@@ -10,10 +10,9 @@ public enum MessageType {
     DOI_REQUEST("DoiRequest"),
     PUBLISHING_REQUEST("PublishingRequest");
     
-    static final String INVALID_MESSAGE_TYPE_ERROR =
-        String.format("Invalid Message type. Allowed values: %s",allowedValuesString());
     public static final String DELIMITER = ", ";
-    
+    static final String INVALID_MESSAGE_TYPE_ERROR =
+        String.format("Invalid Message type. Allowed values: %s", allowedValuesString());
     private final String value;
     
     MessageType(String value) {

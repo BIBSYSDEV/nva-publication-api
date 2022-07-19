@@ -17,7 +17,7 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then the NVA DegreePhd has a PublicationContext with number of pages equal to "<pages>"
     Examples:
-      | pages        |
-      | 10-15        |
-      | 123          |
-      | some pages   |
+      | pages      |
+      | 10-15      |
+      | 123        |
+      | some pages |

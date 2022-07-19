@@ -88,7 +88,6 @@ Feature: User access rights
     Then the publication is NOT in the result-set
 
 
-
   @notmvp
   Scenario: users with role USER read unpublished publication that is shared with them
     Given a publication

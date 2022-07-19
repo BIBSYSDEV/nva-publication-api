@@ -21,7 +21,7 @@ class DoiRequestDaoTest {
     
     @Test
     public void queryByCustomerAndResourceIdentifierReturnsObjectWithPartitionKeyContainingPublisherAndResourceId() {
-    
+        
         DoiRequestDao queryObject =
             DoiRequestDao.queryByCustomerAndResourceIdentifier(SAMPLE_USER_INSTANCE, SAMPLE_RESOURCE_IDENTIFIER);
         String expectedPartitionKey = CUSTOMER_INDEX_FIELD_PREFIX

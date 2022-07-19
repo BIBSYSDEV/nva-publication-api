@@ -47,7 +47,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
-
+    
     public static final int LARGE_PAGE = 10;
     public static final int ONE_ENTRY_PER_EVENT = 1;
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
@@ -58,39 +58,39 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private Clock clock;
     private ResourceService resourceService;
     private List<Map<String, AttributeValue>> scanningStartingPoints;
-
+    
     @BeforeEach
     public void init() {
         super.init();
-
+        
         this.clock = Clock.systemDefaultZone();
         this.output = new ByteArrayOutputStream();
         this.context = mockContent();
         this.eventBridgeClient = new FakeEventBridgeClient();
-
+        
         var dynamoDbClient = super.client;
         this.resourceService = mockResourceService(dynamoDbClient);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
         this.scanningStartingPoints = Collections.synchronizedList(new ArrayList<>());
     }
-
+    
     @Test
     void shouldUpdateDataEntriesWhenValidRequestIsReceived()
         throws ApiGatewayException {
         Publication createdPublication = createPublication(PublicationGenerator.randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         final String initialRowVersion = initialResource.getRowVersion();
-
+        
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
         Resource updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-
+        
         String updatedRowVersion =
             resourceService.getResourceByIdentifier(createdPublication.getIdentifier()).getRowVersion();
-
+        
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedRowVersion, is(not(equalTo(initialRowVersion))));
     }
-
+    
     @Test
     void shouldEmitNewScanEventWhenDatabaseScanningIsNotComplete() throws ApiGatewayException {
         createRandomResources(2);
@@ -98,7 +98,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var emittedEvent = consumeLatestEmittedEvent();
         assertThat(emittedEvent.getStartMarker(), is(not(nullValue())));
     }
-
+    
     @Test
     void shouldNotSendScanEventWhenDatabaseScanningIsComplete()
         throws ApiGatewayException {
@@ -106,23 +106,23 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
         assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
     }
-
+    
     @Test
     void shouldStartScanningFromSuppliedStartMarkerWhenStartMakerIsNotNull()
         throws ApiGatewayException {
         createRandomResources(5);
         handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
-
+        
         var expectedStaringPointForNextEvent = getLatestEmittedStartingPoint();
         var secondScanRequest = new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, expectedStaringPointForNextEvent);
         handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
-
+        
         var scanStartingPointSentToTheService =
             scanningStartingPoints.get(scanningStartingPoints.size() - 1);
-
+        
         assertThat(scanStartingPointSentToTheService, is(equalTo(expectedStaringPointForNextEvent)));
     }
-
+    
     @Test
     void shouldNotGoIntoInfiniteLoop() throws ApiGatewayException {
         createRandomResources(20);
@@ -133,7 +133,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         }
         assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
     }
-
+    
     @Test
     void shouldLogFailureWhenExceptionIsThrown() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
@@ -141,26 +141,26 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var spiedResourceService = spy(resourceService);
         doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
             .scanResources(anyInt(), any());
-
+        
         handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient);
         Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         assertThrows(RuntimeException.class, action);
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
     }
-
+    
     private void createRandomResources(int numberOfResources) throws ApiGatewayException {
         for (int i = 0; i < numberOfResources; i++) {
             createPublication(PublicationGenerator.randomPublication());
         }
     }
-
+    
     private Publication createPublication(Publication publication) throws ApiGatewayException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);
     }
-
+    
     private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {
-        return new ResourceService(dynamoDbClient,  clock) {
+        return new ResourceService(dynamoDbClient, clock) {
             @Override
             public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
                 if (nonNull(startMarker)) {
@@ -170,7 +170,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
             }
         };
     }
-
+    
     private FakeContext mockContent() {
         return new FakeContext() {
             @Override
@@ -179,32 +179,32 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
             }
         };
     }
-
+    
     private void pushInitialEntryInEventBridge(ScanDatabaseRequest initialRequest) {
         var entry = PutEventsRequestEntry.builder()
             .detail(initialRequest.toJsonString())
             .build();
         eventBridgeClient.getRequestEntries().add(entry);
     }
-
+    
     private boolean thereAreMoreEventsInEventBridge() {
         return !eventBridgeClient.getRequestEntries().isEmpty();
     }
-
+    
     private Map<String, AttributeValue> getLatestEmittedStartingPoint() {
         return consumeLatestEmittedEvent().getStartMarker();
     }
-
+    
     private ScanDatabaseRequest consumeLatestEmittedEvent() {
         var allRequests = eventBridgeClient.getRequestEntries();
         var latest = allRequests.remove(allRequests.size() - 1);
         return attempt(() -> ScanDatabaseRequest.fromJson(latest.detail())).orElseThrow();
     }
-
+    
     private InputStream createInitialScanRequest(int pageSize) {
         return eventToInputStream(new ScanDatabaseRequest(pageSize, START_FROM_BEGINNING));
     }
-
+    
     private InputStream eventToInputStream(ScanDatabaseRequest scanDatabaseRequest) {
         var event = new AwsEventBridgeEvent<ScanDatabaseRequest>();
         event.setAccount(randomString());

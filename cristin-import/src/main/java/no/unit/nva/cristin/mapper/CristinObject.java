@@ -33,14 +33,14 @@ import no.unit.nva.model.Publication;
 
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
-
+    
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
     public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
     public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
     public static final String IDENTIFIER_ORIGIN = "Cristin";
-
+    
     public static final String BOOK_OR_REPORT_METADATA = "type_bok_rapport";
-
+    
     @JsonProperty("id")
     private Integer id;
     @JsonProperty("arstall")
@@ -74,27 +74,27 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("type_foredrag_poster")
     private CristinLectureOrPosterMetaData lectureOrPosterMetaData;
     private String publicationOwner;
-
+    
     public CristinObject() {
     }
-
+    
+    public static CristinObject fromJson(JsonNode json) {
+        return attempt(() -> cristinEntryMapper.convertValue(json, CristinObject.class)).orElseThrow();
+    }
+    
     public CristinObjectBuilder copy() {
         return this.toBuilder();
     }
-
+    
     public Publication toPublication() {
         return new CristinMapper(this).generatePublication();
     }
-
+    
     public void hardcodePublicationOwner(String publicationsOwner) {
         this.setPublicationOwner(publicationsOwner);
     }
-
+    
     public boolean isPeerReviewed() {
         return nonNull(yearReported);
-    }
-
-    public static CristinObject fromJson(JsonNode json) {
-        return attempt(() -> cristinEntryMapper.convertValue(json, CristinObject.class)).orElseThrow();
     }
 }

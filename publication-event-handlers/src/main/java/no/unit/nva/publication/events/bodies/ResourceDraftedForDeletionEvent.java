@@ -8,15 +8,15 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
 public class ResourceDraftedForDeletionEvent {
-
+    
     public static final String EVENT_TOPIC = "PublicationService.Resource.DraftForDeletion";
-
+    
     private final String topic;
     private final SortableIdentifier identifier;
     private final String status;
     private final URI doi;
     private final URI customerId;
-
+    
     /**
      * Constructor for DeletePublicationEvent.
      *
@@ -39,38 +39,38 @@ public class ResourceDraftedForDeletionEvent {
         this.doi = doi;
         this.customerId = customerId;
     }
-
+    
     public String getTopic() {
         return topic;
     }
-
+    
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-
+    
     public String getStatus() {
         return status;
     }
-
+    
     public URI getDoi() {
         return doi;
     }
-
+    
     public URI getCustomerId() {
         return customerId;
     }
-
+    
     @JsonProperty("hasDoi")
     public boolean hasDoi() {
         return Objects.nonNull(doi);
     }
-
+    
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(topic, identifier, status, doi, customerId);
     }
-
+    
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {

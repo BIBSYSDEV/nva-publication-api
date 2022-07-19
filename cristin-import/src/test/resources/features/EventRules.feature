@@ -7,13 +7,13 @@ Feature: Event conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationContext of type "Event"
     Examples:
-    | secondaryCategory |
-    | VIT_FOREDRAG      |
-    | POSTER            |
-    | FOREDRAG_FAG      |
-    | POPVIT_FOREDRAG   |
-    | ANNEN_PRESENTASJ  |
-    | UTST_WEB          |
+      | secondaryCategory |
+      | VIT_FOREDRAG      |
+      | POSTER            |
+      | FOREDRAG_FAG      |
+      | POPVIT_FOREDRAG   |
+      | ANNEN_PRESENTASJ  |
+      | UTST_WEB          |
 
   Scenario Outline: Cristin Result of type foredrag is converted to
   an NVA Resource with the correct Publication Instance type
@@ -22,10 +22,10 @@ Feature: Event conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "<instanceType>"
     Examples:
-    | secondaryCategory | instanceType      |
-    | VIT_FOREDRAG      | ConferenceLecture |
-    | POSTER            | ConferencePoster  |
-    | FOREDRAG_FAG      | Lecture           |
-    | POPVIT_FOREDRAG   | Lecture           |
-    | ANNEN_PRESENTASJ  | OtherPresentation |
-    | UTST_WEB          | OtherPresentation |
+      | secondaryCategory | instanceType      |
+      | VIT_FOREDRAG      | ConferenceLecture |
+      | POSTER            | ConferencePoster  |
+      | FOREDRAG_FAG      | Lecture           |
+      | POPVIT_FOREDRAG   | Lecture           |
+      | ANNEN_PRESENTASJ  | OtherPresentation |
+      | UTST_WEB          | OtherPresentation |

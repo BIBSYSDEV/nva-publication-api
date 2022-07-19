@@ -18,13 +18,13 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPublicationStatusResponse> {
-
+    
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
     private final String apiHost;
     private final ResourceService resourceService;
-
+    
     /**
      * Default constructor for PublishPublicationHandler.
      */
@@ -38,7 +38,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
             )
         );
     }
-
+    
     /**
      * Constructor for PublishPublicationHandler.
      *
@@ -50,7 +50,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
         this.resourceService = resourceService;
         this.apiHost = environment.readEnv(API_HOST);
     }
-
+    
     @Override
     protected PublishPublicationStatusResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
@@ -59,16 +59,16 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
         URI customerId = requestInfo.getCurrentCustomer();
         UserInstance userInstance = UserInstance.create(user, customerId);
         addAdditionalHeaders(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
-
+        
         return resourceService.publishPublication(userInstance, identifier);
     }
-
-    protected URI getLocation(SortableIdentifier identifier) {
-        return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier.toString()));
-    }
-
+    
     @Override
     protected Integer getSuccessStatusCode(Void input, PublishPublicationStatusResponse output) {
         return output.getStatusCode();
+    }
+    
+    protected URI getLocation(SortableIdentifier identifier) {
+        return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier.toString()));
     }
 }

@@ -22,6 +22,10 @@ public interface DataEntry {
     
     String ROW_VERSION = "rowVersion";
     
+    static String nextRowVersion() {
+        return UUID.randomUUID().toString();
+    }
+    
     Publication toPublication();
     
     SortableIdentifier getIdentifier();
@@ -30,10 +34,6 @@ public interface DataEntry {
     String getRowVersion();
     
     void setRowVersion(String rowVersion);
-    
-    static String nextRowVersion() {
-        return UUID.randomUUID().toString();
-    }
     
     default DataEntry refreshRowVersion() {
         setRowVersion(nextRowVersion());

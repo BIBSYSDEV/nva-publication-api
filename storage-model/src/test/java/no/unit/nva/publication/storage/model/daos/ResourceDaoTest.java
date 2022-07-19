@@ -51,18 +51,18 @@ public class ResourceDaoTest {
                              + SAMPLE_USER;
         assertThat(primaryPartitionKey, is(equalTo(expectedKey)));
     }
-
+    
     @Test
     public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier()
-            throws MalformedURLException, InvalidIssnException {
+        throws MalformedURLException, InvalidIssnException {
         ResourceDao daoWithoutCristinId = WithCristinIdentifierTest.createResourceDaoWithoutCristinIdentifier();
         assertThat(daoWithoutCristinId.getResourceByCristinIdentifierPartitionKey(),
-                is(equalTo(null)));
+            is(equalTo(null)));
     }
-
+    
     @Test
     public void resourceDaoOnlySerializesTypeDataPKAndSKFields()
-            throws MalformedURLException, InvalidIssnException, JsonProcessingException {
+        throws MalformedURLException, InvalidIssnException, JsonProcessingException {
         ResourceDao dao = sampleResourceDao();
         String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
         ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);

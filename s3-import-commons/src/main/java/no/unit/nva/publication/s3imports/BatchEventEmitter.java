@@ -45,7 +45,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
  * @param <T> the type of the event detail.
  */
 public class BatchEventEmitter<T> {
-
+    
     public static final String BUS_NOT_FOUND_ERROR = "EventBridge bus not found: ";
     public static final String NUMBER_OF_REQUEST_ENTRIES = "Number of request entries:";
     public static final int TIMESTAMP_SIZE_IN_BYTES = 14;
@@ -57,16 +57,16 @@ public class BatchEventEmitter<T> {
     private final EventBridgeClient client;
     private final String eventSource;
     private List<PutEventsRequest> putEventsRequests;
-
+    
     public BatchEventEmitter(
-                             String eventSource,
-                             String invokingFunctionArn,
-                             EventBridgeClient eventBridgeClient) {
+        String eventSource,
+        String invokingFunctionArn,
+        EventBridgeClient eventBridgeClient) {
         this.invokingFunctionArn = invokingFunctionArn;
         this.client = eventBridgeClient;
         this.eventSource = eventSource;
     }
-
+    
     /**
      * Create one event for every element in the "eventDetails" list.
      *
@@ -75,7 +75,7 @@ public class BatchEventEmitter<T> {
     public void addEvents(Collection<T> eventDetails) {
         addEvents(eventDetails.stream());
     }
-
+    
     /**
      * Create one event for every element in the "eventDetails" list.
      *
@@ -87,7 +87,7 @@ public class BatchEventEmitter<T> {
             .collect(Collectors.toList());
         putEventsRequests = createPutEventsRequests(eventRequestEntries);
     }
-
+    
     /**
      * The emitted entries are sent in batches and there is a waiting time between each batch, so that EventBridge is
      * not overwhelmed with messages and starts rejecting PutEventRequests.
@@ -100,18 +100,18 @@ public class BatchEventEmitter<T> {
         checkBus();
         return tryManyTimesToEmitTheEventRequests(numberOfEmittedEventsPerRequest);
     }
-
+    
     protected List<PutEventsRequest> getPutEventsRequests() {
         return putEventsRequests;
     }
-
+    
     private void checkBus() {
         List<String> busNames = listAllBusNames();
         if (!busNames.contains(ApplicationConstants.EVENT_BUS_NAME)) {
             throw new IllegalStateException(BUS_NOT_FOUND_ERROR + ApplicationConstants.EVENT_BUS_NAME);
         }
     }
-
+    
     private List<String> listAllBusNames() {
         return client.listEventBuses(
                 ListEventBusesRequest.builder().namePrefix(ApplicationConstants.EVENT_BUS_NAME).build())
@@ -120,9 +120,9 @@ public class BatchEventEmitter<T> {
             .map(EventBus::name)
             .collect(Collectors.toList());
     }
-
+    
     private PutEventsRequestEntry createPutEventRequestEntry(T eventDetail) {
-
+        
         return PutEventsRequestEntry.builder()
             .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
             .resources(invokingFunctionArn)
@@ -132,14 +132,14 @@ public class BatchEventEmitter<T> {
             .source(eventSource)
             .build();
     }
-
+    
     private String toJson(T eventDetail) {
         return attempt(() -> s3ImportsMapper.writeValueAsString(eventDetail)).orElseThrow();
     }
-
+    
     private List<PutEventsResult> tryManyTimesToEmitTheEventRequests(int numberOfEntriesEmittedPerBatch) {
         List<PutEventsResult> failedEvents = emitEventsAndCollectFailures(putEventsRequests,
-                                                                          numberOfEntriesEmittedPerBatch);
+            numberOfEntriesEmittedPerBatch);
         int attempts = 0;
         while (!failedEvents.isEmpty() && attempts < MAX_ATTEMPTS) {
             List<PutEventsRequest> requestsToResend = collectRequestsForResending(failedEvents);
@@ -151,11 +151,11 @@ public class BatchEventEmitter<T> {
         }
         return Collections.emptyList();
     }
-
+    
     private List<PutEventsRequest> collectRequestsForResending(List<PutEventsResult> failedEvents) {
         return failedEvents.stream().map(PutEventsResult::getRequest).collect(Collectors.toList());
     }
-
+    
     private List<PutEventsRequest> createPutEventsRequests(List<PutEventsRequestEntry> entries) {
         return ListUtils.partition(entries, NUMBER_OF_EVENTS_SENT_PER_REQUEST)
             .stream()
@@ -163,7 +163,7 @@ public class BatchEventEmitter<T> {
             .flatMap(this::splitBigEventRequests)
             .collect(Collectors.toList());
     }
-
+    
     private Stream<PutEventsRequest> splitBigEventRequests(PutEventsRequest eventRequest) {
         Integer totalRequestSize = calculateTotalRequestSize(eventRequest);
         if (totalRequestSize > REQUEST_ENTRY_SET_MAX_BYTE_SIZE) {
@@ -172,7 +172,7 @@ public class BatchEventEmitter<T> {
             return Stream.of(eventRequest);
         }
     }
-
+    
     private Integer calculateTotalRequestSize(PutEventsRequest eventsRequest) {
         return eventsRequest.entries()
             .stream()
@@ -180,7 +180,7 @@ public class BatchEventEmitter<T> {
             .reduce(Integer::sum)
             .orElse(0);
     }
-
+    
     private Stream<PutEventsRequest> splitRequestRecursively(PutEventsRequest putEventsRequest) {
         List<PutEventsRequestEntry> requestEntries = putEventsRequest.entries();
         int splitPoint = requestEntries.size() / 2;
@@ -189,43 +189,43 @@ public class BatchEventEmitter<T> {
         PutEventsRequest leftPartitionRequest = PutEventsRequest.builder().entries(leftPartition).build();
         PutEventsRequest rightPartitionRequest = PutEventsRequest.builder().entries(rightPartition).build();
         return Stream.of(splitBigEventRequests(leftPartitionRequest),
-                         splitBigEventRequests(rightPartitionRequest))
+                splitBigEventRequests(rightPartitionRequest))
             .flatMap(stream -> stream);
     }
-
+    
     private List<PutEventsResult> emitEventsAndCollectFailures(List<PutEventsRequest> eventRequests,
                                                                int numberOfEntriesEmittedPerBatch) {
         List<List<PutEventsRequest>> requestBatches = createRequestBatches(eventRequests,
-                                                                           numberOfEntriesEmittedPerBatch);
-
+            numberOfEntriesEmittedPerBatch);
+        
         return sendRequestBatches(requestBatches);
     }
-
+    
     private List<PutEventsResult> sendRequestBatches(
         List<List<PutEventsRequest>> requestBatches) {
         List<PutEventsResult> putEventsResults = new ArrayList<>();
-
+        
         for (List<PutEventsRequest> batch : requestBatches) {
             List<PutEventsResult> batchResults = emitBatch(batch);
             putEventsResults.addAll(batchResults);
         }
         return putEventsResults;
     }
-
+    
     private List<PutEventsResult> emitBatch(List<PutEventsRequest> batch) {
-
+        
         return batch.stream()
             .map(this::emitEvent)
             .filter(PutEventsResult::hasFailures)
             .collect(Collectors.toList());
     }
-
+    
     private List<List<PutEventsRequest>> createRequestBatches(List<PutEventsRequest> eventRequests,
                                                               int numberOfEntriesEmittedPerBatch) {
         List<List<PutEventsRequest>> result = new ArrayList<>();
-
+        
         int numberOfRequests = calculateNumberOfRequestsSentPerBatch(numberOfEntriesEmittedPerBatch);
-
+        
         for (int startIndex = 0; startIndex < eventRequests.size(); startIndex = startIndex + numberOfRequests) {
             int endIndex = endIndex(eventRequests, startIndex + numberOfRequests);
             List<PutEventsRequest> batch = eventRequests.subList(startIndex, endIndex);
@@ -234,25 +234,25 @@ public class BatchEventEmitter<T> {
             }
             result.add(batch);
         }
-
+        
         return result;
     }
-
+    
     private int calculateNumberOfRequestsSentPerBatch(int numberOfEntriesEmittedPerBatch) {
         int numberOfRequests = numberOfEntriesEmittedPerBatch / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
         return numberOfRequests == 0 ? 1 : numberOfRequests;
     }
-
+    
     private int endIndex(List<PutEventsRequest> eventRequests, int overfloadingEndIndex) {
         return Math.min(overfloadingEndIndex, eventRequests.size());
     }
-
+    
     private PutEventsResult emitEvent(PutEventsRequest request) {
         PutEventsResponse result = attempt(() -> client.putEvents(request))
             .orElseThrow(fail -> logEmissionFailureDetails(fail, request));
         return new PutEventsResult(request, result);
     }
-
+    
     private int requestEntrySize(PutEventsRequestEntry entry) {
         int size = entry.source().getBytes(StandardCharsets.UTF_8).length
                    + entry.detail().getBytes(StandardCharsets.UTF_8).length
@@ -263,7 +263,7 @@ public class BatchEventEmitter<T> {
         }
         return size;
     }
-
+    
     private RuntimeException logEmissionFailureDetails(Failure<PutEventsResponse> fail, PutEventsRequest request) {
         logger.info(NUMBER_OF_REQUEST_ENTRIES + request.entries().size());
         if (fail.getException() instanceof RuntimeException) {

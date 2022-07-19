@@ -10,14 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JsonLdContextUtil {
-
-    private final ObjectMapper objectMapper;
+    
     private static final Logger logger = LoggerFactory.getLogger(JsonLdContextUtil.class);
-
+    private final ObjectMapper objectMapper;
+    
     public JsonLdContextUtil(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
-
+    
     /**
      * Get PublicationContext as JsonNode.
      *

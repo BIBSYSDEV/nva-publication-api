@@ -180,11 +180,11 @@
         "originalforfatter": null,
         "originaltittel": null,
         "forlag": null,
-        "fagfelt":{
-            "fagfeltkode":1081,
-            "fagomradekode":"MED",
-            "navn":"Samfunnsmedisin",
-            "navn_engelsk":"Public, Environmental and Occupational Health"
+        "fagfelt": {
+          "fagfeltkode": 1081,
+          "fagomradekode": "MED",
+          "navn": "Samfunnsmedisin",
+          "navn_engelsk": "Public, Environmental and Occupational Health"
         }
       },
       "type_bok_rapport_del": null,
@@ -193,31 +193,31 @@
       "type_mediebidrag": null,
       "type_produkt": null,
       "type_tidsskriftpublikasjon": {
-        "tidsskrift":{
-          "tidsskriftnr":2184708,
-          "tidsskriftnavn":"Dansk Tidsskrift for Teologi og Kirke",
-          "nsdkode":479200,
-          "issn":"1903-6523",
-          "issn_elektronisk":"2446-0850",
-          "landkode_utgiver":"DK",
-          "sprakkode":"DA",
-          "status_referee_ordning":"J",
-          "dato_utgatt":null,
-          "status_serie":null
+        "tidsskrift": {
+          "tidsskriftnr": 2184708,
+          "tidsskriftnavn": "Dansk Tidsskrift for Teologi og Kirke",
+          "nsdkode": 479200,
+          "issn": "1903-6523",
+          "issn_elektronisk": "2446-0850",
+          "landkode_utgiver": "DK",
+          "sprakkode": "DA",
+          "status_referee_ordning": "J",
+          "dato_utgatt": null,
+          "status_serie": null
         },
-        "antall_sider_totalt":null,
-        "publiseringsar":2011,
-        "hefte":"2",
-        "sidenr_fra":"26",
-        "sidenr_til":"36",
-        "status_referee_ordning":null,
-        "supplement":null,
-        "utbredelsesomrade":null,
-        "volum":"38",
-        "artikkelnummer":null,
-        "doi":null,
-        "arstall_trykket":null,
-        "arstall_online":null
+        "antall_sider_totalt": null,
+        "publiseringsar": 2011,
+        "hefte": "2",
+        "sidenr_fra": "26",
+        "sidenr_til": "36",
+        "status_referee_ordning": null,
+        "supplement": null,
+        "utbredelsesomrade": null,
+        "volum": "38",
+        "artikkelnummer": null,
+        "doi": null,
+        "arstall_trykket": null,
+        "arstall_online": null
       },
       "type_utstilling": null,
       "arkivfil": null,

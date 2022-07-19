@@ -18,7 +18,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.create.CreatePublicationRequest;
-
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -26,28 +25,28 @@ import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class CreatePublishedPublicationHandler extends EventHandler<EventReference, PublicationResponse> {
-
+    
     private final S3Client s3Client;
     private final ResourceService resourceService;
-
+    
     @JacocoGenerated
     public CreatePublishedPublicationHandler() {
         this(S3Driver.defaultS3Client().build(),
-             DEFAULT_DYNAMODB_CLIENT);
+            DEFAULT_DYNAMODB_CLIENT);
     }
-
+    
     public CreatePublishedPublicationHandler(S3Client s3Client, AmazonDynamoDB dynamoClient) {
         super(EventReference.class);
         this.s3Client = s3Client;
-        this.resourceService = new ResourceService(dynamoClient,  Clock.systemDefaultZone());
+        this.resourceService = new ResourceService(dynamoClient, Clock.systemDefaultZone());
     }
-
+    
     @Override
     protected PublicationResponse processInput(EventReference eventDetail,
                                                AwsEventBridgeEvent<EventReference> event,
                                                Context context) {
         var input = readEventBodyFromS3(eventDetail);
-
+        
         return attempt(() -> parseInput(input))
             .map(CreatePublicationRequest::toPublication)
             .map(this::addOwnerAndPublisher)
@@ -55,27 +54,27 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
             .map(PublicationResponse::fromPublication)
             .orElseThrow();
     }
-
+    
     private Publication addOwnerAndPublisher(Publication publication) {
         Organization customer = new Organization.Builder().withId(UNIT_CUSTOMER_ID).build();
         ResourceOwner resourceOwner = new ResourceOwner(randomUnitUser(), HARDCODED_OWNER_AFFILIATION);
         return publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
     }
-
+    
     private String randomUnitUser() {
         return randomString() + "@unit.no";
     }
-
-    private Publication storeAsPublishedPublication(Publication publication)  {
+    
+    private Publication storeAsPublishedPublication(Publication publication) {
         return resourceService.createPublicationFromImportedEntry(publication);
     }
-
+    
     private String readEventBodyFromS3(EventReference eventBody) {
         var s3Bucket = eventBody.getUri().getHost();
         var s3Driver = new S3Driver(s3Client, s3Bucket);
         return s3Driver.getFile(UriWrapper.fromUri(eventBody.getUri()).toS3bucketPath());
     }
-
+    
     private CreatePublicationRequest parseInput(String input) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.readValue(input, CreatePublicationRequest.class);
     }

@@ -122,17 +122,17 @@ log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.re
 log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
-karate-core = { group = 'com.intuit.karate', name = 'karate-core', version.ref = 'karate-core'}
-karate-apache = { group = 'com.intuit.karate', name = 'karate-apache', version.ref = 'karate-apache'}
-karate-junit5 = { group = 'com.intuit.karate', name = 'karate-junit5', version.ref = 'karate-junit5'}
-karate-parent = { group = 'com.intuit.karate', name =  'karate-parent', version.ref = 'karate-core'}
+karate-core = { group = 'com.intuit.karate', name = 'karate-core', version.ref = 'karate-core' }
+karate-apache = { group = 'com.intuit.karate', name = 'karate-apache', version.ref = 'karate-apache' }
+karate-junit5 = { group = 'com.intuit.karate', name = 'karate-junit5', version.ref = 'karate-junit5' }
+karate-parent = { group = 'com.intuit.karate', name = 'karate-parent', version.ref = 'karate-core' }
 
 
 
 [bundles]
-testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine','guava',
-    'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core','hamcrest-jackson',
-    'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'javafaker','zalando']
+testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
+    'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core', 'hamcrest-jackson',
+    'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'javafaker', 'zalando']
 
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']

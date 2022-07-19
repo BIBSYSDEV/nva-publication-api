@@ -14,20 +14,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class InitializationHandlerTest {
-
+    
     public static final Context CONTEXT = mock(Context.class);
     public static final String SAMPLE_PIPELINE_EVENT_FROM_AWS_DOCUMENTATION =
         "initialization/pipeline_succeeded_event.json";
     public static final String PIPELINE_NAME_IN_RESOURCES_FILE = "myPipeline";
     private InitializationHandler handler;
     private ByteArrayOutputStream outputStream;
-
+    
     @BeforeEach
     public void init() {
         this.handler = new InitializationHandler();
         this.outputStream = new ByteArrayOutputStream();
     }
-
+    
     @Test
     void shouldLogReceivedEventWhenHandlerIsActivated() {
         TestAppender logger = LogUtils.getTestingAppenderForRootLogger();

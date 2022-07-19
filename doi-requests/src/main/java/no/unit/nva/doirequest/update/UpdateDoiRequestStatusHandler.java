@@ -23,34 +23,33 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 
 public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDoiRequest, Void> {
-
+    
     public static final String INVALID_PUBLICATION_ID_ERROR = "Invalid publication id: ";
-
+    
     public static final String API_HOST_ENV_VARIABLE = "API_HOST";
-    private static final String LOCATION_TEMPLATE_PUBLICATION = "%s://%s/publication/%s";
     public static final String API_SCHEME = "https";
-
+    private static final String LOCATION_TEMPLATE_PUBLICATION = "%s://%s/publication/%s";
     private final String apiHost;
     private final DoiRequestService doiRequestService;
-
+    
     @JacocoGenerated
     public UpdateDoiRequestStatusHandler() {
         this(defaultEnvironment(), defaultService());
     }
-
+    
     public UpdateDoiRequestStatusHandler(Environment environment,
                                          DoiRequestService doiRequestService) {
         super(ApiUpdateDoiRequest.class, environment);
         this.apiHost = environment.readEnv(API_HOST_ENV_VARIABLE);
         this.doiRequestService = doiRequestService;
     }
-
+    
     @Override
     protected Void processInput(ApiUpdateDoiRequest input,
                                 RequestInfo requestInfo,
                                 Context context)
         throws ApiGatewayException {
-
+        
         try {
             input.validate();
             SortableIdentifier publicationIdentifier = getPublicationIdentifier(requestInfo);
@@ -63,55 +62,55 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
         }
         return null;
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(ApiUpdateDoiRequest input, Void output) {
         return HttpStatus.SC_ACCEPTED;
     }
-
+    
     @JacocoGenerated
     private static DoiRequestService defaultService() {
         return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(),
-                                     Clock.systemDefaultZone());
+            Clock.systemDefaultZone());
     }
-
+    
     @JacocoGenerated
     private static Environment defaultEnvironment() {
         return new Environment();
     }
-
+    
     private void validateUser(RequestInfo requestInfo) throws NotAuthorizedException {
         if (userIsNotAuthorized(requestInfo)) {
             throw new NotAuthorizedException();
         }
     }
-
+    
     private boolean userIsNotAuthorized(RequestInfo requestInfo) {
         return !requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
     }
-
+    
     private UserInstance createUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         String user = requestInfo.getNvaUsername();
         var customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(user, customerId);
     }
-
+    
     private void updateDoiRequestStatus(UserInstance userInstance,
                                         DoiRequestStatus newDoiRequestStatus,
                                         SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         doiRequestService.updateDoiRequest(userInstance, publicationIdentifier, newDoiRequestStatus);
     }
-
+    
     private void updateContentLocationHeader(SortableIdentifier publicationIdentifier) {
         addAdditionalHeaders(
             () -> Collections.singletonMap(HttpHeaders.LOCATION, getContentLocation(publicationIdentifier)));
     }
-
+    
     private String getContentLocation(SortableIdentifier publicationID) {
         return String.format(LOCATION_TEMPLATE_PUBLICATION, API_SCHEME, apiHost, publicationID.toString());
     }
-
+    
     private SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
         String publicationIdentifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))

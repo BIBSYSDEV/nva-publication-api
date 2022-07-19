@@ -31,7 +31,7 @@ public class DoiRequestTest {
     
     @Test
     public void doiRequestHasTypeDoiRequest() {
-
+        
         JsonNode json = dynamoDbObjectMapper.convertValue(sampleDoiRequest, JsonNode.class);
         assertThat(json.get(TYPE_FIELD), is(not(nullValue())));
         assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(DoiRequest.TYPE)));
@@ -59,40 +59,40 @@ public class DoiRequestTest {
     
     @Test
     public void toPublicationReturnsPublicationInstanceWithoutLossOfInformation() {
-
+        
         DoiRequest doiRequest =
             DoiRequest.newDoiRequestForResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
-
+        
         assertThat(doiRequest, doesNotHaveEmptyValues());
         Publication generatedPublication = doiRequest.toPublication();
-
+        
         DoiRequest regeneratedDoiRequest = DoiRequest.fromDto(generatedPublication, doiRequest.getIdentifier());
         // when transformed to Publication we do not have control over the rowVersion anymore because
         // nva-datamodel-java is an external library.
         assertThat(regeneratedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("rowVersion")));
         assertThat(regeneratedDoiRequest, is(equalTo(doiRequest)));
     }
-
+    
     @Test
     public void fromPublicationIsEquivalentToFromDto() {
         Publication publication = sampleDoiRequest.toPublication();
         SortableIdentifier identifier = sampleDoiRequest.getIdentifier();
-
+        
         DoiRequest fromPublication = DoiRequest.fromPublication(publication, identifier);
         DoiRequest fromDto = DoiRequest.fromDto(publication, identifier);
-
+        
         assertThat(fromPublication, is(equalTo(fromDto)));
         assertThat(fromDto, is(equalTo(sampleDoiRequest)));
     }
-
+    
     @Test
     public void updateReturnsNewAndUpdatedDoiRequest() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
-
+        
         String newTitle = "newTitle";
         Resource updatedResource = updateResource(resource, newTitle);
-
+        
         DoiRequest updatedDoiRequest = doiRequest.update(updatedResource);
         assertThat(updatedDoiRequest.getResourceTitle(), is(equalTo(newTitle)));
     }
@@ -116,8 +116,6 @@ public class DoiRequestTest {
         updatedEntityDescription.setMainTitle(newTitle);
         return resource.copy().withEntityDescription(updatedEntityDescription).build();
     }
-    
-
     
     private DoiRequest doiRequestWithoutResourceReference() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithoutIdentifier());

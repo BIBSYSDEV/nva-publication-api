@@ -8,13 +8,12 @@ import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 
-
 public class DoiUpdateDto implements JsonSerializable {
-
+    
     private final URI doi;
     private final SortableIdentifier publicationIdentifier;
     private final Instant modifiedDate;
-
+    
     /**
      * Constructor for DoiUpdateDto.
      *
@@ -30,7 +29,7 @@ public class DoiUpdateDto implements JsonSerializable {
         this.publicationIdentifier = publicationIdentifier;
         this.modifiedDate = modifiedDate;
     }
-
+    
     /**
      * Retrieve DOI from DOI update.
      *
@@ -39,43 +38,43 @@ public class DoiUpdateDto implements JsonSerializable {
     public Optional<URI> getDoi() {
         return Optional.ofNullable(doi);
     }
-
+    
     public SortableIdentifier getPublicationIdentifier() {
         return publicationIdentifier;
     }
-
+    
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-
+    
     public boolean hasAllRequiredValuesSet() {
         return getPublicationIdentifier() != null && getModifiedDate() != null;
     }
-
+    
     public static class Builder {
-
+        
         private URI doi;
         private SortableIdentifier publicationIdentifier;
         private Instant modifiedDate;
-
+        
         public Builder() {
         }
-
+        
         public Builder withDoi(URI doi) {
             this.doi = doi;
             return this;
         }
-
+        
         public Builder withPublicationId(SortableIdentifier publicationIdentifier) {
             this.publicationIdentifier = publicationIdentifier;
             return this;
         }
-
+        
         public Builder withModifiedDate(Instant modifiedDate) {
             this.modifiedDate = modifiedDate;
             return this;
         }
-
+        
         public DoiUpdateDto build() {
             return new DoiUpdateDto(doi, publicationIdentifier, modifiedDate);
         }

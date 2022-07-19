@@ -19,19 +19,19 @@ import nva.commons.core.JacocoGenerated;
 
 public class CreatePublishingRequestHandler extends
                                             ApiGatewayHandler<PublishingRequestOpenCase, PublishingRequestCaseDto> {
-
+    
     private final PublishingRequestService requestService;
-
+    
     @JacocoGenerated
     public CreatePublishingRequestHandler() {
         this(defaultRequestService());
     }
-
+    
     public CreatePublishingRequestHandler(PublishingRequestService requestService) {
         super(PublishingRequestOpenCase.class);
         this.requestService = requestService;
     }
-
+    
     @Override
     protected PublishingRequestCaseDto processInput(PublishingRequestOpenCase input,
                                                     RequestInfo requestInfo,
@@ -39,22 +39,22 @@ public class CreatePublishingRequestHandler extends
         final var userInstance = createUserInstance(requestInfo);
         final var publicationIdentifier =
             new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER));
-
+        
         var publishingRequest = PublishingRequestCase.createOpeningCaseObject(userInstance, publicationIdentifier);
         var newPublishingRequest =
             attempt(() -> requestService.createPublishingRequest(publishingRequest))
                 .orElseThrow(fail -> handleErrors(fail.getException()));
-
+        
         var persistedRequest = requestService.getPublishingRequest(newPublishingRequest);
         return PublishingRequestCaseDto.createResponseObject(persistedRequest);
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(PublishingRequestOpenCase input,
                                            PublishingRequestCaseDto output) {
         return HttpURLConnection.HTTP_OK;
     }
-
+    
     private ApiGatewayException handleErrors(Exception exception) {
         if (exception instanceof TransactionFailedException) {
             return new ConflictException(exception, exception.getMessage());

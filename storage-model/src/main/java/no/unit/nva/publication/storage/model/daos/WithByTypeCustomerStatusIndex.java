@@ -13,21 +13,34 @@ import java.net.URI;
 import java.util.Map;
 
 public interface WithByTypeCustomerStatusIndex {
-
+    
+    static String formatByTypeCustomerStatusPartitionKey(String type, String status, URI customerUri) {
+        String customerIdentifier = Dao.orgUriToOrgIdentifier(customerUri);
+        return type
+               + KEY_FIELDS_DELIMITER
+               + CUSTOMER_INDEX_FIELD_PREFIX
+               + KEY_FIELDS_DELIMITER
+               + customerIdentifier
+               + KEY_FIELDS_DELIMITER
+               + STATUS_INDEX_FIELD_PREFIX
+               + KEY_FIELDS_DELIMITER
+               + status;
+    }
+    
     @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME)
     String getByTypeCustomerStatusPartitionKey();
-
+    
     default void setByTypeCustomerStatusPartitionKey(String byTypeCustomerStatusPartitionKey) {
         //Do nothing
     }
-
+    
     @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
     String getByTypeCustomerStatusSortKey();
-
+    
     default void setByTypeCustomerStatusSortKey(String byTypeCustomerStatusSk) {
         // do nothing
     }
-
+    
     /**
      * Returns a Map of field-name:Condition for the key of the By-Type-Customer-Status index table. It's intended use
      * is primarily to get one specific item (by query) if one has the identifier of the entry. It provides an
@@ -52,7 +65,7 @@ public interface WithByTypeCustomerStatusIndex {
                 BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME, sortKeyCondition
             );
     }
-
+    
     default Map<String, Condition> fetchEntryCollectionByTypeCustomerStatusKey() {
         Condition partitionKeyCondition = equalityIndexKeyCondition(getByTypeCustomerStatusPartitionKey());
         return
@@ -60,23 +73,10 @@ public interface WithByTypeCustomerStatusIndex {
                 BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME, partitionKeyCondition
             );
     }
-
+    
     private static Condition equalityIndexKeyCondition(String keyValue) {
         return new Condition()
-                   .withAttributeValueList(new AttributeValue(keyValue))
-                   .withComparisonOperator(ComparisonOperator.EQ);
-    }
-
-    static String formatByTypeCustomerStatusPartitionKey(String type, String status, URI customerUri) {
-        String customerIdentifier = Dao.orgUriToOrgIdentifier(customerUri);
-        return type
-               + KEY_FIELDS_DELIMITER
-               + CUSTOMER_INDEX_FIELD_PREFIX
-               + KEY_FIELDS_DELIMITER
-               + customerIdentifier
-               + KEY_FIELDS_DELIMITER
-               + STATUS_INDEX_FIELD_PREFIX
-               + KEY_FIELDS_DELIMITER
-               + status;
+            .withAttributeValueList(new AttributeValue(keyValue))
+            .withComparisonOperator(ComparisonOperator.EQ);
     }
 }

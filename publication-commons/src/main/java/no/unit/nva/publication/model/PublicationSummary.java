@@ -200,15 +200,6 @@ public class PublicationSummary {
                && getStatus() == that.getStatus();
     }
     
-    private static URI extractPublicationId(ConnectedToResource connectedToResource) {
-        return toPublicationId(connectedToResource.getResourceIdentifier());
-    }
-    
-    private static URI toPublicationId(SortableIdentifier identifier) {
-        return UriWrapper.fromUri(PublicationServiceConfig.ID_NAMESPACE)
-            .addChild(identifier.toString()).getUri();
-    }
-    
     public Instant getCreatedDate() {
         return createdDate;
     }
@@ -223,5 +214,14 @@ public class PublicationSummary {
     
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+    
+    private static URI extractPublicationId(ConnectedToResource connectedToResource) {
+        return toPublicationId(connectedToResource.getResourceIdentifier());
+    }
+    
+    private static URI toPublicationId(SortableIdentifier identifier) {
+        return UriWrapper.fromUri(PublicationServiceConfig.ID_NAMESPACE)
+            .addChild(identifier.toString()).getUri();
     }
 }

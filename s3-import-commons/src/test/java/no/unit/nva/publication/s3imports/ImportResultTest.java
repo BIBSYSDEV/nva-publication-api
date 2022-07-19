@@ -6,7 +6,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import org.junit.jupiter.api.Test;
 
 public class ImportResultTest {
-
+    
     @Test
     public void reportFailureReturnsFailureReport() {
         String someInput = "someInput";

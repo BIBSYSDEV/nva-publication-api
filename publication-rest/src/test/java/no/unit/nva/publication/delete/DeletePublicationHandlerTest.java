@@ -34,7 +34,7 @@ import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
-
+    
     public static final String WILDCARD = "*";
     public static final String SOME_USER = "some_other_user";
     public static final URI SOME_CUSTOMER = URI.create("https://www.example.org");
@@ -43,125 +43,125 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Environment environment;
     private ByteArrayOutputStream outputStream;
     private Context context;
-
+    
     @BeforeEach
     public void setUp() {
         init();
         prepareEnvironment();
-        publicationService = new ResourceService(client,  Clock.systemDefaultZone());
+        publicationService = new ResourceService(client, Clock.systemDefaultZone());
         handler = new DeletePublicationHandler(publicationService, environment);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
     }
-
-    private void prepareEnvironment() {
-        environment = Mockito.mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
-    }
-
+    
     @Test
     void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, ApiGatewayException {
-
+        
         Publication publication = createPublication();
-
+        
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
             .withNvaUsername(publication.getResourceOwner().getOwner())
             .withCustomerId(publication.getPublisher().getId())
             .build();
-
+        
         handler.handleRequest(inputStream, outputStream, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Void.class);
+        
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertEquals(HttpStatus.SC_ACCEPTED, gatewayResponse.getStatusCode());
     }
-
-    private Publication createPublication() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
-        var userInstance =
-            UserInstance.create(publication.getResourceOwner().getOwner(),publication.getPublisher().getId());
-        return publicationService.createPublication(userInstance,publication);
-    }
-
+    
     @Test
     void handleRequestReturnsBadRequestWhenOnPublishedPublication() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-
+        
         publicationService.publishPublication(createUserInstance(publication), publication.getIdentifier());
-
+        
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
             .withNvaUsername(publication.getResourceOwner().getOwner())
             .withCustomerId(publication.getPublisher().getId())
             .build();
-
+        
         handler.handleRequest(inputStream, outputStream, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
+        
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo((HttpURLConnection.HTTP_BAD_REQUEST))));
     }
-
-    private UserInstance createUserInstance(Publication publication) {
-        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
-    }
-
+    
     @Test
     void handleRequestReturnsErrorWhenNonExistingPublication() throws IOException {
         UUID identifier = UUID.randomUUID();
-
+        
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, identifier.toString()))
             .withCustomerId(SOME_CUSTOMER)
             .withNvaUsername(SOME_USER)
             .build();
-
+        
         handler.handleRequest(inputStream, outputStream, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
+        
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
-
+    
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication() throws IOException, ApiGatewayException {
         Publication createdPublication = createPublication();
-
+        
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, createdPublication.getIdentifier().toString()))
             .withNvaUsername(SOME_USER)
             .withCustomerId(createdPublication.getPublisher().getId())
             .build();
-
+        
         handler.handleRequest(inputStream, outputStream, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
+        
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the user info)
         // being wrong or the status of the resource not being "DRAFT"
         assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
-
+    
     @Test
     void handleRequestReturnsBadRequestdWhenAlreadyMarkedForDeletionPublication()
         throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         markForDeletion(publication);
-
+        
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
             .withNvaUsername(publication.getResourceOwner().getOwner())
             .withCustomerId(publication.getPublisher().getId())
             .build();
-
+        
         handler.handleRequest(inputStream, outputStream, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
+        
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertEquals(HttpStatus.SC_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
-
+    
+    private void prepareEnvironment() {
+        environment = Mockito.mock(Environment.class);
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
+    }
+    
+    private Publication createPublication() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance =
+            UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
+        return publicationService.createPublication(userInstance, publication);
+    }
+    
+    private UserInstance createUserInstance(Publication publication) {
+        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
+    }
+    
     private void markForDeletion(Publication publication) throws ApiGatewayException {
         UserInstance userInstance = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
         publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());

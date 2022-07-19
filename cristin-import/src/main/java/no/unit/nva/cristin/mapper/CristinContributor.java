@@ -33,7 +33,7 @@ import nva.commons.core.paths.UriWrapper;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributor {
-
+    
     public static final String NAME_DELIMITER = ", ";
     public static final String MISSING_ROLE_ERROR = "Affiliation without Role";
     @JsonProperty("personlopenr")
@@ -46,24 +46,24 @@ public class CristinContributor {
     private Integer contributorOrder;
     @JsonProperty("VARBEID_PERSON_STED")
     private List<CristinContributorsAffiliation> affiliations;
-
+    
     @JacocoGenerated
     public CristinContributor() {
     }
-
+    
     @JacocoGenerated
     public CristinContributorBuilder copy() {
         return this.toBuilder();
     }
-
+    
     public Contributor toNvaContributor() {
-
+        
         String fullName = constructFullName();
         Identity identity = new Identity.Builder()
             .withName(fullName)
             .withId(constructId())
             .build();
-
+        
         return new Contributor.Builder()
             .withIdentity(identity)
             .withCorrespondingAuthor(false)
@@ -72,7 +72,7 @@ public class CristinContributor {
             .withSequence(contributorOrder)
             .build();
     }
-
+    
     private String constructFullName() {
         StringBuilder nameBuilder = new StringBuilder();
         if (StringUtils.isNotBlank(getFamilyName())) {
@@ -84,7 +84,7 @@ public class CristinContributor {
         }
         return StringUtils.isNotBlank(nameBuilder.toString()) ? nameBuilder.toString() : null;
     }
-
+    
     private Role extractRoles() {
         CristinContributorRole firstRole =
             affiliations.stream()
@@ -95,7 +95,7 @@ public class CristinContributor {
                 .orElseThrow(() -> new AffiliationWithoutRoleException());
         return firstRole.toNvaRole();
     }
-
+    
     private List<Organization> extractAffiliations() {
         if (isNull(affiliations)) {
             throw new ContributorWithoutAffiliationException();
@@ -104,7 +104,7 @@ public class CristinContributor {
             .map(CristinContributorsAffiliation::toNvaOrganization)
             .collect(Collectors.toList());
     }
-
+    
     private URI constructId() {
         return SHOULD_CREATE_CONTRIBUTOR_ID
                    ? UriWrapper.fromUri(CRISTIN_PERSONS_URI).addChild(identifier.toString()).getUri()

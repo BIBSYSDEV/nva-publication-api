@@ -12,15 +12,15 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 public class SqsPublisherTest {
-
+    
     public static final String EVENT_NAME = "test";
     public static final String EVENT_BODY = "{\"records\":[{\"eventName\":\"test\"}]}";
     private static final String QUEUE_URL = UUID.randomUUID().toString();
     @Mock
     private SqsClient sqs;
-
+    
     private EventPublisher publisher;
-
+    
     /**
      * Set up environment for test.
      */
@@ -29,16 +29,16 @@ public class SqsPublisherTest {
         MockitoAnnotations.initMocks(this);
         publisher = new SqsEventPublisher(sqs, QUEUE_URL);
     }
-
+    
     @Test
     public void publishCanSendMessage() {
         DynamodbEvent event = new DynamodbEvent();
         DynamodbEvent.DynamodbStreamRecord record = new DynamodbEvent.DynamodbStreamRecord();
         record.setEventName(EVENT_NAME);
         event.setRecords(Collections.singletonList(record));
-
+        
         publisher.publish(event);
-
+        
         String expectedBody = EVENT_BODY;
         SendMessageRequest expected = SendMessageRequest.builder()
             .queueUrl(QUEUE_URL)

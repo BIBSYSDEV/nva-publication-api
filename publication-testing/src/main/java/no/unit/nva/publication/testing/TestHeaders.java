@@ -9,10 +9,10 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public class TestHeaders {
-
+    
     public static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
     public static final String WILDCARD = "*";
-
+    
     /**
      * Request headers for testing.
      *
@@ -23,7 +23,7 @@ public class TestHeaders {
             CONTENT_TYPE, JSON_UTF_8.toString(),
             ACCEPT, JSON_UTF_8.toString());
     }
-
+    
     /**
      * Successful response headers for testing.
      *
@@ -35,7 +35,7 @@ public class TestHeaders {
             ACCESS_CONTROL_ALLOW_ORIGIN, WILDCARD
         );
     }
-
+    
     /**
      * Failing response headers for testing.
      *

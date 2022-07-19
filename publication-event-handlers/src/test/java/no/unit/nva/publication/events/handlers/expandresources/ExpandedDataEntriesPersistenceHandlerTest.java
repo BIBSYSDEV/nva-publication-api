@@ -128,6 +128,10 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
     
+    private static Stream<Class<?>> expandedEntriesTypeProvider() {
+        return SubTypeProvider.dataEntryTypeProvider(ExpandedDataEntry.class);
+    }
+    
     private PersistedEntryWithExpectedType generateExpandedEntry(Class<?> expandedEntryType)
         throws JsonProcessingException, ApiGatewayException {
         if (ExpandedResource.class.equals(expandedEntryType)) {
@@ -149,10 +153,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
             PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
         var publishingRequest = publishingRequestService.createPublishingRequest(openingCaseObject);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
-    }
-    
-    private static Stream<Class<?>> expandedEntriesTypeProvider() {
-        return SubTypeProvider.dataEntryTypeProvider(ExpandedDataEntry.class);
     }
     
     private ExpandedResource randomResource() throws JsonProcessingException, ApiGatewayException {

@@ -17,7 +17,7 @@ import no.unit.nva.model.ResearchProject;
 import nva.commons.core.JacocoGenerated;
 
 public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, WithFile, WithContext {
-
+    
     public static final String WRONG_PUBLICATION_UDPATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";
     private SortableIdentifier identifier;
@@ -27,7 +27,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
-
+    
     public Publication generatePublicationUpdate(Publication existingPublication) {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
             throw new IllegalArgumentException(
@@ -40,85 +40,85 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
             .withSubjects(this.subjects)
             .build();
     }
-
+    
     @JacocoGenerated
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-
+    
     @JacocoGenerated
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-
+    
     @JacocoGenerated
     @Override
     public EntityDescription getEntityDescription() {
         return entityDescription;
     }
-
+    
     @JacocoGenerated
     @Override
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }
-
+    
     @Override
     @JacocoGenerated
     public List<ResearchProject> getProjects() {
         return projects;
     }
-
+    
     @Override
     @JacocoGenerated
     public void setProjects(List<ResearchProject> projects) {
         this.projects = projects;
     }
-
+    
     @Override
     @JacocoGenerated
     public List<URI> getSubjects() {
         return subjects;
     }
-
+    
     @Override
     @JacocoGenerated
     public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
     }
-
+    
     @Override
     @JacocoGenerated
     public FileSet getFileSet() {
         return fileSet;
     }
-
+    
     @Override
     @JacocoGenerated
     public void setFileSet(FileSet fileSet) {
         this.fileSet = fileSet;
     }
-
+    
     @Override
     @JacocoGenerated
     public JsonNode getContext() {
         return context;
     }
-
+    
     @Override
     @JacocoGenerated
     public void setContext(JsonNode context) {
         this.context = context;
     }
-
+    
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(identifier, entityDescription, fileSet, subjects, context);
     }
-
+    
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {

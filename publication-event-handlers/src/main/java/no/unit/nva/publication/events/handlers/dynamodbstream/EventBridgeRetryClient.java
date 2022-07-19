@@ -14,11 +14,11 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public class EventBridgeRetryClient {
-
+    
     private static final Logger logger = LoggerFactory.getLogger(EventBridgeRetryClient.class);
     private final EventBridgeClient eventBridge;
     private final int maxAttempt;
-
+    
     /**
      * Constructor for EventBridgeRetryClient.
      *
@@ -29,7 +29,7 @@ public class EventBridgeRetryClient {
         this.eventBridge = eventBridge;
         this.maxAttempt = maxAttempt;
     }
-
+    
     /**
      * Put events on EventBridge EventBus.
      *
@@ -38,22 +38,22 @@ public class EventBridgeRetryClient {
      */
     public List<PutEventsRequestEntry> putEvents(final PutEventsRequest request) {
         PutEventsRequest requestCopy = request;
-
+        
         for (int attemptCount = 0; attemptCount < maxAttempt; attemptCount++) {
             logger.debug("Attempt {} to put events {}", attemptCount + 1, requestCopy);
             PutEventsResponse response = eventBridge.putEvents(requestCopy);
-
+            
             if (response.failedEntryCount() == 0) {
                 return Collections.emptyList();
             }
-
+            
             List<PutEventsRequestEntry> failedEntries = getFailedEntries(requestCopy, response);
             requestCopy = createEventWithFailedEntries(failedEntries);
         }
-
+        
         return requestCopy.entries();
     }
-
+    
     private PutEventsRequest createEventWithFailedEntries(List<PutEventsRequestEntry> failedEntries) {
         PutEventsRequest requestCopy;
         requestCopy = PutEventsRequest.builder()
@@ -61,7 +61,7 @@ public class EventBridgeRetryClient {
             .build();
         return requestCopy;
     }
-
+    
     private List<PutEventsRequestEntry> getFailedEntries(PutEventsRequest request,
                                                          PutEventsResponse response) {
         List<PutEventsRequestEntry> requestEntries = request.entries();
@@ -72,7 +72,7 @@ public class EventBridgeRetryClient {
             .mapToObj(requestEntries::get)
             .collect(Collectors.toList());
     }
-
+    
     private IntPredicate containsFailingResult(List<PutEventsResultEntry> resultEntries) {
         return i -> resultEntries.get(i).errorCode() != null;
     }

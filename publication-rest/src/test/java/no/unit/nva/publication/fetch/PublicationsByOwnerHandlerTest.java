@@ -31,44 +31,44 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class PublicationsByOwnerHandlerTest {
-
+    
     private ResourceService resourceService;
     private Context context;
-
+    
     private ByteArrayOutputStream output;
     private PublicationsByOwnerHandler publicationsByOwnerHandler;
-
+    
     @BeforeEach
     public void setUp() {
         var environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
-
+        
         resourceService = mock(ResourceService.class);
         context = mock(Context.class);
-
+        
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
             new PublicationsByOwnerHandler(resourceService, environment);
     }
-
+    
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     void handlerReturnsOkResponseOnValidInput() throws IOException {
         when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
             .thenReturn(publicationSummaries());
-
+        
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
             .withNvaUsername(randomString())
             .withCustomerId(randomUri())
             .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
-
+        
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationsByOwnerResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
-
+    
     @Test
     void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper).build();
@@ -76,7 +76,7 @@ public class PublicationsByOwnerHandlerTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Void.class);
         assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
-
+    
     private List<Publication> publicationSummaries() {
         return List.of(randomPublication(), randomPublication(), randomPublication());
     }

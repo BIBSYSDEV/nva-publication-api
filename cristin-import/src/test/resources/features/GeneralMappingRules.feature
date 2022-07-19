@@ -134,16 +134,16 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Contributor has the role "<NvaRole>"
     Examples:
-      | CristinRole     | NvaRole               |
-      | REDAKTØR        | EDITOR                |
-      | FORFATTER       | CREATOR               |
-      | PROGRAMDELTAGER | PROGRAMME_PARTICIPANT |
-      | PROGRAMLEDER    | PROGRAMME_LEADER      |
-      | OPPHAVSMANN     | RIGHTS_HOLDER         |
-      | JOURNALIST      | JOURNALIST            |
-      | REDAKSJONSKOM   | EDITORIAL_BOARD_MEMBER|
-      | INTERVJUOBJEKT  | INTERVIEW_SUBJECT     |
-      | FAGLIG_ANSVARLIG| ACADEMIC_COORDINATOR  |
+      | CristinRole      | NvaRole                |
+      | REDAKTØR         | EDITOR                 |
+      | FORFATTER        | CREATOR                |
+      | PROGRAMDELTAGER  | PROGRAMME_PARTICIPANT  |
+      | PROGRAMLEDER     | PROGRAMME_LEADER       |
+      | OPPHAVSMANN      | RIGHTS_HOLDER          |
+      | JOURNALIST       | JOURNALIST             |
+      | REDAKSJONSKOM    | EDITORIAL_BOARD_MEMBER |
+      | INTERVJUOBJEKT   | INTERVIEW_SUBJECT      |
+      | FAGLIG_ANSVARLIG | ACADEMIC_COORDINATOR   |
 
   Scenario: The abstract is copied from the the Cristin Result's title entry when there
   one title entry and it is annotated as original.
@@ -223,7 +223,7 @@ Feature: Mappings that hold for all types of Cristin Results
     And the Cristin Result has the HRCS values:
       | helsekategorikode | aktivitetskode |
       | 4                 | 6.4            |
-      | 13                | 4            |
+      | 13                | 4              |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has the following subjects:
       | https://nva.unit.no/hrcs/category/hrcs_hc_12mus |
@@ -237,12 +237,12 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
     Examples:
-    | helsekategorikode | aktivitetskode |
-    | 4                 | 0.0            |
-    | notANumber        | 1.1            |
-    | 100               | 1.3            |
-    | 7                 | 1.12           |
-    | 8                 | NotANumber     |
+      | helsekategorikode | aktivitetskode |
+      | 4                 | 0.0            |
+      | notANumber        | 1.1            |
+      | 100               | 1.3            |
+      | 7                 | 1.12           |
+      | 8                 | NotANumber     |
 
   Scenario: Mapping a Cristin Result to an NVA Resource creates a publisher id based on environment
   and a hardcoded organization id.

@@ -7,10 +7,10 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationContext with an ISBN list containing the value "9788247151464"
     Examples:
-      | secondaryCategory  |
-      | RAPPORT            |
-      | DRGRADAVH          |
-      | MASTERGRADSOPPG    |
+      | secondaryCategory |
+      | RAPPORT           |
+      | DRGRADAVH         |
+      | MASTERGRADSOPPG   |
 
   Scenario Outline: Mapping does not fail when a Cristin Result that is a "Book" has a null value for isbn.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
@@ -18,8 +18,8 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then no error is reported.
     Examples:
-      | secondaryCategory  |
-      | RAPPORT            |
-      | DRGRADAVH          |
-      | MASTERGRADSOPPG    |
+      | secondaryCategory |
+      | RAPPORT           |
+      | DRGRADAVH         |
+      | MASTERGRADSOPPG   |
 

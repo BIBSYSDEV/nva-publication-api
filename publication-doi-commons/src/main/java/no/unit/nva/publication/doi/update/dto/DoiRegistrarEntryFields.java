@@ -16,7 +16,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import nva.commons.core.JacocoGenerated;
 
 public class DoiRegistrarEntryFields {
-
+    
     private SortableIdentifier resourceIdentifier;
     private List<Contributor> contributors;
     private PublicationDate publicationDate;
@@ -24,11 +24,11 @@ public class DoiRegistrarEntryFields {
     private String title;
     private PublicationInstance<?> publicationInstance;
     private URI doi;
-
+    
     public DoiRegistrarEntryFields() {
-
+    
     }
-
+    
     public static DoiRegistrarEntryFields fromPublication(Publication publication) {
         DoiRegistrarEntryFields doiRegistrarEntryFields = new DoiRegistrarEntryFields();
         doiRegistrarEntryFields.resourceIdentifier = publication.getIdentifier();
@@ -38,38 +38,38 @@ public class DoiRegistrarEntryFields {
         doiRegistrarEntryFields.title = extractTitle(publication);
         doiRegistrarEntryFields.publicationInstance = extractPublicationInstance(publication);
         doiRegistrarEntryFields.doi = extractPublicationDoi(publication);
-
+        
         return doiRegistrarEntryFields;
     }
-
+    
     public URI getDoi() {
         return doi;
     }
-
+    
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }
-
+    
     public List<Contributor> getContributors() {
         return contributors;
     }
-
+    
     public PublicationDate getPublicationDate() {
         return publicationDate;
     }
-
+    
     public URI getPublisherId() {
         return publisherId;
     }
-
+    
     public String getTitle() {
         return title;
     }
-
+    
     public PublicationInstance<?> getPublicationInstance() {
         return publicationInstance;
     }
-
+    
     @JacocoGenerated
     @Override
     public int hashCode() {
@@ -77,7 +77,7 @@ public class DoiRegistrarEntryFields {
             getTitle(),
             getPublicationInstance(), getDoi());
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -95,43 +95,43 @@ public class DoiRegistrarEntryFields {
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getDoi(), that.getDoi());
     }
-
+    
     private static URI extractPublicationDoi(Publication publication) {
         return Optional.of(publication).map(Publication::getDoi).orElse(null);
     }
-
+    
     private static PublicationInstance<?> extractPublicationInstance(Publication publication) {
         return extractEntityDescription(publication)
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationInstance)
-                   .orElse(null);
+            .map(EntityDescription::getReference)
+            .map(Reference::getPublicationInstance)
+            .orElse(null);
     }
-
+    
     private static String extractTitle(Publication publication) {
         return extractEntityDescription(publication)
-                   .map(EntityDescription::getMainTitle)
-                   .orElse(null);
+            .map(EntityDescription::getMainTitle)
+            .orElse(null);
     }
-
+    
     private static URI extractPublisherId(Publication publication) {
         return Optional.of(publication)
-                   .map(Publication::getPublisher)
-                   .map(Organization::getId)
-                   .orElse(null);
+            .map(Publication::getPublisher)
+            .map(Organization::getId)
+            .orElse(null);
     }
-
+    
     private static PublicationDate extractPublicationDate(Publication publication) {
         return extractEntityDescription(publication)
-                   .map(EntityDescription::getDate)
-                   .orElse(null);
+            .map(EntityDescription::getDate)
+            .orElse(null);
     }
-
+    
     private static List<Contributor> extractContributors(Publication publication) {
         return extractEntityDescription(publication)
-                   .map(EntityDescription::getContributors)
-                   .orElse(Collections.emptyList());
+            .map(EntityDescription::getContributors)
+            .orElse(Collections.emptyList());
     }
-
+    
     private static Optional<EntityDescription> extractEntityDescription(Publication publication) {
         return Optional.of(publication).map(Publication::getEntityDescription);
     }

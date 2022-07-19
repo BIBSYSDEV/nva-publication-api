@@ -22,21 +22,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceTest {
-
+    
     public static final String SOME_OWNER = "some@owner.no";
     public static final URI SOME_HOST = URI.create("https://example.org/");
     public static final String DOI_REQUEST_FIELD = "doiRequest";
     private final Javers javers = JaversBuilder.javers().build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
-
+    
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
     void builderContainsAllFields(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
         assertThat(resource, doesNotHaveEmptyValues());
     }
-
-
+    
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
     void copyContainsAllFields(Class<?> publicationInstanceType) {
@@ -48,7 +47,7 @@ class ResourceTest {
         assertThat(copy, is(equalTo(resource)));
         assertThat(resourceJson, is(equalTo(copyJson)));
     }
-
+    
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
     void toDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
@@ -61,40 +60,40 @@ class ResourceTest {
         Diff diff = javers.compare(resource, fromPublication);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
     }
-
+    
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
     void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         Publication expected = PublicationGenerator.randomPublication(publicationInstanceType);
         assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
-
+        
         Publication transformed = Resource.fromPublication(expected).toPublication();
         //doiRequest does not get saved with the resource
         transformed.setDoiRequest(expected.getDoiRequest());
-
+        
         Diff diff = javers.compare(expected, transformed);
-
+        
         //TODO: re-insert when "owner" field has been removed in favor for "resourceOwner"
         //assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
-
-        assertThat(diff.prettyPrint(),transformed, is(equalTo(expected)));
+        
+        assertThat(diff.prettyPrint(), transformed, is(equalTo(expected)));
     }
-
+    
     @Test
     void emptyResourceReturnsResourceWithTheMinimumNecessaryFieldsNotNull() {
-
+        
         Resource emptyResource = Resource.emptyResource(SOME_OWNER, SOME_HOST, sampleIdentifier);
         assertThat(emptyResource.getIdentifier(), is(equalTo(sampleIdentifier)));
         assertThat(emptyResource.getPublisher().getId(), is(equalTo(SOME_HOST)));
         assertThat(emptyResource.getOwner(), is(equalTo(SOME_OWNER)));
     }
-
+    
     @Test
     void queryObjectReturnsResourceWithIdentifier() {
         Resource resource = Resource.resourceQueryObject(sampleIdentifier);
         assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
     }
-
+    
     @Test
     void queryObjectReturnsResourceWithIdentifierAndPublisher() {
         UserInstance userInstance = UserInstance.create(SOME_OWNER, SOME_HOST);
@@ -103,11 +102,11 @@ class ResourceTest {
         assertThat(resource.getPublisher().getId(), is(equalTo(SOME_HOST)));
         assertThat(resource.getOwner(), is(equalTo(SOME_OWNER)));
     }
-
+    
     private static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
-
+    
     private Resource sampleResource(Class<?> publicationInstanceType) {
         return Resource.fromPublication(PublicationGenerator.randomPublication(publicationInstanceType));
     }

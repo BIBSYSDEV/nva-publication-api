@@ -37,7 +37,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
-
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -60,7 +59,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
-
+    
     public static final String SOME_CURATOR = "SomeCurator";
     public static final String SOME_OTHER_OWNER = "someOther@owner.no";
     public static final String SOME_INVALID_ROLE = "SomeInvalidRole";
@@ -77,159 +76,159 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     private Context context;
     private DoiRequestService doiRequestService;
     private MessageService messageService;
-
+    
     @BeforeEach
     public void initialize() {
         init();
         setupClock();
-        resourceService = new ResourceService(client,  mockClock);
-
+        resourceService = new ResourceService(client, mockClock);
+        
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
-
+        
         doiRequestService = new DoiRequestService(client, mockClock);
         messageService = new MessageService(client, mockClock);
         handler = new ListDoiRequestsHandler(environment, doiRequestService, messageService);
     }
-
+    
+    public List<Publication> parseResponse() throws com.fasterxml.jackson.core.JsonProcessingException {
+        var response = GatewayResponse.fromOutputStream(outputStream, Publication[].class);
+        return Arrays.asList(response.getBodyObject(Publication[].class));
+    }
+    
     @Test
     void handlerReturnsListOfDoiRequestsWhenUserIsCuratorAndThereAreDoiRequestsForSamePublisher()
         throws IOException {
         List<Publication> publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
         List<DoiRequest> expectedDoiRequests = createDoiRequests(publications);
-
+        
         URI curatorsPublisher = publications.get(0).getPublisher().getId();
         InputStream request = createRequest(curatorsPublisher, SOME_CURATOR, CURATOR_ROLE);
-
+        
         handler.handleRequest(request, outputStream, context);
-
+        
         List<Publication> actualResponse = parseResponse();
-
+        
         List<Publication> expectedResponse = toPublications(expectedDoiRequests);
         assertThat(actualResponse, is(equalTo(expectedResponse)));
     }
-
-    public List<Publication> parseResponse() throws com.fasterxml.jackson.core.JsonProcessingException {
-        var response = GatewayResponse.fromOutputStream(outputStream,Publication[].class);
-        return Arrays.asList(response.getBodyObject(Publication[].class));
-    }
-
+    
     @Test
     void handlerReturnsListOfDoiRequestsOnlyForTheCuratorsOrganization()
         throws IOException {
         List<Publication> publications = publishedPublicationsOfDifferentPublisher();
         List<DoiRequest> createdDoiRequests = createDoiRequests(publications);
-
+        
         URI curatorsCustomer = publications.get(FIRST_ELEMENT).getPublisher().getId();
-
+        
         InputStream request = createRequest(curatorsCustomer, SOME_CURATOR, CURATOR_ROLE);
-
+        
         handler.handleRequest(request, outputStream, context);
-
+        
         List<Publication> actualResponse = parseResponse();
-
+        
         Publication expectedResponse =
             filterDoiRequests(createdDoiRequests,
-                              doiRequest -> doiRequestBelongsToCustomer(curatorsCustomer, doiRequest)
+                doiRequest -> doiRequestBelongsToCustomer(curatorsCustomer, doiRequest)
             );
-
+        
         Publication unexpectedDoiResponse = filterDoiRequests(createdDoiRequests,
-                                                              doiRequest -> !doiRequestBelongsToCustomer(
-                                                                  curatorsCustomer, doiRequest));
-
+            doiRequest -> !doiRequestBelongsToCustomer(
+                curatorsCustomer, doiRequest));
+        
         assertThat(actualResponse, hasItem(expectedResponse));
         assertThat(actualResponse, not(hasItem(unexpectedDoiResponse)));
     }
-
+    
     @Test
     void listDoiRequestsReturnsEmptyListForUserWhenUserHasNoDoiRequests()
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
-
+        
         URI usersPublisher = publications.get(0).getPublisher().getId();
-
+        
         InputStream request = createRequest(usersPublisher, SOME_OTHER_OWNER, CREATOR_ROLE);
-
+        
         handler.handleRequest(request, outputStream, context);
-
+        
         List<Publication> responseBody = parseResponse();
-
+        
         assertThat(responseBody, is(emptyCollectionOf(Publication.class)));
     }
-
+    
     @Test
     void listDoiRequestsReturnsOnlyDoiRequestsOwnedByTheUserWhenRequestIsFromNotACurator()
         throws IOException {
         List<Publication> publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
         List<DoiRequest> doiRequests = createDoiRequests(publications);
-
+        
         UserInstance userInstance = createUserInstance(publications.get(0));
-
+        
         InputStream request = createRequest(
             userInstance.getOrganizationUri(),
             userInstance.getUserIdentifier(),
             CREATOR_ROLE
         );
-
+        
         handler.handleRequest(request, outputStream, context);
-
+        
         Publication expectedDoiRequest = filterDoiRequests(doiRequests,
-                                                           doi -> doi.getOwner()
-                                                               .equals(userInstance.getUserIdentifier()));
-
+            doi -> doi.getOwner()
+                .equals(userInstance.getUserIdentifier()));
+        
         List<Publication> responseBody = parseResponse();
-
+        
         assertThat(responseBody, is(equalTo(List.of(expectedDoiRequest))));
     }
-
+    
     @Test
     void listDoiRequestsReturnsEmptyListForUserWhenUserHasNoValidRole()
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
-
+        
         URI usersPublisher = publications.get(0).getPublisher().getId();
-
+        
         InputStream request = createRequest(usersPublisher, SOME_OTHER_OWNER, SOME_INVALID_ROLE);
-
+        
         handler.handleRequest(request, outputStream, context);
-
+        
         List<Publication> responseBody = parseResponse();
-
+        
         assertThat(responseBody, is(emptyCollectionOf(Publication.class)));
     }
-
+    
     @Test
     void listDoiRequestsForUserReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest()
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
-
+        
         URI commonPublisherId = publications.get(FIRST_ELEMENT).getPublisher().getId();
         String commonOwner = publications.get(FIRST_ELEMENT).getResourceOwner().getOwner();
         List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, CREATOR_ROLE);
-
+        
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
-
+    
     @Test
     void listDoiRequestsForCuratorReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest()
         throws IOException {
         var publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
         createDoiRequests(publications);
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
-
+        
         URI commonPublisherId = publications.get(0).getPublisher().getId();
         List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, CURATOR_ROLE);
-
+        
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
-
+    
     @Test
     void listDoiRequestsForUserReturnsDtosContainingOnlyDoiRequestsMessagesAndNotOtherTypeOfMessages()
         throws ApiGatewayException, IOException {
@@ -237,27 +236,27 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
         final var publicationsOwner = UserInstance.fromPublication(publications.get(0));
         final var publicationsOwnerIdentifier = publicationsOwner.getUserIdentifier();
         final var commonPublisherId = publicationsOwner.getOrganizationUri();
-
+        
         createDoiRequests(publications);
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
         final var otherMessages = createSupportMessagesForPublications(publications);
-
+        
         var actualMessages = sendRequestAndReadMessages(publicationsOwnerIdentifier, commonPublisherId,
-                                                        CREATOR_ROLE);
-
+            CREATOR_ROLE);
+        
         var expectedMessages = extractMessageTexts(doiRequestMessages);
         var notExpectedMessages = extractMessageTexts(otherMessages);
-
+        
         assertThat(actualMessages, hasItems(expectedMessages));
         assertThatActualMessagesDoNotContainAnyOf(actualMessages, notExpectedMessages);
     }
-
+    
     private void assertThatActualMessagesDoNotContainAnyOf(List<String> actualMessages, String[] notExpectedMessages) {
         for (String notExpectedMessage : notExpectedMessages) {
             assertThat(actualMessages, not(hasItem(notExpectedMessage)));
         }
     }
-
+    
     private List<MessageDto> createSupportMessagesForPublications(List<Publication> publications) {
         return publications.stream()
             .map(attempt(this::createSupportMessage))
@@ -265,32 +264,32 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
+    
     private Message createSupportMessage(Publication pub) throws NotFoundException {
         UserInstance owner = UserInstance.fromPublication(pub);
-
+        
         var messageIdentifier = messageService.createMessage(owner, pub, randomString(), MessageType.SUPPORT);
         return messageService.getMessage(owner, messageIdentifier);
     }
-
+    
     private List<String> sendRequestAndReadMessages(String userIdentifier, URI commonPublisherId, String curatorRole)
         throws IOException {
         InputStream input = createRequest(commonPublisherId, userIdentifier, curatorRole);
         handler.handleRequest(input, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream,Publication[].class);
-
+        var response = GatewayResponse.fromOutputStream(outputStream, Publication[].class);
+        
         Publication[] doiRequestDtos = response.getBodyObject(Publication[].class);
         return extractMessageTexts(doiRequestDtos);
     }
-
+    
     private String[] extractMessageTexts(List<MessageDto> doiRequestMessages) {
         var texts = doiRequestMessages.stream()
             .map(MessageDto::getText)
             .collect(Collectors.toList());
-
+        
         return texts.toArray(String[]::new);
     }
-
+    
     private List<String> extractMessageTexts(Publication[] doiRequestDtos) {
         return Arrays.stream(doiRequestDtos)
             .map(Publication::getDoiRequest)
@@ -298,48 +297,48 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
             .map(DoiRequestMessage::getText)
             .collect(Collectors.toList());
     }
-
+    
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
         Mockito.when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
         return environment;
     }
-
+    
     private List<MessageDto> createDoiRequestMessagesForPublications(List<Publication> publications) {
         return publications.stream()
             .map(attempt(this::createDoiRequestMessage))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
-    private MessageDto createDoiRequestMessage(Publication pub) throws  NotFoundException {
+    
+    private MessageDto createDoiRequestMessage(Publication pub) throws NotFoundException {
         UserInstance owner = UserInstance.fromPublication(pub);
         var messageID = messageService.createMessage(owner, pub, randomString(), MessageType.DOI_REQUEST);
         Message message = messageService.getMessage(owner, messageID);
         return MessageDto.fromMessage(message);
     }
-
+    
     private boolean doiRequestBelongsToCustomer(URI curatorsCustomer, DoiRequest doiRequest) {
         return doiRequest.getCustomerId().equals(curatorsCustomer);
     }
-
+    
     private InputStream createRequest(URI customerId, String userIdentifier, String userRole)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(doiRequestsObjectMapper)
             .withCustomerId(customerId)
             .withNvaUsername(userIdentifier)
-            .withAccessRights(customerId,APPROVE_DOI_REQUEST.toString())
+            .withAccessRights(customerId, APPROVE_DOI_REQUEST.toString())
             .withQueryParameters(
                 Map.of(ROLE_QUERY_PARAMETER, userRole))
             .build();
     }
-
+    
     private List<Publication> toPublications(List<DoiRequest> expectedDoiRequests) {
         return expectedDoiRequests.stream()
             .map(DoiRequest::toPublication)
             .collect(Collectors.toList());
     }
-
+    
     private Publication filterDoiRequests(List<DoiRequest> createdDoiRequests,
                                           Function<DoiRequest, Boolean> filter) {
         return createdDoiRequests
@@ -348,28 +347,28 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
             .map(DoiRequest::toPublication)
             .collect(SingletonCollector.collect());
     }
-
+    
     private List<DoiRequest> createDoiRequests(List<Publication> publications) {
         return publications.stream()
             .map(attempt(this::creteDoiRequest))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
+    
     private List<Publication> createPublishedPublicationsOfSameOwner() throws ApiGatewayException {
         var owner = randomString();
         var publisher = randomUri();
         var userInstance = UserInstance.create(owner, publisher);
         Stream<Publication> publicationsToBeSaved = Stream.of(randomPublication(),
-                                                              randomPublication());
+            randomPublication());
         List<Publication> publications = createPublicationsForOwner(userInstance, publicationsToBeSaved);
-
+        
         for (Publication pub : publications) {
             publishPublication(pub);
         }
         return publications;
     }
-
+    
     private List<Publication> createPublishedPublicationsOfSamePublisherButDifferentOwner() {
         Publication publication = PublicationGenerator.randomPublication();
         Publication publicationWithDifferentOwner =
@@ -377,57 +376,57 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
                 .withPublisher(publication.getPublisher())
                 .withResourceOwner(new ResourceOwner(randomString(), randomUri()))
                 .build();
-
+        
         return saveAndPublishPublications(publication, publicationWithDifferentOwner);
     }
-
+    
     private List<Publication> saveAndPublishPublications(Publication... publications) {
         return Arrays.stream(publications)
             .map(attempt(this::createPublishedPublication))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
+    
     private Publication createPublishedPublication(Publication pub) throws ApiGatewayException {
         UserInstance userInstance = UserInstance.fromPublication(pub);
         var createdPublication = resourceService.createPublication(userInstance, pub);
         resourceService.publishPublication(UserInstance.fromPublication(createdPublication),
-                                           createdPublication.getIdentifier());
+            createdPublication.getIdentifier());
         return resourceService.getPublication(userInstance, createdPublication.getIdentifier());
     }
-
+    
     private List<Publication> publishedPublicationsOfDifferentPublisher() {
         Publication publication = PublicationGenerator.randomPublication();
         Publication publicationWithDifferentPublisher = PublicationGenerator.randomPublication();
         return saveAndPublishPublications(publication, publicationWithDifferentPublisher);
     }
-
+    
     private List<Publication> createPublicationsForOwner(UserInstance userInstance,
                                                          Stream<Publication> sameOwnerPublications) {
         return sameOwnerPublications
             .map(attempt(pub -> resourceService.createPublication(userInstance, pub)))
-
+            
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
+    
     private void publishPublication(Publication pub) throws ApiGatewayException {
         UserInstance userInstance = UserInstance.create(pub.getResourceOwner().getOwner(),
-                                                        pub.getPublisher().getId());
+            pub.getPublisher().getId());
         resourceService.publishPublication(userInstance, pub.getIdentifier());
     }
-
+    
     private DoiRequest creteDoiRequest(Publication pub)
-        throws BadRequestException,  NotFoundException {
+        throws BadRequestException, NotFoundException {
         UserInstance userInstance = createUserInstance(pub);
         doiRequestService.createDoiRequest(userInstance, pub.getIdentifier());
         return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, pub.getIdentifier());
     }
-
+    
     private UserInstance createUserInstance(Publication pub) {
         return UserInstance.create(pub.getResourceOwner().getOwner(), pub.getPublisher().getId());
     }
-
+    
     private void setupClock() {
         mockClock = mock(Clock.class);
         Mockito.when(mockClock.instant())

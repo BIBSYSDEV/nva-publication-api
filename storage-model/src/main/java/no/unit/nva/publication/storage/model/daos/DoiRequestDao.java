@@ -18,35 +18,35 @@ public class DoiRequestDao extends Dao<DoiRequest>
     implements
     JoinWithResource,
     JsonSerializable {
-
+    
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
     public static final String TYPE = "DoiRequest";
     private DoiRequest data;
-
+    
     @JacocoGenerated
     public DoiRequestDao() {
         super();
     }
-
+    
     public DoiRequestDao(DoiRequest doiRequest) {
         super();
         this.data = doiRequest;
     }
-
+    
     public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
         DoiRequest doi = DoiRequest.builder()
             .withIdentifier(doiRequestIdentifier)
             .withOwner(owner)
             .withCustomerId(publisherId)
             .build();
-
+        
         return new DoiRequestDao(doi);
     }
-
+    
     public static DoiRequestDao queryObject(URI publisherId, String owner) {
         return queryObject(publisherId, owner, null);
     }
-
+    
     public static DoiRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                      SortableIdentifier resourceIdentifier) {
         DoiRequest doi = DoiRequest.builder()
@@ -56,64 +56,64 @@ public class DoiRequestDao extends Dao<DoiRequest>
             .build();
         return new DoiRequestDao(doi);
     }
-
+    
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
     }
-
+    
     public static String getContainedType() {
         return DoiRequest.TYPE;
     }
-
+    
     @Override
     public DoiRequest getData() {
         return data;
     }
-
+    
     @Override
     public void setData(DoiRequest data) {
         this.data = data;
     }
-
+    
     @Override
     public String getType() {
         return getContainedType();
     }
-
+    
     @Override
     public URI getCustomerId() {
         return data.getCustomerId();
     }
-
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return data.getIdentifier();
     }
-
+    
     @Override
     protected String getOwner() {
         return data.getOwner();
     }
-
+    
     @Override
     @JsonIgnore
     public String joinByResourceOrderedType() {
         return joinByResourceContainedOrderedType();
     }
-
+    
     @Override
     @JsonIgnore
     public SortableIdentifier getResourceIdentifier() {
         return data.getResourceIdentifier();
     }
-
+    
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getData());
     }
-
+    
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -126,7 +126,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
         DoiRequestDao that = (DoiRequestDao) o;
         return Objects.equals(getData(), that.getData());
     }
-
+    
     @Override
     @JacocoGenerated
     public String toString() {

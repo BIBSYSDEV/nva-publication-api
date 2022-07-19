@@ -14,12 +14,12 @@ import nva.commons.core.JacocoGenerated;
 
 public class DeletionProcessInitializationHandler
     extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, ResourceDraftedForDeletionEvent> {
-
+    
     @JacocoGenerated
     public DeletionProcessInitializationHandler() {
         super(DataEntryUpdateEvent.class);
     }
-
+    
     @Override
     protected ResourceDraftedForDeletionEvent processInputPayload(
         DataEntryUpdateEvent input,
@@ -31,12 +31,12 @@ public class DeletionProcessInitializationHandler
         }
         return null;
     }
-
+    
     private boolean isDraftForDeletion(Publication publication) {
         return publication != null
                && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
     }
-
+    
     private Publication toPublication(DataEntry dataEntry) {
         Publication publication = null;
         if (dataEntry instanceof DoiRequest) {
@@ -44,7 +44,7 @@ public class DeletionProcessInitializationHandler
         }
         return publication;
     }
-
+    
     private ResourceDraftedForDeletionEvent toDeletePublicationEvent(Publication publication) {
         return new ResourceDraftedForDeletionEvent(
             ResourceDraftedForDeletionEvent.EVENT_TOPIC,

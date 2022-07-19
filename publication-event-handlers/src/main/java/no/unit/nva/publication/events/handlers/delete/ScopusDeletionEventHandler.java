@@ -7,13 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ScopusDeletionEventHandler extends EventHandler<ScopusDeleteEventBody, Void> {
-
+    
     private static final Logger logger = LoggerFactory.getLogger(ScopusDeletionEventHandler.class);
-
+    
     protected ScopusDeletionEventHandler() {
         super(ScopusDeleteEventBody.class);
     }
-
+    
     @Override
     protected Void processInput(ScopusDeleteEventBody input,
                                 AwsEventBridgeEvent<ScopusDeleteEventBody> event,

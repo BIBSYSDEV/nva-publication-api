@@ -39,9 +39,7 @@ class PublicationSummaryTest {
         assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
     }
-
-
-
+    
     @Test
     void shouldCreatePublicationSummaryFromDoiRequest() {
         DoiRequest doiRequest =
@@ -49,7 +47,7 @@ class PublicationSummaryTest {
         PublicationSummary publicationSummary = PublicationSummary.create(doiRequest);
         assertThat(publicationSummary.getPublicationIdentifier(), is(equalTo(doiRequest.getResourceIdentifier())));
     }
-
+    
     private PublicationSummary publicationSummary() {
         return PublicationSummary.create(PublicationGenerator.randomPublication());
     }

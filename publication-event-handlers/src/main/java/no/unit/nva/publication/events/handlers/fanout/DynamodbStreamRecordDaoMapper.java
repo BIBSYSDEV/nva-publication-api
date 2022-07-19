@@ -21,11 +21,11 @@ import nva.commons.core.JacocoGenerated;
 
 //TODO: rename class to DynamoJsonToInternalModelEventHandler
 public final class DynamodbStreamRecordDaoMapper {
-
+    
     private DynamodbStreamRecordDaoMapper() {
-
+    
     }
-
+    
     /**
      * Map a DynamodbStreamRecordImage to Publication.
      *
@@ -44,41 +44,41 @@ public final class DynamodbStreamRecordDaoMapper {
             .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate)
             .map(data -> (DataEntry) data);
     }
-
+    
     private static boolean isDao(DynamoEntry dynamoEntry) {
         return dynamoEntry instanceof Dao<?>;
     }
-
+    
     private static boolean isResourceUpdate(Object data) {
         return data instanceof DataEntry;
     }
-
+    
     /*These methods are a copy of ItemUtils.toItem. The only difference is that instead of throwing an exception
      * when a field has empty values we do not throw an exception but we return null  */
     private static Item toItem(Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> attributeMap) {
-
+        
         return Item.fromMap(toSimpleMapValue(attributeMap));
     }
-
+    
     private static Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> fromEventMapToDynamodbMap(
         Map<String, AttributeValue> recordImage) throws JsonProcessingException {
         var jsonString = objectMapper.writeValueAsString(recordImage);
         var javaType =
             objectMapper.getTypeFactory()
                 .constructParametricType(Map.class,
-                                         String.class,
-                                         com.amazonaws.services.dynamodbv2.model.AttributeValue.class
+                    String.class,
+                    com.amazonaws.services.dynamodbv2.model.AttributeValue.class
                 );
         return objectMapper.readValue(jsonString, javaType);
     }
-
+    
     @JacocoGenerated
     private static <T> Map<String, T> toSimpleMapValue(
         Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> values) {
         if (values == null) {
             return null;
         }
-
+        
         @SuppressWarnings("PMD.UseConcurrentHashMap")
         Map<String, T> result = new LinkedHashMap<>(values.size());
         for (Map.Entry<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> entry : values.entrySet()) {
@@ -87,7 +87,7 @@ public final class DynamodbStreamRecordDaoMapper {
         }
         return result;
     }
-
+    
     @SuppressWarnings({"unchecked", "PMD.CognitiveComplexity"})
     private static <T> T toSimpleValue(com.amazonaws.services.dynamodbv2.model.AttributeValue value) {
         if (value == null) {
@@ -138,7 +138,7 @@ public final class DynamodbStreamRecordDaoMapper {
             return null;
         }
     }
-
+    
     private static List<Object> toSimpleList(List<com.amazonaws.services.dynamodbv2.model.AttributeValue> attrValues) {
         if (attrValues == null) {
             return null;

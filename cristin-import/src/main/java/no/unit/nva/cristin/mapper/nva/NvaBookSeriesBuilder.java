@@ -14,11 +14,11 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 
 public class NvaBookSeriesBuilder extends CristinMappingModule {
-
+    
     public NvaBookSeriesBuilder(CristinObject cristinObject) {
         super(cristinObject);
     }
-
+    
     public BookSeries createBookSeries() {
         return Optional.of(cristinObject)
             .map(CristinObject::getBookOrReportMetadata)
@@ -26,7 +26,7 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
             .map(this::toNvaBookSeries)
             .orElse(null);
     }
-
+    
     private BookSeries toNvaBookSeries(CristinJournalPublicationJournal bookSeries) {
         if (nonNull(bookSeries.getNsdCode())) {
             return createConfirmedBookSeries(bookSeries);
@@ -34,13 +34,13 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
             return createUnconfirmedBookSeries(bookSeries);
         }
     }
-
+    
     private BookSeries createUnconfirmedBookSeries(CristinJournalPublicationJournal bookSeries) {
         return attempt(
             () -> new UnconfirmedSeries(bookSeries.getJournalTitle(), bookSeries.getIssn(), bookSeries.getIssnOnline()))
             .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
     }
-
+    
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
         int nsdCode = b.getNsdCode();
         int publicationYear = cristinObject.getPublicationYear();

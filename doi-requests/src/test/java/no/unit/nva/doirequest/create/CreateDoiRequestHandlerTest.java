@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
 public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
-
+    
     public static final String HTTP_PATH_SEPARATOR = "/";
     public static final ResourceOwner NOT_THE_RESOURCE_OWNER = new ResourceOwner(randomString(), randomUri());
     public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
@@ -65,7 +65,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     private Context context;
     private DoiRequestService doiRequestService;
     private MessageService messageService;
-
+    
     @BeforeEach
     public void initialize() {
         init();
@@ -76,10 +76,10 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
-
+        
         handler = new CreateDoiRequestHandler(resourceService, doiRequestService, messageService, environment);
     }
-
+    
     @Test
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException, IOException {
@@ -90,20 +90,20 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         DoiRequest doiRequest = readDoiRequestDirectlyFromService(publication, doiRequestIdentifier);
         assertThat(doiRequest, is(not(nullValue())));
     }
-
+    
     @Test
     public void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
-
+        
         sendRequest(publication, NOT_THE_RESOURCE_OWNER);
-
+        
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         Problem problem = response.getBodyObject(Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpStatus.SC_BAD_REQUEST)));
         assertThat(problem.getDetail(), is(equalTo(CreateDoiRequestHandler.USER_IS_NOT_OWNER_ERROR)));
     }
-
+    
     @Test
     public void createDoiRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
@@ -112,58 +112,58 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
             .withNvaUsername(NOT_THE_RESOURCE_OWNER.getOwner())
             .withCustomerId(SOME_PUBLISHER)
             .build();
-
+        
         handler.handleRequest(inputStream, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpStatus.SC_BAD_REQUEST)));
     }
-
+    
     @Test
     public void createDoiRequestReturnsBadRequestErrorWenDoiRequestAlreadyExists()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
-
+        
         sendRequest(publication, publication.getResourceOwner());
-
+        
         outputStream = new ByteArrayOutputStream();
         sendRequest(publication, publication.getResourceOwner());
-
+        
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
-
+    
     @Test
     public void createDoiRequestStoresMessageAsDoiRelatedWhenMessageIsIncluded()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
         String expectedMessageText = randomString();
-
+        
         sendRequest(publication, publication.getResourceOwner(), expectedMessageText);
-
+        
         Optional<ResourceConversation> resourceMessages = messageService.getMessagesForResource(
             UserInstance.fromPublication(publication),
             publication.getIdentifier());
-
+        
         MessageDto savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
         assertThat(savedMessage.getMessageType(), is(equalTo(MessageType.DOI_REQUEST.toString())));
     }
-
+    
     public void sendRequest(Publication publication, ResourceOwner owner, String message) throws IOException {
         InputStream inputStream = createRequest(publication, owner, message);
         handler.handleRequest(inputStream, outputStream, context);
     }
-
+    
     private void sendRequest(Publication publication, ResourceOwner owner) throws IOException {
         sendRequest(publication, owner, null);
     }
-
+    
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGINS);
         return environment;
     }
-
+    
     private InputStream createRequest(Publication publication, ResourceOwner owner, String message)
         throws JsonProcessingException {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), message);
@@ -174,22 +174,22 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
             .withBody(request)
             .build();
     }
-
+    
     private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier)
         throws NotFoundException {
         UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner(),
-                                                        publication.getPublisher().getId());
-
+            publication.getPublisher().getId());
+        
         return doiRequestService.getDoiRequest(userInstance, new SortableIdentifier(
             doiRequestIdentifier));
     }
-
+    
     private String extractLocationHeader(GatewayResponse<Void> response) {
         String locationHeader = response.getHeaders().get(HttpHeaders.LOCATION);
         String[] headerArray = locationHeader.split(HTTP_PATH_SEPARATOR);
         return headerArray[headerArray.length - 1];
     }
-
+    
     private void setupClock() {
         mockClock = mock(Clock.class);
         when(mockClock.instant())
@@ -198,7 +198,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
     }
-
+    
     private Publication createPublication() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);

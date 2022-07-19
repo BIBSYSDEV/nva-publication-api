@@ -16,12 +16,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class WithCristinIdentifierTest extends ResourcesLocalTest {
-
+    
     @BeforeEach
     public void init() {
         super.init();
     }
-
+    
     @Test
     public void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId() {
         ResourceDao dao = sampleResourceDao();
@@ -30,7 +30,7 @@ public class WithCristinIdentifierTest extends ResourcesLocalTest {
         WithCristinIdentifier expectedItem = dao;
         assertThat(actualResult, is(equalTo(expectedItem)));
     }
-
+    
     @Test
     public void dynamoClientReturnsOnlyResourcesWithCristinIdWhenSearchingResourcesByCristinId() {
         ResourceDao daoWithCristinId = sampleResourceDao();
@@ -38,28 +38,26 @@ public class WithCristinIdentifierTest extends ResourcesLocalTest {
         client.putItem(toPutItemRequest(daoWithCristinId));
         client.putItem(toPutItemRequest(daoWithoutCristinId));
         ScanResult result = client.scan(
-                new ScanRequest()
-                        .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
-                        .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME));
+            new ScanRequest()
+                .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME));
         assertThat(result.getCount(), is(equalTo(1)));
     }
-
-
+    
+    protected static ResourceDao createResourceDaoWithoutCristinIdentifier() {
+        return new ResourceDao(sampleResourceDao()
+            .getData()
+            .copy()
+            .withAdditionalIdentifiers(null)
+            .build());
+    }
+    
     private WithCristinIdentifier queryDbFindByCristinIdentifier(WithCristinIdentifier dao) {
         QueryRequest queryRequest = dao.createQueryFindByCristinIdentifier();
         return client.query(queryRequest)
-                .getItems()
-                .stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, dao.getClass()))
-                .collect(SingletonCollector.collectOrElse(null));
+            .getItems()
+            .stream()
+            .map(item -> DynamoEntry.parseAttributeValuesMap(item, dao.getClass()))
+            .collect(SingletonCollector.collectOrElse(null));
     }
-
-    protected static ResourceDao createResourceDaoWithoutCristinIdentifier() {
-        return new ResourceDao(sampleResourceDao()
-                .getData()
-                .copy()
-                .withAdditionalIdentifiers(null)
-                .build());
-    }
-
 }

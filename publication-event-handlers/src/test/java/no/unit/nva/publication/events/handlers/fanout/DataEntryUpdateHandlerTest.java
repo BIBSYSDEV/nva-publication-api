@@ -51,24 +51,24 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 public class DataEntryUpdateHandlerTest {
-
+    
     private OutputStream outputStream;
     private Context context;
     private DataEntryUpdateHandler handler;
     private S3Driver s3Driver;
-
+    
     public static Stream<Arguments> dynamoDbEventProvider() throws JsonProcessingException {
         var samplePublication = createRandomPublicationWithoutLegacyDoiRequestEntry();
         return
             Stream.of(Arguments.of(samplePublication, sampleDynamoRecord(samplePublication, null)),
-                      Arguments.of(samplePublication, sampleDynamoRecord(null, samplePublication)),
-                      Arguments.of(samplePublication, sampleDynamoRecord(samplePublication, samplePublication)));
+                Arguments.of(samplePublication, sampleDynamoRecord(null, samplePublication)),
+                Arguments.of(samplePublication, sampleDynamoRecord(samplePublication, samplePublication)));
     }
-
+    
     public static Stream<Map<String, AttributeValue>> notDaoProvider() throws JsonProcessingException {
         return Stream.of(identifierEntry(), randomDynamoEntry());
     }
-
+    
     @BeforeEach
     public void setUp() {
         outputStream = new ByteArrayOutputStream();
@@ -77,7 +77,7 @@ public class DataEntryUpdateHandlerTest {
         handler = new DataEntryUpdateHandler(s3Client);
         s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
     }
-
+    
     //Using event blobs (storing events in S3) helps us avoid AWS EventBridge message size limitations.
     @ParameterizedTest(name = "should convert a DynamoDbStream to a DataEntryUpdate event")
     @MethodSource("dynamoDbEventProvider")
@@ -93,56 +93,56 @@ public class DataEntryUpdateHandlerTest {
         var expectedIdentifier = extractIdentifierFromPresentImage(eventBody);
         assertThat(expectedIdentifier, is(equalTo(samplePublication.getIdentifier())));
     }
-
+    
     @ParameterizedTest
     @MethodSource("notDaoProvider")
     void shouldNotThrowExceptionWhenEntryIsNotDao(Map<String, AttributeValue> notDao) throws IOException {
         var blob = sampleDynamoRecord(notDao, notDao);
         var event = emulateEventSentByDynamoDbStreamToEventBridgeHandler(blob);
-
+        
         assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, context));
         var response = parseResponse();
         assertThat(response, is(nullValue()));
     }
-
+    
     private static Map<String, AttributeValue> randomDynamoEntry() {
         return Map.of(randomString(), new AttributeValue(randomString()));
     }
-
+    
     private static Publication createRandomPublicationWithoutLegacyDoiRequestEntry() {
         var samplePublication = PublicationGenerator.randomPublication();
         samplePublication.setDoiRequest(null);
         return samplePublication;
     }
-
+    
     private static DynamodbEvent.DynamodbStreamRecord sampleDynamoRecord(Publication oldImage, Publication newImage)
         throws JsonProcessingException {
         return createDynamoRecord(createPayload(oldImage, newImage));
     }
-
+    
     private static DynamodbEvent.DynamodbStreamRecord sampleDynamoRecord(Map<String, AttributeValue> oldImage,
                                                                          Map<String, AttributeValue> newImage) {
         return createDynamoRecord(createPayload(oldImage, newImage));
     }
-
+    
     private static DynamodbStreamRecord createDynamoRecord(StreamRecord payload) {
         var record = new DynamodbStreamRecord();
         record.setEventName(randomElement(OperationType.values()));
         record.setEventID(randomString());
         record.setAwsRegion(AWS_REGION);
-
+        
         record.setDynamodb(payload);
         record.setEventSource(randomString());
         record.setEventVersion(randomString());
         return record;
     }
-
+    
     private static StreamRecord createPayload(Publication oldImage, Publication newImage)
         throws JsonProcessingException {
         return createPayload(convertToAttributeValueMap(toDynamoEntry(oldImage)),
-                             convertToAttributeValueMap(toDynamoEntry(newImage)));
+            convertToAttributeValueMap(toDynamoEntry(newImage)));
     }
-
+    
     private static StreamRecord createPayload(Map<String, AttributeValue> oldImage,
                                               Map<String, AttributeValue> newImage) {
         var record = new StreamRecord();
@@ -150,27 +150,27 @@ public class DataEntryUpdateHandlerTest {
         record.setNewImage(newImage);
         return record;
     }
-
+    
     private static DynamoEntry toDynamoEntry(Publication publication) {
         return nonNull(publication) ? new ResourceDao(Resource.fromPublication(publication)) : null;
     }
-
+    
     private static <T> Map<String, AttributeValue> convertToAttributeValueMap(DynamoEntry payload)
         throws JsonProcessingException {
         return nonNull(payload) ? toAttributeValueMap(payload) : null;
     }
-
+    
     private static Map<String, AttributeValue> toAttributeValueMap(DynamoEntry dynamoEntry)
         throws JsonProcessingException {
         Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> dynamoFormat = dynamoEntry.toDynamoFormat();
         var json = dtoObjectMapper.writeValueAsString(dynamoFormat);
         return dtoObjectMapper.readValue(json, dynamoMapStructureAsJacksonType());
     }
-
+    
     private static JavaType dynamoMapStructureAsJacksonType() {
         return dtoObjectMapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
     }
-
+    
     private static Map<String, AttributeValue> identifierEntry()
         throws JsonProcessingException {
         var publication = PublicationGenerator.randomPublication();
@@ -178,25 +178,25 @@ public class DataEntryUpdateHandlerTest {
         var identifierEntry = IdentifierEntry.create(resource);
         return convertToAttributeValueMap(identifierEntry);
     }
-
+    
     private SortableIdentifier extractIdentifierFromPresentImage(DataEntryUpdateEvent eventBody) {
         return nonNull(eventBody.getNewData())
                    ? eventBody.getNewData().getIdentifier()
                    : eventBody.getOldData().getIdentifier();
     }
-
+    
     private InputStream emulateEventSentByDynamoDbStreamToEventBridgeHandler(DynamodbStreamRecord dynamoRecord)
         throws IOException {
         var blobUri = saveBlobInS3(dynamoRecord);
         var eventBody = new EventReference(DYNAMODB_UPDATE_EVENT_TOPIC, blobUri);
         return EventBridgeEventBuilder.sampleEvent(eventBody);
     }
-
+    
     private URI saveBlobInS3(DynamodbStreamRecord blob) throws IOException {
         var json = attempt(() -> dtoObjectMapper.writeValueAsString(blob)).orElseThrow();
         return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), json);
     }
-
+    
     private EventReference parseResponse() {
         return attempt(() -> objectMapper.readValue(outputStream.toString(), EventReference.class))
             .orElseThrow();

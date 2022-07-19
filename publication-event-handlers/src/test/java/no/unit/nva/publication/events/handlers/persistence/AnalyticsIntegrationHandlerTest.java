@@ -52,7 +52,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
-
+    
     public static final int FILENAME_WIHOUT_FILE_ENDING = 0;
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
     public static final String JSONLD_CONTEXT = "@context";
@@ -76,15 +76,15 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.s3Client = new FakeS3Client();
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
-
-        resourceService = new ResourceService(dynamoClient,  CLOCK);
+        
+        resourceService = new ResourceService(dynamoClient, CLOCK);
         messageService = new MessageService(dynamoClient, CLOCK);
-        doiRequestService = new DoiRequestService(dynamoClient,  CLOCK);
+        doiRequestService = new DoiRequestService(dynamoClient, CLOCK);
         publishingRequestService = new PublishingRequestService(dynamoClient, CLOCK);
-
+        
         this.resourceExpansionService = setupResourceExpansionService();
     }
-
+    
     @Test
     void shouldThrowExceptionWhenEventIsOfWrongType() {
         var eventReference = new EventReference(randomString(), randomUri());
@@ -93,7 +93,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         var expectedException = assertThrows(Exception.class, action);
         assertThat(expectedException.getMessage(), containsString(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC));
     }
-
+    
     @Test
     void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder() throws IOException {
         var inputEvent = generateEventForExpandedPublication();
@@ -106,7 +106,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationString, not(containsString(JSONLD_CONTEXT)));
         assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(inputEvent, storedPublication);
     }
-
+    
     @Test
     void shouldNotStoreTheExpandedDataEntriesThatAreNotPublications() throws IOException, ApiGatewayException {
         EventReference inputEvent = generateEventForExpandedDoiRequest();
@@ -115,36 +115,36 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
         assertThat(analyticsObjectEvent, is(nullValue()));
     }
-
+    
     private ResourceExpansionServiceImpl setupResourceExpansionService() {
         var notImportantMessageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
-        return new ResourceExpansionServiceImpl(resourceService,notImportantMessageService,doiRequestService,
+        return new ResourceExpansionServiceImpl(resourceService, notImportantMessageService, doiRequestService,
             publishingRequestService);
     }
-
+    
     private void assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(EventReference inputEvent,
                                                                               ExpandedResource storedPublication) {
         var expectedPublicationIdentifier = extractPublicationIdentifier(inputEvent);
         assertThat(storedPublication.identifyExpandedEntry().toString(), is(equalTo(expectedPublicationIdentifier)));
     }
-
+    
     private String extractPublicationIdentifier(EventReference inputEvent) {
         return splitFilenameFromFileEnding(inputEvent)[FILENAME_WIHOUT_FILE_ENDING];
     }
-
+    
     private String[] splitFilenameFromFileEnding(EventReference inputEvent) {
         return UriWrapper.fromUri(inputEvent.getUri())
             .toS3bucketPath()
             .getLastPathElement()
             .split(FILENAME_AND_FILE_ENDING_SEPRATOR);
     }
-
+    
     private EventReference generateEventForExpandedPublication() throws IOException {
         var samplePublication = PublicationGenerator.randomPublication();
         var inputFileUri = expandPublicationAndSaveToS3(samplePublication);
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, inputFileUri);
     }
-
+    
     private EventReference generateEventForExpandedDoiRequest() throws IOException, ApiGatewayException {
         var expandedDoiRequest = createSampleExpandedDoiRequest();
         var expandedDoiRequestJson = JsonUtils.dtoObjectMapper.writeValueAsString(expandedDoiRequest);
@@ -153,21 +153,21 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         var fileUri = s3Driver.insertFile(inputEventFilePath, expandedDoiRequestJson);
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, fileUri);
     }
-
+    
     private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
-
+        
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
     }
-
+    
     private Publication insertSamplePublication() throws ApiGatewayException {
         var samplePublication = PublicationGenerator.randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = resourceService.createPublication(userInstance, samplePublication);
         return samplePublication;
     }
-
+    
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {
         UriRetriever fakeUrlRetriever = mock(UriRetriever.class);
         when(fakeUrlRetriever.getRawContent(any(URI.class), anyString())).thenReturn(Optional.of(randomJson()));
@@ -176,7 +176,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         UnixPath randomPath = formatPublicationFilename(expandedPublication);
         return s3Driver.insertFile(randomPath, resourceJson);
     }
-
+    
     private UnixPath formatPublicationFilename(ExpandedResource expandedPublication) {
         return UnixPath.of(randomString(), expandedPublication.identifyExpandedEntry() + ".gz");
     }

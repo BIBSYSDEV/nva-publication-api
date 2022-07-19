@@ -16,9 +16,9 @@ import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
-
+    
     private final ResourceService resourceService;
-
+    
     /**
      * Default constructor for DeletePublicationHandler.
      */
@@ -26,7 +26,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     public DeletePublicationHandler() {
         this(defaultService(), new Environment());
     }
-
+    
     /**
      * Constructor for DeletePublicationHandler.
      *
@@ -37,26 +37,26 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         super(Void.class, environment);
         this.resourceService = resourceService;
     }
-
+    
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         String owner = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCurrentCustomer();
         UserInstance userInstance = UserInstance.create(owner, customerId);
-
+        
         resourceService.markPublicationForDeletion(userInstance, identifier);
-
+        
         return null;
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(Void input, Void output) {
         return HttpStatus.SC_ACCEPTED;
     }
-
+    
     @JacocoGenerated
     private static ResourceService defaultService() {
-        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(),Clock.systemDefaultZone());
+        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
     }
 }

@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.expansion.utils.UriRetriever;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
@@ -41,39 +40,38 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedResourceTest {
-
+    
     public static final String PUBLISHER_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/publisher/name";
     public static final String SERIES_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/series/name";
-
+    
     @Test
     void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
-
+        
         final Publication publication = randomBookWithConfirmedPublisher();
         final URI seriesUri = extractSeriesUri(publication);
         final URI publisherUri = extractPublisherUri(publication);
         final String publisherName = randomString();
         final String seriesName = randomString();
-
+        
         final UriRetriever mockUriRetriever =
             mockPublicationChannelPublisherResponse(seriesUri, seriesName, publisherUri, publisherName);
         final ExpandedResource indexDocument = fromPublication(mockUriRetriever, publication);
         final JsonNode framedResultNode = indexDocument.asJsonNode();
-
+        
         assertEquals(publisherUri.toString(), framedResultNode.at(PUBLISHER_ID_JSON_PTR).textValue());
         assertEquals(publisherName, framedResultNode.at(PUBLISHER_NAME_JSON_PTR).textValue());
         assertEquals(seriesUri.toString(), framedResultNode.at(SERIES_ID_JSON_PTR).textValue());
         assertEquals(seriesName, framedResultNode.at(SERIES_NAME_JSON_PTR).textValue());
     }
-
+    
     @ParameterizedTest(name = "should return properly framed document with id based on Id-namespace and resource "
                               + "identifier. Instance type:{0}")
     @MethodSource("publicationInstanceProvider")
@@ -86,7 +84,7 @@ class ExpandedResourceTest {
         URI actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
         assertThat(actualUri, is(equalTo(expectedUri)));
     }
-
+    
     @Test
     void shouldReturnIndexDocumentContainingConfirmedSeriesUriFromNsdPublicationChannels()
         throws JsonProcessingException {
@@ -98,7 +96,7 @@ class ExpandedResourceTest {
         ExpandedResource actualDocument = fromPublication(publication);
         assertThat(actualDocument.getPublicationContextUris(), hasItems(expectedSeriesUri));
     }
-
+    
     @Test
     void shouldReturnIndexDocumentContainingReturnsJournalUriFromNsdPublicationChannels()
         throws JsonProcessingException {
@@ -109,7 +107,7 @@ class ExpandedResourceTest {
         ExpandedResource actualDocument = fromPublication(publication);
         assertThat(actualDocument.getPublicationContextUris(), contains(expectedJournalUri));
     }
-
+    
     @Test
     void shouldReturnIndexDocumentWithConfirmedSeriesIdWhenBookIsPartOfSeriesFoundInNsd()
         throws JsonProcessingException {
@@ -121,9 +119,9 @@ class ExpandedResourceTest {
         Publisher publisher = (Publisher) book.getPublisher();
         URI expectedPublisherId = publisher.getId();
         assertThat(actualDocument.getPublicationContextUris(),
-                   containsInAnyOrder(expectedSeriesId, expectedPublisherId));
+            containsInAnyOrder(expectedSeriesId, expectedPublisherId));
     }
-
+    
     @Test
     void shouldReturnIndexDocumentWithConfirmedJournalIdWhenPublicationIsPublishedInConfirmedJournal()
         throws JsonProcessingException {
@@ -133,34 +131,32 @@ class ExpandedResourceTest {
         URI expectedJournalId = journal.getId();
         assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
     }
-
+    
     @Test
     void shouldNotFailWhenThereIsNoPublicationContext() throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().getReference().setPublicationContext(null);
         assertThat(ExpandedResource.fromPublication(publication), is(not(nullValue())));
     }
-
+    
     @Test
     void shouldNotFailWhenThereIsNoPublicationInstance() throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().getReference().setPublicationInstance(null);
         assertThat(ExpandedResource.fromPublication(publication), is(not(nullValue())));
     }
-
+    
     @Test
     void shouldNotFailWhenThereIsNoMainTitle() throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().setMainTitle(null);
         assertThat(ExpandedResource.fromPublication(publication), is(not(nullValue())));
     }
-
-
-
+    
     private static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
-
+    
     private static UriRetriever mockPublicationChannelPublisherResponse(URI journalId,
                                                                         String journalName,
                                                                         URI publisherId,
@@ -175,35 +171,35 @@ class ExpandedResourceTest {
             .thenReturn(Optional.of(publicationChannelSamplePublisher));
         return mockUriRetriever;
     }
-
+    
     private Journal extractJournal(Publication publication) {
         return (Journal) publication.getEntityDescription().getReference().getPublicationContext();
     }
-
+    
     private URI extractPublisherUri(Publication publication) {
         Book book = extractBook(publication);
         Publisher publisher = extractPublisher(book);
         return publisher.getId();
     }
-
+    
     private Publisher extractPublisher(Book book) {
         return (Publisher) book.getPublisher();
     }
-
+    
     private URI extractSeriesUri(Publication publication) {
         Book book = extractBook(publication);
         Series confirmedSeries = (Series) book.getSeries();
         return confirmedSeries.getId();
     }
-
+    
     private Book extractBook(Publication publication) {
         return (Book) publication.getEntityDescription().getReference().getPublicationContext();
     }
-
+    
     private Publication randomBookWithConfirmedPublisher() {
         return PublicationGenerator.randomPublication(BookMonograph.class);
     }
-
+    
     private Publication randomJournalArticleWithConfirmedJournal() {
         return PublicationGenerator.randomPublication(FeatureArticle.class);
     }

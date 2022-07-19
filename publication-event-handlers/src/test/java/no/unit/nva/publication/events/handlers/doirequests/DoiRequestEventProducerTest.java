@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class DoiRequestEventProducerTest {
-
+    
     private static final String DOI_FIELD = "doi";
     private static final JsonPointer NEW_DATA_FIELD = JsonPointer.compile(
         "/detail/responsePayload/newData");
@@ -57,12 +57,12 @@ class DoiRequestEventProducerTest {
         "doirequests/resource_update_event_doi_request_approved_for_published_publication.json";
     private static final String EVENT_PUBLICATION_UPDATED_ONLY_BY_MODIFIED_DATE =
         "doirequests/resource_update_event_old_and_new_present_with_doi_and_different_modified_date.json";
-
+    
     private static final Javers JAVERS = JaversBuilder.javers().build();
     private DoiRequestEventProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
-
+    
     /**
      * Setting up test environment.
      */
@@ -72,7 +72,7 @@ class DoiRequestEventProducerTest {
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }
-
+    
     @Test
     public void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutIdentifier() {
         var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_WITHOUT_IDENTIFIER);
@@ -80,12 +80,12 @@ class DoiRequestEventProducerTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getMessage(), is(equalTo(NO_RESOURCE_IDENTIFIER_ERROR)));
     }
-
+    
     @Test
     void handlerCreatesUpdateDoiEventWhenThereIsNoPreviousDoiRequestButThereIsDoi() throws JsonProcessingException {
         String eventInput = IoUtils.stringFromResources(Path.of(RESOURCE_UPDATE_NEW_IMAGE_ONLY_WITH_DOI));
         assertTrue(hasDoiField(eventInput));
-
+        
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.EMPTY_EVENT_TYPE)));
@@ -94,31 +94,31 @@ class DoiRequestEventProducerTest {
         //assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
         //assertThat(actual.getItem(), notNullValue());
     }
-
+    
     @Test
     void handlerCreatesUpdateDoiEventWhenThereIsPreviousDoiRequestAndThereIsDoi() throws JsonProcessingException {
         String eventInput = IoUtils.stringFromResources(Path.of(
             RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT_NEW_HAS_DOI));
         assertTrue(hasDoiField(eventInput));
-
+        
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
-
+    
     @Test
     void handlerCreatesUpdateDoiEventWhenThereIsPreviousDoiRequestAndThereIsNoDoi() throws JsonProcessingException {
         String eventInput = IoUtils.stringFromResources(Path.of(
             RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT_NO_DOI));
         assertTrue(hasDoiField(eventInput));
-
+        
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
-
+    
     @Test
     void handlerCreatesOutputWithNonEmptyDoiWhenNewImageHasPublicationWithDoi() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(EVENT_PUBLICATION_WITH_DOI_IS_UPDATED);
@@ -128,21 +128,21 @@ class DoiRequestEventProducerTest {
         URI actualDoi = actual.getItem().getDoi();
         assertThat(actualDoi, is(equalTo(doiInResourceFile)));
     }
-
+    
     @Test
     void handlerCreatesNoOutputWhenPublicationUpdateDiffersOnlyInModifiedDate() throws JsonProcessingException {
         var event =
             IoUtils.stringFromResources(Path.of(EVENT_PUBLICATION_UPDATED_ONLY_BY_MODIFIED_DATE));
-
+        
         assertThatEventsDifferOnlyInModifiedDate(event);
-
+        
         var eventInputStream = IoUtils.stringToStream(event);
         handler.handleRequest(eventInputStream, outputStream, context);
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
-
+        
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
-
+    
     @Test
     void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources((RESOURCE_UPDATE_EVENT_OLD_ONLY));
@@ -150,57 +150,57 @@ class DoiRequestEventProducerTest {
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
-
+    
     @Test
     void processInputCreatesDtosWhenOldAndNewImageAreDifferent() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(
             RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT_NEW_HAS_DOI);
         handler.handleRequest(eventInputStream, outputStream, context);
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
-
+        
         assertThat(actual.getTopic(),
-                   is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
+            is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
-
+    
     @Test
     void processInputSkipsCreatingDtosWhenOldAndNewImageAreEqual() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_EQUAL);
         handler.handleRequest(eventInputStream, outputStream, context);
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
-
+        
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
-
+    
     @Test
     void handlerCreatesEventWhenDoiRequestIsApprovedForPublishedPublication() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_DOI_REQUEST_APPROVED);
         handler.handleRequest(eventInputStream, outputStream, context);
         DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
-
+        
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
-
+    
     private void assertThatEventsDifferOnlyInModifiedDate(String event) {
         AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> eventObject = parseEvent(event);
-
+        
         Publication newPublication = eventObject.getDetail().getResponsePayload().getNewData().toPublication();
         Publication oldPublication = eventObject.getDetail().getResponsePayload().getOldData().toPublication();
-
+        
         assertThat(newPublication, is(not(equalTo(oldPublication))));
         assertThatNewAndOldDifferOnlyInModifiedDate(newPublication, oldPublication);
     }
-
+    
     private void assertThatNewAndOldDifferOnlyInModifiedDate(Publication newPublication, Publication oldPublication) {
         Publication newFromOld = oldPublication.copy().build();
         newFromOld.setModifiedDate(newPublication.getModifiedDate());
         newFromOld.getDoiRequest().setModifiedDate(newPublication.getDoiRequest().getModifiedDate());
-
+        
         Diff diff = JAVERS.compare(newFromOld, newPublication);
         assertThat(diff.prettyPrint(), newPublication, is((equalTo(newFromOld))));
     }
-
+    
     @SuppressWarnings("unchecked")
     private AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> parseEvent(String event) {
         EventParser<AwsEventBridgeDetail<DataEntryUpdateEvent>> eventEventParser =
@@ -208,12 +208,12 @@ class DoiRequestEventProducerTest {
         return (AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>>)
                    eventEventParser.parse(AwsEventBridgeDetail.class, DataEntryUpdateEvent.class);
     }
-
+    
     private boolean hasDoiField(String eventInput) {
         JsonNode event = attempt(() -> objectMapper.readTree(eventInput)).orElseThrow();
         return event.at(NEW_DATA_FIELD).has(DOI_FIELD);
     }
-
+    
     private DoiUpdateRequestEvent outputToPublicationHolder(ByteArrayOutputStream outputStream)
         throws JsonProcessingException {
         String outputString = outputStream.toString();

@@ -9,7 +9,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.exceptions.ExceptionUtils;
 
 public class ImportResult<I> implements JsonSerializable {
-
+    
     @JsonIgnore
     public static final String INPUT_FIELD = "input";
     @JsonIgnore
@@ -24,7 +24,7 @@ public class ImportResult<I> implements JsonSerializable {
     private final String exception;
     @JsonProperty(STATUS_FIELD)
     private final String status;
-
+    
     @JsonCreator
     @JacocoGenerated
     public ImportResult(@JsonProperty(INPUT_FIELD) I input,
@@ -34,38 +34,38 @@ public class ImportResult<I> implements JsonSerializable {
         this.exception = exception;
         this.status = status;
     }
-
+    
     private ImportResult(I input, Exception exception, String status) {
         this.input = input;
         this.exception = ExceptionUtils.stackTraceInSingleLine(exception);
         this.status = status;
     }
-
+    
     public static <I> ImportResult<I> reportFailure(I event, Exception exception) {
         return new ImportResult<>(event, exception, FAILURE);
     }
-
+    
     @JacocoGenerated
     public String getStatus() {
         return status;
     }
-
+    
     @JacocoGenerated
     public I getInput() {
         return input;
     }
-
+    
     @JacocoGenerated
     public String getException() {
         return exception;
     }
-
+    
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getInput(), getException(), getStatus());
     }
-
+    
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {

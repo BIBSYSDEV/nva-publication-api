@@ -12,22 +12,21 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public class UriRetriever {
-
+    
     public static final String ACCEPT = "Accept";
     private static final HttpClient HTTP_CLIENT = newHttpClient();
-
-    private static HttpClient newHttpClient() {
-        return HttpClient.newHttpClient();
-    }
-
+    
     public Optional<String> getRawContent(URI uri, String mediaType) {
         return attempt(() -> HTTP_CLIENT.send(createHttpRequest(uri, mediaType),
-                                              BodyHandlers.ofString(StandardCharsets.UTF_8)))
+            BodyHandlers.ofString(StandardCharsets.UTF_8)))
             .map(HttpResponse::body)
             .toOptional();
     }
-
-
+    
+    private static HttpClient newHttpClient() {
+        return HttpClient.newHttpClient();
+    }
+    
     private HttpRequest createHttpRequest(URI uri, String mediaType) {
         return HttpRequest.newBuilder()
             .uri(uri)

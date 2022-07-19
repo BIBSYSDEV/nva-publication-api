@@ -1,132 +1,132 @@
 {
-  "id":886441,
-  "varbeidhovedkatkode":"TIDSSKRIFTPUBL",
-  "varbeidunderkatkode":"ARTIKKEL_FAG",
-  "brukernavn_opprettet":"broren",
-  "eierkode_opprettet":"MF",
-  "dato_opprettet":"2012-01-16T10:29:32",
-  "brukernavn_siste_endring":"broren",
-  "eierkode_siste_endring":"MF",
-  "dato_siste_endring":"2012-01-16T10:29:32",
-  "publiseringstatuskode":"PUBLISERT",
-  "dato_utgitt":null,
-  "arstall":2011,
-  "arstall_rapportert":null,
-  "merknadtekst":null,
-  "merknadtekst_godkjenning":null,
-  "kildekode":null,
-  "kildepostid":null,
-  "pubidnr":null,
-  "varbeid_sprak":[
+  "id": 886441,
+  "varbeidhovedkatkode": "TIDSSKRIFTPUBL",
+  "varbeidunderkatkode": "ARTIKKEL_FAG",
+  "brukernavn_opprettet": "broren",
+  "eierkode_opprettet": "MF",
+  "dato_opprettet": "2012-01-16T10:29:32",
+  "brukernavn_siste_endring": "broren",
+  "eierkode_siste_endring": "MF",
+  "dato_siste_endring": "2012-01-16T10:29:32",
+  "publiseringstatuskode": "PUBLISERT",
+  "dato_utgitt": null,
+  "arstall": 2011,
+  "arstall_rapportert": null,
+  "merknadtekst": null,
+  "merknadtekst_godkjenning": null,
+  "kildekode": null,
+  "kildepostid": null,
+  "pubidnr": null,
+  "varbeid_sprak": [
     {
-      "sprakkode":"NB",
-      "titteltekst":"To-regimentslæren i dagens Norge",
-      "sammendragtekst":null,
-      "status_original":"J"
+      "sprakkode": "NB",
+      "titteltekst": "To-regimentslæren i dagens Norge",
+      "sammendragtekst": null,
+      "status_original": "J"
     }
   ],
-  "vitenskapeligarbeid_lokal":[
+  "vitenskapeligarbeid_lokal": [
     {
-      "eierkode":"MF",
-      "brukernavn_opprettet":null,
-      "dato_opprettet":"2012-01-16T10:29:32",
-      "brukernavn_siste_endring":null,
-      "dato_siste_endring":null,
-      "status_kontrollert":null,
-      "brukernavn_kontrollert":null,
-      "dato_kontrollert":null,
-      "status_bekreftet_arkivsporsmal":null,
-      "brukernavn_avlvrt_arkivsystem":null,
-      "dato_avlvrt_arkivsystem":null,
-      "status_fulgt_medf_reg":null,
-      "brukernavn_svart_medforf_reg":null,
-      "dato_svart_medforf_regel":null
+      "eierkode": "MF",
+      "brukernavn_opprettet": null,
+      "dato_opprettet": "2012-01-16T10:29:32",
+      "brukernavn_siste_endring": null,
+      "dato_siste_endring": null,
+      "status_kontrollert": null,
+      "brukernavn_kontrollert": null,
+      "dato_kontrollert": null,
+      "status_bekreftet_arkivsporsmal": null,
+      "brukernavn_avlvrt_arkivsystem": null,
+      "dato_avlvrt_arkivsystem": null,
+      "status_fulgt_medf_reg": null,
+      "brukernavn_svart_medforf_reg": null,
+      "dato_svart_medforf_regel": null
     }
   ],
-  "varbeid_person":[
+  "varbeid_person": [
     {
-      "personlopenr":318877,
-      "fornavn":"Torleiv",
-      "etternavn":"Austad",
-      "rekkefolgenr":1,
-      "varbeid_person_sted":[
+      "personlopenr": 318877,
+      "fornavn": "Torleiv",
+      "etternavn": "Austad",
+      "rekkefolgenr": 1,
+      "varbeid_person_sted": [
         {
-          "institusjonsnr":190,
-          "avdnr":0,
-          "undavdnr":0,
-          "gruppenr":0,
-          "stedkode_opprinnelig":null,
-          "institusjonsnavn_opprinnelig":null,
-          "avdelingsnavn_opprinnelig":null,
-          "stednavn_opprinnelig":null,
-          "varbeid_person_sted_rolle":[
+          "institusjonsnr": 190,
+          "avdnr": 0,
+          "undavdnr": 0,
+          "gruppenr": 0,
+          "stedkode_opprinnelig": null,
+          "institusjonsnavn_opprinnelig": null,
+          "avdelingsnavn_opprinnelig": null,
+          "stednavn_opprinnelig": null,
+          "varbeid_person_sted_rolle": [
             {
-              "rollekode":"FORFATTER"
+              "rollekode": "FORFATTER"
             }
           ]
         }
       ]
     }
   ],
-  "varbeid_kilde":null,
-  "presentasjon_varbeid":null,
-  "varbeid_emneord":[
+  "varbeid_kilde": null,
+  "presentasjon_varbeid": null,
+  "varbeid_emneord": [
     {
-      "emneordlopenr":6548,
-      "emneordnavn_bokmal":"Norge",
-      "emneordnavn_engelsk":"Norway",
-      "emneordnavn_nynorsk":null
+      "emneordlopenr": 6548,
+      "emneordnavn_bokmal": "Norge",
+      "emneordnavn_engelsk": "Norway",
+      "emneordnavn_nynorsk": null
     },
     {
-      "emneordlopenr":21317,
-      "emneordnavn_bokmal":"Martin Luther",
-      "emneordnavn_engelsk":"Martin Luther",
-      "emneordnavn_nynorsk":null
+      "emneordlopenr": 21317,
+      "emneordnavn_bokmal": "Martin Luther",
+      "emneordnavn_engelsk": "Martin Luther",
+      "emneordnavn_nynorsk": null
     },
     {
-      "emneordlopenr":28315,
-      "emneordnavn_bokmal":"Toregimentslæren",
-      "emneordnavn_engelsk":"Two kingdoms doctrine",
-      "emneordnavn_nynorsk":null
+      "emneordlopenr": 28315,
+      "emneordnavn_bokmal": "Toregimentslæren",
+      "emneordnavn_engelsk": "Two kingdoms doctrine",
+      "emneordnavn_nynorsk": null
     }
   ],
-  "varbeid_vdisiplin":null,
-  "varbeid_hrcs_klassifisering":null,
-  "finansiering_varbeid":null,
-  "type_bok_rapport":null,
-  "type_bok_rapport_del":null,
-  "type_foredrag_poster":null,
-  "type_kunstneriskproduksjon":null,
-  "type_mediebidrag":null,
-  "type_produkt":null,
+  "varbeid_vdisiplin": null,
+  "varbeid_hrcs_klassifisering": null,
+  "finansiering_varbeid": null,
+  "type_bok_rapport": null,
+  "type_bok_rapport_del": null,
+  "type_foredrag_poster": null,
+  "type_kunstneriskproduksjon": null,
+  "type_mediebidrag": null,
+  "type_produkt": null,
   "type_tidsskriftpublikasjon": {
-    "tidsskrift":{
-      "tidsskriftnr":2184708,
-      "tidsskriftnavn":"Dansk Tidsskrift for Teologi og Kirke",
-      "nsdkode":479200,
-      "issn":"1903-6523",
-      "issn_elektronisk":"2446-0850",
-      "landkode_utgiver":"DK",
-      "sprakkode":"DA",
-      "status_referee_ordning":"J",
-      "dato_utgutt":null,
-      "status_serie":null
+    "tidsskrift": {
+      "tidsskriftnr": 2184708,
+      "tidsskriftnavn": "Dansk Tidsskrift for Teologi og Kirke",
+      "nsdkode": 479200,
+      "issn": "1903-6523",
+      "issn_elektronisk": "2446-0850",
+      "landkode_utgiver": "DK",
+      "sprakkode": "DA",
+      "status_referee_ordning": "J",
+      "dato_utgutt": null,
+      "status_serie": null
     },
-    "antall_sider_totalt":null,
-    "publiseringsar":2011,
-    "hefte":"2",
-    "sidenr_fra":"26",
-    "sidenr_til":"36",
-    "status_referee_ordning":null,
-    "supplement":null,
-    "utbredelsesomrade":null,
-    "volum":"38",
-    "artikkelnummer":null,
-    "doi":null,
-    "arstall_trykket":null,
-    "arstall_online":null
+    "antall_sider_totalt": null,
+    "publiseringsar": 2011,
+    "hefte": "2",
+    "sidenr_fra": "26",
+    "sidenr_til": "36",
+    "status_referee_ordning": null,
+    "supplement": null,
+    "utbredelsesomrade": null,
+    "volum": "38",
+    "artikkelnummer": null,
+    "doi": null,
+    "arstall_trykket": null,
+    "arstall_online": null
   },
-  "type_utstilling":null,
-  "arkivfil":null,
-  "arkivpost":null
+  "type_utstilling": null,
+  "arkivfil": null,
+  "arkivpost": null
 }

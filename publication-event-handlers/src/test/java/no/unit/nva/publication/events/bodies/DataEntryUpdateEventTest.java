@@ -36,15 +36,6 @@ class DataEntryUpdateEventTest {
         return result.stream();
     }
     
-    private static boolean isTypeWithSubtypes(Type type) {
-        return type.value().getAnnotationsByType(JsonSubTypes.class).length > 0;
-    }
-    
-    private static List<Type> fetchDirectSubtypes(Class<?> type) {
-        var annotations = type.getAnnotationsByType(JsonSubTypes.class);
-        return Arrays.asList(annotations[0].value());
-    }
-    
     @ParameterizedTest(name = "should provide event topic for data entry instance type: {0}")
     @MethodSource("dataEntryTypeProvider")
     void shouldProduceEventTopicForAllDataEntryTypes(Class<?> type)
@@ -52,6 +43,15 @@ class DataEntryUpdateEventTest {
         var dataEntry = createDataEntry(type);
         var updateEvent = new DataEntryUpdateEvent(randomString(), dataEntry, dataEntry);
         assertThat(updateEvent.getTopic(), is(not(nullValue())));
+    }
+    
+    private static boolean isTypeWithSubtypes(Type type) {
+        return type.value().getAnnotationsByType(JsonSubTypes.class).length > 0;
+    }
+    
+    private static List<Type> fetchDirectSubtypes(Class<?> type) {
+        var annotations = type.getAnnotationsByType(JsonSubTypes.class);
+        return Arrays.asList(annotations[0].value());
     }
     
     private DataEntry createDataEntry(Class<?> type)

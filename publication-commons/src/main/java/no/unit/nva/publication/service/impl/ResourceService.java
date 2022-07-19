@@ -58,13 +58,13 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
-
+    
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
-
+    
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 20;
@@ -75,7 +75,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
-
+    
     public ResourceService(AmazonDynamoDB client,
                            Clock clock,
                            Supplier<SortableIdentifier> identifierSupplier) {
@@ -88,12 +88,12 @@ public class ResourceService extends ServiceWithTransactions {
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
     }
-
+    
     public ResourceService(AmazonDynamoDB client,
                            Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
-
+    
     public Publication createPublication(UserInstance userInstance, Publication inputData)
         throws ApiGatewayException {
         Instant currentTime = clockForTimestamps.instant();
@@ -106,14 +106,14 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setStatus(PublicationStatus.DRAFT);
         return insertResource(newResource);
     }
-
+    
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(inputData.getCreatedDate());
         return insertResource(newResource);
     }
-
+    
     public Publication createPublicationFromImportedEntry(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -123,37 +123,37 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setStatus(PublicationStatus.PUBLISHED);
         return insertResource(newResource);
     }
-
+    
     public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);
     }
-
+    
     public Publication markPublicationForDeletion(UserInstance userInstance,
                                                   SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-
+        
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier))
             .toPublication();
     }
-
+    
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                                SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         return updateResourceService.publishResource(userInstance, resourceIdentifier);
     }
-
+    
     @SuppressWarnings(RAWTYPES)
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         List<Dao> daos = readResourceService
             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
-
+        
         List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
-
+    
     public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
         var scanResult = client.scan(scanRequest);
@@ -161,43 +161,43 @@ public class ResourceService extends ServiceWithTransactions {
         var isTruncated = thereAreMorePagesToScan(scanResult);
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
-
+    
     public void refreshResources(List<DataEntry> dataEntries) {
         final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToS3InBatches(writeRequests);
     }
-
+    
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         return readResourceService.getPublication(userInstance, resourceIdentifier);
     }
-
+    
     public Publication getPublication(Publication sampleResource) throws NotFoundException {
         return readResourceService.getPublication(sampleResource);
     }
-
+    
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return readResourceService.getResourceByIdentifier(identifier);
     }
-
+    
     public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
-
+    
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toPublication();
     }
-
+    
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
         throws NotFoundException {
         updateResourceService.updateOwner(identifier, oldOwner, newOwner);
     }
-
+    
     public Publication updatePublication(Publication resourceUpdate) {
         return updateResourceService.updatePublication(resourceUpdate);
     }
-
+    
     // update this method according to current needs.
     //TODO: redesign migration process?
     public DataEntry migrate(DataEntry dataEntry) {
@@ -205,22 +205,22 @@ public class ResourceService extends ServiceWithTransactions {
                    ? migrateResource((Resource) dataEntry)
                    : dataEntry;
     }
-
+    
     @Override
     protected String getTableName() {
         return tableName;
     }
-
+    
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
     }
-
+    
     @Override
     protected Clock getClock() {
         return clockForTimestamps;
     }
-
+    
     private List<DataEntry> refreshAndMigrate(List<DataEntry> dataEntries) {
         return dataEntries
             .stream()
@@ -229,32 +229,32 @@ public class ResourceService extends ServiceWithTransactions {
             .map(DataEntry::refreshRowVersion)
             .collect(Collectors.toList());
     }
-
+    
     private Organization createOrganization(UserInstance userInstance) {
         return new Organization.Builder().withId(userInstance.getOrganizationUri()).build();
     }
-
+    
     private ResourceOwner createResourceOwner(UserInstance userInstance) {
         return new ResourceOwner(userInstance.getUserIdentifier(),
-                                 userInstance.getTopLevelOrgCristinId());
+            userInstance.getTopLevelOrgCristinId());
     }
-
+    
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {
         return nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
     }
-
+    
     // change this method depending on the current migration needs.
     private Resource migrateResource(Resource dataEntry) {
         return dataEntry;
     }
-
+    
     private void writeToS3InBatches(List<WriteRequest> writeRequests) {
         Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
             .stream()
             .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
             .forEach(client::batchWriteItem);
     }
-
+    
     private List<WriteRequest> createWriteRequestsForBatchJob(List<DataEntry> refreshedEntries) {
         return refreshedEntries.stream()
             .map(DataEntry::toDao)
@@ -263,7 +263,7 @@ public class ResourceService extends ServiceWithTransactions {
             .map(WriteRequest::new)
             .collect(Collectors.toList());
     }
-
+    
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
                                                                        Map<String, AttributeValue> startMarker) {
         return new ScanRequest()
@@ -275,7 +275,7 @@ public class ResourceService extends ServiceWithTransactions {
             .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
             .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
     }
-
+    
     private List<DataEntry> extractDatabaseEntries(ScanResult response) {
         return response.getItems()
             .stream()
@@ -285,21 +285,21 @@ public class ResourceService extends ServiceWithTransactions {
             .map(DataEntry.class::cast)
             .collect(Collectors.toList());
     }
-
+    
     private Publication insertResource(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
-
+        
         return fetchSavedResource(newResource);
     }
-
+    
     private Publication fetchSavedResource(Resource newResource) {
         return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
             .map(Resource::toPublication)
             .orElse(null);
     }
-
+    
     @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
         throws BadRequestException {
@@ -308,13 +308,13 @@ public class ResourceService extends ServiceWithTransactions {
         transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
         return transactionItems;
     }
-
+    
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
         TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource));
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
-
+    
     @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
         Optional<DoiRequestDao> doiRequest = extractDoiRequest(daos);
@@ -323,30 +323,30 @@ public class ResourceService extends ServiceWithTransactions {
         }
         return Collections.emptyList();
     }
-
+    
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(DoiRequestDao doiRequestDao) {
         WithPrimaryKey identifierEntry = IdentifierEntry.create(doiRequestDao);
         WithPrimaryKey uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(doiRequestDao);
         return
             Stream.of(doiRequestDao, identifierEntry, uniqueDoiRequestEntry)
                 .map(this::newDeleteTransactionItem)
-
+                
                 .collect(Collectors.toList());
     }
-
+    
     @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> deleteResourceTransactionItems(List<Dao> daos)
         throws BadRequestException {
         ResourceDao resourceDao = extractResourceDao(daos);
-
+        
         TransactWriteItem deleteResourceItem = newDeleteTransactionItem(resourceDao);
         applyDeleteResourceConditions(deleteResourceItem);
-
+        
         TransactWriteItem deleteResourceIdentifierItem = newDeleteTransactionItem(IdentifierEntry.create(resourceDao));
-
+        
         return List.of(deleteResourceItem, deleteResourceIdentifierItem);
     }
-
+    
     private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
         Map<String, String> expressionAttributeNames = Map.of(
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
@@ -356,13 +356,13 @@ public class ResourceService extends ServiceWithTransactions {
         Map<String, AttributeValue> expressionAttributeValues = Map.of(
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue())
         );
-
+        
         deleteResource.getDelete()
             .withConditionExpression("#data.#status <> :publishedStatus AND attribute_not_exists(#data.#doi)")
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
     }
-
+    
     private Resource markResourceForDeletion(Resource resource)
         throws ApiGatewayException {
         ResourceDao dao = new ResourceDao(resource);
@@ -370,7 +370,7 @@ public class ResourceService extends ServiceWithTransactions {
         return attempt(() -> sendUpdateRequest(updateRequest))
             .orElseThrow(failure -> markForDeletionError(failure, resource));
     }
-
+    
     private ApiGatewayException markForDeletionError(Failure<Resource> failure, Resource resource) {
         if (primaryKeyConditionFailed(failure.getException())) {
             return new NotFoundException(ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE);
@@ -381,34 +381,34 @@ public class ResourceService extends ServiceWithTransactions {
         }
         throw new RuntimeException(failure.getException());
     }
-
+    
     private boolean primaryKeyConditionFailed(Exception exception) {
         return exception instanceof AmazonServiceException
                && messageRefersToInvalidPath(exception);
     }
-
+    
     private boolean messageRefersToInvalidPath(Exception exception) {
         return exception.getMessage().contains(INVALID_PATH_ERROR);
     }
-
+    
     private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) {
         String updateExpression = "SET "
                                   + "#data.#status = :newStatus, "
                                   + "#data.#modifiedDate = :modifiedDate";
-
+        
         String conditionExpression = "#data.#status = :expectedExistingStatus";
-
+        
         Map<String, AttributeValue> expressionValuesMap = Map.of(
             ":newStatus", new AttributeValue(PublicationStatus.DRAFT_FOR_DELETION.getValue()),
             ":modifiedDate", new AttributeValue(nowAsString()),
             ":expectedExistingStatus", new AttributeValue(PublicationStatus.DRAFT.toString())
         );
-
+        
         Map<String, String> expressionAttributeNames = Map.of(
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
-
+        
         UpdateItemRequest request = new UpdateItemRequest()
             .withTableName(tableName)
             .withKey(dao.primaryKey())
@@ -420,7 +420,7 @@ public class ResourceService extends ServiceWithTransactions {
         logger.info("DeleteRequest:{}", request);
         return request;
     }
-
+    
     private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
         UpdateItemResult requestResult = client.updateItem(updateRequest);
         return Try.of(requestResult)
@@ -429,7 +429,7 @@ public class ResourceService extends ServiceWithTransactions {
             .map(ResourceDao::getData)
             .orElseThrow();
     }
-
+    
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
         return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
     }

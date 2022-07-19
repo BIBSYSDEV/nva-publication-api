@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
 class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
-
+    
     public static final String SOME_CURATOR = randomString();
     public static final String INVALID_IDENTIFIER = "invalidIdentifier";
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
@@ -54,7 +54,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private ByteArrayOutputStream outputStream;
     private Context context;
-
+    
     @BeforeEach
     public void initialize() {
         super.init();
@@ -64,41 +64,41 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
             .thenReturn(PUBLICATION_UPDATE_TIME)
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
-
+        
         doiRequestService = new DoiRequestService(client, clock);
         handler = new UpdateDoiRequestStatusHandler(setupEnvironment(), doiRequestService);
         resourceService = new ResourceService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
     }
-
+    
     @Test
     void handleRequestUpdatesDoiStatusOfDoiRequestInDatabase()
         throws ApiGatewayException, IOException {
         var publication = createPublishedPublicationAndDoiRequest();
-
+        
         var request = createAuthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
-
+        
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
-
+        
         var updatedDoiRequest = fetchDoiRequestDirectlyFromService(publication);
         assertThat(updatedDoiRequest.getStatus(), is(equalTo(DoiRequestStatus.APPROVED)));
     }
-
+    
     @Test
     void handleReturnsForbiddenWhenUserDoesNotHaveApproveOrRejectAccessRights()
         throws ApiGatewayException, IOException {
         var publication = createPublishedPublicationAndDoiRequest();
-
+        
         var request = createUnauthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
-
+        
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
-
+    
     @Test
     void handlerReturnsBadRequestWhenPublicationIsDraft()
         throws ApiGatewayException, IOException {
@@ -110,7 +110,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
-
+    
     @Test
     void handlerReturnsBadRequestForInvalidPublicationIdentifier()
         throws ApiGatewayException, IOException {
@@ -123,7 +123,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         assertThat(problem.getDetail(), containsString(INVALID_PUBLICATION_ID_ERROR));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
-
+    
     @Test
     void handlerReturnsBadRequestWhenNoChangeInDoiRequestStatusIsRequested()
         throws ApiGatewayException, IOException {
@@ -136,34 +136,34 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         assertThat(problem.getDetail(), containsString(NO_CHANGE_REQUESTED_ERROR));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
-
+    
     private InputStream createAuthorizedRestRequestWithNoRequestedChange(Publication publication)
         throws JsonProcessingException {
         return createAuthorizedRestRequest(publication, publication.getIdentifier().toString(), null);
     }
-
+    
     private InputStream createAuthorizedRestRequestWithInvalidIdentifier(Publication publication)
         throws JsonProcessingException {
         return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, DoiRequestStatus.APPROVED);
     }
-
+    
     private Environment setupEnvironment() {
         var environment = mock(Environment.class);
         when(environment.readEnv(anyString())).thenReturn("*");
         return environment;
     }
-
+    
     private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) throws NotFoundException {
         return doiRequestService
             .getDoiRequestByResourceIdentifier(UserInstance.fromPublication(publication), publication.getIdentifier());
     }
-
+    
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
         return createAuthorizedRestRequest(publication,
-                                           publication.getIdentifier().toString(),
-                                           DoiRequestStatus.APPROVED);
+            publication.getIdentifier().toString(),
+            DoiRequestStatus.APPROVED);
     }
-
+    
     private InputStream createAuthorizedRestRequest(Publication publication,
                                                     String identifier,
                                                     DoiRequestStatus doiRequestStatus)
@@ -174,12 +174,12 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
             .withCustomerId(customerId)
             .withNvaUsername(SOME_CURATOR)
-            .withAccessRights(customerId,APPROVE_DOI_REQUEST.toString())
+            .withAccessRights(customerId, APPROVE_DOI_REQUEST.toString())
             .withPathParameters(pathParameters)
             .withBody(body)
             .build();
     }
-
+    
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
         var body = createUpdateRequest(DoiRequestStatus.APPROVED);
         var pathParameters = createPathParameters(publication.getIdentifier().toString());
@@ -191,25 +191,25 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
             .withBody(body)
             .build();
     }
-
+    
     private Map<String, String> createPathParameters(String identifier) {
         return Map.of(
             PUBLICATION_IDENTIFIER_PATH_PARAMETER, identifier
         );
     }
-
+    
     private ApiUpdateDoiRequest createUpdateRequest(DoiRequestStatus doiRequestStatus) {
         var body = new ApiUpdateDoiRequest();
         body.setDoiRequestStatus(doiRequestStatus);
         return body;
     }
-
+    
     private Publication createPublishedPublicationAndDoiRequest() throws ApiGatewayException {
         var publication = createDraftPublicationAndDoiRequest();
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         return publication;
     }
-
+    
     private Publication createDraftPublicationAndDoiRequest() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);

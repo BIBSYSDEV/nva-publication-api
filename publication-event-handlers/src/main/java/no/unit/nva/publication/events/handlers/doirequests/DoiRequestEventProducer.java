@@ -23,52 +23,52 @@ import org.slf4j.LoggerFactory;
  */
 public class DoiRequestEventProducer
     extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, DoiUpdateRequestEvent> {
-
+    
     public static final String REQUEST_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.CreationRequest";
     public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
-
+    
     protected static final String EMPTY_EVENT_TYPE = "empty";
     public static final DoiUpdateRequestEvent EMPTY_EVENT = emptyEvent();
     private static final Logger logger = LoggerFactory.getLogger(DoiRequestEventProducer.class);
-
+    
     @JacocoGenerated
     public DoiRequestEventProducer() {
         super(DataEntryUpdateEvent.class);
     }
-
+    
     @Override
     protected DoiUpdateRequestEvent processInputPayload(
         DataEntryUpdateEvent input,
         AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
         Context context) {
-
+        
         logger.info(event.toJsonString());
         DoiUpdateRequestEvent updatedDoiInformationEvent = fromDynamoEntryUpdate(input);
         validate(updatedDoiInformationEvent);
         return updatedDoiInformationEvent;
     }
-
+    
     private static DoiUpdateRequestEvent emptyEvent() {
         return toPublicationHolder(null, EMPTY_EVENT_TYPE);
     }
-
+    
     private static DoiUpdateRequestEvent toPublicationHolder(DoiRequest doiRequest, String eventType) {
         Publication publication = nonNull(doiRequest) ? doiRequest.toPublication() : null;
         return new DoiUpdateRequestEvent(eventType, publication);
     }
-
+    
     private void validate(DoiUpdateRequestEvent updatedDoiInformationEvent) {
         if (isInvalid(updatedDoiInformationEvent)) {
             throw new IllegalStateException(NO_RESOURCE_IDENTIFIER_ERROR);
         }
     }
-
+    
     private boolean isInvalid(DoiUpdateRequestEvent updatedDoiInformationEvent) {
         return nonNull(updatedDoiInformationEvent.getItem())
                && isNull(updatedDoiInformationEvent.getItem().getIdentifier());
     }
-
+    
     private DoiUpdateRequestEvent fromDynamoEntryUpdate(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
             .filter(this::shouldPropagateEvent)
@@ -78,7 +78,7 @@ public class DoiRequestEventProducer
             .map(pub -> toPublicationHolder(pub, calculateEventType(updateEvent)))
             .orElse(EMPTY_EVENT);
     }
-
+    
     private String calculateEventType(DataEntryUpdateEvent updateEvent) {
         if (isFirstDoiRequest(updateEvent)) {
             return REQUEST_DRAFT_DOI_EVENT_TOPIC;
@@ -86,22 +86,22 @@ public class DoiRequestEventProducer
             return UPDATE_DOI_EVENT_TOPIC;
         }
     }
-
+    
     private Publication toPublication(DataEntry dataEntry) {
         return dataEntry != null ? dataEntry.toPublication() : null;
     }
-
+    
     private boolean isFirstDoiRequest(DataEntryUpdateEvent updateEvent) {
         return isNull(toPublication(updateEvent.getOldData()))
                && updateHasDoiRequest(updateEvent)
                && isNull(toPublication(updateEvent.getNewData()).getDoi());
     }
-
+    
     private boolean updateHasDoiRequest(DataEntryUpdateEvent updateEvent) {
         return nonNull(toPublication(updateEvent.getNewData()))
                && nonNull(toPublication(updateEvent.getNewData()).getDoiRequest());
     }
-
+    
     private boolean publicationHasDoiRequest(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
             .map(DataEntryUpdateEvent::getNewData)
@@ -109,14 +109,14 @@ public class DoiRequestEventProducer
             .map(data -> (DoiRequest) data)
             .isPresent();
     }
-
+    
     private boolean shouldPropagateEvent(DataEntryUpdateEvent updateEvent) {
         boolean publicationHasDoiRequest = publicationHasDoiRequest(updateEvent);
         boolean isChange = isEffectiveChange(updateEvent);
-
+        
         return isChange && publicationHasDoiRequest;
     }
-
+    
     private boolean isEffectiveChange(DataEntryUpdateEvent updateEvent) {
         var newPublication = toPublication(updateEvent.getNewData());
         var oldPublication = toPublication(updateEvent.getOldData());
@@ -127,13 +127,13 @@ public class DoiRequestEventProducer
         }
         return false;
     }
-
+    
     private boolean doiRequestGotApproved(DataEntryUpdateEvent updateEvent) {
         DoiRequestStatus oldStatus = extractOldPublicationStatus(updateEvent);
         DoiRequestStatus newStatus = extractNewPublicationStatus(updateEvent);
         return DoiRequestStatus.REQUESTED.equals(oldStatus) && DoiRequestStatus.APPROVED.equals(newStatus);
     }
-
+    
     private DoiRequestStatus extractNewPublicationStatus(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
             .map(DataEntryUpdateEvent::getNewData)
@@ -142,7 +142,7 @@ public class DoiRequestEventProducer
             .map(DoiRequest::getStatus)
             .orElse(null);
     }
-
+    
     private DoiRequestStatus extractOldPublicationStatus(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
             .map(DataEntryUpdateEvent::getOldData)
@@ -151,13 +151,13 @@ public class DoiRequestEventProducer
             .map(DoiRequest::getStatus)
             .orElse(DoiRequestStatus.REQUESTED);
     }
-
+    
     private boolean newDoiRelatedMetadataDifferFromOld(Publication newPublication, Publication oldPublication) {
         DoiRegistrarEntryFields doiInfoNew = DoiRegistrarEntryFields.fromPublication(newPublication);
         DoiRegistrarEntryFields doiInfoOld = extractInfoFromOldInstance(oldPublication);
         return !doiInfoNew.equals(doiInfoOld);
     }
-
+    
     private DoiRegistrarEntryFields extractInfoFromOldInstance(Publication oldPublication) {
         return nonNull(oldPublication) ? DoiRegistrarEntryFields.fromPublication(oldPublication) : null;
     }

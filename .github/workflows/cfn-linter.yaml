@@ -1,6 +1,6 @@
 name: Lint CloudFormation Templates
 
-on: [push]
+on: [ push ]
 
 jobs:
   cloudformation-linter:
@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: cfn-lint
-      uses: scottbrenner/cfn-lint-action@main
-      with:
-        entrypoint: /bin/sh
-        args: "-c \"cat template.yaml | sed '/CODEBUILD_RESOLVED_SOURCE_VERSION/d' | cfn-lint -\""
+      - name: cfn-lint
+        uses: scottbrenner/cfn-lint-action@main
+        with:
+          entrypoint: /bin/sh
+          args: "-c \"cat template.yaml | sed '/CODEBUILD_RESOLVED_SOURCE_VERSION/d' | cfn-lint -\""

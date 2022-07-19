@@ -27,22 +27,22 @@ import no.unit.nva.publication.storage.model.WithIdentifier;
 import nva.commons.core.attempt.Try;
 
 public final class DaoUtils {
-
+    
     private static final Clock clock = Clock.systemDefaultZone();
-
+    
     public static Resource sampleResource() {
         Publication publication = PublicationGenerator.randomPublication();
         var additionalIdentifier = Set.of(new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
         publication.setAdditionalIdentifiers(additionalIdentifier);
         return Resource.fromPublication(publication);
     }
-
+    
     public static ResourceDao sampleResourceDao() {
         return Try.of(sampleResource())
             .map(ResourceDao::new)
             .orElseThrow();
     }
-
+    
     public static Stream<Dao<?>> instanceProvider() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
@@ -50,30 +50,30 @@ public final class DaoUtils {
         PublishingRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
         return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
     }
-
+    
     public static DoiRequestDao doiRequestDao(Resource resource) {
         return attempt(() -> DoiRequest.newDoiRequestForResource(resource))
             .map(DoiRequestDao::new)
             .orElseThrow();
     }
-
+    
     static <R extends WithIdentifier & RowLevelSecurity & DataEntry> PutItemRequest toPutItemRequest(
         Dao<R> resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
             .withItem(resource.toDynamoFormat());
     }
-
+    
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publishingRequest = randomPublishingRequest().approve();
         return (PublishingRequestDao) publishingRequest.toDao();
     }
-
+    
     private static MessageDao sampleMessageDao() {
         SortableIdentifier identifier = SortableIdentifier.next();
         UserInstance sender = UserInstance.create(randomString(), randomUri());
         Publication publication = PublicationGenerator.randomPublication();
         Message message = Message.create(sender, publication, randomString(), identifier, clock,
-                                         MessageType.DOI_REQUEST);
+            MessageType.DOI_REQUEST);
         assertThat(message, doesNotHaveEmptyValues());
         return new MessageDao(message);
     }

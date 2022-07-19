@@ -11,7 +11,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import org.junit.jupiter.api.Test;
 
 class UniquePublishingRequestEntryTest {
-
+    
     @Test
     void shouldContainPrimaryKeyThatEnsuresThatOnlyOnePublishingRequestExistsPerPublication() {
         var userInstance = UserInstance.create(randomString(), randomUri());

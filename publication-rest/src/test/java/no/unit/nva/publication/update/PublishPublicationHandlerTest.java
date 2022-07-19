@@ -36,16 +36,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class PublishPublicationHandlerTest {
-
+    
     public static final String HTTPS = "https";
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
-
+    
     private Environment environment;
     private ResourceService publicationService;
     private ByteArrayOutputStream output;
     private Context context;
-
+    
     /**
      * Set up environment for test.
      */
@@ -58,34 +58,34 @@ public class PublishPublicationHandlerTest {
         output = new ByteArrayOutputStream();
         context = mock(Context.class);
     }
-
+    
     @Test
     void publishPublicationHandlerReturnsGatewayResponseWhenInputIsValid() throws Exception {
         var identifier = SortableIdentifier.next();
         var status = mockPublishPublicationStatusResponse();
-
+        
         var handler = callPublishPublicationHandler(identifier);
-
+        
         var actualResponse =
-            GatewayResponse.fromOutputStream(output,PublishPublicationStatusResponse.class);
-
+            GatewayResponse.fromOutputStream(output, PublishPublicationStatusResponse.class);
+        
         GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
             restApiMapper.writeValueAsString(status),
             getResponseHeaders(handler.getLocation(identifier).toString()),
             SC_ACCEPTED
         );
-
+        
         assertEquals(expected, actualResponse);
     }
-
+    
     @Test
     void getLocationReturnsUri() {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         URI location = handler.getLocation(SortableIdentifier.next());
-
+        
         assertNotNull(location);
     }
-
+    
     private PublishPublicationHandler callPublishPublicationHandler(SortableIdentifier identifier) throws IOException {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
@@ -98,7 +98,7 @@ public class PublishPublicationHandlerTest {
         handler.handleRequest(input, output, context);
         return handler;
     }
-
+    
     private PublishPublicationStatusResponse mockPublishPublicationStatusResponse() throws ApiGatewayException {
         PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(
             PUBLISH_IN_PROGRESS, SC_ACCEPTED);
@@ -106,7 +106,7 @@ public class PublishPublicationHandlerTest {
             .thenReturn(status);
         return status;
     }
-
+    
     private Map<String, String> getResponseHeaders(String location) {
         return Map.of(
             CONTENT_TYPE, MediaType.JSON_UTF_8.toString(),
@@ -114,7 +114,7 @@ public class PublishPublicationHandlerTest {
             LOCATION, location
         );
     }
-
+    
     private Map<String, String> getRequestHeaders() {
         return Map.of(
             CONTENT_TYPE, APPLICATION_JSON.getMimeType()

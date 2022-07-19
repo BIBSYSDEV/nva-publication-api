@@ -27,10 +27,10 @@ import no.unit.nva.transformer.dto.TitleDto;
  * which is the required input for {@link no.unit.nva.transformer.Transformer}.
  */
 public final class DataCiteMetadataDtoMapper {
-
+    
     private DataCiteMetadataDtoMapper() {
     }
-
+    
     /**
      * Maps a Publication to DataCiteMetadataDto. For use in the nva doi partner data Transformer.
      *
@@ -47,20 +47,20 @@ public final class DataCiteMetadataDtoMapper {
             .withResourceType(toResourceTypeDto(publication))
             .build();
     }
-
+    
     private static List<Contributor> extractContributors(Publication publication) {
         return getEntityDescription(publication)
             .map(EntityDescription::getContributors)
             .orElse(null);
     }
-
+    
     private static String extractPublicationYear(Publication publication) {
         return getEntityDescription(publication)
             .map(EntityDescription::getDate)
             .map(PublicationDate::getYear)
             .orElse(null);
     }
-
+    
     private static ResourceTypeDto toResourceTypeDto(Publication publication) {
         return getEntityDescription(publication)
             .map(EntityDescription::getReference)
@@ -69,25 +69,25 @@ public final class DataCiteMetadataDtoMapper {
             .map(DataCiteMetadataDtoMapper::newResourceTypeDto)
             .orElse(null);
     }
-
+    
     private static ResourceTypeDto newResourceTypeDto(String resourceType) {
         return new ResourceTypeDto.Builder()
             .withValue(resourceType)
             .build();
     }
-
+    
     private static TitleDto extractTitle(Publication publication) {
         return getEntityDescription(publication)
             .map(EntityDescription::getMainTitle)
             .map(title -> new TitleDto.Builder().withValue(title).build())
             .orElse(null);
     }
-
+    
     private static Optional<EntityDescription> getEntityDescription(Publication publication) {
         return Optional.of(publication)
             .map(Publication::getEntityDescription);
     }
-
+    
     private static PublisherDto extractPublisher(Publication publication) {
         return Optional.of(publication)
             .map(Publication::getPublisher)
@@ -95,11 +95,11 @@ public final class DataCiteMetadataDtoMapper {
             .map(DataCiteMetadataDtoMapper::newPublisherDto)
             .orElse(null);
     }
-
+    
     private static PublisherDto newPublisherDto(URI uri) {
         return new PublisherDto.Builder().withValue(uri.toString()).build();
     }
-
+    
     private static IdentifierDto toIdentifierDto(Publication publication) {
         return Optional.of(publication)
             .map(Publication::getIdentifier)
@@ -109,7 +109,7 @@ public final class DataCiteMetadataDtoMapper {
             .map(uriString -> new IdentifierDto.Builder().withValue(uriString).build())
             .orElse(null);
     }
-
+    
     private static List<CreatorDto> toCreatorDtoList(List<Contributor> contributors) {
         if (contributors == null) {
             return null;
@@ -118,7 +118,7 @@ public final class DataCiteMetadataDtoMapper {
             .map(DataCiteMetadataDtoMapper::toCreatorDto)
             .collect(Collectors.toList());
     }
-
+    
     private static CreatorDto toCreatorDto(Contributor contributor) {
         return new CreatorDto.Builder()
             .withCreatorName(contributor.getIdentity().getName())

@@ -35,7 +35,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -57,7 +56,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ListMessagesHandlerTest extends ResourcesLocalTest {
-
+    
     public static final String SAMPLE_USER = "some@user";
     public static final URI SOME_ORG = URI.create("https://example.com/123");
     public static final Context CONTEXT = mock(Context.class);
@@ -65,7 +64,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     public static final String ALLOW_EVERYTHING = "*";
     public static final String CURATOR_ROLE = "Curator";
     public static final String ROLE_QUERY_PARAMETER = "role";
-
+    
     public static final String SOME_OTHER_ROLE = "SomeOtherRole";
     public static final URI NOT_IMPORTANT = null;
     private static final int NUMBER_OF_PUBLICATIONS = 3;
@@ -74,17 +73,17 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     private InputStream input;
     private ResourceService resourceService;
     private MessageService messageService;
-
+    
     @BeforeEach
     public void init() {
         super.init();
         output = new ByteArrayOutputStream();
-        resourceService = new ResourceService(client,  Clock.systemDefaultZone());
+        resourceService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         var environment = mockEnvironment();
         handler = new ListMessagesHandler(environment, messageService);
     }
-
+    
     @Test
     void listMessagesReturnsOkWhenUserIsAuthenticated() throws IOException {
         input = sampleListRequest();
@@ -92,23 +91,23 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
     }
-
+    
     @Test
     void listMessagesReturnsMessagesPerPublicationsForUser()
         throws IOException {
         var savedMessages = insertSampleMessagesForSingleOwner();
         var owner = extractPublicationOwner(savedMessages.get(0));
-
+        
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
-
+        
         var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var responseObjects = response.getBodyObject(ResourceConversation[].class);
-
+        
         assertThatResponseContainsAllExpectedMessages(savedMessages, responseObjects);
         assertThatResourceDescriptionsContainIdentifierAndTitle(savedMessages, responseObjects);
     }
-
+    
     @Test
     void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
@@ -119,61 +118,61 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
         var allMessages = new ArrayList<Message>();
         allMessages.addAll(messages);
         allMessages.addAll(moreMessages);
-
+        
         var owner = extractPublicationOwner(allMessages.get(0));
-
+        
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
-
+        
         var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var responseObjects = response.getBodyObject(ResourceConversation[].class);
-
+        
         assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(responseObjects);
         assertThatResponseObjectsAreOrderedByOldestMessage(responseObjects);
     }
-
+    
     @Test
     void listMessagesShowsAllSupportMessagesOfAnOrgGroupedByPublicationWhenUserIsCurator()
         throws IOException {
         var publications = createPublicationsOfDifferentOwnersButSamplePublisher();
         final var messages =
             createSampleMessagesFromPublications(publications, UserInstance::fromPublication);
-
+        
         final var expectedResponse = constructExpectedResponse(messages);
-
+        
         var orgURI = messages.get(0).getCustomerId();
         var curator = someCurator(orgURI);
-
+        
         input = defaultCuratorRequest(curator.getUserIdentifier(), curator.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
-
+        
         var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var body = response.getBodyObject(ResourceConversation[].class);
-
+        
         assertThat(Arrays.asList(body), containsInAnyOrder(expectedResponse));
     }
-
+    
     @Test
     void listMessagesReturnsEmptyListWhenUserIsNeitherCreatorOrCurator()
         throws IOException {
         var publications = createPublicationsOfDifferentOwnersButSamplePublisher();
         final var messages =
             createSampleMessagesFromPublications(publications, UserInstance::fromPublication);
-
+        
         var orgURI = messages.get(0).getCustomerId();
         var curator = someCurator(orgURI);
-
+        
         input = userRequest(curator.getUserIdentifier(), curator.getOrganizationUri(), SOME_OTHER_ROLE);
         handler.handleRequest(input, output, CONTEXT);
-
+        
         var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var body = response.getBodyObject(ResourceConversation[].class);
-
+        
         assertThat(Arrays.asList(body), is(empty()));
     }
-
+    
     private List<Publication> createPublicationsOfDifferentOwnersButSamplePublisher() {
-
+        
         var publisher = PublicationGenerator.randomPublication().getPublisher();
         return samplePublicationsOfDifferentOwners()
             .stream()
@@ -182,13 +181,13 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
+    
     private List<Publication> samplePublicationsOfDifferentOwners() {
         return IntStream.range(0, ListMessagesHandlerTest.NUMBER_OF_PUBLICATIONS).boxed()
             .map(ignored -> PublicationGenerator.randomPublication())
             .collect(Collectors.toList());
     }
-
+    
     private ResourceConversation[] constructExpectedResponse(List<Message> messages) {
         var conversations = messages.stream()
             .collect(Collectors.groupingBy(Message::getResourceIdentifier))
@@ -197,27 +196,27 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
             .map(ResourceConversation::fromMessageList)
             .flatMap(List::stream)
             .collect(Collectors.toList());
-
+        
         return conversations.toArray(ResourceConversation[]::new);
     }
-
+    
     private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
-
+        
         List<ResourceConversation> sorted = Arrays.stream(responseObjects)
             .sorted(this::objectWithOldestMessageFirst)
             .collect(Collectors.toList());
         List<ResourceConversation> actualResponseObjects = Arrays.asList(responseObjects);
-
+        
         assertThat(actualResponseObjects, is(equalTo(sorted)));
         assertThat(actualResponseObjects, is(not(sameInstance(sorted))));
     }
-
+    
     private int objectWithOldestMessageFirst(ResourceConversation left, ResourceConversation right) {
         MessageDto oldestMessageLeft = oldestMessage(left);
         MessageDto oldestMessageRight = oldestMessage(right);
         return oldestMessageLeft.getDate().compareTo(oldestMessageRight.getDate());
     }
-
+    
     private MessageDto oldestMessage(ResourceConversation left) {
         return left.getMessageCollections()
             .stream()
@@ -226,91 +225,91 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
             .collect(Collectors.toList())
             .get(0);
     }
-
+    
     private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(
         ResourceConversation[] responseObjects) {
-
+        
         for (ResourceConversation responseObject : responseObjects) {
             assertThatMessagesInEachResourceConversationAreOrderedWithOldestFirst(responseObject);
         }
     }
-
+    
     private void assertThatMessagesInEachResourceConversationAreOrderedWithOldestFirst(
         ResourceConversation resourceConversation) {
         for (MessageCollection messageCollection : resourceConversation.getMessageCollections()) {
             assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(messageCollection);
         }
     }
-
+    
     private void assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(MessageCollection messageCollection) {
         var messages = messageCollection.getMessages();
         List<MessageDto> sortedMessages = messages.stream()
             .sorted(Comparator.comparing(MessageDto::getDate))
             .collect(Collectors.toList());
-
+        
         assertThat(messages, is(not(sameInstance(sortedMessages))));
         assertThat(messages, is(equalTo(sortedMessages)));
     }
-
+    
     private Publication createPublication(ResourceService resourceService, Publication p) throws ApiGatewayException {
         return resourceService.createPublication(UserInstance.fromPublication(p), p);
     }
-
+    
     private Publication createPublication(UserInstance userInstance) throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         publication.setResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), NOT_IMPORTANT));
         publication.setPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build());
         return createPublication(resourceService, publication);
     }
-
+    
     private void assertThatResourceDescriptionsContainIdentifierAndTitle(List<Message> savedMessages,
                                                                          ResourceConversation[] responseObjects) {
-
+        
         List<PublicationSummary> actualPublicationSummaries = extractPublicationSummaryFromResponse(responseObjects);
         PublicationSummary[] expectedPublicationSummaries = constructExpectedPublicationSummaries(savedMessages);
         assertThat(actualPublicationSummaries, containsInAnyOrder(expectedPublicationSummaries));
     }
-
+    
     private void assertThatResponseContainsAllExpectedMessages(List<Message> savedMessages,
                                                                ResourceConversation[] responseObjects) {
         List<MessageDto> actualMessages = extractAllMessagesFromResponse(responseObjects);
         MessageDto[] expectedMessages = constructExpectedMessages(savedMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
-
+    
     private InputStream defaultCuratorRequest(String userIdentifier, URI organizationUri)
         throws JsonProcessingException {
         return userRequest(userIdentifier, organizationUri, CURATOR_ROLE);
     }
-
+    
     private InputStream defaultUserRequest(String userIdentifier, URI organizationUri)
         throws JsonProcessingException {
         return userRequest(userIdentifier, organizationUri, CREATOR_ROLE);
     }
-
+    
     private InputStream userRequest(String userIdentifier, URI organizationUri, String requestedRole)
         throws JsonProcessingException {
         var requestBuilder = new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
             .withNvaUsername(userIdentifier)
             .withCustomerId(organizationUri)
             .withQueryParameters(Map.of(ROLE_QUERY_PARAMETER, requestedRole));
-
+        
         if (CURATOR_ROLE.equals(requestedRole)) {
-            requestBuilder.withAccessRights(organizationUri,APPROVE_DOI_REQUEST);
+            requestBuilder.withAccessRights(organizationUri, APPROVE_DOI_REQUEST);
         }
         return requestBuilder.build();
     }
-
+    
     private UserInstance extractPublicationOwner(Message message) {
         return UserInstance.create(message.getOwner(), message.getCustomerId());
     }
-
+    
     private List<PublicationSummary> extractPublicationSummaryFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
             .map(ResourceConversation::getPublicationSummary)
             .collect(Collectors.toList());
     }
-
+    
     private PublicationSummary[] constructExpectedPublicationSummaries(List<Message> savedMessages) {
         return savedMessages
             .stream()
@@ -318,14 +317,14 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
             .collect(Collectors.toList())
             .toArray(PublicationSummary[]::new);
     }
-
+    
     private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
             .flatMap(responseObject -> responseObject.getMessageCollections().stream())
             .flatMap(messageCollections -> messageCollections.getMessages().stream())
             .collect(Collectors.toList());
     }
-
+    
     private MessageDto[] constructExpectedMessages(List<Message> savedMessages) {
         List<MessageDto> expectedMessages = savedMessages.stream().map(MessageDto::fromMessage)
             .collect(Collectors.toList());
@@ -333,21 +332,21 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
         expectedMessages.toArray(expectedMessagesArray);
         return expectedMessagesArray;
     }
-
+    
     private List<Message> insertSampleMessagesForSingleOwner() {
         UserInstance userInstance = UserInstance.create(randomString(), randomUri());
         List<Publication> publications = createSamplePublicationsForSingleOwner(userInstance);
         return createSampleMessagesFromPublications(publications, this::notTheOwner);
     }
-
+    
     private UserInstance notTheOwner(Publication samplePublication) {
         return someCurator(samplePublication.getPublisher().getId());
     }
-
+    
     private UserInstance someCurator(URI orgId) {
         return UserInstance.create(SOME_OTHER_USER, orgId);
     }
-
+    
     private List<Message> createSampleMessagesFromPublications(List<Publication> publications,
                                                                Function<Publication, UserInstance> sender) {
         return publications.stream()
@@ -355,28 +354,28 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
+    
     private List<Publication> createSamplePublicationsForSingleOwner(UserInstance userInstance) {
         return IntStream.range(0, NUMBER_OF_PUBLICATIONS).boxed()
             .map(attempt(i -> createPublication(userInstance)))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
-
+    
     private Environment mockEnvironment() {
         var env = mock(Environment.class);
         when(env.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_EVERYTHING);
         return env;
     }
-
+    
     private Message createMessage(Publication publication, UserInstance sender)
         throws NotFoundException {
-
+        
         var messageIdentifier = messageService.createMessage(sender, publication, randomString(),
-                                                             MessageType.SUPPORT);
+            MessageType.SUPPORT);
         return messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
     }
-
+    
     private InputStream sampleListRequest() throws JsonProcessingException {
         return defaultUserRequest(SAMPLE_USER, SOME_ORG);
     }

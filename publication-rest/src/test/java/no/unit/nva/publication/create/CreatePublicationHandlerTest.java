@@ -39,20 +39,19 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
-
+    
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
+    public static final Clock CLOCK = Clock.systemDefaultZone();
     private String testUserName;
     private URI testOrgId;
-
-    public static final Clock CLOCK = Clock.systemDefaultZone();
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
     private Publication samplePublication;
     private URI topLevelCristinOrgId;
-
+    
     /**
      * Setting up test environment.
      */
@@ -71,86 +70,86 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         testOrgId = samplePublication.getPublisher().getId();
         topLevelCristinOrgId = randomUri();
     }
-
+    
     @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
         throws Exception {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
-        assertExistenceOfMinimumRequiredFields(publicationResponse);
-    }
-
-    @Test
-    void requestToHandlerReturnsMinRequiredFieldsWhenRequestContainsEmptyResource() throws Exception {
-        var request = createEmptyPublicationRequest();
-        InputStream inputStream = createPublicationRequest(request);
-        handler.handleRequest(inputStream, outputStream, context);
-
+        
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
-
-    private CreatePublicationRequest createEmptyPublicationRequest() {
-        return new CreatePublicationRequest();
+    
+    @Test
+    void requestToHandlerReturnsMinRequiredFieldsWhenRequestContainsEmptyResource() throws Exception {
+        var request = createEmptyPublicationRequest();
+        InputStream inputStream = createPublicationRequest(request);
+        handler.handleRequest(inputStream, outputStream, context);
+        
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
-
+    
     @Test
     void requestToHandlerReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
         var filesetInCreationRequest = PublicationGenerator.randomPublication().getFileSet();
         var request = createEmptyPublicationRequest();
         request.setFileSet(filesetInCreationRequest);
-
+        
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
+        
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertThat(publicationResponse.getFileSet(), is(equalTo(filesetInCreationRequest)));
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
-
+    
     @Test
     void shouldSaveAllSuppliedInformationOfPublicationRequestExceptForInternalInformationDecidedByService()
         throws Exception {
         var request = CreatePublicationRequest.fromPublication(samplePublication);
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
-
+        
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        
         var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
-
+        
         var expectedPublicationResponse =
             constructResponseSettingFieldsThatAreNotCopiedByTheRequest(samplePublication, actualPublicationResponse);
-
+        
         var diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
         assertThat(actualPublicationResponse.getIdentifier(), is(equalTo(expectedPublicationResponse.getIdentifier())));
         assertThat(actualPublicationResponse.getPublisher(), is(equalTo(expectedPublicationResponse.getPublisher())));
         assertThat(diff.prettyPrint(), actualPublicationResponse, is(equalTo(expectedPublicationResponse)));
     }
-
+    
     @Test
     void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
         var event = requestWithoutUsername(createEmptyPublicationRequest());
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(),is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
-
+    
+    private CreatePublicationRequest createEmptyPublicationRequest() {
+        return new CreatePublicationRequest();
+    }
+    
     private PublicationResponse constructResponseSettingFieldsThatAreNotCopiedByTheRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         var expectedPublication = setAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication,
-                                                                                   actualPublicationResponse);
+            actualPublicationResponse);
         return PublicationResponse.fromPublication(expectedPublication);
     }
-
+    
     private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         return attempt(() -> removeAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication))
@@ -158,7 +157,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                      setAllFieldsThatAreAutomaticallySetByResourceService(publication, actualPublicationResponse))
             .orElseThrow();
     }
-
+    
     private Publication setAllFieldsThatAreAutomaticallySetByResourceService(
         Publication samplePublication,
         PublicationResponse actualPublicationResponse) {
@@ -170,7 +169,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withStatus(PublicationStatus.DRAFT)
             .build();
     }
-
+    
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
         return samplePublication.copy()
             .withDoiRequest(null)
@@ -182,7 +181,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             //            .withResourceOwner(null)
             .build();
     }
-
+    
     private void assertExistenceOfMinimumRequiredFields(PublicationResponse publicationResponse) {
         assertThat(publicationResponse.getIdentifier(), is(not(nullValue())));
         assertThat(publicationResponse.getIdentifier(), is(instanceOf(SortableIdentifier.class)));
@@ -191,9 +190,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
     }
-
+    
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
-
+        
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
             .withNvaUsername(testUserName)
             .withCustomerId(testOrgId)
@@ -201,9 +200,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withBody(request)
             .build();
     }
-
+    
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
-
+        
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
             .withCustomerId(testOrgId)
             .withBody(request)

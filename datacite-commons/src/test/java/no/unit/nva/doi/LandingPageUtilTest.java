@@ -15,10 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 public class LandingPageUtilTest {
-
+    
     public static final String INVALID_HOST = "~~!@#$";
     public static final String SOME_IDENTIFIER = "someIdentifier";
-
+    
     @Test
     public void constructResourceUriReturnsTheIdOfTheResource() {
         LandingPageUtil landingPageUtil = new LandingPageUtil(new Environment());
@@ -26,7 +26,7 @@ public class LandingPageUtilTest {
         assertThat(uri.toString(), containsString(LandingPageUtil.DEFAULT_RESOURCES_HOST));
         assertThat(uri.toString(), containsString(SOME_IDENTIFIER));
     }
-
+    
     @Test
     public void constructResourceThrowsExceptionWhenHostIsInvalid() {
         Environment mockEnv = mock(Environment.class);

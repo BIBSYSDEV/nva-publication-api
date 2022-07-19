@@ -99,17 +99,17 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         assertThat(retrievedByPublicationIdentifier, is(equalTo(persistedRquest)));
     }
     
-    private Publication createPublication() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        return resourceService.createPublication(userInstance, publication);
-    }
-    
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publication = PublicationGenerator.randomPublication();
         var publishingRequestCase = randomPublishingRequest(publication).approve();
         publishingRequestCase.setStatus(randomElement(PublishingRequestStatus.values()));
         return (PublishingRequestDao) publishingRequestCase.toDao();
+    }
+    
+    private Publication createPublication() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        return resourceService.createPublication(userInstance, publication);
     }
     
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {

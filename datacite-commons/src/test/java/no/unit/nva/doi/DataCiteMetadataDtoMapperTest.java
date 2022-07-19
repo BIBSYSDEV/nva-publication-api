@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class DataCiteMetadataDtoMapperTest {
-
+    
     public static final String MAIN_TITLE = "MainTitle";
     public static final String SOME_ISSUE = "1";
     public static final String SOME_ARTICLE_NUMBER = "1";
@@ -29,30 +29,31 @@ public class DataCiteMetadataDtoMapperTest {
     public static final String SOME_MONTH = "12";
     public static final String SOME_DAY = "52";
     public static final int NOT_THE_CREATOR = 2;
-    public static final Organization SOME_PUBLISHER = new Builder().withId(URI.create("https://some-org.example.org")).build();
+    public static final Organization SOME_PUBLISHER = new Builder().withId(URI.create("https://some-org.example.org"))
+        .build();
     public static final String SOME_ARP_ID = "someArpId";
     public static final int THE_CREATOR = 1;
     public static final String SOME_OTHER_ARP_ID = "someOtherArpId";
     public static final String THE_CREATOR_NAME = "TheCreatorName";
     public static final String NOT_THE_CREATOR_NAME = "notTheCreatorName";
-
+    
     @Test
     public void fromPublicationReturnsDataCiteMetadataDto() {
         Publication publication = samplePublication();
-
+        
         DataCiteMetadataDto dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication);
-
+        
         assertThat(dataCiteMetadataDto, doesNotHaveEmptyValues());
     }
-
+    
     @Test
     public void fromPublicationReturnsDataCiteMetadataDtoWithNullFieldsWhenPublicationIsEmpty() {
         Publication publication = Mockito.mock(Publication.class);
         DataCiteMetadataDto dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication);
-
+        
         assertThat(dataCiteMetadataDto, notNullValue());
     }
-
+    
     private Publication samplePublication() {
         return new Publication.Builder()
             .withIdentifier(SortableIdentifier.next())
@@ -60,7 +61,7 @@ public class DataCiteMetadataDtoMapperTest {
             .withEntityDescription(createEntityDescriptionWithExpectedAndUnexpectedContributors())
             .build();
     }
-
+    
     private EntityDescription createEntityDescriptionWithExpectedAndUnexpectedContributors() {
         return new EntityDescription.Builder()
             .withReference(createReference())
@@ -69,7 +70,7 @@ public class DataCiteMetadataDtoMapperTest {
             .withContributors(List.of(createUnexpectedContributor(), createExpectedContributor()))
             .build();
     }
-
+    
     private Contributor createExpectedContributor() {
         return new Contributor.Builder()
             .withSequence(THE_CREATOR)
@@ -79,7 +80,7 @@ public class DataCiteMetadataDtoMapperTest {
                 .build())
             .build();
     }
-
+    
     private Contributor createUnexpectedContributor() {
         return new Contributor.Builder()
             .withSequence(NOT_THE_CREATOR)
@@ -89,7 +90,7 @@ public class DataCiteMetadataDtoMapperTest {
                 .build())
             .build();
     }
-
+    
     private PublicationDate createPublicationDate() {
         return new PublicationDate.Builder()
             .withYear(SOME_YEAR)
@@ -97,12 +98,12 @@ public class DataCiteMetadataDtoMapperTest {
             .withDay(SOME_DAY)
             .build();
     }
-
+    
     private Reference createReference() {
         return new Reference.Builder()
             .withPublicationInstance(createJournalReview()).build();
     }
-
+    
     private JournalReview createJournalReview() {
         return new JournalReview.Builder()
             .withIssue(SOME_ISSUE)

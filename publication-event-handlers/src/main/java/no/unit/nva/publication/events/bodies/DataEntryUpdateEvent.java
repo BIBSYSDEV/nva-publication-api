@@ -25,7 +25,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
-   
+    
     private static final Map<Class<?>, String> ENTRY_TYPE_TO_TOPIC_MAP = Map.of(
         Resource.class, RESOURCE_UPDATE_EVENT_TOPIC,
         DoiRequest.class, DOI_REQUEST_UPDATE_EVENT_TOPIC,

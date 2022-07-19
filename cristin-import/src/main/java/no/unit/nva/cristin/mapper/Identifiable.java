@@ -17,12 +17,12 @@ import nva.commons.core.JacocoGenerated;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class Identifiable {
-
+    
     @JsonProperty("id")
     private String id;
-
+    
     @JacocoGenerated
     public Identifiable() {
-
+    
     }
 }

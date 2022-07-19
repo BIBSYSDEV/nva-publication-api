@@ -39,25 +39,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ReadResourceService {
-
+    
     public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX = "Could not find resource with "
                                                                                + "identifier: ";
     public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR = RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX
                                                                         + "{}, {} ";
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
-
+    
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
-
+    
     private static final Logger logger = LoggerFactory.getLogger(ReadResourceService.class);
-
+    
     private final AmazonDynamoDB client;
     private final String tableName;
-
+    
     protected ReadResourceService(AmazonDynamoDB client, String tableName) {
         this.client = client;
         this.tableName = tableName;
     }
-
+    
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         if (isNull(resourceIdentifier)) {
@@ -65,76 +65,54 @@ public class ReadResourceService {
         }
         return getResource(userInstance, resourceIdentifier).toPublication();
     }
-
+    
     public Publication getPublication(Publication publication) throws NotFoundException {
         return getResource(Resource.fromPublication(publication)).toPublication();
     }
-
+    
     public List<Publication> getResourcesByOwner(UserInstance userInstance) {
         String partitionKey = constructPrimaryPartitionKey(userInstance);
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
         Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
-                                                                                     String.class);
+            String.class);
         Map<String, String> namesMap = querySpec.getNameMap();
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
-
+        
         return queryResultToListOfPublications(result);
     }
-
-    private String constructPrimaryPartitionKey(UserInstance userInstance) {
-        return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
-                                                        userInstance.getUserIdentifier());
-    }
-
-    private List<Publication> queryResultToListOfPublications(QueryResult result) {
-        return queryResultToResourceList(result)
-            .stream()
-            .map(Resource::toPublication)
-            .collect(Collectors.toList());
-    }
-
+    
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-
+        
         QueryRequest queryRequest = createGetByResourceIdentifierQueryRequest(identifier);
-
+        
         QueryResult result = client.query(queryRequest);
         ResourceDao fetchedDao = queryResultToSingleResource(identifier, result);
         return fetchedDao.getData();
     }
-
+    
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
         return getResource(resourceQueryObject(userInstance, identifier));
     }
-
+    
     protected Resource getResource(Resource resource) throws NotFoundException {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
         ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
         return fetchedDao.getData();
     }
-
+    
     @SuppressWarnings(RAWTYPES)
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
         QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject))
             .orElseThrow(fail -> logQueryRelatedDataAndThrowException(fail,
-                                                                      userInstance,
-                                                                      resourceIdentifier));
+                userInstance,
+                resourceIdentifier));
         QueryResult queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
     }
-
-    private RuntimeException logQueryRelatedDataAndThrowException(Failure<QueryRequest> fail,
-                                                                  UserInstance userInstance,
-                                                                  SortableIdentifier resourceIdentifier) {
-
-        logger.error("Could fetch Resource for user:");
-        logger.error("UserInstance" + userInstance.toJsonString());
-        logger.error("Resource identifier:" + resourceIdentifier.toString());
-        return new RuntimeException(fail.getException());
-    }
-
+    
     private static ResourceDao queryResultToSingleResource(SortableIdentifier identifier, QueryResult result)
         throws NotFoundException {
         return result.getItems()
@@ -143,13 +121,13 @@ public class ReadResourceService {
             .collect(SingletonCollector.tryCollect())
             .orElseThrow(fail -> handleGetResourceByIdentifierError(fail, identifier));
     }
-
+    
     private static NotFoundException handleGetResourceByIdentifierError(Failure<ResourceDao> fail,
                                                                         SortableIdentifier identifier) {
         logger.warn(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR, identifier.toString(), fail.getException());
         return new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier.toString());
     }
-
+    
     private static List<Resource> queryResultToResourceList(QueryResult result) {
         return result.getItems()
             .stream()
@@ -157,12 +135,34 @@ public class ReadResourceService {
             .map(ResourceDao::getData)
             .collect(Collectors.toList());
     }
-
+    
+    private String constructPrimaryPartitionKey(UserInstance userInstance) {
+        return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
+            userInstance.getUserIdentifier());
+    }
+    
+    private List<Publication> queryResultToListOfPublications(QueryResult result) {
+        return queryResultToResourceList(result)
+            .stream()
+            .map(Resource::toPublication)
+            .collect(Collectors.toList());
+    }
+    
+    private RuntimeException logQueryRelatedDataAndThrowException(Failure<QueryRequest> fail,
+                                                                  UserInstance userInstance,
+                                                                  SortableIdentifier resourceIdentifier) {
+        
+        logger.error("Could fetch Resource for user:");
+        logger.error("UserInstance" + userInstance.toJsonString());
+        logger.error("Resource identifier:" + resourceIdentifier.toString());
+        return new RuntimeException(fail.getException());
+    }
+    
     private QueryRequest createGetByResourceIdentifierQueryRequest(SortableIdentifier identifier) {
-
+        
         Resource resource = resourceQueryObject(identifier);
         ResourceDao resourceDao = new ResourceDao(resource);
-
+        
         String keyCondition = "#PK = :PK AND #SK = :SK";
         Map<String, String> expressionAttributeName =
             Map.of(
@@ -171,9 +171,9 @@ public class ReadResourceService {
             );
         Map<String, AttributeValue> expressionAttributeValues =
             Map.of(":PK", new AttributeValue(resourceDao.getResourceByIdentifierPartitionKey()),
-                   ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
+                ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
             );
-
+        
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME)
@@ -181,7 +181,7 @@ public class ReadResourceService {
             .withExpressionAttributeNames(expressionAttributeName)
             .withExpressionAttributeValues(expressionAttributeValues);
     }
-
+    
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
                                      Map<String, String> namesMap) {
         return client.query(
@@ -191,22 +191,22 @@ public class ReadResourceService {
                 .withTableName(tableName)
         );
     }
-
+    
     private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
         return new ExpressionSpecBuilder()
             .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
     }
-
+    
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
         GetItemResult result = client.getItem(new GetItemRequest()
-                                                  .withTableName(tableName)
-                                                  .withKey(primaryKey));
+            .withTableName(tableName)
+            .withKey(primaryKey));
         if (isNull(result.getItem())) {
             throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
         }
         return result;
     }
-
+    
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
         Map<String, Condition> keyConditions = queryObject
             .byResource(
@@ -218,7 +218,7 @@ public class ReadResourceService {
             .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .withKeyConditions(keyConditions);
     }
-
+    
     @SuppressWarnings(RAWTYPES)
     private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
         return queryResult.getItems()

@@ -1,4 +1,4 @@
-plugins{
+plugins {
     id 'nva-publication-api.java-library-conventions'
 }
 
@@ -24,7 +24,7 @@ subprojects {
         into 'build/dynamodb-local'
     }
 
-    test{
+    test {
         dependsOn copyNativeDeps
         systemProperty "java.library.path", 'build/dynamodb-local'
     }

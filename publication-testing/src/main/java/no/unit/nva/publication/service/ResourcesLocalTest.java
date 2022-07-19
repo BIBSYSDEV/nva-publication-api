@@ -55,11 +55,11 @@ public class ResourcesLocalTest {
     
     private CreateTableRequest createTableRequest() {
         return new CreateTableRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withAttributeDefinitions(attributeDefinitions())
-                   .withKeySchema(primaryKeySchema())
-                   .withGlobalSecondaryIndexes(globalSecondaryIndexes())
-                   .withBillingMode(BillingMode.PAY_PER_REQUEST);
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withAttributeDefinitions(attributeDefinitions())
+            .withKeySchema(primaryKeySchema())
+            .withGlobalSecondaryIndexes(globalSecondaryIndexes())
+            .withBillingMode(BillingMode.PAY_PER_REQUEST);
     }
     
     private Collection<GlobalSecondaryIndex> globalSecondaryIndexes() {
@@ -81,18 +81,18 @@ public class ResourcesLocalTest {
                 RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME)
         );
         indexes.add(
-                newGsi(RESOURCE_BY_CRISTIN_ID_INDEX_NAME,
-                        RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME,
-                        RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
+            newGsi(RESOURCE_BY_CRISTIN_ID_INDEX_NAME,
+                RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME,
+                RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
         );
         return indexes;
     }
     
     private GlobalSecondaryIndex newGsi(String indexName, String partitionKeyName, String sortKeyName) {
         return new GlobalSecondaryIndex()
-                   .withIndexName(indexName)
-                   .withKeySchema(keySchema(partitionKeyName, sortKeyName))
-                   .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+            .withIndexName(indexName)
+            .withKeySchema(keySchema(partitionKeyName, sortKeyName))
+            .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
     }
     
     private Collection<KeySchemaElement> primaryKeySchema() {
@@ -129,7 +129,7 @@ public class ResourcesLocalTest {
     
     private AttributeDefinition newAttribute(String keyName) {
         return new AttributeDefinition()
-                   .withAttributeName(keyName)
-                   .withAttributeType(STRING_TYPE);
+            .withAttributeName(keyName)
+            .withAttributeType(STRING_TYPE);
     }
 }

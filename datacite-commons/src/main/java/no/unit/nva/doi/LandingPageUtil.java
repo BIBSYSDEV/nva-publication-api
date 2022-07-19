@@ -14,25 +14,25 @@ import org.slf4j.LoggerFactory;
  * Utility class to generate landing page URI for NVA publications.
  */
 public final class LandingPageUtil {
-
+    
     public static final String ERROR_PUBLICATION_LANDING_PAGE_COULD_NOT_BE_CONSTRUCTED =
         "Landing page could not be constructed";
     public static final String URI_SCHEME = "https";
     public static final String ABSOLUTE_RESOURCES_PATH = "/publication/";
     public static final String EPMTY_FRAGMENT = null;
     public static final String RESOURCES_HOST_ENV_VARIABLE = "RESOURCES_HOST";
-
+    
     public static final String DEFAULT_RESOURCES_HOST = "api.nva.unit.no";
     public static final LandingPageUtil LANDING_PAGE_UTIL = new LandingPageUtil(new Environment());
     private static final Logger logger = LoggerFactory.getLogger(LandingPageUtil.class);
     private final Environment environment;
     private final String resourcesHost;
-
+    
     protected LandingPageUtil(Environment environment) {
         this.environment = environment;
         this.resourcesHost = readHostFromEnvironment();
     }
-
+    
     /**
      * Create publication landing page URI.
      *
@@ -45,22 +45,22 @@ public final class LandingPageUtil {
             .flatMap(attempt -> attempt.toOptional(LandingPageUtil::logFailure))
             .orElseThrow(() -> new IllegalArgumentException(ERROR_PUBLICATION_LANDING_PAGE_COULD_NOT_BE_CONSTRUCTED));
     }
-
+    
     @JacocoGenerated
     public String getResourcesHost() {
         return resourcesHost;
     }
-
+    
     @JacocoGenerated
     private static void logFailure(Failure<URI> fail) {
         logger.error(fail.getException().getMessage(), fail.getException());
     }
-
+    
     private URI createLandingPageUri(String publicationIdentifier) throws URISyntaxException {
         String uriPath = ABSOLUTE_RESOURCES_PATH + publicationIdentifier;
         return new URI(URI_SCHEME, resourcesHost, uriPath, EPMTY_FRAGMENT);
     }
-
+    
     private String readHostFromEnvironment() {
         return environment.readEnvOpt(RESOURCES_HOST_ENV_VARIABLE).orElse(DEFAULT_RESOURCES_HOST);
     }

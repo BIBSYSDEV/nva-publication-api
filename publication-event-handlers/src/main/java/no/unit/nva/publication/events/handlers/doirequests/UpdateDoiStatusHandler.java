@@ -8,26 +8,25 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
-
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 
 public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<DoiUpdateHolder, Void> {
-
+    
     public static final Void SUCCESSFULLY_HANDLED_EVENT = null;
     private final ResourceService resourceService;
-
+    
     @JacocoGenerated
     public UpdateDoiStatusHandler() {
         this(defaultResourceService());
     }
-
+    
     public UpdateDoiStatusHandler(ResourceService resourceService) {
         super(DoiUpdateHolder.class);
         this.resourceService = resourceService;
     }
-
+    
     @Override
     protected Void processInputPayload(DoiUpdateHolder input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<DoiUpdateHolder>> event,
@@ -35,14 +34,14 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
         attempt(() -> updateDoi(input)).orElseThrow(this::handleFailure);
         return SUCCESSFULLY_HANDLED_EVENT;
     }
-
+    
     @JacocoGenerated
     private static ResourceService defaultResourceService() {
         return new ResourceService(
             AmazonDynamoDBClientBuilder.defaultClient(),
             Clock.systemDefaultZone());
     }
-
+    
     private RuntimeException handleFailure(Failure<Void> fail) {
         Exception exception = fail.getException();
         if (exceptionInstanceOfRuntimeException(exception)) {
@@ -51,11 +50,11 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
             return new RuntimeException(exception);
         }
     }
-
+    
     private boolean exceptionInstanceOfRuntimeException(Exception exception) {
         return exception instanceof RuntimeException;
     }
-
+    
     private Void updateDoi(DoiUpdateHolder input) {
         new UpdateDoiStatusProcess(resourceService, input).updateDoi();
         return null;
