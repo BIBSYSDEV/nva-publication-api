@@ -38,7 +38,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -154,7 +154,7 @@ public class ResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
     
-    public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
+    public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
         var scanResult = client.scan(scanRequest);
         var values = extractDatabaseEntries(scanResult);
@@ -162,7 +162,7 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
     
-    public void refreshResources(List<DataEntry> dataEntries) {
+    public void refreshResources(List<Entity> dataEntries) {
         final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToS3InBatches(writeRequests);
@@ -200,7 +200,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     // update this method according to current needs.
     //TODO: redesign migration process?
-    public DataEntry migrate(DataEntry dataEntry) {
+    public Entity migrate(Entity dataEntry) {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
                    : dataEntry;
@@ -221,12 +221,12 @@ public class ResourceService extends ServiceWithTransactions {
         return clockForTimestamps;
     }
     
-    private List<DataEntry> refreshAndMigrate(List<DataEntry> dataEntries) {
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
         return dataEntries
             .stream()
             .map(attempt(this::migrate))
             .map(Try::orElseThrow)
-            .map(DataEntry::refreshRowVersion)
+            .map(Entity::refreshRowVersion)
             .collect(Collectors.toList());
     }
     
@@ -255,9 +255,9 @@ public class ResourceService extends ServiceWithTransactions {
             .forEach(client::batchWriteItem);
     }
     
-    private List<WriteRequest> createWriteRequestsForBatchJob(List<DataEntry> refreshedEntries) {
+    private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
         return refreshedEntries.stream()
-            .map(DataEntry::toDao)
+            .map(Entity::toDao)
             .map(Dao::toDynamoFormat)
             .map(item -> new PutRequest().withItem(item))
             .map(WriteRequest::new)
@@ -276,13 +276,13 @@ public class ResourceService extends ServiceWithTransactions {
             .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
     }
     
-    private List<DataEntry> extractDatabaseEntries(ScanResult response) {
+    private List<Entity> extractDatabaseEntries(ScanResult response) {
         return response.getItems()
             .stream()
             .map(CorrectParsingErrors::apply)
             .map(value -> parseAttributeValuesMap(value, Dao.class))
             .map(Dao::getData)
-            .map(DataEntry.class::cast)
+            .map(Entity.class::cast)
             .collect(Collectors.toList());
     }
     

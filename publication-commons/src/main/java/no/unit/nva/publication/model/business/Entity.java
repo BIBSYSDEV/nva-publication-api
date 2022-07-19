@@ -9,18 +9,22 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.Dao;
 
 /**
- * DataEntries are the basic entities associated with a Resource, ignoring database implementation details. E.g., a
- * DataEntry represents actual data stored in the Database, but without the required Dynamo specific fields i.e., the
- * Primary and Range keys.
+ * Entities are the basic entities associated with a Resource, ignoring database implementation details. An Entity
+ * contains all information necessary to identify and describe the entity, but does not contain database details.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(TicketEntry.class)
 })
-public interface DataEntry {
+public interface Entity extends RowLevelSecurity{
     
     String ROW_VERSION = "rowVersion";
+    
+    @JsonProperty("identifier")
+    SortableIdentifier getIdentifier();
+    
+    void setIdentifier(SortableIdentifier identifier);
     
     static String nextRowVersion() {
         return UUID.randomUUID().toString();
@@ -28,14 +32,13 @@ public interface DataEntry {
     
     Publication toPublication();
     
-    SortableIdentifier getIdentifier();
-    
+    //TODO: this does not belong here
     @JsonProperty(ROW_VERSION)
     String getRowVersion();
     
     void setRowVersion(String rowVersion);
     
-    default DataEntry refreshRowVersion() {
+    default Entity refreshRowVersion() {
         setRowVersion(nextRowVersion());
         return this;
     }

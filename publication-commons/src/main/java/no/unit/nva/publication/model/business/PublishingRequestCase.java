@@ -15,11 +15,9 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PublishingRequestCase
-    implements WithIdentifier,
-               RowLevelSecurity,
+    implements RowLevelSecurity,
                WithStatus,
-               TicketEntry,
-               ConnectedToResource {
+               TicketEntry {
     
     public static final String TYPE = "PublishingRequestCase";
     public static final String STATUS_FIELD = "status";

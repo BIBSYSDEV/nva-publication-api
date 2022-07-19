@@ -2,7 +2,6 @@ package no.unit.nva.publication.model.storage;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import no.unit.nva.publication.model.business.WithIdentifier;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName("IdEntry")
@@ -21,7 +20,7 @@ public class IdentifierEntry extends UniquenessEntry {
         super(identifier);
     }
     
-    public static IdentifierEntry create(WithIdentifier withIdentifier) {
+    public static IdentifierEntry create(DynamoEntry withIdentifier) {
         return new IdentifierEntry(withIdentifier.getIdentifier().toString());
     }
     

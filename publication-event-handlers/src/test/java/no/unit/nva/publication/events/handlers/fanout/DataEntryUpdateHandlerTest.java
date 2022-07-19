@@ -175,7 +175,7 @@ public class DataEntryUpdateHandlerTest {
         throws JsonProcessingException {
         var publication = PublicationGenerator.randomPublication();
         var resource = Resource.fromPublication(publication);
-        var identifierEntry = IdentifierEntry.create(resource);
+        var identifierEntry = IdentifierEntry.create(resource.toDao());
         return convertToAttributeValueMap(identifierEntry);
     }
     

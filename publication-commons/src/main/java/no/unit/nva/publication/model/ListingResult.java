@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import nva.commons.core.JacocoGenerated;
 
 public class ListingResult<T> {
@@ -21,7 +21,7 @@ public class ListingResult<T> {
         this.truncated = truncated;
     }
     
-    public static ListingResult<DataEntry> empty() {
+    public static ListingResult<Entity> empty() {
         return new ListingResult<>(Collections.emptyList(), null, true);
     }
     

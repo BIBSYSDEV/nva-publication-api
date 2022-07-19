@@ -16,9 +16,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.model.business.ConnectedToResource;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -216,8 +216,8 @@ public class PublicationSummary {
         this.owner = owner;
     }
     
-    private static URI extractPublicationId(ConnectedToResource connectedToResource) {
-        return toPublicationId(connectedToResource.getResourceIdentifier());
+    private static URI extractPublicationId(TicketEntry ticketEntry) {
+        return toPublicationId(ticketEntry.getResourceIdentifier());
     }
     
     private static URI toPublicationId(SortableIdentifier identifier) {

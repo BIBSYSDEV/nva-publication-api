@@ -5,6 +5,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 
@@ -16,6 +17,7 @@ import nva.commons.core.JacocoGenerated;
 })
 public abstract class UniquenessEntry implements DynamoEntry, WithPrimaryKey {
     
+    public static final String DESERIALIZATION_ERROR_MESSAGE = "UniquenessEntries are not supposed to be deserialized";
     private String partitionKey;
     private String sortKey;
     
@@ -29,6 +31,12 @@ public abstract class UniquenessEntry implements DynamoEntry, WithPrimaryKey {
         this.partitionKey = getType() + DatabaseConstants.KEY_FIELDS_DELIMITER + identifier;
         this.sortKey = partitionKey;
     }
+    
+    @Override
+    public final SortableIdentifier getIdentifier() {
+        throw new UnsupportedOperationException(DESERIALIZATION_ERROR_MESSAGE);
+    }
+    
     
     @JacocoGenerated
     @Override

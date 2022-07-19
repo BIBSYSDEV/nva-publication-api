@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -35,9 +35,9 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     @JsonProperty(ACTION)
     private final String action;
     @JsonProperty(OLD_DATA)
-    private final DataEntry oldData;
+    private final Entity oldData;
     @JsonProperty(NEW_DATA)
-    private final DataEntry newData;
+    private final Entity newData;
     
     /**
      * Constructor for creating DynamoEntryUpdateEvent.
@@ -49,8 +49,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     @JsonCreator
     public DataEntryUpdateEvent(
         @JsonProperty(ACTION) String action,
-        @JsonProperty(OLD_DATA) DataEntry oldData,
-        @JsonProperty(NEW_DATA) DataEntry newData) {
+        @JsonProperty(OLD_DATA) Entity oldData,
+        @JsonProperty(NEW_DATA) Entity newData) {
         
         this.action = action;
         this.oldData = oldData;
@@ -65,11 +65,11 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         return action;
     }
     
-    public DataEntry getOldData() {
+    public Entity getOldData() {
         return oldData;
     }
     
-    public DataEntry getNewData() {
+    public Entity getNewData() {
         return newData;
     }
     
@@ -106,7 +106,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         return ENTRY_TYPE_TO_TOPIC_MAP.get(type);
     }
     
-    private Class<? extends DataEntry> extractDataEntryType() {
+    private Class<? extends Entity> extractDataEntryType() {
         return nonNull(newData) ? newData.getClass() : oldData.getClass();
     }
 }

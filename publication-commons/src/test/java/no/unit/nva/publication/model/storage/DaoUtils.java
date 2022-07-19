@@ -1,9 +1,9 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -16,14 +16,13 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.RowLevelSecurity;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.WithIdentifier;
 import nva.commons.core.attempt.Try;
 
 public final class DaoUtils {
@@ -57,7 +56,7 @@ public final class DaoUtils {
             .orElseThrow();
     }
     
-    static <R extends WithIdentifier & RowLevelSecurity & DataEntry> PutItemRequest toPutItemRequest(
+    static <R extends RowLevelSecurity & Entity> PutItemRequest toPutItemRequest(
         Dao<R> resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
             .withItem(resource.toDynamoFormat());

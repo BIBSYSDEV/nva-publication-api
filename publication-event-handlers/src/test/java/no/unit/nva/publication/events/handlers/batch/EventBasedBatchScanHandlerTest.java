@@ -32,7 +32,7 @@ import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.stubs.FakeContext;
@@ -162,7 +162,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {
         return new ResourceService(dynamoDbClient, clock) {
             @Override
-            public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
+            public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
                 if (nonNull(startMarker)) {
                     scanningStartingPoints.add(startMarker);
                 }

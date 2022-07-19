@@ -21,7 +21,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.s3.S3Driver;
@@ -118,7 +118,7 @@ public class ExpandDataEntriesHandler
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
     
-    private boolean shouldBeEnriched(DataEntry entry) {
+    private boolean shouldBeEnriched(Entity entry) {
         if (entry instanceof Resource) {
             Resource resource = (Resource) entry;
             return PublicationStatus.PUBLISHED.equals(resource.getStatus());
@@ -137,16 +137,16 @@ public class ExpandDataEntriesHandler
         return attempt(() -> s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string)).orElseThrow();
     }
     
-    private Optional<String> enrich(DataEntry newData) {
+    private Optional<String> enrich(Entity newData) {
         return attempt(() -> createExpandedResourceUpdate(newData))
             .toOptional(fail -> logError(fail, newData));
     }
     
-    private String createExpandedResourceUpdate(DataEntry input) throws JsonProcessingException, NotFoundException {
+    private String createExpandedResourceUpdate(Entity input) throws JsonProcessingException, NotFoundException {
         return resourceExpansionService.expandEntry(input).toJsonString();
     }
     
-    private void logError(Failure<?> fail, DataEntry input) {
+    private void logError(Failure<?> fail, Entity input) {
         Exception exception = fail.getException();
         logger.warn(ERROR_EXPANDING_RESOURCE_WARNING + input.getIdentifier(), exception);
     }

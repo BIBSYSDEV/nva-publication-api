@@ -22,7 +22,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
@@ -72,7 +72,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return fromPublication(associatePublication);
     }
     
-    public PublishingRequestCase getPublishingRequest(DataEntry dataEntry)
+    public PublishingRequestCase getPublishingRequest(Entity dataEntry)
         throws NotFoundException {
         var queryObject = (PublishingRequestCase) dataEntry;
         var queryResult = getFromDatabase(queryObject);

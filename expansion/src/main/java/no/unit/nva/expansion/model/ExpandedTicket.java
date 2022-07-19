@@ -21,6 +21,7 @@ public interface ExpandedTicket extends ExpandedDataEntry {
     
     @JsonProperty(PUBLICATION_FIELD)
     PublicationSummary getPublicationSummary();
+    
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     Set<URI> getOrganizationIds();
 }

@@ -12,7 +12,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiUpdateRequestEvent;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -87,7 +87,7 @@ public class DoiRequestEventProducer
         }
     }
     
-    private Publication toPublication(DataEntry dataEntry) {
+    private Publication toPublication(Entity dataEntry) {
         return dataEntry != null ? dataEntry.toPublication() : null;
     }
     

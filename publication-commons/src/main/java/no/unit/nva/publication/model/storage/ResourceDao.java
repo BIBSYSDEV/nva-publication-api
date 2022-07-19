@@ -82,12 +82,7 @@ public class ResourceDao extends Dao<Resource>
     public URI getCustomerId() {
         return data.getPublisher().getId();
     }
-    
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return data.getIdentifier();
-    }
-    
+
     @Override
     protected String getOwner() {
         return data.getOwner();

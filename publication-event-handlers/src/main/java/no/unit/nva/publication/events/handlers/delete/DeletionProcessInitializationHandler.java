@@ -8,7 +8,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
 import nva.commons.core.JacocoGenerated;
 
@@ -37,7 +37,7 @@ public class DeletionProcessInitializationHandler
                && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
     }
     
-    private Publication toPublication(DataEntry dataEntry) {
+    private Publication toPublication(Entity dataEntry) {
         Publication publication = null;
         if (dataEntry instanceof DoiRequest) {
             publication = dataEntry.toPublication();

@@ -87,11 +87,6 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
     }
     
     @Override
-    public SortableIdentifier getIdentifier() {
-        return data.getIdentifier();
-    }
-    
-    @Override
     protected String getOwner() {
         return data.getOwner();
     }
