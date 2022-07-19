@@ -3,7 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation project(":storage-model")
     implementation project(":publication-commons")
 
     implementation libs.nva.apigateway

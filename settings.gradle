@@ -2,7 +2,6 @@ enableFeaturePreview('VERSION_CATALOGS')
 rootProject.name = 'nva-publication-api'
 include 'publication-constants'
 include 'publication-testing'
-include 'storage-model'
 include 'publication-commons'
 include 'doi-requests'
 include 'messages'

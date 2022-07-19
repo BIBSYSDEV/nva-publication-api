@@ -1,7 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.StorageModelTestUtils.randomPublishingRequest;
+import static no.unit.nva.publication.storage.model.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

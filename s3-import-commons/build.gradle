@@ -29,7 +29,6 @@ dependencies {
     runtimeOnly libs.jackson.datatype.jsr310
     runtimeOnly libs.jackson.datatype.jdk8
 
-    testImplementation project(":storage-model")
     testImplementation project(":publication-testing")
     testImplementation libs.javafaker
     testImplementation libs.nva.testutils
@@ -37,9 +36,6 @@ dependencies {
     testImplementation libs.aws.sdk2.utils
     testImplementation libs.aws.sdk2.s3
 
-    compileOnly(project(":storage-model")) {
-        because "PMD complains for no/unit/nva/publication/storage/model/daos/DynamoEntry"
-    }
     compileOnly libs.nva.apigateway
     compileOnly libs.nva.identifiers
     compileOnly libs.zalando

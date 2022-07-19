@@ -3,7 +3,6 @@ dependencies {
     implementation(project(':publication-commons')) {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
-    implementation(project(':storage-model'))
     implementation(project(':datacite-commons'))
 
     implementation libs.nva.apigateway
