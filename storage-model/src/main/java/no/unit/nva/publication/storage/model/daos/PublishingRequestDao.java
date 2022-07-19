@@ -20,16 +20,16 @@ import nva.commons.core.JacocoGenerated;
 public class PublishingRequestDao extends Dao<PublishingRequestCase>
     implements JoinWithResource,
                JsonSerializable {
-
+    
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
     public static final String TYPE = "PublishingRequestCase";
     private PublishingRequestCase data;
-
+    
     @JacocoGenerated
     public PublishingRequestDao() {
         super();
     }
-
+    
     public PublishingRequestDao(PublishingRequestCase data) {
         super();
         this.data = data;
@@ -46,74 +46,72 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
             .withKeyConditions(dao.byResource(dao.joinByResourceOrderedType()));
     }
     
-    
-    
     public static PublishingRequestDao queryObject(PublishingRequestCase queryObject) {
         return new PublishingRequestDao(queryObject);
     }
-
+    
     public static PublishingRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                             SortableIdentifier resourceIdentifier) {
         var queryObject =
             PublishingRequestCase.createQuery(resourceOwner, resourceIdentifier, null);
         return new PublishingRequestDao(queryObject);
     }
-
+    
     public static String getContainedType() {
         return PublishingRequestCase.TYPE;
     }
-
+    
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + PublishingRequestCase.TYPE;
     }
-
+    
     @Override
     public PublishingRequestCase getData() {
         return data;
     }
-
+    
     @Override
     public void setData(PublishingRequestCase data) {
         this.data = data;
     }
-
+    
     @Override
     public String getType() {
         return getContainedType();
     }
-
+    
     @Override
     public URI getCustomerId() {
         return data.getCustomerId();
     }
-
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return data.getIdentifier();
     }
-
+    
     @Override
     protected String getOwner() {
         return data.getOwner();
     }
-
+    
     @Override
     public String joinByResourceOrderedType() {
         return joinByResourceContainedOrderedType();
     }
-
+    
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return data.getResourceIdentifier();
     }
-
+    
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getData());
     }
-
+    
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -126,7 +124,7 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
         PublishingRequestDao that = (PublishingRequestDao) o;
         return Objects.equals(getData(), that.getData());
     }
-
+    
     @Override
     @JacocoGenerated
     public String toString() {

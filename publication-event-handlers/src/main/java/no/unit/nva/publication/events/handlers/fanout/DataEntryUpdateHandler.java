@@ -29,29 +29,29 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class DataEntryUpdateHandler extends EventHandler<EventReference, EventReference> {
-
+    
     public static final DataEntry NO_VALUE = null;
-    private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
     public static final URI BLOB_IS_EMPTY = null;
     public static final EventReference DO_NOT_EMIT_EVENT = null;
+    private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
     private final S3Driver s3Driver;
-
+    
     @JacocoGenerated
     public DataEntryUpdateHandler() {
         this(S3Driver.defaultS3Client().build());
     }
-
+    
     public DataEntryUpdateHandler(S3Client s3Client) {
         super(EventReference.class);
         this.s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
     }
-
+    
     @Override
     protected EventReference processInput(
         EventReference input,
         AwsEventBridgeEvent<EventReference> event,
         Context context) {
-
+        
         var s3Content = readBlobFromS3(input);
         var dynamoDbRecord = parseDynamoDbRecord(s3Content);
         var blob = convertToDataEntryUpdateEvent(dynamoDbRecord);
@@ -61,19 +61,19 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
             .map(this::logEvent)
             .orElse(DO_NOT_EMIT_EVENT);
     }
-
+    
     private EventReference logEvent(EventReference event) {
         logger.debug("Emitted Event:{}", event.toJsonString());
         return event;
     }
-
+    
     private URI saveBlobToS3(DataEntryUpdateEvent blob) throws IOException {
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return blob.notEmpty()
                    ? s3Driver.insertFile(filePath, blob.toJsonString())
                    : BLOB_IS_EMPTY;
     }
-
+    
     private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
         return new DataEntryUpdateEvent(
             dynamoDbRecord.getEventName(),
@@ -81,22 +81,22 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
             getDao(dynamoDbRecord.getDynamodb().getNewImage())
         );
     }
-
+    
     private String readBlobFromS3(EventReference input) {
         var filePath = UriWrapper.fromUri(input.getUri()).toS3bucketPath();
         return s3Driver.getFile(filePath);
     }
-
+    
     private DynamodbStreamRecord parseDynamoDbRecord(String s3Content) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(s3Content, DynamodbStreamRecord.class)).orElseThrow();
     }
-
+    
     private DataEntry getDao(Map<String, AttributeValue> image) {
         return attempt(() -> toDao(image))
             .toOptional(this::logFailureInDebugging)
             .flatMap(Function.identity()).orElse(NO_VALUE);
     }
-
+    
     private void logFailureInDebugging(Failure<Optional<DataEntry>> fail) {
         logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
     }

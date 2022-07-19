@@ -10,17 +10,17 @@ import java.io.File;
 import org.junit.jupiter.api.Test;
 
 public class CorrectParsingErrorsTest {
-
+    
     public static final String PUBLICATION_BEFORE_JSON = "src/test/resources/migration/publication_before.json";
     public static final String PUBLICATION_AFTER_JSON = "src/test/resources/migration/publication_after.json";
-
+    
     @Test
     void shouldCorrectParsingErrors() throws Exception {
         ObjectNode actual = (ObjectNode) dtoObjectMapper.readTree(new File(PUBLICATION_BEFORE_JSON));
         ObjectNode expected = (ObjectNode) dtoObjectMapper.readTree(new File(PUBLICATION_AFTER_JSON));
-
+        
         correctParsingErrors(actual);
-
+        
         assertThat(actual, is(equalTo(expected)));
     }
 }

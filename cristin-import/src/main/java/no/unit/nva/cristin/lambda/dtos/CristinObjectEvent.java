@@ -12,7 +12,7 @@ import no.unit.nva.publication.s3imports.FileContentsEvent;
  */
 
 public class CristinObjectEvent extends FileContentsEvent<JsonNode> {
-
+    
     @JsonCreator
     public CristinObjectEvent(
         @JsonProperty(TOPIC) String topic,
@@ -20,7 +20,7 @@ public class CristinObjectEvent extends FileContentsEvent<JsonNode> {
         @JsonProperty(FILE_URI) URI fileUri,
         @JsonProperty(TIMESTAMP) Instant timestamp,
         @JsonProperty(CONTENTS_FIELD) JsonNode contents) {
-
-        super(topic,subtopic,fileUri, timestamp, contents);
+        
+        super(topic, subtopic, fileUri, timestamp, contents);
     }
 }

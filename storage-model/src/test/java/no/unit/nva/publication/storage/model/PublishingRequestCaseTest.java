@@ -11,7 +11,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import org.junit.jupiter.api.Test;
 
 class PublishingRequestCaseTest {
-
+    
     @Test
     void shouldReturnCopyWithoutInformationLoss() {
         var original = createSample(randomElement(PublishingRequestStatus.values()));
@@ -20,7 +20,7 @@ class PublishingRequestCaseTest {
         assertThat(copy, is(equalTo(original)));
         assertThat(copy, is(not(sameInstance(original))));
     }
-
+    
     @Test
     void shouldReturnCopyOfOriginalWithApprovedStatusButAllOtherFieldsTheSame() {
         var original = createSample(PublishingRequestStatus.PENDING);
@@ -29,7 +29,7 @@ class PublishingRequestCaseTest {
         expected.setStatus(PublishingRequestStatus.APPROVED);
         assertThat(approved, is(equalTo(expected)));
     }
-
+    
     private PublishingRequestCase createSample(PublishingRequestStatus status) {
         var sample = randomPublishingRequest();
         sample.setStatus(status);

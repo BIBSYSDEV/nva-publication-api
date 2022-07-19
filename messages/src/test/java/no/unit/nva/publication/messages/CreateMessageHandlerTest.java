@@ -157,8 +157,8 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         
         input = createInput(request);
         handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output,Problem.class);
-        assertThat(response.getStatusCode(),is(equalTo(HTTP_BAD_REQUEST)));
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
     
     private URI constructExpectedMessageUri(Message message) throws URISyntaxException {

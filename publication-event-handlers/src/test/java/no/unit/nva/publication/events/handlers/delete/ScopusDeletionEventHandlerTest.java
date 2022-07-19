@@ -11,13 +11,13 @@ import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.Test;
 
 class ScopusDeletionEventHandlerTest {
-
+    
     public static final Context CONTEXT = mock(Context.class);
     private final OutputStream outputStream = OutputStream.nullOutputStream();
-
+    
     @Test
     void shouldDoNothingElseButLogReceivedMessageUntilFunctionalityIsSpecified() {
-
+        
         var eventBody = new ScopusDeleteEventBody(randomString());
         var event = EventBridgeEventBuilder.sampleEvent(eventBody);
         var logger = LogUtils.getTestingAppenderForRootLogger();

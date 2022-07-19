@@ -23,21 +23,21 @@ import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
-
+    
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private final ResourceService resourceService;
-
+    
     /**
      * Default constructor for MainHandler.
      */
     @JacocoGenerated
     public UpdatePublicationHandler() {
         this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
-             new Environment());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                Clock.systemDefaultZone()),
+            new Environment());
     }
-
+    
     /**
      * Constructor for MainHandler.
      *
@@ -49,11 +49,11 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         super(UpdatePublicationRequest.class, environment);
         this.resourceService = resourceService;
     }
-
+    
     @Override
     protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-
+        
         SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
         validateRequest(identifierInPath, input);
         Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
@@ -61,33 +61,33 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
         return PublicationResponse.fromPublication(updatedPublication);
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
         return HttpStatus.SC_OK;
     }
-
+    
     private Publication fetchExistingPublication(RequestInfo requestInfo,
                                                  SortableIdentifier identifierInPath) throws ApiGatewayException {
         UserInstance userInstance = extractUserInstance(requestInfo);
-
+        
         return userCanEditOtherPeoplesPublications(requestInfo)
                    ? fetchPublicationForPrivilegedUser(identifierInPath, userInstance)
                    : fetchPublicationForPublicationOwner(identifierInPath, userInstance);
     }
-
+    
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(requestInfo::getCurrentCustomer)
             .map(customerId -> UserInstance.create(requestInfo.getNvaUsername(), customerId))
             .orElseThrow(fail -> new UnauthorizedException());
     }
-
+    
     private Publication fetchPublicationForPublicationOwner(SortableIdentifier identifierInPath,
                                                             UserInstance userInstance)
         throws ApiGatewayException {
         return resourceService.getPublication(userInstance, identifierInPath);
     }
-
+    
     private Publication fetchPublicationForPrivilegedUser(SortableIdentifier identifierInPath,
                                                           UserInstance userInstance)
         throws NotFoundException, NotAuthorizedException {
@@ -96,7 +96,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         checkUserIsInSameInstitutionAsThePublication(userInstance, existingPublication);
         return existingPublication;
     }
-
+    
     private void checkUserIsInSameInstitutionAsThePublication(UserInstance userInstance,
                                                               Publication existingPublication)
         throws NotAuthorizedException {
@@ -104,20 +104,20 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
             throw new NotAuthorizedException();
         }
     }
-
+    
     private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
-
+        
         var accessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString();
         return requestInfo.userIsAuthorized(accessRight);
     }
-
+    
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)
         throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);
         }
     }
-
+    
     private boolean identifiersDoNotMatch(SortableIdentifier identifierInPath,
                                           UpdatePublicationRequest input) {
         return !identifierInPath.equals(input.getIdentifier());

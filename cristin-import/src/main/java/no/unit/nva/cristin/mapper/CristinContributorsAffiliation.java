@@ -25,7 +25,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonIgnoreProperties({"stednavn_opprinnelig", "avdelingsnavn_opprinnelig", "institusjonsnavn_opprinnelig",
     "stedkode_opprinnelig"})
 public class CristinContributorsAffiliation {
-
+    
     public static final String CRISTIN_UNITS_DELIMITER = ".";
     public static final String INSITITUTION_IDENTIFIER = "institusjonsnr";
     public static final String DEPARTMENT_IDENTIFIER = "avdnr";
@@ -41,30 +41,29 @@ public class CristinContributorsAffiliation {
     private Integer groupNumber;
     @JsonProperty("VARBEID_PERSON_STED_ROLLE")
     private List<CristinContributorRole> roles;
-
-
+    
     public CristinContributorsAffiliation() {
     }
-
+    
     public Organization toNvaOrganization() {
         return new Organization.Builder()
-                   .withId(buildId())
-                   .withLabels(Collections.emptyMap())
-                   .build();
+            .withId(buildId())
+            .withLabels(Collections.emptyMap())
+            .build();
     }
-
+    
     public CristinContributorsAffiliationBuilder copy() {
         return this.toBuilder();
     }
-
+    
     private URI buildId() {
         String affiliationCristinCode = String.join(CRISTIN_UNITS_DELIMITER,
-                                                    institutionIdentifier.toString(),
-                                                    departmentIdentifier.toString(),
-                                                    subdepartmentIdentifier.toString(),
-                                                    groupNumber.toString());
+            institutionIdentifier.toString(),
+            departmentIdentifier.toString(),
+            subdepartmentIdentifier.toString(),
+            groupNumber.toString());
         return UriWrapper.fromUri(MappingConstants.CRISTIN_ORG_URI)
-                   .addChild(affiliationCristinCode)
-                   .getUri();
+            .addChild(affiliationCristinCode)
+            .getUri();
     }
 }

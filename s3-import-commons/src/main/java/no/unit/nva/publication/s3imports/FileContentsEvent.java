@@ -22,7 +22,7 @@ import nva.commons.core.JacocoGenerated;
  * @param <T> the class modeling the data structure of the file content.
  */
 public class FileContentsEvent<T> {
-
+    
     @JsonIgnore
     public static final String FILE_URI = "fileUri";
     @JsonIgnore
@@ -41,7 +41,7 @@ public class FileContentsEvent<T> {
     private final String topic;
     @JsonProperty(SUBTOPIC)
     private final String subtopic;
-
+    
     @JacocoGenerated
     @JsonCreator
     public FileContentsEvent(
@@ -56,38 +56,38 @@ public class FileContentsEvent<T> {
         this.timestamp = timestamp;
         this.contents = contents;
     }
-
+    
     public static <T> FileContentsEvent<T> fromJson(String jsonString, Class<T> contentsClass) {
         JavaType javaType = constructJavaType(contentsClass);
         return attempt(() -> s3ImportsMapper
             .<FileContentsEvent<T>>readValue(jsonString, javaType)).orElseThrow();
     }
-
+    
     @JacocoGenerated
     public String getTopic() {
         return topic;
     }
-
+    
     @JacocoGenerated
     public String getSubtopic() {
         return subtopic;
     }
-
+    
     @JacocoGenerated
     public URI getFileUri() {
         return fileUri;
     }
-
+    
     @JacocoGenerated
     public Instant getTimestamp() {
         return timestamp;
     }
-
+    
     @JacocoGenerated
     public T getContents() {
         return contents;
     }
-
+    
     private static <T> JavaType constructJavaType(Class<T> contentsClass) {
         return s3ImportsMapper.getTypeFactory().constructParametricType(FileContentsEvent.class, contentsClass);
     }

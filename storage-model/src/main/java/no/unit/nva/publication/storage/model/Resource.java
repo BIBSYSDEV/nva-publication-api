@@ -28,10 +28,10 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, DataEntry {
-
+    
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
-
+    
     @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty
@@ -66,18 +66,18 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
     private List<URI> subjects;
     @JsonProperty(ROW_VERSION)
     private String rowVersion;
-
+    
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
-                             resourceIdentifier);
+            resourceIdentifier);
     }
-
+    
     public static Resource resourceQueryObject(SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
-
+    
     public static Resource emptyResource(String username,
                                          URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
@@ -87,7 +87,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
-
+    
     public static Resource fromPublication(Publication publication) {
         return Resource.builder()
             .withIdentifier(publication.getIdentifier())
@@ -110,147 +110,147 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
             .withRowVersion(nextRowVersion())
             .build();
     }
-
+    
     @JsonIgnore
     public static String getType() {
         return TYPE;
     }
-
+    
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
     }
-
+    
     public static String nextRowVersion() {
         return UUID.randomUUID().toString();
     }
-
+    
     public ResourceOwner getResourceOwner() {
         return resourceOwner;
     }
-
+    
     public void setResourceOwner(ResourceOwner resourceOwner) {
         this.resourceOwner = resourceOwner;
     }
-
+    
     public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
         return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
     }
-
+    
     public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
     }
-
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-
+    
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-
+    
     public PublicationStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(PublicationStatus status) {
         this.status = status;
     }
-
+    
     public Organization getPublisher() {
         return publisher;
     }
-
+    
     public void setPublisher(Organization publisher) {
         this.publisher = publisher;
     }
-
+    
     public Instant getCreatedDate() {
         return createdDate;
     }
-
+    
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-
+    
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-
+    
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
-
+    
     public Instant getPublishedDate() {
         return publishedDate;
     }
-
+    
     public void setPublishedDate(Instant publishedDate) {
         this.publishedDate = publishedDate;
     }
-
+    
     public Instant getIndexedDate() {
         return indexedDate;
     }
-
+    
     public void setIndexedDate(Instant indexedDate) {
         this.indexedDate = indexedDate;
     }
-
+    
     public URI getLink() {
         return link;
     }
-
+    
     public void setLink(URI link) {
         this.link = link;
     }
-
+    
     public FileSet getFileSet() {
         return fileSet;
     }
-
+    
     public void setFileSet(FileSet fileSet) {
         this.fileSet = fileSet;
     }
-
+    
     public List<ResearchProject> getProjects() {
         return nonNull(projects) ? projects : Collections.emptyList();
     }
-
+    
     public void setProjects(List<ResearchProject> projects) {
         this.projects = projects;
     }
-
+    
     public EntityDescription getEntityDescription() {
         return entityDescription;
     }
-
+    
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }
-
+    
     public URI getDoi() {
         return doi;
     }
-
+    
     public void setDoi(URI doi) {
         this.doi = doi;
     }
-
+    
     public URI getHandle() {
         return handle;
     }
-
+    
     public void setHandle(URI handle) {
         this.handle = handle;
     }
-
+    
     @Override
     public String getStatusString() {
         return nonNull(getStatus()) ? getStatus().toString() : null;
     }
-
+    
     public ResourceBuilder copy() {
         return Resource.builder()
             .withIdentifier(getIdentifier())
@@ -272,7 +272,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
             .withSubjects(getSubjects())
             .withRowVersion(getRowVersion());
     }
-
+    
     @Override
     public Publication toPublication() {
         return new Publication.Builder()
@@ -295,46 +295,60 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
             .withSubjects(getSubjects())
             .build();
     }
-
+    
     @Override
     @JacocoGenerated
     public String getRowVersion() {
         return rowVersion;
     }
-
+    
     @Override
     @JacocoGenerated
     public void setRowVersion(String rowVersion) {
         this.rowVersion = rowVersion;
     }
-
+    
     @Override
     public Dao<?> toDao() {
         return new ResourceDao(this);
     }
-
+    
     @Override
     @JsonIgnore
     public URI getCustomerId() {
         return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
     }
-
+    
     @JsonIgnore
     @Override
     public String getOwner() {
         return getResourceOwner().getOwner();
     }
-
+    
     public List<URI> getSubjects() {
         return nonNull(subjects) ? subjects : Collections.emptyList();
     }
-
+    
     public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
     }
-
+    
+    /**
+     * Calculates hashcode without considering the row version.
+     *
+     * @return the hashcode.
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
+            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
+            getProjects(),
+            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects());
+    }
+    
     /**
      * It compares two Resources ignoring the row version.
+     *
      * @param o the other Resource.
      * @return true if the two Resources are equivalent without considering the row version, false otherwise.
      */
@@ -363,18 +377,6 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
                && Objects.equals(getHandle(), resource.getHandle())
                && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
                && Objects.equals(getSubjects(), resource.getSubjects());
-    }
-
-    /**
-     * Calculates hashcode without considering the row version.
-     * @return the hashcode.
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
-                            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
-                            getProjects(),
-                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects());
     }
 }
 

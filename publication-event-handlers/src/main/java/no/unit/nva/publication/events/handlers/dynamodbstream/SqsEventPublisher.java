@@ -10,20 +10,20 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 public class SqsEventPublisher implements EventPublisher {
-
+    
     private static final ObjectMapper objectMapper = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
+    
     private static final Logger logger = LoggerFactory.getLogger(SqsEventPublisher.class);
-
+    
     private final SqsClient sqs;
     private final String queueUrl;
-
+    
     public SqsEventPublisher(SqsClient sqs, String queueUrl) {
         this.sqs = sqs;
         this.queueUrl = queueUrl;
     }
-
+    
     @Override
     public void publish(final DynamodbEvent event) {
         logger.debug("Sending events {} to SQS queue {}", event, queueUrl);
@@ -34,7 +34,7 @@ public class SqsEventPublisher implements EventPublisher {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
-
+    
     private SendMessageRequest createSendMessageRequest(DynamodbEvent event) throws JsonProcessingException {
         return SendMessageRequest.builder()
             .queueUrl(queueUrl)

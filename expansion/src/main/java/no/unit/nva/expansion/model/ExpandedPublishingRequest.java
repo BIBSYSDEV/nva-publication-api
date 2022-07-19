@@ -83,6 +83,12 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getPublicationSummary(), getMessages());
+    }
+    
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -94,12 +100,6 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         return Objects.equals(getIdentifier(), that.getIdentifier()) && Objects.equals(
             getPublicationSummary(), that.getPublicationSummary()) && Objects.equals(getMessages(),
             that.getMessages());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getPublicationSummary(), getMessages());
     }
     
     private static ExpandedPublishingRequest create(PublishingRequestCase dataEntry,

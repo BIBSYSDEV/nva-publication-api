@@ -8,20 +8,20 @@ import java.util.Objects;
 import nva.commons.core.paths.UnixPath;
 
 public class FileContent {
-
+    
     private final UnixPath filename;
     private final ByteBuffer fileContent;
-
+    
     public FileContent(UnixPath filename, InputStream fileContent) {
         this.filename = filename;
         this.fileContent = attempt(() -> ByteBuffer.wrap(fileContent.readAllBytes())).orElseThrow();
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hash(getFilename(), getFileContent());
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -34,15 +34,15 @@ public class FileContent {
         return Objects.equals(getFilename(), that.getFilename())
                && Objects.equals(getFileContent(), that.getFileContent());
     }
-
+    
     public UnixPath getFilename() {
         return filename;
     }
-
+    
     public ByteBuffer getFileContent() {
         return fileContent;
     }
-
+    
     public Map<String, ByteBuffer> toMap() {
         return Map.of(filename.toString(), fileContent);
     }

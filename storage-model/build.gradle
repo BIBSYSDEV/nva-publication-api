@@ -1,5 +1,3 @@
-
-
 dependencies {
     implementation project(":publication-constants")
     implementation libs.aws.sdk.dynamodb

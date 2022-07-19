@@ -50,7 +50,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
     private ResourceService resourceService;
     private DoiRequestService doiRequestService;
-    private PublishingRequestService publishingRequestService;
     
     public static Stream<Class<?>> entryTypes() {
         return SubTypeProvider.dataEntryTypeProvider(ExpandedDataEntry.class);
@@ -63,7 +62,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.resourceService = new ResourceService(client, clock);
         this.messageService = new MessageService(client, clock);
         this.doiRequestService = new DoiRequestService(client, clock);
-        this.publishingRequestService = new PublishingRequestService(client, clock);
+        var publishingRequestService = new PublishingRequestService(client, clock);
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
             doiRequestService, publishingRequestService);
     }
@@ -208,18 +207,18 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             }
         }
         
-        private static Publication createPublication(ResourceService resourceService) throws ApiGatewayException {
-            var publication = randomPublication();
-            publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-            return publication;
-        }
-        
         public Publication getPublication() {
             return publication;
         }
         
         public ExpandedDataEntry getExpandedDataEntry() {
             return expandedDataEntry;
+        }
+        
+        private static Publication createPublication(ResourceService resourceService) throws ApiGatewayException {
+            var publication = randomPublication();
+            publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+            return publication;
         }
         
         private static ExpandedDataEntryWithAssociatedPublication createExpandedResource(Publication publication) {

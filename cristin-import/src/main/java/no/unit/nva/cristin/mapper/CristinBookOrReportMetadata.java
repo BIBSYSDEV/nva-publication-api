@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import nva.commons.core.JacocoGenerated;
 
-
 @Data
 @Builder(
     builderClassName = "CristinBookReportBuilder",
@@ -24,7 +23,7 @@ import nva.commons.core.JacocoGenerated;
     "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
     "arkivpost"})
 public class CristinBookOrReportMetadata {
-
+    
     public static final String ISBN_LIST = "isbn";
     public static final String PUBLISHER_NAME = "utgivernavn";
     public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
@@ -35,7 +34,7 @@ public class CristinBookOrReportMetadata {
     public static final String ISSUE = "hefte";
     public static final String VOLUME = "volum_serie";
     public static final String PUBLISHER = "forlag";
-
+    
     @JsonProperty(ISBN_LIST)
     private String isbn;
     @JsonProperty(PUBLISHER_NAME)
@@ -53,23 +52,21 @@ public class CristinBookOrReportMetadata {
     private String volume;
     @JsonProperty(PUBLISHER)
     private CristinPublisher cristinPublisher;
-
-
+    
     public CristinBookOrReportMetadata() {
-
+    
     }
-
+    
     public String getNumberOfPages() {
         return numberOfPages;
     }
-
+    
     public String getPublisherName() {
         return publisherName;
     }
-
+    
     @JacocoGenerated
     public CristinBookOrReportMetadata.CristinBookReportBuilder copy() {
         return this.toBuilder();
     }
-
 }

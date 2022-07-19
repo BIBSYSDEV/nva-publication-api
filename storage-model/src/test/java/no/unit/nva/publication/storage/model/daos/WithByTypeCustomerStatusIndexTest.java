@@ -21,13 +21,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class WithByTypeCustomerStatusIndexTest {
-
+    
     public static final String SAMPLE_TYPE = "sampleType";
     public static final String SAMPLE_STATUS = "sampleStatus";
     public static final String SAMPLE_CUSTOMER_IDENTIFIER = "123";
     public static final URI SAMPLE_CUSTOMER_ID = URI.create("https://example.org/" + SAMPLE_CUSTOMER_IDENTIFIER);
-
-
+    
     @Test
     public void formatByTypeCustomerStatusPartitionKeyReturnsKeyEnablingSearchByCustomerAndStatus() {
         String partitionKey = WithByTypeCustomerStatusIndex.formatByTypeCustomerStatusPartitionKey(
@@ -35,12 +34,12 @@ public class WithByTypeCustomerStatusIndexTest {
             SAMPLE_STATUS,
             SAMPLE_CUSTOMER_ID
         );
-
+        
         assertThat(partitionKey, containsString(SAMPLE_TYPE));
         assertThat(partitionKey, containsString(SAMPLE_STATUS));
         assertThat(partitionKey, containsString(SAMPLE_CUSTOMER_IDENTIFIER));
     }
-
+    
     @ParameterizedTest
     @MethodSource("instanceProvider")
     public void fetchEntryCollectionByTypeCustomerStatusKeyReturnsConditionForFetchingEntryCollection(Dao<?> dao) {
@@ -49,16 +48,16 @@ public class WithByTypeCustomerStatusIndexTest {
         assertThat(condition, hasKey(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME));
         Condition actualCondition = condition.get(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME);
         String actualValue = actualCondition.getAttributeValueList().get(0).getS();
-
+        
         String expectedValue = constructExpectedPartitionKeyFormat(dao);
-
+        
         assertThat(actualValue, is(equalTo(expectedValue)));
     }
-
+    
     private static Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
         return DaoUtils.instanceProvider();
     }
-
+    
     private String constructExpectedPartitionKeyFormat(Dao<?> dao) {
         return dao.getType()
                + KEY_FIELDS_DELIMITER

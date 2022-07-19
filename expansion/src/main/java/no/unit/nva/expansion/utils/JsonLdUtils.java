@@ -7,15 +7,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public final class JsonLdUtils {
-
+    
     private JsonLdUtils() {
-
+    
     }
-
+    
     public static String toJsonString(JsonNode root) {
         return attempt(() -> objectMapper.writeValueAsString(addContext(root))).orElseThrow();
     }
-
+    
     private static JsonNode addContext(JsonNode root) {
         if (nonNull(root)) {
             ObjectNode context = objectMapper.createObjectNode();

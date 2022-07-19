@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Status;
 
 class PersonApiClientTest {
-
+    
     private PersonApiClient personApiClient;
     private String errorMessage;
     private String inputFeideId;
@@ -36,7 +36,7 @@ class PersonApiClientTest {
     private URI mockOrgUnitId;
     private String successfulNonEmptyResponse;
     private String successfulEmptyResponse;
-
+    
     @BeforeEach
     public void init() {
         inputFeideId = randomString();
@@ -46,7 +46,7 @@ class PersonApiClientTest {
         successfulEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId).toString();
         randomFailureCode = randomNonSuccessfulStatusCode();
     }
-
+    
     @Test
     void shouldReturnPersonsOrgUnitIdsWhenInputIsUserExistingInPersonService()
         throws IOException, InterruptedException, ApiGatewayException {
@@ -54,7 +54,7 @@ class PersonApiClientTest {
         var userAffiliations = personApiClient.fetchAffiliationsForUser(inputFeideId);
         assertThat(userAffiliations, is(hasItems(mockOrgUnitId)));
     }
-
+    
     @Test
     void shouldReturnEmptyListIfUserWasNotFoundInPersonService()
         throws IOException, InterruptedException, ApiGatewayException {
@@ -62,7 +62,7 @@ class PersonApiClientTest {
         var userAffiliations = personApiClient.fetchAffiliationsForUser(inputFeideId);
         assertThat(userAffiliations, is(empty()));
     }
-
+    
     @Test
     void shouldReturnBadGatewayWhenResponseIsNotSuccessful() throws IOException, InterruptedException {
         var logger = LogUtils.getTestingAppenderForRootLogger();
@@ -70,8 +70,7 @@ class PersonApiClientTest {
         assertThrows(BadGatewayException.class, () -> personApiClient.fetchAffiliationsForUser(inputFeideId));
         assertThat(logger.getMessages(), containsString(errorMessage));
     }
-
-
+    
     @SuppressWarnings("unchecked")
     private HttpResponse<String> badRequestResponse() {
         var response = (HttpResponse<String>) mock(HttpResponse.class);
@@ -79,31 +78,31 @@ class PersonApiClientTest {
         when(response.body()).thenReturn(errorMessage);
         return response;
     }
-
+    
     private int randomNonSuccessfulStatusCode() {
         var notSuccessfulValues = Arrays.stream(Status.values())
             .filter(status -> !Status.OK.equals(status))
             .map(Status::getStatusCode)
             .collect(Collectors.toList());
-
+        
         return randomElement(notSuccessfulValues);
     }
-
+    
     private HttpClient createMockHttpClientReturningResponse(HttpResponse<String> response)
         throws IOException, InterruptedException {
         var httpClient = mock(HttpClient.class);
         when(httpClient.send(any(HttpRequest.class), any())).thenAnswer((ignored -> response));
         return httpClient;
     }
-
+    
     private HttpResponse<String> successfulNonEmptyResponse() {
         return mockSuccessfulResponse(successfulNonEmptyResponse);
     }
-
+    
     private HttpResponse<String> successfulEmptyResponse() {
         return mockSuccessfulResponse(successfulEmptyResponse);
     }
-
+    
     @SuppressWarnings("unchecked")
     private HttpResponse<String> mockSuccessfulResponse(String successfulEmptyResponse) {
         var response = (HttpResponse<String>) mock(HttpResponse.class);

@@ -7,31 +7,31 @@ import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
 public class DoiUpdateHolder implements JsonSerializable {
-
+    
     public static final String TOPIC = "topic";
     public static final String ITEM = "item";
-
+    
     @JsonProperty(TOPIC)
     protected String topic;
     @JsonProperty(ITEM)
     protected DoiUpdateDto item;
-
+    
     @JsonCreator
     public DoiUpdateHolder(@JsonProperty(TOPIC) String topic, @JsonProperty(ITEM) DoiUpdateDto item) {
         this.topic = topic;
         this.item = item;
     }
-
+    
     @JacocoGenerated
     public String getTopic() {
         return topic;
     }
-
+    
     @JsonIgnore
     public boolean hasItem() {
         return item != null;
     }
-
+    
     @JacocoGenerated
     public DoiUpdateDto getItem() {
         return item;

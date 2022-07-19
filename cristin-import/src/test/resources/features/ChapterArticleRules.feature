@@ -7,11 +7,11 @@ Feature:
     Then the NVA Resource has a Publication Instance of type "ChapterArticle"
     And the NVA ChapterArticle Resource has a Content type of type "<contentType>"
     Examples:
-    | secondarycategory | contentType             |
-    | KAPITTEL          | AcademicChapter         |
-    | FAGLIG_KAPITTEL   | NonFictionChapter       |
-    | POPVIT_KAPITTEL   | PopularScienceChapter   |
-    | LEKSIKAL_INNF     | EncyclopediaChapter     |
+      | secondarycategory | contentType           |
+      | KAPITTEL          | AcademicChapter       |
+      | FAGLIG_KAPITTEL   | NonFictionChapter     |
+      | POPVIT_KAPITTEL   | PopularScienceChapter |
+      | LEKSIKAL_INNF     | EncyclopediaChapter   |
 
   Scenario: Cristin Result's sidenr_fra and sidenr_til is copied to the pages value of the NVA Result.
     Given a valid Cristin Result with secondary category "KAPITTEL"

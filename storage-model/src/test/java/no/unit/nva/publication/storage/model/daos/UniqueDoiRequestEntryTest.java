@@ -28,10 +28,10 @@ public class UniqueDoiRequestEntryTest {
     
     private DoiRequestDao sampleDoiRequestDao() {
         DoiRequest doiRequest = DoiRequest.builder()
-                                    .withIdentifier(SAMPLE_IDENTIFIER)
-                                    .withResourceIdentifier(RESOURCE_IDENTIFIER)
-                                    .withCustomerId(SAMPLE_CUSTOMER_ID)
-                                    .build();
+            .withIdentifier(SAMPLE_IDENTIFIER)
+            .withResourceIdentifier(RESOURCE_IDENTIFIER)
+            .withCustomerId(SAMPLE_CUSTOMER_ID)
+            .build();
         return new DoiRequestDao(doiRequest);
     }
 }

@@ -52,18 +52,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 
 class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
-
+    
     private static final Context CONTEXT = new FakeContext();
     private UpdatePublishingRequestHandler handler;
     private ResourceService resourceService;
     private PublishingRequestService requestService;
     private ByteArrayOutputStream outputStream;
-
+    
     public static Stream<InputStream> invalidHttpRequests() throws JsonProcessingException {
         return Stream.of(publishingRequestWithIdConflictingWithRequestUri(),
-                         publishingRequestWithInvalidPublishingRequestCaseStatus());
+            publishingRequestWithInvalidPublishingRequestCaseStatus());
     }
-
+    
     @BeforeEach
     public void setup() {
         super.init();
@@ -73,12 +73,12 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         this.outputStream = new ByteArrayOutputStream();
         this.handler = new UpdatePublishingRequestHandler(requestService);
     }
-
+    
     @AfterEach
     public void tearDown() {
         super.shutdown();
     }
-
+    
     @ParameterizedTest(name = "should return Approved PublishingRequestCaseDto when authorized user approves case and "
                               + "case has status {0}")
     @EnumSource(value = PublishingRequestStatus.class, names = {"PENDING", "APPROVED"})
@@ -88,26 +88,26 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         var publication = createPersistedPublication();
         var publishingRequest = createPersistedPublishingRequest(publication, status);
-
+        
         var httpRequest = createAuthorizedApprovalRequest(publication, publishingRequest).build();
         handler.handleRequest(httpRequest, outputStream, CONTEXT);
         var response = GatewayResponse.fromOutputStream(outputStream,
-                                                        PublishingRequestCaseDto.class);
+            PublishingRequestCaseDto.class);
         var responseBody = response.getBodyObject(PublishingRequestCaseDto.class);
-
+        
         var expectedPublishingRequest = publishingRequest.approve();
         var expectedResponseBody = PublishingRequestCaseDto.createResponseObject(expectedPublishingRequest);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(responseBody, is(equalTo(expectedResponseBody)));
         assertThat(responseBody.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
     }
-
+    
     @Test
     void shouldPersistPublishingRequestApprovalWhenInputIsPublishingRequestApprovalAndUserIsAuthorizedToApprove()
         throws ApiGatewayException, IOException {
         var publication = createPersistedPublication();
         var publishingRequest = createPendingPublishingRequest(publication);
-
+        
         var httpRequest = createAuthorizedApprovalRequest(publication, publishingRequest).build();
         handler.handleRequest(httpRequest, outputStream, CONTEXT);
         var response =
@@ -118,7 +118,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         assertThat(persistedRequest.getIdentifier(), is(equalTo(actualIdentifierInResponseBody)));
         assertThat(persistedRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
     }
-
+    
     @Test
     void shouldReturnUnauthorizedWhenUserIsNotAuthorizedToPerformPublishingRequestApprovals()
         throws ApiGatewayException, IOException {
@@ -131,7 +131,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var problem = response.getBodyObject(Problem.class);
         assertThat(problem.getDetail(), is(equalTo(AUTHORIZATION_ERROR)));
     }
-
+    
     @ParameterizedTest(name = "should return BadRequest when input is invalid")
     @MethodSource("invalidHttpRequests")
     void shouldReturnBadRequestWhenSubmittedRequestContainsInvalidData(InputStream httpRequest) throws IOException {
@@ -139,7 +139,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
-
+    
     private static InputStream publishingRequestWithInvalidPublishingRequestCaseStatus()
         throws JsonProcessingException {
         var publicationIdentifier = SortableIdentifier.next();
@@ -148,7 +148,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var customerId = randomUri();
         return constructHttpRequest(publicationIdentifier, publishingRequestIdentifier, invalidBody, customerId);
     }
-
+    
     private static InputStream publishingRequestWithIdConflictingWithRequestUri() throws JsonProcessingException {
         var publicationIdentifier = SortableIdentifier.next();
         var publishingRequestIdentifier = SortableIdentifier.next();
@@ -160,7 +160,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var customerId = randomUri();
         return constructHttpRequest(publicationIdentifier, publishingRequestIdentifier, dto, customerId);
     }
-
+    
     private static InputStream constructHttpRequest(SortableIdentifier publicationIdentifier,
                                                     SortableIdentifier publishingRequestIdentifier,
                                                     Object dto,
@@ -171,12 +171,12 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
             .withBody(dto)
             .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
-                                       publicationIdentifier.toString(),
-                                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
-                                       publishingRequestIdentifier.toString()))
+                publicationIdentifier.toString(),
+                PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+                publishingRequestIdentifier.toString()))
             .build();
     }
-
+    
     private static ObjectNode createInvalidBody(SortableIdentifier publicationIdentifier,
                                                 SortableIdentifier publishingRequestIdentifier) {
         var uri = PublishingRequestCaseDto.calculateId(publicationIdentifier, publishingRequestIdentifier);
@@ -185,7 +185,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         invalidBody.put(PublishingRequestCaseDto.STATUS, randomString());
         return invalidBody;
     }
-
+    
     private static UriWrapper createRequestUri(SortableIdentifier publicationIdentifier,
                                                SortableIdentifier publishingRequestIdentifier) {
         return UriWrapper.fromHost(API_HOST)
@@ -194,18 +194,18 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .addChild(SUPPORT_CASE_PATH)
             .addChild(publishingRequestIdentifier.toString());
     }
-
+    
     private static Map<String, String> constructPathParameters(Publication publication,
                                                                PublishingRequestCase publishingRequest) {
         return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
-                      PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
-                      publishingRequest.getIdentifier().toString());
+            PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+            publishingRequest.getIdentifier().toString());
     }
-
+    
     private PublishingRequestCase createPendingPublishingRequest(Publication publication) throws ApiGatewayException {
         return createPersistedPublishingRequest(publication, PENDING);
     }
-
+    
     private SortableIdentifier extractIdentifierFromDto(PublishingRequestCaseDto responseBody) {
         return attempt(responseBody::getId)
             .map(UriWrapper::fromUri)
@@ -213,7 +213,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .map(SortableIdentifier::new)
             .orElseThrow();
     }
-
+    
     private HandlerRequestBuilder<PublishingRequestCaseDto> createUnauthorizedApprovalRequest(
         Publication publication,
         PublishingRequestCase publishingRequest
@@ -224,14 +224,14 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withCustomerId(publication.getPublisher().getId())
             .withPathParameters(constructPathParameters(publication, publishingRequest));
     }
-
+    
     private PublishingRequestCaseDto sampleApprovalDto(PublishingRequestCase publishingRequest) {
         var caseId =
             PublishingRequestCaseDto.calculateId(publishingRequest.getResourceIdentifier(),
-                                                 publishingRequest.getIdentifier());
+                publishingRequest.getIdentifier());
         return new PublishingRequestCaseDto(caseId, PublishingRequestStatus.APPROVED);
     }
-
+    
     private HandlerRequestBuilder<PublishingRequestCaseDto> createAuthorizedApprovalRequest(
         Publication publication,
         PublishingRequestCase publishingRequest
@@ -244,21 +244,21 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withPathParameters(constructPathParameters(publication, publishingRequest))
             .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString());
     }
-
+    
     private PublishingRequestCase createPersistedPublishingRequest(Publication publication,
                                                                    PublishingRequestStatus status)
         throws ApiGatewayException {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
-                                                          publication.getIdentifier());
+                publication.getIdentifier());
         publishingRequest = requestService.createPublishingRequest(publishingRequest);
-
+        
         if (PublishingRequestStatus.APPROVED == status) {
             requestService.updatePublishingRequest(publishingRequest.approve());
         }
         return publishingRequest;
     }
-
+    
     private Publication createPersistedPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);

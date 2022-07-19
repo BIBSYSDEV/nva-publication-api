@@ -19,26 +19,26 @@ import no.unit.nva.expansion.utils.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
 
 public class IndexDocumentWrapperLinkedData {
-
+    
     private final UriRetriever uriRetriever;
-
+    
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
     }
-
+    
     public String toFramedJsonLd(JsonNode indexDocument) throws IOException {
         String frame = SearchIndexFrame.FRAME_SRC;
         List<InputStream> inputStreams = getInputStreams(indexDocument);
         return new FramedJsonGenerator(inputStreams, stringToStream(frame)).getFramedJson();
     }
-
+    
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         inputStreams.addAll(fetchAll(getPublicationContextUris(indexDocument)));
         return inputStreams;
     }
-
+    
     private Collection<? extends InputStream> fetchAll(List<URI> publicationContextUris) {
         List<Optional<String>> uriContent =
             publicationContextUris.stream().map(this::fetch).collect(Collectors.toList());
@@ -47,7 +47,7 @@ public class IndexDocumentWrapperLinkedData {
             .map(IoUtils::stringToStream)
             .collect(Collectors.toList());
     }
-
+    
     private Optional<String> fetch(URI externalReference) {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
     }

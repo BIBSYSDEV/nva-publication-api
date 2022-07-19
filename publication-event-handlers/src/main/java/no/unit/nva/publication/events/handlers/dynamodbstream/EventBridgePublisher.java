@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class EventBridgePublisher implements EventPublisher {
-
+    
     public static final String EVENT_SOURCE = "aws-dynamodb-stream-eventbridge-fanout";
     public static final int ENTRIES_PER_REQUEST = 7;
     private static final ObjectMapper objectMapper = new ObjectMapper()
@@ -30,7 +30,7 @@ public class EventBridgePublisher implements EventPublisher {
     private final String eventBusName;
     private final Clock clock;
     private final String eventDetailType;
-
+    
     @JacocoGenerated
     public EventBridgePublisher(EventBridgeRetryClient eventBridge,
                                 EventPublisher failedEventPublisher,
@@ -38,7 +38,7 @@ public class EventBridgePublisher implements EventPublisher {
                                 String eventDetailType) {
         this(eventBridge, failedEventPublisher, eventBusName, eventDetailType, Clock.systemUTC());
     }
-
+    
     public EventBridgePublisher(EventBridgeRetryClient eventBridge,
                                 EventPublisher failedEventPublisher,
                                 String eventBusName,
@@ -50,7 +50,7 @@ public class EventBridgePublisher implements EventPublisher {
         this.clock = clock;
         this.eventDetailType = eventDetailType;
     }
-
+    
     @Override
     public void publish(final DynamodbEvent event) {
         List<PutEventsRequestEntry> requestEntries = createPutEventsRequestEntries(event);
@@ -58,14 +58,14 @@ public class EventBridgePublisher implements EventPublisher {
             requestEntries);
         publishFailedEventsToDlq(failedEntries);
     }
-
+    
     private void publishFailedEventsToDlq(List<PutEventsRequestEntry> failedEntries) {
         if (!failedEntries.isEmpty()) {
             logger.debug("Sending failed events {} to failed event publisher", failedEntries);
             failedEntries.forEach(this::publishFailedEvent);
         }
     }
-
+    
     private List<PutEventsRequestEntry> putEventsToEventBus(List<PutEventsRequestEntry> requestEntries) {
         List<List<PutEventsRequestEntry>> groupedRequestEntries = Lists.partition(requestEntries, ENTRIES_PER_REQUEST);
         return groupedRequestEntries.stream()
@@ -74,20 +74,20 @@ public class EventBridgePublisher implements EventPublisher {
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     }
-
+    
     private PutEventsRequest createPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
         return PutEventsRequest.builder()
             .entries(requestEntries)
             .build();
     }
-
+    
     private List<PutEventsRequestEntry> createPutEventsRequestEntries(DynamodbEvent event) {
         return event.getRecords()
             .stream()
             .map(this::createPutEventRequestEntry)
             .collect(Collectors.toList());
     }
-
+    
     private PutEventsRequestEntry createPutEventRequestEntry(DynamodbStreamRecord record) {
         Instant time = Instant.now(clock);
         return PutEventsRequestEntry.builder()
@@ -99,14 +99,14 @@ public class EventBridgePublisher implements EventPublisher {
             .resources(record.getEventSourceARN())
             .build();
     }
-
+    
     private void publishFailedEvent(PutEventsRequestEntry entry) {
         DynamodbEvent.DynamodbStreamRecord record = parseDynamodbStreamRecord(entry);
         DynamodbEvent failedEvent = new DynamodbEvent();
         failedEvent.setRecords(Collections.singletonList(record));
         failedEventPublisher.publish(failedEvent);
     }
-
+    
     @JacocoGenerated
     private String toString(DynamodbEvent.DynamodbStreamRecord record) {
         try {
@@ -115,7 +115,7 @@ public class EventBridgePublisher implements EventPublisher {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
-
+    
     @JacocoGenerated
     private DynamodbStreamRecord parseDynamodbStreamRecord(PutEventsRequestEntry entry) {
         try {

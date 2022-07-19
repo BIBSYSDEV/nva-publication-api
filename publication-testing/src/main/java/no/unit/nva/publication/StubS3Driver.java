@@ -19,25 +19,25 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 @JacocoGenerated
 public class StubS3Driver extends S3Driver {
-
+    
     private final List<UnixPath> filesInBucket;
-
+    
     public StubS3Driver(String bucketName, List<UnixPath> filesInBucket) {
         super(null, bucketName);
         this.filesInBucket = new ArrayList<>(filesInBucket);
     }
-
+    
     @Override
     public List<UnixPath> listAllFiles(UnixPath folder) {
         return filesInBucket;
     }
-
+    
     @Override
     public String getFile(UnixPath filename) {
         List<String> lines = fileContent(filename);
         return String.join(System.lineSeparator(), lines);
     }
-
+    
     public List<String> getAllIonItems() {
         return listAllFiles(null)
             .stream()
@@ -45,7 +45,7 @@ public class StubS3Driver extends S3Driver {
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     }
-
+    
     private List<String> fileContent(UnixPath filename) {
         try (InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename.toString()))
             .orElseThrow(fail -> fileNotFoundException());
@@ -57,7 +57,7 @@ public class StubS3Driver extends S3Driver {
             throw new RuntimeException(e);
         }
     }
-
+    
     private NoSuchKeyException fileNotFoundException() {
         return NoSuchKeyException.builder().message("File does not exist or file is empty").build();
     }

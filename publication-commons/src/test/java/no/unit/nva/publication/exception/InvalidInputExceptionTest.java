@@ -6,7 +6,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import org.junit.jupiter.api.Test;
 
 class InvalidInputExceptionTest {
-
+    
     @Test
     public void exceptionContainsSuppliedMessage() {
         String expectedMessage = "someMessage";

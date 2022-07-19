@@ -12,23 +12,23 @@ import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 
 public final class TestingUtils {
-
+    
     private TestingUtils() {
-
+    
     }
-
+    
     public static URI randomOrgUnitId() {
         return URI.create(String.format("https://example.org/some/path/%s.%s.%s.%s",
-                                        randomInteger(),
-                                        randomInteger(),
-                                        randomInteger(),
-                                        randomInteger()));
+            randomInteger(),
+            randomInteger(),
+            randomInteger(),
+            randomInteger()));
     }
-
+    
     public static UserInstance randomUserInstance() {
         return UserInstance.create(randomString(), randomUri());
     }
-
+    
     public static Publication createPublicationForUser(UserInstance userInstance) {
         return PublicationGenerator.randomPublication()
             .copy()
@@ -36,13 +36,13 @@ public final class TestingUtils {
             .withPublisher(createOrganization(userInstance.getOrganizationUri()))
             .build();
     }
-
+    
     public static Organization createOrganization(URI orgUri) {
         return new Organization.Builder().withId(orgUri).build();
     }
-
+    
     public static PublishingRequestCase createPublishingRequest(Publication publication) {
         return PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
-                                                             publication.getIdentifier());
+            publication.getIdentifier());
     }
 }

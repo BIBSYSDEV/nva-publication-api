@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
-
+    
     public static final Context CONTEXT = mock(Context.class);
     public static final String DATA_IMPORT_TOPIC = "PublicationService.DataImport.DataEntry";
     public static final String SCOPUS_IMPORT_SUBTOPIC = "PublicationService.ScopusData.DataEntry";
@@ -37,7 +37,7 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private S3Driver s3Driver;
     private ResourceService publicationService;
-
+    
     @BeforeEach
     public void init() {
         super.init();
@@ -45,21 +45,21 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         FakeS3Client fakeS3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(fakeS3Client, "notimportant");
         this.handler = new CreatePublishedPublicationHandler(fakeS3Client, client);
-        this.publicationService = new ResourceService(super.client,  Clock.systemDefaultZone());
+        this.publicationService = new ResourceService(super.client, Clock.systemDefaultZone());
     }
-
+    
     @Test
     void shouldReceiveAnEventReferenceAndReadFileFromS3() throws IOException {
         var samplePublication = PublicationGenerator.randomPublication();
         var s3FileUri = createPublicationRequestAndStoreInS3(samplePublication);
-
+        
         var response = sendMessageToEventHandler(s3FileUri);
-
+        
         var actualSampleValue = response.getEntityDescription().getMainTitle();
         var expectedSampleValue = samplePublication.getEntityDescription().getMainTitle();
         assertThat(actualSampleValue, is(equalTo(expectedSampleValue)));
     }
-
+    
     @Test
     void shouldStoreTheCreatePublicationRequestReferencedByTheEventAsPublishedPublication()
         throws IOException, NotFoundException {
@@ -67,33 +67,31 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         var s3FileUri = createPublicationRequestAndStoreInS3(samplePublication);
         sendMessageToEventHandler(s3FileUri);
         var savedPublication = extractSavedPublicationFromDatabase();
-
+        
         var expectedPublication = copyFieldsCreatedByHandler(samplePublication.copy(), savedPublication)
             .withStatus(PublicationStatus.PUBLISHED)
             .build();
-
+        
         assertThat(savedPublication, is(equalTo(expectedPublication)));
     }
-
-
-
+    
     private Publication extractSavedPublicationFromDatabase() throws JsonProcessingException, NotFoundException {
         var savedPublicationIdentifier = parseResponse(outputStream.toString()).getIdentifier();
         return this.publicationService.getPublicationByIdentifier(savedPublicationIdentifier);
     }
-
+    
     private Publication createSamplePublicationNotContainingFieldThatScopusWillNotProvide() {
         var samplePublication = PublicationGenerator.randomPublication();
         samplePublication =
             deleteFieldsThatAreExpectedToBeNullWhenCreatingAPublishedPublicationFromScopus(samplePublication);
         return samplePublication;
     }
-
+    
     private URI createPublicationRequestAndStoreInS3(Publication samplePublication) throws IOException {
         var request = CreatePublicationRequest.fromPublication(samplePublication);
         return storeRequestInS3(request);
     }
-
+    
     private Publication deleteFieldsThatAreExpectedToBeNullWhenCreatingAPublishedPublicationFromScopus(
         Publication publication) {
         return publication.copy()
@@ -107,7 +105,7 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
             .withResourceOwner(null)
             .build();
     }
-
+    
     private Publication.Builder copyFieldsCreatedByHandler(Publication.Builder publicationBuilder,
                                                            Publication savedPublication) {
         return publicationBuilder.withResourceOwner(savedPublication.getResourceOwner())
@@ -116,19 +114,19 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
             .withModifiedDate(savedPublication.getModifiedDate())
             .withIdentifier(savedPublication.getIdentifier());
     }
-
+    
     private PublicationResponse sendMessageToEventHandler(URI s3FileUri) throws JsonProcessingException {
         var eventBody = new EventReference(DATA_IMPORT_TOPIC, SCOPUS_IMPORT_SUBTOPIC, s3FileUri);
         var event = EventBridgeEventBuilder.sampleEvent(eventBody);
         handler.handleRequest(event, outputStream, CONTEXT);
         return parseResponse(outputStream.toString());
     }
-
+    
     private URI storeRequestInS3(CreatePublicationRequest request) throws IOException {
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(request);
         return s3Driver.insertFile(UnixPath.of(randomString()), json);
     }
-
+    
     private PublicationResponse parseResponse(String responseString) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponse.class);
     }

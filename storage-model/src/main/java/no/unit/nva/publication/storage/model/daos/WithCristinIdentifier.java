@@ -18,36 +18,35 @@ import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 
 public interface WithCristinIdentifier {
-
+    
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     default String getResourceByCristinIdentifierPartitionKey() {
         return getCristinIdentifier().isEmpty() ? null
-                : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getCristinIdentifier();
+                   : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getCristinIdentifier();
     }
-
+    
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
     default String getResourceByCristinIdentifierSortKey() {
         return RESOURCE_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getIdentifier();
     }
-
+    
     @JsonIgnore
     SortableIdentifier getIdentifier();
-
+    
     @JsonIgnore
     Optional<String> getCristinIdentifier();
-
+    
     default QueryRequest createQueryFindByCristinIdentifier() {
         return new QueryRequest()
-                .withTableName(RESOURCES_TABLE_NAME)
-                .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
-                .withKeyConditions(createConditionsWithCristinIdentifier());
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
+            .withKeyConditions(createConditionsWithCristinIdentifier());
     }
-
+    
     default Map<String, Condition> createConditionsWithCristinIdentifier() {
         Condition condition = new Condition()
-                .withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
+            .withComparisonOperator(ComparisonOperator.EQ)
+            .withAttributeValueList(new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
         return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
     }
-
 }

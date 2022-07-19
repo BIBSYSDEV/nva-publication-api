@@ -6,7 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
  * Publishing event.
  */
 public interface EventPublisher {
-
+    
     /**
      * Publish DynamodbEvent on a bus.
      *

@@ -740,7 +740,7 @@ Resources:
                 responsePayload:
                   topic: [ "PublicationService.DoiRequest.Update" ]
                   newData:
-                      type: [ { "exists": true } ] # "exists" works only in leaf nodes.
+                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -1060,8 +1060,8 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: ["PublicationService.DataImport.DataEntry"]
-                subtopic: ["PublicationService.CristinData.DataEntry"]
+                topic: [ "PublicationService.DataImport.DataEntry" ]
+                subtopic: [ "PublicationService.CristinData.DataEntry" ]
 
   CreatePublishedPublicationHandler:
     Type: AWS::Serverless::Function
@@ -1083,7 +1083,7 @@ Resources:
             EventBusName: !Ref NewNvaEventBusArn
             Pattern:
               detail:
-                topic: [ "FatchDoi.DataImport.Scopus" ]
+                topic: [ "FetchDoi.DataImport.Scopus" ]
 
   ScopusDeletionEventHandler:
     Type: AWS::Serverless::Function

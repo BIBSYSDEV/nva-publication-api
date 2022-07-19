@@ -20,14 +20,14 @@ import nva.commons.core.JacocoGenerated;
 @JsonIgnoreProperties({"antall_sider_totalt", "publiseringsar", "status_referee_ordning",
     "supplement", "utbredelsesomrade", "artikkelnummer", "arstall_trykket", "arstall_online"})
 public class CristinJournalPublication {
-
+    
     public static final String JOURNAL = "tidsskrift";
     public static final String PAGES_BEGIN = "sidenr_fra";
     public static final String PAGES_END = "sidenr_til";
     public static final String VOLUME = "volum";
     public static final String ISSUE = "hefte";
     public static final String DOI = "doi";
-
+    
     @JsonProperty(JOURNAL)
     private CristinJournalPublicationJournal journal;
     @JsonProperty(PAGES_BEGIN)
@@ -40,11 +40,11 @@ public class CristinJournalPublication {
     private String issue;
     @JsonProperty(DOI)
     private String doi;
-
+    
     public CristinJournalPublication() {
-
+    
     }
-
+    
     @JacocoGenerated
     public CristinJournalPublicationBuilder copy() {
         return this.toBuilder();

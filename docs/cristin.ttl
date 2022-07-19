@@ -295,7 +295,7 @@
 :HENDELSE_Class
     a               rdfs:Class ;
     rdfs:subClassOf :TYPE_FOREDRAG_POSTER_Class ;
-    rdfs:comment    "Information about the actuall event.".
+    rdfs:comment    "Information about the actuall event." .
 
 :TYPE_PRODUKT_Class
     a               rdfs:Class ;
@@ -310,17 +310,17 @@
                         Software (Programvare)
                         Database (Database)
                         Sound material (Lydmateriale)
-                        Other product (Annet produkt)""".
+                        Other product (Annet produkt)""" .
 
 :ARKIVPOST_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    "A reference to a local archive. Example: {eierkode=UIO, edit_iri=https://w3prod-dspace01.uio.no/dspace/swordv2/edit/81508, dato_opprettet=2019-01-24T23:06:25}".
+    rdfs:comment    "A reference to a local archive. Example: {eierkode=UIO, edit_iri=https://w3prod-dspace01.uio.no/dspace/swordv2/edit/81508, dato_opprettet=2019-01-24T23:06:25}" .
 
 :ARKIV_FIL_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    "Holds information about a file uploaded to an archive.".
+    rdfs:comment    "Holds information about a file uploaded to an archive." .
 
 :TYPE_KUNSTNERSIKPRODUKSJON_Class
     a               rdfs:Class ;
@@ -331,7 +331,7 @@
                        Arkitektutstilling
                        Kunstutstilling
                        Webutstilling
-                       Annen presentasjon """.
+                       Annen presentasjon """ .
 
 :TYPE_UTSTILLING_Class
     a               rdfs:Class ;
@@ -344,19 +344,19 @@
                         Arkitektutstilling
                         Kunstutstilling
                         Webutstilling
-                        Annen presentasjon""".
+                        Annen presentasjon""" .
 
 :id
-    a               :cristinfield ;
-    rdfs:comment    "Identifier of Cristin Result entry." ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :Result ; .
+    a            :cristinfield ;
+    rdfs:comment "Identifier of Cristin Result entry." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :Result ; .
 
 :arstall
-    a               :cristinfield ;
-    rdfs:comment    "The year a resource (result) was published." ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :Result ; .
+    a            :cristinfield ;
+    rdfs:comment "The year a resource (result) was published." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :Result ; .
 
 :dato_opprettet
     a                  :cristinfield ;
@@ -370,24 +370,24 @@
 
 
 :varbeidhovedkatkode
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     The general category of the resource. A collection of "varbeidunderkatkode" .
 
 """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :Result ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result ; .
 
 :varbeidunderkatkode
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
         The more specific category of the resource. No specific range available at the moment.
         Each varbeidunderkatkode belongs to only one varbeidhovedkatkode and therefore the value of this field is enough
         to deduct the exact type of the publication.
         The range of this property is found here:  https://api.cristin.no/v2/results/categories?lang=nb ,  en
         """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :Result ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result ; .
 
 :eierkode_opprettet
     a            :cristinfield ;
@@ -482,11 +482,11 @@
     :currently_ignored "true" .
 
 :varbeid_kilde
-    a                   :cristinfield ;
-    rdfs:comment        "See description in range class.";
-    rdfs:range          :VARBEID_KILDE_Class ;
-    rdfs:domain         :Result ;
-    :currently_ignored  true.
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class." ;
+    rdfs:range         :VARBEID_KILDE_Class ;
+    rdfs:domain        :Result ;
+    :currently_ignored true .
 
 :kildekode
     a                  :cristinfield ;
@@ -532,34 +532,36 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     :currently_ignored "true" .
 
 :varbeid_sprak
-    a               :cristinfield ;
-    rdfs:comment    """See the description of the range class. """ ;
-    rdfs:range      :VARBEID_SPRAK_Class ;
-    rdfs:domain     :Result ; .
+    a            :cristinfield ;
+    rdfs:comment """See the description of the range class. """ ;
+    rdfs:range   :VARBEID_SPRAK_Class ;
+    rdfs:domain  :Result ; .
 
 :sprakkode
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     When the domain in :VARARBEID_SPRAK it is the language of the title and the abstract included in the entry
     When the domain is :TIDSSKRIFT it is the language used in the journal, this may not be the same as the article contained within.
     The range is ISO 639-1.
     Possibly null or (xx) to represent (n/a)
     """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class, :TIDSSKRIFT_Class ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_SPRAK_Class, :TIDSSKRIFT_Class ; .
 
 :tittletekst
-    a               :cristinfield ;
-    rdfs:comment    "The title in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class ; .
+    a           :cristinfield ;
+    rdfs:comment
+                "The title in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
+    rdfs:range  xsd:string ;
+    rdfs:domain :VARBEID_SPRAK_Class ; .
 
 
 :sammendragtekst
-    a               :cristinfield ;
-    rdfs:comment    "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class ; .
+    a           :cristinfield ;
+    rdfs:comment
+                "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
+    rdfs:range  xsd:string ;
+    rdfs:domain :VARBEID_SPRAK_Class ; .
 
 :status_original
     a                  :cristinfield ;
@@ -581,10 +583,10 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     :currently_ignored "true" .
 
 :varbeid_person
-    a               :cristinfield ;
-    rdfs:comment    "See description in range class." ;
-    rdfs:range      :VARBEID_PERSON_Class ;
-    rdfs:domain     :Result ; .
+    a            :cristinfield ;
+    rdfs:comment "See description in range class." ;
+    rdfs:range   :VARBEID_PERSON_Class ;
+    rdfs:domain  :Result ; .
 
 :personlopenr
     a                  :cristinfield ;
@@ -600,42 +602,42 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 
 
 :fornavn
-    a               :cristinfield ;
-    rdfs:comment    """The first/given name of the contributor of the respective result entry.
+    a            :cristinfield ;
+    rdfs:comment """The first/given name of the contributor of the respective result entry.
                         This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
                         submitted the publication to the publisher
 (e.g. Elsevier)
         """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_PERSON_Class ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_PERSON_Class ; .
 
 :etternavn
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     The surname/family-name of the contributor of the respective result entry
     This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
         submitted the publication to the publisher ( e.g. Elsevier ) .
 """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_PERSON_Class ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_PERSON_Class ; .
 
 :rekkefolgenr
-    a               :cristinfield ;
-    rdfs:comment    "An integer informing in what place among the other contributers this particular one is to be listed.";
-    rdfs:range      :VARBEID_PERSON_Class ;
-    rdfs:domain     xsd:positiveInteger ;
-    :currently_ignored false.
+    a                  :cristinfield ;
+    rdfs:comment       "An integer informing in what place among the other contributers this particular one is to be listed." ;
+    rdfs:range         :VARBEID_PERSON_Class ;
+    rdfs:domain        xsd:positiveInteger ;
+    :currently_ignored false .
 
 :varbeid_person_sted
-    a               :cristinfield ;
-    rdfs:comment    "See description in range class" ;
-    rdfs:range      :VARBEID_PERSON_STED_Class ;
-    rdfs:domain     :VARBEID_PERSON_Class ; .
+    a            :cristinfield ;
+    rdfs:comment "See description in range class" ;
+    rdfs:range   :VARBEID_PERSON_STED_Class ;
+    rdfs:domain  :VARBEID_PERSON_Class ; .
 
 
 :institusjonsnr
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     The **current** Cristin institution identifier institution that the contributor of the publication was affiliated with.
     This value may have changed from the time of entry was registered in
 Cristin.
@@ -643,39 +645,39 @@ Cristin.
         ,   :avdnr, :undavdnr, and :gruppenr form a unique identifier of the Contributor's affiliation.
 
     """ ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class ; .
 
 :avdnr
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     The **current** Cristin Department number that the contributor of the publication was affiliated with at the time of creation of the
     registration entry.
     This value may have changed from the time of entry was registered in Cristin.
     See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class ; .
 
 :undavdnr
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     The current Sub-department number that the contributor of the publication was affiliated with at the time of creation of the
     registration entry.
     This value may have changed from the time of entry was registered in Cristin.
     See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class ; .
 
 :gruppenr
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
      The current group number that the contributor of the publication was affiliated with at the time of creation of the registration entry.
      This value may have changed from the time of entry was registered in Cristin.
     """ ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class ; .
 
 :stedkode_opprinnelig
     a                  :cristinfield ;
@@ -712,10 +714,10 @@ Cristin.
     :currently_ignored "true" .
 
 :varbeid_person_sted_rolle
-    a               :cristinfield ;
-    rdfs:comment    "See description in range class" ;
-    rdfs:range      :VARBEID_PERSON_STED_ROLLE_Class ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
+    a            :cristinfield ;
+    rdfs:comment "See description in range class" ;
+    rdfs:range   :VARBEID_PERSON_STED_ROLLE_Class ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class ; .
 
 :rollekode
     a                  :cristinfield ;
@@ -725,7 +727,7 @@ Cristin.
         """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :VARBEID_PERSON_STED_ROLLE_Class ;
-    :currently_ignored false ;.
+    :currently_ignored false ; .
 
 :eierkode
     a                  :cristinfield ;
@@ -824,10 +826,11 @@ Cristin.
     rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
 :disiplinkode_eier
-    a            :cristinfield ;
-    rdfs:comment "A code identifying the parent node of the respective publications discipline. The code is a number in the form of a string" ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_VDISIPLIN_Class .
+    a           :cristinfield ;
+    rdfs:comment
+                "A code identifying the parent node of the respective publications discipline. The code is a number in the form of a string" ;
+    rdfs:range  xsd:string ;
+    rdfs:domain :VARBEID_VDISIPLIN_Class .
 
 :disiplinnavn_bokmal
     a            :cristinfield ;
@@ -893,11 +896,11 @@ It is a self reference.""" ;
     :currently_ignored false .
 
 :finansiering_varbeid
-    a                   :cristinfield;
-    rdfs:comment        "See description in range class.";
-    rdfs:domain         :Result ;
-    rdfs:range          :FINANSIERING_VARBEID_Class ;
-    :currently_ignored  true.
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class." ;
+    rdfs:domain        :Result ;
+    rdfs:range         :FINANSIERING_VARBEID_Class ;
+    :currently_ignored true .
 
 :finansieringslopenr
     a                  :cristinfield ;
@@ -949,180 +952,181 @@ It is a self reference.""" ;
 
 
 :type_bok_rapport
-    a               :cristinfield ;
-    rdfs:comment    "See description in range class.";
-    rdfs:range      :TYPE_BOK_RAPPORT_Class ;
-    rdfs:domain     :Result ; .
+    a            :cristinfield ;
+    rdfs:comment "See description in range class." ;
+    rdfs:range   :TYPE_BOK_RAPPORT_Class ;
+    rdfs:domain  :Result ; .
 
 
 
 :isbn
-    a               :cristinfield ;
-    rdfs:comment    "The isbn which the respective Book or Report is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored false;.
+    a                  :cristinfield ;
+    rdfs:comment       "The isbn which the respective Book or Report is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false ; .
 
 :utgivernavn
-    a               :cristinfield ;
-    rdfs:comment    "The name of the publisher of the respective Book or Report. Can be empty." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored false;.
+    a                  :cristinfield ;
+    rdfs:comment       "The name of the publisher of the respective Book or Report. Can be empty." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false ; .
+
 :forlag
-    a            :cristinfield ;
-    rdfs:comment """
+    a                  :cristinfield ;
+    rdfs:comment       """
         Information about the Publishing House of the respective Book or Report.
         The connection between the subfields forlag.forlagsnavn and utgivernavn is UNKNONWN.
          There are 353 cases where forlag.forlagsnavn and utgivernavn are not the same and there is no NSD code for reference.
          There are also about 140 000 cases where there is no forlag entry but there is utgivernavn.
 
         """ ;
-    rdfs:range   :FORLAG_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored false;.
+    rdfs:range         :FORLAG_Class ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false ; .
 
 :forlagsnavn
-    a            :cristinfield ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :FORLAG_Class ;
-    rdfs:comment """The name of the Publishing House that published the Book or Report""";
-    :currently_ignored false;.
+    a                  :cristinfield ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :FORLAG_Class ;
+    rdfs:comment       """The name of the Publishing House that published the Book or Report""" ;
+    :currently_ignored false ; .
 
 :forlagsnr
-    a            :cristinfield ;
-    rdfs:range   xsd:integer ;
-    rdfs:domain  :FORLAG_Class ;
-    rdfs:comment """The internal Cristin number of the specific Book series.""" ;
-    :should_ignore   true.
+    a              :cristinfield ;
+    rdfs:range     xsd:integer ;
+    rdfs:domain    :FORLAG_Class ;
+    rdfs:comment   """The internal Cristin number of the specific Book series.""" ;
+    :should_ignore true .
 
 
 :fagfelt
-    a            :cristinfield ;
-    rdfs:comment "The scientific field in which the Book or Report is published" ;
-    rdfs:range   :FAGFELT_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored false;.
+    a                  :cristinfield ;
+    rdfs:comment       "The scientific field in which the Book or Report is published" ;
+    rdfs:range         :FAGFELT_Class ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false ; .
 
 :tidsskrift_serie
-    a            :cristinfield ;
-    rdfs:comment """
+    a                  :cristinfield ;
+    rdfs:comment       """
         A Publisher's series that is modeled by NSD as Journal. Probably not exactly a journal since the respective Cristin Results are Books or Reports.
         This field has the exact same structure as the field "tidskrift" in the field "type_tidsskriftpublikasjon"
      """ ;
-    rdfs:range   :TIDSSKRIFT_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored false;.
+    rdfs:range         :TIDSSKRIFT_Class ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false ; .
 
 :volum_serie
-    a           :cristinfield ;
-    rdfs:comment "The Book or Report volume in the series. The value is a number in the form of a string. Possibly null.";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored false.
+    a                  :cristinfield ;
+    rdfs:comment       "The Book or Report volume in the series. The value is a number in the form of a string. Possibly null." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false .
 
 :utgave
-    a           :cristinfield ;
-    rdfs:comment "A text field which generally consists of a number indicating which edition this book is.";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "A text field which generally consists of a number indicating which edition this book is." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :utgave_fra
-    a           :cristinfield ;
-    rdfs:comment "A text field which generally consists of a number indicating which edition this book is. This field is most likely not used in Cristin any more.";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "A text field which generally consists of a number indicating which edition this book is. This field is most likely not used in Cristin any more." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :status_revidert
-    a           :cristinfield ;
-    rdfs:comment """If the value is (J) the Book or Report has been revised, if it is (N) it has not. Possibly null if we dont know.
-                    Revision is done by the author(s).""";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       """If the value is (J) the Book or Report has been revised, if it is (N) it has not. Possibly null if we dont know.
+                    Revision is done by the author(s).""" ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :status_elektronisk_publisert
-    a           :cristinfield ;
-    rdfs:comment "If the value is (J) the Book or Report has been published electronically, if it is (N) it has not. Possibly null if we dont know.";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "If the value is (J) the Book or Report has been published electronically, if it is (N) it has not. Possibly null if we dont know." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :stedangivelse_utgiver
-    a           :cristinfield ;
-    rdfs:comment "A text field indicating where the Book or Report was published, example: Oslo.";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "A text field indicating where the Book or Report was published, example: Oslo." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :institusjonsnr_utgiver
-    a           :cristinfield ;
-    rdfs:comment """This field has to bee seen in combination with :avdnr_utgiver, :undavdnr_utgiver, :gruppenr_utgiver.
+    a                  :cristinfield ;
+    rdfs:comment       """This field has to bee seen in combination with :avdnr_utgiver, :undavdnr_utgiver, :gruppenr_utgiver.
                     Each of the fields carries a number that combined gives a publisher. Each number added makes the granularity finer.
-                    Example: 194 60 0 0 would be the Faculty of Economics(60) at NTNU(194).""";
-    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+                    Example: 194 60 0 0 would be the Faculty of Economics(60) at NTNU(194).""" ;
+    rdfs:range         rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :avdnr_utgiver
-    a           :cristinfield ;
-    rdfs:comment "See :institusjonsnr_utgiver";
-    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See :institusjonsnr_utgiver" ;
+    rdfs:range         rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :undavdnr_utgiver
-    a           :cristinfield ;
-    rdfs:comment "See :institusjonsnr_utgiver";
-    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See :institusjonsnr_utgiver" ;
+    rdfs:range         rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :gruppenr_utgiver
-    a           :cristinfield ;
-    rdfs:comment "See :institusjonsnr_utgiver";
-    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See :institusjonsnr_utgiver" ;
+    rdfs:range         rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 
 :tidsskriftnr_serie
-    a           :cristinfield ;
-    rdfs:comment """Refers to a Cristin journal and not a publisher. This is often the case for conference proceedings, when this would be a collection of articles.
+    a                  :cristinfield ;
+    rdfs:comment       """Refers to a Cristin journal and not a publisher. This is often the case for conference proceedings, when this would be a collection of articles.
                     Not part of current CristinImport.""" ;
-    rdfs:range  rdf:nil; #Unknown.
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    rdfs:range         rdf:nil ; #Unknown.
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :sprakkode_oversatt_til
-    a           :cristinfield ;
-    rdfs:comment "Holds the language-code(ISO 639-1 code) for the language the Book or Report has been translated into, feks 'EN' for english.";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "Holds the language-code(ISO 639-1 code) for the language the Book or Report has been translated into, feks 'EN' for english." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :originalforfatter
-    a           :cristinfield ;
-    rdfs:comment "If the Book is a translation this field will hold the name of the original author(s)." ;
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "If the Book is a translation this field will hold the name of the original author(s)." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :originaltittel
-    a           :cristinfield ;
-    rdfs:comment "If the Book is a translation this field will hold the original title.";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "If the Book is a translation this field will hold the original title." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :fagfeltkode
-    a               :cristinfield ;
-    rdfs:comment    "The (numerical) code representing the scientific field in which the Book or Report is published" ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :FAGFELT_Class ;
-    :currently_ignored false;.
+    a                  :cristinfield ;
+    rdfs:comment       "The (numerical) code representing the scientific field in which the Book or Report is published" ;
+    rdfs:range         xsd:positiveInteger ;
+    rdfs:domain        :FAGFELT_Class ;
+    :currently_ignored false ; .
 
 :fagomradekode
     a                  :cristinfield ;
@@ -1146,55 +1150,57 @@ It is a self reference.""" ;
     :currently_ignored "true" .
 
 :type_tidsskriftpublikasjon
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     A type publication called tidsskrift.
     """ ;
-    rdfs:range      :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    rdfs:domain     :Result ; .
+    rdfs:range   :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:domain  :Result ; .
 
 :volum
-    a               :cristinfield ;
-    rdfs:comment    """
+    a                  :cristinfield ;
+    rdfs:comment       """
     The volume in which the article is published. The value is a number in the form of a string. Possibly null.
     """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :currently_ignored false .
 
 :sidenr_fra
-    a               :cristinfield ;
-    rdfs:comment    "The page number the that marks the start of the article. The value is a number in the form of a string. Possibly null." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a                  :cristinfield ;
+    rdfs:comment       "The page number the that marks the start of the article. The value is a number in the form of a string. Possibly null." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :currently_ignored false .
 
 :sidenr_til
-    a               :cristinfield ;
-    rdfs:comment    "The page number the that marks the end of the article. The value is a number in the form of a string. Possibly null." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a                  :cristinfield ;
+    rdfs:comment       "The page number the that marks the end of the article. The value is a number in the form of a string. Possibly null." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :currently_ignored false .
 
 :doi
-    a               :cristinfield ;
-    rdfs:comment    """The doi connected to the respective entry. Possibly null.
+    a                  :cristinfield ;
+    rdfs:comment       """The doi connected to the respective entry. Possibly null.
                         There are currently no entries in Cristin where the main category is BOK and this field is not null.
                         Currently ignored for TYPE_BOK_RAPPORT_Class domain.""" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_BOK_RAPPORT_Class ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class,
+                       :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false .
 
 :antall_sider_totalt
-    a               :cristinfield ;
-    rdfs:comment    """
+    a                  :cristinfield ;
+    rdfs:comment       """
     The total number of pages of the specific entry.
     When the the entry represents a part of another entry (e.g. a Chapter in a Book) then the total number of pages
     refers to the entry (e.g Chapter) and not the to parent entry (e.g. Book).
     """ ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_FOREDRAG_POSTER_Class ;
-    :currently_ignored false.
+    rdfs:range         xsd:positiveInteger ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class,
+                       :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_FOREDRAG_POSTER_Class ;
+    :currently_ignored false .
 
 :publiseringsar
     a                  :cristinfield ;
@@ -1215,14 +1221,15 @@ It is a self reference.""" ;
         A string holding information about the which issue it is,
         this could be in the form of a number, a roman number or any other way of distinguishing an issue""" ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_Class  ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored true .
 
 :status_referee_ordning
     a                  :cristinfield ;
     rdfs:comment       "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no and NULL." ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TIDSSKRIFT_Class, :TYPE_FOREDRAG_POSTER_Class ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TIDSSKRIFT_Class,
+                       :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
 
 :supplement
@@ -1272,25 +1279,25 @@ It is a self reference.""" ;
     rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class .
 
 :issn
-    a               :cristinfield ;
-    rdfs:comment    "The issn connected to the respective article. Possibly null." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
-    :currently_ignored   false .
+    a                  :cristinfield ;
+    rdfs:comment       "The issn connected to the respective article. Possibly null." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TIDSSKRIFT_Class ;
+    :currently_ignored false .
 
 :issn_elektronisk
-    a               :cristinfield ;
-    rdfs:comment    "The online version of the issn connected to the respective article. Possibly null." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
-    :currently_ignored   false .
+    a                  :cristinfield ;
+    rdfs:comment       "The online version of the issn connected to the respective article. Possibly null." ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TIDSSKRIFT_Class ;
+    :currently_ignored false .
 
 :tidsskriftnavn
-    a               :cristinfield ;
-    rdfs:comment    "The name of the journal publishing the article" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
-    :currently_ignored   false .
+    a                  :cristinfield ;
+    rdfs:comment       "The name of the journal publishing the article" ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TIDSSKRIFT_Class ;
+    :currently_ignored false .
 
 :tidsskriftnr
     a                  :cristinfield ;
@@ -1300,12 +1307,11 @@ It is a self reference.""" ;
     :currently_ignored true .
 
 :nsdkode
-
-    a            :cristinfield ;
-    rdfs:comment "A code representing the id of a Journal, Series (also viewed as a Journal in NSD) or Publishing House in NSD-channel registry " ;
-    rdfs:range   rdf:nil ; #unknown range
-    rdfs:domain  :TIDSSKRIFT_Class, :FORLAG_Class  ;
-    :currently_ignored   false .
+    a                  :cristinfield ;
+    rdfs:comment       "A code representing the id of a Journal, Series (also viewed as a Journal in NSD) or Publishing House in NSD-channel registry " ;
+    rdfs:range         rdf:nil ; #unknown range
+    rdfs:domain        :TIDSSKRIFT_Class, :FORLAG_Class ;
+    :currently_ignored false .
 
 :landkode_utgiver
     a                  :cristinfield ;
@@ -1339,46 +1345,46 @@ It is a self reference.""" ;
     :currently_ignored true .
 
 :varbeid_emneord
-    a               :cristinfield ;
-    rdfs:comment    """See the range class.""" ;
-    rdfs:range      :VARBEID_EMNEORD_Class ;
-    rdfs:domain     :Result ; .
+    a            :cristinfield ;
+    rdfs:comment """See the range class.""" ;
+    rdfs:range   :VARBEID_EMNEORD_Class ;
+    rdfs:domain  :Result ; .
 
 :emneordnavn_bokmal
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
     The bokmal version of the VARBEID_EMNEORD. Possibly null.
     """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_EMNEORD_Class ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_EMNEORD_Class ; .
 
 :emneordnavn_engelsk
-    a               :cristinfield ;
-    rdfs:comment    "The english version of the VARBEID_EMNEORD. Possibly null." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_EMNEORD_Class ; .
+    a            :cristinfield ;
+    rdfs:comment "The english version of the VARBEID_EMNEORD. Possibly null." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_EMNEORD_Class ; .
 
 :emneordnavn_nynorsk
-    a               :cristinfield ;
-    rdfs:comment    "The nynorsk version of the the VARBEID_EMNEORD. Possibly null." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_EMNEORD_Class ; .
+    a            :cristinfield ;
+    rdfs:comment "The nynorsk version of the the VARBEID_EMNEORD. Possibly null." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_EMNEORD_Class ; .
 
 :helsekategorikode
-    a                  :cristinfield ;
-    rdfs:comment       """Health Category Code in the UKCRC Health Research Classification System (HRCS).
+    a            :cristinfield ;
+    rdfs:comment """Health Category Code in the UKCRC Health Research Classification System (HRCS).
     See https://hrcsonline.net/health-categories/.
     """ ;
-    rdfs:range         xsd:string ;
-    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ; .
 
 :aktivitetskode
-    a                  :cristinfield ;
-    rdfs:comment       """Research Activity Code in the UKCRC Health Research Classification System (HRCS).
+    a            :cristinfield ;
+    rdfs:comment """Research Activity Code in the UKCRC Health Research Classification System (HRCS).
                      See https://hrcsonline.net/research-activities/.
                      """ ;
-    rdfs:range         xsd:string ;
-    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ; .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ; .
 
 :TYPE_BOK_RAPPORT_DEL
     a            :cristinfield ;
@@ -1387,19 +1393,19 @@ It is a self reference.""" ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class .
 
 :varbeidlopenr_inngar_i
-    a            :cristinfield ;
-    rdfs:comment """The CristinID of the current TYPE_BOK_RAPPORT_DEL_Class entry's parent TYPE_BOK_RAPPORT_Class entry.""" ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
-    rdfs:range   xsd:integer;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       """The CristinID of the current TYPE_BOK_RAPPORT_DEL_Class entry's parent TYPE_BOK_RAPPORT_Class entry.""" ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:range         xsd:integer ;
+    :currently_ignored true .
 
 :status_utgitt_av_forlag
-    a            :cristinfield ;
-    rdfs:comment """If the value is (J) the Book or Report has been published by a publisher, if it is (N) it has not. Possibly null if status is unknown.
+    a                  :cristinfield ;
+    rdfs:comment       """If the value is (J) the Book or Report has been published by a publisher, if it is (N) it has not. Possibly null if status is unknown.
                     There is no sure connection between this value and :forlag""" ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_BOK_RAPPORT_Class ;
-    :currently_ignored true.
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true .
 
 :delangivelse
     a                  :cristinfield ;
@@ -1412,95 +1418,95 @@ It is a self reference.""" ;
     :currently_ignored true .
 
 :sidenr_fra
-    a            :cristinfield ;
-    rdfs:comment """The starting page of the part in the respective parent entry.
+    a                  :cristinfield ;
+    rdfs:comment       """The starting page of the part in the respective parent entry.
     Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
     """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
-    :currently_ignored false.
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored false .
 
 :sidenr_til
-    a            :cristinfield ;
-    rdfs:comment """The ending page of the part in the respective parent entry.
+    a                  :cristinfield ;
+    rdfs:comment       """The ending page of the part in the respective parent entry.
     Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
     """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class;
-    :currently_ignored false.
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored false .
 
 :sprakkode_oversatt_fra
-    a            :cristinfield ;
-    rdfs:comment """It has meaning only when the respective entry has :varbeidunderkatkode OVERSETTELSE_KAP
+    a                  :cristinfield ;
+    rdfs:comment       """It has meaning only when the respective entry has :varbeidunderkatkode OVERSETTELSE_KAP
     or OVERSETTELSE_BOK, indicating that the current entry is a translation of a Book or Chapter.
  The value represents the language of the original document as an ISO 639-1 code. The original document is not
  referenced further as it may not be in the scope of Cristin.
   """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
-    :currently_ignored true.
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored true .
 
 :type_foredrag_poster
-    a           :cristinfield ;
-    rdfs:comment "See description in range class.";
-    rdfs:range  :TYPE_FOREDRAG_POSTER_Class ;
-    rdfs:domain :Result .
+    a            :cristinfield ;
+    rdfs:comment "See description in range class." ;
+    rdfs:range   :TYPE_FOREDRAG_POSTER_Class ;
+    rdfs:domain  :Result .
 
 :status_invitert
-    a           :cristinfield ;
-    rdfs:comment """The value is J or N. When the value is J the lecturer has received a special invitation to hold a lecture or a poster.
-                    N indicates that the lecturer still held a lecture or a poster, but without a special invitation""";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
+    a                  :cristinfield ;
+    rdfs:comment       """The value is J or N. When the value is J the lecturer has received a special invitation to hold a lecture or a poster.
+                    N indicates that the lecturer still held a lecture or a poster, but without a special invitation""" ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
 
 :status_plenar
-    a           :cristinfield ;
-    rdfs:comment """The value is J or N. When the value is J the lecture or poster was the main event.
-                    N indicates that it was not the main event.""";
-    rdfs:range  xsd:string ;
-    rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
+    a                  :cristinfield ;
+    rdfs:comment       """The value is J or N. When the value is J the lecture or poster was the main event.
+                    N indicates that it was not the main event.""" ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
 
 :hendelse
-    a           :cristinfield ;
-    rdfs:comment "See description in range class.";
-    rdfs:range  :HENDELSE_Class;
-    rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class." ;
+    rdfs:range         :HENDELSE_Class ;
+    rdfs:domain        :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
 
 :type_produkt
-    a           :cristinfield ;
-    rdfs:comment "See description in range class.";
-    rdfs:domain :Result ;
-    rdfs:range  :TYPE_PRODUKT_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class." ;
+    rdfs:domain        :Result ;
+    rdfs:range         :TYPE_PRODUKT_Class ;
+    :currently_ignored true .
 
 :arkivpost
-    a           :cristinfield ;
-    rdfs:comment "See description in range class";
-    rdfs:domain :Result, :TYPE_BOK_RAPPORT_Class ;
-    rdfs:range  :ARKIVPOST_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class" ;
+    rdfs:domain        :Result, :TYPE_BOK_RAPPORT_Class ;
+    rdfs:range         :ARKIVPOST_Class ;
+    :currently_ignored true .
 
 :arkivfil
-    a           :cristinfield ;
-    rdfs:comment "See description in range class.";
-    rdfs:domain :Result ;
-    rdfs:range  :ARKIV_FIL_Class ;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class." ;
+    rdfs:domain        :Result ;
+    rdfs:range         :ARKIV_FIL_Class ;
+    :currently_ignored true .
 
 :type_kunstneriskproduksjon
-    a           :cristinfield ;
-    rdfs:comment "See description in range class";
-    rdfs:domain :Result ;
-    rdfs:range  :TYPE_KUNSTNERSIKPRODUKSJON_Class;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class" ;
+    rdfs:domain        :Result ;
+    rdfs:range         :TYPE_KUNSTNERSIKPRODUKSJON_Class ;
+    :currently_ignored true .
 
 :type_utstilling
-    a           :cristinfield ;
-    rdfs:comment "See description in range class";
-    rdfs:domain :Result ;
-    rdfs:range  :TYPE_UTSTILLING_Class;
-    :currently_ignored true.
+    a                  :cristinfield ;
+    rdfs:comment       "See description in range class" ;
+    rdfs:domain        :Result ;
+    rdfs:range         :TYPE_UTSTILLING_Class ;
+    :currently_ignored true .
 

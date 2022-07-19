@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
-
+    
     public static final String EXPECTED_EVENT_TOPIC_ERROR_MESSAGE =
         "The event topic is not the expected. Expected topic is "
         + EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
@@ -32,17 +32,17 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     public static final String TYPE_FIELD = "type";
     private static final Logger logger = LoggerFactory.getLogger(AnalyticsIntegrationHandler.class);
     private final S3Client s3Client;
-
+    
     @JacocoGenerated
     public AnalyticsIntegrationHandler() {
         this(S3Driver.defaultS3Client().build());
     }
-
+    
     public AnalyticsIntegrationHandler(S3Client s3Client) {
         super(EventReference.class);
         this.s3Client = s3Client;
     }
-
+    
     @Override
     protected EventReference processInputPayload(EventReference input,
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
@@ -54,14 +54,14 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         logger.info("input:" + attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(input)).orElseThrow());
         return processInputEvent(input.getUri());
     }
-
+    
     private EventReference processInputEvent(URI inputFileLocation) {
         return readPublicationAndRemoveJsonLdContext(inputFileLocation)
             .map(fileContents -> storePublicationInAnalyticsFolder(fileContents, inputFileLocation))
             .map(this::createEventWithOutputFileUri)
             .orElse(EMPTY_EVENT);
     }
-
+    
     private Optional<String> readPublicationAndRemoveJsonLdContext(URI inputFileLocation) {
         return Optional.ofNullable(readFileContents(inputFileLocation))
             .map(this::parseAsJson)
@@ -70,54 +70,54 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
             .map(this::writeJsonInAthenaFriendlyWay)
             .orElseGet(this::ignoreNotInterestingEntries);
     }
-
+    
     private Optional<String> writeJsonInAthenaFriendlyWay(ObjectNode json) {
         return Optional.of(attempt(() -> JsonUtils.singleLineObjectMapper.writeValueAsString(json)).orElseThrow());
     }
-
+    
     private String readFileContents(URI inputFileLocation) {
         var s3Driver = new S3Driver(s3Client, inputFileLocation.getHost());
         var inputFilePathInsideBucket = UriWrapper.fromUri(inputFileLocation).toS3bucketPath();
         return s3Driver.getFile(inputFilePathInsideBucket);
     }
-
+    
     private URI storePublicationInAnalyticsFolder(String publication, URI inputFileLocation) {
         var writeS3Driver = new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET);
         return attempt(() -> constructOutputPath(inputFileLocation))
             .map(outputFilePath -> writeS3Driver.insertFile(outputFilePath, publication))
             .orElseThrow();
     }
-
+    
     private UnixPath constructOutputPath(URI inputFileLocation) {
         var filename = UriWrapper.fromUri(inputFileLocation).getLastPathElement();
         return PersistenceConfig.ANALYTICS_FOLDER.addChild(filename);
     }
-
+    
     private EventReference createEventWithOutputFileUri(URI outputFileUri) {
         return new EventReference(ANALYTICS_ENTRY_PERSISTED_EVENT_TOPIC, outputFileUri);
     }
-
+    
     private ObjectNode parseAsJson(String contents) {
         return (ObjectNode) attempt(() -> JsonUtils.dtoObjectMapper.readTree(contents)).orElseThrow();
     }
-
+    
     private ObjectNode removeJsonLdContext(ObjectNode json) {
         json.remove(CONTEXT);
         return json;
     }
-
+    
     private Optional<String> ignoreNotInterestingEntries() {
         return Optional.empty();
     }
-
+    
     private boolean expandedResourceIsPublication(ObjectNode json) {
         return ExpandedResource.TYPE.equalsIgnoreCase(json.get(TYPE_FIELD).textValue());
     }
-
+    
     private boolean topicIsInvalid(EventReference input) {
         return !EXPANDED_ENTRY_UPDATED_EVENT_TOPIC.equals(input.getTopic());
     }
-
+    
     private void logErrorMessageAndThrowException(AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event) {
         String jsonStringEvent = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(event)).orElseThrow();
         logger.error(EXPECTED_EVENT_TOPIC_ERROR_MESSAGE);

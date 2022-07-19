@@ -39,13 +39,13 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 class DynamodbStreamToEventBridgeHandlerTest {
-
+    
     public static final String EXPECTED_EXCEPTION_MESSAGE = "expected exception message";
     private FakeS3Client s3Client;
     private FakeContext context;
     private DynamodbStreamToEventBridgeHandler handler;
     private FakeEventBridgeClient eventBridgeClient;
-
+    
     @BeforeEach
     public void init() {
         this.s3Client = new FakeS3Client();
@@ -59,7 +59,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
         };
         this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient);
     }
-
+    
     @Test
     void shouldWriteEachDynamoRecordOfDynamoDbEventInS3() {
         var event = randomEventWithMultipleDynamoRecords();
@@ -68,7 +68,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
         var actualEventId = extractIdentifierFromActualStoredEntry();
         assertThat(actualEventId, is(equalTo(expectedEventId)));
     }
-
+    
     @Test
     void shouldThrowExceptionWhenStoringAnyEventRecordInS3Fails() {
         var event = randomEventWithMultipleDynamoRecords();
@@ -77,7 +77,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
         var exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), containsString(EXPECTED_EXCEPTION_MESSAGE));
     }
-
+    
     @Test
     void shouldEmitOneEventPerDynamoDbStreamRecordContainedInDynamoDbEvent() {
         var event = randomEventWithMultipleDynamoRecords();
@@ -94,14 +94,14 @@ class DynamodbStreamToEventBridgeHandlerTest {
         var expectedFilePaths = new HashSet<>(new S3Driver(s3Client, EVENTS_BUCKET).listAllFiles(UnixPath.ROOT_PATH));
         assertThat(emittedFilePaths, is(equalTo(expectedFilePaths)));
     }
-
+    
     private DynamodbEvent randomEventWithMultipleDynamoRecords() {
         var event = new DynamodbEvent();
         var records = List.of(randomDynamoRecord(), randomDynamoRecord(), randomDynamoRecord());
         event.setRecords(records);
         return event;
     }
-
+    
     private Set<String> extractIdentifierFromActualStoredEntry() {
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         return s3Driver.getFiles(UnixPath.ROOT_PATH)
@@ -111,14 +111,14 @@ class DynamodbStreamToEventBridgeHandlerTest {
             .map(Record::getEventID)
             .collect(Collectors.toSet());
     }
-
+    
     private Set<String> extractIdentifiersForExpectedStoredEntry(DynamodbEvent event) {
         return event.getRecords()
             .stream()
             .map(Record::getEventID)
             .collect(Collectors.toSet());
     }
-
+    
     private DynamodbEvent.DynamodbStreamRecord randomDynamoRecord() {
         var record = new DynamodbStreamRecord();
         record.setEventName(randomElement(OperationType.values()));
@@ -129,19 +129,19 @@ class DynamodbStreamToEventBridgeHandlerTest {
         record.setEventVersion(randomString());
         return record;
     }
-
+    
     private StreamRecord randomPayload() {
         var record = new StreamRecord();
         record.setOldImage(randomDynamoPayload());
         record.setNewImage(randomDynamoPayload());
         return record;
     }
-
+    
     private Map<String, AttributeValue> randomDynamoPayload() {
         var value = new AttributeValue(randomString());
         return Map.of(randomString(), value);
     }
-
+    
     private FakeS3Client createFailingS3Client() {
         return new FakeS3Client() {
             @SuppressWarnings("PMD.CloseResource")

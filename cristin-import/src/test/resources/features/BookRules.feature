@@ -21,13 +21,13 @@ Feature: Book conversion rules
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
     And the NVA BookMonograph Resource has a Content type of type "<contentType>"
     Examples:
-      | secondaryCategory | contentType               |
-      | MONOGRAFI         | AcademicMonograph         |
-      | LÆREBOK           | Textbook                  |
-      | FAGBOK            | NonFictionMonograph       |
-      | LEKSIKON          | Encyclopedia              |
-      | POPVIT_BOK        | PopularScienceMonograph   |
-      | OPPSLAGSVERK      | Encyclopedia              |
+      | secondaryCategory | contentType             |
+      | MONOGRAFI         | AcademicMonograph       |
+      | LÆREBOK           | Textbook                |
+      | FAGBOK            | NonFictionMonograph     |
+      | LEKSIKON          | Encyclopedia            |
+      | POPVIT_BOK        | PopularScienceMonograph |
+      | OPPSLAGSVERK      | Encyclopedia            |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
@@ -138,30 +138,28 @@ Feature: Book conversion rules
       | FORSKERLINJEOPPG  |
 
 
-
-
   Scenario Outline: Mapping crates an Unconfirmed series when a Cristin Book has a references to
-      Book series but there is no NSD code.
-      Given a valid Cristin Result with secondary category "<secondaryCategory>"
-      And the Cristin Result belongs to a Series
-      And the Series does not include an NSD code
-      And the Series mentions a title "SomeSeries"
-      And the Series mentions an issn "0028-0836"
-      And  the Series mentions online issn "0028-0836"
-      And the Series mentions a volume "Vol 1"
-      And the Series mentions an issue "Issue 2"
-      When the Cristin Result is converted to an NVA Resource
-      Then  the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "0028-0836", online issn "0028-0836" and seriesNumber "Volume:Vol 1;Issue:Issue 2"
+  Book series but there is no NSD code.
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And the Cristin Result belongs to a Series
+    And the Series does not include an NSD code
+    And the Series mentions a title "SomeSeries"
+    And the Series mentions an issn "0028-0836"
+    And  the Series mentions online issn "0028-0836"
+    And the Series mentions a volume "Vol 1"
+    And the Series mentions an issue "Issue 2"
+    When the Cristin Result is converted to an NVA Resource
+    Then  the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "0028-0836", online issn "0028-0836" and seriesNumber "Volume:Vol 1;Issue:Issue 2"
 
-      Examples:
-        | secondaryCategory |
-        | MONOGRAFI         |
-        | ANTOLOGI          |
-        | RAPPORT           |
-        | DRGRADAVH         |
-        | MASTERGRADSOPPG   |
-        | HOVEDFAGSOPPGAVE  |
-        | FORSKERLINJEOPPG  |
+    Examples:
+      | secondaryCategory |
+      | MONOGRAFI         |
+      | ANTOLOGI          |
+      | RAPPORT           |
+      | DRGRADAVH         |
+      | MASTERGRADSOPPG   |
+      | HOVEDFAGSOPPGAVE  |
+      | FORSKERLINJEOPPG  |
 
   Scenario Outline: A Cristin Result with a valid isbn littered with special characters will have them removed
   when mapped to the NVA Resource

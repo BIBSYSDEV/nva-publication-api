@@ -4,7 +4,7 @@ import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
 public class PublishPublicationStatusResponse {
-
+    
     private final String message;
     private final Integer statusCode;
     
@@ -25,6 +25,12 @@ public class PublishPublicationStatusResponse {
     
     @JacocoGenerated
     @Override
+    public int hashCode() {
+        return Objects.hash(getMessage(), getStatusCode());
+    }
+    
+    @JacocoGenerated
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -34,12 +40,6 @@ public class PublishPublicationStatusResponse {
         }
         PublishPublicationStatusResponse that = (PublishPublicationStatusResponse) o;
         return Objects.equals(getMessage(), that.getMessage())
-            && Objects.equals(getStatusCode(), that.getStatusCode());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getMessage(), getStatusCode());
+               && Objects.equals(getStatusCode(), that.getStatusCode());
     }
 }

@@ -20,18 +20,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, PublicationsByOwnerResponse> {
-
+    
     private static final Logger logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
     private final ResourceService resourceService;
-
+    
     @JacocoGenerated
     public PublicationsByOwnerHandler() {
         this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
-             new Environment());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                Clock.systemDefaultZone()),
+            new Environment());
     }
-
+    
     /**
      * Constructor for MainHandler.
      *
@@ -42,27 +42,27 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         super(Void.class, environment);
         this.resourceService = resourceService;
     }
-
+    
     @Override
     protected PublicationsByOwnerResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-
+        
         String owner = RequestUtil.getOwner(requestInfo);
         URI customerId = requestInfo.getCurrentCustomer();
         UserInstance userInstance = UserInstance.create(owner, customerId);
         logger.info(String.format("Requested publications for owner with feideId=%s and publisher with customerId=%s",
-                                  owner,
-                                  customerId));
-
+            owner,
+            customerId));
+        
         List<PublicationSummary> publicationsByOwner;
         publicationsByOwner = resourceService.getPublicationsByOwner(userInstance)
-                                  .stream()
-                                  .map(PublicationSummary::create)
-                                  .collect(Collectors.toList());
-
+            .stream()
+            .map(PublicationSummary::create)
+            .collect(Collectors.toList());
+        
         return new PublicationsByOwnerResponse(publicationsByOwner);
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(Void input, PublicationsByOwnerResponse output) {
         return HttpStatus.SC_OK;

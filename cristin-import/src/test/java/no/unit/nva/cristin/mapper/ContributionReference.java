@@ -9,22 +9,22 @@ import java.util.Objects;
  * Contribution sequence by saying that the "X person is the ith contributor in the Y publication".
  */
 public class ContributionReference {
-
+    
     private final Integer cristinResultId;
     private final Integer cristinPersonId;
     private final Integer sequence;
-
+    
     public ContributionReference(Integer cristinResultId, Integer cristinPersonId, Integer sequence) {
         this.cristinResultId = cristinResultId;
         this.cristinPersonId = cristinPersonId;
         this.sequence = sequence;
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hash(cristinResultId, cristinPersonId, sequence);
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {

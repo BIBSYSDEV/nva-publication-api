@@ -10,14 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class RequestUtil {
-
+    
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
-
+    
     private RequestUtil() {
     }
-
+    
     /**
      * Get identifier from request path parameters.
      *
@@ -36,7 +36,7 @@ public final class RequestUtil {
             throw new BadRequestException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
         }
     }
-
+    
     /**
      * Get owner from requestContext authorizer claims.
      *

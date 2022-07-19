@@ -13,10 +13,10 @@ Feature: Mapping of "Feature article" entries
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource, FeatureArticle, has a PublicationContext with pagesBegin equal to "<pagesEnd>"
     Examples:
-      | pagesEnd     |
-      | XI           |
-      | 123          |
-      | some page    |
+      | pagesEnd  |
+      | XI        |
+      | 123       |
+      | some page |
 
   Scenario Outline: Cristin Entry's Journal Publication "pagesEnd" is copied as is with in NVA's field "pagesEnd".
     Given that the Cristin Result has a non empty Journal Publication
@@ -24,10 +24,10 @@ Feature: Mapping of "Feature article" entries
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource, FeatureArticle, has a PublicationContext with pagesEnd equal to "<pagesBegin>"
     Examples:
-      | pagesBegin   |
-      | XI           |
-      | 123          |
-      | some page    |
+      | pagesBegin |
+      | XI         |
+      | 123        |
+      | some page  |
 
   Scenario Outline: Cristin Entry's Journal Publication "volume" entry is copied to Journal Article's  "volume" field.
     Given that the Cristin Result has a non empty Journal Publication
@@ -35,10 +35,10 @@ Feature: Mapping of "Feature article" entries
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource, FeatureArticle, has a PublicationContext with volume equal to "<volume>"
     Examples:
-      | volume       |
-      | VI           |
-      | 123          |
-      | some volume  |
+      | volume      |
+      | VI          |
+      | 123         |
+      | some volume |
 
   Scenario Outline: Cristin Entry's Journal Publication "issue" entry is copied to Feature Article's  "issue" field.
     Given that the Cristin Result has a non empty Journal Publication
@@ -46,10 +46,10 @@ Feature: Mapping of "Feature article" entries
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource, FeatureArticle, has a PublicationContext with issue equal to "<issue>"
     Examples:
-      | issue        |
-      | VI           |
-      | 123          |
-      | some volume  |
+      | issue       |
+      | VI          |
+      | 123         |
+      | some volume |
 
   Scenario: When the the Cristin entry has a reference to an NSD journal then the
   NVA Entry contains a URI that is a reference to that NSD journal.

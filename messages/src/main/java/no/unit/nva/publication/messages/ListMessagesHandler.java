@@ -21,23 +21,23 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConversation[]> {
-
+    
     public static final String REQUESTED_ROLE = "role";
     public static final String CURATOR_ROLE = "Curator";
     public static final String CREATOR_ROLE = "Creator";
     public static final String APPROVE_DOI_REQUEST = "APPROVE_DOI_REQUEST";
     private final MessageService messageService;
-
+    
     @JacocoGenerated
     public ListMessagesHandler() {
         this(new Environment(), defaultMessageService());
     }
-
+    
     public ListMessagesHandler(Environment environment, MessageService messageService) {
         super(Void.class, environment);
         this.messageService = messageService;
     }
-
+    
     @Override
     protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context)
         throws BadRequestException, UnauthorizedException {
@@ -45,18 +45,18 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
         List<ResourceConversation> conversations = fetchResourceConversations(requestInfo, userInstance);
         return convertListToArray(conversations);
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(Void input, ResourceConversation[] output) {
         return HttpURLConnection.HTTP_OK;
     }
-
+    
     @JacocoGenerated
     private static MessageService defaultMessageService() {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
         return new MessageService(client, Clock.systemDefaultZone());
     }
-
+    
     private List<ResourceConversation> fetchResourceConversations(RequestInfo requestInfo, UserInstance userInstance)
         throws BadRequestException {
         if (userIsCurator(requestInfo)) {
@@ -68,22 +68,22 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
             return Collections.emptyList();
         }
     }
-
+    
     private boolean bestEffortToIdentityCreatorsUntilTheyHaveTheirOwnAccessRight(RequestInfo requestInfo) {
         return attempt(requestInfo::getCurrentCustomer).isSuccess();
     }
-
+    
     private boolean userIsCurator(RequestInfo requestInfo) throws BadRequestException {
         return CURATOR_ROLE.equals(requestInfo.getQueryParameter(REQUESTED_ROLE))
-            && requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST);
+               && requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST);
     }
-
+    
     private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) throws UnauthorizedException {
         String feideId = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(feideId, customerId);
     }
-
+    
     private ResourceConversation[] convertListToArray(List<ResourceConversation> result) {
         return result.toArray(ResourceConversation[]::new);
     }

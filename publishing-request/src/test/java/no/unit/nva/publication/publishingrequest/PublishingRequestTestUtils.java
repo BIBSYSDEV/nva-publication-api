@@ -13,10 +13,10 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 
 public class PublishingRequestTestUtils {
-
+    
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
-
+    
     public static Clock setupMockClock() {
         var mockClock = mock(Clock.class);
         when(mockClock.instant())
@@ -24,37 +24,37 @@ public class PublishingRequestTestUtils {
             .thenReturn(PUBLICATION_UPDATE_TIME);
         return mockClock;
     }
-
+    
     public static Publication createAndPersistDraftPublication(ResourceService resourceService)
         throws ApiGatewayException {
         return createAndPersistPublicationAndThenActOnIt(resourceService, publication -> {
         });
     }
-
+    
     public static Publication createPersistAndPublishPublication(ResourceService resourceService)
         throws ApiGatewayException {
         return createAndPersistPublicationAndThenActOnIt(resourceService,
-                                                         publication -> publish(resourceService, publication));
+            publication -> publish(resourceService, publication));
     }
-
+    
     public static Publication createAndPersistPublicationAndMarkForDeletion(ResourceService resourceService)
         throws ApiGatewayException {
         return createAndPersistPublicationAndThenActOnIt(resourceService,
-                                                         publication -> markForDeletion(resourceService, publication));
+            publication -> markForDeletion(resourceService, publication));
     }
-
+    
     private static void publish(ResourceService resourceService, Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         attempt(() -> resourceService.publishPublication(userInstance, publication.getIdentifier()))
             .orElseThrow();
     }
-
+    
     private static void markForDeletion(ResourceService resourceService, Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         attempt(() -> resourceService.markPublicationForDeletion(userInstance, publication.getIdentifier()))
             .orElseThrow();
     }
-
+    
     private static Publication createAndPersistPublicationAndThenActOnIt(ResourceService resourceService,
                                                                          Consumer<Publication> action)
         throws ApiGatewayException {

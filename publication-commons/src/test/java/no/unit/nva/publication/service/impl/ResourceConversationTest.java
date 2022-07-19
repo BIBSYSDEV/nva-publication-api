@@ -27,7 +27,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import org.junit.jupiter.api.Test;
 
 class ResourceConversationTest {
-
+    
     public static final Faker FAKER = Faker.instance();
     public static final int SMALL_WAITING_TIME = 2;
     public static final String USER_IDENTIFIER = "userIdentifier";
@@ -36,31 +36,24 @@ class ResourceConversationTest {
     public static final int SINGLE_OBJECT = 0;
     public static final int RESOURCE_CONVERSATION_OF_SINGLE_RESOURCE = 0;
     private static final int NUMBER_OF_PUBLICATIONS = 3;
-
+    
     @Test
     public void returnsListOfResourceConversationsForEachMentionedResource() {
         var publications =
             samplePublicationsOfDifferentOwners();
         var allMessages = twoMessagesPerPublication(publications);
-
+        
         List<ResourceConversation> conversations = ResourceConversation.fromMessageList(allMessages);
         MessageDto oldestMessage = conversations.get(0).getOldestMessage();
         var expectedOldestMessage = allMessages
             .stream()
             .min(Comparator.comparing(Message::getCreatedTime))
             .orElseThrow();
-
+        
         assertThat(oldestMessage.getMessageIdentifier(), is(equalTo(expectedOldestMessage.getIdentifier())));
         assertThat(oldestMessage.getMessageIdentifier(), is(not(nullValue())));
     }
-
-    private List<Publication> samplePublicationsOfDifferentOwners() {
-        return IntStream.range(0, ResourceConversationTest.NUMBER_OF_PUBLICATIONS).boxed()
-            .map(ignored -> PublicationGenerator.randomPublication())
-            .collect(Collectors.toList());
-    }
-
-
+    
     @Test
     public void getRequestMessagesReturnsMessagesOfSpecifiedType() {
         var publication = PublicationGenerator.publicationWithIdentifier();
@@ -68,7 +61,7 @@ class ResourceConversationTest {
         var doiRequestMessage = doiRequestMessage(publication);
         var messageList = List.of(supportMessage, doiRequestMessage);
         var resourceConversation = ResourceConversation.fromMessageList(messageList);
-
+        
         var actualMessages = resourceConversation
             .get(SINGLE_OBJECT)
             .getMessageCollectionOfType(MessageType.DOI_REQUEST)
@@ -76,20 +69,20 @@ class ResourceConversationTest {
         assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
         assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
     }
-
+    
     @Test
     void shouldReturnNewResourceConversationContainingMessagesOfOnlySpecifiedTypes() {
         var publication = PublicationGenerator.publicationWithIdentifier();
         var inputSupportMessages = List.of(supportMessage(publication), supportMessage(publication));
         var inputDoiRequestMessages = List.of(doiRequestMessage(publication), doiRequestMessage(publication));
-
+        
         var allMessages = Stream.of(inputSupportMessages, inputDoiRequestMessages)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
-
+        
         var resourceConversation = ResourceConversation.fromMessageList(allMessages)
             .get(RESOURCE_CONVERSATION_OF_SINGLE_RESOURCE);
-
+        
         var doiRequestConversationMessages = resourceConversation.ofMessageTypes(MessageType.DOI_REQUEST)
             .allMessages()
             .stream()
@@ -102,17 +95,23 @@ class ResourceConversationTest {
             .toArray(String[]::new);
         assertThat(doiRequestConversationMessages, contains(expectedDoiRequestConversationMessages));
     }
-
+    
+    private List<Publication> samplePublicationsOfDifferentOwners() {
+        return IntStream.range(0, ResourceConversationTest.NUMBER_OF_PUBLICATIONS).boxed()
+            .map(ignored -> PublicationGenerator.randomPublication())
+            .collect(Collectors.toList());
+    }
+    
     private Message doiRequestMessage(Publication publication) {
         return Message.create(SOME_USER, publication, randomString(), SortableIdentifier.next(),
-                              Clock.systemDefaultZone(), MessageType.DOI_REQUEST);
+            Clock.systemDefaultZone(), MessageType.DOI_REQUEST);
     }
-
+    
     private Message supportMessage(Publication publication) {
         return Message.create(SOME_USER, publication, randomString(), SortableIdentifier.next(),
-                              Clock.systemDefaultZone(), MessageType.SUPPORT);
+            Clock.systemDefaultZone(), MessageType.SUPPORT);
     }
-
+    
     private ArrayList<Message> twoMessagesPerPublication(List<Publication> publications) {
         var messages = createOneMessagePerPublication(publications);
         var moreMessages = createOneMessagePerPublication(publications);
@@ -121,17 +120,17 @@ class ResourceConversationTest {
         allMessages.addAll(moreMessages);
         return allMessages;
     }
-
+    
     private List<Message> createOneMessagePerPublication(List<Publication> publications) {
         return publications.stream().map(this::createMessage).collect(Collectors.toList());
     }
-
+    
     private Message createMessage(Publication publication) {
         waitForAvoidingSameTimeStampInMessages();
         return Message.create(UserInstance.fromPublication(publication), publication, randomString(),
-                              SortableIdentifier.next(), Clock.systemDefaultZone(), MessageType.SUPPORT);
+            SortableIdentifier.next(), Clock.systemDefaultZone(), MessageType.SUPPORT);
     }
-
+    
     private void waitForAvoidingSameTimeStampInMessages() {
         try {
             Thread.sleep(SMALL_WAITING_TIME);
@@ -139,7 +138,7 @@ class ResourceConversationTest {
             throw new RuntimeException(e);
         }
     }
-
+    
     private String randomString() {
         return FAKER.lorem().sentence();
     }

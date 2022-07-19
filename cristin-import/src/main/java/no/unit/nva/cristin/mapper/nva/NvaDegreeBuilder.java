@@ -6,11 +6,11 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 
 public class NvaDegreeBuilder extends NvaBookLikeBuilder {
-
+    
     public NvaDegreeBuilder(CristinObject cristinObject) {
         super(cristinObject);
     }
-
+    
     public Degree buildDegree() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new Degree.Builder()
             .withPublisher(buildPublisher())

@@ -12,7 +12,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public final class PublicationServiceConfig {
-
+    
     public static final Environment ENVIRONMENT = new Environment();
     public static final String URI_EMPTY_FRAGMENT = null;
     public static final String PATH_SEPARATOR = "/";
@@ -25,23 +25,20 @@ public final class PublicationServiceConfig {
     @Deprecated
     public static final String ID_NAMESPACE = ENVIRONMENT.readEnv("ID_NAMESPACE");
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
-
-
+    public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
     public static final String API_SCHEME = "https";
     public static final HttpClient EXTERNAL_SERVICES_HTTP_CLIENT = HttpClient.newBuilder().build();
-    public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
-
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
-
+    
     private PublicationServiceConfig() {
-
+    
     }
-
+    
     @JacocoGenerated
     public static ResourceService defaultResourceService() {
-        return new ResourceService(defaultDynamoDbClient(),  Clock.systemDefaultZone());
+        return new ResourceService(defaultDynamoDbClient(), Clock.systemDefaultZone());
     }
-
+    
     @JacocoGenerated
     public static AmazonDynamoDB defaultDynamoDbClient() {
         return AmazonDynamoDBClientBuilder
@@ -50,5 +47,4 @@ public final class PublicationServiceConfig {
             .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
             .build();
     }
-
 }

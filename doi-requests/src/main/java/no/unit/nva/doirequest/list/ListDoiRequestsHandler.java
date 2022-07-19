@@ -28,24 +28,24 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[]> {
-
+    
     public static final String ROLE_QUERY_PARAMETER = "role";
     public static final String CURATOR_ROLE = "Curator";
     public static final String CREATOR_ROLE = "Creator";
-
+    
     private final DoiRequestService doiRequestService;
     private final MessageService messageService;
-
+    
     @JacocoGenerated
     public ListDoiRequestsHandler() {
         this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
     }
-
+    
     @JacocoGenerated
     private ListDoiRequestsHandler(AmazonDynamoDB client, Clock clock) {
         this(new Environment(), defaultDoiRequestService(client, clock), defaultMessageService(client, clock));
     }
-
+    
     public ListDoiRequestsHandler(Environment environment,
                                   DoiRequestService doiRequestService,
                                   MessageService messageService) {
@@ -53,80 +53,79 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         this.doiRequestService = doiRequestService;
         this.messageService = messageService;
     }
-
+    
     @Override
     protected Publication[] processInput(Void input, RequestInfo requestInfo, Context context)
         throws BadRequestException, UnauthorizedException {
         URI customerId = requestInfo.getCurrentCustomer();
         String requestedRole = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
         String userId = requestInfo.getNvaUsername();
-
+        
         UserInstance userInstance = UserInstance.create(userId, customerId);
         if (userIsACurator(requestedRole, requestInfo)) {
             return fetchDoiRequestsForCurator(userInstance);
         } else if (userIsACreator(requestedRole)) {
             return fetchDoiRequestsForUser(userInstance);
         }
-
+        
         return emptyResult();
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(Void input, Publication[] output) {
         return HttpURLConnection.HTTP_OK;
     }
-
+    
     @JacocoGenerated
     private static MessageService defaultMessageService(AmazonDynamoDB client, Clock clock) {
         return new MessageService(client, clock);
     }
-
+    
     @JacocoGenerated
     private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client, Clock clock) {
-        return new DoiRequestService(client,  clock);
+        return new DoiRequestService(client, clock);
     }
-
+    
     private Publication[] emptyResult() {
         return new Publication[0];
     }
-
+    
     private boolean userIsACreator(String requestedRole) {
         return CREATOR_ROLE.equals(requestedRole);
     }
-
+    
     private boolean userIsACurator(String requestedRole, RequestInfo requestInfo) {
         return CURATOR_ROLE.equals(requestedRole)
                && requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
     }
-
-
+    
     private Publication[] fetchDoiRequestsForUser(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForUser(userInstance);
         return addDoiRequestMessagesToDoiRequests(doiRequests);
     }
-
+    
     private Publication[] fetchDoiRequestsForCurator(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(userInstance);
         return addDoiRequestMessagesToDoiRequests(doiRequests);
     }
-
+    
     private Publication[] addDoiRequestMessagesToDoiRequests(List<DoiRequest> doiRequests) {
         List<Publication> publicationDtos = convertDoiRequestsToPublicationDtos(doiRequests);
         List<Publication> enrichedWithMessages = enrichPublicationDtosWithDoiRequestMessages(publicationDtos);
         return publicationListToPublicationArray(enrichedWithMessages);
     }
-
+    
     private List<Publication> enrichPublicationDtosWithDoiRequestMessages(List<Publication> dtos) {
         return dtos.stream()
-                   .map(this::addMessagesToPublicationDto)
-                   .sorted(sortByOldestDoiRequestFirst())
-                   .collect(Collectors.toList());
+            .map(this::addMessagesToPublicationDto)
+            .sorted(sortByOldestDoiRequestFirst())
+            .collect(Collectors.toList());
     }
-
+    
     private Comparator<Publication> sortByOldestDoiRequestFirst() {
         return Comparator.comparing(p -> p.getDoiRequest().getCreatedDate());
     }
-
+    
     private Publication addMessagesToPublicationDto(Publication dto) {
         Stream<ResourceConversation> messages =
             messageService.getMessagesForResource(UserInstance.fromPublication(dto), dto.getIdentifier()).stream();
@@ -134,36 +133,36 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         dto.getDoiRequest().setMessages(doiRequestMessages);
         return dto;
     }
-
+    
     private List<DoiRequestMessage> transformToLegacyDoiRequestMessagesDto(
         Stream<ResourceConversation> resourceConversations) {
         return resourceConversations
-                   .map(conversations -> conversations.getMessageCollectionOfType(MessageType.DOI_REQUEST))
-                   .flatMap(messageCollection -> messageCollection.getMessages().stream())
-                   .map(this::toDoiRequestMessage)
-                   .sorted(sortByTimeOldestFirst())
-                   .collect(Collectors.toList());
+            .map(conversations -> conversations.getMessageCollectionOfType(MessageType.DOI_REQUEST))
+            .flatMap(messageCollection -> messageCollection.getMessages().stream())
+            .map(this::toDoiRequestMessage)
+            .sorted(sortByTimeOldestFirst())
+            .collect(Collectors.toList());
     }
-
+    
     private Comparator<DoiRequestMessage> sortByTimeOldestFirst() {
         return Comparator.comparing(DoiRequestMessage::getTimestamp);
     }
-
+    
     private DoiRequestMessage toDoiRequestMessage(MessageDto message) {
         return new DoiRequestMessage.Builder()
-                   .withText(message.getText())
-                   .withTimestamp(message.getDate())
-                   .withAuthor(message.getSenderIdentifier())
-                   .build();
+            .withText(message.getText())
+            .withTimestamp(message.getDate())
+            .withAuthor(message.getSenderIdentifier())
+            .build();
     }
-
+    
     private Publication[] publicationListToPublicationArray(List<Publication> dtos) {
         return dtos.toArray(Publication[]::new);
     }
-
+    
     private List<Publication> convertDoiRequestsToPublicationDtos(List<DoiRequest> doiRequests) {
         return doiRequests.stream()
-                   .map(DoiRequest::toPublication)
-                   .collect(Collectors.toList());
+            .map(DoiRequest::toPublication)
+            .collect(Collectors.toList());
     }
 }

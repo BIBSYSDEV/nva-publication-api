@@ -13,19 +13,19 @@ import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 
 public final class StorageModelTestUtils {
-
+    
     private static Faker FAKER = Faker.instance();
-
+    
     private StorageModelTestUtils() {
-
+    
     }
-
+    
     public static String randomString() {
         return FAKER.lorem().sentence();
     }
-
+    
     public static PublishingRequestCase randomPublishingRequest(Publication publication) {
-
+        
         var userInstance = UserInstance.fromPublication(publication);
         var sample = new PublishingRequestCase();
         sample.setOwner(userInstance.getUserIdentifier());
@@ -39,7 +39,7 @@ public final class StorageModelTestUtils {
         assertThat(sample, doesNotHaveEmptyValues());
         return sample;
     }
-
+    
     public static PublishingRequestCase randomPublishingRequest() {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);

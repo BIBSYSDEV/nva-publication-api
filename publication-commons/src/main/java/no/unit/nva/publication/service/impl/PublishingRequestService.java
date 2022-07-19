@@ -108,7 +108,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         URI customerId,
         SortableIdentifier resourceIdentifier) {
         var query = queryPublishingRequestByResource(customerId, resourceIdentifier);
-    
+        
         var queryResult = client.query(query);
         return queryResult.getItems().stream()
             .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
@@ -116,7 +116,6 @@ public class PublishingRequestService extends ServiceWithTransactions {
             .collect(SingletonCollector.tryCollect())
             .orElseThrow();
     }
-    
     
     @Override
     protected String getTableName() {

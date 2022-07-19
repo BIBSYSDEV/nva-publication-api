@@ -14,7 +14,7 @@ import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 
 class BatchScanStartHandlerTest {
-
+    
     public static final int NOT_SET_PAGE_SIZE = 0;
     private final FakeContext context = new FakeContext() {
         @Override
@@ -22,7 +22,7 @@ class BatchScanStartHandlerTest {
             return randomString();
         }
     };
-
+    
     @Test
     void shouldSendInitialScanMessageWithDefaultPageSizeWhenPageSizeIsNotSet() throws IOException {
         var client = new FakeEventBridgeClient();
@@ -35,7 +35,7 @@ class BatchScanStartHandlerTest {
         var sentRequest = JsonUtils.dtoObjectMapper.readValue(eventDetail, ScanDatabaseRequest.class);
         assertThat(sentRequest.getPageSize(), is(equalTo(ScanDatabaseRequest.DEFAULT_PAGE_SIZE)));
     }
-
+    
     @Test
     void shouldSendInitialScanMessageForInitiatingBatchScanning() throws IOException {
         FakeEventBridgeClient client = new FakeEventBridgeClient();

@@ -1,9 +1,7 @@
-
-
 dependencies {
     implementation project(":publication-constants")
-    implementation (libs.nva.datamodel.core) {
-        exclude group:'com.github.bibsysdev', module:'core'
+    implementation(libs.nva.datamodel.core) {
+        exclude group: 'com.github.bibsysdev', module: 'core'
     }
     implementation libs.nva.core
     implementation libs.nva.json
@@ -22,12 +20,12 @@ dependencies {
     implementation libs.aws.sdk2.s3
 
     implementation libs.bundles.testing
-    implementation (libs.dynamodDbLocal) {
+    implementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    implementation (libs.httpcore){
+    implementation(libs.httpcore) {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
 

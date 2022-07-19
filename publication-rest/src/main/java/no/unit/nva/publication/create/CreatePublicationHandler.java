@@ -27,25 +27,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
-
+    
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
     private final ResourceService publicationService;
     private final String apiHost;
-
+    
     /**
      * Default constructor for CreatePublicationHandler.
      */
     @JacocoGenerated
     public CreatePublicationHandler() {
         this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
-             new Environment());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                Clock.systemDefaultZone()),
+            new Environment());
     }
-
+    
     /**
      * Constructor for CreatePublicationHandler.
      *
@@ -58,43 +58,43 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         this.publicationService = publicationService;
         this.apiHost = environment.readEnv(API_HOST);
     }
-
+    
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
         logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
-
+        
         UserInstance userInstance = createUserInstanceFromLoginInformation(requestInfo);
         var newPublication = Optional.ofNullable(input)
             .map(CreatePublicationRequest::toPublication)
             .orElseGet(Publication::new);
         var createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
-
+        
         return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
     }
-
+    
+    @Override
+    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
+        return HttpStatus.SC_CREATED;
+    }
+    
+    protected URI getLocation(SortableIdentifier identifier) {
+        return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
+    }
+    
     private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws UnauthorizedException {
         var resourceOwner = createResourceOwner(requestInfo);
         var customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(resourceOwner, customerId);
     }
-
+    
     private ResourceOwner createResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(() -> requestInfo.getTopLevelOrgCristinId().orElseThrow())
             .map(topLevelOrgCristinId -> new ResourceOwner(requestInfo.getNvaUsername(), topLevelOrgCristinId))
             .orElseThrow(fail -> new UnauthorizedException());
     }
-
-    @Override
-    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_CREATED;
-    }
-
-    protected URI getLocation(SortableIdentifier identifier) {
-        return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
-    }
-
+    
     private void setLocationHeader(SortableIdentifier identifier) {
         addAdditionalHeaders(() -> Map.of(
             HttpHeaders.LOCATION,

@@ -18,15 +18,15 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public class UpdatePublishingRequestHandler
     extends ApiGatewayHandler<PublishingRequestCaseDto, PublishingRequestCaseDto> {
-
+    
     public static final String AUTHORIZATION_ERROR = "User is not authorized to approve publishing requests";
     private final PublishingRequestService requestService;
-
+    
     public UpdatePublishingRequestHandler(PublishingRequestService requestService) {
         super(PublishingRequestCaseDto.class);
         this.requestService = requestService;
     }
-
+    
     @Override
     protected PublishingRequestCaseDto processInput(PublishingRequestCaseDto input,
                                                     RequestInfo requestInfo,
@@ -36,22 +36,22 @@ public class UpdatePublishingRequestHandler
             readIdentifierFromPathParameter(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         var publishingRequestIdentifier =
             readIdentifierFromPathParameter(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
-
+        
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
         var currentRequest =
             requestService.getPublishingRequestByPublicationAndRequestIdentifiers(publicationIdentifier,
-                                                                                  publishingRequestIdentifier);
-
+                publishingRequestIdentifier);
+        
         final var updatedRequest = currentRequest.approve();
         var updatedEntry = requestService.updatePublishingRequest(updatedRequest);
         return PublishingRequestCaseDto.createResponseObject(updatedEntry);
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(PublishingRequestCaseDto input, PublishingRequestCaseDto output) {
         return HTTP_OK;
     }
-
+    
     private void validateInput(PublishingRequestCaseDto input,
                                SortableIdentifier publicationIdentifier,
                                SortableIdentifier publishingRequestIdentifier) throws BadRequestException {
@@ -60,17 +60,17 @@ public class UpdatePublishingRequestHandler
             throw new BadRequestException("Id in path parameter does not match id in body");
         }
     }
-
+    
     private boolean doNotMatch(URI left, URI right) {
         return !left.equals(right);
     }
-
+    
     private void authorizeUser(RequestInfo requestInfo) throws UnauthorizedException {
         if (!requestInfo.userIsAuthorized(AccessRight.APPROVE_PUBLISH_REQUEST.toString())) {
             throw new UnauthorizedException(AUTHORIZATION_ERROR);
         }
     }
-
+    
     private SortableIdentifier readIdentifierFromPathParameter(RequestInfo requestInfo,
                                                                String pathParameter) {
         return attempt(() -> requestInfo.getPathParameter(pathParameter))

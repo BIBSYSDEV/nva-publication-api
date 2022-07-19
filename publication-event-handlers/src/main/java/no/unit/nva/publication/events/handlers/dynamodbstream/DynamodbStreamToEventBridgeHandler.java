@@ -32,23 +32,23 @@ import software.amazon.awssdk.services.s3.S3Client;
  * issues with DynamodDB, this is why we have this handler to publish it to EventBridge.
  */
 public class DynamodbStreamToEventBridgeHandler implements RequestHandler<DynamodbEvent, Set<PutEventsResponse>> {
-
+    
     public static final String DYNAMODB_UPDATE_EVENT_TOPIC = "PublicationService.Database.Update";
     public static final String DETAIL_TYPE_NOT_IMPORTANT = "See event topic";
     public static final String DYNAMO_DB_STREAM_SOURCE = "DynamoDbStream";
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
-
+    
     @JacocoGenerated
     public DynamodbStreamToEventBridgeHandler() {
         this(defaultS3Client(), defaultEventBridgeClient());
     }
-
+    
     protected DynamodbStreamToEventBridgeHandler(S3Client s3Client, EventBridgeClient eventBridgeClient) {
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
     }
-
+    
     @Override
     public Set<PutEventsResponse> handleRequest(DynamodbEvent inputEvent, Context context) {
         return inputEvent.getRecords()
@@ -60,26 +60,26 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
             .map(Try::orElseThrow)
             .collect(Collectors.toSet());
     }
-
+    
     @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Driver.defaultS3Client().build();
     }
-
+    
     private PutEventsResponse sendEvent(EventReference eventReference, Context context) {
         var eventRequest = createPutEventRequest(context, eventReference);
         return eventBridgeClient.putEvents(eventRequest);
     }
-
+    
     private URI storeFileInS3Bucket(String json) throws IOException {
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), json);
     }
-
+    
     private EventReference createEvent(URI uri) {
         return new EventReference(DYNAMODB_UPDATE_EVENT_TOPIC, uri);
     }
-
+    
     private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
         var entry = PutEventsRequestEntry.builder()
             .eventBusName(EVENT_BUS_NAME)

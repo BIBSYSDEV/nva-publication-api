@@ -3,7 +3,7 @@
 
 name: Java CI with Gradle
 
-on: [push,pull_request]
+on: [ push,pull_request ]
 
 jobs:
   build:
@@ -21,10 +21,10 @@ jobs:
         run: chmod +x gradlew
 
       - name: install jq
-        run:  sudo apt-get install -y jq
+        run: sudo apt-get install -y jq
 
       - name: setup codacy version
-        run:  curl -LSs "$(curl -LSs https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | endswith(".jar"))) | .[0].browser_download_url')" -o codacy-coverage-reporter-assembly.jar
+        run: curl -LSs "$(curl -LSs https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | endswith(".jar"))) | .[0].browser_download_url')" -o codacy-coverage-reporter-assembly.jar
 
 
       - name: Cache Gradle packages
@@ -39,6 +39,6 @@ jobs:
 
       - shell: bash
         env:
-          CODACY_PROJECT_TOKEN : ${{ secrets.CODACY_PROJECT_TOKEN }}
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
           java -jar codacy-coverage-reporter-assembly.jar report -l Java -r $(pwd)/build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml

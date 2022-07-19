@@ -23,7 +23,7 @@ public class Message implements WithIdentifier,
                                 TicketEntry,
                                 ConnectedToResource,
                                 JsonSerializable {
-
+    
     public static final String TYPE = "Message";
     private SortableIdentifier identifier;
     private String owner;
@@ -36,27 +36,27 @@ public class Message implements WithIdentifier,
     private String resourceTitle;
     private MessageType messageType;
     private String rowVersion;
-
+    
     @JacocoGenerated
     public Message() {
-
+    
     }
-
+    
     public static MessageBuilder builder() {
         return new MessageBuilder();
     }
-
+    
     public static Message create(UserInstance sender,
-                                         Publication publication,
-                                         String messageText,
-                                         SortableIdentifier messageIdentifier,
-                                         Clock clock,
-                                        MessageType messageType) {
+                                 Publication publication,
+                                 String messageText,
+                                 SortableIdentifier messageIdentifier,
+                                 Clock clock,
+                                 MessageType messageType) {
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
             .withMessageType(messageType)
             .build();
     }
-
+    
     @Deprecated
     public static Message supportMessage(UserInstance sender,
                                          Publication publication,
@@ -64,55 +64,55 @@ public class Message implements WithIdentifier,
                                          Clock clock) {
         return create(sender, publication, messageText, null, clock, MessageType.SUPPORT);
     }
-
+    
     public MessageType getMessageType() {
         return messageType;
     }
-
+    
     public void setMessageType(MessageType messageType) {
         this.messageType = messageType;
     }
-
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-
+    
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-
+    
     @Override
     public URI getCustomerId() {
         return customerId;
     }
-
+    
     @Override
     public String getOwner() {
         return owner;
     }
-
+    
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
+    
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
-
+    
     public MessageStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(MessageStatus status) {
         this.status = status;
     }
-
+    
     public String getSender() {
         return sender;
     }
-
+    
     public void setSender(String sender) {
         this.sender = sender;
     }
@@ -121,69 +121,69 @@ public class Message implements WithIdentifier,
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }
-
+    
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
     }
-
+    
     public String getText() {
         return text;
     }
-
+    
     public void setText(String text) {
         this.text = text;
     }
-
+    
     public Instant getCreatedTime() {
         return createdTime;
     }
-
+    
     public void setCreatedTime(Instant createdTime) {
         this.createdTime = createdTime;
     }
-
+    
     public String getResourceTitle() {
         return resourceTitle;
     }
-
+    
     public void setResourceTitle(String resourceTitle) {
         this.resourceTitle = resourceTitle;
     }
-
+    
     @Override
     public String getStatusString() {
         return status.toString();
     }
-
+    
     @Override
     public Publication toPublication() {
         throw new UnsupportedOperationException();
     }
-
+    
     @JacocoGenerated
     @Override
     public String getRowVersion() {
         return this.rowVersion;
     }
-
+    
     @Override
     @JacocoGenerated
     public void setRowVersion(String rowVersion) {
         this.rowVersion = rowVersion;
     }
-
+    
     @Override
     public Dao<?> toDao() {
         return new MessageDao(this);
     }
-
+    
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-                            getResourceIdentifier(), getText(), getCreatedTime(), getResourceTitle(), getMessageType());
+            getResourceIdentifier(), getText(), getCreatedTime(), getResourceTitle(), getMessageType());
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -204,13 +204,13 @@ public class Message implements WithIdentifier,
                && Objects.equals(getResourceTitle(), message.getResourceTitle())
                && getMessageType() == message.getMessageType();
     }
-
+    
     @Override
     @JacocoGenerated
     public String toString() {
         return toJsonString();
     }
-
+    
     public MessageBuilder copy() {
         return Message.builder()
             .withCreatedTime(this.getCreatedTime())
@@ -225,7 +225,7 @@ public class Message implements WithIdentifier,
             .withResourceTitle(this.getResourceTitle())
             .withRowVersion(this.getRowVersion());
     }
-
+    
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
                                                String messageText, SortableIdentifier messageIdentifier,
                                                Clock clock) {
@@ -241,7 +241,7 @@ public class Message implements WithIdentifier,
             .withIdentifier(messageIdentifier)
             .withRowVersion(nextRowVersion());
     }
-
+    
     private static String extractTitle(Publication publication) {
         return Optional.of(publication)
             .map(Publication::getEntityDescription)

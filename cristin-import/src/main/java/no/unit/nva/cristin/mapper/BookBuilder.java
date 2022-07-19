@@ -8,11 +8,11 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.Pages;
 
 public class BookBuilder extends AbstractBookReportBuilder {
-
+    
     public BookBuilder(CristinObject cristinObject) {
         super(cristinObject);
     }
-
+    
     @Override
     public PublicationInstance<? extends Pages> build() {
         if (CristinSecondaryCategory.isAnthology(getCristinObject())) {
@@ -23,19 +23,19 @@ public class BookBuilder extends AbstractBookReportBuilder {
             throw unknownSecondaryCategory();
         }
     }
-
+    
     @Override
     protected CristinMainCategory getExpectedType() {
         return CristinMainCategory.BOOK;
     }
-
+    
     private BookAnthology createBookAnthology() {
         return new BookAnthology.Builder()
             .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
             .withPages(createMonographPages())
             .build();
     }
-
+    
     private BookMonograph createBookMonograph() {
         return new BookMonograph.Builder()
             .withContentType(getCristinObject().getSecondaryCategory().toBookMonographContentType())
@@ -44,5 +44,4 @@ public class BookBuilder extends AbstractBookReportBuilder {
             .withPeerReviewed(getCristinObject().isPeerReviewed())
             .build();
     }
-
 }

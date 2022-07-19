@@ -29,23 +29,23 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
-
+    
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private final ResourceService resourceService;
     private final DoiRequestService doiRequestService;
-
+    
     @JacocoGenerated
     public FetchPublicationHandler() {
         this(AmazonDynamoDBClientBuilder.defaultClient());
     }
-
+    
     @JacocoGenerated
     public FetchPublicationHandler(AmazonDynamoDB client) {
         this(defaultResourceService(client),
-             defaultDoiRequestService(client),
-             new Environment());
+            defaultDoiRequestService(client),
+            new Environment());
     }
-
+    
     /**
      * Constructor for MainHandler.
      *
@@ -59,19 +59,43 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         this.resourceService = resourceService;
         this.doiRequestService = doiRequestService;
     }
-
+    
+    @Override
+    protected List<MediaType> listSupportedMediaTypes() {
+        return List.of(
+            JSON_UTF_8,
+            APPLICATION_JSON_LD,
+            APPLICATION_DATACITE_XML
+        );
+    }
+    
     @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-
+        
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
         var doiRequest = fetchDoiRequest(publication);
         publication.setDoiRequest(doiRequest);
-
+        
         return createResponse(requestInfo, publication);
     }
-
+    
+    @Override
+    protected Integer getSuccessStatusCode(Void input, String output) {
+        return HttpURLConnection.HTTP_OK;
+    }
+    
+    @JacocoGenerated
+    private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client) {
+        return new DoiRequestService(client, CLOCK);
+    }
+    
+    @JacocoGenerated
+    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
+        return new ResourceService(client, CLOCK);
+    }
+    
     private String createResponse(RequestInfo requestInfo,
                                   Publication publication) throws UnsupportedAcceptHeaderException {
         String response;
@@ -83,48 +107,24 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         }
         return response;
     }
-
+    
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
         var publicationResponse = PublicationMapper
-                .convertValue(publication, PublicationResponse.class);
+            .convertValue(publication, PublicationResponse.class);
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
-
+    
     private String createDataCiteMetadata(Publication publication) {
         var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
     }
-
-    @Override
-    protected List<MediaType> listSupportedMediaTypes() {
-        return List.of(
-            JSON_UTF_8,
-            APPLICATION_JSON_LD,
-            APPLICATION_DATACITE_XML
-        );
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(Void input, String output) {
-        return HttpURLConnection.HTTP_OK;
-    }
-
-    @JacocoGenerated
-    private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client) {
-        return new DoiRequestService(client,  CLOCK);
-    }
-
-    @JacocoGenerated
-    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
-        return new ResourceService(client,  CLOCK);
-    }
-
+    
     private DoiRequest fetchDoiRequest(Publication publication) {
         var owner = UserInstance.fromPublication(publication);
         var resourceIdentifier = publication.getIdentifier();
         return attempt(() -> doiRequestService.getDoiRequestByResourceIdentifier(owner, resourceIdentifier))
-                   .map(no.unit.nva.publication.storage.model.DoiRequest::toPublication)
-                   .map(Publication::getDoiRequest)
-                   .orElse(fail -> null);
+            .map(no.unit.nva.publication.storage.model.DoiRequest::toPublication)
+            .map(Publication::getDoiRequest)
+            .orElse(fail -> null);
     }
 }

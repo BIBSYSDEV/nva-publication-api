@@ -13,7 +13,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Publication'
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend', 'aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend', 'aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
@@ -67,7 +67,7 @@ paths:
     put:
       summary: Update Publication for Identifier
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
         required: true
         content:
@@ -98,7 +98,7 @@ paths:
     delete:
       summary: Delete Publication for Identifier
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -124,7 +124,7 @@ paths:
     get:
       summary: Get Publications by Owner
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublicationsByOwnerFunction.Arn}/invocations
@@ -135,11 +135,11 @@ paths:
         '200':
           description: OK
           content:
-              application/json:
-                schema:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Publication'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Publication'
 
   /{publicationIdentifier}/publish:
     put:
@@ -152,7 +152,7 @@ paths:
           required: true
           description: UUID identifier of the Publication to publish.
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublishPublicationFunction.Arn}/invocations
@@ -200,7 +200,7 @@ paths:
           schema:
             type: string
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       responses:
         '200':
           description: OK
@@ -238,7 +238,7 @@ paths:
     post:
       summary: Create a DOI request
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
         content:
           application/json:
@@ -257,7 +257,7 @@ paths:
     post:
       summary: Initiate a Update DOI Request process
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
         content:
           application/json:
@@ -283,7 +283,7 @@ paths:
     post:
       summary: Create a message.
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
         content:
           application/json:
@@ -301,7 +301,7 @@ paths:
     get:
       summary: Get messages for a user.
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       responses:
         '200':
           description: "OK"
@@ -332,10 +332,10 @@ paths:
         content:
           'application/json':
             schema:
-              $ref : '#/components/schemas/PublishingRequestCase'
+              $ref: '#/components/schemas/PublishingRequestCase'
             examples:
               request:
-                value: { "type" : "PublishingRequestCase" }
+                value: { "type": "PublishingRequestCase" }
       responses:
         '200':
           description: OK

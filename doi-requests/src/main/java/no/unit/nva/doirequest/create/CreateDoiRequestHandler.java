@@ -15,7 +15,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InternalErrorException;
-
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -33,29 +32,29 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 
 public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest, Void> {
-
+    
     public static final String DOI_ALREADY_EXISTS_ERROR = "A DOI request already exists";
     public static final String USER_IS_NOT_OWNER_ERROR = "User does not own the specific publication";
-
+    
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private final DoiRequestService doiRequestService;
     private final MessageService messageService;
     private final ResourceService resourceService;
-
+    
     @JacocoGenerated
     public CreateDoiRequestHandler() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(),  CLOCK);
+        this(AmazonDynamoDBClientBuilder.defaultClient(), CLOCK);
     }
-
+    
     @JacocoGenerated
     private CreateDoiRequestHandler(AmazonDynamoDB client, Clock clock) {
         this(
-            new ResourceService(client,  clock),
-            new DoiRequestService(client,  clock),
+            new ResourceService(client, clock),
+            new DoiRequestService(client, clock),
             new MessageService(client, clock),
             new Environment());
     }
-
+    
     public CreateDoiRequestHandler(ResourceService resourceService,
                                    DoiRequestService requestService,
                                    MessageService messageService,
@@ -65,12 +64,12 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         this.messageService = messageService;
         this.doiRequestService = requestService;
     }
-
+    
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         super.handleRequest(input, output, context);
     }
-
+    
     @Override
     protected Void processInput(CreateDoiRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
@@ -81,18 +80,18 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         addAdditionalHeaders(() -> additionalHeaders(doiRequestIdentifier));
         return null;
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(CreateDoiRequest input, Void output) {
         return HttpURLConnection.HTTP_CREATED;
     }
-
+    
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         URI customerId = requestInfo.getCurrentCustomer();
         String user = requestInfo.getNvaUsername();
         return UserInstance.create(user, customerId);
     }
-
+    
     private Publication fetchPublication(CreateDoiRequest input, UserInstance owner) throws ApiGatewayException {
         try {
             return resourceService.getPublication(owner, input.getResourceIdentifier());
@@ -100,20 +99,20 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
             throw new BadRequestException(USER_IS_NOT_OWNER_ERROR);
         }
     }
-
+    
     private void sendMessage(CreateDoiRequest input, UserInstance owner, Publication publication) {
         String message = input.getMessage();
         if (StringUtils.isNotBlank(message)) {
             messageService.createMessage(owner, publication, message, MessageType.DOI_REQUEST);
         }
     }
-
+    
     private SortableIdentifier createDoiRequest(Publication publication)
         throws ApiGatewayException {
         return attempt(() -> doiRequestService.createDoiRequest(publication))
             .orElseThrow(this::handleError);
     }
-
+    
     private ApiGatewayException handleError(Failure<SortableIdentifier> fail) {
         Exception exception = fail.getException();
         if (exception instanceof TransactionFailedException) {
@@ -124,7 +123,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
             return new InternalErrorException(fail.getException());
         }
     }
-
+    
     private Map<String, String> additionalHeaders(SortableIdentifier doiRequestIdentifier) {
         return Map.of(
             "Location", "doi-request/" + doiRequestIdentifier.toString()

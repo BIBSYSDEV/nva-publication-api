@@ -21,7 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class DataEntryTest {
-
+    
     static Stream<Tuple> resourceProvider() {
         var publication = PublicationGenerator.randomPublication();
         final var leftResource = Resource.fromPublication(publication);
@@ -31,10 +31,10 @@ class DataEntryTest {
         final var leftMessage = randomMessage(publication);
         final var rightMessage = leftMessage.copy().withRowVersion(nextRowVersion()).build();
         return Stream.of(new Tuple(leftResource, rightResource),
-                         new Tuple(leftDoiRequest, rightDoiRequest),
-                         new Tuple(leftMessage, rightMessage));
+            new Tuple(leftDoiRequest, rightDoiRequest),
+            new Tuple(leftMessage, rightMessage));
     }
-
+    
     //This test guarantees backwards compatibility and the requirements can change when optimistic concurrency control
     // is implemented.
     @ParameterizedTest(name = "should return equals true when two resources differ only in their row version")
@@ -44,7 +44,7 @@ class DataEntryTest {
         assertThat(tuple.right.getRowVersion(), is(not(equalTo(tuple.left.getRowVersion()))));
         assertThat(tuple.right, is(equalTo(tuple.left)));
     }
-
+    
     //This test guarantees backwards compatibility and the requirements can change when optimistic concurrency control
     // is implemented.
     @ParameterizedTest(name = "should return the same hash code when two resources differ only in their row version")
@@ -54,7 +54,7 @@ class DataEntryTest {
         assertThat(tuple.left.getRowVersion(), is(not(equalTo(tuple.right.getRowVersion()))));
         assertThat(tuple.left.hashCode(), is(equalTo(tuple.right.hashCode())));
     }
-
+    
     @Test
     void shouldCreateNewRowVersionWhenRefreshed() {
         var publication = PublicationGenerator.randomPublication();
@@ -63,26 +63,26 @@ class DataEntryTest {
         var newRowVersion = resource.refreshRowVersion().getRowVersion();
         assertThat(newRowVersion, is(not(equalTo(oldRowVersion))));
     }
-
+    
     @ParameterizedTest(name = "should return Dao object:{0}")
     @MethodSource("resourceProvider")
     void shouldReturnDaoObject(Tuple resourceUpdate) {
-        assertThat(resourceUpdate.left.toDao(),is(instanceOf(Dao.class)));
+        assertThat(resourceUpdate.left.toDao(), is(instanceOf(Dao.class)));
     }
-
+    
     private static Message randomMessage(Publication publication) {
         var user = UserInstance.create(randomString(), randomUri());
         var clock = Clock.systemDefaultZone();
         return Message.create(user, publication, randomString(), SortableIdentifier.next(), clock, MessageType.SUPPORT);
     }
-
+    
     private static class Tuple {
-
+        
         private final DataEntry left;
         private final DataEntry right;
-
+        
         public Tuple(DataEntry left, DataEntry right) {
-
+            
             this.left = left;
             this.right = right;
         }

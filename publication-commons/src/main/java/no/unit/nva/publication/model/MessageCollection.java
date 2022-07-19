@@ -97,5 +97,4 @@ public class MessageCollection {
         MessageCollection that = (MessageCollection) o;
         return Objects.equals(getMessages(), that.getMessages()) && getMessageType() == that.getMessageType();
     }
-    
 }

@@ -16,9 +16,9 @@ import no.unit.nva.model.Publication;
 import org.junit.jupiter.api.Test;
 
 public class MessageTypeTest {
-
+    
     public static final String MESSAGE_TYPE_FIELD = "messageType";
-
+    
     @Test
     void parseValueReturnsMessageTypeIgnoringInputCase() {
         var messageTypeInVaryingCase = "DoIReQuESt";
@@ -26,7 +26,7 @@ public class MessageTypeTest {
         var actualMessageType = MessageType.parse(messageTypeInVaryingCase);
         assertThat(actualMessageType, is(equalTo(expectedMessageType)));
     }
-
+    
     @Test
     void parseValueThrowsExceptionWhenParsingInvalidMessageType() {
         var messageTypeString = "someInvalidType";
@@ -34,21 +34,20 @@ public class MessageTypeTest {
             assertThrows(IllegalArgumentException.class, () -> MessageType.parse(messageTypeString));
         assertThat(actualException.getMessage(), containsString(MessageType.INVALID_MESSAGE_TYPE_ERROR));
     }
-
+    
     @Test
     void parsingMessageValueFromJsonIsCaseTolerant() throws JsonProcessingException {
         Publication publication = publicationWithIdentifier();
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
         UserInstance owner = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
         Message message = Message.create(owner, publication, randomString(), messageIdentifier,
-                                         Clock.systemDefaultZone(), MessageType.DOI_REQUEST);
-
+            Clock.systemDefaultZone(), MessageType.DOI_REQUEST);
+        
         ObjectNode json = dynamoDbObjectMapper.convertValue(message, ObjectNode.class);
         json.put(MESSAGE_TYPE_FIELD, "DoiREquEst");
         String jsonString = dynamoDbObjectMapper.writeValueAsString(json);
         Message actualMessage = dynamoDbObjectMapper.readValue(jsonString, Message.class);
         assertThat(actualMessage, is(equalTo(message)));
     }
-    
 }
 

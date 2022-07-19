@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class UpdateDoiStatusHandlerTest {
-
+    
     public static final String BAD_EVENT_WITH_DATE_IN_FUTURE =
         "doirequests/update_doi_status_event_bad_date_in_the_future.json";
     public static final String EMPTY_OBJECT = "{}";
@@ -48,7 +48,7 @@ class UpdateDoiStatusHandlerTest {
     private Context context;
     private ResourceService resourceService;
     private TestAppender logger;
-
+    
     @BeforeEach
     void setUp() throws ApiGatewayException {
         logger = LogUtils.getTestingAppender(UpdateDoiStatusProcess.class);
@@ -56,58 +56,58 @@ class UpdateDoiStatusHandlerTest {
         handler = new UpdateDoiStatusHandler(resourceService);
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
-
+        
         when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(
             new Publication.Builder()
                 .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
                 .build());
     }
-
+    
     @Test
     void handleRequestThrowsIllegalStateExceptionWhereRequestedDoiModificationTimeIsInTheFuture() {
         var eventInputStream = IoUtils.inputStreamFromResources(BAD_EVENT_WITH_DATE_IN_FUTURE);
-
+        
         var actualException = assertThrows(RuntimeException.class,
-                                           () -> handler.handleRequest(eventInputStream, outputStream, context));
+            () -> handler.handleRequest(eventInputStream, outputStream, context));
         assertThat(actualException.getMessage(), is(equalTo("Modified doi is in the future, bailing!")));
     }
-
+    
     @Test
     void handleRequestThrowsRuntimeExceptionCausedByMismatchedInputExceptionWhereDoiRequestHolderIsNullDueToBadInput() {
         var inputStream = new ByteArrayInputStream(new byte[0]);
-
+        
         var actualException = assertThrows(RuntimeException.class,
-                                           () -> handler.handleRequest(inputStream, outputStream, context));
+            () -> handler.handleRequest(inputStream, outputStream, context));
         assertThat(actualException.getCause(), is(instanceOf(MismatchedInputException.class)));
         assertThat(actualException.getMessage(), containsString("No content to map due to end-of-input"));
     }
-
+    
     @Test
     void handleRequestThrowsIllegalArgumentExceptionWherePayloadNotMatchingDoiRequestHolderPojo() {
         var eventInputStream = IoUtils
             .inputStreamFromResources(BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO);
-
+        
         IllegalArgumentException actualException = assertThrows(IllegalArgumentException.class,
-                                                                () -> handler.handleRequest(eventInputStream,
-                                                                                            outputStream, context));
-
+            () -> handler.handleRequest(eventInputStream,
+                outputStream, context));
+        
         assertThat(actualException.getMessage(), is(equalTo(String.format(ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT,
-                                                                          EMPTY_OBJECT))));
+            EMPTY_OBJECT))));
     }
-
+    
     @Test
     void handleRequestThrowsDependencyRemoteNvaApiExceptionWhenPublicationServiceFailsToFetchPublication()
         throws ApiGatewayException {
         when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenThrow(
             NotFoundException.class);
-
+        
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
-
+        
         var actualException = assertThrows(DependencyRemoteNvaApiException.class,
-                                           () -> handler.handleRequest(eventInputStream, outputStream, context));
+            () -> handler.handleRequest(eventInputStream, outputStream, context));
         assertThat(actualException, is(instanceOf(DependencyRemoteNvaApiException.class)));
     }
-
+    
     @Test
     void handleRequestLogsUnexpectedExceptions()
         throws ApiGatewayException {
@@ -116,69 +116,69 @@ class UpdateDoiStatusHandlerTest {
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
         when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
-
+        
         String expectedMessage = "someMessage";
         RuntimeException expectedException = new RuntimeException(expectedMessage);
         when(resourceService.updatePublication(any(Publication.class))).thenThrow(expectedException);
-
+        
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
         var actualException = assertThrows(RuntimeException.class,
-                                           () -> handler.handleRequest(eventInputStream, outputStream, context));
+            () -> handler.handleRequest(eventInputStream, outputStream, context));
         assertThat(actualException.getMessage(), containsString(expectedMessage));
         assertThat(testAppender.getMessages(), containsString(expectedMessage));
     }
-
+    
     @Test
     void handleRequestSuccessfullyWhenPayloadContainsDoiUpdateHolderWithValidFields() throws ApiGatewayException {
         var publication = new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
-
+        
         var expectedPublicationUpdate = new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .withDoi(EXAMPLE_DOI)
             .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
             .build();
-
+        
         stubSuccessfulDoiStatusUpdate(publication, expectedPublicationUpdate);
-
+        
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
         handler.handleRequest(eventInputStream, outputStream, context);
         verifySuccessfulDoiStatusUpdate(expectedPublicationUpdate);
     }
-
+    
     @Test
     void handleRequestSuccessfullyThenLogsInformationMessage()
         throws ApiGatewayException {
         var publication = new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
-
+        
         var expectedPublicationUpdate = new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .withDoi(EXAMPLE_DOI)
             .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
             .build();
-
+        
         stubSuccessfulDoiStatusUpdate(publication, expectedPublicationUpdate);
-
+        
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
         handler.handleRequest(eventInputStream, outputStream, context);
-
+        
         assertThat(logger.getMessages(), containsString(String.format(UpdateDoiStatusProcess.UPDATED_PUBLICATION_FORMAT,
-                                                                      PUBLICATION_IDENTIFIER_IN_RESOURCES,
-                                                                      EXAMPLE_DOI,
-                                                                      EXAMPLE_DOI_MODIFIED_DATE
+            PUBLICATION_IDENTIFIER_IN_RESOURCES,
+            EXAMPLE_DOI,
+            EXAMPLE_DOI_MODIFIED_DATE
         )));
     }
-
+    
     private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) {
         ArgumentCaptor<Publication> publicationServiceCaptor = ArgumentCaptor.forClass(Publication.class);
         verify(resourceService).updatePublication(publicationServiceCaptor.capture());
         Publication actualPublicationUpdate = publicationServiceCaptor.getValue();
         assertThat(actualPublicationUpdate, is(equalTo(expectedPublicationUpdate)));
     }
-
+    
     private void stubSuccessfulDoiStatusUpdate(Publication publication, Publication expectedPublicationUpdate)
         throws ApiGatewayException {
         when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);

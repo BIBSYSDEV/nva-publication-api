@@ -15,7 +15,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(UniquePublishingRequestEntry.class),
 })
 public abstract class UniquenessEntry implements DynamoEntry, WithPrimaryKey {
-
+    
     private String partitionKey;
     private String sortKey;
     

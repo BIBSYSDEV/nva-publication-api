@@ -25,21 +25,21 @@ public class ResourceDao extends Dao<Resource>
                ResourceByIdentifier,
                WithCristinIdentifier,
                JsonSerializable {
-
+    
     public static final String CRISTIN_SOURCE = "Cristin";
     public static final String TYPE = "Resource";
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     private Resource data;
-
+    
     public ResourceDao() {
         this(new Resource());
     }
-
+    
     public ResourceDao(Resource resource) {
         super();
         this.data = resource;
     }
-
+    
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         Resource resource = Resource.emptyResource(
             userInstance.getUserIdentifier(),
@@ -47,52 +47,52 @@ public class ResourceDao extends Dao<Resource>
             resourceIdentifier);
         return new ResourceDao(resource);
     }
-
+    
     public static String constructPrimaryPartitionKey(URI customerId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
-                             orgUriToOrgIdentifier(customerId), owner);
+            orgUriToOrgIdentifier(customerId), owner);
     }
-
+    
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + Resource.getType();
     }
-
+    
     @JsonIgnore
     public static String getContainedType() {
         return Resource.getType();
     }
-
+    
     @Override
     public Resource getData() {
         return data;
     }
-
+    
     @Override
     public void setData(Resource resource) {
         this.data = resource;
     }
-
+    
     @Override
     public String getType() {
         return Resource.getType();
     }
-
+    
     @Override
     public URI getCustomerId() {
         return data.getPublisher().getId();
     }
-
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return data.getIdentifier();
     }
-
+    
     @Override
     protected String getOwner() {
         return data.getOwner();
     }
-
+    
     @Override
     public Optional<String> getCristinIdentifier() {
         String cristinIdentifierValue = Optional.ofNullable(data.getAdditionalIdentifiers())
@@ -103,18 +103,24 @@ public class ResourceDao extends Dao<Resource>
             .collect(SingletonCollector.collectOrElse(null));
         return Optional.ofNullable(cristinIdentifierValue);
     }
-
+    
     @Override
     public String joinByResourceOrderedType() {
         return joinByResourceContainedOrderedType();
     }
-
+    
     @Override
     @JsonIgnore
     public SortableIdentifier getResourceIdentifier() {
         return this.getIdentifier();
     }
-
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getData());
+    }
+    
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -127,13 +133,7 @@ public class ResourceDao extends Dao<Resource>
         ResourceDao that = (ResourceDao) o;
         return Objects.equals(getData(), that.getData());
     }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getData());
-    }
-
+    
     private boolean keyEqualsCristin(AdditionalIdentifier identifier) {
         return Optional.ofNullable(identifier)
             .map(AdditionalIdentifier::getSource)

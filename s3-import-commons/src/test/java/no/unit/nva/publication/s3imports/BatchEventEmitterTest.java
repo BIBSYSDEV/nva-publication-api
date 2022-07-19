@@ -35,19 +35,19 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public class BatchEventEmitterTest {
-
+    
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
     public static final Lorem FAKER = Faker.instance().lorem();
     private EventBridgeClient eventBridgeClient;
     private AtomicInteger sleepingCounter;
-
+    
     @BeforeEach
     public void init() {
         sleepingCounter = new AtomicInteger();
         sleepingCounter.set(0);
         eventBridgeClient = setupEventBridgeClient();
     }
-
+    
     @Test
     public void emitEventsEmitsAllEventsWhenCalledWithArguments() {
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
@@ -58,9 +58,7 @@ public class BatchEventEmitterTest {
         int expectedNumberOfPutEventRequests = manyEvents.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
         verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
     }
-
-
-
+    
     @Test
     public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails() {
         eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests();
@@ -70,14 +68,14 @@ public class BatchEventEmitterTest {
         batchEventEmitter.addEvents(eventBodies);
         assertThrows(EventBridgeException.class, () -> batchEventEmitter.emitEvents(NUMBER_OF_EVENTS_SENT_PER_REQUEST));
         assertThat(logAppender.getMessages(),
-                   containsString(NUMBER_OF_REQUEST_ENTRIES + NUMBER_OF_EVENTS_SENT_PER_REQUEST));
+            containsString(NUMBER_OF_REQUEST_ENTRIES + NUMBER_OF_EVENTS_SENT_PER_REQUEST));
     }
-
+    
     @ParameterizedTest
     @CsvSource({"250000,10", "120000,5"})
     public void eventEmitterCreatesPutEventRequestsThatDoNotExceedAmazonsLimits(String individualEntrySize,
                                                                                 String numberOfExpectedRequests) {
-
+        
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         List<String> eventBodies = generateEventsOfSpecificSize(Integer.parseInt(individualEntrySize));
         batchEventEmitter.addEvents(eventBodies);
@@ -86,7 +84,7 @@ public class BatchEventEmitterTest {
         double actualSize = batchEventEmitter.getPutEventsRequests().size();
         assertThat(actualSize, is(closeTo(expectedNumberOfRequests, acceptableError)));
     }
-
+    
     @Test
     public void eventEmitterThrowsExceptionWhenDataEntryIsTooBigForAwsEventBridgeEvent() {
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
@@ -94,7 +92,7 @@ public class BatchEventEmitterTest {
         List<String> eventBodies = generateEventsOfSpecificSize(sizeBiggerThanAcceptable);
         assertThrows(EntryTooBigException.class, () -> batchEventEmitter.addEvents(eventBodies));
     }
-
+    
     private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests() {
         EventBridgeClient client = mock(EventBridgeClient.class);
         when(client.listEventBuses(any(ListEventBusesRequest.class)))
@@ -103,13 +101,13 @@ public class BatchEventEmitterTest {
             .thenThrow(EventBridgeException.builder().message("Unimportant message").build());
         return client;
     }
-
+    
     private BatchEventEmitter<String> newEventEmitter() {
         return new BatchEventEmitter<>(randomString(),
-                                       randomString(),
-                                       eventBridgeClient);
+            randomString(),
+            eventBridgeClient);
     }
-
+    
     private EventBridgeClient setupEventBridgeClient() {
         EventBridgeClient client = mock(EventBridgeClient.class);
         when(client.listEventBuses(any(ListEventBusesRequest.class)))
@@ -118,24 +116,24 @@ public class BatchEventEmitterTest {
             .thenReturn(mockPutEventResult());
         return client;
     }
-
+    
     private PutEventsResponse mockPutEventResult() {
         return PutEventsResponse.builder().failedEntryCount(0).build();
     }
-
+    
     private ListEventBusesResponse mockListEventBusesResponse() {
         EventBus eventBus = EventBus.builder().name(ApplicationConstants.EVENT_BUS_NAME).build();
         return ListEventBusesResponse.builder()
             .eventBuses(eventBus)
             .build();
     }
-
+    
     private List<String> generateInputBiggerThanEventEmittersRequestSize() {
         return IntStream.range(0, NUMBER_OF_EVENTS_SENT_PER_REQUEST * 100)
             .boxed().map(i -> randomString())
             .collect(Collectors.toList());
     }
-
+    
     private List<String> generateEventsOfSpecificSize(int requestSize) {
         return IntStream.range(0, NUMBER_OF_EVENTS_SENT_PER_REQUEST)
             .boxed()

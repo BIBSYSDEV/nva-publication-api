@@ -30,34 +30,46 @@ import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
 
 public class ReferenceBuilder extends CristinMappingModule {
-
+    
     private static final Config config = loadConfiguration();
     private static final boolean VALIDATE_DOI_ONLINE = parseValidateDoiOnline();
-
+    
     private final DoiConverter doiConverter;
-
+    
     public ReferenceBuilder(CristinObject cristinObject) {
         super(cristinObject);
         DoiValidator doiValidator = new DoiValidator();
         doiConverter = new DoiConverter(doiUri -> validateDoi(doiValidator, doiUri));
     }
-
+    
     public Reference buildReference() {
         PublicationInstanceBuilderImpl publicationInstanceBuilderImpl
-                = new PublicationInstanceBuilderImpl(cristinObject);
+            = new PublicationInstanceBuilderImpl(cristinObject);
         PublicationInstance<? extends Pages> publicationInstance
-                = publicationInstanceBuilderImpl.build();
+            = publicationInstanceBuilderImpl.build();
         PublicationContext publicationContext = attempt(this::buildPublicationContext)
-                .orElseThrow(failure -> castToCorrectRuntimeException(failure.getException()));
+            .orElseThrow(failure -> castToCorrectRuntimeException(failure.getException()));
         return new Reference.Builder()
-                .withPublicationInstance(publicationInstance)
-                .withPublishingContext(publicationContext)
-                .withDoi(extractDoi())
-                .build();
+            .withPublicationInstance(publicationInstance)
+            .withPublishingContext(publicationContext)
+            .withDoi(extractDoi())
+            .build();
     }
-
+    
+    private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
+        return VALIDATE_DOI_ONLINE ? doiValidator.validateOnline(doiUri) : DoiValidator.validateOffline(doiUri);
+    }
+    
+    private static boolean parseValidateDoiOnline() {
+        return config.getBoolean("doi.validation.online");
+    }
+    
+    private static Config loadConfiguration() {
+        return ConfigFactory.load(ConfigFactory.defaultApplication());
+    }
+    
     private PublicationContext buildPublicationContext()
-            throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
             return new NvaBookBuilder(cristinObject).buildBookForPublicationContext();
         }
@@ -75,42 +87,30 @@ public class ReferenceBuilder extends CristinMappingModule {
         }
         return null;
     }
-
+    
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
-            throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
             return new NvaDegreeBuilder(cristinObject).buildDegree();
         }
         return new NvaReportBuilder(cristinObject).buildNvaReport();
     }
-
+    
     private Chapter buildChapterForPublicationContext() {
         return new Chapter.Builder().build();
     }
-
+    
     private PublicationContext buildEventForPublicationContext() {
         return new Event.Builder().build();
     }
-
+    
     private URI extractDoi() {
         if (isJournal(cristinObject)) {
             return Optional.of(extractCristinJournalPublication())
-                    .map(CristinJournalPublication::getDoi)
-                    .map(doiConverter::toUri)
-                    .orElse(null);
+                .map(CristinJournalPublication::getDoi)
+                .map(doiConverter::toUri)
+                .orElse(null);
         }
         return null;
-    }
-
-    private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
-        return VALIDATE_DOI_ONLINE ? doiValidator.validateOnline(doiUri) : DoiValidator.validateOffline(doiUri);
-    }
-
-    private static boolean parseValidateDoiOnline() {
-        return config.getBoolean("doi.validation.online");
-    }
-
-    private static Config loadConfiguration() {
-        return ConfigFactory.load(ConfigFactory.defaultApplication());
     }
 }

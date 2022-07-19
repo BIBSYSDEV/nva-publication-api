@@ -19,22 +19,22 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public class BatchScanStartHandler implements RequestStreamHandler {
-
+    
     public static final String INFORMATION_MESSAGE =
         "Starting scanning with pageSize equal to: %s. Set 'pageSize' between [1,1000] "
         + "if you want a different pageSize value.";
     private static final Logger logger = LoggerFactory.getLogger(BatchScanStartHandler.class);
     private final EventBridgeClient client;
-
+    
     @JacocoGenerated
     public BatchScanStartHandler() {
         this(defaultClient());
     }
-
+    
     public BatchScanStartHandler(EventBridgeClient client) {
         this.client = client;
     }
-
+    
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         String inputString = IoUtils.streamToString(input);
@@ -48,14 +48,14 @@ public class BatchScanStartHandler implements RequestStreamHandler {
         PutEventsResponse response = sendEvent(event);
         logger.info(response.toString());
     }
-
+    
     @JacocoGenerated
     private static EventBridgeClient defaultClient() {
         return EventBridgeClient.builder()
             .httpClientBuilder(UrlConnectionHttpClient.builder())
             .build();
     }
-
+    
     private PutEventsResponse sendEvent(PutEventsRequestEntry event) {
         PutEventsRequest putEventsRequest = PutEventsRequest.builder().entries(event).build();
         return client.putEvents(putEventsRequest);

@@ -11,7 +11,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
 class UserInstanceTest {
-
+    
     @Test
     void shouldReturnUserInstanceFromPublication() {
         Publication publication = PublicationGenerator.randomPublication();
@@ -19,7 +19,7 @@ class UserInstanceTest {
         assertThat(userInstance.getUserIdentifier(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
-
+    
     @Test
     void shouldReturnUserInstanceFromDoiRequest() {
         Publication publication = PublicationGenerator.randomPublication();
@@ -28,13 +28,13 @@ class UserInstanceTest {
         assertThat(userInstance.getUserIdentifier(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
-
+    
     @Test
     void shouldReturnUserInstanceFromMessage() {
         Publication publication = PublicationGenerator.randomPublication();
-
+        
         var message = Message.create(UserInstance.fromPublication(publication), publication, randomString(),
-                                     SortableIdentifier.next(), Clock.systemDefaultZone(), MessageType.SUPPORT);
+            SortableIdentifier.next(), Clock.systemDefaultZone(), MessageType.SUPPORT);
         var userInstance = UserInstance.fromMessage(message);
         assertThat(userInstance.getUserIdentifier(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
