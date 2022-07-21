@@ -152,7 +152,7 @@ public class ReadResourceService {
                                                                   UserInstance userInstance,
                                                                   SortableIdentifier resourceIdentifier) {
         
-        logger.error("Could fetch Resource for user:");
+        logger.error("Could not fetch Resource for user:");
         logger.error("UserInstance" + userInstance.toJsonString());
         logger.error("Resource identifier:" + resourceIdentifier.toString());
         return new RuntimeException(fail.getException());

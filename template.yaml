@@ -719,7 +719,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
       ReservedConcurrentExecutions: 1
@@ -789,7 +789,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedDataEntriesPersistenceHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       ReservedConcurrentExecutions: 64
@@ -849,6 +849,33 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+  AcceptedPublisingRequestHander:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.tickets.AcceptedPublishingRequestEventHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 64
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.PublishingRequest.Update" ]
+
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -985,7 +1012,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.doirequests.UpdateDoiStatusHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn

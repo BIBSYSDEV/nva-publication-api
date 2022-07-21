@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.doirequests;
+package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;

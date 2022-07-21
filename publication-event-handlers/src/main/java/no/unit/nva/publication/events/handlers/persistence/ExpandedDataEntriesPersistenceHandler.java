@@ -1,6 +1,6 @@
-package no.unit.nva.publication.events.handlers.expandresources;
+package no.unit.nva.publication.events.handlers.persistence;
 
-import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocument.createIndexDocument;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
 import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;

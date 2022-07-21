@@ -1,7 +1,7 @@
-package no.unit.nva.publication.events.handlers.expandresources;
+package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.createAttributes;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.createAttributes;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

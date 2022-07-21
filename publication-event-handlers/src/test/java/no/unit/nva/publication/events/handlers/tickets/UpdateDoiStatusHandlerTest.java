@@ -1,6 +1,6 @@
-package no.unit.nva.publication.events.handlers.doirequests;
+package no.unit.nva.publication.events.handlers.tickets;
 
-import static no.unit.nva.publication.events.handlers.doirequests.UpdateDoiStatusProcess.ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT;
+import static no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusProcess.ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
