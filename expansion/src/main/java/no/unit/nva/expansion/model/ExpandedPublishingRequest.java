@@ -16,6 +16,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingRequestStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -27,6 +28,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     public static final String TYPE = "PublishingRequest";
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String MESSAGES_FIELD = "messages";
+    public static final String STATUS_FIELD = "status";
     
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -36,6 +38,8 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     private MessageCollection messages;
     @JsonProperty("organizationIds")
     private Set<URI> organizationIds;
+    @JsonProperty(STATUS_FIELD)
+    private PublishingRequestStatus status;
     
     public ExpandedPublishingRequest() {
         this.messages = MessageCollection.empty(MessageType.PUBLISHING_REQUEST);
@@ -53,6 +57,14 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
         return create(publishingRequestCase, publication, messageCollection, organizationIds);
+    }
+    
+    public PublishingRequestStatus getStatus() {
+        return status;
+    }
+    
+    public void setStatus(PublishingRequestStatus status) {
+        this.status = status;
     }
     
     @JacocoGenerated
@@ -105,7 +117,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getPublicationSummary(), getMessages());
+        return Objects.hash(getIdentifier(), getPublicationSummary(), getMessages(), getOrganizationIds(), getStatus());
     }
     
     @Override
@@ -118,9 +130,11 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
             return false;
         }
         ExpandedPublishingRequest that = (ExpandedPublishingRequest) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier()) && Objects.equals(
-            getPublicationSummary(), that.getPublicationSummary()) && Objects.equals(getMessages(),
-            that.getMessages());
+        return Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getPublicationSummary(), that.getPublicationSummary())
+               && Objects.equals(getMessages(), that.getMessages())
+               && Objects.equals(getOrganizationIds(), that.getOrganizationIds())
+               && getStatus() == that.getStatus();
     }
     
     private static ExpandedPublishingRequest create(PublishingRequestCase dataEntry,
@@ -132,6 +146,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         entry.setPublicationSummary(PublicationSummary.create(publication));
         entry.setMessages(messages);
         entry.setOrganizationIds(organizationIds);
+        entry.setStatus(dataEntry.getStatus());
         return entry;
     }
     
