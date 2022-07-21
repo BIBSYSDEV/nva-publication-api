@@ -849,12 +849,39 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-  AcceptedPublisingRequestHander:
+  AcceptedPublishingRequestHander:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.AcceptedPublishingRequestEventHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 64
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.PublishingRequest.Update" ]
+
+  PendingPublishingRequestHander:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.tickets.PendingPublishingRequestEventHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn

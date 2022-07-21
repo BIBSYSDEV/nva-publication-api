@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.DEFAULT_S3_CLIENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,18 +11,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +34,15 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class PendingPublishingRequestEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
     
+    private static final Logger logger = LoggerFactory.getLogger(PendingPublishingRequestEventHandler.class);
     private final S3Driver s3Driver;
     private final PublishingRequestService publishingRequestService;
     private final HttpClient httpClient;
-    private static final Logger logger = LoggerFactory.getLogger(PendingPublishingRequestEventHandler.class);
+    
+    @JacocoGenerated
+    public PendingPublishingRequestEventHandler() {
+        this(defaultPublishingRequestService(), HttpClient.newHttpClient(), DEFAULT_S3_CLIENT);
+    }
     
     protected PendingPublishingRequestEventHandler(PublishingRequestService publishingRequestService,
                                                    HttpClient httpClient,
@@ -55,6 +64,12 @@ public class PendingPublishingRequestEventHandler
         }
         
         return null;
+    }
+    
+    @JacocoGenerated
+    private static PublishingRequestService defaultPublishingRequestService() {
+        return
+            new PublishingRequestService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
     private boolean customerAllowsPublishing(PublishingRequestCase publishingRequest) {

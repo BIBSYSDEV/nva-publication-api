@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -14,7 +13,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Organization;
@@ -51,11 +49,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private FakeContext context;
     private ResourceService resourceService;
     private PublishingRequestService publishingRequestService;
-    private FakeHttpClient httpClient;
-    
-    public static Stream<String> unrecognizedResponseBodies() {
-        return Stream.of(randomJson(), randomString());
-    }
+    private FakeHttpClient<String> httpClient;
     
     @BeforeEach
     public void setup() {
