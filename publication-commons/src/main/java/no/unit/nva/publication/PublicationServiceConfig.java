@@ -4,7 +4,6 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -27,7 +26,6 @@ public final class PublicationServiceConfig {
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
     public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
     public static final String API_SCHEME = "https";
-    public static final HttpClient EXTERNAL_SERVICES_HTTP_CLIENT = HttpClient.newBuilder().build();
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     
     private PublicationServiceConfig() {

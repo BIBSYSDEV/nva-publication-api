@@ -6,6 +6,7 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -14,6 +15,7 @@ import no.unit.nva.publication.model.business.PublishingRequestStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,12 @@ public class AcceptedPublishingRequestEventHandler
     private final ResourceService resourceService;
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
     private final S3Driver s3Driver;
+    
+    @JacocoGenerated
+    public AcceptedPublishingRequestEventHandler(){
+        this(PublicationServiceConfig.defaultResourceService(),S3Driver.defaultS3Client().build());
+    }
+    
     
     protected AcceptedPublishingRequestEventHandler(ResourceService resourceService, S3Client s3Client) {
         super(EventReference.class);
