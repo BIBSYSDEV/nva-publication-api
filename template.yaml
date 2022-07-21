@@ -719,7 +719,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
       ReservedConcurrentExecutions: 1
@@ -985,7 +985,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.doirequests.UpdateDoiStatusHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn

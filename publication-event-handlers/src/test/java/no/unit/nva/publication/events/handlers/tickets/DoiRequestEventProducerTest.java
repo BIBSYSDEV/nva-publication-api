@@ -1,8 +1,8 @@
-package no.unit.nva.publication.events.handlers.doirequests;
+package no.unit.nva.publication.events.handlers.tickets;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.EMPTY_EVENT;
-import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;

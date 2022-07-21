@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.doirequests;
+package no.unit.nva.publication.events.handlers.tickets;
 
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 
