@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.expandresources;
+package no.unit.nva.publication.events.handlers.persistence;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

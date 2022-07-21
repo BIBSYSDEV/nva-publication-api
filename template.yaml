@@ -789,7 +789,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedDataEntriesPersistenceHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       ReservedConcurrentExecutions: 64
