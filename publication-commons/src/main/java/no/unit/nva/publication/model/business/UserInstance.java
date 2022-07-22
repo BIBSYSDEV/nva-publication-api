@@ -4,6 +4,8 @@ import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
 /**
@@ -28,6 +30,12 @@ public class UserInstance implements JsonSerializable {
     
     public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
         return new UserInstance(resourceOwner.getOwner(), organizationUri, resourceOwner.getOwnerAffiliation());
+    }
+    
+    public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
+        var userName = requestInfo.getNvaUsername();
+        var customerId = requestInfo.getCurrentCustomer();
+        return UserInstance.create(userName, customerId);
     }
     
     public static UserInstance fromDoiRequest(DoiRequest doiRequest) {

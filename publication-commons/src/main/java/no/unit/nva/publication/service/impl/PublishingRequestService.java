@@ -104,9 +104,8 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return getPublishingRequest(queryObject);
     }
     
-    public PublishingRequestCase getPublishingRequestByResourceIdentifier(
-        URI customerId,
-        SortableIdentifier resourceIdentifier) {
+    public PublishingRequestCase getPublishingRequestByResourceIdentifier(URI customerId,
+                                                                          SortableIdentifier resourceIdentifier) {
         var query = queryPublishingRequestByResource(customerId, resourceIdentifier);
         
         var queryResult = client.query(query);
