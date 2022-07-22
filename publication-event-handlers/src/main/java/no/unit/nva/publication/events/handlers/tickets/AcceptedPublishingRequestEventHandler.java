@@ -24,28 +24,26 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class AcceptedPublishingRequestEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
     
-    private final ResourceService resourceService;
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
+    private final ResourceService resourceService;
     private final S3Driver s3Driver;
     
     @JacocoGenerated
-    public AcceptedPublishingRequestEventHandler(){
-        this(PublicationServiceConfig.defaultResourceService(),S3Driver.defaultS3Client().build());
+    public AcceptedPublishingRequestEventHandler() {
+        this(PublicationServiceConfig.defaultResourceService(), S3Driver.defaultS3Client().build());
     }
-    
     
     protected AcceptedPublishingRequestEventHandler(ResourceService resourceService, S3Client s3Client) {
         super(EventReference.class);
         this.resourceService = resourceService;
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
-        
     }
     
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
-        var eventBlob= s3Driver.readEvent(input.getUri());
+        var eventBlob = s3Driver.readEvent(input.getUri());
         var latestUpdate = parseInput(eventBlob);
         if (PublishingRequestStatus.APPROVED.equals(latestUpdate.getStatus())) {
             var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
