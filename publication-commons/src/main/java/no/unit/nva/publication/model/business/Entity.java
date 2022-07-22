@@ -17,18 +17,18 @@ import no.unit.nva.publication.model.storage.Dao;
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(TicketEntry.class)
 })
-public interface Entity extends RowLevelSecurity{
+public interface Entity extends RowLevelSecurity {
     
     String ROW_VERSION = "rowVersion";
+    
+    static String nextRowVersion() {
+        return UUID.randomUUID().toString();
+    }
     
     @JsonProperty("identifier")
     SortableIdentifier getIdentifier();
     
     void setIdentifier(SortableIdentifier identifier);
-    
-    static String nextRowVersion() {
-        return UUID.randomUUID().toString();
-    }
     
     Publication toPublication();
     

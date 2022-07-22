@@ -1,10 +1,10 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestCreatedDate;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestModifiedDate;
+import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -34,7 +34,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
-public class DoiRequest implements WithStatus, TicketEntry{
+public class DoiRequest implements WithStatus, TicketEntry {
     
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
@@ -147,6 +147,57 @@ public class DoiRequest implements WithStatus, TicketEntry{
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
+    }
+    
+    @Override
+    public Publication toPublication() {
+        
+        no.unit.nva.model.DoiRequest doiRequest = new no.unit.nva.model.DoiRequest.Builder()
+            .withStatus(getStatus())
+            .withModifiedDate(getModifiedDate())
+            .withCreatedDate(getCreatedDate())
+            .build();
+        
+        Reference reference = new Reference.Builder()
+            .withPublicationInstance(getResourcePublicationInstance())
+            .build();
+        
+        EntityDescription entityDescription = new EntityDescription.Builder()
+            .withMainTitle(getResourceTitle())
+            .withDate(getResourcePublicationDate())
+            .withReference(reference)
+            .withContributors(getContributors())
+            .build();
+        
+        Organization customer = new Organization.Builder()
+            .withId(getCustomerId())
+            .build();
+        
+        return new Publication.Builder()
+            .withIdentifier(getResourceIdentifier())
+            .withModifiedDate(getResourceModifiedDate())
+            .withDoi(getDoi())
+            .withStatus(getResourceStatus())
+            .withEntityDescription(entityDescription)
+            .withPublisher(customer)
+            .withResourceOwner(new ResourceOwner(getOwner(), UNKNOWN_USER_AFFILIATION))
+            .withDoiRequest(doiRequest)
+            .build();
+    }
+    
+    @Override
+    public String getRowVersion() {
+        return rowVersion;
+    }
+    
+    @Override
+    public void setRowVersion(String rowVersion) {
+        this.rowVersion = rowVersion;
+    }
+    
+    @Override
+    public Dao<?> toDao() {
+        return new DoiRequestDao(this);
     }
     
     @Override
@@ -302,57 +353,6 @@ public class DoiRequest implements WithStatus, TicketEntry{
         if (isNull(resourceIdentifier)) {
             throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
         }
-    }
-    
-    @Override
-    public Publication toPublication() {
-        
-        no.unit.nva.model.DoiRequest doiRequest = new no.unit.nva.model.DoiRequest.Builder()
-            .withStatus(getStatus())
-            .withModifiedDate(getModifiedDate())
-            .withCreatedDate(getCreatedDate())
-            .build();
-        
-        Reference reference = new Reference.Builder()
-            .withPublicationInstance(getResourcePublicationInstance())
-            .build();
-        
-        EntityDescription entityDescription = new EntityDescription.Builder()
-            .withMainTitle(getResourceTitle())
-            .withDate(getResourcePublicationDate())
-            .withReference(reference)
-            .withContributors(getContributors())
-            .build();
-        
-        Organization customer = new Organization.Builder()
-            .withId(getCustomerId())
-            .build();
-        
-        return new Publication.Builder()
-            .withIdentifier(getResourceIdentifier())
-            .withModifiedDate(getResourceModifiedDate())
-            .withDoi(getDoi())
-            .withStatus(getResourceStatus())
-            .withEntityDescription(entityDescription)
-            .withPublisher(customer)
-            .withResourceOwner(new ResourceOwner(getOwner(), UNKNOWN_USER_AFFILIATION))
-            .withDoiRequest(doiRequest)
-            .build();
-    }
-    
-    @Override
-    public String getRowVersion() {
-        return rowVersion;
-    }
-    
-    @Override
-    public void setRowVersion(String rowVersion) {
-        this.rowVersion = rowVersion;
-    }
-    
-    @Override
-    public Dao<?> toDao() {
-        return new DoiRequestDao(this);
     }
     
     @Override

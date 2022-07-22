@@ -32,14 +32,14 @@ public class UniquenessEntryTest {
     @ParameterizedTest(name = "UniquenessEntries should not be deserialized")
     @MethodSource("uniquenessEntries")
     void shouldNotBeDeserialized(UniquenessEntry entry) {
-        var exception=assertThrows(UnsupportedOperationException.class, entry::getIdentifier);
-        assertThat(exception.getMessage(),containsString(DESERIALIZATION_ERROR_MESSAGE));
+        var exception = assertThrows(UnsupportedOperationException.class, entry::getIdentifier);
+        assertThat(exception.getMessage(), containsString(DESERIALIZATION_ERROR_MESSAGE));
     }
     
     private static Stream<UniquenessEntry> uniquenessEntries() {
         var identifierEntry = new IdentifierEntry(SAMPLE_IDENTIFIER);
         var uniqueDoiRequestEntry = new UniqueDoiRequestEntry(SAMPLE_IDENTIFIER);
         var uniquePublishingRequestEntry = new UniquePublishingRequestEntry(SAMPLE_IDENTIFIER);
-        return Stream.of(identifierEntry, uniqueDoiRequestEntry,uniquePublishingRequestEntry);
+        return Stream.of(identifierEntry, uniqueDoiRequestEntry, uniquePublishingRequestEntry);
     }
 }
