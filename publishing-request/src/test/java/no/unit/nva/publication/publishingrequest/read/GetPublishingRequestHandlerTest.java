@@ -75,7 +75,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
         assertThat(actualResponseObject, is(equalTo(expectedResponseObject)));
     }
     
-    @ParameterizedTest(name = " should return not found when ticket exists but requester is not the ticket owner")
+    @ParameterizedTest(name = "should return not found when ticket exists but requester is not the ticket owner")
     @MethodSource("wrongUserProvider")
     void shouldReturnNotFoundWhenTicketExistsButRequesterIsNotTheTicketOwnerAndIsNotACurator(
         Function<PublishingRequestCase, UserInstance> wrongUserProvider)
