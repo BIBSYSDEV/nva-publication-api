@@ -374,6 +374,35 @@ paths:
           type: string
         required: true
         description: Identifier of the publication related to the publishing request
+    get:
+      summary: Get the support case for a publication
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishingRequestCase'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPublishingRequestFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
     put:
       summary: Update status for a support case for a publication
       security:
