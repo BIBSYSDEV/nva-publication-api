@@ -1,9 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -70,7 +70,7 @@ public class MessageService extends ServiceWithTransactions {
         return writeMessageToDb(message);
     }
     
-    public SortableIdentifier writeMessageToDb(Message message) {
+    private SortableIdentifier writeMessageToDb(Message message) {
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
         
         IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());

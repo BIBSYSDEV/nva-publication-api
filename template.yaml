@@ -664,7 +664,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.list.GetPublishingRequestHandler::handleRequest
+      Handler: no.unit.nva.publication.publishingrequest.read.GetPublishingRequestHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Timeout: 10
@@ -678,7 +678,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /publishingrequest
+            Path: /{publicationIdentifier}/support-case/{supportCaseIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
