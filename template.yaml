@@ -612,7 +612,7 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
-            Path: /messages/{messageIdentifier}
+            Path: /messages
             Method: get
             RestApiId: !Ref NvaPublicationApi
   NvaGetMessageFunction:
@@ -632,7 +632,7 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
-            Path: /messages
+            Path: /messages/{messageIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
