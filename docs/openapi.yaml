@@ -315,6 +315,30 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+  /messages/{messageIdentifier}:
+    parameters:
+      - in: path
+        name: messageIdentitifer
+        schema:
+          type: string
+        required: true
+        description: Identifier for the requested message
+    get:
+      responses:
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+    x-amazon-apigateway-integration:
+      uri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaGetMessageFunction.Arn}/invocations
+      responses: { }
+      httpMethod: POST
+      type: AWS_PROXY
   /{publicationIdentifier}/support-case:
     parameters:
       - in: path

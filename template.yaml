@@ -612,6 +612,26 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
+            Path: /messages/{messageIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+  NvaGetMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler: no.unit.nva.publication.messages.read.GetMessageHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
             Path: /messages
             Method: get
             RestApiId: !Ref NvaPublicationApi
