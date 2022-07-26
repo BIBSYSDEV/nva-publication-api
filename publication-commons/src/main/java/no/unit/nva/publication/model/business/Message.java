@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
@@ -8,6 +9,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -22,21 +24,35 @@ public class Message implements WithStatus,
                                 JsonSerializable {
     
     public static final String TYPE = "Message";
+    public static final String SUPPORT_SERVICE_RECIPIENT = "SupportService";
+    
+    @JsonProperty("identifier")
     private SortableIdentifier identifier;
+    @JsonProperty("owner")
     private String owner;
+    @JsonProperty("customerId")
     private URI customerId;
+    @JsonProperty("status")
     private MessageStatus status;
+    @JsonProperty("sender")
     private String sender;
+    @JsonProperty("resourceIdentifier")
     private SortableIdentifier resourceIdentifier;
+    @JsonProperty("text")
     private String text;
+    @JsonProperty("createdTime")
     private Instant createdTime;
+    @JsonProperty("modifiedTime")
+    private Instant modifiedTime;
+    @JsonProperty("resourceTitle")
     private String resourceTitle;
+    @JsonProperty("messageType")
     private MessageType messageType;
+    @JsonProperty("rowVersion")
     private String rowVersion;
     
     @JacocoGenerated
     public Message() {
-    
     }
     
     public static MessageBuilder builder() {
@@ -62,6 +78,31 @@ public class Message implements WithStatus,
         return create(sender, publication, messageText, null, clock, MessageType.SUPPORT);
     }
     
+    @JsonProperty("recipient")
+    public String getRecipient() {
+        return owner.equals(sender) ? SUPPORT_SERVICE_RECIPIENT : owner;
+    }
+    
+    public void setRecipient(String recipient) {
+        // DO NOTHING
+    }
+    
+    public Instant getModifiedTime() {
+        return modifiedTime;
+    }
+    
+    public void setModifiedTime(Instant modifiedTime) {
+        this.modifiedTime = modifiedTime;
+    }
+    
+    public Message markAsRead(Clock clock) {
+        return this.copy()
+            .withStatus(MessageStatus.READ)
+            .withModifiedTime(clock.instant())
+            .withRowVersion(UUID.randomUUID().toString())
+            .build();
+    }
+    
     public MessageType getMessageType() {
         return messageType;
     }
@@ -78,6 +119,33 @@ public class Message implements WithStatus,
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
+    }
+    
+    @Override
+    public Publication toPublication() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @JacocoGenerated
+    @Override
+    public String getRowVersion() {
+        return this.rowVersion;
+    }
+    
+    @Override
+    @JacocoGenerated
+    public void setRowVersion(String rowVersion) {
+        this.rowVersion = rowVersion;
+    }
+    
+    @Override
+    public String getType() {
+        return Message.TYPE;
+    }
+    
+    @Override
+    public Dao<?> toDao() {
+        return new MessageDao(this);
     }
     
     @Override
@@ -112,11 +180,6 @@ public class Message implements WithStatus,
     
     public void setSender(String sender) {
         this.sender = sender;
-    }
-    
-    @Override
-    public String getType() {
-        return Message.TYPE;
     }
     
     @Override
@@ -158,35 +221,15 @@ public class Message implements WithStatus,
     }
     
     @Override
-    public Publication toPublication() {
-        throw new UnsupportedOperationException();
-    }
-    
-    @JacocoGenerated
-    @Override
-    public String getRowVersion() {
-        return this.rowVersion;
-    }
-    
-    @Override
-    @JacocoGenerated
-    public void setRowVersion(String rowVersion) {
-        this.rowVersion = rowVersion;
-    }
-    
-    @Override
-    public Dao<?> toDao() {
-        return new MessageDao(this);
-    }
-    
-    @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-            getResourceIdentifier(), getText(), getCreatedTime(), getResourceTitle(), getMessageType());
+            getResourceIdentifier(),
+            getText(), getCreatedTime(), getModifiedTime(), getResourceTitle(), getMessageType());
     }
     
     @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -195,6 +238,7 @@ public class Message implements WithStatus,
             return false;
         }
         Message message = (Message) o;
+    
         return Objects.equals(getIdentifier(), message.getIdentifier())
                && Objects.equals(getOwner(), message.getOwner())
                && Objects.equals(getCustomerId(), message.getCustomerId())
@@ -203,6 +247,7 @@ public class Message implements WithStatus,
                && Objects.equals(getResourceIdentifier(), message.getResourceIdentifier())
                && Objects.equals(getText(), message.getText())
                && Objects.equals(getCreatedTime(), message.getCreatedTime())
+               && Objects.equals(getModifiedTime(), message.getModifiedTime())
                && Objects.equals(getResourceTitle(), message.getResourceTitle())
                && getMessageType() == message.getMessageType();
     }
@@ -225,12 +270,15 @@ public class Message implements WithStatus,
             .withSender(this.getSender())
             .withText(this.getText())
             .withResourceTitle(this.getResourceTitle())
+            .withModifiedTime(this.getModifiedTime())
             .withRowVersion(this.getRowVersion());
     }
     
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
                                                String messageText, SortableIdentifier messageIdentifier,
                                                Clock clock) {
+    
+        var now = clock.instant();
         return Message.builder()
             .withStatus(MessageStatus.UNREAD)
             .withResourceIdentifier(publication.getIdentifier())
@@ -239,7 +287,8 @@ public class Message implements WithStatus,
             .withSender(sender.getUserIdentifier())
             .withOwner(publication.getResourceOwner().getOwner())
             .withResourceTitle(extractTitle(publication))
-            .withCreatedTime(clock.instant())
+            .withCreatedTime(now)
+            .withModifiedTime(now)
             .withIdentifier(messageIdentifier)
             .withRowVersion(nextRowVersion());
     }

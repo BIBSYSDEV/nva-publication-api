@@ -41,7 +41,6 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -88,7 +87,7 @@ class MessageServiceTest extends ResourcesLocalTest {
             messageService.createMessage(sender, publication, messageText, messageType);
         var message = messageService.getMessage(owner, messageIdentifier);
         var expectedMessage = constructExpectedMessage(messageIdentifier, publication, messageText, messageType);
-        Assertions.assertEquals(expectedMessage, message);
+        assertThat(expectedMessage, is(equalTo(message)));
     }
     
     @Test
@@ -185,6 +184,46 @@ class MessageServiceTest extends ResourcesLocalTest {
         );
         
         assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+    
+    @Test
+    void shouldSetRecipientAsOwnerWhenSenderIsNotOwner() throws ApiGatewayException {
+        var publication = createDraftPublication(owner);
+        var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
+        var messageIdentifier =
+            messageService.createMessage(sender, publication, randomString(), randomElement(MessageType.values()));
+        var message = messageService.getMessage(owner, messageIdentifier);
+        assertThat(message.getRecipient(), is(equalTo(publication.getResourceOwner().getOwner())));
+    }
+    
+    @Test
+    void shouldSetRecipientAsSupportServiceWhenSenderIsOwner() throws ApiGatewayException {
+        var publication = createDraftPublication(owner);
+        var messageIdentifier =
+            messageService.createMessage(owner, publication, randomString(), randomElement(MessageType.values()));
+        var message = messageService.getMessage(owner, messageIdentifier);
+        assertThat(message.getRecipient(), is(equalTo(Message.SUPPORT_SERVICE_RECIPIENT)));
+    }
+    
+    @Test
+    void shouldMarkAsReadMessageWhenInputMessageExists() throws ApiGatewayException {
+        var publication = createDraftPublication(owner);
+        var messageIdentifier =
+            messageService.createMessage(owner, publication, randomString(), randomElement(MessageType.values()));
+        var originalMessage = messageService.getMessage(owner, messageIdentifier);
+        messageService.markAsRead(originalMessage);
+        var updatedMessage = messageService.getMessage(owner, messageIdentifier);
+        assertThat(originalMessage.getStatus(), is(equalTo(MessageStatus.UNREAD)));
+        assertThat(updatedMessage.getStatus(), is(equalTo(MessageStatus.READ)));
+    }
+    
+    @Test
+    void shouldThrowExceptionWhenTryingToMarkNonExistentMessageAsRead() throws ApiGatewayException {
+        var publication = createDraftPublication(owner);
+        var nonPersistedMessage = Message.create(owner, publication, randomString(), SortableIdentifier.next(),
+            Clock.systemDefaultZone(), MessageType.SUPPORT);
+        
+        assertThrows(NotFoundException.class, () -> messageService.markAsRead(nonPersistedMessage));
     }
     
     private ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {

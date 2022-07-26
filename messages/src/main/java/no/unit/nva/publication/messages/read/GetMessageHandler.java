@@ -3,6 +3,7 @@ package no.unit.nva.publication.messages.read;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_CLOCK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_NOT_FOUND;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -17,7 +18,6 @@ import nva.commons.core.JacocoGenerated;
 
 public class GetMessageHandler extends ApiGatewayHandler<Void, MessageDto> {
     
-    public static final String MESSAGE_NOT_FOUND = "Could not find message";
     private final MessageService messageService;
     
     @JacocoGenerated
