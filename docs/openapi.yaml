@@ -318,7 +318,7 @@ paths:
   /messages/{messageIdentifier}:
     parameters:
       - in: path
-        name: messageIdentitifer
+        name: messageIdentifier
         schema:
           type: string
         required: true
@@ -331,6 +331,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
     x-amazon-apigateway-integration:
