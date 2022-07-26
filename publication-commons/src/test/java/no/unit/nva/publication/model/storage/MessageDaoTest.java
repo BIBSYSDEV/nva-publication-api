@@ -54,26 +54,25 @@ public class MessageDaoTest extends ResourcesLocalTest {
     
     @Test
     void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey() {
-        
-        Message message = insertSampleMessageInDatabase();
-        MessageDao queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
-        Message retrievedMessage = fetchMessageFromDatabase(queryObject);
+        var message = insertSampleMessageInDatabase();
+        var queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
+        var retrievedMessage = fetchMessageFromDatabase(queryObject);
         
         assertThat(retrievedMessage, is(equalTo(message)));
     }
     
     @Test
     void listMessagesForCustomerAndStatusReturnsObjectWithCustomerIdAndStatus() {
-        MessageStatus expectedMessageStatus = MessageStatus.READ;
-        URI expectedUri = URI.create("https://example.com");
-        MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(expectedUri, expectedMessageStatus);
+        var expectedMessageStatus = MessageStatus.READ;
+        var expectedUri = URI.create("https://example.com");
+        var queryObject = MessageDao.listMessagesForCustomerAndStatus(expectedUri, expectedMessageStatus);
         assertThat(queryObject.getCustomerId(), is(equalTo(expectedUri)));
         assertThat(queryObject.getData().getStatus(), is(equalTo(expectedMessageStatus)));
     }
     
     @Test
     void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
-        MessageDao actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
+        var actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
         assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUserIdentifier())));
         assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getOrganizationUri())));
     }
