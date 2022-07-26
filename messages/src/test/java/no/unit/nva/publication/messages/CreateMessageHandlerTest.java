@@ -14,7 +14,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,13 +28,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
+import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -88,7 +88,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
-        URI messageId = extractLocationFromHttpHeaders();
+        URI messageId = extractLocationFromResponse();
         Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
@@ -100,7 +100,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
-        URI messageId = extractLocationFromHttpHeaders();
+        URI messageId = extractLocationFromResponse();
         
         Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
         URI expectedMessageId = constructExpectedMessageUri(message);
@@ -209,10 +209,10 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         doiRequestService.createDoiRequest(extractOwner(samplePublication), samplePublication.getIdentifier());
     }
     
-    private URI extractLocationFromHttpHeaders() throws JsonProcessingException {
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        String headerValue = response.getHeaders().get(HttpHeaders.LOCATION);
-        return URI.create(headerValue);
+    private URI extractLocationFromResponse() throws JsonProcessingException {
+        var response = GatewayResponse.fromOutputStream(output, MessageDto.class);
+        var message = response.getBodyObject(MessageDto.class);
+        return message.getMessageId();
     }
     
     private Message fetchMessageDirectlyFromDb(Publication samplePublication, URI messageId) throws NotFoundException {
