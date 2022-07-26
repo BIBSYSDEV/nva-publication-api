@@ -318,7 +318,7 @@ paths:
   /messages/{messageIdentifier}:
     parameters:
       - in: path
-        name: messageIdentitifer
+        name: messageIdentifier
         schema:
           type: string
         required: true
