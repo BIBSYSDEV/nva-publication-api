@@ -14,10 +14,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -26,7 +26,7 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
-public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
+public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, MessageDto> {
     
     public static final String INVALID_MESSAGE_TYPE_ERROR_INFO =
         "MessageType may not be null: Allowed values are: " + MessageType.allowedValuesString();
@@ -51,19 +51,24 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     }
     
     @Override
-    protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
+    protected MessageDto processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         Publication publication = fetchExistingPublication(input);
         UserInstance sender = createSender(requestInfo);
         
         URI messageId = sendMessage(input, sender, publication);
         addAdditionalHeaders(() -> locationHeader(messageId.toString()));
-        
-        return null;
+        return createDto(messageId);
+    }
+    
+    private MessageDto createDto(URI messageId) {
+        var messageDto = new MessageDto();
+        messageDto.setMessageId(messageId);
+        return messageDto;
     }
     
     @Override
-    protected Integer getSuccessStatusCode(CreateMessageRequest input, Void output) {
+    protected Integer getSuccessStatusCode(CreateMessageRequest input, MessageDto output) {
         return HttpURLConnection.HTTP_CREATED;
     }
     
