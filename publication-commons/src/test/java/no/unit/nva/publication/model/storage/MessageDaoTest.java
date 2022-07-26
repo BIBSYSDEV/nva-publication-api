@@ -1,7 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -15,10 +15,12 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,10 +37,19 @@ public class MessageDaoTest extends ResourcesLocalTest {
     public static final String SAMPLE_TEXT = "some text";
     public static final Instant MESSAGE_CREATE_TIME = Instant.now();
     public static final Clock CLOCK = Clock.fixed(MESSAGE_CREATE_TIME, Clock.systemDefaultZone().getZone());
+    private MessageService messageService;
     
     @BeforeEach
     public void initialize() {
         super.init();
+        this.messageService = new MessageService(client, Clock.systemDefaultZone());
+    }
+    
+    @Test
+    void shouldBeRetrievableByIdentifier() {
+        var message = insertSampleMessageInDatabase();
+        var retrievedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
+        assertThat(retrievedMessage, is(equalTo(message)));
     }
     
     @Test
@@ -83,8 +94,12 @@ public class MessageDaoTest extends ResourcesLocalTest {
             .withPublisher(publisher)
             .build();
         Message message =
-            Message.supportMessage(SAMPLE_SENDER, publication, SAMPLE_TEXT, CLOCK);
-        message.setIdentifier(SortableIdentifier.next());
+            Message.create(SAMPLE_SENDER,
+                publication,
+                SAMPLE_TEXT,
+                SortableIdentifier.next(),
+                CLOCK,
+                MessageType.SUPPORT);
         MessageDao dao = new MessageDao(message);
         client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());
         return message;

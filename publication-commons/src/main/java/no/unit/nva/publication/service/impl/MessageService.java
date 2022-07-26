@@ -33,6 +33,7 @@ import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 
 public class MessageService extends ServiceWithTransactions {
@@ -68,6 +69,17 @@ public class MessageService extends ServiceWithTransactions {
         requireMessageIsNotBlank(messageText);
         Message message = createMessageEntry(sender, publication, messageText, messageType);
         return writeMessageToDb(message);
+    }
+    
+    public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
+        var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
+        var query = queryObject.creteQueryForFetchingByIdentifier();
+        return client.query(query)
+            .getItems().stream()
+            .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+            .map(MessageDao::getData)
+            .collect(SingletonCollector.tryCollect())
+            .toOptional();
     }
     
     private SortableIdentifier writeMessageToDb(Message message) {

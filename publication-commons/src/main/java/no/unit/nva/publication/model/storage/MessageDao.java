@@ -14,7 +14,9 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(MessageDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class MessageDao extends Dao<Message>
-    implements JoinWithResource {
+    implements
+    DynamoEntryByIdentifier<Message>,
+    JoinWithResource {
     
     public static final String TYPE = "Message";
     private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "c";
@@ -77,7 +79,7 @@ public class MessageDao extends Dao<Message>
     public URI getCustomerId() {
         return data.getCustomerId();
     }
-
+    
     @Override
     protected String getOwner() {
         return data.getOwner();

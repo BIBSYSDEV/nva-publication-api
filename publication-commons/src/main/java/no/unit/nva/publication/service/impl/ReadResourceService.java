@@ -2,13 +2,13 @@ package no.unit.nva.publication.service.impl;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.EMPTY_RESOURCE_IDENTIFIER_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.service.impl.ServiceWithTransactions.RAWTYPES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -83,9 +82,9 @@ public class ReadResourceService {
     
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         
-        QueryRequest queryRequest = createGetByResourceIdentifierQueryRequest(identifier);
-        
-        QueryResult result = client.query(queryRequest);
+        var queryObject = new ResourceDao(resourceQueryObject(identifier));
+        var queryRequest = queryObject.creteQueryForFetchingByIdentifier();
+        var result = client.query(queryRequest);
         ResourceDao fetchedDao = queryResultToSingleResource(identifier, result);
         return fetchedDao.getData();
     }
@@ -125,7 +124,7 @@ public class ReadResourceService {
     private static NotFoundException handleGetResourceByIdentifierError(Failure<ResourceDao> fail,
                                                                         SortableIdentifier identifier) {
         logger.warn(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR, identifier.toString(), fail.getException());
-        return new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier.toString());
+        return new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier);
     }
     
     private static List<Resource> queryResultToResourceList(QueryResult result) {
@@ -153,33 +152,9 @@ public class ReadResourceService {
                                                                   SortableIdentifier resourceIdentifier) {
         
         logger.error("Could not fetch Resource for user:");
-        logger.error("UserInstance" + userInstance.toJsonString());
-        logger.error("Resource identifier:" + resourceIdentifier.toString());
+        logger.error("UserInstance {}", userInstance.toJsonString());
+        logger.error("Resource identifier: {}", resourceIdentifier);
         return new RuntimeException(fail.getException());
-    }
-    
-    private QueryRequest createGetByResourceIdentifierQueryRequest(SortableIdentifier identifier) {
-        
-        Resource resource = resourceQueryObject(identifier);
-        ResourceDao resourceDao = new ResourceDao(resource);
-        
-        String keyCondition = "#PK = :PK AND #SK = :SK";
-        Map<String, String> expressionAttributeName =
-            Map.of(
-                "#PK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME,
-                "#SK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME
-            );
-        Map<String, AttributeValue> expressionAttributeValues =
-            Map.of(":PK", new AttributeValue(resourceDao.getResourceByIdentifierPartitionKey()),
-                ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
-            );
-        
-        return new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME)
-            .withKeyConditionExpression(keyCondition)
-            .withExpressionAttributeNames(expressionAttributeName)
-            .withExpressionAttributeValues(expressionAttributeValues);
     }
     
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
@@ -208,10 +183,11 @@ public class ReadResourceService {
     }
     
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
+        var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
         Map<String, Condition> keyConditions = queryObject
             .byResource(
-                DoiRequestDao.joinByResourceContainedOrderedType(),
-                ResourceDao.joinByResourceContainedOrderedType()
+                doiRequestQueryObject.joinByResourceContainedOrderedType(),
+                queryObject.joinByResourceContainedOrderedType()
             );
         return new QueryRequest()
             .withTableName(tableName)

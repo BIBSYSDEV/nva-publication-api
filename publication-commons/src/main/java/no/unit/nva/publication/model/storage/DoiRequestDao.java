@@ -7,9 +7,9 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(DoiRequestDao.TYPE)
@@ -57,13 +57,19 @@ public class DoiRequestDao extends Dao<DoiRequest>
         return new DoiRequestDao(doi);
     }
     
-    @JsonIgnore
-    public static String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
+    public static DoiRequestDao queryObject(ResourceDao queryObject) {
+        var doiRequest = DoiRequest.builder()
+            .withResourceIdentifier(queryObject.getResourceIdentifier())
+            .build();
+        return new DoiRequestDao(doiRequest);
     }
     
     public static String getContainedType() {
         return DoiRequest.TYPE;
+    }
+    
+    public String joinByResourceContainedOrderedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + data.getType();
     }
     
     @Override

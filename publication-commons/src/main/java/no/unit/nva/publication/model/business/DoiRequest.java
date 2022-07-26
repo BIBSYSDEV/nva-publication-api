@@ -108,7 +108,8 @@ public class DoiRequest implements WithStatus, TicketEntry {
         return doiRequest;
     }
     
-    public static String getType() {
+    @Override
+    public String getType() {
         return DoiRequest.TYPE;
     }
     

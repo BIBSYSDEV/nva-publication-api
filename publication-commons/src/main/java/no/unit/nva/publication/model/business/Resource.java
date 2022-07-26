@@ -111,8 +111,8 @@ public class Resource implements WithStatus, Entity {
             .build();
     }
     
-    @JsonIgnore
-    public static String getType() {
+    @Override
+    public String getType() {
         return TYPE;
     }
     
