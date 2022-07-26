@@ -27,6 +27,7 @@ public final class PublicationServiceConfig {
     public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
     public static final String API_SCHEME = "https";
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
+    public static final Clock DEFAULT_CLOCK = Clock.systemDefaultZone();
     
     private PublicationServiceConfig() {
     

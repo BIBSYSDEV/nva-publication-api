@@ -53,7 +53,7 @@ public class MessageDaoTest extends ResourcesLocalTest {
     }
     
     @Test
-    public void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey() {
+    void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey() {
         
         Message message = insertSampleMessageInDatabase();
         MessageDao queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
@@ -63,7 +63,7 @@ public class MessageDaoTest extends ResourcesLocalTest {
     }
     
     @Test
-    public void listMessagesForCustomerAndStatusReturnsObjectWithCustomerIdAndStatus() {
+    void listMessagesForCustomerAndStatusReturnsObjectWithCustomerIdAndStatus() {
         MessageStatus expectedMessageStatus = MessageStatus.READ;
         URI expectedUri = URI.create("https://example.com");
         MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(expectedUri, expectedMessageStatus);
@@ -72,7 +72,7 @@ public class MessageDaoTest extends ResourcesLocalTest {
     }
     
     @Test
-    public void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
+    void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
         MessageDao actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
         assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUserIdentifier())));
         assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getOrganizationUri())));
