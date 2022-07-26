@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -12,7 +13,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -33,11 +33,11 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
@@ -50,7 +50,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
-    public static final Faker FAKER = new Faker();
     public static final String SOME_SENDER = "some@user";
     public static final SortableIdentifier SOME_IDENTIFIER = SortableIdentifier.next();
     public static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
@@ -227,10 +226,6 @@ class MessageServiceTest extends ResourcesLocalTest {
             .withPublisher(insertedPublication.getPublisher())
             .withEntityDescription(entityDescription)
             .build();
-    }
-    
-    private String randomString() {
-        return FAKER.lorem().sentence();
     }
     
     private MessageService serviceProducingDuplicateIdentifiers() {

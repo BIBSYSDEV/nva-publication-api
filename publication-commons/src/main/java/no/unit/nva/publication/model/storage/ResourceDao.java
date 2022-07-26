@@ -13,7 +13,6 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.ResourceByIdentifier;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
@@ -22,8 +21,8 @@ import nva.commons.core.SingletonCollector;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao<Resource>
     implements JoinWithResource,
-               ResourceByIdentifier,
-               WithCristinIdentifier,
+               DynamoEntryByIdentifier<Resource>,
+               WithCristinIdentifier<Resource>,
                JsonSerializable {
     
     public static final String CRISTIN_SOURCE = "Cristin";
@@ -54,13 +53,13 @@ public class ResourceDao extends Dao<Resource>
     }
     
     @JsonIgnore
-    public static String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + Resource.getType();
+    public String joinByResourceContainedOrderedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + data.getType();
     }
     
     @JsonIgnore
-    public static String getContainedType() {
-        return Resource.getType();
+    public  String getContainedType() {
+        return this.getContainedDataType();
     }
     
     @Override
@@ -75,7 +74,7 @@ public class ResourceDao extends Dao<Resource>
     
     @Override
     public String getType() {
-        return Resource.getType();
+        return this.getData().getType();
     }
     
     @Override

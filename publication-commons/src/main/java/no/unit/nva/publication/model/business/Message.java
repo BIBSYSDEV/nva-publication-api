@@ -115,6 +115,11 @@ public class Message implements WithStatus,
     }
     
     @Override
+    public String getType() {
+        return Message.TYPE;
+    }
+    
+    @Override
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }

@@ -105,6 +105,11 @@ public class PublishingRequestCase
     }
     
     @Override
+    public String getType() {
+        return PublishingRequestCase.TYPE;
+    }
+    
+    @Override
     public Dao<?> toDao() {
         return new PublishingRequestDao(this);
     }

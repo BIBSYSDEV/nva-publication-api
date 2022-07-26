@@ -6,7 +6,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -15,9 +14,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.Optional;
-import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.RowLevelSecurity;
 
-public interface WithCristinIdentifier {
+public interface WithCristinIdentifier<T extends RowLevelSecurity & Entity> extends DynamoEntryByIdentifier<T> {
     
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     default String getResourceByCristinIdentifierPartitionKey() {
@@ -27,11 +27,8 @@ public interface WithCristinIdentifier {
     
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
     default String getResourceByCristinIdentifierSortKey() {
-        return RESOURCE_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getIdentifier();
+        return getContainedDataType() + KEY_FIELDS_DELIMITER + getIdentifier();
     }
-    
-    @JsonIgnore
-    SortableIdentifier getIdentifier();
     
     @JsonIgnore
     Optional<String> getCristinIdentifier();

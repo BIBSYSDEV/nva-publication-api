@@ -1,6 +1,12 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.model.business.DoiRequest.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.DoiRequest.RESOURCE_STATUS_FIELD;
+import static no.unit.nva.publication.model.business.DoiRequest.STATUS_FIELD;
+import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
+import static no.unit.nva.publication.model.storage.DoiRequestDao.queryObject;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
@@ -8,8 +14,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CU
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.model.storage.DoiRequestDao.queryObject;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -35,15 +39,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.DynamoDBException;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithByTypeCustomerStatusIndex;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
@@ -87,12 +90,12 @@ public class DoiRequestService extends ServiceWithTransactions {
                                                                String tableName,
                                                                AmazonDynamoDB client
     ) throws NotFoundException {
-        DoiRequestDao queryObject = DoiRequestDao.queryByCustomerAndResourceIdentifier(resourceOwner,
+        var queryObject = DoiRequestDao.queryByCustomerAndResourceIdentifier(resourceOwner,
             resourceIdentifier);
         QueryRequest queryRequest = new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
+            .withKeyConditions(queryObject.byResource(queryObject.joinByResourceContainedOrderedType()));
         QueryResult queryResult = client.query(queryRequest);
         
         Map<String, AttributeValue> item = parseQueryResultExpectingSingleItem(queryResult)
@@ -217,10 +220,10 @@ public class DoiRequestService extends ServiceWithTransactions {
         String conditionExpression = "#data.#resourceStatus = :publishedStatus";
         
         Map<String, String> expressionAttributeNames = Map.of(
-            "#data", DoiRequestDao.CONTAINED_DATA_FIELD_NAME,
-            "#status", DoiRequest.STATUS_FIELD,
-            "#modifiedDate", DoiRequest.MODIFIED_DATE_FIELD,
-            "#resourceStatus", DoiRequest.RESOURCE_STATUS_FIELD,
+            "#data", CONTAINED_DATA_FIELD_NAME,
+            "#status", STATUS_FIELD,
+            "#modifiedDate", MODIFIED_DATE_FIELD,
+            "#resourceStatus", RESOURCE_STATUS_FIELD,
             "#PK1", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
             "#SK1", BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME,
             "#PK2", BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
@@ -289,8 +292,8 @@ public class DoiRequestService extends ServiceWithTransactions {
         Map<String, String> expressionAttributeNames =
             Map.of(
                 "#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME,
-                "#data", DoiRequestDao.CONTAINED_DATA_FIELD_NAME,
-                "#status", DoiRequest.STATUS_FIELD);
+                "#data", CONTAINED_DATA_FIELD_NAME,
+                "#status", STATUS_FIELD);
         
         String primaryKeyPartitionKeyValue = doiRequestPrimaryKeyPartionKeyValue(userInstance);
         
@@ -320,8 +323,8 @@ public class DoiRequestService extends ServiceWithTransactions {
         final String filterExpression = "#data.#resourceStatus = :publishedStatus";
         
         Map<String, String> expressionAttributeNames = Map.of(
-            "#data", Dao.CONTAINED_DATA_FIELD_NAME,
-            "#resourceStatus", DoiRequest.RESOURCE_STATUS_FIELD,
+            "#data", CONTAINED_DATA_FIELD_NAME,
+            "#resourceStatus", RESOURCE_STATUS_FIELD,
             "#partitionKeyName", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME
         );
         
@@ -329,15 +332,14 @@ public class DoiRequestService extends ServiceWithTransactions {
             ":partitionKeyValue", new AttributeValue(partitionKeyValue),
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.toString())
         );
-        
-        QueryRequest query = new QueryRequest()
+    
+        return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
             .withKeyConditionExpression(keyConditionExpression)
             .withFilterExpression(filterExpression)
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
-        return query;
     }
     
     private String formatPartitionKeyValueForByTypeCustomerStatusIndex(UserInstance userInstance) {

@@ -56,7 +56,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
             fetchAllMessagesForPublishingRequestCase(publishingRequestCase, messageService, userInstance);
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
-        return create(publishingRequestCase, publication, messageCollection, organizationIds);
+        return createRequest(publishingRequestCase, publication, messageCollection, organizationIds);
     }
     
     public PublishingRequestStatus getStatus() {
@@ -137,7 +137,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
                && getStatus() == that.getStatus();
     }
     
-    private static ExpandedPublishingRequest create(PublishingRequestCase dataEntry,
+    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
                                                     Publication publication,
                                                     MessageCollection messages,
                                                     Set<URI> organizationIds) {
