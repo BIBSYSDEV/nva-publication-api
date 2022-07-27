@@ -7,9 +7,4 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 public class MarkMessageAsReadRequest implements UpdateMessageRequest {
     
     public static final String TYPE = "MarkMessageAsRead";
-    
-    @Override
-    public boolean isMarkAsReadRequest() {
-        return true;
-    }
 }

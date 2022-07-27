@@ -1,12 +1,13 @@
 package no.unit.nva.publication.messages.update;
 
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.MessageType.SUPPORT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.fail;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,9 +73,8 @@ class UpdateMessageHandlerTest extends MessagesTest {
         var request = ownerMarksMessageAsRead(publication, messageIdentifier);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(),is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
     
     @Test
     void shouldReturnForbiddenWhenSomeCuratorSendsTheMessageAndTheSameOrOtherCuratorTriesToMarkTheirMessageAsRead()
@@ -86,12 +86,15 @@ class UpdateMessageHandlerTest extends MessagesTest {
         var request = curatorMarksMessageAsRead(publication, messageIdentifier);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(),is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
     
     @Test
-    void shouldReturnNotFoundWhenTryingToUpdateNonExistingMessage(){
-        fail()
+    void shouldReturnNotFoundWhenTryingToUpdateNonExistingMessage() throws IOException {
+        var request = ownerMarksMessageAsRead(randomPublication(), SortableIdentifier.next());
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
     
     private InputStream ownerMarksMessageAsRead(Publication publication, SortableIdentifier messageIdentifier)

@@ -1,6 +1,5 @@
 package no.unit.nva.publication.messages.update;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -10,7 +9,5 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
     @JsonSubTypes.Type(name = MarkMessageAsReadRequest.TYPE, value = MarkMessageAsReadRequest.class)
 })
 public interface UpdateMessageRequest {
-    
-    @JsonIgnore
-    boolean isMarkAsReadRequest();
+
 }

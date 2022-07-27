@@ -88,7 +88,6 @@ public class MessageService extends ServiceWithTransactions {
        we are doing 2 reads and 1 write to update the message status. If we did the update, we should be careful
        to update the indices as well.
      */
-    
     public Message markAsRead(Message message) throws NotFoundException {
         var existingMessage = getMessage(UserInstance.fromMessage(message), message.getIdentifier());
         var messageUpdate = existingMessage.markAsRead(clockForTimestamps);
