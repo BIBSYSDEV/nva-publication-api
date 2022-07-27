@@ -1,8 +1,8 @@
 package no.unit.nva.publication.messages;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static no.unit.nva.publication.PublicationServiceConfig.PATH_SEPARATOR;
-import static no.unit.nva.publication.PublicationServiceConfig.URI_EMPTY_FRAGMENT;
+import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -26,7 +26,6 @@ import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.Message;
@@ -42,6 +41,7 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -161,9 +161,11 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
     
-    private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
-        String expectedPath = PublicationServiceConfig.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
-        return new URI(HTTPS, SOME_VALID_HOST, expectedPath, URI_EMPTY_FRAGMENT);
+    private URI constructExpectedMessageUri(Message message) {
+        return UriWrapper.fromUri(PUBLICATION_HOST_URI)
+            .addChild(MESSAGE_PATH)
+            .addChild(message.getIdentifier().toString())
+            .getUri();
     }
     
     private Environment setupEnvironment() {

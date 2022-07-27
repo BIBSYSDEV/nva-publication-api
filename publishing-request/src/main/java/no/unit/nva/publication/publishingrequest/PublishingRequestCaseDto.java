@@ -1,7 +1,6 @@
 package no.unit.nva.publication.publishingrequest;
 
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_CASE_PATH;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,8 +39,7 @@ public class PublishingRequestCaseDto implements PublishingRequestCaseDtoInterfa
     
     public static URI calculateId(SortableIdentifier publicationIdentifier,
                                   SortableIdentifier publishingRequestIdentifier) {
-        return UriWrapper.fromHost(API_HOST)
-            .addChild(PUBLICATION_PATH)
+        return UriWrapper.fromUri(PUBLICATION_HOST_URI)
             .addChild(publicationIdentifier.toString())
             .addChild(SUPPORT_CASE_PATH)
             .addChild(publishingRequestIdentifier.toString())
