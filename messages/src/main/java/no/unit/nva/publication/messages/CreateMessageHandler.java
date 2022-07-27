@@ -29,7 +29,7 @@ import nva.commons.core.JacocoGenerated;
 public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, MessageDto> {
     
     public static final String INVALID_MESSAGE_TYPE_ERROR_INFO =
-        "MessageType may not be null: Allowed values are: " + MessageType.allowedValuesString();
+        "messageType may not be null: Allowed values are: " + MessageType.allowedValuesString();
     private final MessageService messageService;
     private final ResourceService resourceService;
     
