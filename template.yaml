@@ -8,6 +8,7 @@ Description: >
 Globals:
   Function:
     Timeout: 20
+    MemorySize: 1800 # 1 vCPU
     Environment:
       Variables:
         COGNITO_HOST: !Ref CognitoAuthorizationUri
@@ -360,7 +361,6 @@ Resources:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1798
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -381,7 +381,6 @@ Resources:
       CodeUri: doi-requests
       Handler: no.unit.nva.doirequest.create.CreateDoiRequestHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -403,7 +402,6 @@ Resources:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       AutoPublishAlias: live
       DeploymentPreference:
         Type: AllAtOnce
@@ -451,7 +449,6 @@ Resources:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.update.UpdatePublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -472,7 +469,6 @@ Resources:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -492,7 +488,6 @@ Resources:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.PublicationsByOwnerHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -512,7 +507,6 @@ Resources:
     Properties:
       CodeUri: doi-requests
       Handler: no.unit.nva.doirequest.list.ListDoiRequestsHandler::handleRequest
-      MemorySize: 768
       Timeout: 600
       Runtime: java11
       Tracing: Active
@@ -535,7 +529,6 @@ Resources:
     Properties:
       CodeUri: doi-requests
       Handler: no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler::handleRequest
-      MemorySize: 768
       Timeout: 600
       Runtime: java11
       Tracing: Active
@@ -559,7 +552,6 @@ Resources:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.update.PublishPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -580,7 +572,6 @@ Resources:
       CodeUri: messages
       Handler: no.unit.nva.publication.messages.CreateMessageHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -601,7 +592,6 @@ Resources:
       CodeUri: messages
       Handler: no.unit.nva.publication.messages.ListMessagesHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -621,7 +611,6 @@ Resources:
       CodeUri: messages
       Handler: no.unit.nva.publication.messages.read.GetMessageHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -636,13 +625,31 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+  NvaUpdateMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler:  no.unit.nva.publication.messages.update.UpdateMessageHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /messages/{messageIdentifier}
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
   CreatePublishingRequestFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publishing-request
       Handler: no.unit.nva.publication.publishingrequest.create.CreatePublishingRequestHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Timeout: 10
       Environment:
         Variables:
@@ -664,7 +671,6 @@ Resources:
       CodeUri: publishing-request
       Handler: no.unit.nva.publication.publishingrequest.update.UpdatePublishingRequestHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Timeout: 10
       Environment:
         Variables:
@@ -686,7 +692,6 @@ Resources:
       CodeUri: publishing-request
       Handler: no.unit.nva.publication.publishingrequest.read.GetPublishingRequestHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Timeout: 10
       Environment:
         Variables:
@@ -712,7 +717,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletionProcessInitializationHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
       Events:
@@ -741,7 +745,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer::handleRequest
       Runtime: java11
-      MemorySize: 1400
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -776,7 +779,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
       Environment:
@@ -811,7 +813,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       ReservedConcurrentExecutions: 64
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -845,7 +846,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.persistence.AnalyticsIntegrationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       ReservedConcurrentExecutions: 5
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -876,7 +876,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.AcceptedPublishingRequestEventHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
       Environment:
@@ -903,7 +902,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.PendingPublishingRequestEventHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
       Environment:
@@ -930,7 +928,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
       ReservedConcurrentExecutions: 1
@@ -966,7 +963,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.fanout.DataEntryUpdateHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -999,7 +995,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteDraftPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
       Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
       Environment:
         Variables:
@@ -1032,7 +1027,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
-      MemorySize: 768
       Timeout: 360
       Runtime: java11
       Tracing: Active
@@ -1061,7 +1055,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
@@ -1091,7 +1084,6 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
       Runtime: java11
-      MemorySize: 2048
       Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
@@ -1116,7 +1108,6 @@ Resources:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
       Runtime: java11
-      MemorySize: 512
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
@@ -1143,7 +1134,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.create.CreatePublishedPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1798
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -1165,7 +1155,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.ScopusDeletionEventHandler::handleRequest
       Runtime: java11
-      MemorySize: 1798
       Role: !GetAtt LambdaRole.Arn
       Events:
         Event:
@@ -1186,7 +1175,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
       Timeout: 60
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
@@ -1202,7 +1190,6 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
       Runtime: java11
-      MemorySize: 512
       Timeout: 900 # 15 min timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1247,7 +1234,6 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: index.lambda_handler
-      MemorySize: 128
       Timeout: 30
       Role: !GetAtt ApiGatewayCreateDeploymentLambdaRole.Arn
       Runtime: python3.8
