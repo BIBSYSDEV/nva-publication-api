@@ -4,7 +4,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestCreatedDate;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestModifiedDate;
-import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
+import static no.unit.nva.publication.model.business.Entity.nextVersion;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.DoiRequestStatus;
@@ -76,7 +77,7 @@ public class DoiRequest implements WithStatus, TicketEntry {
     private URI doi;
     @JsonProperty
     private List<Contributor> contributors;
-    private String rowVersion;
+    private UUID rowVersion;
     
     public DoiRequest() {
     
@@ -101,7 +102,7 @@ public class DoiRequest implements WithStatus, TicketEntry {
                 .withModifiedDate(now)
                 .withCreatedDate(now)
                 .withDoi(resource.getDoi())
-                .withRowVersion(nextRowVersion())
+                .withRowVersion(nextVersion())
                 .build();
         
         doiRequest.validate();
@@ -132,7 +133,7 @@ public class DoiRequest implements WithStatus, TicketEntry {
             .withCreatedDate(extractDoiRequestCreatedDate(publication.getDoiRequest()))
             .withIdentifier(doiRequestIdentifier)
             .withStatus(extractDoiRequestStatus(publication.getDoiRequest()))
-            .withRowVersion(nextRowVersion())
+            .withRowVersion(nextVersion())
             .build();
     }
     
@@ -187,12 +188,12 @@ public class DoiRequest implements WithStatus, TicketEntry {
     }
     
     @Override
-    public String getRowVersion() {
+    public UUID getVersion() {
         return rowVersion;
     }
     
     @Override
-    public void setRowVersion(String rowVersion) {
+    public void setVersion(UUID rowVersion) {
         this.rowVersion = rowVersion;
     }
     
@@ -347,7 +348,7 @@ public class DoiRequest implements WithStatus, TicketEntry {
             .withResourcePublicationYear(getResourcePublicationYear())
             .withDoi(getDoi())
             .withContributors(getContributors())
-            .withRowVersion(getRowVersion());
+            .withRowVersion(getVersion());
     }
     
     public void validate() {

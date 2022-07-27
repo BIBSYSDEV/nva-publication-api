@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -23,7 +24,6 @@ public class PublishingRequestCase
     public static final String STATUS_FIELD = "status";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String CREATED_DATE_FIELD = "createdDate";
-    public static final String ROW_VERSION_FIELD = "rowVersion";
     public static final String OWNER_FIELD = "owner";
     public static final String CUSTOMER_ID_FIELD = "customerId";
     public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
@@ -43,8 +43,8 @@ public class PublishingRequestCase
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
-    @JsonProperty(ROW_VERSION_FIELD)
-    private String rowVersion;
+    
+    private UUID version;
     
     public PublishingRequestCase() {
     }
@@ -95,13 +95,13 @@ public class PublishingRequestCase
     }
     
     @Override
-    public String getRowVersion() {
-        return rowVersion;
+    public UUID getVersion() {
+        return version;
     }
     
     @Override
-    public void setRowVersion(String rowVersion) {
-        this.rowVersion = rowVersion;
+    public void setVersion(UUID version) {
+        this.version = version;
     }
     
     @Override
@@ -175,7 +175,7 @@ public class PublishingRequestCase
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
-            getModifiedDate(), getCreatedDate(), getRowVersion());
+            getModifiedDate(), getCreatedDate(), getVersion());
     }
     
     @Override
@@ -195,7 +195,7 @@ public class PublishingRequestCase
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getRowVersion(), that.getRowVersion());
+               && Objects.equals(getVersion(), that.getVersion());
     }
     
     public PublishingRequestCase approve() {
@@ -210,7 +210,7 @@ public class PublishingRequestCase
         copy.setStatus(this.getStatus());
         copy.setModifiedDate(this.getModifiedDate());
         copy.setCreatedDate(this.getCreatedDate());
-        copy.setRowVersion(this.getRowVersion());
+        copy.setVersion(this.getVersion());
         copy.setCustomerId(this.getCustomerId());
         copy.setResourceIdentifier(this.getResourceIdentifier());
         copy.setOwner(this.getOwner());

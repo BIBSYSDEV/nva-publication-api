@@ -1,6 +1,6 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
+import static no.unit.nva.publication.model.business.Entity.nextVersion;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -49,7 +49,7 @@ public class Message implements WithStatus,
     @JsonProperty("messageType")
     private MessageType messageType;
     @JsonProperty("rowVersion")
-    private String rowVersion;
+    private UUID rowVersion;
     
     @JacocoGenerated
     public Message() {
@@ -99,7 +99,7 @@ public class Message implements WithStatus,
         return this.copy()
             .withStatus(MessageStatus.READ)
             .withModifiedTime(clock.instant())
-            .withRowVersion(UUID.randomUUID().toString())
+            .withRowVersion(UUID.randomUUID())
             .build();
     }
     
@@ -128,13 +128,13 @@ public class Message implements WithStatus,
     
     @JacocoGenerated
     @Override
-    public String getRowVersion() {
+    public UUID getVersion() {
         return this.rowVersion;
     }
     
     @Override
     @JacocoGenerated
-    public void setRowVersion(String rowVersion) {
+    public void setVersion(UUID rowVersion) {
         this.rowVersion = rowVersion;
     }
     
@@ -271,7 +271,7 @@ public class Message implements WithStatus,
             .withText(this.getText())
             .withResourceTitle(this.getResourceTitle())
             .withModifiedTime(this.getModifiedTime())
-            .withRowVersion(this.getRowVersion());
+            .withRowVersion(this.getVersion());
     }
     
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
@@ -290,7 +290,7 @@ public class Message implements WithStatus,
             .withCreatedTime(now)
             .withModifiedTime(now)
             .withIdentifier(messageIdentifier)
-            .withRowVersion(nextRowVersion());
+            .withRowVersion(nextVersion());
     }
     
     private static String extractTitle(Publication publication) {

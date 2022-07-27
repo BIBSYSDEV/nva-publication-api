@@ -60,6 +60,10 @@ public abstract class ServiceWithTransactions {
         return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
     
+    protected <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T dynamoEntry) {
+        return newPutTransactionItem(dynamoEntry, getTableName());
+    }
+    
     protected <T extends Entity, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
         T dynamoEntry,
         FunctionWithException<T, T, E> nonEventuallyConsistentFetch) {
@@ -69,10 +73,6 @@ public abstract class ServiceWithTransactions {
             attempt(this::waitBeforeFetching).orElseThrow();
         }
         return Optional.ofNullable(savedEntry);
-    }
-    
-    protected <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T dynamoEntry) {
-        return newPutTransactionItem(dynamoEntry, getTableName());
     }
     
     protected abstract String getTableName();

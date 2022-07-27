@@ -111,7 +111,7 @@ class UpdateMessageHandlerTest extends MessagesTest {
         return originalMessage.copy()
             .withStatus(MessageStatus.READ)
             .withModifiedTime(updatedMessage.getModifiedTime())
-            .withRowVersion(updatedMessage.getRowVersion())
+            .withRowVersion(updatedMessage.getVersion())
             .build();
     }
     

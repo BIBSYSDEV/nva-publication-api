@@ -860,7 +860,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         
         for (var firstUpdate : firstUpdates) {
             Entity secondUpdate = findMatchingSecondUpdate(secondUpdates, firstUpdate);
-            assertThat(secondUpdate.getRowVersion(), is(not(equalTo(firstUpdate.getRowVersion()))));
+            assertThat(secondUpdate.getVersion(), is(not(equalTo(firstUpdate.getVersion()))));
         }
     }
     
@@ -994,7 +994,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
             .withContributors(publicationUpdate.getEntityDescription().getContributors())
             .withResourcePublicationInstance(
                 publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
-            .withRowVersion(updatedDoiRequest.getRowVersion())
+            .withRowVersion(updatedDoiRequest.getVersion())
             .build();
     }
     

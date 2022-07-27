@@ -43,6 +43,13 @@ public class DoiRequestDao extends Dao<DoiRequest>
         return new DoiRequestDao(doi);
     }
     
+    public static DoiRequestDao queryObject(ResourceDao queryObject) {
+        var doiRequest = DoiRequest.builder()
+            .withResourceIdentifier(queryObject.getResourceIdentifier())
+            .build();
+        return new DoiRequestDao(doiRequest);
+    }
+    
     public static DoiRequestDao queryObject(URI publisherId, String owner) {
         return queryObject(publisherId, owner, null);
     }
@@ -55,13 +62,6 @@ public class DoiRequestDao extends Dao<DoiRequest>
             .withCustomerId(resourceOwner.getOrganizationUri())
             .build();
         return new DoiRequestDao(doi);
-    }
-    
-    public static DoiRequestDao queryObject(ResourceDao queryObject) {
-        var doiRequest = DoiRequest.builder()
-            .withResourceIdentifier(queryObject.getResourceIdentifier())
-            .build();
-        return new DoiRequestDao(doiRequest);
     }
     
     public static String getContainedType() {

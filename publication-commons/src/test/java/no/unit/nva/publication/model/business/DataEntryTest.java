@@ -1,7 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
+import static no.unit.nva.publication.model.business.Entity.nextVersion;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -25,11 +25,11 @@ class DataEntryTest {
     static Stream<Tuple> resourceProvider() {
         var publication = PublicationGenerator.randomPublication();
         final var leftResource = Resource.fromPublication(publication);
-        final var rightResource = leftResource.copy().withRowVersion(nextRowVersion()).build();
+        final var rightResource = leftResource.copy().withRowVersion(nextVersion()).build();
         final var leftDoiRequest = DoiRequest.newDoiRequestForResource(leftResource, Instant.now());
-        final var rightDoiRequest = leftDoiRequest.copy().withRowVersion(nextRowVersion()).build();
+        final var rightDoiRequest = leftDoiRequest.copy().withRowVersion(nextVersion()).build();
         final var leftMessage = randomMessage(publication);
-        final var rightMessage = leftMessage.copy().withRowVersion(nextRowVersion()).build();
+        final var rightMessage = leftMessage.copy().withRowVersion(nextVersion()).build();
         return Stream.of(new Tuple(leftResource, rightResource),
             new Tuple(leftDoiRequest, rightDoiRequest),
             new Tuple(leftMessage, rightMessage));
@@ -41,7 +41,7 @@ class DataEntryTest {
     @MethodSource("resourceProvider")
     void shouldReturnEqualsTrueWhenTwoResourcesDifferOnlyInTheirRowVersion(Tuple tuple) {
         assertThat(tuple.left, doesNotHaveEmptyValues());
-        assertThat(tuple.right.getRowVersion(), is(not(equalTo(tuple.left.getRowVersion()))));
+        assertThat(tuple.right.getVersion(), is(not(equalTo(tuple.left.getVersion()))));
         assertThat(tuple.right, is(equalTo(tuple.left)));
     }
     
@@ -51,7 +51,7 @@ class DataEntryTest {
     @MethodSource("resourceProvider")
     void shouldReturnTheSameHashCodeWhenTwoResourcesDifferOnlyInTheirRowVersion(Tuple tuple) {
         assertThat(tuple.left, doesNotHaveEmptyValues());
-        assertThat(tuple.left.getRowVersion(), is(not(equalTo(tuple.right.getRowVersion()))));
+        assertThat(tuple.left.getVersion(), is(not(equalTo(tuple.right.getVersion()))));
         assertThat(tuple.left.hashCode(), is(equalTo(tuple.right.hashCode())));
     }
     
@@ -59,8 +59,8 @@ class DataEntryTest {
     void shouldCreateNewRowVersionWhenRefreshed() {
         var publication = PublicationGenerator.randomPublication();
         var resource = Resource.fromPublication(publication);
-        var oldRowVersion = resource.getRowVersion();
-        var newRowVersion = resource.refreshRowVersion().getRowVersion();
+        var oldRowVersion = resource.getVersion();
+        var newRowVersion = resource.refreshVersion().getVersion();
         assertThat(newRowVersion, is(not(equalTo(oldRowVersion))));
     }
     

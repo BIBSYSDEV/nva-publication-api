@@ -64,8 +64,8 @@ public class Resource implements WithStatus, Entity {
     private Set<AdditionalIdentifier> additionalIdentifiers;
     @JsonProperty
     private List<URI> subjects;
-    @JsonProperty(ROW_VERSION)
-    private String rowVersion;
+    @JsonProperty(VERSION)
+    private UUID version;
     
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
@@ -107,7 +107,7 @@ public class Resource implements WithStatus, Entity {
             .withHandle(publication.getHandle())
             .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
             .withSubjects(publication.getSubjects())
-            .withRowVersion(nextRowVersion())
+            .withRowVersion(Entity.nextVersion())
             .build();
     }
     
@@ -120,9 +120,7 @@ public class Resource implements WithStatus, Entity {
         return new ResourceBuilder();
     }
     
-    public static String nextRowVersion() {
-        return UUID.randomUUID().toString();
-    }
+
     
     public ResourceOwner getResourceOwner() {
         return resourceOwner;
@@ -270,7 +268,7 @@ public class Resource implements WithStatus, Entity {
             .withHandle(getHandle())
             .withAdditionalIdentifiers(getAdditionalIdentifiers())
             .withSubjects(getSubjects())
-            .withRowVersion(getRowVersion());
+            .withRowVersion(getVersion());
     }
     
     @Override
@@ -298,14 +296,14 @@ public class Resource implements WithStatus, Entity {
     
     @Override
     @JacocoGenerated
-    public String getRowVersion() {
-        return rowVersion;
+    public UUID getVersion() {
+        return version;
     }
     
     @Override
     @JacocoGenerated
-    public void setRowVersion(String rowVersion) {
-        this.rowVersion = rowVersion;
+    public void setVersion(UUID version) {
+        this.version = version;
     }
     
     @Override

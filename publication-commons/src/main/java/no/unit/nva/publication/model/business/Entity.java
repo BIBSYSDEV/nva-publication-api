@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -20,10 +21,10 @@ import no.unit.nva.publication.model.storage.Dao;
 })
 public interface Entity extends RowLevelSecurity {
     
-    String ROW_VERSION = "rowVersion";
+    String VERSION = "version";
     
-    static String nextRowVersion() {
-        return UUID.randomUUID().toString();
+    static UUID nextVersion() {
+        return UUID.randomUUID();
     }
     
     @JsonProperty("identifier")
@@ -33,14 +34,14 @@ public interface Entity extends RowLevelSecurity {
     
     Publication toPublication();
     
-    //TODO: this belongs to Dao
-    @JsonProperty(ROW_VERSION)
-    String getRowVersion();
+    @JsonAlias("rowVersion")
+    @JsonProperty(VERSION)
+    UUID getVersion();
     
-    void setRowVersion(String rowVersion);
+    void setVersion(UUID rowVersion);
     
-    default Entity refreshRowVersion() {
-        setRowVersion(nextRowVersion());
+    default Entity refreshVersion() {
+        setVersion(nextVersion());
         return this;
     }
     

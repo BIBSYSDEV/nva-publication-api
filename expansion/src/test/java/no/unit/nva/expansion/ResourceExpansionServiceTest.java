@@ -365,7 +365,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setCreatedDate(Instant.now());
         publishingRequest.setResourceIdentifier(createdPublication.getIdentifier());
         publishingRequest.setOwner(createdPublication.getResourceOwner().getOwner());
-        publishingRequest.setRowVersion(UUID.randomUUID().toString());
+        publishingRequest.setVersion(UUID.randomUUID());
         publishingRequest.setIdentifier(SortableIdentifier.next());
         assertThat(publishingRequest, doesNotHaveEmptyValues());
         return publishingRequest;

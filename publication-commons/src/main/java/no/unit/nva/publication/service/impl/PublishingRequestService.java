@@ -1,9 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.model.storage.PublishingRequestDao.queryPublishingRequestByResource;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -16,7 +16,6 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Supplier;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -86,7 +85,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     public PublishingRequestCase updatePublishingRequest(PublishingRequestCase requestUpdate) {
         var entryUpdate = requestUpdate.copy();
         entryUpdate.setModifiedDate(clock.instant());
-        entryUpdate.setRowVersion(UUID.randomUUID().toString());
+        entryUpdate.setVersion(Entity.nextVersion());
         var putItemRequest = cratePutItemRequest(entryUpdate);
         client.putItem(putItemRequest);
         return entryUpdate;
@@ -187,7 +186,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         var entry = PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
         entry.setCreatedDate(clock.instant());
         entry.setIdentifier(identifierProvider.get());
-        entry.setRowVersion(UUID.randomUUID().toString());
+        entry.setVersion(Entity.nextVersion());
         return entry;
     }
     
@@ -217,7 +216,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return newPutTransactionItem(identifierEntry);
     }
     
-    private class UpdateCaseButNotOwnerCondition {
+    private static class UpdateCaseButNotOwnerCondition {
         
         private String conditionExpression;
         private Map<String, String> expressionAttributeNames;
@@ -249,7 +248,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
                 "#modifiedDate", PublishingRequestCase.MODIFIED_DATE_FIELD,
                 "#owner", PublishingRequestCase.OWNER_FIELD,
                 "#resourceIdentifier", PublishingRequestCase.RESOURCE_IDENTIFIER_FIELD,
-                "#rowVersion", PublishingRequestCase.ROW_VERSION_FIELD);
+                "#version", Entity.VERSION);
             
             this.expressionAttributeValues =
                 Map.of(
@@ -259,7 +258,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
                     ":modifiedDate", new AttributeValue(dateAsString(entryUpdate.getModifiedDate())),
                     ":owner", new AttributeValue(entryUpdate.getOwner()),
                     ":resourceIdentifier", new AttributeValue(entryUpdate.getResourceIdentifier().toString()),
-                    ":rowVersion", new AttributeValue(entryUpdate.getRowVersion()));
+                    ":version", new AttributeValue(entryUpdate.getVersion().toString()));
             
             this.conditionExpression = "#data.#createdDate = :createdDate "
                                        + "AND #data.#customerId = :customerId "
@@ -267,7 +266,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
                                        + "AND #data.#modifiedDate <> :modifiedDate "
                                        + "AND #data.#owner = :owner "
                                        + "AND #data.#resourceIdentifier = :resourceIdentifier "
-                                       + "AND #data.#rowVersion <> :rowVersion ";
+                                       + "AND #data.#version <> :version ";
         }
         
         private String dateAsString(Instant date) {
