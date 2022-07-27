@@ -1,6 +1,8 @@
 package no.unit.nva.publication.messages.update;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_CLOCK;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_NOT_FOUND;
 import static nva.commons.core.attempt.Try.attempt;
@@ -17,11 +19,17 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 
 public class UpdateMessageHandler extends ApiGatewayHandler<UpdateMessageRequest, MessageDto> {
     
     private final MessageService messageService;
+    
+    @JacocoGenerated
+    public UpdateMessageHandler() {
+        this(new MessageService(DEFAULT_DYNAMODB_CLIENT, DEFAULT_CLOCK));
+    }
     
     public UpdateMessageHandler(MessageService messageService) {
         super(UpdateMessageRequest.class);
