@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
@@ -9,6 +10,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -82,6 +84,21 @@ public class MessageService extends ServiceWithTransactions {
             .toOptional();
     }
     
+    /* TODO: consider using UpdateRequest to avoid doing the existence checking beforehand. At the present time
+       we are doing 2 reads and 1 write to update the message status. If we did the update, we should be careful
+       to update the indices as well.
+     */
+    public Message markAsRead(Message message) throws NotFoundException {
+        var existingMessage = getMessage(UserInstance.fromMessage(message), message.getIdentifier());
+        var messageUpdate = existingMessage.markAsRead(clockForTimestamps);
+        var dao = new MessageDao(messageUpdate);
+        var putRequest = new PutItemRequest()
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withItem(dao.toDynamoFormat());
+        client.putItem(putRequest);
+        return messageUpdate;
+    }
+    
     private SortableIdentifier writeMessageToDb(Message message) {
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
         
@@ -150,7 +167,7 @@ public class MessageService extends ServiceWithTransactions {
         GetItemResult queryResult = client.getItem(getMessageRequest);
         Map<String, AttributeValue> item = queryResult.getItem();
         
-        if (item.isEmpty()) {
+        if (isNull(item) || item.isEmpty()) {
             throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR + queryObject.getIdentifier().toString());
         }
         return item;

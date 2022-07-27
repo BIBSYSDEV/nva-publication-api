@@ -1,7 +1,7 @@
 package no.unit.nva.publication.messages.read;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.publication.messages.read.GetMessageHandler.MESSAGE_NOT_FOUND;
+import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_NOT_FOUND;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

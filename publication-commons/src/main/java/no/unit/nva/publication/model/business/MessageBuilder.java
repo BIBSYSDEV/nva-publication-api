@@ -62,6 +62,11 @@ public class MessageBuilder {
         return this;
     }
     
+    public MessageBuilder withModifiedTime(Instant modifiedTime) {
+        message.setModifiedTime(modifiedTime);
+        return this;
+    }
+    
     public Message build() {
         return message;
     }

@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -14,16 +15,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
-import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.UserInstance;
 import org.junit.jupiter.api.Test;
 
 class MessageTest {
@@ -54,10 +47,7 @@ class MessageTest {
     
     @Test
     public void toStringReturnsAJsonString() throws JsonProcessingException {
-        Message message = Message.builder()
-            .withStatus(MessageStatus.UNREAD)
-            .withIdentifier(SortableIdentifier.next())
-            .build();
+        var message = createSampleMessage();
         String json = message.toString();
         Message recreatedMessage = dynamoDbObjectMapper.readValue(json, Message.class);
         assertThat(recreatedMessage, is(equalTo(message)));
@@ -65,19 +55,21 @@ class MessageTest {
     
     @Test
     void simpleMessageReturnsMessageWithAllFieldsFieldInExceptForIdentifier() {
-        SortableIdentifier resourceIdentifier = SortableIdentifier.next();
-        Publication publication = samplePublication(resourceIdentifier);
-        SortableIdentifier messageIdentifier = SortableIdentifier.next();
-        
-        Message message = Message.create(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK,
-            MessageType.SUPPORT);
+        var message = createSampleMessage();
         assertThat(message, doesNotHaveEmptyValuesIgnoringFields(Set.of(MESSAGE_IDENTIFIER_FIELD)));
+    }
+    
+    private Message createSampleMessage() {
+        Publication publication = randomPublication();
+        SortableIdentifier messageIdentifier = SortableIdentifier.next();
+        return Message.create(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK,
+            MessageType.SUPPORT);
     }
     
     @Test
     void shouldReturnCopyWithoutLossOfInformation() {
         Clock clock = Clock.systemDefaultZone();
-        Publication publication = PublicationGenerator.randomPublication();
+        Publication publication = randomPublication();
         
         Message message = Message.create(SAMPLE_SENDER, publication, randomString(), SortableIdentifier.next(), clock,
             MessageType.SUPPORT);
@@ -88,16 +80,5 @@ class MessageTest {
     
     private static UserInstance sampleSender() {
         return UserInstance.create(SOME_SENDER, SOME_ORG);
-    }
-    
-    private Publication samplePublication(SortableIdentifier resourceIdentifier) {
-        Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        EntityDescription entityDescription = new EntityDescription.Builder().withMainTitle(randomString()).build();
-        return new Publication.Builder()
-            .withPublisher(publisher)
-            .withResourceOwner(RANDOM_RESOURCE_OWNER)
-            .withIdentifier(resourceIdentifier)
-            .withEntityDescription(entityDescription)
-            .build();
     }
 }
