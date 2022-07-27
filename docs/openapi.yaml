@@ -358,6 +358,15 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
     put:
+      requestBody:
+        description: 'Mark message as read'
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UpdateMessageRequest'
+            examples:
+              request:
+                value: { "type": "MarkMessageAsRead" }
       responses:
         '404':
           description: Not Found
@@ -600,6 +609,14 @@ components:
           enum:
             - DoiRequest
             - Support
+            - PublishingRequest
+    UpdateMessageRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - MarkMessageAsReadRequest
     PublishingRequestCase:
       type: object
       properties:
