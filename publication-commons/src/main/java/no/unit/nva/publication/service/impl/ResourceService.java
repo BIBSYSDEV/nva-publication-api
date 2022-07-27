@@ -226,7 +226,7 @@ public class ResourceService extends ServiceWithTransactions {
             .stream()
             .map(attempt(this::migrate))
             .map(Try::orElseThrow)
-            .map(Entity::refreshRowVersion)
+            .map(Entity::refreshVersion)
             .collect(Collectors.toList());
     }
     

@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 
 public class MessageBuilder {
@@ -71,8 +72,8 @@ public class MessageBuilder {
         return message;
     }
     
-    public MessageBuilder withRowVersion(String rowVersion) {
-        message.setRowVersion(rowVersion);
+    public MessageBuilder withRowVersion(UUID rowVersion) {
+        message.setVersion(rowVersion);
         return this;
     }
 }

@@ -22,7 +22,7 @@ public final class StorageModelTestUtils {
         sample.setCustomerId(userInstance.getOrganizationUri());
         sample.setResourceIdentifier(publication.getIdentifier());
         sample.setIdentifier(SortableIdentifier.next());
-        sample.setRowVersion(UUID.randomUUID().toString());
+        sample.setVersion(UUID.randomUUID());
         sample.setCreatedDate(randomInstant());
         sample.setModifiedDate(randomInstant());
         sample.setStatus(PublishingRequestStatus.APPROVED);

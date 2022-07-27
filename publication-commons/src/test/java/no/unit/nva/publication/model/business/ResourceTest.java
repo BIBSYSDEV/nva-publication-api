@@ -14,8 +14,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
@@ -58,7 +56,7 @@ class ResourceTest {
         Publication publication = resource.toPublication();
         Resource fromPublication = Resource.fromPublication(publication);
         //inject row version because conversion to publication changes the row version
-        fromPublication.setRowVersion(resource.getRowVersion());
+        fromPublication.setVersion(resource.getVersion());
         Diff diff = javers.compare(resource, fromPublication);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
     }

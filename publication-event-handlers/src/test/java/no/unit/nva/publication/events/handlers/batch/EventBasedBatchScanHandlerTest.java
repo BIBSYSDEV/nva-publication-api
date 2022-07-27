@@ -79,13 +79,13 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         Publication createdPublication = createPublication(PublicationGenerator.randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        final String initialRowVersion = initialResource.getRowVersion();
+        final var initialRowVersion = initialResource.getVersion();
         
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
         Resource updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         
-        String updatedRowVersion =
-            resourceService.getResourceByIdentifier(createdPublication.getIdentifier()).getRowVersion();
+        var updatedRowVersion =
+            resourceService.getResourceByIdentifier(createdPublication.getIdentifier()).getVersion();
         
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedRowVersion, is(not(equalTo(initialRowVersion))));
