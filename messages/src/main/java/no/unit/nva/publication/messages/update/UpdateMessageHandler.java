@@ -56,7 +56,7 @@ public class UpdateMessageHandler extends ApiGatewayHandler<UpdateMessageRequest
     
     private boolean callerIsTheMessageRecipient(Message message, RequestInfo requestInfo) throws UnauthorizedException {
         return callerIsTheOwnerAndTheRecipient(message, requestInfo)
-               ||callerIsCuratorAndSupportIsTheRecipient(message, requestInfo);
+               || callerIsCuratorAndSupportIsTheRecipient(message, requestInfo);
     }
     
     private boolean callerIsCuratorAndSupportIsTheRecipient(Message message, RequestInfo requestInfo) {
