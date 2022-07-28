@@ -34,7 +34,7 @@ test {
     useJUnitPlatform {
         excludeTags "RemoteTest", "integrationTest", "KarateTest"
     }
-    failFast = true
+    failFast = false
     testLogging {
         events 'skipped', 'passed', 'failed'
         showCauses true

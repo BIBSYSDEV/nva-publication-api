@@ -2,8 +2,6 @@ package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
-import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestCreatedDate;
-import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestModifiedDate;
 import static no.unit.nva.publication.model.business.Entity.nextVersion;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,11 +12,9 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -77,10 +73,14 @@ public class DoiRequest implements WithStatus, TicketEntry {
     private URI doi;
     @JsonProperty
     private List<Contributor> contributors;
-    private UUID rowVersion;
+    private UUID version;
     
     public DoiRequest() {
     
+    }
+    
+    public static DoiRequest fromPublication(Publication publication) {
+        return newDoiRequestForResource(Resource.fromPublication(publication));
     }
     
     public static DoiRequest newDoiRequestForResource(Resource resource) {
@@ -114,29 +114,6 @@ public class DoiRequest implements WithStatus, TicketEntry {
         return DoiRequest.TYPE;
     }
     
-    /**
-     * Creates a DoiRequest from a {@link Publication} object which is currently the de-facto DTO.
-     *
-     * @param publication          a {@link Publication} objcet
-     * @param doiRequestIdentifier the identifier that the new DoiRequest will have
-     * @return a new DoiRequest
-     */
-    public static DoiRequest fromPublication(Publication publication, SortableIdentifier doiRequestIdentifier) {
-        return fromDto(publication, doiRequestIdentifier);
-    }
-    
-    public static DoiRequest fromDto(Publication publication, SortableIdentifier doiRequestIdentifier) {
-        Resource resource = Resource.fromPublication(publication);
-        
-        return extractDataFromResource(DoiRequest.builder(), resource)
-            .withModifiedDate(extractDoiRequestModifiedDate(publication.getDoiRequest()))
-            .withCreatedDate(extractDoiRequestCreatedDate(publication.getDoiRequest()))
-            .withIdentifier(doiRequestIdentifier)
-            .withStatus(extractDoiRequestStatus(publication.getDoiRequest()))
-            .withRowVersion(nextVersion())
-            .build();
-    }
-    
     public static DoiRequestBuilder builder() {
         return new DoiRequestBuilder();
     }
@@ -153,12 +130,6 @@ public class DoiRequest implements WithStatus, TicketEntry {
     
     @Override
     public Publication toPublication() {
-        
-        no.unit.nva.model.DoiRequest doiRequest = new no.unit.nva.model.DoiRequest.Builder()
-            .withStatus(getStatus())
-            .withModifiedDate(getModifiedDate())
-            .withCreatedDate(getCreatedDate())
-            .build();
         
         Reference reference = new Reference.Builder()
             .withPublicationInstance(getResourcePublicationInstance())
@@ -183,18 +154,18 @@ public class DoiRequest implements WithStatus, TicketEntry {
             .withEntityDescription(entityDescription)
             .withPublisher(customer)
             .withResourceOwner(new ResourceOwner(getOwner(), UNKNOWN_USER_AFFILIATION))
-            .withDoiRequest(doiRequest)
+            
             .build();
     }
     
     @Override
     public UUID getVersion() {
-        return rowVersion;
+        return version;
     }
     
     @Override
     public void setVersion(UUID rowVersion) {
-        this.rowVersion = rowVersion;
+        this.version = rowVersion;
     }
     
     @Override
@@ -393,10 +364,6 @@ public class DoiRequest implements WithStatus, TicketEntry {
                && Objects.equals(getResourcePublicationYear(), that.getResourcePublicationYear())
                && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getContributors(), that.getContributors());
-    }
-    
-    private static DoiRequestStatus extractDoiRequestStatus(no.unit.nva.model.DoiRequest doiRequest) {
-        return Optional.ofNullable(doiRequest).map(no.unit.nva.model.DoiRequest::getStatus).orElse(null);
     }
     
     private boolean updateIsAboutTheSameResource(Resource resource) {

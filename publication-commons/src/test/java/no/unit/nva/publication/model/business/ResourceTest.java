@@ -64,14 +64,12 @@ class ResourceTest {
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
     void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
-        Publication expected = PublicationGenerator.randomPublication(publicationInstanceType);
+        var expected = PublicationGenerator.randomPublication(publicationInstanceType);
         assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
         
-        Publication transformed = Resource.fromPublication(expected).toPublication();
-        //doiRequest does not get saved with the resource
-        transformed.setDoiRequest(expected.getDoiRequest());
+        var transformed = Resource.fromPublication(expected).toPublication();
         
-        Diff diff = javers.compare(expected, transformed);
+        var diff = javers.compare(expected, transformed);
         
         //TODO: re-insert when "owner" field has been removed in favor for "resourceOwner"
         //assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));

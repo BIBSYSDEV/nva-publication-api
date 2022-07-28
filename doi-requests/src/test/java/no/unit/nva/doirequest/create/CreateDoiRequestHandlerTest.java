@@ -27,15 +27,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.ResourceConversation;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -133,7 +132,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    public void createDoiRequestStoresMessageAsDoiRelatedWhenMessageIsIncluded()
+    void createDoiRequestStoresMessageAsDoiRelatedWhenMessageIsIncluded()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
         String expectedMessageText = randomString();
@@ -144,9 +143,9 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
             UserInstance.fromPublication(publication),
             publication.getIdentifier());
         
-        MessageDto savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
+        var savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
-        assertThat(savedMessage.getMessageType(), is(equalTo(MessageType.DOI_REQUEST.toString())));
+        assertThat(savedMessage.getMessageType(), is(equalTo(MessageType.DOI_REQUEST)));
     }
     
     public void sendRequest(Publication publication, ResourceOwner owner, String message) throws IOException {

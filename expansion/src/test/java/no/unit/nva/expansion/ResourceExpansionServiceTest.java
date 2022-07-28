@@ -39,14 +39,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.MessageCollection;
-import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -54,6 +48,11 @@ import no.unit.nva.publication.model.business.PublishingRequestStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -256,7 +255,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             expectedMessages.stream().map(Message::getText).collect(Collectors.toList());
         var actualMessageTexts = actualMessages.getMessages()
             .stream()
-            .map(MessageDto::getText)
+            .map(Message::getText)
             .collect(Collectors.toList());
         assertThat(actualMessageTexts, containsInAnyOrder(expectedMessageTexts.toArray(String[]::new)));
     }
@@ -280,7 +279,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             .stream()
             .map(MessageCollection::getMessages)
             .flatMap(Collection::stream)
-            .map(MessageDto::getMessageIdentifier)
+            .map(Message::getIdentifier)
             .collect(Collectors.toList());
         
         assertThat(actualMessageIdentifiers, contains(samplePublication.getSupportMessageIdentifiers()));
@@ -299,7 +298,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             .getDoiRequestMessages()
             .getMessages()
             .stream()
-            .map(MessageDto::getMessageIdentifier)
+            .map(Message::getIdentifier)
             .collect(Collectors.toList());
     }
     

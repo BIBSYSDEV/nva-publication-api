@@ -119,7 +119,7 @@ public class ResourceConversation implements JsonSerializable {
                 .collect(SingletonCollector.collectOrElse(MessageCollection.empty(messageType)));
     }
     
-    public List<MessageDto> allMessages() {
+    public List<Message> allMessages() {
         return this.getMessageCollections()
             .stream()
             .flatMap(messageCollection -> messageCollection.getMessages().stream())

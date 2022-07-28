@@ -1,8 +1,8 @@
 package no.unit.nva.doirequest.update;
 
 import java.util.Optional;
-import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.publication.exception.BadRequestException;
+import no.unit.nva.publication.model.business.DoiRequestStatus;
 import nva.commons.core.JacocoGenerated;
 
 public class ApiUpdateDoiRequest {

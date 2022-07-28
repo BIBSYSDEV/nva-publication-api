@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -27,6 +28,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -70,7 +72,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var event = createEvent(publishingRequest);
         var customerAllowingPublishing = IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
             "customer_allowing_publishing.json"));
-        this.httpClient = new FakeHttpClient<String>(customerAllowingPublishing);
+        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
         
         this.handler = new PendingPublishingRequestEventHandler(publishingRequestService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
@@ -85,7 +87,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var event = createEvent(publishingRequest);
         var customerAllowingPublishing = IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
             "customer_forbidding_publishing.json"));
-        this.httpClient = new FakeHttpClient<String>(customerAllowingPublishing);
+        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
         
         this.handler = new PendingPublishingRequestEventHandler(publishingRequestService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
@@ -99,14 +101,14 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publishingRequest = pendingPublishingRequest();
         var event = createEvent(publishingRequest);
         final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var responseBody = randomString();
-        this.httpClient = new FakeHttpClient<>(responseBody);
+        var response = FakeHttpResponse.create(randomString(),HTTP_OK);
+        this.httpClient = new FakeHttpClient<>(response);
         
         this.handler = new PendingPublishingRequestEventHandler(publishingRequestService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = publishingRequestService.getPublishingRequest(publishingRequest);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.PENDING)));
-        assertThat(logger.getMessages(), containsString(responseBody));
+        assertThat(logger.getMessages(), containsString(response.body()));
     }
     
     private InputStream createEvent(PublishingRequestCase publishingRequest) throws IOException {

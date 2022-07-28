@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
@@ -13,18 +12,6 @@ import no.unit.nva.model.pages.Pages;
 public final class DoiRequestUtils {
     
     private DoiRequestUtils() {
-    }
-    
-    static Instant extractDoiRequestModifiedDate(no.unit.nva.model.DoiRequest doiRequestDto) {
-        return Optional.ofNullable(doiRequestDto)
-            .map(no.unit.nva.model.DoiRequest::getModifiedDate)
-            .orElse(null);
-    }
-    
-    static Instant extractDoiRequestCreatedDate(no.unit.nva.model.DoiRequest doiRequestDto) {
-        return Optional.of(doiRequestDto)
-            .map(no.unit.nva.model.DoiRequest::getCreatedDate)
-            .orElse(null);
     }
     
     static DoiRequestBuilder extractDataFromResource(DoiRequestBuilder builder, Resource resource) {

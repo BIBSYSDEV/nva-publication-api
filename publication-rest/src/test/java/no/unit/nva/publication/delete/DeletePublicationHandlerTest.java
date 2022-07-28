@@ -159,11 +159,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private UserInstance createUserInstance(Publication publication) {
-        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
     }
     
     private void markForDeletion(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
+        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner(),
+            publication.getPublisher().getId());
         publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
     }
 }

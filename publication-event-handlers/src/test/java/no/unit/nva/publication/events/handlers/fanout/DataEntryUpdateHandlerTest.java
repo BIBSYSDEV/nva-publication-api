@@ -58,7 +58,7 @@ public class DataEntryUpdateHandlerTest {
     private S3Driver s3Driver;
     
     public static Stream<Arguments> dynamoDbEventProvider() throws JsonProcessingException {
-        var samplePublication = createRandomPublicationWithoutLegacyDoiRequestEntry();
+        var samplePublication = PublicationGenerator.randomPublication();
         return
             Stream.of(Arguments.of(samplePublication, sampleDynamoRecord(samplePublication, null)),
                 Arguments.of(samplePublication, sampleDynamoRecord(null, samplePublication)),
@@ -107,12 +107,6 @@ public class DataEntryUpdateHandlerTest {
     
     private static Map<String, AttributeValue> randomDynamoEntry() {
         return Map.of(randomString(), new AttributeValue(randomString()));
-    }
-    
-    private static Publication createRandomPublicationWithoutLegacyDoiRequestEntry() {
-        var samplePublication = PublicationGenerator.randomPublication();
-        samplePublication.setDoiRequest(null);
-        return samplePublication;
     }
     
     private static DynamodbEvent.DynamodbStreamRecord sampleDynamoRecord(Publication oldImage, Publication newImage)

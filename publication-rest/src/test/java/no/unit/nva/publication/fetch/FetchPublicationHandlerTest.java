@@ -11,10 +11,8 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,14 +31,13 @@ import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
@@ -83,7 +80,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
-        fetchPublicationHandler = new FetchPublicationHandler(publicationService, doiRequestService, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(publicationService, environment);
     }
     
     @Test
@@ -164,7 +161,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
             .when(serviceThrowingException)
             .getPublicationByIdentifier(any(SortableIdentifier.class));
         
-        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException, doiRequestService, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,  environment);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
         
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -174,26 +171,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
     
-    @Test
-    void handlerReturnsPublicationWithDoiRequestWhenDoiRequestIsPresent()
-        throws ApiGatewayException, IOException {
-        Publication createdPublication = createPublication();
-        UserInstance resourceOwner = UserInstance.fromPublication(createdPublication);
-        SortableIdentifier doiRequestIdentifier =
-            doiRequestService.createDoiRequest(resourceOwner, createdPublication.getIdentifier());
-        InputStream input = generateHandlerRequest(createdPublication.getIdentifier().toString());
-        fetchPublicationHandler.handleRequest(input, output, context);
-        GatewayResponse<PublicationResponse> response = GatewayResponse
-            .fromOutputStream(output, PublicationResponse.class);
-        PublicationResponse publicationDto = response.getBodyObject(PublicationResponse.class);
-        
-        DoiRequest actualDoiRequest = publicationDto.getDoiRequest();
-        DoiRequest expectedDoiRequest = doiRequestService.getDoiRequest(resourceOwner, doiRequestIdentifier)
-            .toPublication()
-            .getDoiRequest();
-        assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
-    }
-    
+  
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
         return restApiMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }

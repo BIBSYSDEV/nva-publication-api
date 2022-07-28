@@ -11,14 +11,14 @@ import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.MessageService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 

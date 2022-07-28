@@ -286,7 +286,6 @@ public class Resource implements WithStatus, Entity {
             .withFileSet(getFileSet())
             .withProjects(getProjects())
             .withEntityDescription(getEntityDescription())
-            .withDoiRequest(null)
             .withDoi(getDoi())
             .withHandle(getHandle())
             .withAdditionalIdentifiers(getAdditionalIdentifiers())

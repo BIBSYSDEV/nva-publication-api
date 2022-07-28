@@ -30,7 +30,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.Message;
@@ -123,7 +122,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         
         assertThat(actualPublication, is(equalTo(expectedPublication)));
         
-        MessageDto[] expectedMessages = constructExpectedMessagesDtos(insertedMessages);
+        var expectedMessages = toArray(insertedMessages);
         assertThat(resourceConversation.allMessages(), containsInAnyOrder(expectedMessages));
     }
     
@@ -246,10 +245,8 @@ class MessageServiceTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
     }
     
-    private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
-        return insertedMessages.stream()
-            .map(MessageDto::fromMessage)
-            .toArray(MessageDto[]::new);
+    private Message[] toArray(List<Message> insertedMessages) {
+        return insertedMessages.toArray(Message[]::new);
     }
     
     private Publication constructExpectedPublication(Publication insertedPublication) {

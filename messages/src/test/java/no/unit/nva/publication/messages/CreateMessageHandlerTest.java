@@ -19,10 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Clock;
-import java.util.Map;
-import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -77,10 +74,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         samplePublication = createSamplePublication();
     }
     
-    public String extractTextFromOldestMessage(Publication doiRequest) {
-        return doiRequest.getDoiRequest().getMessages().get(0).getText();
-    }
-    
+   
     @Test
     void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
         throws IOException, NotFoundException {
@@ -94,8 +88,8 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void handlerReturnsLocationHeaderWithUriForGettingTheMessage()
-        throws IOException, URISyntaxException, NotFoundException {
+    void handlerReturnsBodyWithMessageId()
+        throws IOException,  NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
         
         input = createInput(requestBody);
@@ -138,19 +132,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void handlerCreatesDoiRequestMessageWhenClientMarksMessageAsDoiRequestRelated()
-        throws IOException, BadRequestException {
-        createDoiRequestForSamplePublication();
-        CreateMessageRequest requestBody = createDoiRequestMessage();
-        postDoiRequestMessage(requestBody);
-        
-        Publication[] doiRequests = listDoiRequestsAsPublicationOwner();
-        String actualText = extractTextFromOldestMessage(doiRequests[0]);
-        
-        assertThat(actualText, is(equalTo(requestBody.getMessage())));
-    }
-    
-    @Test
     void shouldReturnBadRequestWhenClientDoesNotProvideMessageType() throws IOException {
         var request = createSampleMessage(samplePublication, randomString());
         request.setMessageType(null);
@@ -174,26 +155,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         return environment;
     }
     
-    private Publication[] listDoiRequestsAsPublicationOwner() throws IOException {
-        ListDoiRequestsHandler listDoiRequestsHandler = new ListDoiRequestsHandler(
-            environment, doiRequestService, messageService);
-        InputStream listDoiRequestsRequest = createListDoiRequestsHttpQuery();
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        listDoiRequestsHandler.handleRequest(listDoiRequestsRequest, output, CONTEXT);
-        var listDoiRequestsResponse = GatewayResponse.fromOutputStream(output, Publication[].class);
-        return listDoiRequestsResponse.getBodyObject(Publication[].class);
-    }
-    
-    private InputStream createListDoiRequestsHttpQuery() throws JsonProcessingException {
-        UserInstance publicationOwner = extractOwner(samplePublication);
-        return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
-            .withNvaUsername(publicationOwner.getUserIdentifier())
-            .withCustomerId(publicationOwner.getOrganizationUri())
-            .withQueryParameters(Map.of("role", "Creator"))
-            .withRoles("Creator")
-            .build();
-    }
-    
+   
     private void postDoiRequestMessage(CreateMessageRequest requestBody) throws IOException {
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
