@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.PushPromiseHandler;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -20,13 +21,20 @@ import javax.net.ssl.SSLParameters;
 
 public class FakeHttpClient<T> extends HttpClient {
     
-    private final List<T> responseBodies;
+    private final List<FakeHttpResponse<T>> responseBodies;
     private final AtomicInteger callCounter;
     
-    public FakeHttpClient(T... responseBody) {
+    @SafeVarargs
+    public FakeHttpClient(FakeHttpResponse<T>... responses) {
         super();
-        this.responseBodies = Arrays.asList(responseBody);
+        this.responseBodies = new ArrayList<>();
+        responseBodies.addAll(Arrays.asList(responses));
         this.callCounter = new AtomicInteger(0);
+    }
+    
+    public FakeHttpClient<T> addResponse(FakeHttpResponse<T> response) {
+        responseBodies.add(response);
+        return this;
     }
     
     public AtomicInteger getCallCounter() {
@@ -78,24 +86,24 @@ public class FakeHttpClient<T> extends HttpClient {
         return Optional.empty();
     }
     
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> HttpResponse<T> send(HttpRequest request, BodyHandler<T> responseBodyHandler) {
-        var responseBody = nextResponse();
-        return new FakeHttpResponse(request, responseBody);
+    public <S> HttpResponse<S> send(HttpRequest request, BodyHandler<S> responseBodyHandler) {
+        return FakeHttpResponse.create(request, (FakeHttpResponse<S>) nextResponse());
     }
     
     @Override
-    public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, BodyHandler<T> responseBodyHandler) {
+    public <S> CompletableFuture<HttpResponse<S>> sendAsync(HttpRequest request, BodyHandler<S> responseBodyHandler) {
         return null;
     }
     
     @Override
-    public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, BodyHandler<T> responseBodyHandler,
-                                                            PushPromiseHandler<T> pushPromiseHandler) {
+    public <S> CompletableFuture<HttpResponse<S>> sendAsync(HttpRequest request, BodyHandler<S> responseBodyHandler,
+                                                            PushPromiseHandler<S> pushPromiseHandler) {
         return null;
     }
     
-    private T nextResponse() {
+    private FakeHttpResponse<T> nextResponse() {
         int nextResponseIndex = Math.min(callCounter.get(), responseBodies.size() - 1);
         callCounter.incrementAndGet();
         return responseBodies.get(nextResponseIndex);

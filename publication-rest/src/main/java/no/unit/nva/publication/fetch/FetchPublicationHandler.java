@@ -14,12 +14,9 @@ import java.util.List;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
-import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -32,7 +29,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private final ResourceService resourceService;
-    private final DoiRequestService doiRequestService;
     
     @JacocoGenerated
     public FetchPublicationHandler() {
@@ -41,9 +37,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     
     @JacocoGenerated
     public FetchPublicationHandler(AmazonDynamoDB client) {
-        this(defaultResourceService(client),
-            defaultDoiRequestService(client),
-            new Environment());
+        this(defaultResourceService(client), new Environment());
     }
     
     /**
@@ -52,12 +46,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
      * @param resourceService publicationService
      * @param environment     environment
      */
-    public FetchPublicationHandler(ResourceService resourceService,
-                                   DoiRequestService doiRequestService,
-                                   Environment environment) {
+    public FetchPublicationHandler(ResourceService resourceService, Environment environment) {
         super(Void.class, environment);
         this.resourceService = resourceService;
-        this.doiRequestService = doiRequestService;
     }
     
     @Override
@@ -75,8 +66,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
-        var doiRequest = fetchDoiRequest(publication);
-        publication.setDoiRequest(doiRequest);
         
         return createResponse(requestInfo, publication);
     }
@@ -84,11 +73,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @Override
     protected Integer getSuccessStatusCode(Void input, String output) {
         return HttpURLConnection.HTTP_OK;
-    }
-    
-    @JacocoGenerated
-    private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client) {
-        return new DoiRequestService(client, CLOCK);
     }
     
     @JacocoGenerated
@@ -117,14 +101,5 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private String createDataCiteMetadata(Publication publication) {
         var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
-    }
-    
-    private DoiRequest fetchDoiRequest(Publication publication) {
-        var owner = UserInstance.fromPublication(publication);
-        var resourceIdentifier = publication.getIdentifier();
-        return attempt(() -> doiRequestService.getDoiRequestByResourceIdentifier(owner, resourceIdentifier))
-            .map(no.unit.nva.publication.model.business.DoiRequest::toPublication)
-            .map(Publication::getDoiRequest)
-            .orElse(fail -> null);
     }
 }

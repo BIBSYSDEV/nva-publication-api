@@ -36,15 +36,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.MessageCollection;
-import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -212,16 +211,16 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
     
     private int objectWithOldestMessageFirst(ResourceConversation left, ResourceConversation right) {
-        MessageDto oldestMessageLeft = oldestMessage(left);
-        MessageDto oldestMessageRight = oldestMessage(right);
-        return oldestMessageLeft.getDate().compareTo(oldestMessageRight.getDate());
+        var oldestMessageLeft = oldestMessage(left);
+        var oldestMessageRight = oldestMessage(right);
+        return oldestMessageLeft.getCreatedTime().compareTo(oldestMessageRight.getCreatedTime());
     }
     
-    private MessageDto oldestMessage(ResourceConversation left) {
+    private Message oldestMessage(ResourceConversation left) {
         return left.getMessageCollections()
             .stream()
             .flatMap(messageCollection -> messageCollection.getMessages().stream())
-            .sorted(Comparator.comparing(MessageDto::getDate))
+            .sorted(Comparator.comparing(Message::getCreatedTime))
             .collect(Collectors.toList())
             .get(0);
     }
@@ -243,8 +242,8 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     
     private void assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(MessageCollection messageCollection) {
         var messages = messageCollection.getMessages();
-        List<MessageDto> sortedMessages = messages.stream()
-            .sorted(Comparator.comparing(MessageDto::getDate))
+        List<Message> sortedMessages = messages.stream()
+            .sorted(Comparator.comparing(Message::getCreatedTime))
             .collect(Collectors.toList());
         
         assertThat(messages, is(not(sameInstance(sortedMessages))));
@@ -272,9 +271,8 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     
     private void assertThatResponseContainsAllExpectedMessages(List<Message> savedMessages,
                                                                ResourceConversation[] responseObjects) {
-        List<MessageDto> actualMessages = extractAllMessagesFromResponse(responseObjects);
-        MessageDto[] expectedMessages = constructExpectedMessages(savedMessages);
-        assertThat(actualMessages, containsInAnyOrder(expectedMessages));
+        List<Message> actualMessages = extractAllMessagesFromResponse(responseObjects);
+        assertThat(actualMessages, containsInAnyOrder(savedMessages.toArray(Message[]::new)));
     }
     
     private InputStream defaultCuratorRequest(String userIdentifier, URI organizationUri)
@@ -318,19 +316,11 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
             .toArray(PublicationSummary[]::new);
     }
     
-    private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
+    private List<Message> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
             .flatMap(responseObject -> responseObject.getMessageCollections().stream())
             .flatMap(messageCollections -> messageCollections.getMessages().stream())
             .collect(Collectors.toList());
-    }
-    
-    private MessageDto[] constructExpectedMessages(List<Message> savedMessages) {
-        List<MessageDto> expectedMessages = savedMessages.stream().map(MessageDto::fromMessage)
-            .collect(Collectors.toList());
-        MessageDto[] expectedMessagesArray = new MessageDto[savedMessages.size()];
-        expectedMessages.toArray(expectedMessagesArray);
-        return expectedMessagesArray;
     }
     
     private List<Message> insertSampleMessagesForSingleOwner() {

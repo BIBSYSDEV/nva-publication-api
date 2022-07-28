@@ -96,7 +96,6 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         Publication publication) {
         return publication.copy()
             .withDoi(null)
-            .withDoiRequest(null)
             .withHandle(null)
             .withPublishedDate(null)
             .withLink(null)

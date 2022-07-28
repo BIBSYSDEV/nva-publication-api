@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +25,7 @@ public class MessageCollection {
     public static final String MESSAGE_TYPE_FIELD = "messageType";
     
     @JsonProperty(MESSAGES_FIELD)
-    private List<MessageDto> messages;
+    private List<Message> messages;
     @JsonProperty(MESSAGE_TYPE_FIELD)
     private MessageType messageType;
     @JsonIgnore
@@ -38,7 +39,7 @@ public class MessageCollection {
     private MessageCollection(MessageType messageType, List<Message> messages) {
         this.messageType = messageType;
         this.messagesInternalStructure = messages;
-        this.messages = messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
+        this.messages = new ArrayList<>(messages);
     }
     
     public static List<MessageCollection> groupMessagesByType(Collection<Message> messages) {
@@ -55,12 +56,12 @@ public class MessageCollection {
     }
     
     @JacocoGenerated
-    public List<MessageDto> getMessages() {
+    public List<Message> getMessages() {
         return isNull(messages) ? Collections.emptyList() : messages;
     }
     
     @JacocoGenerated
-    public void setMessages(List<MessageDto> messages) {
+    public void setMessages(List<Message> messages) {
         this.messages = messages;
     }
     

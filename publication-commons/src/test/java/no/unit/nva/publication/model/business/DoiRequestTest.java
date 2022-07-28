@@ -15,16 +15,13 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Set;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import org.junit.jupiter.api.Test;
 
-public class DoiRequestTest {
+class DoiRequestTest {
     
     public static final String TYPE_FIELD = "type";
     private static final Instant NOW = Instant.now();
@@ -32,27 +29,26 @@ public class DoiRequestTest {
     private final DoiRequest sampleDoiRequest = sampleDoiRequestFromResource();
     
     @Test
-    public void doiRequestHasTypeDoiRequest() {
-        
+    void doiRequestHasTypeDoiRequest() {
         JsonNode json = dynamoDbObjectMapper.convertValue(sampleDoiRequest, JsonNode.class);
         assertThat(json.get(TYPE_FIELD), is(not(nullValue())));
         assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(DoiRequest.TYPE)));
     }
     
     @Test
-    public void doiRequestHasReferenceToResource() {
+    void doiRequestHasReferenceToResource() {
         assertThat(sampleDoiRequest.getResourceIdentifier(), is(notNullValue()));
     }
     
     @Test
-    public void doiRequestCannotBeCreatedWithoutReferenceToResource() {
+    void doiRequestCannotBeCreatedWithoutReferenceToResource() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
             this::doiRequestWithoutResourceReference);
         assertThat(exception.getMessage(), is(equalTo(DoiRequest.MISSING_RESOURCE_REFERENCE_ERROR)));
     }
     
     @Test
-    public void doiRequestContainsResourcesMainTitle() {
+    void doiRequestContainsResourcesMainTitle() {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         Resource resource = Resource.fromPublication(publication);
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource, fixedClock().instant());
@@ -60,35 +56,26 @@ public class DoiRequestTest {
     }
     
     @Test
-    public void toPublicationReturnsPublicationInstanceWithoutLossOfInformation() {
+    void toPublicationPreservesPublicationRelatedFields() {
         
-        DoiRequest doiRequest =
-            DoiRequest.newDoiRequestForResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
+        var originalDoiRequest = DoiRequest.fromPublication(PublicationGenerator.randomPublication());
         
-        assertThat(doiRequest, doesNotHaveEmptyValues());
-        Publication generatedPublication = doiRequest.toPublication();
+        assertThat(originalDoiRequest, doesNotHaveEmptyValues());
+        var generatedPublication = originalDoiRequest.toPublication();
         
-        DoiRequest regeneratedDoiRequest = DoiRequest.fromDto(generatedPublication, doiRequest.getIdentifier());
+        var regeneratedDoiRequest = DoiRequest.fromPublication(generatedPublication);
+        regeneratedDoiRequest.setIdentifier(originalDoiRequest.getIdentifier());
+        regeneratedDoiRequest.setVersion(originalDoiRequest.getVersion());
+        regeneratedDoiRequest.setCreatedDate(originalDoiRequest.getCreatedDate());
+        regeneratedDoiRequest.setModifiedDate(originalDoiRequest.getModifiedDate());
         // when transformed to Publication we do not have control over the rowVersion anymore because
         // nva-datamodel-java is an external library.
-        assertThat(regeneratedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("rowVersion")));
-        assertThat(regeneratedDoiRequest, is(equalTo(doiRequest)));
+        assertThat(regeneratedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("version")));
+        assertThat(regeneratedDoiRequest, is(equalTo(originalDoiRequest)));
     }
     
     @Test
-    public void fromPublicationIsEquivalentToFromDto() {
-        Publication publication = sampleDoiRequest.toPublication();
-        SortableIdentifier identifier = sampleDoiRequest.getIdentifier();
-        
-        DoiRequest fromPublication = DoiRequest.fromPublication(publication, identifier);
-        DoiRequest fromDto = DoiRequest.fromDto(publication, identifier);
-        
-        assertThat(fromPublication, is(equalTo(fromDto)));
-        assertThat(fromDto, is(equalTo(sampleDoiRequest)));
-    }
-    
-    @Test
-    public void updateReturnsNewAndUpdatedDoiRequest() {
+    void updateReturnsNewAndUpdatedDoiRequest() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
         
@@ -100,7 +87,7 @@ public class DoiRequestTest {
     }
     
     @Test
-    public void updateThrowsExceptionWhenResourceIdentifierIsDiffenret() {
+    void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
         

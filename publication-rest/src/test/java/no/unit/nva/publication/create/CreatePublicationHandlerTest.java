@@ -172,7 +172,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
         return samplePublication.copy()
-            .withDoiRequest(null)
             .withDoi(null)
             .withHandle(null)
             .withLink(null)

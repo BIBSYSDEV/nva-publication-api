@@ -28,8 +28,8 @@ class UserInstanceTest {
     
     @Test
     void shouldReturnUserInstanceFromDoiRequest() {
-        Publication publication = PublicationGenerator.randomPublication();
-        var doiRequest = DoiRequest.fromPublication(publication, SortableIdentifier.next());
+        var publication = PublicationGenerator.randomPublication();
+        var doiRequest = DoiRequest.fromPublication(publication);
         var userInstance = UserInstance.fromDoiRequest(doiRequest);
         assertThat(userInstance.getUserIdentifier(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));

@@ -55,7 +55,7 @@ class ResourceConversationTest {
     }
     
     @Test
-    public void getRequestMessagesReturnsMessagesOfSpecifiedType() {
+     void getRequestMessagesReturnsMessagesOfSpecifiedType() {
         var publication = PublicationGenerator.publicationWithIdentifier();
         var supportMessage = supportMessage(publication);
         var doiRequestMessage = doiRequestMessage(publication);
@@ -66,8 +66,8 @@ class ResourceConversationTest {
             .get(SINGLE_OBJECT)
             .getMessageCollectionOfType(MessageType.DOI_REQUEST)
             .getMessages();
-        assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
-        assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
+        assertThat(actualMessages, contains(doiRequestMessage));
+        assertThat(actualMessages, not(contains(supportMessage)));
     }
     
     @Test
@@ -86,7 +86,7 @@ class ResourceConversationTest {
         var doiRequestConversationMessages = resourceConversation.ofMessageTypes(MessageType.DOI_REQUEST)
             .allMessages()
             .stream()
-            .map(MessageDto::getText)
+            .map(Message::getText)
             .collect(Collectors.toList());
         var expectedDoiRequestConversationMessages = inputDoiRequestMessages
             .stream()

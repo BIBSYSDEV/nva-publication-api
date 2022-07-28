@@ -27,7 +27,7 @@ class MigrationTests extends ResourcesLocalTest {
     @Test
     void shouldWriteBackEntryAsIsWhenMigrating()
         throws NotFoundException {
-        var publication = PublicationGenerator.randomPublication().copy().withDoiRequest(null).build();
+        var publication = PublicationGenerator.randomPublication();
         var savedPublication = resourceService.insertPreexistingPublication(publication);
         migrateResources();
         

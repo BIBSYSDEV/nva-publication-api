@@ -2,154 +2,196 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.events.bodies.DoiUpdateRequestEvent;
-import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
+import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Sends messages to DoiRegistrar service for creating and updating DOIs.
  */
 public class DoiRequestEventProducer
-    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, DoiUpdateRequestEvent> {
+    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, DoiMetadataUpdateEvent> {
     
-    public static final String REQUEST_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.CreationRequest";
-    public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
-    public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
-    
-    protected static final String EMPTY_EVENT_TYPE = "empty";
-    public static final DoiUpdateRequestEvent EMPTY_EVENT = emptyEvent();
-    private static final Logger logger = LoggerFactory.getLogger(DoiRequestEventProducer.class);
+    public static final String NO_RESOURCE_IDENTIFIER_ERROR = "DoiRequest does not reference any Resource";
+    public static final String DOI_REQUEST_HAS_NO_IDENTIFIER = "DoiRequest has no identifier";
+    public static final String HEAD = "HEAD";
+    public static final DoiMetadataUpdateEvent EMPTY_EVENT = DoiMetadataUpdateEvent.empty();
+    protected static final Integer HTTP_FOUND = 302;
+    private static final String HANDLER_DOES_NOT_DEAL_WITH_DELETIONS = "Handler does not deal with deletions";
+    private final ResourceService resourceService;
+    private final HttpClient httpClient;
     
     @JacocoGenerated
-    public DoiRequestEventProducer() {
+    public DoiRequestEventProducer(ResourceService resourceService, HttpClient httpClient) {
         super(DataEntryUpdateEvent.class);
+        this.resourceService = resourceService;
+        this.httpClient = httpClient;
     }
     
     @Override
-    protected DoiUpdateRequestEvent processInputPayload(
+    protected DoiMetadataUpdateEvent processInputPayload(
         DataEntryUpdateEvent input,
         AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
         Context context) {
+        validate(input);
+        return isEffectiveChange(input)
+                   ? propagateEvent(input)
+                   : EMPTY_EVENT;
+    }
+    
+    private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
+        var newEntry = input.getNewData();
         
-        logger.info(event.toJsonString());
-        DoiUpdateRequestEvent updatedDoiInformationEvent = fromDynamoEntryUpdate(input);
-        validate(updatedDoiInformationEvent);
-        return updatedDoiInformationEvent;
+        if (newEntry instanceof Resource) {
+            return createDoiMetadataUpdateEvent((Resource) newEntry);
+        }
+        if (newEntry instanceof DoiRequest) {
+            return createDoiMetadataUpdateEvent((DoiRequest) input.getOldData(), (DoiRequest) newEntry);
+        }
+        return EMPTY_EVENT;
     }
     
-    private static DoiUpdateRequestEvent emptyEvent() {
-        return toPublicationHolder(null, EMPTY_EVENT_TYPE);
+    private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(DoiRequest oldEntry, DoiRequest newEntry) {
+        if (isFirstDoiRequest(oldEntry, newEntry)) {
+            return DoiMetadataUpdateEvent.createNewDoiEvent(newEntry);
+        } else if (isDoiRequestApproval(oldEntry, newEntry)) {
+            return createEventForMakingDoiFindable(newEntry);
+        }
+        return EMPTY_EVENT;
     }
     
-    private static DoiUpdateRequestEvent toPublicationHolder(DoiRequest doiRequest, String eventType) {
-        Publication publication = nonNull(doiRequest) ? doiRequest.toPublication() : null;
-        return new DoiUpdateRequestEvent(eventType, publication);
+    private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(Resource newEntry) {
+        if (aResourceWithFindableDoiHasBeenUpdated(newEntry)) {
+            return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication());
+        }
+        return EMPTY_EVENT;
     }
     
-    private void validate(DoiUpdateRequestEvent updatedDoiInformationEvent) {
-        if (isInvalid(updatedDoiInformationEvent)) {
-            throw new IllegalStateException(NO_RESOURCE_IDENTIFIER_ERROR);
+    private DoiMetadataUpdateEvent createEventForMakingDoiFindable(DoiRequest newEntry) {
+        return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication());
+    }
+    
+    private boolean isDoiRequestApproval(DoiRequest oldEntry, DoiRequest newEntry) {
+        var oldEntryIsNotApproved = matchStatus(oldEntry, DoiRequestStatus.REQUESTED);
+        var newEntryIsApproved = matchStatus(newEntry, DoiRequestStatus.APPROVED);
+        return oldEntryIsNotApproved && newEntryIsApproved;
+    }
+    
+    private Boolean matchStatus(DoiRequest oldEntry, DoiRequestStatus approved) {
+        return Optional.of(oldEntry)
+            .map(DoiRequest::getStatus)
+            .map(approved::equals)
+            .orElse(false);
+    }
+    
+    private boolean aResourceWithFindableDoiHasBeenUpdated(Resource newEntry) {
+        return hasDoi(newEntry) && doiIsFindable(newEntry.getDoi());
+    }
+    
+    private boolean doiIsFindable(URI doi) {
+        var request = HttpRequest.newBuilder(doi).method(HEAD, BodyPublishers.noBody()).build();
+        return attempt(() -> httpClient.send(request, BodyHandlers.ofString()))
+            .map(HttpResponse::statusCode)
+            .map(HTTP_FOUND::equals)
+            .toOptional()
+            .orElse(false);
+    }
+    
+    private boolean hasDoi(Resource newEntry) {
+        return nonNull(newEntry.getDoi());
+    }
+    
+    private void validate(DataEntryUpdateEvent event) {
+        validateEvent(event);
+        validateDoiRequest(event);
+    }
+    
+    private void validateEvent(DataEntryUpdateEvent event) {
+        if (eventIsADeletion(event)) {
+            throw new InvalidInputException(HANDLER_DOES_NOT_DEAL_WITH_DELETIONS);
         }
     }
     
-    private boolean isInvalid(DoiUpdateRequestEvent updatedDoiInformationEvent) {
-        return nonNull(updatedDoiInformationEvent.getItem())
-               && isNull(updatedDoiInformationEvent.getItem().getIdentifier());
-    }
-    
-    private DoiUpdateRequestEvent fromDynamoEntryUpdate(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-            .filter(this::shouldPropagateEvent)
-            .map(DataEntryUpdateEvent::getNewData)
-            .filter(data -> data instanceof DoiRequest)
-            .map(data -> (DoiRequest) data)
-            .map(pub -> toPublicationHolder(pub, calculateEventType(updateEvent)))
-            .orElse(EMPTY_EVENT);
-    }
-    
-    private String calculateEventType(DataEntryUpdateEvent updateEvent) {
-        if (isFirstDoiRequest(updateEvent)) {
-            return REQUEST_DRAFT_DOI_EVENT_TOPIC;
-        } else {
-            return UPDATE_DOI_EVENT_TOPIC;
+    private void validateDoiRequest(DataEntryUpdateEvent event) {
+        if (event.getNewData() instanceof DoiRequest) {
+            var doiRequest = (DoiRequest) event.getNewData();
+            if (hasNoReferenceToPublication(doiRequest)) {
+                throw new IllegalStateException(NO_RESOURCE_IDENTIFIER_ERROR);
+            }
+            if (eventCannotBeReferenced(doiRequest)) {
+                throw new IllegalStateException(DOI_REQUEST_HAS_NO_IDENTIFIER);
+            }
         }
+    }
+    
+    private boolean eventIsADeletion(DataEntryUpdateEvent event) {
+        return isNull(event.getNewData());
+    }
+    
+    private boolean eventCannotBeReferenced(DoiRequest doiRequest) {
+        return isNull(doiRequest.getIdentifier());
+    }
+    
+    private boolean hasNoReferenceToPublication(DoiRequest doiRequest) {
+        return isNull(doiRequest.getResourceIdentifier());
     }
     
     private Publication toPublication(Entity dataEntry) {
         return dataEntry != null ? dataEntry.toPublication() : null;
     }
     
-    private boolean isFirstDoiRequest(DataEntryUpdateEvent updateEvent) {
-        return isNull(toPublication(updateEvent.getOldData()))
-               && updateHasDoiRequest(updateEvent)
-               && isNull(toPublication(updateEvent.getNewData()).getDoi());
+    private boolean isFirstDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
+        boolean b = publicationDoesNotHaveDoiFromBefore(newEntry);
+        return thereWasNoDoiRequestBefore(oldEntry) && b;
     }
     
-    private boolean updateHasDoiRequest(DataEntryUpdateEvent updateEvent) {
-        return nonNull(toPublication(updateEvent.getNewData()))
-               && nonNull(toPublication(updateEvent.getNewData()).getDoiRequest());
+    private boolean thereWasNoDoiRequestBefore(DoiRequest oldEntry) {
+        return isNull(oldEntry);
     }
     
-    private boolean publicationHasDoiRequest(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-            .map(DataEntryUpdateEvent::getNewData)
-            .filter(data -> data instanceof DoiRequest)
-            .map(data -> (DoiRequest) data)
-            .isPresent();
-    }
-    
-    private boolean shouldPropagateEvent(DataEntryUpdateEvent updateEvent) {
-        boolean publicationHasDoiRequest = publicationHasDoiRequest(updateEvent);
-        boolean isChange = isEffectiveChange(updateEvent);
-        
-        return isChange && publicationHasDoiRequest;
+    private boolean publicationDoesNotHaveDoiFromBefore(DoiRequest doiRequest) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(doiRequest.getResourceIdentifier()))
+            .map(Publication::getDoi)
+            .map(Objects::isNull)
+            .orElseThrow();
     }
     
     private boolean isEffectiveChange(DataEntryUpdateEvent updateEvent) {
+        return isDoiRequestUpdate(updateEvent) || doiRelatedDataDifferFromOld(updateEvent);
+    }
+    
+    private boolean doiRelatedDataDifferFromOld(DataEntryUpdateEvent updateEvent) {
         var newPublication = toPublication(updateEvent.getNewData());
         var oldPublication = toPublication(updateEvent.getOldData());
         if (nonNull(newPublication)) {
-            return
-                doiRequestGotApproved(updateEvent)
-                || newDoiRelatedMetadataDifferFromOld(newPublication, oldPublication);
+            return newDoiRelatedMetadataDifferFromOld(newPublication, oldPublication);
         }
         return false;
     }
     
-    private boolean doiRequestGotApproved(DataEntryUpdateEvent updateEvent) {
-        DoiRequestStatus oldStatus = extractOldPublicationStatus(updateEvent);
-        DoiRequestStatus newStatus = extractNewPublicationStatus(updateEvent);
-        return DoiRequestStatus.REQUESTED.equals(oldStatus) && DoiRequestStatus.APPROVED.equals(newStatus);
-    }
-    
-    private DoiRequestStatus extractNewPublicationStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-            .map(DataEntryUpdateEvent::getNewData)
-            .filter(data -> data instanceof DoiRequest)
-            .map(data -> (DoiRequest) data)
-            .map(DoiRequest::getStatus)
-            .orElse(null);
-    }
-    
-    private DoiRequestStatus extractOldPublicationStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-            .map(DataEntryUpdateEvent::getOldData)
-            .filter(data -> data instanceof DoiRequest)
-            .map(data -> (DoiRequest) data)
-            .map(DoiRequest::getStatus)
-            .orElse(DoiRequestStatus.REQUESTED);
+    private boolean isDoiRequestUpdate(DataEntryUpdateEvent updateEvent) {
+        return updateEvent.getNewData() instanceof DoiRequest;
     }
     
     private boolean newDoiRelatedMetadataDifferFromOld(Publication newPublication, Publication oldPublication) {

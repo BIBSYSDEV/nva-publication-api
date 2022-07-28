@@ -60,18 +60,22 @@ public class MessageDto implements JsonSerializable {
         return null;
     }
     
+    @JacocoGenerated
     public String getRecipient() {
         return recipient;
     }
     
+    @JacocoGenerated
     public void setRecipient(String recipient) {
         this.recipient = recipient;
     }
     
+    @JacocoGenerated
     public MessageStatus getStatus() {
         return status;
     }
     
+    @JacocoGenerated
     public void setStatus(MessageStatus status) {
         this.status = status;
     }
