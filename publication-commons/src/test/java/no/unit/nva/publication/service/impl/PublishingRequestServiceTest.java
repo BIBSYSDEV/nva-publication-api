@@ -49,7 +49,7 @@ import org.junit.jupiter.api.function.Executable;
 
 class PublishingRequestServiceTest extends ResourcesLocalTest {
     
-    public static final int ONE_FOR_PUBLCATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
+    public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant PUBLICATION_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
@@ -68,6 +68,13 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             .thenReturn(PUBLICATION_REQUEST_UPDATE_TIME);
         this.resourceService = new ResourceService(client, mockClock);
         this.publishingRequestService = new PublishingRequestService(client, mockClock);
+    }
+    
+    @Test
+    void shouldCreateDoiRequestForPublishedPublication() throws ApiGatewayException {
+        var publication = createPublication(owner);
+        resourceService.publishPublication(UserInstance.fromPublication(publication),publication.getIdentifier());
+        
     }
     
     @Test
@@ -145,7 +152,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         var expectedDao = DynamoEntry.parseAttributeValuesMap(mockedResponse, PublishingRequestDao.class);
         var expectedRequest = expectedDao.getData();
         assertThat(response, is(equalTo(expectedRequest)));
-        verify(client, times(ONE_FOR_PUBLCATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());
+        verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());
     }
     
     @Test
