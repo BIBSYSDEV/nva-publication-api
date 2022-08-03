@@ -1,6 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
+import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -312,7 +312,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
     
     private Publication createDraftPublication(UserInstance owner) throws ApiGatewayException {
-        var publication = createPublicationForUser(owner);
+        var publication = createUnpersistedPublication(owner);
         return resourceService.createPublication(owner, publication);
     }
     

@@ -93,6 +93,7 @@ public class WithPrimaryKeyTest extends ResourcesLocalTest {
     private static List<DoiRequestDao> sampleDoiRequests(List<ResourceDao> publications) {
         return publications.stream()
             .map(ResourceDao::getData)
+            .map(Resource.class::cast)
             .map(DoiRequest::newDoiRequestForResource)
             .map(DoiRequestDao::new)
             .collect(Collectors.toList());

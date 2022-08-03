@@ -8,9 +8,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -42,10 +42,10 @@ public class CreatePublishingRequestHandler extends
         
         var publishingRequest = PublishingRequestCase.createOpeningCaseObject(userInstance, publicationIdentifier);
         var newPublishingRequest =
-            attempt(() -> requestService.createPublishingRequest(publishingRequest))
+            attempt(() -> requestService.createTicket(publishingRequest, PublishingRequestCase.class))
                 .orElseThrow(fail -> handleErrors(fail.getException()));
         
-        var persistedRequest = requestService.getPublishingRequest(newPublishingRequest);
+        var persistedRequest = requestService.fetchTicket(newPublishingRequest, PublishingRequestCase.class);
         return PublishingRequestCaseDto.createResponseObject(persistedRequest);
     }
     

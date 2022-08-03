@@ -110,7 +110,7 @@ class UpdateMessageHandlerTest extends MessagesTest {
     private Message constructExpectedMessage(Message originalMessage, Message updatedMessage) {
         return originalMessage.copy()
             .withStatus(MessageStatus.READ)
-            .withModifiedTime(updatedMessage.getModifiedTime())
+            .withModifiedTime(updatedMessage.getModifiedDate())
             .withRowVersion(updatedMessage.getVersion())
             .build();
     }

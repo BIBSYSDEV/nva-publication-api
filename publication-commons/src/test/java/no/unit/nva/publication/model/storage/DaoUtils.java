@@ -16,12 +16,11 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.RowLevelSecurity;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.attempt.Try;
 
@@ -42,7 +41,7 @@ public final class DaoUtils {
             .orElseThrow();
     }
     
-    public static Stream<Dao<?>> instanceProvider() {
+    public static Stream<Dao> instanceProvider() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         MessageDao messageDao = sampleMessageDao();
@@ -50,14 +49,14 @@ public final class DaoUtils {
         return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
     }
     
-    public static DoiRequestDao doiRequestDao(Resource resource) {
-        return attempt(() -> DoiRequest.newDoiRequestForResource(resource))
+    public static DoiRequestDao doiRequestDao(Entity resource) {
+        
+        return attempt(() -> DoiRequest.newDoiRequestForResource((Resource) resource))
             .map(DoiRequestDao::new)
             .orElseThrow();
     }
     
-    static <R extends RowLevelSecurity & Entity> PutItemRequest toPutItemRequest(
-        Dao<R> resource) {
+    static PutItemRequest toPutItemRequest(Dao resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
             .withItem(resource.toDynamoFormat());
     }

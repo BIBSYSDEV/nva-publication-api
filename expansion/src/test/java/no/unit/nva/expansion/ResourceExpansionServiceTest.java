@@ -469,7 +469,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             
             var publishingRequestCase =
                 PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-            publishingRequest = publishingRequestService.createPublishingRequest(publishingRequestCase);
+            publishingRequest =
+                publishingRequestService.createTicket(publishingRequestCase,PublishingRequestCase.class);
             doiRequestMessages = createSomeMessages(MessageType.DOI_REQUEST);
             supportMessages = createSomeMessages(MessageType.SUPPORT);
             publishingRequestMessages = createSomeMessages(MessageType.PUBLISHING_REQUEST);

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.publication.model.business.Entity.nextVersion;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -14,7 +15,6 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.core.JacocoGenerated;
 
@@ -40,10 +40,14 @@ public class Message implements WithStatus,
     private SortableIdentifier resourceIdentifier;
     @JsonProperty("text")
     private String text;
-    @JsonProperty("createdTime")
-    private Instant createdTime;
-    @JsonProperty("modifiedTime")
-    private Instant modifiedTime;
+    //TODO: remove alias after migration
+    @JsonAlias("createdTime")
+    @JsonProperty("createdDate")
+    private Instant createdDate;
+    //TODO: remove alias after migration
+    @JsonAlias("modifiedTime")
+    @JsonProperty("modifiedDate")
+    private Instant modifiedDate;
     @JsonProperty("resourceTitle")
     private String resourceTitle;
     @JsonProperty("messageType")
@@ -87,12 +91,14 @@ public class Message implements WithStatus,
         // DO NOTHING
     }
     
-    public Instant getModifiedTime() {
-        return modifiedTime;
+    @Override
+    public Instant getModifiedDate() {
+        return modifiedDate;
     }
     
-    public void setModifiedTime(Instant modifiedTime) {
-        this.modifiedTime = modifiedTime;
+    @Override
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
     }
     
     public Message markAsRead(Clock clock) {
@@ -143,8 +149,10 @@ public class Message implements WithStatus,
         return Message.TYPE;
     }
     
+    //TODO: cover this method when Message is not a ticket any more.
+    @JacocoGenerated
     @Override
-    public Dao<?> toDao() {
+    public MessageDao toDao() {
         return new MessageDao(this);
     }
     
@@ -187,6 +195,13 @@ public class Message implements WithStatus,
         return resourceIdentifier;
     }
     
+    //TODO: remove method or cover when Message is not a Ticket anymore.
+    @JacocoGenerated
+    @Override
+    public void validateRequirements(Publication publication) {
+    
+    }
+    
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
     }
@@ -199,12 +214,14 @@ public class Message implements WithStatus,
         this.text = text;
     }
     
-    public Instant getCreatedTime() {
-        return createdTime;
+    @Override
+    public Instant getCreatedDate() {
+        return createdDate;
     }
     
-    public void setCreatedTime(Instant createdTime) {
-        this.createdTime = createdTime;
+    @Override
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
     }
     
     public String getResourceTitle() {
@@ -225,7 +242,7 @@ public class Message implements WithStatus,
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
             getResourceIdentifier(),
-            getText(), getCreatedTime(), getModifiedTime(), getResourceTitle(), getMessageType());
+            getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(), getMessageType());
     }
     
     @Override
@@ -238,7 +255,7 @@ public class Message implements WithStatus,
             return false;
         }
         Message message = (Message) o;
-    
+        
         return Objects.equals(getIdentifier(), message.getIdentifier())
                && Objects.equals(getOwner(), message.getOwner())
                && Objects.equals(getCustomerId(), message.getCustomerId())
@@ -246,8 +263,8 @@ public class Message implements WithStatus,
                && Objects.equals(getSender(), message.getSender())
                && Objects.equals(getResourceIdentifier(), message.getResourceIdentifier())
                && Objects.equals(getText(), message.getText())
-               && Objects.equals(getCreatedTime(), message.getCreatedTime())
-               && Objects.equals(getModifiedTime(), message.getModifiedTime())
+               && Objects.equals(getCreatedDate(), message.getCreatedDate())
+               && Objects.equals(getModifiedDate(), message.getModifiedDate())
                && Objects.equals(getResourceTitle(), message.getResourceTitle())
                && getMessageType() == message.getMessageType();
     }
@@ -260,7 +277,7 @@ public class Message implements WithStatus,
     
     public MessageBuilder copy() {
         return Message.builder()
-            .withCreatedTime(this.getCreatedTime())
+            .withCreatedTime(this.getCreatedDate())
             .withCustomerId(this.getCustomerId())
             .withIdentifier(this.getIdentifier())
             .withMessageType(this.getMessageType())
@@ -270,14 +287,14 @@ public class Message implements WithStatus,
             .withSender(this.getSender())
             .withText(this.getText())
             .withResourceTitle(this.getResourceTitle())
-            .withModifiedTime(this.getModifiedTime())
+            .withModifiedTime(this.getModifiedDate())
             .withRowVersion(this.getVersion());
     }
     
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
                                                String messageText, SortableIdentifier messageIdentifier,
                                                Clock clock) {
-    
+        
         var now = clock.instant();
         return Message.builder()
             .withStatus(MessageStatus.UNREAD)

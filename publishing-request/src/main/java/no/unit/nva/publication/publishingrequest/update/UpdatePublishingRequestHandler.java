@@ -9,6 +9,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import nva.commons.apigateway.AccessRight;
@@ -46,8 +47,8 @@ public class UpdatePublishingRequestHandler
             readIdentifierFromPathParameter(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
         
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
-        var currentRequest =
-            requestService.getPublishingRequestByPublicationAndRequestIdentifiers(publicationIdentifier,
+        var currentRequest = (PublishingRequestCase)
+            requestService.fetchTicketByPublicationAndRequestIdentifiers(publicationIdentifier,
                 publishingRequestIdentifier);
         
         final var updatedRequest = currentRequest.approve();

@@ -9,9 +9,10 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -28,6 +29,10 @@ public class PublishingRequestCase
     public static final String CUSTOMER_ID_FIELD = "customerId";
     public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
     public static final String IDENTIFIER_FIELD = "identifier";
+    public static final String ALREADY_PUBLISHED_ERROR =
+        "Publication is already published.";
+    public static final String MARKED_FOR_DELETION_ERROR =
+        "Publication is marked for deletion and cannot be published.";
     
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -80,38 +85,18 @@ public class PublishingRequestCase
         return resourceIdentifier;
     }
     
+    @Override
+    public void validateRequirements(Publication publication) throws ConflictException {
+        if (PublicationStatus.PUBLISHED == publication.getStatus()) {
+            throw new ConflictException(ALREADY_PUBLISHED_ERROR);
+        }
+        if (PublicationStatus.DRAFT_FOR_DELETION == publication.getStatus()) {
+            throw new ConflictException(MARKED_FOR_DELETION_ERROR);
+        }
+    }
+    
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
-    }
-    
-    @Override
-    public Publication toPublication() {
-        
-        return new Publication.Builder()
-            .withIdentifier(getResourceIdentifier())
-            .withResourceOwner(new ResourceOwner(getOwner(), null))
-            .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
-            .build();
-    }
-    
-    @Override
-    public UUID getVersion() {
-        return version;
-    }
-    
-    @Override
-    public void setVersion(UUID version) {
-        this.version = version;
-    }
-    
-    @Override
-    public String getType() {
-        return PublishingRequestCase.TYPE;
-    }
-    
-    @Override
-    public Dao<?> toDao() {
-        return new PublishingRequestDao(this);
     }
     
     @Override
@@ -142,6 +127,56 @@ public class PublishingRequestCase
         this.identifier = identifier;
     }
     
+    @Override
+    public Publication toPublication() {
+        
+        return new Publication.Builder()
+            .withIdentifier(getResourceIdentifier())
+            .withResourceOwner(new ResourceOwner(getOwner(), null))
+            .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
+            .build();
+    }
+    
+    @Override
+    public UUID getVersion() {
+        return version;
+    }
+    
+    @Override
+    public void setVersion(UUID version) {
+        this.version = version;
+    }
+    
+    @Override
+    public String getType() {
+        return PublishingRequestCase.TYPE;
+    }
+    
+    @Override
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+    
+    @Override
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+    
+    @Override
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+    
+    @Override
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
+    }
+    
+    @Override
+    public PublishingRequestDao toDao() {
+        return new PublishingRequestDao(this);
+    }
+    
     public PublishingRequestStatus getStatus() {
         return status;
     }
@@ -153,29 +188,6 @@ public class PublishingRequestCase
     @Override
     public String getStatusString() {
         return status.name();
-    }
-    
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-    
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-    
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-    
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
-            getModifiedDate(), getCreatedDate(), getVersion());
     }
     
     @Override
@@ -194,8 +206,14 @@ public class PublishingRequestCase
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getVersion(), that.getVersion());
+               && Objects.equals(getCreatedDate(), that.getCreatedDate());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
+            getModifiedDate(), getCreatedDate());
     }
     
     public PublishingRequestCase approve() {
@@ -229,4 +247,5 @@ public class PublishingRequestCase
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);
         return newPublishingRequest;
     }
+    
 }

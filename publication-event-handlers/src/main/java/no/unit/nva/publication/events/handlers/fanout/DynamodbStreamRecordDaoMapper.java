@@ -40,13 +40,13 @@ public final class DynamodbStreamRecordDaoMapper {
         DynamoEntry dynamoEntry = objectMapper.readValue(item.toJSON(), DynamoEntry.class);
         return Optional.of(dynamoEntry)
             .filter(entry -> isDao(dynamoEntry))
-            .map(dao -> ((Dao<?>) dao).getData())
-            .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate)
-            .map(data -> (Entity) data);
+            .map(Dao.class::cast)
+            .map(Dao::getData)
+            .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
     }
     
     private static boolean isDao(DynamoEntry dynamoEntry) {
-        return dynamoEntry instanceof Dao<?>;
+        return dynamoEntry instanceof Dao;
     }
     
     private static boolean isResourceUpdate(Object data) {

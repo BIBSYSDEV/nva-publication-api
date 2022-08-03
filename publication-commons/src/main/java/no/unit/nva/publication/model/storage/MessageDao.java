@@ -1,11 +1,15 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -13,10 +17,8 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(MessageDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class MessageDao extends Dao<Message>
-    implements
-    DynamoEntryByIdentifier<Message>,
-    JoinWithResource {
+public class MessageDao extends TicketDao
+    implements DynamoEntryByIdentifier, JoinWithResource {
     
     public static final String TYPE = "Message";
     private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "c";
@@ -24,6 +26,20 @@ public class MessageDao extends Dao<Message>
     
     public MessageDao() {
         super();
+    }
+    
+    //TODO: cover when refactoring to ticket system is completed
+    @JacocoGenerated
+    @Override
+    public TransactWriteItemsRequest createInsertionTransactionRequest() {
+        throw new UnsupportedOperationException();
+    }
+    
+    //TODO: cover when refactoring to ticket system is completed
+    @JacocoGenerated
+    @Override
+    public Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
+        throw new UnsupportedOperationException();
     }
     
     public MessageDao(Message message) {
@@ -66,8 +82,8 @@ public class MessageDao extends Dao<Message>
     }
     
     @Override
-    public void setData(Message data) {
-        this.data = data;
+    public void setData(Entity data) {
+        this.data = (Message) data;
     }
     
     @Override

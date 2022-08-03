@@ -23,8 +23,6 @@ import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import java.time.Clock;
@@ -43,8 +41,6 @@ import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
-import no.unit.nva.publication.model.storage.IdentifierEntry;
-import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithByTypeCustomerStatusIndex;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -65,7 +61,6 @@ public class DoiRequestService extends ServiceWithTransactions {
     private final AmazonDynamoDB client;
     private final Clock clock;
     private final ResourceService resourceService;
-    private final String tableName;
     private final Supplier<SortableIdentifier> identifierProvider;
     
     public DoiRequestService(AmazonDynamoDB client, Clock clock) {
@@ -81,7 +76,6 @@ public class DoiRequestService extends ServiceWithTransactions {
         this.client = client;
         this.clock = clock;
         this.resourceService = new ResourceService(client, clock);
-        this.tableName = RESOURCES_TABLE_NAME;
         this.identifierProvider = identifierProvider;
     }
     
@@ -108,7 +102,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     public DoiRequest getDoiRequestByResourceIdentifier(UserInstance resourceOwner,
                                                         SortableIdentifier resourceIdentifier)
         throws NotFoundException {
-        return getDoiRequestByResourceIdentifier(resourceOwner, resourceIdentifier, tableName, client);
+        return getDoiRequestByResourceIdentifier(resourceOwner, resourceIdentifier, RESOURCES_TABLE_NAME, client);
     }
     
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -118,8 +112,8 @@ public class DoiRequestService extends ServiceWithTransactions {
     }
     
     public SortableIdentifier createDoiRequest(Publication publication) {
-        DoiRequest doiRequest = createNewDoiRequestEntry(publication);
-        TransactWriteItemsRequest request = createInsertionTransactionRequest(doiRequest);
+        var doiRequest = createNewDoiRequestEntry(publication).toDao();
+        var request = doiRequest.createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);
         return doiRequest.getIdentifier();
     }
@@ -165,11 +159,6 @@ public class DoiRequestService extends ServiceWithTransactions {
     protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
         QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);
         return performQueryWithPotentiallyManyResults(query);
-    }
-    
-    @Override
-    protected String getTableName() {
-        return tableName;
     }
     
     @Override
@@ -241,7 +230,7 @@ public class DoiRequestService extends ServiceWithTransactions {
             ":SK2", new AttributeValue(dao.getByCustomerAndResourceSortKey())
         );
         return new UpdateItemRequest()
-            .withTableName(tableName)
+            .withTableName(RESOURCES_TABLE_NAME)
             .withKey(dao.primaryKey())
             .withUpdateExpression(updateExpression)
             .withConditionExpression(conditionExpression)
@@ -304,7 +293,7 @@ public class DoiRequestService extends ServiceWithTransactions {
         );
         
         return new QueryRequest()
-            .withTableName(tableName)
+            .withTableName(RESOURCES_TABLE_NAME)
             .withKeyConditionExpression(queryExpression)
             .withFilterExpression(filterExpression)
             .withExpressionAttributeNames(expressionAttributeNames)
@@ -332,9 +321,9 @@ public class DoiRequestService extends ServiceWithTransactions {
             ":partitionKeyValue", new AttributeValue(partitionKeyValue),
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.toString())
         );
-    
+        
         return new QueryRequest()
-            .withTableName(tableName)
+            .withTableName(RESOURCES_TABLE_NAME)
             .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
             .withKeyConditionExpression(keyConditionExpression)
             .withFilterExpression(filterExpression)
@@ -373,30 +362,4 @@ public class DoiRequestService extends ServiceWithTransactions {
         return DoiRequest.newDoiRequestForResource(identifierProvider.get(), resource, clock.instant());
     }
     
-    private TransactWriteItemsRequest createInsertionTransactionRequest(DoiRequest doiRequest) {
-        TransactWriteItem doiRequestEntry = createDoiRequestInsertionEntry(doiRequest);
-        TransactWriteItem identifierEntry = createUniqueIdentifierEntry(doiRequest);
-        TransactWriteItem uniqueDoiRequestEntry = createUniqueDoiRequestEntry(doiRequest);
-        
-        return new TransactWriteItemsRequest()
-            .withTransactItems(
-                identifierEntry,
-                uniqueDoiRequestEntry,
-                doiRequestEntry);
-    }
-    
-    private TransactWriteItem createUniqueDoiRequestEntry(DoiRequest doiRequest) {
-        UniqueDoiRequestEntry uniqueDoiRequestEntry = new UniqueDoiRequestEntry(
-            doiRequest.getResourceIdentifier().toString());
-        return newPutTransactionItem(uniqueDoiRequestEntry);
-    }
-    
-    private TransactWriteItem createDoiRequestInsertionEntry(DoiRequest doiRequest) {
-        return newPutTransactionItem(new DoiRequestDao(doiRequest));
-    }
-    
-    private TransactWriteItem createUniqueIdentifierEntry(DoiRequest doiRequest) {
-        IdentifierEntry identifierEntry = new IdentifierEntry(doiRequest.getIdentifier().toString());
-        return newPutTransactionItem(identifierEntry);
-    }
 }

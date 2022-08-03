@@ -29,7 +29,7 @@ public final class TestingUtils {
         return UserInstance.create(randomString(), randomUri());
     }
     
-    public static Publication createPublicationForUser(UserInstance userInstance) {
+    public static Publication createUnpersistedPublication(UserInstance userInstance) {
         return PublicationGenerator.randomPublication()
             .copy()
             .withResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), randomOrgUnitId()))

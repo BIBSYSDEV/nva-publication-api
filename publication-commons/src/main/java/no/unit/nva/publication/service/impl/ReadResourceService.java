@@ -6,7 +6,6 @@ import static no.unit.nva.publication.model.business.Resource.resourceQueryObjec
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.EMPTY_RESOURCE_IDENTIFIER_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
-import static no.unit.nva.publication.service.impl.ServiceWithTransactions.RAWTYPES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
@@ -86,7 +85,7 @@ public class ReadResourceService {
         var queryRequest = queryObject.creteQueryForFetchingByIdentifier();
         var result = client.query(queryRequest);
         ResourceDao fetchedDao = queryResultToSingleResource(identifier, result);
-        return fetchedDao.getData();
+        return (Resource) fetchedDao.getData();
     }
     
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
@@ -100,7 +99,6 @@ public class ReadResourceService {
         return fetchedDao.getData();
     }
     
-    @SuppressWarnings(RAWTYPES)
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
@@ -132,6 +130,7 @@ public class ReadResourceService {
             .stream()
             .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
             .map(ResourceDao::getData)
+            .map(Resource.class::cast)
             .collect(Collectors.toList());
     }
     
@@ -195,7 +194,6 @@ public class ReadResourceService {
             .withKeyConditions(keyConditions);
     }
     
-    @SuppressWarnings(RAWTYPES)
     private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
         return queryResult.getItems()
             .stream()

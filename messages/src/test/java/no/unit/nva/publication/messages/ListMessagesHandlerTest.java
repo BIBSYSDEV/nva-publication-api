@@ -213,14 +213,14 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     private int objectWithOldestMessageFirst(ResourceConversation left, ResourceConversation right) {
         var oldestMessageLeft = oldestMessage(left);
         var oldestMessageRight = oldestMessage(right);
-        return oldestMessageLeft.getCreatedTime().compareTo(oldestMessageRight.getCreatedTime());
+        return oldestMessageLeft.getCreatedDate().compareTo(oldestMessageRight.getCreatedDate());
     }
     
     private Message oldestMessage(ResourceConversation left) {
         return left.getMessageCollections()
             .stream()
             .flatMap(messageCollection -> messageCollection.getMessages().stream())
-            .sorted(Comparator.comparing(Message::getCreatedTime))
+            .sorted(Comparator.comparing(Message::getCreatedDate))
             .collect(Collectors.toList())
             .get(0);
     }
@@ -243,7 +243,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     private void assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(MessageCollection messageCollection) {
         var messages = messageCollection.getMessages();
         List<Message> sortedMessages = messages.stream()
-            .sorted(Comparator.comparing(Message::getCreatedTime))
+            .sorted(Comparator.comparing(Message::getCreatedDate))
             .collect(Collectors.toList());
         
         assertThat(messages, is(not(sameInstance(sortedMessages))));

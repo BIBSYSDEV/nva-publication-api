@@ -49,7 +49,7 @@ public class UpdateDoiStatusProcess {
         validateInput();
     }
     
-    public void updateDoi() {
+    public void updateDoi() throws NotFoundException {
         publication.setModifiedDate(request.getModifiedDate());
         publication.setDoi(request.getDoi().orElseThrow());
         resourceService.updatePublication(publication);

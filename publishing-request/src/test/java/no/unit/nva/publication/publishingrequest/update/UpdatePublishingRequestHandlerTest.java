@@ -7,9 +7,9 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_CASE_PATH;
+import static no.unit.nva.publication.model.business.PublishingRequestStatus.PENDING;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.update.UpdatePublishingRequestHandler.AUTHORIZATION_ERROR;
-import static no.unit.nva.publication.model.business.PublishingRequestStatus.PENDING;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -30,13 +30,13 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -114,7 +114,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             GatewayResponse.fromOutputStream(outputStream, PublishingRequestCaseDto.class);
         var responseBody = response.getBodyObject(PublishingRequestCaseDto.class);
         var actualIdentifierInResponseBody = extractIdentifierFromDto(responseBody);
-        var persistedRequest = requestService.getPublishingRequest(publishingRequest);
+        var persistedRequest = requestService.fetchTicket(publishingRequest,PublishingRequestCase.class);
         assertThat(persistedRequest.getIdentifier(), is(equalTo(actualIdentifierInResponseBody)));
         assertThat(persistedRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
     }
@@ -251,7 +251,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
                 publication.getIdentifier());
-        publishingRequest = requestService.createPublishingRequest(publishingRequest);
+        publishingRequest = requestService.createTicket(publishingRequest,PublishingRequestCase.class);
         
         if (PublishingRequestStatus.APPROVED == status) {
             requestService.updatePublishingRequest(publishingRequest.approve());

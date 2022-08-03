@@ -14,10 +14,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.Optional;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.RowLevelSecurity;
 
-public interface WithCristinIdentifier<T extends RowLevelSecurity & Entity> extends DynamoEntryByIdentifier<T> {
+public interface WithCristinIdentifier extends DynamoEntryByIdentifier {
     
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     default String getResourceByCristinIdentifierPartitionKey() {

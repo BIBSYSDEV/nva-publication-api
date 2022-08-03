@@ -76,7 +76,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         
         this.handler = new PendingPublishingRequestEventHandler(publishingRequestService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
-        var updatedPublishingRequest = publishingRequestService.getPublishingRequest(publishingRequest);
+        var updatedPublishingRequest =
+            publishingRequestService.fetchTicket(publishingRequest, PublishingRequestCase.class);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
     }
     
@@ -91,7 +92,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         
         this.handler = new PendingPublishingRequestEventHandler(publishingRequestService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
-        var updatedPublishingRequest = publishingRequestService.getPublishingRequest(publishingRequest);
+        var updatedPublishingRequest =
+            publishingRequestService.fetchTicket(publishingRequest, PublishingRequestCase.class);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.PENDING)));
     }
     
@@ -101,12 +103,13 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publishingRequest = pendingPublishingRequest();
         var event = createEvent(publishingRequest);
         final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var response = FakeHttpResponse.create(randomString(),HTTP_OK);
+        var response = FakeHttpResponse.create(randomString(), HTTP_OK);
         this.httpClient = new FakeHttpClient<>(response);
         
         this.handler = new PendingPublishingRequestEventHandler(publishingRequestService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
-        var updatedPublishingRequest = publishingRequestService.getPublishingRequest(publishingRequest);
+        var updatedPublishingRequest =
+            publishingRequestService.fetchTicket(publishingRequest, PublishingRequestCase.class);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.PENDING)));
         assertThat(logger.getMessages(), containsString(response.body()));
     }
@@ -136,7 +139,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
                 publication.getIdentifier());
-        return publishingRequestService.createPublishingRequest(publishingRequest);
+        return publishingRequestService.createTicket(publishingRequest, PublishingRequestCase.class);
     }
     
     private Publication createPublication() throws ApiGatewayException {

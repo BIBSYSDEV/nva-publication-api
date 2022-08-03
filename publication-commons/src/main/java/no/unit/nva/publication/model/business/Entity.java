@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -19,7 +20,7 @@ import no.unit.nva.publication.model.storage.Dao;
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(TicketEntry.class)
 })
-public interface Entity extends RowLevelSecurity {
+public interface Entity extends RowLevelSecurity, WithStatus {
     
     String VERSION = "version";
     
@@ -52,5 +53,13 @@ public interface Entity extends RowLevelSecurity {
         // DO NOTHING;
     }
     
-    Dao<?> toDao();
+    Instant getCreatedDate();
+    
+    void setCreatedDate(Instant now);
+    
+    Instant getModifiedDate();
+    
+    void setModifiedDate(Instant now);
+    
+    Dao toDao();
 }

@@ -26,14 +26,16 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
@@ -67,8 +69,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         this.readResourceService = readResourceService;
     }
     
+    //TODO: here we allow all fields to be overwritten by the user.
     public Publication updatePublication(Publication publication) {
-        Resource resource = Resource.fromPublication(publication);
+        var persistedPublication = fetchExistingPublication(publication);
+        publication.setCreatedDate(persistedPublication.getCreatedDate());
+        publication.setModifiedDate(clockForTimestamps.instant());
+        var resource = Resource.fromPublication(publication);
+        
         UserInstance userInstance = UserInstance.create(resource.getResourceOwner().getOwner(),
             resource.getCustomerId());
         
@@ -95,11 +102,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
     
     @Override
-    public String getTableName() {
-        return tableName;
-    }
-    
-    @Override
     protected AmazonDynamoDB getClient() {
         return client;
     }
@@ -114,19 +116,23 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throws ApiGatewayException {
         List<Dao> daos = readResourceService
             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
-        ResourceDao resourceDao = extractResourceDao(daos);
-        
-        if (resourceIsPublished(resourceDao.getData())) {
+        var dao = extractResourceDao(daos);
+        var resource = dao.getData();
+        if (resourceIsPublished(resource)) {
             return publishCompletedStatus();
         }
-        
-        validateForPublishing(resourceDao.getData());
-        setResourceStatusToPublished(daos, resourceDao);
+        validateForPublishing(resource);
+        setResourceStatusToPublished(daos, dao);
         return publishingInProgressStatus();
     }
     
-    private boolean resourceIsPublished(Resource resource) {
-        return PublicationStatus.PUBLISHED.equals(resource.getStatus());
+    private Publication fetchExistingPublication(Publication publication) {
+        return attempt(() -> readResourceService.getPublication(publication))
+            .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
+    }
+    
+    private boolean resourceIsPublished(Entity resource) {
+        return PublicationStatus.PUBLISHED.equals(((Resource) resource).getStatus());
     }
     
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
@@ -192,7 +198,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
     
-    @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> createUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
         String nowString = nowAsString();
         List<TransactWriteItem> transactionItems = new ArrayList<>();
@@ -204,7 +209,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private TransactWriteItem publishUpdateRequest(ResourceDao dao, String nowString) {
         
-        dao.getData().setStatus(PublicationStatus.PUBLISHED);
+        var resource = dao.getData();
+        resource.setStatus(PublicationStatus.PUBLISHED);
         final String updateExpression = "SET"
                                         + " #data.#status = :newStatus, "
                                         + "#data.#modifiedDate = :modifiedDate, "

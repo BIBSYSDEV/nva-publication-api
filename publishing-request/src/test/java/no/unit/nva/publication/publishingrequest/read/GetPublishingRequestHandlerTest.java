@@ -140,7 +140,8 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
                 publication.getIdentifier());
-        return publishingRequestService.createPublishingRequest(publishingRequest);
+        return (PublishingRequestCase)
+                   publishingRequestService.createTicket(publishingRequest,PublishingRequestCase.class);
     }
     
     private Publication createPublication() throws ApiGatewayException {

@@ -143,7 +143,7 @@ public class ResourceConversation implements JsonSerializable {
     }
     
     private static int oldestMessageOnTop(Message left, Message right) {
-        return left.getCreatedTime().compareTo(right.getCreatedTime());
+        return left.getCreatedDate().compareTo(right.getCreatedDate());
     }
     
     private static ResourceConversation createResourceConversation(List<Message> messages,

@@ -49,7 +49,7 @@ public class MessageBuilder {
     }
     
     public MessageBuilder withCreatedTime(Instant createdTime) {
-        message.setCreatedTime(createdTime);
+        message.setCreatedDate(createdTime);
         return this;
     }
     
@@ -64,7 +64,7 @@ public class MessageBuilder {
     }
     
     public MessageBuilder withModifiedTime(Instant modifiedTime) {
-        message.setModifiedTime(modifiedTime);
+        message.setModifiedDate(modifiedTime);
         return this;
     }
     

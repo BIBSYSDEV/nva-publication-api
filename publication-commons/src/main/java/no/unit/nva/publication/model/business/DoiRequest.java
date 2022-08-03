@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
@@ -24,9 +25,9 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -42,6 +43,10 @@ public class DoiRequest implements WithStatus, TicketEntry {
     
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
     private static final URI UNKNOWN_USER_AFFILIATION = null;
+    public static final String WRONG_PUBLICATION_STATUS_ERROR =
+        "DoiRequests may only be created for publications with statuses %s";
+    public static final Set<PublicationStatus> ACCEPTABLE_PUBLICATION_STATUSES = Set.of(PublicationStatus.PUBLISHED,
+        PublicationStatus.DRAFT);
     
     private SortableIdentifier identifier;
     @JsonProperty
@@ -169,13 +174,24 @@ public class DoiRequest implements WithStatus, TicketEntry {
     }
     
     @Override
-    public Dao<?> toDao() {
+    public DoiRequestDao toDao() {
         return new DoiRequestDao(this);
     }
     
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
+    }
+    
+    @Override
+    public void validateRequirements(Publication publication) throws ConflictException {
+        if (publicationDoesNotHaveAnExpectedStatus(publication)) {
+            throw new ConflictException(String.format(WRONG_PUBLICATION_STATUS_ERROR, ACCEPTABLE_PUBLICATION_STATUSES));
+        }
+    }
+    
+    private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
+        return !ACCEPTABLE_PUBLICATION_STATUSES.contains(publication.getStatus());
     }
     
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
@@ -198,18 +214,22 @@ public class DoiRequest implements WithStatus, TicketEntry {
         this.resourceStatus = resourceStatus;
     }
     
+    @Override
     public Instant getModifiedDate() {
         return modifiedDate;
     }
     
+    @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
     
+    @Override
     public Instant getCreatedDate() {
         return createdDate;
     }
     
+    @Override
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
@@ -291,8 +311,7 @@ public class DoiRequest implements WithStatus, TicketEntry {
     
     public DoiRequest update(Resource resource) {
         if (updateIsAboutTheSameResource(resource)) {
-            return extractDataFromResource(this.copy(), resource)
-                .build();
+            return extractDataFromResource(this.copy(), resource).build();
         }
         throw new IllegalDoiRequestUpdate(RESOURCE_IDENTIFIER_MISMATCH_ERROR);
     }

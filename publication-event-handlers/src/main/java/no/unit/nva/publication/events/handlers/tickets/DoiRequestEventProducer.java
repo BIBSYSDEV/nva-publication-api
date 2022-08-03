@@ -82,7 +82,7 @@ public class DoiRequestEventProducer
     }
     
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(Resource newEntry) {
-        if (aResourceWithFindableDoiHasBeenUpdated(newEntry)) {
+        if (resourceWithFindableDoiHasBeenUpdated(newEntry)) {
             return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication());
         }
         return EMPTY_EVENT;
@@ -105,7 +105,7 @@ public class DoiRequestEventProducer
             .orElse(false);
     }
     
-    private boolean aResourceWithFindableDoiHasBeenUpdated(Resource newEntry) {
+    private boolean resourceWithFindableDoiHasBeenUpdated(Resource newEntry) {
         return hasDoi(newEntry) && doiIsFindable(newEntry.getDoi());
     }
     
