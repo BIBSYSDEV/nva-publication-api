@@ -21,7 +21,7 @@ class PublishingRequestStatusTest {
     private static final String UNKNOWN_VALUE = "ObviouslyUnknownValue";
 
     @ParameterizedTest
-    @ValueSource(strings = {"PENDING", "APPROVED", "REJECTED", PENDING_STATUS, COMPLETED_STATUS, CLOSED_STATUS})
+    @ValueSource(strings = {PENDING_STATUS, COMPLETED_STATUS, CLOSED_STATUS})
     void shouldAcceptTextualValueForEnum(String textualValue) throws JsonProcessingException {
         var jsonString = String.format("\"%s\"", textualValue);
         var actualValue = JsonUtils.dtoObjectMapper.readValue(jsonString, PublishingRequestStatus.class);

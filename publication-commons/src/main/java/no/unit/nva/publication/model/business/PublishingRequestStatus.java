@@ -12,9 +12,9 @@ import static no.unit.nva.publication.model.business.TicketStatusConstants.COMPL
 import static no.unit.nva.publication.model.business.TicketStatusConstants.PENDING_STATUS;
 
 public enum PublishingRequestStatus {
-    PENDING(PENDING_STATUS, "PENDING"),
-    COMPLETED(COMPLETED_STATUS, "APPROVED"),
-    CLOSED(CLOSED_STATUS, "REJECTED");
+    PENDING(PENDING_STATUS),
+    COMPLETED(COMPLETED_STATUS),
+    CLOSED(CLOSED_STATUS);
 
     public static final String INVALID_APPROVE_PUBLISHING_REQUEST_STATUS_ERROR =
             "Invalid PublishingRequestStatus. Valid values: ";
@@ -22,11 +22,9 @@ public enum PublishingRequestStatus {
         "Not allowed to change status from %s to %s";
     public static final String SEPARATOR = ",";
     private final String value;
-    private final String legacyValue;
 
-    PublishingRequestStatus(String value, String legacyValue) {
+    PublishingRequestStatus(String value) {
         this.value = value;
-        this.legacyValue = legacyValue;
     }
 
     @JsonCreator
@@ -64,7 +62,6 @@ public enum PublishingRequestStatus {
 
     private boolean filterByNameOrValue(String candidate) {
         return toString().equalsIgnoreCase(candidate)
-                || legacyValue.equalsIgnoreCase(candidate)
                 || name().equalsIgnoreCase(candidate);
     }
 
