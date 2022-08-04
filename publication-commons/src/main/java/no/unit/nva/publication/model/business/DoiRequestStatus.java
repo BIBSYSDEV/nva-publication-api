@@ -1,6 +1,10 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Collections.emptySet;
+import static no.unit.nva.publication.model.business.TicketStatusConstants.CLOSED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatusConstants.COMPLETED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatusConstants.PENDING_STATUS;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
@@ -8,7 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import nva.commons.core.SingletonCollector;
 
-public enum DoiRequestStatus implements TicketStatus {
+public enum DoiRequestStatus {
     PENDING(PENDING_STATUS, "REQUESTED"),
     COMPLETED(COMPLETED_STATUS, "APPROVED"),
     CLOSED(CLOSED_STATUS, "REJECTED");
