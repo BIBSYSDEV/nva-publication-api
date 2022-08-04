@@ -15,18 +15,18 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.DoiRequestService;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
@@ -96,8 +96,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
     
     private ExpandedDataEntry updatePublishingRequestConversation(Message message) throws NotFoundException {
-        var publishingRequest = publishingRequestService
-            .getPublishingRequestByResourceIdentifier(message.getCustomerId(), message.getResourceIdentifier());
+        var publishingRequest = (PublishingRequestCase) publishingRequestService
+            .getTicketByResourceIdentifier(message.getCustomerId(),
+                message.getResourceIdentifier(),
+                PublishingRequestCase.class
+            );
         return ExpandedPublishingRequest.create(publishingRequest, resourceService, messageService, this);
     }
     

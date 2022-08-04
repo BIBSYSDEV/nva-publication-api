@@ -172,7 +172,7 @@ class UpdateDoiStatusHandlerTest {
         )));
     }
     
-    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) {
+    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) throws NotFoundException {
         ArgumentCaptor<Publication> publicationServiceCaptor = ArgumentCaptor.forClass(Publication.class);
         verify(resourceService).updatePublication(publicationServiceCaptor.capture());
         Publication actualPublicationUpdate = publicationServiceCaptor.getValue();

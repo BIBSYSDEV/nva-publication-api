@@ -1,6 +1,9 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
@@ -10,9 +13,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
-import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -31,7 +31,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.model.business.WithStatus;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,14 +45,14 @@ public class DaoTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "getType returns name of the contained object: {0}")
     @MethodSource("instanceProvider")
-    public void getTypeReturnsNameOfTheContainedObject(Dao<?> daoInstance) {
+    public void getTypeReturnsNameOfTheContainedObject(Dao daoInstance) {
         String expectedType = daoInstance.getData().getClass().getSimpleName();
         assertThat(daoInstance.getType(), is(equalTo(expectedType)));
     }
     
     @ParameterizedTest(name = "getIdentifier returns the identifier of the contained object: {0}")
     @MethodSource("instanceProvider")
-    public void getIdentifierReturnsTheIdentifierOfTheContainedObject(Dao<?> daoInstance) {
+    public void getIdentifierReturnsTheIdentifierOfTheContainedObject(Dao daoInstance) {
         String expectedIdentifier = daoInstance.getData().getIdentifier().toString();
         assertThat(expectedIdentifier, is(not(emptyString())));
         
@@ -62,7 +61,7 @@ public class DaoTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "getCustomerId returns the customerId of the contained object: {0}")
     @MethodSource("instanceProvider")
-    public void getCustomerIdReturnsTheCustomerIdOfTheContainedObject(Dao<?> dao) {
+    public void getCustomerIdReturnsTheCustomerIdOfTheContainedObject(Dao dao) {
         String expectedCustomerId = dao.getData().getCustomerId().toString();
         assertThat(expectedCustomerId, is(not(emptyString())));
         
@@ -72,7 +71,7 @@ public class DaoTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "daoPrimaryKeyPartitionKey contains only Type, CustomerIdentifier, and Owner "
                               + "in that order: {0}")
     @MethodSource("instanceProvider")
-    public void daoPrimaryKeyPartitionKeyContainsOnlyTypeCustomerIdentifierAndOwnerInThatOrder(Dao<?> daoInstance)
+    public void daoPrimaryKeyPartitionKeyContainsOnlyTypeCustomerIdentifierAndOwnerInThatOrder(Dao daoInstance)
         throws JsonProcessingException {
         JsonNode jsonNode = serializeInstance(daoInstance);
         
@@ -90,7 +89,7 @@ public class DaoTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "daoPrimaryKeySortKey contains only Type and Identifier in that order: {0}")
     @MethodSource("instanceProvider")
-    public void daoPrimaryKeySortKeyContainsOnlyTypeAndIdentifierInThatOrder(Dao<?> daoInstance)
+    public void daoPrimaryKeySortKeyContainsOnlyTypeAndIdentifierInThatOrder(Dao daoInstance)
         throws JsonProcessingException {
         JsonNode jsonNode = serializeInstance(daoInstance);
         assertThat(jsonNode.get(PRIMARY_KEY_SORT_KEY_NAME), is(not(nullValue())));
@@ -106,8 +105,8 @@ public class DaoTest extends ResourcesLocalTest {
         (name = "daoByCustomerAndStatusIndexPartitionKey contains only Type, CustomerIdentifier and Status "
                 + "in that order: {0}")
     @MethodSource("instanceProvider")
-    public void daoByCustomerAndStatusIndexPartitionKeyContainsOnlyTypeCustomerIdentifierAndStatusInThatOrder(
-        Dao<? extends WithStatus> dao) throws JsonProcessingException {
+    public void daoByCustomerAndStatusIndexPartitionKeyContainsOnlyTypeCustomerIdentifierAndStatusInThatOrder(Dao dao)
+        throws JsonProcessingException {
         
         JsonNode jsonNode = serializeInstance(dao);
         assertThat(jsonNode.get(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME), is(not(nullValue())));
@@ -125,7 +124,7 @@ public class DaoTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "daoByCustomerAndStatusIndexSortKey contains only type and identifier: {0}")
     @MethodSource("instanceProvider")
-    public void daoByCustomerAndStatusIndexSortKeyContainsOnlyTypeAndIdentifier(Dao<? extends WithStatus> dao)
+    public void daoByCustomerAndStatusIndexSortKeyContainsOnlyTypeAndIdentifier(Dao dao)
         throws JsonProcessingException {
         JsonNode jsonNode = serializeInstance(dao);
         assertThat(jsonNode.get(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME), is(not(nullValue())));
@@ -140,13 +139,13 @@ public class DaoTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "dao can be retrieved by primary-key from dynamo: {0}")
     @MethodSource("instanceProvider")
-    public void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao<?> originalResource) {
+    public void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao originalResource) {
         
         client.putItem(toPutItemRequest(originalResource));
         GetItemResult getItemResult = client.getItem(
             new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
                 .withKey(originalResource.primaryKey()));
-        Dao<?> retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
+        Dao retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
         
         assertThat(originalResource, doesNotHaveEmptyValues());
         assertThat(originalResource, is(equalTo(retrievedResource)));
@@ -154,10 +153,10 @@ public class DaoTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "dao can be retrieved by the ByTypePublisherStatus index: {0}")
     @MethodSource("instanceProvider")
-    public void daoCanBeRetrievedByTypePublisherStatusIndex(Dao<?> originalDao) {
+    public void daoCanBeRetrievedByTypePublisherStatusIndex(Dao originalDao) {
         client.putItem(toPutItemRequest(originalDao));
         QueryResult queryResult = client.query(queryByTypeCustomerStatusIndex(originalDao));
-        Dao<?> retrievedDao = queryResult.getItems()
+        Dao retrievedDao = queryResult.getItems()
             .stream()
             .map(map -> parseAttributeValuesMap(map, originalDao.getClass()))
             .collect(SingletonCollector.collect());
@@ -166,17 +165,17 @@ public class DaoTest extends ResourcesLocalTest {
     
     @ParameterizedTest
     @MethodSource("instanceProvider")
-    public void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao<?> originalDao) {
+    public void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
         
         assertThat(originalDao, doesNotHaveEmptyValues());
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
-        Dao<?> parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
+        Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
     }
     
     @ParameterizedTest(name = "toDynamoFormat creates a Dynamo object preserving all information")
     @MethodSource("instanceProvider")
-    void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao<?> originalDao) {
+    void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao originalDao) {
         
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         client.putItem(RESOURCES_TABLE_NAME, dynamoMap);
@@ -185,14 +184,14 @@ public class DaoTest extends ResourcesLocalTest {
             .getItem();
         assertThat(dynamoMap, is(equalTo(savedMap)));
         
-        Dao<?> retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
+        Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValues());
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     
     @ParameterizedTest(name = "should return filter expression that filters out non data entries:{0}")
     @MethodSource("instanceProvider")
-    void shouldReturnFilteringExpressionThatFiltersOutNonDataEntries(Dao<?> sampleDao) {
+    void shouldReturnFilteringExpressionThatFiltersOutNonDataEntries(Dao sampleDao) {
         IdentifierEntry identifier = IdentifierEntry.create(sampleDao);
         client.putItem(RESOURCES_TABLE_NAME, identifier.toDynamoFormat());
         client.putItem(RESOURCES_TABLE_NAME, sampleDao.toDynamoFormat());
@@ -204,24 +203,24 @@ public class DaoTest extends ResourcesLocalTest {
             .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
         ScanResult result = client.scan(scanRequest);
         
-        Dao<?> actualItem = result.getItems().stream().map(value -> parseAttributeValuesMap(value, Dao.class))
+        Dao actualItem = result.getItems().stream().map(value -> parseAttributeValuesMap(value, Dao.class))
             .collect(SingletonCollector.collect());
         
         assertThat(actualItem, is(equalTo(sampleDao)));
     }
     
-    private static Stream<Dao<?>> instanceProvider() {
+    private static Stream<Dao> instanceProvider() {
         return DaoUtils.instanceProvider();
     }
     
-    private QueryRequest queryByTypeCustomerStatusIndex(Dao<?> originalResource) {
+    private QueryRequest queryByTypeCustomerStatusIndex(Dao originalResource) {
         return new QueryRequest()
             .withTableName(RESOURCES_TABLE_NAME)
             .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
             .withKeyConditions(originalResource.fetchEntryByTypeCustomerStatusKey());
     }
     
-    private JsonNode serializeInstance(Dao<?> daoInstance) throws JsonProcessingException {
+    private JsonNode serializeInstance(Dao daoInstance) throws JsonProcessingException {
         String json = dynamoDbObjectMapper.writeValueAsString(daoInstance);
         return dynamoDbObjectMapper.readTree(json);
     }

@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
@@ -19,11 +21,8 @@ import nva.commons.core.SingletonCollector;
 
 @JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ResourceDao extends Dao<Resource>
-    implements JoinWithResource,
-               DynamoEntryByIdentifier<Resource>,
-               WithCristinIdentifier<Resource>,
-               JsonSerializable {
+public class ResourceDao extends Dao
+    implements JoinWithResource, DynamoEntryByIdentifier, WithCristinIdentifier, JsonSerializable {
     
     public static final String CRISTIN_SOURCE = "Cristin";
     public static final String TYPE = "Resource";
@@ -58,7 +57,7 @@ public class ResourceDao extends Dao<Resource>
     }
     
     @JsonIgnore
-    public  String getContainedType() {
+    public String getContainedType() {
         return this.getContainedDataType();
     }
     
@@ -68,8 +67,8 @@ public class ResourceDao extends Dao<Resource>
     }
     
     @Override
-    public void setData(Resource resource) {
-        this.data = resource;
+    public void setData(Entity resource) {
+        this.data = (Resource) resource;
     }
     
     @Override
@@ -81,7 +80,14 @@ public class ResourceDao extends Dao<Resource>
     public URI getCustomerId() {
         return data.getPublisher().getId();
     }
-
+    
+    //TODO: cover when refactoring to ticket system is completed
+    @JacocoGenerated
+    @Override
+    public TransactWriteItemsRequest createInsertionTransactionRequest() {
+        throw new UnsupportedOperationException();
+    }
+    
     @Override
     protected String getOwner() {
         return data.getOwner();

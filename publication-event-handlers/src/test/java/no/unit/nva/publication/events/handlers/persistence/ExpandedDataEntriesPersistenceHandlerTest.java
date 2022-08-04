@@ -151,7 +151,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject =
             PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-        var publishingRequest = publishingRequestService.createPublishingRequest(openingCaseObject);
+        var publishingRequest =
+            publishingRequestService.createTicket(openingCaseObject,PublishingRequestCase.class);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
     

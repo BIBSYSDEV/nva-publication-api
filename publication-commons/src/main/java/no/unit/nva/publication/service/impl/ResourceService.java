@@ -1,9 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -39,7 +39,6 @@ import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -48,6 +47,7 @@ import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
@@ -194,7 +194,7 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.updateOwner(identifier, oldOwner, newOwner);
     }
     
-    public Publication updatePublication(Publication resourceUpdate) {
+    public Publication updatePublication(Publication resourceUpdate) throws NotFoundException {
         return updateResourceService.updatePublication(resourceUpdate);
     }
     
@@ -204,11 +204,6 @@ public class ResourceService extends ServiceWithTransactions {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
                    : dataEntry;
-    }
-    
-    @Override
-    protected String getTableName() {
-        return tableName;
     }
     
     @Override
@@ -427,6 +422,7 @@ public class ResourceService extends ServiceWithTransactions {
             .map(UpdateItemResult::getAttributes)
             .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
             .map(ResourceDao::getData)
+            .map(Resource.class::cast)
             .orElseThrow();
     }
     

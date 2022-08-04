@@ -11,10 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 
-public interface DynamoEntryByIdentifier<T extends RowLevelSecurity & Entity> {
+public interface DynamoEntryByIdentifier {
     
     @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)
     default String getByTypeAndIdentifierPartitionKey() {
@@ -28,7 +27,7 @@ public interface DynamoEntryByIdentifier<T extends RowLevelSecurity & Entity> {
     
     SortableIdentifier getIdentifier();
     
-    T getData();
+    Entity getData();
     
     @JsonIgnore
     default String getContainedDataType() {

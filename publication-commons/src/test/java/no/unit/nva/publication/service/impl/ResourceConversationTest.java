@@ -47,7 +47,7 @@ class ResourceConversationTest {
         MessageDto oldestMessage = conversations.get(0).getOldestMessage();
         var expectedOldestMessage = allMessages
             .stream()
-            .min(Comparator.comparing(Message::getCreatedTime))
+            .min(Comparator.comparing(Message::getCreatedDate))
             .orElseThrow();
         
         assertThat(oldestMessage.getMessageIdentifier(), is(equalTo(expectedOldestMessage.getIdentifier())));

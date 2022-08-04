@@ -9,6 +9,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
@@ -37,7 +38,7 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
     @Override
     protected PublishingRequestCaseDto processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var persistedRequest = fetchPublishingRequest(requestInfo);
+        var persistedRequest = (PublishingRequestCase) fetchPublishingRequest(requestInfo);
         return PublishingRequestCaseDto.createResponseObject(persistedRequest);
     }
     
@@ -46,7 +47,7 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
         return HTTP_OK;
     }
     
-    private PublishingRequestCase fetchPublishingRequest(RequestInfo requestInfo)
+    private TicketEntry fetchPublishingRequest(RequestInfo requestInfo)
         throws NotFoundException, UnauthorizedException {
         var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         var requestIdentifier = extractIdentifier(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
@@ -66,15 +67,15 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
         var queryObject = PublishingRequestCase.createQuery(userInstance,
             resourceIdentifier,
             requestIdentifier);
-        return publishingRequestService.getPublishingRequest(queryObject);
+        return publishingRequestService.fetchTicket(queryObject,PublishingRequestCase.class);
     }
     
     private PublishingRequestCase fetchPublishingRequestForElevatedUser(UserInstance userInstance,
                                                                         SortableIdentifier resourceIdentifier) {
         PublishingRequestCase persistedRequest;
-        persistedRequest =
-            publishingRequestService.getPublishingRequestByResourceIdentifier(userInstance.getOrganizationUri(),
-                resourceIdentifier);
+        persistedRequest = (PublishingRequestCase)
+                               publishingRequestService.getTicketByResourceIdentifier(userInstance.getOrganizationUri(),
+                                   resourceIdentifier, PublishingRequestCase.class);
         return persistedRequest;
     }
     

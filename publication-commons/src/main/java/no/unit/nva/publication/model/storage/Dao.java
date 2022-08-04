@@ -8,6 +8,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -17,7 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.RowLevelSecurity;
 import no.unit.nva.publication.model.business.WithStatus;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
@@ -27,11 +27,9 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonSubTypes({
     @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
-    @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
-    @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
-    @JsonSubTypes.Type(name = PublishingRequestDao.TYPE, value = PublishingRequestDao.class),
+    @JsonSubTypes.Type(TicketDao.class)
 })
-public abstract class Dao<R extends RowLevelSecurity & Entity>
+public abstract class Dao
     implements DynamoEntry,
                WithPrimaryKey,
                WithByTypeCustomerStatusIndex {
@@ -91,9 +89,9 @@ public abstract class Dao<R extends RowLevelSecurity & Entity>
     }
     
     @JsonProperty(CONTAINED_DATA_FIELD_NAME)
-    public abstract R getData();
+    public abstract Entity getData();
     
-    public abstract void setData(R data);
+    public abstract void setData(Entity data);
     
     @Override
     public final String getByTypeCustomerStatusPartitionKey() {
@@ -135,6 +133,8 @@ public abstract class Dao<R extends RowLevelSecurity & Entity>
         throw new UnsupportedOperationException(UNSUPORTED_SET_IDENTIFIER_ERROR);
     }
     
+    public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
+    
     protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
         String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
         return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
@@ -156,7 +156,7 @@ public abstract class Dao<R extends RowLevelSecurity & Entity>
     
     private Optional<String> extractStatus() {
         return attempt(this::getData)
-            .map(data -> (WithStatus) data)
+            .map(WithStatus.class::cast)
             .map(WithStatus::getStatusString)
             .toOptional();
     }

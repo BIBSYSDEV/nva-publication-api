@@ -80,6 +80,7 @@ public class MessageService extends ServiceWithTransactions {
             .getItems().stream()
             .map(item -> parseAttributeValuesMap(item, MessageDao.class))
             .map(MessageDao::getData)
+            .map(Message.class::cast)
             .collect(SingletonCollector.tryCollect())
             .toOptional();
     }
@@ -114,7 +115,7 @@ public class MessageService extends ServiceWithTransactions {
         MessageDao queryObject = MessageDao.queryObject(owner, identifier);
         Map<String, AttributeValue> item = fetchMessage(queryObject);
         MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
-        return result.getData();
+        return (Message) result.getData();
     }
     
     public Optional<ResourceConversation> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
@@ -139,11 +140,6 @@ public class MessageService extends ServiceWithTransactions {
         QueryResult queryResult = client.query(queryRequest);
         List<Message> messagesPerResource = parseMessages(queryResult);
         return ResourceConversation.fromMessageList(messagesPerResource);
-    }
-    
-    @Override
-    protected String getTableName() {
-        return tableName;
     }
     
     @Override
@@ -178,6 +174,7 @@ public class MessageService extends ServiceWithTransactions {
             .stream()
             .map(item -> parseAttributeValuesMap(item, MessageDao.class))
             .map(MessageDao::getData)
+            .map(Message.class::cast)
             .collect(Collectors.toList());
     }
     

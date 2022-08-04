@@ -9,6 +9,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 
@@ -55,7 +56,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
         return exception instanceof RuntimeException;
     }
     
-    private Void updateDoi(DoiUpdateHolder input) {
+    private Void updateDoi(DoiUpdateHolder input) throws NotFoundException {
         new UpdateDoiStatusProcess(resourceService, input).updateDoi();
         return null;
     }

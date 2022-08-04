@@ -3,11 +3,11 @@ package no.unit.nva.publication.publishingrequest.create;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.ALREADY_PUBLISHED_ERROR;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.MARKED_FOR_DELETION_ERROR;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublicationAndMarkForDeletion;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createPersistAndPublishPublication;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
-import static no.unit.nva.publication.service.impl.PublishingRequestService.ALREADY_PUBLISHED_ERROR;
-import static no.unit.nva.publication.service.impl.PublishingRequestService.MARKED_FOR_DELETION_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,13 +31,13 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
@@ -142,7 +142,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var userInfo = UserInstance.fromPublication(publication);
         
         var queryObject = PublishingRequestCase.createQuery(userInfo, publicationIdentifier, caseIdentifier);
-        return requestService.getPublishingRequest(queryObject);
+        return requestService.fetchTicket(queryObject,PublishingRequestCase.class);
     }
     
     private SortableIdentifier extractPublishingIdentifierFromPublishingRequestId(URI publishingRequestId) {

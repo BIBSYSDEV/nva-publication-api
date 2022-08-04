@@ -120,8 +120,6 @@ public class Resource implements WithStatus, Entity {
         return new ResourceBuilder();
     }
     
-
-    
     public ResourceOwner getResourceOwner() {
         return resourceOwner;
     }
@@ -164,18 +162,22 @@ public class Resource implements WithStatus, Entity {
         this.publisher = publisher;
     }
     
+    @Override
     public Instant getCreatedDate() {
         return createdDate;
     }
     
+    @Override
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
     
+    @Override
     public Instant getModifiedDate() {
         return modifiedDate;
     }
     
+    @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
@@ -306,7 +308,7 @@ public class Resource implements WithStatus, Entity {
     }
     
     @Override
-    public Dao<?> toDao() {
+    public Dao toDao() {
         return new ResourceDao(this);
     }
     

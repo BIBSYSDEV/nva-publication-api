@@ -1,52 +1,46 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.model.business.TicketEntry.createNewTicket;
 import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.model.storage.PublishingRequestDao.queryPublishingRequestByResource;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
-import no.unit.nva.publication.model.storage.UniquePublishingRequestEntry;
+import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.attempt.FunctionWithException;
 
 public class PublishingRequestService extends ServiceWithTransactions {
     
-    public static final String PUBLISHING_REQUEST_NOT_FOUND_FOR_RESOURCE =
-        "Could not find a Publishing Request for Resource: ";
-    public static final String ALREADY_PUBLISHED_ERROR =
-        "Publication is already published.";
-    public static final String MARKED_FOR_DELETION_ERROR =
-        "Publication is marked for deletion and cannot be published.";
+    public static final String TICKET_NOT_FOUND_FOR_RESOURCE =
+        "Could not find requested ticket for Resource: ";
+    
     public static final String DOUBLE_QUOTES = "\"";
     public static final String EMPTY_STRING = "";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private final AmazonDynamoDB client;
     private final Clock clock;
-    private final String tableName;
+    
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
     
@@ -60,26 +54,23 @@ public class PublishingRequestService extends ServiceWithTransactions {
         super();
         this.client = client;
         this.clock = clock;
-        this.tableName = RESOURCES_TABLE_NAME;
         this.identifierProvider = identifierProvider;
         resourceService = new ResourceService(client, clock, identifierProvider);
     }
     
-    public PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequest)
+    public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
         throws ApiGatewayException {
-        var associatePublication = fetchPublication(publishingRequest);
-        return fromPublication(associatePublication);
+        //TODO: rename the method fetchPublication so that it reveals why we are fetching the publication.
+        var associatedPublication = fetchPublication(ticketEntry);
+        return createTicketForPublication(associatedPublication, ticketType);
     }
     
-    public PublishingRequestCase getPublishingRequest(Entity dataEntry)
+    public <T extends TicketEntry> T fetchTicket(TicketEntry dataEntry, Class<T> ticketType)
         throws NotFoundException {
-        var queryObject = (PublishingRequestCase) dataEntry;
-        var queryResult = getFromDatabase(queryObject);
-        return attempt(queryResult::getItem)
-            .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
-            .map(PublishingRequestDao::getData)
-            .toOptional()
-            .orElseThrow(() -> handleFetchPublishingRequestByResourceError(queryObject.getIdentifier()));
+        return fetchFromDatabase(dataEntry, ticketType)
+            .map(TicketDao::getData)
+            .map(ticketEntry -> (T) ticketEntry)
+            .orElseThrow(() -> handleFetchPublishingRequestByResourceError(dataEntry.getIdentifier()));
     }
     
     public PublishingRequestCase updatePublishingRequest(PublishingRequestCase requestUpdate) {
@@ -91,21 +82,23 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return entryUpdate;
     }
     
-    public PublishingRequestCase getPublishingRequestByPublicationAndRequestIdentifiers(
+    public TicketEntry fetchTicketByPublicationAndRequestIdentifiers(
         SortableIdentifier publicationIdentifier,
-        SortableIdentifier publishingRequestIdentifier)
+        SortableIdentifier ticketIdentifier)
         throws NotFoundException {
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
         var userInstance = UserInstance.fromPublication(publication);
         var queryObject = PublishingRequestCase.createQuery(userInstance,
             publicationIdentifier,
-            publishingRequestIdentifier);
-        return getPublishingRequest(queryObject);
+            ticketIdentifier);
+        return fetchTicket(queryObject, PublishingRequestCase.class);
     }
     
-    public PublishingRequestCase getPublishingRequestByResourceIdentifier(URI customerId,
-                                                                          SortableIdentifier resourceIdentifier) {
-        var query = queryPublishingRequestByResource(customerId, resourceIdentifier);
+    public <T extends TicketEntry> TicketEntry getTicketByResourceIdentifier(URI customerId,
+                                                                             SortableIdentifier resourceIdentifier,
+                                                                             Class<T> ticketType) {
+        
+        var query = TicketDao.queryByCustomerAndResource(customerId, resourceIdentifier, ticketType);
         
         var queryResult = client.query(query);
         return queryResult.getItems().stream()
@@ -113,11 +106,6 @@ public class PublishingRequestService extends ServiceWithTransactions {
             .map(PublishingRequestDao::getData)
             .collect(SingletonCollector.tryCollect())
             .orElseThrow();
-    }
-    
-    @Override
-    protected String getTableName() {
-        return tableName;
     }
     
     @Override
@@ -133,7 +121,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     
     private static NotFoundException handleFetchPublishingRequestByResourceError(
         SortableIdentifier resourceIdentifier) {
-        return new NotFoundException(PUBLISHING_REQUEST_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
+        return new NotFoundException(TICKET_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
     }
     
     private PutItemRequest cratePutItemRequest(PublishingRequestCase entryUpdate) {
@@ -141,79 +129,36 @@ public class PublishingRequestService extends ServiceWithTransactions {
         var condition = new UpdateCaseButNotOwnerCondition(entryUpdate);
         
         return new PutItemRequest()
-            .withTableName(tableName)
+            .withTableName(RESOURCES_TABLE_NAME)
             .withItem(dao.toDynamoFormat())
             .withConditionExpression(condition.getConditionExpression())
             .withExpressionAttributeNames(condition.getExpressionAttributeNames())
             .withExpressionAttributeValues(condition.getExpressionAttributeValues());
     }
     
-    private Publication fetchPublication(PublishingRequestCase publishingRequest)
+    private Publication fetchPublication(TicketEntry ticketEntry)
         throws ApiGatewayException {
-        var userInstance = UserInstance.create(publishingRequest.getOwner(),
-            publishingRequest.getCustomerId());
-        return resourceService.getPublication(userInstance, publishingRequest.getResourceIdentifier());
+        var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
+        return resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier());
     }
     
-    private PublishingRequestCase fromPublication(Publication publication)
-        throws ConflictException {
-        verifyPublicationIsPublishable(publication);
-        var publishingRequest = createNewPublishingRequestEntry(publication);
-        var request = createInsertionTransactionRequest(publishingRequest);
+    //TODO: try to remove suppression.
+    @SuppressWarnings("unchecked")
+    private <T extends TicketEntry> T createTicketForPublication(Publication publication, Class<T> ticketType)
+        throws ConflictException, NotFoundException {
+        //TODO: Do something about the clock and identifier provider dependencies, if possible.
+        var ticketEntry = createNewTicket(publication, ticketType, clock, identifierProvider);
+        var request = ticketEntry.toDao().createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);
-        return fetchEventualConsistentDataEntry(publishingRequest, this::getPublishingRequest).orElseThrow();
+        FunctionWithException<TicketEntry, TicketEntry, NotFoundException>
+            fetchTicketProvider = dataEntry -> fetchTicket(dataEntry, ticketType);
+        return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
     }
     
-    private GetItemResult getFromDatabase(PublishingRequestCase queryObject) {
-        var queryDao = PublishingRequestDao.queryObject(queryObject);
-        var getItemRequest = new GetItemRequest()
-            .withTableName(tableName)
-            .withKey(queryDao.primaryKey());
-        return client.getItem(getItemRequest);
-    }
-    
-    private void verifyPublicationIsPublishable(Publication publication) throws ConflictException {
-        if (PublicationStatus.PUBLISHED == publication.getStatus()) {
-            throw new ConflictException(ALREADY_PUBLISHED_ERROR);
-        }
-        if (PublicationStatus.DRAFT_FOR_DELETION == publication.getStatus()) {
-            throw new ConflictException(MARKED_FOR_DELETION_ERROR);
-        }
-    }
-    
-    private PublishingRequestCase createNewPublishingRequestEntry(Publication publication) {
-        var userInstance = UserInstance.fromPublication(publication);
-        var entry = PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-        entry.setCreatedDate(clock.instant());
-        entry.setIdentifier(identifierProvider.get());
-        entry.setVersion(Entity.nextVersion());
-        return entry;
-    }
-    
-    private TransactWriteItemsRequest createInsertionTransactionRequest(PublishingRequestCase publishingRequest) {
-        var publicationRequestEntry = createPublishingRequestInsertionEntry(publishingRequest);
-        var identifierEntry = createUniqueIdentifierEntry(publishingRequest);
-        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry(publishingRequest);
-        return new TransactWriteItemsRequest()
-            .withTransactItems(
-                identifierEntry,
-                publicationRequestEntry,
-                publishingRequestUniquenessEntry);
-    }
-    
-    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequestCase publishingRequest) {
-        var publishingRequestUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
-        return newPutTransactionItem(publishingRequestUniquenessEntry);
-    }
-    
-    private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequestCase publicationRequest) {
-        var dynamoEntry = new PublishingRequestDao(publicationRequest);
-        return newPutTransactionItem(dynamoEntry);
-    }
-    
-    private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
-        var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
-        return newPutTransactionItem(identifierEntry);
+    private <T extends TicketEntry> Optional<TicketDao> fetchFromDatabase(TicketEntry queryObject,
+                                                                          Class<T> ticketType) {
+        var queryDao = TicketDao.queryObject(queryObject, ticketType);
+        return queryDao.fetchItem(client);
     }
     
     private static class UpdateCaseButNotOwnerCondition {

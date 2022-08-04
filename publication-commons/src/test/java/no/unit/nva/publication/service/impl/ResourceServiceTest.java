@@ -41,7 +41,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -93,7 +92,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-public class ResourceServiceTest extends ResourcesLocalTest {
+class ResourceServiceTest extends ResourcesLocalTest {
     
     public static final String ANOTHER_OWNER = "another@owner.no";
     public static final String SOME_OTHER_USER = "some_other@user.no";
@@ -114,10 +113,10 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     private static final URI SOME_ORG = randomUri();
     public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    private static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
-    private static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
-    private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
-    private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
+    private static final Instant FIRST_CLOCK_TICK = Instant.parse("1900-12-03T10:15:30.00Z");
+    private static final Instant SECOND_CLOCK_TICK = Instant.parse("2000-01-03T00:00:18.00Z");
+    private static final Instant THIRD_CLOCK_TICK = Instant.parse("2010-01-03T02:00:25.00Z");
+    private static final Instant FOURTH_CLOCK_TICK = Instant.parse("2020-01-03T06:00:32.00Z");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
     private ResourceService resourceService;
     private Clock clock;
@@ -154,7 +153,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
         Diff diff = JAVERS.compare(inputPublication, savedPublication);
-        assertThat(publicationPredefinedTime, is(not(equalTo(RESOURCE_CREATION_TIME))));
+        assertThat(publicationPredefinedTime, is(not(equalTo(FIRST_CLOCK_TICK))));
         assertThat(diff.prettyPrint(), savedPublication, is(equalTo(inputPublication)));
     }
     
@@ -165,8 +164,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         Instant predefinedPublishTime = Instant.now();
         
         inputPublication.setPublishedDate(predefinedPublishTime);
-        inputPublication.setCreatedDate(RESOURCE_CREATION_TIME);
-        inputPublication.setModifiedDate(RESOURCE_MODIFICATION_TIME);
+        inputPublication.setCreatedDate(FIRST_CLOCK_TICK);
+        inputPublication.setModifiedDate(SECOND_CLOCK_TICK);
         inputPublication.setStatus(PublicationStatus.PUBLISHED);
         
         SortableIdentifier savedPublicationIdentifier =
@@ -300,7 +299,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         
         Publication newResource = resourceService.getPublication(newOwner, sampleResource.getIdentifier());
         
-        assertThat(newResource.getModifiedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
+        assertThat(newResource.getModifiedDate(), is(equalTo(SECOND_CLOCK_TICK)));
     }
     
     @Test
@@ -463,8 +462,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         
         Publication expectedResource = resource.copy()
             .withStatus(PublicationStatus.PUBLISHED)
-            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
+            .withModifiedDate(SECOND_CLOCK_TICK)
+            .withPublishedDate(SECOND_CLOCK_TICK)
             .build();
         
         assertThat(actualResource, is(equalTo(expectedResource)));
@@ -477,8 +476,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         Publication updatedResource = resourceService.getPublication(resource);
         Publication expectedResource = resource.copy()
             .withStatus(PublicationStatus.PUBLISHED)
-            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
+            .withModifiedDate(SECOND_CLOCK_TICK)
+            .withPublishedDate(SECOND_CLOCK_TICK)
             .build();
         
         assertThat(updatedResource, is(equalTo(expectedResource)));
@@ -527,7 +526,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void publishPublicationSetsPublishedDate() throws ApiGatewayException {
         Publication updatedResource = createPublishedResource();
-        assertThat(updatedResource.getPublishedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
+        assertThat(updatedResource.getPublishedDate(), is(equalTo(SECOND_CLOCK_TICK)));
     }
     
     @Test
@@ -671,40 +670,41 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceUpdatesLinkedDoiRequestUponUpdate()
         throws ApiGatewayException {
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
-        Publication resource = createSampleResourceWithDoi();
-        DoiRequest originalDoiRequest = createDoiRequest(resource);
+        var doiRequestService = new DoiRequestService(client, clock);
+        var resource = createSampleResourceWithDoi(); // 1st clock tick
+        var originalDoiRequest = createDoiRequest(resource); // 2nd clock tick
         
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
-        resourceService.updatePublication(resource);
+        resourceService.updatePublication(resource); // 3rd clock tick
         
         UserInstance userInstance = UserInstance.create(resource.getResourceOwner(), resource.getPublisher().getId());
-        DoiRequest updatedDoiRequest = doiRequestService
+        var updatedDoiRequest = doiRequestService
             .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
         
-        DoiRequest expectedDoiRequest = originalDoiRequest.copy()
+        var expectedDoiRequest = originalDoiRequest.copy()
             .withResourceTitle(ANOTHER_TITLE)
+            .withResourceModifiedDate(THIRD_CLOCK_TICK)
             .build();
-        assertThat(updatedDoiRequest, is(equalTo(expectedDoiRequest)));
+        var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
+        assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
+        
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
     }
     
     @Test
     void updateResourceUpdatesAllFieldsInDoiRequest()
         throws ApiGatewayException {
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
-        Publication initialPublication = createPublication(resourceService, PublicationGenerator.randomPublication());
-        UserInstance userInstance = UserInstance.fromPublication(initialPublication);
-        DoiRequest initialDoiRequest = createDoiRequest(initialPublication);
-        
-        Publication publicationUpdate = updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(initialPublication);
+        var doiRequestService = new DoiRequestService(client, clock);
+        var initialPublication = createPublication(resourceService, PublicationGenerator.randomPublication());
+        var userInstance = UserInstance.fromPublication(initialPublication);
+        var initialDoiRequest = createDoiRequest(initialPublication);
+        var publicationUpdate = updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(initialPublication);
         resourceService.updatePublication(publicationUpdate);
         
-        DoiRequest updatedDoiRequest = doiRequestService
-            .getDoiRequestByResourceIdentifier(userInstance,
-                initialPublication.getIdentifier());
+        var updatedDoiRequest = doiRequestService
+            .getDoiRequestByResourceIdentifier(userInstance, initialPublication.getIdentifier());
         
-        DoiRequest expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
+        var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
             initialPublication,
             initialDoiRequest,
             publicationUpdate,
@@ -930,16 +930,16 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     private Clock setupClock() {
         Clock clock = mock(Clock.class);
         when(clock.instant())
-            .thenReturn(RESOURCE_CREATION_TIME)
-            .thenReturn(RESOURCE_MODIFICATION_TIME)
-            .thenReturn(RESOURCE_SECOND_MODIFICATION_TIME)
-            .thenReturn(RESOURCE_THIRD_MODIFICATION_TIME);
+            .thenReturn(FIRST_CLOCK_TICK)
+            .thenReturn(SECOND_CLOCK_TICK)
+            .thenReturn(THIRD_CLOCK_TICK)
+            .thenReturn(FOURTH_CLOCK_TICK);
         this.clock = clock;
         return clock;
     }
     
     private void verifyThatResourceClockWillReturnPredefinedCreationTime() {
-        assertThat(clock.instant(), is(equalTo(RESOURCE_CREATION_TIME)));
+        assertThat(clock.instant(), is(equalTo(FIRST_CLOCK_TICK)));
         clock = setupClock();
     }
     
@@ -976,12 +976,12 @@ public class ResourceServiceTest extends ResourcesLocalTest {
                                                                 DoiRequest updatedDoiRequest) {
         
         return DoiRequest.builder()
-            .withOwner(initialPublication.getOwner())
+            .withOwner(initialPublication.getResourceOwner().getOwner())
             .withCustomerId(initialPublication.getPublisher().getId())
             .withResourceIdentifier(initialPublication.getIdentifier())
-            .withIdentifier(updatedDoiRequest.getIdentifier())
+            .withIdentifier(initialDoiRequest.getIdentifier())
             .withCreatedDate(initialDoiRequest.getCreatedDate())
-            .withModifiedDate(initialDoiRequest.getModifiedDate())
+            .withModifiedDate(updatedDoiRequest.getModifiedDate())
             .withDoi(publicationUpdate.getDoi())
             .withStatus(DoiRequestStatus.REQUESTED)
             .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
@@ -1066,8 +1066,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
             .withIdentifier(savedResource.getIdentifier())
             .withPublisher(organizationWithoutLabels(sampleResource))
             .withResourceOwner(sampleResource.getResourceOwner())
-            .withCreatedDate(RESOURCE_CREATION_TIME)
-            .withModifiedDate(RESOURCE_CREATION_TIME)
+            .withCreatedDate(FIRST_CLOCK_TICK)
+            .withModifiedDate(FIRST_CLOCK_TICK)
             .withStatus(PublicationStatus.DRAFT)
             .build();
     }
@@ -1112,7 +1112,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
             .withResourceOwner(new ResourceOwner(newOwner.getUserIdentifier(), AFFILIATION_NOT_IMPORTANT))
             .withPublisher(userOrganization(newOwner))
             .withCreatedDate(sampleResource.getCreatedDate())
-            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
+            .withModifiedDate(SECOND_CLOCK_TICK)
             .build();
     }
     
@@ -1129,9 +1129,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     
     private void assertThatUpdateFails(Publication resourceUpdate) {
         Executable action = () -> resourceService.updatePublication(resourceUpdate);
-        TransactionFailedException exception = assertThrows(TransactionFailedException.class, action);
-        Throwable cause = exception.getCause();
-        assertThat(cause, instanceOf(TransactionCanceledException.class));
+        assertThrows(TransactionFailedException.class, action);
     }
     
     private Publication updateResourceTitle(Publication resource) {

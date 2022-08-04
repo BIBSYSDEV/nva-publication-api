@@ -6,6 +6,7 @@ import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_
 import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Delete;
@@ -42,11 +43,11 @@ public abstract class ServiceWithTransactions {
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     
-    protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
+    protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
         
         Put put = new Put()
             .withItem(data.toDynamoFormat())
-            .withTableName(tableName)
+            .withTableName(RESOURCES_TABLE_NAME)
             .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
             .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
@@ -60,10 +61,6 @@ public abstract class ServiceWithTransactions {
         return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
     
-    protected <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T dynamoEntry) {
-        return newPutTransactionItem(dynamoEntry, getTableName());
-    }
-    
     protected <T extends Entity, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
         T dynamoEntry,
         FunctionWithException<T, T, E> nonEventuallyConsistentFetch) {
@@ -75,16 +72,13 @@ public abstract class ServiceWithTransactions {
         return Optional.ofNullable(savedEntry);
     }
     
-    protected abstract String getTableName();
-    
     protected abstract AmazonDynamoDB getClient();
     
     protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
         return new TransactWriteItem()
-            .withDelete(new Delete().withTableName(getTableName()).withKey(dynamoEntry.primaryKey()));
+            .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
     }
     
-    @SuppressWarnings(RAWTYPES)
     protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
             return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS));
@@ -92,7 +86,6 @@ public abstract class ServiceWithTransactions {
         return Optional.empty();
     }
     
-    @SuppressWarnings(RAWTYPES)
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
@@ -124,12 +117,10 @@ public abstract class ServiceWithTransactions {
         return new TransactionFailedException(fail.getException());
     }
     
-    @SuppressWarnings(RAWTYPES)
     private boolean onlyResourceExists(List<Dao> daos) {
         return daos.size() == 1;
     }
     
-    @SuppressWarnings(RAWTYPES)
     private boolean doiRequestExists(List<Dao> daos) {
         return daos.size() == 2;
     }

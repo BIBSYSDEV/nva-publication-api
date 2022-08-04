@@ -1,7 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.TestingUtils.createOrganization;
-import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
+import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -302,7 +302,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
     }
     
     private Publication createDraftPublication(UserInstance owner) throws ApiGatewayException {
-        Publication publication = createPublicationForUser(owner);
+        Publication publication = createUnpersistedPublication(owner);
         return resourceService.createPublication(owner, publication);
     }
     
@@ -367,7 +367,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
     
     private Publication createPublishedPublication(UserInstance owner)
         throws ApiGatewayException {
-        Publication publication = createPublicationForUser(owner);
+        Publication publication = createUnpersistedPublication(owner);
         publication = resourceService.createPublication(owner, publication);
         resourceService.publishPublication(owner, publication.getIdentifier());
         return publication;

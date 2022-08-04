@@ -3,23 +3,27 @@ package no.unit.nva.publication.model.storage;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(PublishingRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class PublishingRequestDao extends Dao<PublishingRequestCase>
-    implements JoinWithResource,
-               JsonSerializable {
+public class PublishingRequestDao extends TicketDao implements JoinWithResource, JsonSerializable {
     
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
     public static final String TYPE = "PublishingRequestCase";
@@ -30,9 +34,9 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
         super();
     }
     
-    public PublishingRequestDao(PublishingRequestCase data) {
+    public PublishingRequestDao(TicketEntry data) {
         super();
-        this.data = data;
+        this.data = (PublishingRequestCase) data;
     }
     
     public static QueryRequest queryPublishingRequestByResource(URI customerId,
@@ -57,6 +61,38 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
         return new PublishingRequestDao(queryObject);
     }
     
+    @Override
+    public Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
+        return fetchItem(client, PublishingRequestDao.class);
+    }
+    
+    @Override
+    public TransactWriteItemsRequest createInsertionTransactionRequest() {
+        var publicationRequestEntry = createPublishingRequestInsertionEntry(data);
+        var identifierEntry = createUniqueIdentifierEntry(data);
+        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry(data);
+        return new TransactWriteItemsRequest()
+            .withTransactItems(
+                identifierEntry,
+                publicationRequestEntry,
+                publishingRequestUniquenessEntry);
+    }
+    
+    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequestCase publishingRequest) {
+        var publishingRequestUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
+        return newPutTransactionItem(publishingRequestUniquenessEntry);
+    }
+    
+    private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequestCase publicationRequest) {
+        var dynamoEntry = new PublishingRequestDao(publicationRequest);
+        return newPutTransactionItem(dynamoEntry);
+    }
+    
+    private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
+        var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
+        return newPutTransactionItem(identifierEntry);
+    }
+    
     public static String getContainedType() {
         return PublishingRequestCase.TYPE;
     }
@@ -72,8 +108,8 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
     }
     
     @Override
-    public void setData(PublishingRequestCase data) {
-        this.data = data;
+    public void setData(Entity data) {
+        this.data = (PublishingRequestCase) data;
     }
     
     @Override
