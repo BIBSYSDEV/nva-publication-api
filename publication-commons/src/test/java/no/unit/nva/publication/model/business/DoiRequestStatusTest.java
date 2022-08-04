@@ -1,36 +1,33 @@
 package no.unit.nva.publication.model.business;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class DoiRequestStatusTest {
     
-    @ParameterizedTest(name = "parse returns DoiRequestStatus '{1}' for input: '{0}'")
-    @CsvSource({
-        "requested,REQUESTED",
-        "Requested,REQUESTED",
-        "reQueSted,REQUESTED",
-        "REjeCted,REJECTED",
-        "rejected,REJECTED",
-        "approved,APPROVED",
-        "Approved,APPROVED",
-    })
-    public void parseReturnsDoiRequestStatusIgnoringCase(String input, DoiRequestStatus expected) {
-        DoiRequestStatus actual = DoiRequestStatus.parse(input);
-        assertThat(actual, is(equalTo(expected)));
+    @ParameterizedTest(name = "should accept textual value {0} for enum")
+    @ValueSource(strings = {"REQUESTED", "Pending", "APPROVED", "Completed", "REJECTED", "Closed"})
+    void shouldAcceptTextualValueForEnum(String textualValue) throws JsonProcessingException {
+        var jsonString = String.format("\"%s\"", textualValue);
+        var actualValue = JsonUtils.dtoObjectMapper.readValue(jsonString, DoiRequestStatus.class);
+        assertThat(actualValue, is(in(DoiRequestStatus.values())));
     }
     
     @ParameterizedTest
     // ExistingState , RequestedChange, ExpectedState
     @CsvSource({
-        "REQUESTED,APPROVED,APPROVED",
-        "REQUESTED,REJECTED,REJECTED",
-        "REJECTED,APPROVED,APPROVED",
+        "PENDING,COMPLETED,COMPLETED",
+        "PENDING,CLOSED,CLOSED",
+        "CLOSED,COMPLETED,COMPLETED",
     })
     @DisplayName("Should follow business rules for valid status changes on DoiRequestStatus")
     void validStatusChanges(DoiRequestStatus existingState,
@@ -42,12 +39,12 @@ class DoiRequestStatusTest {
     @ParameterizedTest
     // ExistingState, RequestedChange
     @CsvSource({
-        "REQUESTED,REQUESTED",
-        "APPROVED,REQUESTED",
-        "APPROVED,APPROVED",
-        "APPROVED,REJECTED",
-        "REJECTED,REJECTED",
-        "REJECTED,REQUESTED"
+        "PENDING,PENDING",
+        "COMPLETED,PENDING",
+        "COMPLETED,COMPLETED",
+        "COMPLETED,CLOSED",
+        "CLOSED,CLOSED",
+        "CLOSED,PENDING"
     })
     void invalidStatusChanges(DoiRequestStatus existingState,
                               DoiRequestStatus requestedChange) {
