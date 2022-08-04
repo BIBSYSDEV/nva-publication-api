@@ -19,8 +19,7 @@ import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class Message implements WithStatus,
-                                TicketEntry,
+public class Message implements TicketEntry,
                                 JsonSerializable {
     
     public static final String TYPE = "Message";
