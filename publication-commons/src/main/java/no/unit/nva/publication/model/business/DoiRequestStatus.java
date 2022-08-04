@@ -19,10 +19,11 @@ public enum DoiRequestStatus {
     
     public static final String ERROR_MESSAGE_NOT_ALLOWED_TO_CHANGE_STATUS_FROM_S_TO_S =
         "Not allowed to change status from %s to %s";
-    public static final String INVALID_DOI_REQUEST_STATUS_ERROR = "Invalid DoiRequest status: ";
+    public static final String INVALID_DOI_REQUEST_STATUS_ERROR = "Invalid DoiRequest status. Valid values:  ";
     static final Set<DoiRequestStatus> validStatusChangeForRejected = Set.of(COMPLETED);
     static final Set<DoiRequestStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED);
     static final Set<DoiRequestStatus> validDefaultStatusChanges = emptySet();
+    public static final String SEPARATOR = ",";
     private final String value;
     private final String legacyValue;
     
@@ -75,7 +76,7 @@ public enum DoiRequestStatus {
     private static String validValues() {
         return Arrays.stream(DoiRequestStatus.values())
             .map(DoiRequestStatus::toString)
-            .collect(Collectors.joining(","));
+            .collect(Collectors.joining(SEPARATOR));
     }
     
     private boolean filterByNameOrValue(String candidate) {

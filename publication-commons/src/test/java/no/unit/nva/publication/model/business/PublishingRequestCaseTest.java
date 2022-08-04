@@ -26,7 +26,7 @@ class PublishingRequestCaseTest {
         var original = createSample(PublishingRequestStatus.PENDING);
         var approved = original.approve();
         var expected = original.copy();
-        expected.setStatus(PublishingRequestStatus.APPROVED);
+        expected.setStatus(PublishingRequestStatus.COMPLETED);
         assertThat(approved, is(equalTo(expected)));
     }
     

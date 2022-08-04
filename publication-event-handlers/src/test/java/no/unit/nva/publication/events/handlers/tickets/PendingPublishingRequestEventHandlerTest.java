@@ -78,7 +78,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest =
             publishingRequestService.fetchTicket(publishingRequest, PublishingRequestCase.class);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
     }
     
     @Test
