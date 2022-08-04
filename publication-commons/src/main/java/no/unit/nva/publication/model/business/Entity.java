@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -21,7 +22,7 @@ import no.unit.nva.publication.model.storage.Dao;
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(TicketEntry.class)
 })
-public interface Entity extends RowLevelSecurity {
+public interface Entity {
     
     String VERSION = "version";
     
@@ -62,8 +63,12 @@ public interface Entity extends RowLevelSecurity {
     
     void setModifiedDate(Instant now);
     
+    String getOwner();
+    
+    URI getCustomerId();
+    
     Dao toDao();
-
+    
     @JsonIgnore
     String getStatusString();
 }

@@ -16,9 +16,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class PublishingRequestCase
-    implements RowLevelSecurity,
-               TicketEntry {
+public class PublishingRequestCase implements TicketEntry {
     
     public static final String TYPE = "PublishingRequestCase";
     public static final String STATUS_FIELD = "status";

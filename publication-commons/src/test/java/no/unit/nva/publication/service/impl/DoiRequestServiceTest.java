@@ -78,6 +78,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         return UserInstance.create(randomString(), publication.getPublisher().getId());
     }
     
+    //TODO: Remove once ticket service is in place
     @Test
     void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException {
@@ -89,6 +90,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(doiRequest, is(not(nullValue())));
     }
     
+    //TODO: Remove once ticket service is in place
     @Test
     void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
         throws ApiGatewayException {
@@ -104,6 +106,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
     }
     
+    //TODO: Remove once ticket service is in place
     @Test
     void createDoiRequestThrowsExceptionWhenTheUserIsNotTheResourceOwner()
         throws ApiGatewayException {
