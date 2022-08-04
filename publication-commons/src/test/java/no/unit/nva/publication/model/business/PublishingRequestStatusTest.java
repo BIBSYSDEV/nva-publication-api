@@ -1,44 +1,43 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.publication.model.business.TicketStatusConstants.CLOSED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatusConstants.COMPLETED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatusConstants.PENDING_STATUS;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 //TODO: test from handler
 class PublishingRequestStatusTest {
-    
-    @Test
-    public void parseReturnsStatusForValidInputIgnoringCase() {
-        var validStatus = "pEnDiNg";
-        var actualStatus = PublishingRequestStatus.parse(validStatus);
-        
-        assertThat(actualStatus, is(equalTo(PublishingRequestStatus.PENDING)));
+
+    private static final String UNKNOWN_VALUE = "ObviouslyUnknownValue";
+
+    @ParameterizedTest
+    @ValueSource(strings = {PENDING_STATUS, COMPLETED_STATUS, CLOSED_STATUS})
+    void shouldAcceptTextualValueForEnum(String textualValue) throws JsonProcessingException {
+        var jsonString = String.format("\"%s\"", textualValue);
+        var actualValue = JsonUtils.dtoObjectMapper.readValue(jsonString, PublishingRequestStatus.class);
+        assertThat(actualValue, is(in(PublishingRequestStatus.values())));
     }
-    
+
     @Test
-    public void toStringReturnsEnumValue() {
-        assertThat(PublishingRequestStatus.APPROVED.toString(), is(equalTo("APPROVED")));
-    }
-    
-    @Test
-    void parseThrowsIllegalArgumentExceptionOnInvalidStatus() {
-        var invalidStatus = "invalidStatus";
-        Executable action = () -> PublishingRequestStatus.parse(invalidStatus);
-        var exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(),
-            containsString(PublishingRequestStatus.INVALID_APPROVE_PUBLISHING_REQUEST_STATUS_ERROR));
-        assertThat(exception.getMessage(), containsString(invalidStatus));
+    void shouldThrowExceptionWhenInputIsUnknownValue() {
+        Executable executable = () -> PublishingRequestStatus.parse(UNKNOWN_VALUE);
+        assertThrows(IllegalArgumentException.class, executable);
     }
     
     @Test
     void shouldNotAllowApprovedToChange() {
         final Executable executable =
-            () -> PublishingRequestStatus.APPROVED.changeStatus(PublishingRequestStatus.REJECTED);
+            () -> PublishingRequestStatus.COMPLETED.changeStatus(PublishingRequestStatus.CLOSED);
         assertThrows(IllegalArgumentException.class, executable);
     }
 }

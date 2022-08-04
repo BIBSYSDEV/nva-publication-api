@@ -93,8 +93,8 @@ public class DoiRequestEventProducer
     }
     
     private boolean isDoiRequestApproval(DoiRequest oldEntry, DoiRequest newEntry) {
-        var oldEntryIsNotApproved = matchStatus(oldEntry, DoiRequestStatus.REQUESTED);
-        var newEntryIsApproved = matchStatus(newEntry, DoiRequestStatus.APPROVED);
+        var oldEntryIsNotApproved = matchStatus(oldEntry, DoiRequestStatus.PENDING);
+        var newEntryIsApproved = matchStatus(newEntry, DoiRequestStatus.COMPLETED);
         return oldEntryIsNotApproved && newEntryIsApproved;
     }
     

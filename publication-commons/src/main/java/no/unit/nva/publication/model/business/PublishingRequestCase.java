@@ -187,7 +187,7 @@ public class PublishingRequestCase
     
     @Override
     public String getStatusString() {
-        return status.name();
+        return status.toString();
     }
     
     @Override
@@ -218,7 +218,7 @@ public class PublishingRequestCase
     
     public PublishingRequestCase approve() {
         var copy = copy();
-        copy.setStatus(PublishingRequestStatus.APPROVED);
+        copy.setStatus(PublishingRequestStatus.COMPLETED);
         return copy;
     }
     

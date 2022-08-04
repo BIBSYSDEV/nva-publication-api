@@ -288,8 +288,8 @@ public class DoiRequestService extends ServiceWithTransactions {
         
         Map<String, AttributeValue> expressionAttributeValues = Map.of(
             ":PK", new AttributeValue(primaryKeyPartitionKeyValue),
-            ":requestedStatus", new AttributeValue(DoiRequestStatus.REQUESTED.toString()),
-            ":rejectedStatus", new AttributeValue(DoiRequestStatus.REJECTED.toString())
+            ":requestedStatus", new AttributeValue(DoiRequestStatus.PENDING.toString()),
+            ":rejectedStatus", new AttributeValue(DoiRequestStatus.CLOSED.toString())
         );
         
         return new QueryRequest()
@@ -334,7 +334,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     private String formatPartitionKeyValueForByTypeCustomerStatusIndex(UserInstance userInstance) {
         return WithByTypeCustomerStatusIndex.formatByTypeCustomerStatusPartitionKey(
             DoiRequestDao.getContainedType(),
-            DoiRequestStatus.REQUESTED.toString(),
+            DoiRequestStatus.PENDING.toString(),
             userInstance.getOrganizationUri()
         );
     }

@@ -45,7 +45,7 @@ public class AcceptedPublishingRequestEventHandler
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
         var latestUpdate = parseInput(eventBlob);
-        if (PublishingRequestStatus.APPROVED.equals(latestUpdate.getStatus())) {
+        if (PublishingRequestStatus.COMPLETED.equals(latestUpdate.getStatus())) {
             var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
             attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.getResourceIdentifier()))
                 .orElse(fail -> logError(fail.getException()));

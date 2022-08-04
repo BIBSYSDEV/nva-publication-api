@@ -983,7 +983,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             .withCreatedDate(initialDoiRequest.getCreatedDate())
             .withModifiedDate(updatedDoiRequest.getModifiedDate())
             .withDoi(publicationUpdate.getDoi())
-            .withStatus(DoiRequestStatus.REQUESTED)
+            .withStatus(DoiRequestStatus.PENDING)
             .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
             .withResourceStatus(publicationUpdate.getStatus())
             .withResourceModifiedDate(publicationUpdate.getModifiedDate())

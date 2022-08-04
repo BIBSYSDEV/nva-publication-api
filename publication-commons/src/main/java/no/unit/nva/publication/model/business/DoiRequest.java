@@ -103,7 +103,7 @@ public class DoiRequest implements WithStatus, TicketEntry {
         DoiRequest doiRequest =
             extractDataFromResource(builder(), resource)
                 .withIdentifier(doiRequestIdentifier)
-                .withStatus(DoiRequestStatus.REQUESTED)
+                .withStatus(DoiRequestStatus.PENDING)
                 .withModifiedDate(now)
                 .withCreatedDate(now)
                 .withDoi(resource.getDoi())

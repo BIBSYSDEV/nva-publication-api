@@ -84,7 +84,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
         
         var updatedDoiRequest = fetchDoiRequestDirectlyFromService(publication);
-        assertThat(updatedDoiRequest.getStatus(), is(equalTo(DoiRequestStatus.APPROVED)));
+        assertThat(updatedDoiRequest.getStatus(), is(equalTo(DoiRequestStatus.COMPLETED)));
     }
     
     @Test
@@ -144,7 +144,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     
     private InputStream createAuthorizedRestRequestWithInvalidIdentifier(Publication publication)
         throws JsonProcessingException {
-        return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, DoiRequestStatus.APPROVED);
+        return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, DoiRequestStatus.COMPLETED);
     }
     
     private Environment setupEnvironment() {
@@ -161,7 +161,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
         return createAuthorizedRestRequest(publication,
             publication.getIdentifier().toString(),
-            DoiRequestStatus.APPROVED);
+            DoiRequestStatus.COMPLETED);
     }
     
     private InputStream createAuthorizedRestRequest(Publication publication,
@@ -181,7 +181,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     }
     
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
-        var body = createUpdateRequest(DoiRequestStatus.APPROVED);
+        var body = createUpdateRequest(DoiRequestStatus.COMPLETED);
         var pathParameters = createPathParameters(publication.getIdentifier().toString());
         var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)

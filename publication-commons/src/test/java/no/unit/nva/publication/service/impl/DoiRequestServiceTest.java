@@ -241,7 +241,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         SortableIdentifier doiRequestIdentifier = doiRequestService
             .createDoiRequest(userInstance, publication.getIdentifier());
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
+        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
         doiRequestService.updateDoiRequest(userInstance, publication.getIdentifier(), expectedNewDoiRequestStatus);
         
         DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
@@ -256,7 +256,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         SortableIdentifier doiRequestIdentifier = doiRequestService
             .createDoiRequest(owner, publication.getIdentifier());
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
+        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
         doiRequestService.updateDoiRequest(owner, publication.getIdentifier(), expectedNewDoiRequestStatus);
         
         DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(owner, doiRequestIdentifier);
@@ -276,7 +276,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         
         assertThatDoiRequestIsIncludedInTheCuratorView(sampleCurator, doiRequestIdentifier);
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
+        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
         doiRequestService.updateDoiRequest(someUser, publication.getIdentifier(), expectedNewDoiRequestStatus);
         
         assertThatDoiRequestHasBeenRemovedFromCuratorsView(sampleCurator, doiRequestIdentifier);
@@ -297,7 +297,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         UserInstance sampleCurator = createSampleCurator(publication);
         Executable action =
             () -> doiRequestService.updateDoiRequest(sampleCurator, publication.getIdentifier(),
-                DoiRequestStatus.APPROVED);
+                DoiRequestStatus.COMPLETED);
         assertThrows(BadRequestException.class, action);
     }
     
@@ -340,7 +340,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
             .withResourceIdentifier(emptyPublication.getIdentifier())
             .withOwner(emptyPublication.getResourceOwner().getOwner())
             .withCustomerId(emptyPublication.getPublisher().getId())
-            .withStatus(DoiRequestStatus.REQUESTED)
+            .withStatus(DoiRequestStatus.PENDING)
             .withResourceStatus(PublicationStatus.DRAFT)
             .withCreatedDate(DOI_REQUEST_CREATION_TIME)
             .withModifiedDate(DOI_REQUEST_CREATION_TIME)

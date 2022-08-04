@@ -178,7 +178,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         ticketService.updatePublishingRequest(requestUpdate);
         var updatedPublicationRequest =
             ticketService.fetchTicket(requestUpdate, PublishingRequestCase.class);
-        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
+        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
     }
     
     @Test
@@ -254,7 +254,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         request.setIdentifier(SortableIdentifier.next());
         request.setOwner(randomString());
         request.setResourceIdentifier(SortableIdentifier.next());
-        request.setStatus(PublishingRequestStatus.APPROVED);
+        request.setStatus(PublishingRequestStatus.COMPLETED);
         request.setCreatedDate(randomInstant());
         request.setModifiedDate(randomInstant());
         request.setCustomerId(randomUri());

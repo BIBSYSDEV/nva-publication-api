@@ -25,7 +25,7 @@ public final class StorageModelTestUtils {
         sample.setVersion(UUID.randomUUID());
         sample.setCreatedDate(randomInstant());
         sample.setModifiedDate(randomInstant());
-        sample.setStatus(PublishingRequestStatus.APPROVED);
+        sample.setStatus(PublishingRequestStatus.COMPLETED);
         assertThat(sample, doesNotHaveEmptyValues());
         return sample;
     }

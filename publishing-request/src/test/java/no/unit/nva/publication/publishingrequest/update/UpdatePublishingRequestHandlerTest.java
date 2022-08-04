@@ -81,7 +81,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "should return Approved PublishingRequestCaseDto when authorized user approves case and "
                               + "case has status {0}")
-    @EnumSource(value = PublishingRequestStatus.class, names = {"PENDING", "APPROVED"})
+    @EnumSource(value = PublishingRequestStatus.class, names = {"PENDING", "COMPLETED"})
     void shouldReturnApprovedPublishingRequestCaseWhenInputIsPublishingRequestApprovalAndUserIsAuthorizedToApprove(
         PublishingRequestStatus status
     )
@@ -99,7 +99,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var expectedResponseBody = PublishingRequestCaseDto.createResponseObject(expectedPublishingRequest);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(responseBody, is(equalTo(expectedResponseBody)));
-        assertThat(responseBody.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
+        assertThat(responseBody.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
     }
     
     @Test
@@ -116,7 +116,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var actualIdentifierInResponseBody = extractIdentifierFromDto(responseBody);
         var persistedRequest = requestService.fetchTicket(publishingRequest,PublishingRequestCase.class);
         assertThat(persistedRequest.getIdentifier(), is(equalTo(actualIdentifierInResponseBody)));
-        assertThat(persistedRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
+        assertThat(persistedRequest.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
     }
     
     @Test
@@ -156,7 +156,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var wrongCaseId = requestUri.getParent().orElseThrow()
             .addChild(SortableIdentifier.next().toString())
             .getUri();
-        var dto = new PublishingRequestCaseDto(wrongCaseId, PublishingRequestStatus.APPROVED);
+        var dto = new PublishingRequestCaseDto(wrongCaseId, PublishingRequestStatus.COMPLETED);
         var customerId = randomUri();
         return constructHttpRequest(publicationIdentifier, publishingRequestIdentifier, dto, customerId);
     }
@@ -229,7 +229,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var caseId =
             PublishingRequestCaseDto.calculateId(publishingRequest.getResourceIdentifier(),
                 publishingRequest.getIdentifier());
-        return new PublishingRequestCaseDto(caseId, PublishingRequestStatus.APPROVED);
+        return new PublishingRequestCaseDto(caseId, PublishingRequestStatus.COMPLETED);
     }
     
     private HandlerRequestBuilder<PublishingRequestCaseDto> createAuthorizedApprovalRequest(
@@ -253,7 +253,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
                 publication.getIdentifier());
         publishingRequest = requestService.createTicket(publishingRequest,PublishingRequestCase.class);
         
-        if (PublishingRequestStatus.APPROVED == status) {
+        if (PublishingRequestStatus.COMPLETED == status) {
             requestService.updatePublishingRequest(publishingRequest.approve());
         }
         return publishingRequest;
