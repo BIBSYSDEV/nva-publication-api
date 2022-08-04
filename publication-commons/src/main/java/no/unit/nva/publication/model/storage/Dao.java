@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.WithStatus;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 
@@ -156,8 +155,8 @@ public abstract class Dao
     
     private Optional<String> extractStatus() {
         return attempt(this::getData)
-            .map(WithStatus.class::cast)
-            .map(WithStatus::getStatusString)
+            .map(Entity.class::cast)
+            .map(Entity::getStatusString)
             .toOptional();
     }
     

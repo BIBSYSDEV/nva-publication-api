@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -20,7 +21,7 @@ import no.unit.nva.publication.model.storage.Dao;
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(TicketEntry.class)
 })
-public interface Entity extends RowLevelSecurity, WithStatus {
+public interface Entity extends RowLevelSecurity {
     
     String VERSION = "version";
     
@@ -62,4 +63,7 @@ public interface Entity extends RowLevelSecurity, WithStatus {
     void setModifiedDate(Instant now);
     
     Dao toDao();
+
+    @JsonIgnore
+    String getStatusString();
 }
