@@ -1,19 +1,21 @@
 package no.unit.nva.publication.events.handlers.delete;
 
-import static java.util.Objects.nonNull;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.time.Clock;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
-import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
+
+import java.time.Clock;
+
+import static nva.commons.core.attempt.Try.attempt;
 
 public class DeleteDraftPublicationHandler
     extends DestinationsEventBridgeEventHandler<ResourceDraftedForDeletionEvent, Void> {
@@ -47,26 +49,30 @@ public class DeleteDraftPublicationHandler
         ResourceDraftedForDeletionEvent input,
         AwsEventBridgeEvent<AwsEventBridgeDetail<ResourceDraftedForDeletionEvent>> event,
         Context context) {
+        verifyPublicationCanBeDeleted(input);
+        return attempt(() -> deleteDraftPublicationForUser(input)).orElseThrow(this::handleException);
+    }
+
+    private void verifyPublicationCanBeDeleted(ResourceDraftedForDeletionEvent input) {
         if (input.hasDoi()) {
             throwPublicationHasDoiError();
         }
-        
-        try {
-            UserInstance userInstance = fetchUserInformationForPublication(input);
-            resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
-        } catch (NotFoundException | BadRequestException e) {
-            throw new RuntimeException(e);
-        }
+    }
+
+    private RuntimeException handleException(Failure<Void> fail) {
+        return new RuntimeException(fail.getException());
+    }
+
+    private Void deleteDraftPublicationForUser(ResourceDraftedForDeletionEvent input) throws ApiGatewayException {
+        var userInstance = fetchUserInformationForPublication(input);
+        resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
         return null;
     }
-    
+
     private UserInstance fetchUserInformationForPublication(ResourceDraftedForDeletionEvent input)
         throws NotFoundException {
-        Publication publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
-        if (nonNull(publication.getDoi())) {
-            throwPublicationHasDoiError();
-        }
-        return UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
+        var publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
+        return UserInstance.fromPublication(publication);
     }
     
     private void throwPublicationHasDoiError() {
