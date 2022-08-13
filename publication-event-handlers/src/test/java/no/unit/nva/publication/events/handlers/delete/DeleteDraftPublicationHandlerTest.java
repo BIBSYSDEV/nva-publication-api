@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
+import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.publication.model.business.UserInstance.fromPublication;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
@@ -13,7 +14,6 @@ import java.io.ByteArrayOutputStream;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
@@ -22,6 +22,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mockito;
 
 public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
@@ -35,7 +36,8 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private ResourceService resourceService;
-    
+    private ByteArrayInputStream inputStream;
+
     @BeforeEach
     public void setUp() {
         super.init();
@@ -46,57 +48,54 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void handleRequestDeletesPublicationWithoutDoiWhenStatusIsDraftForDeletion() throws ApiGatewayException {
-        Publication publication = insertPublicationWithStatus(PublicationStatus.DRAFT_FOR_DELETION);
-        
-        ByteArrayInputStream inputStream = getInputStreamForEvent(
-            DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, publication.getIdentifier());
-        
+    void shouldDeleteDraftPublicationWithoutDoiWhenStatusIsDraftForDeletion() throws ApiGatewayException {
+        var publication = insertDeletablePublication();
+
+        inputStream = getInputStreamForEvent(DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, publication.getIdentifier());
         handler.handleRequest(inputStream, outputStream, context);
-        
-        NotFoundException exception = assertThrows(NotFoundException.class,
-            () -> resourceService.getPublicationByIdentifier(
-                publication.getIdentifier()));
-        String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + publication.getIdentifier();
+
+        Executable executable = () -> resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var exception = assertThrows(NotFoundException.class, executable);
+        var message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + publication.getIdentifier();
         assertThat(exception.getMessage(), equalTo(message));
     }
     
     @Test
-    void handleRequestThrowsRuntimeExceptionOnServiceException() {
-        SortableIdentifier identifier = SortableIdentifier.next();
-        ByteArrayInputStream inputStream = getInputStreamForEvent(
-            DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, identifier);
-        
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(inputStream, outputStream, context));
-        String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier;
+    void shouldThrowExceptionWhenPublicationDoesNotExist() {
+        var nonExistingPublicationIdentifier = SortableIdentifier.next();
+
+        inputStream = getInputStreamForEvent(DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON,
+            nonExistingPublicationIdentifier);
+
+        Executable executable = () -> handler.handleRequest(inputStream, outputStream, context);
+        var exception = assertThrows(RuntimeException.class, executable);
+        var message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + nonExistingPublicationIdentifier;
         assertThat(exception.getMessage(), containsString(message));
     }
     
     @Test
-    void handleRequestThrowsRuntimeExceptionOnEventWithDoi() {
-        SortableIdentifier identifier = SortableIdentifier.next();
-        ByteArrayInputStream inputStream = getInputStreamForEvent(
-            DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
-        
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(inputStream, outputStream, context));
-        String message = DeleteDraftPublicationHandler.DELETE_WITH_DOI_ERROR;
+    void shouldThrowRuntimeExceptionWhenPublicationForDeletionHasDoi() {
+        var identifier = SortableIdentifier.next();
+        inputStream = getInputStreamForEvent(DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
+
+        Executable executable = () -> handler.handleRequest(inputStream, outputStream, context);
+        var exception = assertThrows(RuntimeException.class, executable);
+        var message = DeleteDraftPublicationHandler.DELETE_WITH_DOI_ERROR;
         assertThat(exception.getMessage(), equalTo(message));
     }
     
     private ByteArrayInputStream getInputStreamForEvent(String path, SortableIdentifier identifier) {
-        String eventTemplate = streamToString(inputStreamFromResources(path));
-        String event = String.format(eventTemplate, identifier);
+        var eventTemplate = streamToString(inputStreamFromResources(path));
+        var event = String.format(eventTemplate, identifier);
         
         return new ByteArrayInputStream(event.getBytes());
     }
     
-    private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
-        Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier().copy()
+    private Publication insertDeletablePublication() throws ApiGatewayException {
+        var publicationToCreate = PublicationGenerator.publicationWithoutIdentifier().copy()
             .withDoi(null)
+            .withStatus(DRAFT_FOR_DELETION)
             .build();
-        publicationToCreate.setStatus(status);
         return resourceService.createPublication(fromPublication(publicationToCreate), publicationToCreate);
     }
 }
