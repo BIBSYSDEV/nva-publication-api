@@ -14,6 +14,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -70,6 +71,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private PublishingRequestService ticketService;
     private UserInstance owner;
+    private Clock clock;
     
     public static Stream<Arguments> ticketProvider() {
         return Stream.of(Arguments.of(DoiRequest.class), Arguments.of(PublishingRequestCase.class));
@@ -78,15 +80,15 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() {
         super.init();
-        Clock mockClock = mock(Clock.class);
+        clock = mock(Clock.class);
         this.owner = randomUserInstance();
-        when(mockClock.instant())
+        when(clock.instant())
             .thenReturn(PUBLICATION_CREATION_TIME)
             .thenReturn(PUBLICATION_MODIFICATION_TIME)
             .thenReturn(PUBLICATION_REQUEST_CREATION_TIME)
             .thenReturn(PUBLICATION_REQUEST_UPDATE_TIME);
-        this.resourceService = new ResourceService(client, mockClock);
-        this.ticketService = new PublishingRequestService(client, mockClock);
+        this.resourceService = new ResourceService(client, clock);
+        this.ticketService = new PublishingRequestService(client, clock);
     }
     
     @ParameterizedTest(name = "Publication status: {0}")
@@ -139,7 +141,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     // This action fails with a TransactionFailedException which contains no information about why the transaction
     // failed, which may fail because of multiple reasons including what we are testing for here.
     @ParameterizedTest(name = "type: {0}")
-    @DisplayName("should throw Error when mor than one tickets exist for one publication for type")
+    @DisplayName("should throw Error when more than one tickets exist for one publication for type")
     @MethodSource("ticketProvider")
     void shouldThrowExceptionOnMoreThanOnePublishingRequestsForTheSamePublication(
         Class<? extends TicketEntry> ticketType)
@@ -191,11 +193,25 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenTheUserIsNotTheResourceOwner(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistDraftPublication(owner);
-        publication.setResourceOwner(new ResourceOwner(randomString(),randomUri()));
-        var ticket = createUnpersistedTicket(ticketType,publication);
+        publication.setResourceOwner(new ResourceOwner(randomString(), randomUri()));
+        var ticket = createUnpersistedTicket(ticketType, publication);
         
-        Executable action = () -> ticketService.createTicket(ticket,ticketType);
+        Executable action = () -> ticketService.createTicket(ticket, ticketType);
         assertThrows(ForbiddenException.class, action);
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should throw Exception when duplicate ticket identifier is created")
+    @MethodSource("ticketProvider")
+    void shouldThrowExceptionWhenDuplicateTicketIdentifierIsCreated(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistDraftPublication(owner);
+        var duplicateIdentifier = SortableIdentifier.next();
+        ticketService = new PublishingRequestService(client, clock, () -> duplicateIdentifier);
+        var ticketEntry = createUnpersistedTicket(ticketType, publication);
+        Executable action = () -> ticketService.createTicket(ticketEntry, ticketType);
+        assertDoesNotThrow(action);
+        assertThrows(TransactionFailedException.class, action);
     }
     
     @Test

@@ -1,7 +1,7 @@
 package no.unit.nva.publication.publishingrequest.create;
 
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.ALREADY_PUBLISHED_ERROR;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.MARKED_FOR_DELETION_ERROR;
@@ -84,14 +84,14 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldNotRevealThatPublicationExistsWhenRequesterIsThePublicationOwner()
+    void shouldNotRevealThatPublicationExistsWhenRequesterIsNotThePublicationOwner()
         throws IOException, ApiGatewayException {
         var existingPublication = PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
         var notOwner = randomString();
         var apiRequest = requestToPublishPublication(existingPublication, notOwner);
         handler.handleRequest(apiRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
     
     @Test
@@ -127,11 +127,11 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldReturnNotFoundWhenTryingToPublishNonExistingPublication() throws IOException {
+    void shouldReturnForbiddenWhenTryingToPublishNonExistingPublication() throws IOException {
         var nonPersistedPublication = PublicationGenerator.randomPublication();
         var httpResponse =
             ownerCreatesPublishingRequestForDraftPublication(nonPersistedPublication, Void.class);
-        assertThat(httpResponse.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+        assertThat(httpResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
     
     private PublishingRequestCase fetchCreatedRequestDirectlyFromService(URI publishingRequestId)
