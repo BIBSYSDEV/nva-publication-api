@@ -13,8 +13,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
-    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
-    @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
+    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)
 })
 public interface TicketEntry extends Entity {
     

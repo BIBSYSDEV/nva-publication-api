@@ -20,7 +20,8 @@ import no.unit.nva.publication.model.storage.Dao;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.EXISTING_PROPERTY, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
-    @JsonSubTypes.Type(TicketEntry.class)
+    @JsonSubTypes.Type(TicketEntry.class),
+    @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
 })
 public interface Entity {
     
