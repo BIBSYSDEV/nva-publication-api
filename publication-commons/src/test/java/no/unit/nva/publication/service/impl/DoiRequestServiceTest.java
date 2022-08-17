@@ -245,6 +245,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(result, hasSize(endExclusive));
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void updateDoiRequestUpdatesDoiRequestStatusInDatabase()
         throws ApiGatewayException {
@@ -260,6 +261,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(updatedDoiRequest.getStatus(), is(equalTo(expectedNewTicketStatus)));
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void updateDoiRequestUpdatesModifiedDateOfDoiRequest()
         throws ApiGatewayException {

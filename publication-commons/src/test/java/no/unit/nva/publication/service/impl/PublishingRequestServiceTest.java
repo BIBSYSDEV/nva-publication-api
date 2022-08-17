@@ -65,8 +65,8 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     private static final Instant PUBLICATION_CREATION_TIME = randomInstant();
     private static final Instant PUBLICATION_MODIFICATION_TIME = randomInstant(PUBLICATION_CREATION_TIME);
-    private static final Instant PUBLICATION_REQUEST_CREATION_TIME = randomInstant(PUBLICATION_MODIFICATION_TIME);
-    private static final Instant PUBLICATION_REQUEST_UPDATE_TIME = randomInstant(PUBLICATION_CREATION_TIME);
+    private static final Instant TICKET_CREATION_TIME = randomInstant(PUBLICATION_MODIFICATION_TIME);
+    private static final Instant TICKET_UPDATE_TIME = randomInstant(PUBLICATION_CREATION_TIME);
     private ResourceService resourceService;
     private PublishingRequestService ticketService;
     private UserInstance owner;
@@ -84,8 +84,8 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         when(clock.instant())
             .thenReturn(PUBLICATION_CREATION_TIME)
             .thenReturn(PUBLICATION_MODIFICATION_TIME)
-            .thenReturn(PUBLICATION_REQUEST_CREATION_TIME)
-            .thenReturn(PUBLICATION_REQUEST_UPDATE_TIME);
+            .thenReturn(TICKET_CREATION_TIME)
+            .thenReturn(TICKET_UPDATE_TIME);
         this.resourceService = new ResourceService(client, clock);
         this.ticketService = new PublishingRequestService(client, clock);
     }
@@ -103,7 +103,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         
         copyServiceControlledFields(ticket, persistedTicket);
         
-        assertThat(persistedTicket.getCreatedDate(), is(equalTo(PUBLICATION_REQUEST_CREATION_TIME)));
+        assertThat(persistedTicket.getCreatedDate(), is(equalTo(TICKET_CREATION_TIME)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket, doesNotHaveEmptyValues());
     }
@@ -132,7 +132,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         var persistedTicket = ticketService.createTicket(ticket, PublishingRequestCase.class);
         
         copyServiceControlledFields(ticket, persistedTicket);
-        assertThat(persistedTicket.getCreatedDate(), is(equalTo(PUBLICATION_REQUEST_CREATION_TIME)));
+        assertThat(persistedTicket.getCreatedDate(), is(equalTo(TICKET_CREATION_TIME)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket, doesNotHaveEmptyValues());
     }
@@ -219,6 +219,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     void shouldPersistUpdatedStatusWhenTicketStatusIsUpdated(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistDraftPublication(owner);
+        tickTheClockInsteadOfUpdatingPublication();
         var ticketRequest = createUnpersistedTicket(ticketType, publication);
         
         var persistedTicket = ticketService.createTicket(ticketRequest, ticketType);
@@ -228,6 +229,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         var updatedPublicationRequest =
             ticketService.fetchTicket(updatedTicket, ticketType);
         assertThat(updatedPublicationRequest.getStatusString(), is(equalTo(TicketStatus.COMPLETED.toString())));
+        assertThat(updatedPublicationRequest.getModifiedDate(), is(equalTo(TICKET_UPDATE_TIME)));
     }
     
     @Test
@@ -266,6 +268,10 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             ticketService.getTicketByResourceIdentifier(publication.getPublisher().getId(),
                 publication.getIdentifier(), PublishingRequestCase.class);
         assertThat(retrievedRequest, is(equalTo(publishingRequest)));
+    }
+    
+    private void tickTheClockInsteadOfUpdatingPublication() {
+        clock.instant();
     }
     
     private Publication persistEmptyPublication(UserInstance owner) throws ApiGatewayException {
