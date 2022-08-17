@@ -36,7 +36,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
@@ -50,7 +50,7 @@ import org.zalando.problem.Problem;
 
 class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     
-    PublishingRequestService requestService;
+    TicketService requestService;
     Clock mockClock;
     private CreatePublishingRequestHandler handler;
     private ByteArrayOutputStream outputStream;
@@ -64,7 +64,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         resourceService = new ResourceService(client, mockClock);
-        requestService = new PublishingRequestService(client, mockClock);
+        requestService = new TicketService(client, mockClock);
         handler = new CreatePublishingRequestHandler(requestService);
     }
     

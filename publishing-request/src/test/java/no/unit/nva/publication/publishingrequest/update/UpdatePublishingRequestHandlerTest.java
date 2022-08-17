@@ -35,7 +35,7 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -56,7 +56,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     private static final Context CONTEXT = new FakeContext();
     private UpdatePublishingRequestHandler handler;
     private ResourceService resourceService;
-    private PublishingRequestService requestService;
+    private TicketService requestService;
     private ByteArrayOutputStream outputStream;
     
     public static Stream<InputStream> invalidHttpRequests() throws JsonProcessingException {
@@ -69,7 +69,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         super.init();
         var clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(super.client, clock);
-        this.requestService = new PublishingRequestService(client, clock);
+        this.requestService = new TicketService(client, clock);
         this.outputStream = new ByteArrayOutputStream();
         this.handler = new UpdatePublishingRequestHandler(requestService);
     }

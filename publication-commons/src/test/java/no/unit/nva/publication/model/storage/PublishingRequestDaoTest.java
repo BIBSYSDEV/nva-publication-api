@@ -19,7 +19,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.SingletonCollector;
@@ -35,13 +35,13 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     
     private ResourceService resourceService;
-    private PublishingRequestService publishingRequestService;
+    private TicketService ticketService;
     
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(super.client, Clock.systemDefaultZone());
-        this.publishingRequestService = new PublishingRequestService(super.client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(super.client, Clock.systemDefaultZone());
     }
     
     @Test
@@ -90,7 +90,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-        var persistedRquest = publishingRequestService.createTicket(publishingRequest, PublishingRequestCase.class);
+        var persistedRquest = ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
         var queryResult = client.query(query);
         var retrievedByPublicationIdentifier = queryResult.getItems().stream()
             .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))

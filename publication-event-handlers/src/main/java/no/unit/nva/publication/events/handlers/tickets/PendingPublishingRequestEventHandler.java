@@ -23,7 +23,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -36,7 +36,7 @@ public class PendingPublishingRequestEventHandler
     
     private static final Logger logger = LoggerFactory.getLogger(PendingPublishingRequestEventHandler.class);
     private final S3Driver s3Driver;
-    private final PublishingRequestService publishingRequestService;
+    private final TicketService ticketService;
     private final HttpClient httpClient;
     
     @JacocoGenerated
@@ -44,12 +44,12 @@ public class PendingPublishingRequestEventHandler
         this(defaultPublishingRequestService(), HttpClient.newHttpClient(), DEFAULT_S3_CLIENT);
     }
     
-    protected PendingPublishingRequestEventHandler(PublishingRequestService publishingRequestService,
+    protected PendingPublishingRequestEventHandler(TicketService ticketService,
                                                    HttpClient httpClient,
                                                    S3Client s3Client) {
         super(EventReference.class);
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
-        this.publishingRequestService = publishingRequestService;
+        this.ticketService = ticketService;
         this.httpClient = httpClient;
     }
     
@@ -60,16 +60,16 @@ public class PendingPublishingRequestEventHandler
         var updateEvent = parseInput(input);
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
         if (customerAllowsPublishing(publishingRequest)) {
-            attempt(() -> publishingRequestService.completeTicket(publishingRequest)).orElseThrow();
+            attempt(() -> ticketService.completeTicket(publishingRequest)).orElseThrow();
         }
         
         return null;
     }
     
     @JacocoGenerated
-    private static PublishingRequestService defaultPublishingRequestService() {
+    private static TicketService defaultPublishingRequestService() {
         return
-            new PublishingRequestService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+            new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
     private boolean customerAllowsPublishing(PublishingRequestCase publishingRequest) {
