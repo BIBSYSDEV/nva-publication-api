@@ -18,6 +18,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -54,7 +55,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldPublishPublicationWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {
         var publication = createPublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var approvedPublishingRequest = pendingPublishingRequest.approve();
+        var approvedPublishingRequest = pendingPublishingRequest.complete();
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -77,7 +78,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldLogFailingReasonsWhenPublishingFails() throws ApiGatewayException, IOException {
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var approvedPublishingRequest = pendingPublishingRequest.approve();
+        var approvedPublishingRequest = pendingPublishingRequest.complete();
         var event = createEvent(pendingPublishingRequest,approvedPublishingRequest);
         var logger = LogUtils.getTestingAppenderForRootLogger();
         
@@ -88,8 +89,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
     }
     
-    private InputStream createEvent(PublishingRequestCase pendingPublishingRequest,
-                                    PublishingRequestCase approvedPublishingRequest) throws IOException {
+    private InputStream createEvent(TicketEntry pendingPublishingRequest,
+                                    TicketEntry approvedPublishingRequest) throws IOException {
         var sampleEvent = eventBody(pendingPublishingRequest, approvedPublishingRequest);
         var eventReference = storeEventToS3AndGenerateEventReference(sampleEvent);
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
@@ -100,8 +101,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return new EventReference(DataEntryUpdateEvent.PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC, blobUri);
     }
     
-    private String eventBody(PublishingRequestCase pendingPublishingRequest,
-                             PublishingRequestCase approvedPublishingRequest) {
+    private String eventBody(TicketEntry pendingPublishingRequest,
+                             TicketEntry approvedPublishingRequest) {
         return new DataEntryUpdateEvent(randomString(), pendingPublishingRequest, approvedPublishingRequest)
             .toJsonString();
     }

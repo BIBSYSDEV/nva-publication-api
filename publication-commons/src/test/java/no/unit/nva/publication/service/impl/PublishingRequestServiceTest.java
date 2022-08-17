@@ -37,11 +37,10 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
@@ -214,17 +213,21 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         assertThrows(TransactionFailedException.class, action);
     }
     
-    @Test
-    void shouldPersistUpdatedStatusWhenPublishingRequestUpdateUpdatesStatus()
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should persist updated ticket status when ticket status is updated")
+    @MethodSource("ticketProvider")
+    void shouldPersistUpdatedStatusWhenTicketStatusIsUpdated(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistDraftPublication(owner);
-        var publishingRequest = createPublishingRequest(publication);
-        var requestUpdate = publishingRequest.approve();
+        var ticketRequest = createUnpersistedTicket(ticketType, publication);
         
-        ticketService.updatePublishingRequest(requestUpdate);
+        var persistedTicket = ticketService.createTicket(ticketRequest, ticketType);
+        
+        var updatedTicket = ticketService.updateTicket(persistedTicket.complete());
+        
         var updatedPublicationRequest =
-            ticketService.fetchTicket(requestUpdate, PublishingRequestCase.class);
-        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
+            ticketService.fetchTicket(updatedTicket, ticketType);
+        assertThat(updatedPublicationRequest.getStatusString(), is(equalTo(TicketStatus.COMPLETED.toString())));
     }
     
     @Test
@@ -282,7 +285,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             .withResourceIdentifier(emptyPublication.getIdentifier())
             .withOwner(emptyPublication.getResourceOwner().getOwner())
             .withCustomerId(emptyPublication.getPublisher().getId())
-            .withStatus(DoiRequestStatus.PENDING)
+            .withStatus(TicketStatus.PENDING)
             .withResourceStatus(PublicationStatus.DRAFT)
             .withCreatedDate(actualDoiRequest.getCreatedDate())
             .withModifiedDate(actualDoiRequest.getModifiedDate())
@@ -325,11 +328,11 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         request.setIdentifier(SortableIdentifier.next());
         request.setOwner(randomString());
         request.setResourceIdentifier(SortableIdentifier.next());
-        request.setStatus(PublishingRequestStatus.COMPLETED);
+        request.setStatus(TicketStatus.COMPLETED);
         request.setCreatedDate(randomInstant());
         request.setModifiedDate(randomInstant());
         request.setCustomerId(randomUri());
-        request.setStatus(randomElement(PublishingRequestStatus.values()));
+        request.setStatus(randomElement(TicketStatus.values()));
         return request;
     }
     

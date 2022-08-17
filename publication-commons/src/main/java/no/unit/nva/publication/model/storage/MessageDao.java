@@ -9,7 +9,7 @@ import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
@@ -47,10 +47,10 @@ public class MessageDao extends Dao
         return new MessageDao(message);
     }
     
-    public static MessageDao listMessagesForCustomerAndStatus(URI customerId, MessageStatus messageStatus) {
+    public static MessageDao listMessagesForCustomerAndStatus(URI customerId, TicketStatus ticketStatus) {
         Message message = Message.builder()
             .withCustomerId(customerId)
-            .withStatus(messageStatus)
+            .withStatus(ticketStatus)
             .build();
         return new MessageDao(message);
     }

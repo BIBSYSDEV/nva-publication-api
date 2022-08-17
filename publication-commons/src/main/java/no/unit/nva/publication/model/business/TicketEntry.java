@@ -31,6 +31,18 @@ public interface TicketEntry extends Entity {
     
     void validateRequirements(Publication publication) throws NotFoundException, ConflictException;
     
+    default TicketEntry complete() {
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.COMPLETED);
+        return updated;
+    }
+    
+    TicketEntry copy();
+    
+    TicketStatus getStatus();
+    
+    void setStatus(TicketStatus ticketStatus);
+    
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
         Class<T> ticketType,
@@ -71,5 +83,20 @@ public interface TicketEntry extends Entity {
         var entry = createOpeningCaseObject(userInstance, publication.getIdentifier());
         setServiceControlledFields(entry, clock, identifierProvider);
         return entry;
+    }
+    
+    final class Constants {
+        
+        public static final String STATUS_FIELD = "status";
+        public static final String MODIFIED_DATE_FIELD = "modifiedDate";
+        public static final String CREATED_DATE_FIELD = "createdDate";
+        public static final String OWNER_FIELD = "owner";
+        public static final String CUSTOMER_ID_FIELD = "customerId";
+        public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
+        public static final String IDENTIFIER_FIELD = "identifier";
+        
+        private Constants() {
+        
+        }
     }
 }

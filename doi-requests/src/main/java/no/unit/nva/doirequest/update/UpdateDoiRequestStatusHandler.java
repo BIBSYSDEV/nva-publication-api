@@ -10,7 +10,7 @@ import java.util.Collections;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.NotAuthorizedException;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -96,10 +96,10 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
     
     private void updateDoiRequestStatus(UserInstance userInstance,
-                                        DoiRequestStatus newDoiRequestStatus,
+                                        TicketStatus newTicketStatus,
                                         SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
-        doiRequestService.updateDoiRequest(userInstance, publicationIdentifier, newDoiRequestStatus);
+        doiRequestService.updateDoiRequest(userInstance, publicationIdentifier, newTicketStatus);
     }
     
     private void updateContentLocationHeader(SortableIdentifier publicationIdentifier) {

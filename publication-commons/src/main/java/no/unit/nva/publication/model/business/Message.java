@@ -32,7 +32,7 @@ public class Message implements TicketEntry,
     @JsonProperty("customerId")
     private URI customerId;
     @JsonProperty("status")
-    private MessageStatus status;
+    private TicketStatus status;
     @JsonProperty("sender")
     private String sender;
     @JsonProperty("resourceIdentifier")
@@ -101,11 +101,11 @@ public class Message implements TicketEntry,
     }
     
     public Message markAsRead(Clock clock) {
-        return this.copy()
-            .withStatus(MessageStatus.READ)
-            .withModifiedTime(clock.instant())
-            .withRowVersion(UUID.randomUUID())
-            .build();
+        var copy = this.copy();
+        copy.setStatus(TicketStatus.READ);
+        copy.setModifiedDate(clock.instant());
+        copy.setVersion(UUID.randomUUID());
+        return copy;
     }
     
     public MessageType getMessageType() {
@@ -173,11 +173,13 @@ public class Message implements TicketEntry,
         this.customerId = customerId;
     }
     
-    public MessageStatus getStatus() {
+    @Override
+    public TicketStatus getStatus() {
         return status;
     }
     
-    public void setStatus(MessageStatus status) {
+    @Override
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
     
@@ -274,7 +276,8 @@ public class Message implements TicketEntry,
         return toJsonString();
     }
     
-    public MessageBuilder copy() {
+    @Override
+    public Message copy() {
         return Message.builder()
             .withCreatedTime(this.getCreatedDate())
             .withCustomerId(this.getCustomerId())
@@ -287,7 +290,8 @@ public class Message implements TicketEntry,
             .withText(this.getText())
             .withResourceTitle(this.getResourceTitle())
             .withModifiedTime(this.getModifiedDate())
-            .withRowVersion(this.getVersion());
+            .withVersion(this.getVersion())
+            .build();
     }
     
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
@@ -296,7 +300,7 @@ public class Message implements TicketEntry,
         
         var now = clock.instant();
         return Message.builder()
-            .withStatus(MessageStatus.UNREAD)
+            .withStatus(TicketStatus.UNREAD)
             .withResourceIdentifier(publication.getIdentifier())
             .withCustomerId(sender.getOrganizationUri())
             .withText(messageText)
@@ -306,7 +310,7 @@ public class Message implements TicketEntry,
             .withCreatedTime(now)
             .withModifiedTime(now)
             .withIdentifier(messageIdentifier)
-            .withRowVersion(nextVersion());
+            .withVersion(nextVersion());
     }
     
     private static String extractTitle(Publication publication) {

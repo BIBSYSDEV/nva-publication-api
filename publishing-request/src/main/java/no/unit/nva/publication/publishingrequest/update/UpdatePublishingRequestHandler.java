@@ -48,12 +48,12 @@ public class UpdatePublishingRequestHandler
         
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
         var currentRequest = (PublishingRequestCase)
-            requestService.fetchTicketByPublicationAndRequestIdentifiers(publicationIdentifier,
-                publishingRequestIdentifier);
+                                 requestService.fetchTicketByPublicationAndRequestIdentifiers(publicationIdentifier,
+                                     publishingRequestIdentifier);
         
-        final var updatedRequest = currentRequest.approve();
-        var updatedEntry = requestService.updatePublishingRequest(updatedRequest);
-        return PublishingRequestCaseDto.createResponseObject(updatedEntry);
+        final var updatedRequest = currentRequest.complete();
+        var updatedEntry = requestService.updateTicket(updatedRequest);
+        return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) updatedEntry);
     }
     
     @Override

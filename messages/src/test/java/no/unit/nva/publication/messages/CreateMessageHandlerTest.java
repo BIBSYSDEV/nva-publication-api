@@ -50,15 +50,12 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     public static final String SOME_CURATOR = "some@curator";
     public static final Context CONTEXT = mock(Context.class);
     public static final String ALLOW_ALL_ORIGIN = "*";
-    public static final String SOME_VALID_HOST = "localhost";
-    public static final String HTTPS = "https";
     private ResourceService resourcesService;
     private MessageService messageService;
     private CreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
     private Publication samplePublication;
-    private Environment environment;
     private DoiRequestService doiRequestService;
     
     @BeforeEach
@@ -68,7 +65,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
-        environment = setupEnvironment();
+        Environment environment = setupEnvironment();
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();

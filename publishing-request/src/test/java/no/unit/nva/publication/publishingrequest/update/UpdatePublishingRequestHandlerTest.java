@@ -7,7 +7,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_CASE_PATH;
-import static no.unit.nva.publication.model.business.PublishingRequestStatus.PENDING;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.update.UpdatePublishingRequestHandler.AUTHORIZATION_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -31,7 +31,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -81,9 +81,9 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "should return Approved PublishingRequestCaseDto when authorized user approves case and "
                               + "case has status {0}")
-    @EnumSource(value = PublishingRequestStatus.class, names = {"PENDING", "COMPLETED"})
+    @EnumSource(value = TicketStatus.class, names = {"PENDING", "COMPLETED"})
     void shouldReturnApprovedPublishingRequestCaseWhenInputIsPublishingRequestApprovalAndUserIsAuthorizedToApprove(
-        PublishingRequestStatus status
+        TicketStatus status
     )
         throws IOException, ApiGatewayException {
         var publication = createPersistedPublication();
@@ -95,11 +95,12 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             PublishingRequestCaseDto.class);
         var responseBody = response.getBodyObject(PublishingRequestCaseDto.class);
         
-        var expectedPublishingRequest = publishingRequest.approve();
-        var expectedResponseBody = PublishingRequestCaseDto.createResponseObject(expectedPublishingRequest);
+        var expectedPublishingRequest = publishingRequest.complete();
+        var expectedResponseBody =
+            PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) expectedPublishingRequest);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(responseBody, is(equalTo(expectedResponseBody)));
-        assertThat(responseBody.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
+        assertThat(responseBody.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
     
     @Test
@@ -116,7 +117,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var actualIdentifierInResponseBody = extractIdentifierFromDto(responseBody);
         var persistedRequest = requestService.fetchTicket(publishingRequest,PublishingRequestCase.class);
         assertThat(persistedRequest.getIdentifier(), is(equalTo(actualIdentifierInResponseBody)));
-        assertThat(persistedRequest.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
+        assertThat(persistedRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
     
     @Test
@@ -156,7 +157,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var wrongCaseId = requestUri.getParent().orElseThrow()
             .addChild(SortableIdentifier.next().toString())
             .getUri();
-        var dto = new PublishingRequestCaseDto(wrongCaseId, PublishingRequestStatus.COMPLETED);
+        var dto = new PublishingRequestCaseDto(wrongCaseId, TicketStatus.COMPLETED);
         var customerId = randomUri();
         return constructHttpRequest(publicationIdentifier, publishingRequestIdentifier, dto, customerId);
     }
@@ -229,7 +230,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var caseId =
             PublishingRequestCaseDto.calculateId(publishingRequest.getResourceIdentifier(),
                 publishingRequest.getIdentifier());
-        return new PublishingRequestCaseDto(caseId, PublishingRequestStatus.COMPLETED);
+        return new PublishingRequestCaseDto(caseId, TicketStatus.COMPLETED);
     }
     
     private HandlerRequestBuilder<PublishingRequestCaseDto> createAuthorizedApprovalRequest(
@@ -246,15 +247,15 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase createPersistedPublishingRequest(Publication publication,
-                                                                   PublishingRequestStatus status)
+                                                                   TicketStatus status)
         throws ApiGatewayException {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
                 publication.getIdentifier());
         publishingRequest = requestService.createTicket(publishingRequest,PublishingRequestCase.class);
         
-        if (PublishingRequestStatus.COMPLETED == status) {
-            requestService.updatePublishingRequest(publishingRequest.approve());
+        if (TicketStatus.COMPLETED == status) {
+            requestService.updateTicket(publishingRequest.complete());
         }
         return publishingRequest;
     }

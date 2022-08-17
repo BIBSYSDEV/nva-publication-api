@@ -35,7 +35,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -253,11 +253,11 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         SortableIdentifier doiRequestIdentifier = doiRequestService
             .createDoiRequest(userInstance, publication.getIdentifier());
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
-        doiRequestService.updateDoiRequest(userInstance, publication.getIdentifier(), expectedNewDoiRequestStatus);
+        TicketStatus expectedNewTicketStatus = TicketStatus.COMPLETED;
+        doiRequestService.updateDoiRequest(userInstance, publication.getIdentifier(), expectedNewTicketStatus);
         
         DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-        assertThat(updatedDoiRequest.getStatus(), is(equalTo(expectedNewDoiRequestStatus)));
+        assertThat(updatedDoiRequest.getStatus(), is(equalTo(expectedNewTicketStatus)));
     }
     
     @Test
@@ -268,8 +268,8 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         SortableIdentifier doiRequestIdentifier = doiRequestService
             .createDoiRequest(owner, publication.getIdentifier());
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
-        doiRequestService.updateDoiRequest(owner, publication.getIdentifier(), expectedNewDoiRequestStatus);
+        TicketStatus expectedNewTicketStatus = TicketStatus.COMPLETED;
+        doiRequestService.updateDoiRequest(owner, publication.getIdentifier(), expectedNewTicketStatus);
         
         DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(owner, doiRequestIdentifier);
         assertThat(updatedDoiRequest.getModifiedDate(), is(equalTo(DOI_REQUEST_UPDATE_TIME)));
@@ -288,8 +288,8 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         
         assertThatDoiRequestIsIncludedInTheCuratorView(sampleCurator, doiRequestIdentifier);
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
-        doiRequestService.updateDoiRequest(someUser, publication.getIdentifier(), expectedNewDoiRequestStatus);
+        TicketStatus expectedNewTicketStatus = TicketStatus.COMPLETED;
+        doiRequestService.updateDoiRequest(someUser, publication.getIdentifier(), expectedNewTicketStatus);
         
         assertThatDoiRequestHasBeenRemovedFromCuratorsView(sampleCurator, doiRequestIdentifier);
     }
@@ -309,7 +309,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         UserInstance sampleCurator = createSampleCurator(publication);
         Executable action =
             () -> doiRequestService.updateDoiRequest(sampleCurator, publication.getIdentifier(),
-                DoiRequestStatus.COMPLETED);
+                TicketStatus.COMPLETED);
         assertThrows(BadRequestException.class, action);
     }
     
@@ -352,7 +352,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
             .withResourceIdentifier(emptyPublication.getIdentifier())
             .withOwner(emptyPublication.getResourceOwner().getOwner())
             .withCustomerId(emptyPublication.getPublisher().getId())
-            .withStatus(DoiRequestStatus.PENDING)
+            .withStatus(TicketStatus.PENDING)
             .withResourceStatus(PublicationStatus.DRAFT)
             .withCreatedDate(DOI_REQUEST_CREATION_TIME)
             .withModifiedDate(DOI_REQUEST_CREATION_TIME)

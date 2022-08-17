@@ -44,9 +44,9 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -358,7 +358,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private Entity createPublishingRequest(Publication createdPublication) {
         var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setStatus(PublishingRequestStatus.PENDING);
+        publishingRequest.setStatus(TicketStatus.PENDING);
         publishingRequest.setCustomerId(createdPublication.getPublisher().getId());
         publishingRequest.setModifiedDate(Instant.now());
         publishingRequest.setCreatedDate(Instant.now());

@@ -1,40 +1,44 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Collections.emptySet;
-import static no.unit.nva.publication.model.business.TicketStatusConstants.CLOSED_STATUS;
-import static no.unit.nva.publication.model.business.TicketStatusConstants.COMPLETED_STATUS;
-import static no.unit.nva.publication.model.business.TicketStatusConstants.PENDING_STATUS;
-
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.CLOSED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.COMPLETED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.PENDING_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.READ_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.UNREAD_STATUS;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
-public enum DoiRequestStatus {
+public enum TicketStatus {
     PENDING(PENDING_STATUS, "REQUESTED"),
     COMPLETED(COMPLETED_STATUS, "APPROVED"),
-    CLOSED(CLOSED_STATUS, "REJECTED");
+    CLOSED(CLOSED_STATUS, "REJECTED"),
+    READ(READ_STATUS, "READ"),
+    UNREAD(UNREAD_STATUS, "UNREAD");
     
     public static final String ERROR_MESSAGE_NOT_ALLOWED_TO_CHANGE_STATUS_FROM_S_TO_S =
         "Not allowed to change status from %s to %s";
     public static final String INVALID_DOI_REQUEST_STATUS_ERROR = "Invalid DoiRequest status. Valid values:  ";
-    static final Set<DoiRequestStatus> validStatusChangeForRejected = Set.of(COMPLETED);
-    static final Set<DoiRequestStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED);
-    static final Set<DoiRequestStatus> validDefaultStatusChanges = emptySet();
+    static final Set<TicketStatus> validStatusChangeForRejected = Set.of(COMPLETED);
+    static final Set<TicketStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED);
+    static final Set<TicketStatus> validDefaultStatusChanges = emptySet();
     public static final String SEPARATOR = ",";
     private final String value;
     private final String legacyValue;
     
-    DoiRequestStatus(String value, String legacyValue) {
+    TicketStatus(String value, String legacyValue) {
         this.value = value;
         this.legacyValue = legacyValue;
     }
     
     @JsonCreator
-    public static DoiRequestStatus parse(String candidate) {
-        return Arrays.stream(DoiRequestStatus.values())
+    public static TicketStatus parse(String candidate) {
+        return Arrays.stream(TicketStatus.values())
             .filter(enumValue -> enumValue.filterByNameOrValue(candidate))
             .collect(SingletonCollector.tryCollect())
             .orElseThrow(fail -> handleParsingError());
@@ -46,7 +50,7 @@ public enum DoiRequestStatus {
         return value;
     }
     
-    public boolean isValidStatusChange(DoiRequestStatus requestedStatusChange) {
+    public boolean isValidStatusChange(TicketStatus requestedStatusChange) {
         return getValidTransitions(this).contains(requestedStatusChange);
     }
     
@@ -58,14 +62,14 @@ public enum DoiRequestStatus {
      * @return New DoiRequestStatus.
      * @throws IllegalArgumentException requestedStatusChange is not valid to change into.
      */
-    public DoiRequestStatus changeStatus(DoiRequestStatus requestedStatusChange) {
+    public TicketStatus changeStatus(TicketStatus requestedStatusChange) {
         if (isValidStatusChange(requestedStatusChange)) {
             return requestedStatusChange;
         }
         throw new IllegalArgumentException(getErrorMessageForNotAllowedStatusChange(requestedStatusChange));
     }
     
-    protected String getErrorMessageForNotAllowedStatusChange(DoiRequestStatus requestedStatusChange) {
+    protected String getErrorMessageForNotAllowedStatusChange(TicketStatus requestedStatusChange) {
         return String.format(ERROR_MESSAGE_NOT_ALLOWED_TO_CHANGE_STATUS_FROM_S_TO_S, this, requestedStatusChange);
     }
     
@@ -74,8 +78,8 @@ public enum DoiRequestStatus {
     }
     
     private static String validValues() {
-        return Arrays.stream(DoiRequestStatus.values())
-            .map(DoiRequestStatus::toString)
+        return Arrays.stream(TicketStatus.values())
+            .map(TicketStatus::toString)
             .collect(Collectors.joining(SEPARATOR));
     }
     
@@ -85,7 +89,7 @@ public enum DoiRequestStatus {
                || name().equalsIgnoreCase(candidate);
     }
     
-    private Set<DoiRequestStatus> getValidTransitions(DoiRequestStatus fromRequestStatus) {
+    private Set<TicketStatus> getValidTransitions(TicketStatus fromRequestStatus) {
         switch (fromRequestStatus) {
             case PENDING:
                 return validStatusChangeForRequested;
@@ -93,6 +97,19 @@ public enum DoiRequestStatus {
                 return validStatusChangeForRejected;
             default:
                 return validDefaultStatusChanges;
+        }
+    }
+    
+    public static class TicketStatusConstants {
+        
+        public static final String PENDING_STATUS = "Pending";
+        public static final String COMPLETED_STATUS = "Completed";
+        public static final String CLOSED_STATUS = "Closed";
+        public static final String READ_STATUS = "Read";
+        public static final String UNREAD_STATUS = "Unread";
+        
+        @JacocoGenerated
+        public TicketStatusConstants() {
         }
     }
 }

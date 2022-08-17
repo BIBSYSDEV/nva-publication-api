@@ -27,8 +27,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -115,7 +115,7 @@ public class MessageService extends ServiceWithTransactions {
         MessageDao queryObject = MessageDao.queryObject(owner, identifier);
         Map<String, AttributeValue> item = fetchMessage(queryObject);
         MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
-        return (Message) result.getData();
+        return result.getData();
     }
     
     public Optional<ResourceConversation> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
@@ -126,8 +126,8 @@ public class MessageService extends ServiceWithTransactions {
         return ResourceConversation.fromMessageList(messagesPerResource).stream().findFirst();
     }
     
-    public List<ResourceConversation> listMessagesForCurator(URI customerId, MessageStatus messageStatus) {
-        MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
+    public List<ResourceConversation> listMessagesForCurator(URI customerId, TicketStatus ticketStatus) {
+        MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, ticketStatus);
         QueryRequest queryRequest = queryRequestForListingMessagesByCustomerAndStatus(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         List<Message> messagesPerResource = parseMessages(queryResult);

@@ -1,20 +1,13 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.model.business.TicketEntry.createNewTicket;
-import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Entity;
@@ -74,11 +67,11 @@ public class PublishingRequestService extends ServiceWithTransactions {
             .orElseThrow(() -> handleFetchPublishingRequestByResourceError(dataEntry.getIdentifier()));
     }
     
-    public PublishingRequestCase updatePublishingRequest(PublishingRequestCase requestUpdate) {
-        var entryUpdate = requestUpdate.copy();
+    public TicketEntry updateTicket(TicketEntry ticketEntry) {
+        var entryUpdate = ticketEntry.copy();
         entryUpdate.setModifiedDate(clock.instant());
         entryUpdate.setVersion(Entity.nextVersion());
-        var putItemRequest = cratePutItemRequest(entryUpdate);
+        var putItemRequest = ((TicketDao) entryUpdate.toDao()).createPutItemRequest();
         client.putItem(putItemRequest);
         return entryUpdate;
     }
@@ -125,18 +118,6 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return new NotFoundException(TICKET_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
     }
     
-    private PutItemRequest cratePutItemRequest(PublishingRequestCase entryUpdate) {
-        var dao = new PublishingRequestDao(entryUpdate);
-        var condition = new UpdateCaseButNotOwnerCondition(entryUpdate);
-        
-        return new PutItemRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withItem(dao.toDynamoFormat())
-            .withConditionExpression(condition.getConditionExpression())
-            .withExpressionAttributeNames(condition.getExpressionAttributeNames())
-            .withExpressionAttributeValues(condition.getExpressionAttributeValues());
-    }
-    
     private Publication fetchPublication(TicketEntry ticketEntry) throws ForbiddenException {
         var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
         return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
@@ -162,63 +143,4 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return queryDao.fetchItem(client);
     }
     
-    private static class UpdateCaseButNotOwnerCondition {
-        
-        private String conditionExpression;
-        private Map<String, String> expressionAttributeNames;
-        private Map<String, AttributeValue> expressionAttributeValues;
-        
-        public UpdateCaseButNotOwnerCondition(PublishingRequestCase entryUpdate) {
-            createCondition(entryUpdate);
-        }
-        
-        public String getConditionExpression() {
-            return conditionExpression;
-        }
-        
-        public Map<String, String> getExpressionAttributeNames() {
-            return expressionAttributeNames;
-        }
-        
-        public Map<String, AttributeValue> getExpressionAttributeValues() {
-            return expressionAttributeValues;
-        }
-        
-        private void createCondition(PublishingRequestCase entryUpdate) {
-            
-            this.expressionAttributeNames = Map.of(
-                "#data", CONTAINED_DATA_FIELD_NAME,
-                "#createdDate", PublishingRequestCase.CREATED_DATE_FIELD,
-                "#customerId", PublishingRequestCase.CUSTOMER_ID_FIELD,
-                "#identifier", PublishingRequestCase.IDENTIFIER_FIELD,
-                "#modifiedDate", PublishingRequestCase.MODIFIED_DATE_FIELD,
-                "#owner", PublishingRequestCase.OWNER_FIELD,
-                "#resourceIdentifier", PublishingRequestCase.RESOURCE_IDENTIFIER_FIELD,
-                "#version", Entity.VERSION);
-            
-            this.expressionAttributeValues =
-                Map.of(
-                    ":createdDate", new AttributeValue(dateAsString(entryUpdate.getCreatedDate())),
-                    ":customerId", new AttributeValue(entryUpdate.getCustomerId().toString()),
-                    ":identifier", new AttributeValue(entryUpdate.getIdentifier().toString()),
-                    ":modifiedDate", new AttributeValue(dateAsString(entryUpdate.getModifiedDate())),
-                    ":owner", new AttributeValue(entryUpdate.getOwner()),
-                    ":resourceIdentifier", new AttributeValue(entryUpdate.getResourceIdentifier().toString()),
-                    ":version", new AttributeValue(entryUpdate.getVersion().toString()));
-            
-            this.conditionExpression = "#data.#createdDate = :createdDate "
-                                       + "AND #data.#customerId = :customerId "
-                                       + "AND #data.#identifier = :identifier "
-                                       + "AND #data.#modifiedDate <> :modifiedDate "
-                                       + "AND #data.#owner = :owner "
-                                       + "AND #data.#resourceIdentifier = :resourceIdentifier "
-                                       + "AND #data.#version <> :version ";
-        }
-        
-        private String dateAsString(Instant date) {
-            return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(date))
-                .map(dateStr -> dateStr.replace(DOUBLE_QUOTES, EMPTY_STRING))
-                .orElseThrow();
-        }
-    }
 }

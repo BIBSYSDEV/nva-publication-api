@@ -31,7 +31,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -147,7 +146,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
                ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
         var draftRequest = DoiRequest.fromPublication(publication);
-        var approvedRequest = draftRequest.copy().withStatus(DoiRequestStatus.COMPLETED).build();
+        var approvedRequest = draftRequest.complete();
         var event = createEvent(draftRequest, approvedRequest);
         
         handler.handleRequest(event, outputStream, context);

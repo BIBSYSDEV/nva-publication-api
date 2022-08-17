@@ -10,7 +10,7 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -34,7 +34,7 @@ public class MessageDto implements JsonSerializable {
     @JsonProperty("recipient")
     private String recipient;
     @JsonProperty("status")
-    private MessageStatus status;
+    private TicketStatus status;
     
     public static MessageDto fromMessage(Message message) {
         MessageDto messageDto = new MessageDto();
@@ -71,12 +71,12 @@ public class MessageDto implements JsonSerializable {
     }
     
     @JacocoGenerated
-    public MessageStatus getStatus() {
+    public TicketStatus getStatus() {
         return status;
     }
     
     @JacocoGenerated
-    public void setStatus(MessageStatus status) {
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
     

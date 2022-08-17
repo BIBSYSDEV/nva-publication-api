@@ -2,22 +2,22 @@ package no.unit.nva.doirequest.update;
 
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import nva.commons.core.JacocoGenerated;
 
 public class ApiUpdateDoiRequest {
     
     public static final String NO_CHANGE_REQUESTED_ERROR = "You must request changes to do";
-    private DoiRequestStatus doiRequestStatus;
+    private TicketStatus doiRequestStatus;
     private String message;
     
     @JacocoGenerated
-    public DoiRequestStatus getDoiRequestStatus() {
+    public TicketStatus getDoiRequestStatus() {
         return this.doiRequestStatus;
     }
     
     @JacocoGenerated
-    public void setDoiRequestStatus(DoiRequestStatus status) {
+    public void setDoiRequestStatus(TicketStatus status) {
         this.doiRequestStatus = status;
     }
     

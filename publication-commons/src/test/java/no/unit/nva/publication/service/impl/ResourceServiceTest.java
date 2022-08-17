@@ -70,10 +70,10 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -681,10 +681,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedDoiRequest = doiRequestService
             .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
         
-        var expectedDoiRequest = originalDoiRequest.copy()
-            .withResourceTitle(ANOTHER_TITLE)
-            .withResourceModifiedDate(THIRD_CLOCK_TICK)
-            .build();
+        var expectedDoiRequest = originalDoiRequest.copy();
+        expectedDoiRequest.setResourceTitle(ANOTHER_TITLE);
+        expectedDoiRequest.setResourceModifiedDate(THIRD_CLOCK_TICK);
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
         
@@ -983,7 +982,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             .withCreatedDate(initialDoiRequest.getCreatedDate())
             .withModifiedDate(updatedDoiRequest.getModifiedDate())
             .withDoi(publicationUpdate.getDoi())
-            .withStatus(DoiRequestStatus.PENDING)
+            .withStatus(TicketStatus.PENDING)
             .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
             .withResourceStatus(publicationUpdate.getStatus())
             .withResourceModifiedDate(publicationUpdate.getModifiedDate())

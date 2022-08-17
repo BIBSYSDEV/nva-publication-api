@@ -3,6 +3,12 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.model.business.Entity.nextVersion;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOURCE_IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -35,34 +41,33 @@ import nva.commons.core.JacocoGenerated;
 public class DoiRequest implements TicketEntry {
     
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
-    public static final String STATUS_FIELD = "status";
-    public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String TYPE = "DoiRequest";
     
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
     
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
-    private static final URI UNKNOWN_USER_AFFILIATION = null;
     public static final String WRONG_PUBLICATION_STATUS_ERROR =
         "DoiRequests may only be created for publications with statuses %s";
     public static final Set<PublicationStatus> ACCEPTABLE_PUBLICATION_STATUSES = Set.of(PublicationStatus.PUBLISHED,
         PublicationStatus.DRAFT);
+    private static final URI UNKNOWN_USER_AFFILIATION = null;
     
+    @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
-    @JsonProperty
+    @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
     private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
-    private DoiRequestStatus status;
+    private TicketStatus status;
     @JsonProperty(RESOURCE_STATUS_FIELD)
     private PublicationStatus resourceStatus;
     @JsonProperty
     private Instant modifiedDate;
-    @JsonProperty
+    @JsonProperty(CREATED_DATE_FIELD)
     @JsonAlias("date")
     private Instant createdDate;
-    @JsonProperty("customerId")
+    @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
-    @JsonProperty("owner")
+    @JsonProperty(OWNER_FIELD)
     private String owner;
     @JsonProperty("resourceTitle")
     private String resourceTitle;
@@ -100,23 +105,16 @@ public class DoiRequest implements TicketEntry {
                                                       Resource resource,
                                                       Instant now) {
         
-        DoiRequest doiRequest =
-            extractDataFromResource(builder(), resource)
-                .withIdentifier(doiRequestIdentifier)
-                .withStatus(DoiRequestStatus.PENDING)
-                .withModifiedDate(now)
-                .withCreatedDate(now)
-                .withDoi(resource.getDoi())
-                .withRowVersion(nextVersion())
-                .build();
+        var doiRequest = extractDataFromResource(resource);
+        doiRequest.setIdentifier(doiRequestIdentifier);
+        doiRequest.setStatus(TicketStatus.PENDING);
+        doiRequest.setModifiedDate(now);
+        doiRequest.setCreatedDate(now);
+        doiRequest.setDoi(resource.getDoi());
+        doiRequest.setVersion(nextVersion());
         
         doiRequest.validate();
         return doiRequest;
-    }
-    
-    @Override
-    public String getType() {
-        return DoiRequest.TYPE;
     }
     
     public static DoiRequestBuilder builder() {
@@ -131,6 +129,11 @@ public class DoiRequest implements TicketEntry {
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
+    }
+    
+    @Override
+    public DoiRequest complete() {
+        return (DoiRequest) TicketEntry.super.complete();
     }
     
     @Override
@@ -174,8 +177,56 @@ public class DoiRequest implements TicketEntry {
     }
     
     @Override
+    public String getType() {
+        return DoiRequest.TYPE;
+    }
+    
+    @Override
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+    
+    @Override
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+    
+    @Override
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+    
+    @Override
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
+    }
+    
+    @Override
+    public String getOwner() {
+        return owner;
+    }
+    
+    @Override
+    public URI getCustomerId() {
+        return customerId;
+    }
+    
+    @Override
     public DoiRequestDao toDao() {
         return new DoiRequestDao(this);
+    }
+    
+    @Override
+    public String getStatusString() {
+        return Objects.nonNull(getStatus()) ? getStatus().toString() : null;
+    }
+    
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
     
     @Override
@@ -190,20 +241,40 @@ public class DoiRequest implements TicketEntry {
         }
     }
     
-    private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
-        return !ACCEPTABLE_PUBLICATION_STATUSES.contains(publication.getStatus());
+    @Override
+    public DoiRequest copy() {
+        return DoiRequest.builder()
+            .withIdentifier(getIdentifier())
+            .withResourceIdentifier(getResourceIdentifier())
+            .withStatus(getStatus())
+            .withResourceStatus(getResourceStatus())
+            .withModifiedDate(getModifiedDate())
+            .withCreatedDate(getCreatedDate())
+            .withCustomerId(getCustomerId())
+            .withOwner(getOwner())
+            .withResourceTitle(getResourceTitle())
+            .withResourceModifiedDate(getResourceModifiedDate())
+            .withResourcePublicationInstance(getResourcePublicationInstance())
+            .withResourcePublicationDate(getResourcePublicationDate())
+            .withResourcePublicationYear(getResourcePublicationYear())
+            .withDoi(getDoi())
+            .withContributors(getContributors())
+            .withRowVersion(getVersion())
+            .build();
+    }
+    
+    @Override
+    public TicketStatus getStatus() {
+        return status;
+    }
+    
+    @Override
+    public void setStatus(TicketStatus status) {
+        this.status = status;
     }
     
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
-    }
-    
-    public DoiRequestStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(DoiRequestStatus status) {
-        this.status = status;
     }
     
     public PublicationStatus getResourceStatus() {
@@ -212,44 +283,6 @@ public class DoiRequest implements TicketEntry {
     
     public void setResourceStatus(PublicationStatus resourceStatus) {
         this.resourceStatus = resourceStatus;
-    }
-    
-    @Override
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-    
-    @Override
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-    
-    @Override
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-    
-    @Override
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-    
-    @Override
-    public URI getCustomerId() {
-        return customerId;
-    }
-    
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
-    }
-    
-    @Override
-    public String getOwner() {
-        return owner;
-    }
-    
-    public void setOwner(String owner) {
-        this.owner = owner;
     }
     
     public String getResourceTitle() {
@@ -311,34 +344,9 @@ public class DoiRequest implements TicketEntry {
     
     public DoiRequest update(Resource resource) {
         if (updateIsAboutTheSameResource(resource)) {
-            return extractDataFromResource(this.copy(), resource).build();
+            return extractDataFromResource(this, resource);
         }
         throw new IllegalDoiRequestUpdate(RESOURCE_IDENTIFIER_MISMATCH_ERROR);
-    }
-    
-    @Override
-    public String getStatusString() {
-        return Objects.nonNull(getStatus()) ? getStatus().toString() : null;
-    }
-    
-    public DoiRequestBuilder copy() {
-        return DoiRequest.builder()
-            .withIdentifier(getIdentifier())
-            .withResourceIdentifier(getResourceIdentifier())
-            .withStatus(getStatus())
-            .withResourceStatus(getResourceStatus())
-            .withModifiedDate(getModifiedDate())
-            .withCreatedDate(getCreatedDate())
-            .withCustomerId(getCustomerId())
-            .withOwner(getOwner())
-            .withResourceTitle(getResourceTitle())
-            .withResourceModifiedDate(getResourceModifiedDate())
-            .withResourcePublicationInstance(getResourcePublicationInstance())
-            .withResourcePublicationDate(getResourcePublicationDate())
-            .withResourcePublicationYear(getResourcePublicationYear())
-            .withDoi(getDoi())
-            .withContributors(getContributors())
-            .withRowVersion(getVersion());
     }
     
     public void validate() {
@@ -383,6 +391,10 @@ public class DoiRequest implements TicketEntry {
                && Objects.equals(getResourcePublicationYear(), that.getResourcePublicationYear())
                && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getContributors(), that.getContributors());
+    }
+    
+    private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
+        return !ACCEPTABLE_PUBLICATION_STATUSES.contains(publication.getStatus());
     }
     
     private boolean updateIsAboutTheSameResource(Resource resource) {
