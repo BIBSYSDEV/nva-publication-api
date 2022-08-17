@@ -10,7 +10,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -20,14 +20,14 @@ import nva.commons.core.JacocoGenerated;
 public class CreatePublishingRequestHandler extends
                                             ApiGatewayHandler<PublishingRequestOpenCase, PublishingRequestCaseDto> {
     
-    private final PublishingRequestService requestService;
+    private final TicketService requestService;
     
     @JacocoGenerated
     public CreatePublishingRequestHandler() {
         this(defaultRequestService());
     }
     
-    public CreatePublishingRequestHandler(PublishingRequestService requestService) {
+    public CreatePublishingRequestHandler(TicketService requestService) {
         super(PublishingRequestOpenCase.class);
         this.requestService = requestService;
     }

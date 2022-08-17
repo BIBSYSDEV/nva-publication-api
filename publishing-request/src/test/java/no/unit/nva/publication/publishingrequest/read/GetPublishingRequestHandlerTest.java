@@ -24,7 +24,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -39,7 +39,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     
     private ResourceService resourceService;
-    private PublishingRequestService publishingRequestService;
+    private TicketService ticketService;
     private GetPublishingRequestHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
@@ -56,8 +56,8 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.publishingRequestService = new PublishingRequestService(client, Clock.systemDefaultZone());
-        this.handler = new GetPublishingRequestHandler(publishingRequestService);
+        this.ticketService = new TicketService(client, Clock.systemDefaultZone());
+        this.handler = new GetPublishingRequestHandler(ticketService);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }
@@ -140,8 +140,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
                 publication.getIdentifier());
-        return (PublishingRequestCase)
-                   publishingRequestService.createTicket(publishingRequest,PublishingRequestCase.class);
+        return ticketService.createTicket(publishingRequest,PublishingRequestCase.class);
     }
     
     private Publication createPublication() throws ApiGatewayException {

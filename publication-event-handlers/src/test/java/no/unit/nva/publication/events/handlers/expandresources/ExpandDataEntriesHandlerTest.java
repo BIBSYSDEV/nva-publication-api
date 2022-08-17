@@ -36,7 +36,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -75,7 +75,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         resourceService = new ResourceService(client, CLOCK);
         var messageService = new MessageService(client, CLOCK);
-        var publishingRequestService = new PublishingRequestService(client, CLOCK);
+        var publishingRequestService = new TicketService(client, CLOCK);
         var doiRequestService = new DoiRequestService(client, CLOCK);
         
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();

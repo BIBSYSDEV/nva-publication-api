@@ -38,7 +38,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.s3.S3Driver;
@@ -61,7 +61,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
     private DoiRequestService doiRequestService;
-    private PublishingRequestService publishingRequestService;
+    private TicketService ticketService;
     private MessageService messageService;
     private ResourceExpansionService resourceExpansionService;
     
@@ -72,9 +72,9 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, clock);
         doiRequestService = new DoiRequestService(client, clock);
         messageService = new MessageService(client, clock);
-        publishingRequestService = new PublishingRequestService(client, clock);
+        ticketService = new TicketService(client, clock);
         resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService, doiRequestService,
-            publishingRequestService);
+            ticketService);
     }
     
     @BeforeEach
@@ -152,7 +152,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var openingCaseObject =
             PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
         var publishingRequest =
-            publishingRequestService.createTicket(openingCaseObject,PublishingRequestCase.class);
+            ticketService.createTicket(openingCaseObject,PublishingRequestCase.class);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
     

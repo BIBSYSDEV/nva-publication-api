@@ -29,7 +29,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -61,7 +61,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.resourceService = new ResourceService(client, clock);
         this.messageService = new MessageService(client, clock);
         this.doiRequestService = new DoiRequestService(client, clock);
-        var publishingRequestService = new PublishingRequestService(client, clock);
+        var publishingRequestService = new TicketService(client, clock);
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
             doiRequestService, publishingRequestService);
     }

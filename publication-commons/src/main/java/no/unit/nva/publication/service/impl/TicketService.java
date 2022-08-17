@@ -21,7 +21,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
 
-public class PublishingRequestService extends ServiceWithTransactions {
+public class TicketService extends ServiceWithTransactions {
     
     public static final String TICKET_NOT_FOUND_FOR_RESOURCE =
         "Could not find requested ticket for Resource: ";
@@ -33,13 +33,13 @@ public class PublishingRequestService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
     
-    public PublishingRequestService(AmazonDynamoDB client, Clock clock) {
+    public TicketService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_PROVIDER);
     }
     
-    protected PublishingRequestService(AmazonDynamoDB client,
-                                       Clock clock,
-                                       Supplier<SortableIdentifier> identifierProvider) {
+    protected TicketService(AmazonDynamoDB client,
+                            Clock clock,
+                            Supplier<SortableIdentifier> identifierProvider) {
         super();
         this.client = client;
         this.clock = clock;
@@ -83,8 +83,8 @@ public class PublishingRequestService extends ServiceWithTransactions {
                                                                              SortableIdentifier resourceIdentifier,
                                                                              Class<T> ticketType) {
         
-        var dao=TicketEntry.queryObject(customerId,resourceIdentifier,ticketType).toDao();
-        var persistedDao = ((TicketDao)dao).fetchByResourceIdentifier(client);
+        var dao = TicketEntry.queryObject(customerId, resourceIdentifier, ticketType).toDao();
+        var persistedDao = ((TicketDao) dao).fetchByResourceIdentifier(client);
         return ticketType.cast(persistedDao.getData());
     }
     

@@ -59,7 +59,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class PublishingRequestServiceTest extends ResourcesLocalTest {
+class TicketServiceTest extends ResourcesLocalTest {
     
     public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     private static final Instant PUBLICATION_CREATION_TIME = randomInstant();
@@ -67,7 +67,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     private static final Instant TICKET_CREATION_TIME = randomInstant(PUBLICATION_MODIFICATION_TIME);
     private static final Instant TICKET_UPDATE_TIME = randomInstant(PUBLICATION_CREATION_TIME);
     private ResourceService resourceService;
-    private PublishingRequestService ticketService;
+    private TicketService ticketService;
     private UserInstance owner;
     private Clock clock;
     
@@ -86,7 +86,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             .thenReturn(TICKET_CREATION_TIME)
             .thenReturn(TICKET_UPDATE_TIME);
         this.resourceService = new ResourceService(client, clock);
-        this.ticketService = new PublishingRequestService(client, clock);
+        this.ticketService = new TicketService(client, clock);
     }
     
     @ParameterizedTest(name = "Publication status: {0}")
@@ -205,7 +205,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistDraftPublication(owner);
         var duplicateIdentifier = SortableIdentifier.next();
-        ticketService = new PublishingRequestService(client, clock, () -> duplicateIdentifier);
+        ticketService = new TicketService(client, clock, () -> duplicateIdentifier);
         var ticketEntry = createUnpersistedTicket(ticketType, publication);
         Executable action = () -> ticketService.createTicket(ticketEntry, ticketType);
         assertDoesNotThrow(action);
@@ -262,7 +262,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     void shouldRetrieveEventuallyConsistentTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var client = mock(AmazonDynamoDB.class);
         var expectedTicketEntry = createMockResponsesImitatingEventualConsistency(ticketType, client);
-        var service = new PublishingRequestService(client, Clock.systemDefaultZone());
+        var service = new TicketService(client, Clock.systemDefaultZone());
         var response = service.createTicket(randomPublishingRequest(), ticketType);
         assertThat(response, is(equalTo(expectedTicketEntry)));
         verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());

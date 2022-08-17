@@ -37,7 +37,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -66,7 +66,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private AmazonDynamoDB dynamoClient;
     private MessageService messageService;
     private DoiRequestService doiRequestService;
-    private PublishingRequestService publishingRequestService;
+    private TicketService ticketService;
     
     @BeforeEach()
     public void init() {
@@ -80,7 +80,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         resourceService = new ResourceService(dynamoClient, CLOCK);
         messageService = new MessageService(dynamoClient, CLOCK);
         doiRequestService = new DoiRequestService(dynamoClient, CLOCK);
-        publishingRequestService = new PublishingRequestService(dynamoClient, CLOCK);
+        ticketService = new TicketService(dynamoClient, CLOCK);
         
         this.resourceExpansionService = setupResourceExpansionService();
     }
@@ -119,7 +119,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private ResourceExpansionServiceImpl setupResourceExpansionService() {
         var notImportantMessageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
         return new ResourceExpansionServiceImpl(resourceService, notImportantMessageService, doiRequestService,
-            publishingRequestService);
+            ticketService);
     }
     
     private void assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(EventReference inputEvent,

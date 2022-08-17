@@ -12,7 +12,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -23,16 +23,16 @@ import nva.commons.core.JacocoGenerated;
 
 public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, PublishingRequestCaseDto> {
     
-    private final PublishingRequestService publishingRequestService;
+    private final TicketService ticketService;
     
     @JacocoGenerated
     public GetPublishingRequestHandler() {
-        this(new PublishingRequestService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone()));
+        this(new TicketService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone()));
     }
     
-    protected GetPublishingRequestHandler(PublishingRequestService publishingRequestService) {
+    protected GetPublishingRequestHandler(TicketService ticketService) {
         super(Void.class);
-        this.publishingRequestService = publishingRequestService;
+        this.ticketService = ticketService;
     }
     
     @Override
@@ -67,14 +67,14 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
         var queryObject = PublishingRequestCase.createQuery(userInstance,
             resourceIdentifier,
             requestIdentifier);
-        return publishingRequestService.fetchTicket(queryObject,PublishingRequestCase.class);
+        return ticketService.fetchTicket(queryObject,PublishingRequestCase.class);
     }
     
     private PublishingRequestCase fetchPublishingRequestForElevatedUser(UserInstance userInstance,
                                                                         SortableIdentifier resourceIdentifier) {
         PublishingRequestCase persistedRequest;
         persistedRequest = (PublishingRequestCase)
-                               publishingRequestService.getTicketByResourceIdentifier(userInstance.getOrganizationUri(),
+                               ticketService.getTicketByResourceIdentifier(userInstance.getOrganizationUri(),
                                    resourceIdentifier, PublishingRequestCase.class);
         return persistedRequest;
     }

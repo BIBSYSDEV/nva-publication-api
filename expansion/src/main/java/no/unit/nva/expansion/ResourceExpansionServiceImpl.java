@@ -25,7 +25,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
@@ -36,17 +36,17 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private final ResourceService resourceService;
     private final MessageService messageService;
     private final DoiRequestService doiRequestService;
-    private final PublishingRequestService publishingRequestService;
+    private final TicketService ticketService;
     
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         MessageService messageService,
                                         DoiRequestService doiRequestService,
-                                        PublishingRequestService publishingRequestService) {
+                                        TicketService ticketService) {
         
         this.resourceService = resourceService;
         this.messageService = messageService;
         this.doiRequestService = doiRequestService;
-        this.publishingRequestService = publishingRequestService;
+        this.ticketService = ticketService;
     }
     
     @Override
@@ -96,7 +96,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
     
     private ExpandedDataEntry updatePublishingRequestConversation(Message message) throws NotFoundException {
-        var publishingRequest = (PublishingRequestCase) publishingRequestService
+        var publishingRequest = (PublishingRequestCase) ticketService
             .getTicketByResourceIdentifier(message.getCustomerId(),
                 message.getResourceIdentifier(),
                 PublishingRequestCase.class

@@ -193,7 +193,7 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.updateOwner(identifier, oldOwner, newOwner);
     }
     
-    public Publication updatePublication(Publication resourceUpdate){
+    public Publication updatePublication(Publication resourceUpdate) {
         return updateResourceService.updatePublication(resourceUpdate);
     }
     

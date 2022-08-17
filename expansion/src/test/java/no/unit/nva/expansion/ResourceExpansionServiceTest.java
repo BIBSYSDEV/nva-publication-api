@@ -51,7 +51,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -72,7 +72,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private MessageService messageService;
     private DoiRequestService doiRequestService;
-    private PublishingRequestService publishingRequestService;
+    private TicketService ticketService;
     
     public static Stream<Arguments> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class)
@@ -305,7 +305,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private PublicationWithAllKindsOfCasesAndMessages createSamplePublicationWithConversations()
         throws ApiGatewayException {
         return new PublicationWithAllKindsOfCasesAndMessages(resourceService, doiRequestService, messageService,
-            publishingRequestService)
+            ticketService)
             .create();
     }
     
@@ -322,9 +322,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client, CLOCK);
         doiRequestService = new DoiRequestService(client, CLOCK);
-        publishingRequestService = new PublishingRequestService(client, CLOCK);
+        ticketService = new TicketService(client, CLOCK);
         expansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
-            doiRequestService, publishingRequestService);
+            doiRequestService, ticketService);
     }
     
     private Publication createPublication() throws ApiGatewayException {
@@ -400,7 +400,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         private final ResourceService resourceService;
         private final DoiRequestService doiRequestService;
         private final MessageService messageService;
-        private PublishingRequestService publishingRequestService;
+        private TicketService ticketService;
         private Publication publication;
         private DoiRequest doiRequest;
         private UserInstance userInstance;
@@ -413,14 +413,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             ResourceService resourceService,
             DoiRequestService doiRequestService,
             MessageService messageService,
-            PublishingRequestService publishingRequestService
+            TicketService ticketService
         
         ) {
             
             this.resourceService = resourceService;
             this.doiRequestService = doiRequestService;
             this.messageService = messageService;
-            this.publishingRequestService = publishingRequestService;
+            this.ticketService = ticketService;
         }
         
         public PublishingRequestCase getPublishingRequest() {
@@ -470,7 +470,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             var publishingRequestCase =
                 PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
             publishingRequest =
-                publishingRequestService.createTicket(publishingRequestCase,PublishingRequestCase.class);
+                ticketService.createTicket(publishingRequestCase,PublishingRequestCase.class);
             doiRequestMessages = createSomeMessages(MessageType.DOI_REQUEST);
             supportMessages = createSomeMessages(MessageType.SUPPORT);
             publishingRequestMessages = createSomeMessages(MessageType.PUBLISHING_REQUEST);

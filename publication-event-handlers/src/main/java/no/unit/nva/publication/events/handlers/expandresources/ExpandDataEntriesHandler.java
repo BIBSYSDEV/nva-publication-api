@@ -19,7 +19,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -85,8 +85,8 @@ public class ExpandDataEntriesHandler
     }
     
     @JacocoGenerated
-    private static PublishingRequestService defaultPublishingRequestService(AmazonDynamoDB dynamoDbClient) {
-        return new PublishingRequestService(dynamoDbClient, Clock.systemDefaultZone());
+    private static TicketService defaultPublishingRequestService(AmazonDynamoDB dynamoDbClient) {
+        return new TicketService(dynamoDbClient, Clock.systemDefaultZone());
     }
     
     @JacocoGenerated

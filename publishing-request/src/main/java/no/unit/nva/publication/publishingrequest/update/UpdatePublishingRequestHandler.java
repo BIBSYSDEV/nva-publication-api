@@ -11,7 +11,7 @@ import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -24,14 +24,14 @@ public class UpdatePublishingRequestHandler
     extends ApiGatewayHandler<PublishingRequestCaseDto, PublishingRequestCaseDto> {
     
     public static final String AUTHORIZATION_ERROR = "User is not authorized to approve publishing requests";
-    private final PublishingRequestService requestService;
+    private final TicketService requestService;
     
     @JacocoGenerated
     public UpdatePublishingRequestHandler() {
-        this(new PublishingRequestService(DEFAULT_DYNAMODB_CLIENT, DEFAULT_CLOCK));
+        this(new TicketService(DEFAULT_DYNAMODB_CLIENT, DEFAULT_CLOCK));
     }
     
-    public UpdatePublishingRequestHandler(PublishingRequestService requestService) {
+    public UpdatePublishingRequestHandler(TicketService requestService) {
         super(PublishingRequestCaseDto.class);
         this.requestService = requestService;
     }
