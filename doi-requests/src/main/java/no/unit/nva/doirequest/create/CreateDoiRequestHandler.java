@@ -12,11 +12,12 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InternalErrorException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -34,7 +35,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     public static final String USER_IS_NOT_OWNER_ERROR = "User does not own the specific publication";
     
     private static final Clock CLOCK = Clock.systemDefaultZone();
-    private final DoiRequestService doiRequestService;
+    private final TicketService ticketService;
     private final MessageService messageService;
     private final ResourceService resourceService;
     
@@ -47,19 +48,19 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     private CreateDoiRequestHandler(AmazonDynamoDB client, Clock clock) {
         this(
             new ResourceService(client, clock),
-            new DoiRequestService(client, clock),
+            new TicketService(client, clock),
             new MessageService(client, clock),
             new Environment());
     }
     
     public CreateDoiRequestHandler(ResourceService resourceService,
-                                   DoiRequestService requestService,
+                                   TicketService requestService,
                                    MessageService messageService,
                                    Environment environment) {
         super(CreateDoiRequest.class, environment);
         this.resourceService = resourceService;
         this.messageService = messageService;
-        this.doiRequestService = requestService;
+        this.ticketService = requestService;
     }
     
     @Override
@@ -67,9 +68,9 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         throws ApiGatewayException {
         UserInstance owner = extractUserInstance(requestInfo);
         Publication publication = fetchPublication(input, owner);
-        SortableIdentifier doiRequestIdentifier = createDoiRequest(publication);
+        var createdTicket = createDoiRequest(publication);
         sendMessage(input, owner, publication);
-        addAdditionalHeaders(() -> additionalHeaders(doiRequestIdentifier));
+        addAdditionalHeaders(() -> additionalHeaders(createdTicket.getIdentifier()));
         return null;
     }
     
@@ -99,13 +100,14 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         }
     }
     
-    private SortableIdentifier createDoiRequest(Publication publication)
+    private DoiRequest createDoiRequest(Publication publication)
         throws ApiGatewayException {
-        return attempt(() -> doiRequestService.createDoiRequest(publication))
+        return attempt(() -> DoiRequest.fromPublication(publication))
+            .map(createTicketRequest -> ticketService.createTicket(createTicketRequest, DoiRequest.class))
             .orElseThrow(this::handleError);
     }
     
-    private ApiGatewayException handleError(Failure<SortableIdentifier> fail) {
+    private ApiGatewayException handleError(Failure<DoiRequest> fail) {
         Exception exception = fail.getException();
         if (exception instanceof TransactionFailedException) {
             return new BadRequestException(DOI_ALREADY_EXISTS_ERROR);
