@@ -42,8 +42,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.storage.DynamoEntry;
-import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -246,37 +244,27 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         assertThrows(BadRequestException.class, () -> ticketService.completeTicket(ticketUpdateRequest));
     }
     
-    private TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        var ticket = createUnpersistedTicket(ticketType, publication);
-        return ticketService.createTicket(ticket, ticketType);
-    }
-    
-    @Test
-    void shouldRetrievePublishingRequestBasedOnPublicationAndPublishingRequestIdentifier() throws ApiGatewayException {
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should persist updated ticket status when ticket status is updated")
+    @MethodSource("ticketProvider")
+    void shouldRetrieveTicketByIdentifier(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistDraftPublication(owner);
-        var publishingRequest = createPublishingRequest(publication);
-        var retrievedPublishingRequest = ticketService
-            .fetchTicketByPublicationAndRequestIdentifiers(publication.getIdentifier(),
-                publishingRequest.getIdentifier());
+        var expectedTicketEntry = createPersistedTicket(publication, ticketType);
+        var actualTicketEntry =
+            ticketService.fetchTicketByIdentifier(expectedTicketEntry.getIdentifier(), ticketType);
         
-        assertThat(retrievedPublishingRequest, is(equalTo(publishingRequest)));
+        assertThat(actualTicketEntry, is(equalTo(expectedTicketEntry)));
     }
     
-    @Test
-    void shouldRetrieveEventuallyConsistentPublishingRequest() throws ApiGatewayException {
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should retrieve eventually consistent ticket")
+    @MethodSource("ticketProvider")
+    void shouldRetrieveEventuallyConsistentTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var client = mock(AmazonDynamoDB.class);
-        when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
-        var mockedResponse = new PublishingRequestDao(randomPublishingRequest()).toDynamoFormat();
-        when(client.getItem(any()))
-            .thenReturn(new GetItemResult().withItem(mockedPublicationResponse()))
-            .thenThrow(ResourceNotFoundException.class)
-            .thenReturn(new GetItemResult().withItem(mockedResponse));
+        var expectedTicketEntry = createMockResponsesImitatingEventualConsistency(ticketType, client);
         var service = new PublishingRequestService(client, Clock.systemDefaultZone());
-        var response = service.createTicket(randomPublishingRequest(), PublishingRequestCase.class);
-        var expectedDao = DynamoEntry.parseAttributeValuesMap(mockedResponse, PublishingRequestDao.class);
-        var expectedRequest = expectedDao.getData();
-        assertThat(response, is(equalTo(expectedRequest)));
+        var response = service.createTicket(randomPublishingRequest(), ticketType);
+        assertThat(response, is(equalTo(expectedTicketEntry)));
         verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());
     }
     
@@ -288,6 +276,28 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             ticketService.getTicketByResourceIdentifier(publication.getPublisher().getId(),
                 publication.getIdentifier(), PublishingRequestCase.class);
         assertThat(retrievedRequest, is(equalTo(publishingRequest)));
+    }
+    
+    private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
+                                                                        AmazonDynamoDB client) {
+        var mockedGetPublicationResponse = new GetItemResult().withItem(mockedPublicationResponse());
+        var mockedResponseWhenItemNotYetInPlace = ResourceNotFoundException.class;
+        
+        var ticketEntry = createUnpersistedTicket(ticketType, randomPublication());
+        var mockedResponseWhenItemFinallyInPlace = new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
+        
+        when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
+        when(client.getItem(any()))
+            .thenReturn(mockedGetPublicationResponse)
+            .thenThrow(mockedResponseWhenItemNotYetInPlace)
+            .thenReturn(mockedResponseWhenItemFinallyInPlace);
+        return ticketEntry;
+    }
+    
+    private TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var ticket = createUnpersistedTicket(ticketType, publication);
+        return ticketService.createTicket(ticket, ticketType);
     }
     
     private void tickTheClockInsteadOfUpdatingPublication() {

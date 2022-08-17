@@ -78,6 +78,12 @@ public class PublishingRequestCase implements TicketEntry {
         return queryObject;
     }
     
+    public static PublishingRequestCase createQuery(SortableIdentifier ticketIdentifier) {
+        var queryObject = new PublishingRequestCase();
+        queryObject.setIdentifier(ticketIdentifier);
+        return queryObject;
+    }
+    
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;

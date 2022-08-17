@@ -5,6 +5,7 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -35,7 +36,6 @@ import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 
 public class MessageService extends ServiceWithTransactions {
@@ -75,14 +75,10 @@ public class MessageService extends ServiceWithTransactions {
     
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
-        var query = queryObject.creteQueryForFetchingByIdentifier();
-        return client.query(query)
-            .getItems().stream()
-            .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+        return attempt(() -> queryObject.fetchByIdentifier(client, MessageDao.class))
             .map(MessageDao::getData)
-            .map(Message.class::cast)
-            .collect(SingletonCollector.tryCollect())
             .toOptional();
+        
     }
     
     /* TODO: consider using UpdateRequest to avoid doing the existence checking beforehand. At the present time

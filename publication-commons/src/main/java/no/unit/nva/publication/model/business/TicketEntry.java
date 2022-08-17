@@ -26,6 +26,13 @@ public interface TicketEntry extends Entity {
         return newTicket;
     }
     
+    static <T extends TicketEntry> T createNewTicket(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return ticketType.cast(DoiRequest.builder().withIdentifier(ticketIdentifier).build());
+        }
+        return ticketType.cast(PublishingRequestCase.createQuery(ticketIdentifier));
+    }
+    
     SortableIdentifier getResourceIdentifier();
     
     void validateCreationRequirements(Publication publication) throws ConflictException;

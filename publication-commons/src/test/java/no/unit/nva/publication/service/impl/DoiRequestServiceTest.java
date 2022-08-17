@@ -306,7 +306,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, action);
     }
     
-    
+    //TODO: Remove once ticket service is in place.
     @Test
     void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
         throws ApiGatewayException {

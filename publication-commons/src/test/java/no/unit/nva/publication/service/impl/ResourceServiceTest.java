@@ -7,7 +7,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutI
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
@@ -811,8 +810,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         NotFoundException exception = assertThrows(NotFoundException.class, action);
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
-        assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX));
-        assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
     }
     
     @Test
@@ -871,7 +868,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(samplePublication);
         var exception = assertThrows(InvalidPublicationException.class,
             () -> resourceService.publishPublication(userInstance, samplePublication.getIdentifier()));
-        assertThat(exception.getMessage(),containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+        assertThat(exception.getMessage(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
     }
     
     private Publication createUnpublishablePublication() throws ApiGatewayException {

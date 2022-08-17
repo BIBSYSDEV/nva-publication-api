@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
@@ -62,7 +61,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         throws NotFoundException {
         return fetchFromDatabase(dataEntry, ticketType)
             .map(TicketDao::getData)
-            .map(ticketEntry -> (T) ticketEntry)
+            .map(ticketType::cast)
             .orElseThrow(() -> handleFetchPublishingRequestByResourceError(dataEntry.getIdentifier()));
     }
     
@@ -76,16 +75,11 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return entryUpdate;
     }
     
-    public TicketEntry fetchTicketByPublicationAndRequestIdentifiers(
-        SortableIdentifier publicationIdentifier,
-        SortableIdentifier ticketIdentifier)
+    public <T extends TicketEntry> T fetchTicketByIdentifier(SortableIdentifier ticketIdentifier, Class<T> ticketType)
         throws NotFoundException {
-        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
-        var userInstance = UserInstance.fromPublication(publication);
-        var queryObject = PublishingRequestCase.createQuery(userInstance,
-            publicationIdentifier,
-            ticketIdentifier);
-        return fetchTicket(queryObject, PublishingRequestCase.class);
+        var ticketDao = createNewTicket(ticketIdentifier, ticketType).toDao();
+        var queryResult = ticketDao.fetchByIdentifier(client, ticketDao.getClass());
+        return ticketType.cast(queryResult.getData());
     }
     
     public <T extends TicketEntry> TicketEntry getTicketByResourceIdentifier(URI customerId,
