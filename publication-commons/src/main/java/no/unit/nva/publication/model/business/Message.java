@@ -19,6 +19,7 @@ import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
+@SuppressWarnings("PMD.GodClass")
 public class Message implements TicketEntry,
                                 JsonSerializable {
     
@@ -32,7 +33,7 @@ public class Message implements TicketEntry,
     @JsonProperty("customerId")
     private URI customerId;
     @JsonProperty("status")
-    private MessageStatus status;
+    private TicketStatus status;
     @JsonProperty("sender")
     private String sender;
     @JsonProperty("resourceIdentifier")
@@ -73,14 +74,6 @@ public class Message implements TicketEntry,
             .build();
     }
     
-    @Deprecated
-    public static Message supportMessage(UserInstance sender,
-                                         Publication publication,
-                                         String messageText,
-                                         Clock clock) {
-        return create(sender, publication, messageText, null, clock, MessageType.SUPPORT);
-    }
-    
     @JsonProperty("recipient")
     public String getRecipient() {
         return owner.equals(sender) ? SUPPORT_SERVICE_RECIPIENT : owner;
@@ -101,11 +94,11 @@ public class Message implements TicketEntry,
     }
     
     public Message markAsRead(Clock clock) {
-        return this.copy()
-            .withStatus(MessageStatus.READ)
-            .withModifiedTime(clock.instant())
-            .withRowVersion(UUID.randomUUID())
-            .build();
+        var copy = this.copy();
+        copy.setStatus(TicketStatus.READ);
+        copy.setModifiedDate(clock.instant());
+        copy.setVersion(UUID.randomUUID());
+        return copy;
     }
     
     public MessageType getMessageType() {
@@ -173,11 +166,13 @@ public class Message implements TicketEntry,
         this.customerId = customerId;
     }
     
-    public MessageStatus getStatus() {
+    @Override
+    public TicketStatus getStatus() {
         return status;
     }
     
-    public void setStatus(MessageStatus status) {
+    @Override
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
     
@@ -197,7 +192,14 @@ public class Message implements TicketEntry,
     //TODO: remove method or cover when Message is not a Ticket anymore.
     @JacocoGenerated
     @Override
-    public void validateRequirements(Publication publication) {
+    public void validateCreationRequirements(Publication publication) {
+    
+    }
+    
+    //TODO: remove method or cover when Message is not a Ticket anymore.
+    @JacocoGenerated
+    @Override
+    public void validateCompletionRequirements(Publication publication) {
     
     }
     
@@ -274,7 +276,8 @@ public class Message implements TicketEntry,
         return toJsonString();
     }
     
-    public MessageBuilder copy() {
+    @Override
+    public Message copy() {
         return Message.builder()
             .withCreatedTime(this.getCreatedDate())
             .withCustomerId(this.getCustomerId())
@@ -287,7 +290,8 @@ public class Message implements TicketEntry,
             .withText(this.getText())
             .withResourceTitle(this.getResourceTitle())
             .withModifiedTime(this.getModifiedDate())
-            .withRowVersion(this.getVersion());
+            .withVersion(this.getVersion())
+            .build();
     }
     
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
@@ -296,7 +300,7 @@ public class Message implements TicketEntry,
         
         var now = clock.instant();
         return Message.builder()
-            .withStatus(MessageStatus.UNREAD)
+            .withStatus(TicketStatus.UNREAD)
             .withResourceIdentifier(publication.getIdentifier())
             .withCustomerId(sender.getOrganizationUri())
             .withText(messageText)
@@ -306,7 +310,7 @@ public class Message implements TicketEntry,
             .withCreatedTime(now)
             .withModifiedTime(now)
             .withIdentifier(messageIdentifier)
-            .withRowVersion(nextVersion());
+            .withVersion(nextVersion());
     }
     
     private static String extractTitle(Publication publication) {

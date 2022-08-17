@@ -21,7 +21,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -93,12 +93,12 @@ public class DoiRequestEventProducer
     }
     
     private boolean isDoiRequestApproval(DoiRequest oldEntry, DoiRequest newEntry) {
-        var oldEntryIsNotApproved = matchStatus(oldEntry, DoiRequestStatus.PENDING);
-        var newEntryIsApproved = matchStatus(newEntry, DoiRequestStatus.COMPLETED);
+        var oldEntryIsNotApproved = matchStatus(oldEntry, TicketStatus.PENDING);
+        var newEntryIsApproved = matchStatus(newEntry, TicketStatus.COMPLETED);
         return oldEntryIsNotApproved && newEntryIsApproved;
     }
     
-    private Boolean matchStatus(DoiRequest oldEntry, DoiRequestStatus approved) {
+    private Boolean matchStatus(DoiRequest oldEntry, TicketStatus approved) {
         return Optional.of(oldEntry)
             .map(DoiRequest::getStatus)
             .map(approved::equals)

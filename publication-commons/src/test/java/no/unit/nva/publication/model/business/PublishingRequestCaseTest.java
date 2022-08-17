@@ -14,23 +14,14 @@ class PublishingRequestCaseTest {
     
     @Test
     void shouldReturnCopyWithoutInformationLoss() {
-        var original = createSample(randomElement(PublishingRequestStatus.values()));
+        var original = createSample(randomElement(TicketStatus.values()));
         var copy = original.copy();
         assertThat(original, doesNotHaveEmptyValues());
         assertThat(copy, is(equalTo(original)));
         assertThat(copy, is(not(sameInstance(original))));
     }
     
-    @Test
-    void shouldReturnCopyOfOriginalWithApprovedStatusButAllOtherFieldsTheSame() {
-        var original = createSample(PublishingRequestStatus.PENDING);
-        var approved = original.approve();
-        var expected = original.copy();
-        expected.setStatus(PublishingRequestStatus.COMPLETED);
-        assertThat(approved, is(equalTo(expected)));
-    }
-    
-    private PublishingRequestCase createSample(PublishingRequestStatus status) {
+    private PublishingRequestCase createSample(TicketStatus status) {
         var sample = randomPublishingRequest();
         sample.setStatus(status);
         return sample;

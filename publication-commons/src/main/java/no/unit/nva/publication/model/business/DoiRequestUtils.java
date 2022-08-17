@@ -14,19 +14,24 @@ public final class DoiRequestUtils {
     private DoiRequestUtils() {
     }
     
-    static DoiRequestBuilder extractDataFromResource(DoiRequestBuilder builder, Resource resource) {
-        return builder
-            .withResourceIdentifier(resource.getIdentifier())
-            .withDoi(resource.getDoi())
-            .withOwner(resource.getResourceOwner().getOwner())
-            .withResourceModifiedDate(resource.getModifiedDate())
-            .withResourcePublicationDate(extractPublicationDate(resource))
-            .withCustomerId(resource.getCustomerId())
-            .withResourcePublicationInstance(extractPublicationInstance(resource))
-            .withResourcePublicationYear(extractPublicationYear(resource))
-            .withResourceStatus(resource.getStatus())
-            .withResourceTitle(extractMainTitle(resource))
-            .withContributors(extractContributors(resource));
+    static DoiRequest extractDataFromResource(DoiRequest doiRequest, Resource resource) {
+        var copy = doiRequest.copy();
+        copy.setResourceIdentifier(resource.getIdentifier());
+        copy.setDoi(resource.getDoi());
+        copy.setOwner(resource.getResourceOwner().getOwner());
+        copy.setResourceModifiedDate(resource.getModifiedDate());
+        copy.setResourcePublicationDate(extractPublicationDate(resource));
+        copy.setCustomerId(resource.getCustomerId());
+        copy.setResourcePublicationInstance(extractPublicationInstance(resource));
+        copy.setResourcePublicationYear(extractPublicationYear(resource));
+        copy.setResourceStatus(resource.getStatus());
+        copy.setResourceTitle(extractMainTitle(resource));
+        copy.setContributors(extractContributors(resource));
+        return copy;
+    }
+    
+    static DoiRequest extractDataFromResource(Resource resource) {
+        return extractDataFromResource(new DoiRequest(), resource);
     }
     
     private static List<Contributor> extractContributors(Resource resource) {

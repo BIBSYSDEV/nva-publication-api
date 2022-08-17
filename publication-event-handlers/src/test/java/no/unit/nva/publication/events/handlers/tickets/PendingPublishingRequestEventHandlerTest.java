@@ -22,7 +22,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
@@ -78,7 +78,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest =
             publishingRequestService.fetchTicket(publishingRequest, PublishingRequestCase.class);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.COMPLETED)));
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
     
     @Test
@@ -94,7 +94,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest =
             publishingRequestService.fetchTicket(publishingRequest, PublishingRequestCase.class);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.PENDING)));
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
     }
     
     @Test
@@ -110,7 +110,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest =
             publishingRequestService.fetchTicket(publishingRequest, PublishingRequestCase.class);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(PublishingRequestStatus.PENDING)));
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
         assertThat(logger.getMessages(), containsString(response.body()));
     }
     

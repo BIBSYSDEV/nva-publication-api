@@ -63,7 +63,7 @@ public class DoiRequestDao extends TicketDao
     
     @Override
     public Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
-        return fetchItem(client, TicketDao.class);
+        return fetchItemWithClient(client, TicketDao.class);
     }
     
     public DoiRequestDao(DoiRequest doiRequest) {

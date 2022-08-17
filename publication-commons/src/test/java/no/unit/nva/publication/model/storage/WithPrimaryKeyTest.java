@@ -16,6 +16,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -65,9 +66,12 @@ public class WithPrimaryKeyTest extends ResourcesLocalTest {
     
     private static Message randomMessage(ResourceDao res) {
         UserInstance sampleSender = createSampleUser(res);
-        Message message = Message.supportMessage(sampleSender, res.getData().toPublication(), randomString(), CLOCK);
-        message.setIdentifier(SortableIdentifier.next());
-        return message;
+        return Message.create(sampleSender,
+            res.getData().toPublication(),
+            randomString(),
+            SortableIdentifier.next(),
+            CLOCK,
+            MessageType.SUPPORT);
     }
     
     private static UserInstance createSampleUser(ResourceDao resource) {

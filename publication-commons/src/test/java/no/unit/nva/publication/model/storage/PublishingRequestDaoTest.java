@@ -1,11 +1,11 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -15,12 +15,12 @@ import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
-import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,9 +101,9 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publication = PublicationGenerator.randomPublication();
-        var publishingRequestCase = randomPublishingRequest(publication).approve();
-        publishingRequestCase.setStatus(randomElement(PublishingRequestStatus.values()));
-        return (PublishingRequestDao) publishingRequestCase.toDao();
+        var publishingRequestCase = randomPublishingRequest(publication).complete(publication);
+        publishingRequestCase.setStatus(randomElement(TicketStatus.values()));
+        return publishingRequestCase.toDao();
     }
     
     private Publication createPublication() throws ApiGatewayException {

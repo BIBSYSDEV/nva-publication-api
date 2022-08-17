@@ -32,13 +32,13 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +78,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         return UserInstance.create(randomString(), publication.getPublisher().getId());
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException {
@@ -89,6 +90,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(doiRequest, is(not(nullValue())));
     }
     
+    //TODO: Remove once ticket service is in place
     @Test
     void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
         throws ApiGatewayException {
@@ -104,6 +106,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
     }
     
+    //TODO: Remove once ticket service is in place
     @Test
     void createDoiRequestThrowsExceptionWhenTheUserIsNotTheResourceOwner()
         throws ApiGatewayException {
@@ -114,14 +117,16 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(exception.getCause(), is(instanceOf(NotFoundException.class)));
     }
     
+    //TODO: Remove once ticket service is in place. This test is no longer valid because
+    // a ticket has the following id pattern <host>/publication/<pub-identifier>/ticket/<ticket-identifier>
     @Test
     void createDoiRequestThrowsBadRequestExceptionWhenPublicationIdIsEmpty() {
-        
         Executable action = () -> doiRequestService.createDoiRequest(owner, null);
         BadRequestException exception = assertThrows(BadRequestException.class, action);
         assertThat(exception.getMessage(), containsString(ResourceService.EMPTY_RESOURCE_IDENTIFIER_ERROR));
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void createDoiRequestThrowsTransactionFailedExceptionWhenDoiRequestAlreadyExists()
         throws ApiGatewayException {
@@ -135,6 +140,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(exception.getCause(), is(instanceOf(TransactionCanceledException.class)));
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void createDoiRequestThrowsExceptionWhenDuplicateIdentifierIsCreated()
         throws ApiGatewayException {
@@ -155,6 +161,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThrows(TransactionFailedException.class, action);
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void createDoiRequestDoesNotThrowExceptionWhenResourceIsNotPublished() throws ApiGatewayException {
         Publication publication = createDraftPublication(owner);
@@ -162,6 +169,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertDoesNotThrow(action);
     }
     
+    //TODO: Remove once ticket service is in place. implemented through search.
     @Test
     void listDoiRequestsForPublishedResourcesReturnsAllDoiRequestsWithStatusRequestedForPublishedResources()
         throws ApiGatewayException {
@@ -181,6 +189,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(doiRequests, not(hasItem(unexpectedDoiRequest)));
     }
     
+    //TODO: Remove once ticket service is in place. implemented through search.
     @Test
     void listDoiRequestsForPublishedResourcesDoesNotReturnDoiRequestsFromDifferentOrganization()
         throws ApiGatewayException {
@@ -201,6 +210,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(resultForRelevantUser, hasItem(expectedDoiRequest));
     }
     
+    //TODO: Remove once ticket service is in place. Will be implemented through search
     @Test
     void listDoiRequestsForUserReturnsDoiRequestsWithStatusRequested() throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
@@ -214,8 +224,10 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(result, is(equalTo(List.of(expectedDoiRequest))));
     }
     
+    //TODO: Remove once ticket service is in place. Will be implemented through search
+    // not sure what this test is testing.
     @Test
-    void listDoiRequestsForUserReturnsAllRelevantDoiRequests() throws ApiGatewayException {
+    void listDoiRequestsForUserReturnsAllRelevantDoiRequestsEvenWhenPaginationIsNecessary() throws ApiGatewayException {
         int endExclusive = 10;
         List<Publication> publications = IntStream.range(0, endExclusive).boxed()
             .map(attempt(i -> createDraftPublication(owner)))
@@ -233,6 +245,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(result, hasSize(endExclusive));
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void updateDoiRequestUpdatesDoiRequestStatusInDatabase()
         throws ApiGatewayException {
@@ -241,13 +254,14 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         SortableIdentifier doiRequestIdentifier = doiRequestService
             .createDoiRequest(userInstance, publication.getIdentifier());
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
-        doiRequestService.updateDoiRequest(userInstance, publication.getIdentifier(), expectedNewDoiRequestStatus);
+        TicketStatus expectedNewTicketStatus = TicketStatus.COMPLETED;
+        doiRequestService.updateDoiRequest(userInstance, publication.getIdentifier(), expectedNewTicketStatus);
         
         DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-        assertThat(updatedDoiRequest.getStatus(), is(equalTo(expectedNewDoiRequestStatus)));
+        assertThat(updatedDoiRequest.getStatus(), is(equalTo(expectedNewTicketStatus)));
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void updateDoiRequestUpdatesModifiedDateOfDoiRequest()
         throws ApiGatewayException {
@@ -256,13 +270,15 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         SortableIdentifier doiRequestIdentifier = doiRequestService
             .createDoiRequest(owner, publication.getIdentifier());
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
-        doiRequestService.updateDoiRequest(owner, publication.getIdentifier(), expectedNewDoiRequestStatus);
+        TicketStatus expectedNewTicketStatus = TicketStatus.COMPLETED;
+        doiRequestService.updateDoiRequest(owner, publication.getIdentifier(), expectedNewTicketStatus);
         
         DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(owner, doiRequestIdentifier);
         assertThat(updatedDoiRequest.getModifiedDate(), is(equalTo(DOI_REQUEST_UPDATE_TIME)));
     }
     
+    
+    //TODO: Remove once ticket service is in place. Will be implemented through search
     @Test
     void updateDoiRequestUpdatesStatusIndexForDoiRequest()
         throws ApiGatewayException {
@@ -276,12 +292,13 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         
         assertThatDoiRequestIsIncludedInTheCuratorView(sampleCurator, doiRequestIdentifier);
         
-        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.COMPLETED;
-        doiRequestService.updateDoiRequest(someUser, publication.getIdentifier(), expectedNewDoiRequestStatus);
+        TicketStatus expectedNewTicketStatus = TicketStatus.COMPLETED;
+        doiRequestService.updateDoiRequest(someUser, publication.getIdentifier(), expectedNewTicketStatus);
         
         assertThatDoiRequestHasBeenRemovedFromCuratorsView(sampleCurator, doiRequestIdentifier);
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void getDoiRequestThrowsNotFoundExceptionWhenDoiRequestWasNotFound() {
         UserInstance someUser = randomUserInstance();
@@ -289,6 +306,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, action);
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
         throws ApiGatewayException {
@@ -297,7 +315,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         UserInstance sampleCurator = createSampleCurator(publication);
         Executable action =
             () -> doiRequestService.updateDoiRequest(sampleCurator, publication.getIdentifier(),
-                DoiRequestStatus.COMPLETED);
+                TicketStatus.COMPLETED);
         assertThrows(BadRequestException.class, action);
     }
     
@@ -340,7 +358,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
             .withResourceIdentifier(emptyPublication.getIdentifier())
             .withOwner(emptyPublication.getResourceOwner().getOwner())
             .withCustomerId(emptyPublication.getPublisher().getId())
-            .withStatus(DoiRequestStatus.PENDING)
+            .withStatus(TicketStatus.PENDING)
             .withResourceStatus(PublicationStatus.DRAFT)
             .withCreatedDate(DOI_REQUEST_CREATION_TIME)
             .withModifiedDate(DOI_REQUEST_CREATION_TIME)

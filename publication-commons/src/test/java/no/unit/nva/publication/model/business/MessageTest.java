@@ -34,7 +34,7 @@ class MessageTest {
     
     @Test
     public void statusStringReturnsStringRepresentationOfStatus() {
-        MessageStatus messageStatus = MessageStatus.READ;
+        TicketStatus messageStatus = TicketStatus.READ;
         Message message = Message.builder().withStatus(messageStatus).build();
         assertThat(message.getStatusString(), is(equalTo(messageStatus.toString())));
     }
@@ -73,7 +73,7 @@ class MessageTest {
         
         Message message = Message.create(SAMPLE_SENDER, publication, randomString(), SortableIdentifier.next(), clock,
             MessageType.SUPPORT);
-        var copy = message.copy().build();
+        var copy = message.copy();
         assertThat(copy, doesNotHaveEmptyValues());
         assertThat(copy, is(equalTo(message)));
     }

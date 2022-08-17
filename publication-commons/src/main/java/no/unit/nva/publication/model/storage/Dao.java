@@ -31,6 +31,7 @@ import nva.commons.core.JacocoGenerated;
 public abstract class Dao
     implements DynamoEntry,
                WithPrimaryKey,
+               DynamoEntryByIdentifier,
                WithByTypeCustomerStatusIndex {
     
     public static final String URI_PATH_SEPARATOR = "/";
@@ -87,6 +88,7 @@ public abstract class Dao
         // do nothing
     }
     
+    @Override
     @JsonProperty(CONTAINED_DATA_FIELD_NAME)
     public abstract Entity getData();
     

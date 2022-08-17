@@ -11,7 +11,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -45,7 +45,7 @@ public class AcceptedPublishingRequestEventHandler
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
         var latestUpdate = parseInput(eventBlob);
-        if (PublishingRequestStatus.COMPLETED.equals(latestUpdate.getStatus())) {
+        if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus())) {
             var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
             attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.getResourceIdentifier()))
                 .orElse(fail -> logError(fail.getException()));

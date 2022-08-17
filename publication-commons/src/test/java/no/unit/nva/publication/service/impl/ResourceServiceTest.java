@@ -7,7 +7,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutI
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
@@ -64,21 +63,21 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
@@ -282,7 +281,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
         
-        assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserIdentifier())));
+        assertThat(newResource.getResourceOwner().getOwner(), is(equalTo(newOwner.getUserIdentifier())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
     }
     
@@ -681,10 +680,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedDoiRequest = doiRequestService
             .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
         
-        var expectedDoiRequest = originalDoiRequest.copy()
-            .withResourceTitle(ANOTHER_TITLE)
-            .withResourceModifiedDate(THIRD_CLOCK_TICK)
-            .build();
+        var expectedDoiRequest = originalDoiRequest.copy();
+        expectedDoiRequest.setResourceTitle(ANOTHER_TITLE);
+        expectedDoiRequest.setResourceModifiedDate(THIRD_CLOCK_TICK);
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
         
@@ -722,7 +720,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.create(resource.getOwner(), resource.getPublisher().getId());
+        UserInstance userInstance = UserInstance.fromPublication(resource);
         
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
@@ -812,15 +810,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         NotFoundException exception = assertThrows(NotFoundException.class, action);
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
-        assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX));
-        assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
     }
     
     @Test
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws ApiGatewayException {
         var samplePublication = createPublication(resourceService, PublicationGenerator.randomPublication());
         var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
-        var userInstance = UserInstance.create(samplePublication.getOwner(), samplePublication.getPublisher().getId());
+        var userInstance = UserInstance.fromPublication(samplePublication);
         
         var sampleMessageIdentifier = messageService.createMessage(userInstance, samplePublication, randomString(),
             MessageType.SUPPORT);
@@ -867,13 +863,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource()
         throws ApiGatewayException {
-        var logger = LogUtils.getTestingAppenderForRootLogger();
-        var sampleResource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.create(sampleResource.getOwner(), null);
-        assertThrows(RuntimeException.class,
-            () -> resourceService.publishPublication(userInstance, sampleResource.getIdentifier()));
-        assertThat(logger.getMessages(), containsString(userInstance.getUserIdentifier()));
-        assertThat(logger.getMessages(), containsString(sampleResource.getIdentifier().toString()));
+        
+        var samplePublication = createUnpublishablePublication();
+        var userInstance = UserInstance.fromPublication(samplePublication);
+        var exception = assertThrows(InvalidPublicationException.class,
+            () -> resourceService.publishPublication(userInstance, samplePublication.getIdentifier()));
+        assertThat(exception.getMessage(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+    }
+    
+    private Publication createUnpublishablePublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        publication.getEntityDescription().setMainTitle(null);
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
     private Publication generatePublication() {
@@ -983,7 +984,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             .withCreatedDate(initialDoiRequest.getCreatedDate())
             .withModifiedDate(updatedDoiRequest.getModifiedDate())
             .withDoi(publicationUpdate.getDoi())
-            .withStatus(DoiRequestStatus.PENDING)
+            .withStatus(TicketStatus.PENDING)
             .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
             .withResourceStatus(publicationUpdate.getStatus())
             .withResourceModifiedDate(publicationUpdate.getModifiedDate())

@@ -1,9 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.publication.model.business.DoiRequest.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.DoiRequest.RESOURCE_STATUS_FIELD;
-import static no.unit.nva.publication.model.business.DoiRequest.STATUS_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.model.storage.DoiRequestDao.queryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -34,16 +34,16 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.WithByTypeCustomerStatusIndex;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
@@ -141,7 +141,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     
     public DoiRequest updateDoiRequest(UserInstance userInstance,
                                        SortableIdentifier resourceIdentifier,
-                                       DoiRequestStatus status) throws ApiGatewayException {
+                                       TicketStatus status) throws ApiGatewayException {
         
         UpdateItemRequest updateItemRequest =
             createRequestForUpdatingDoiRequest(userInstance, resourceIdentifier, status);
@@ -194,7 +194,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     
     private UpdateItemRequest createRequestForUpdatingDoiRequest(UserInstance userInstance,
                                                                  SortableIdentifier resourceIdentifier,
-                                                                 DoiRequestStatus status) throws NotFoundException {
+                                                                 TicketStatus status) throws NotFoundException {
         String now = nowAsString();
         
         DoiRequestDao dao = createUpdatedDoiRequestDao(userInstance, resourceIdentifier, status);
@@ -240,9 +240,9 @@ public class DoiRequestService extends ServiceWithTransactions {
     }
     
     private DoiRequestDao createUpdatedDoiRequestDao(UserInstance userInstance, SortableIdentifier resourceIdentifier,
-                                                     DoiRequestStatus status) throws NotFoundException {
+                                                     TicketStatus status) throws NotFoundException {
         DoiRequest doiRequest = getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier);
-        DoiRequestStatus existingStatus = doiRequest.getStatus();
+        TicketStatus existingStatus = doiRequest.getStatus();
         doiRequest.setStatus(existingStatus.changeStatus(status));
         return new DoiRequestDao(doiRequest);
     }
@@ -288,8 +288,8 @@ public class DoiRequestService extends ServiceWithTransactions {
         
         Map<String, AttributeValue> expressionAttributeValues = Map.of(
             ":PK", new AttributeValue(primaryKeyPartitionKeyValue),
-            ":requestedStatus", new AttributeValue(DoiRequestStatus.PENDING.toString()),
-            ":rejectedStatus", new AttributeValue(DoiRequestStatus.CLOSED.toString())
+            ":requestedStatus", new AttributeValue(TicketStatus.PENDING.toString()),
+            ":rejectedStatus", new AttributeValue(TicketStatus.CLOSED.toString())
         );
         
         return new QueryRequest()
@@ -334,7 +334,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     private String formatPartitionKeyValueForByTypeCustomerStatusIndex(UserInstance userInstance) {
         return WithByTypeCustomerStatusIndex.formatByTypeCustomerStatusPartitionKey(
             DoiRequestDao.getContainedType(),
-            DoiRequestStatus.PENDING.toString(),
+            TicketStatus.PENDING.toString(),
             userInstance.getOrganizationUri()
         );
     }
@@ -354,7 +354,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     }
     
     private BadRequestException handleResourceNotFetchedError(Failure<Publication> fail) {
-        return new BadRequestException(fail.getException());
+        return new BadRequestException(fail.getException().getMessage(),fail.getException());
     }
     
     private DoiRequest createNewDoiRequestEntry(Publication publication) {

@@ -47,13 +47,11 @@ public class UpdatePublishingRequestHandler
             readIdentifierFromPathParameter(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
         
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
-        var currentRequest = (PublishingRequestCase)
-            requestService.fetchTicketByPublicationAndRequestIdentifiers(publicationIdentifier,
-                publishingRequestIdentifier);
+        var currentRequest =
+            requestService.fetchTicketByIdentifier(publishingRequestIdentifier, PublishingRequestCase.class);
         
-        final var updatedRequest = currentRequest.approve();
-        var updatedEntry = requestService.updatePublishingRequest(updatedRequest);
-        return PublishingRequestCaseDto.createResponseObject(updatedEntry);
+        var updatedEntry = requestService.completeTicket(currentRequest);
+        return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) updatedEntry);
     }
     
     @Override

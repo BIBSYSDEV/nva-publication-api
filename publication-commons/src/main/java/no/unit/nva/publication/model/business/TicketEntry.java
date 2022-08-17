@@ -3,18 +3,17 @@ package no.unit.nva.publication.model.business;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import java.time.Clock;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
-    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
-    @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
+    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)
 })
 public interface TicketEntry extends Entity {
     
@@ -22,15 +21,49 @@ public interface TicketEntry extends Entity {
                                                                Class<T> ticketType,
                                                                Clock clock,
                                                                Supplier<SortableIdentifier> identifierProvider)
-        throws ConflictException, NotFoundException {
+        throws ConflictException {
         var newTicket = createNewTicketEntry(publication, ticketType, clock, identifierProvider);
-        newTicket.validateRequirements(publication);
+        newTicket.validateCreationRequirements(publication);
         return newTicket;
+    }
+    
+    static <T extends TicketEntry> T queryObject(URI customerId,
+                                                 SortableIdentifier resourceIdentifier,
+                                                 Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return ticketType.cast(DoiRequest.builder()
+                .withResourceIdentifier(resourceIdentifier)
+                .withCustomerId(customerId)
+                .build());
+        }
+        return ticketType.cast(PublishingRequestCase.createQuery(customerId,resourceIdentifier));
+    }
+    
+    static <T extends TicketEntry> T queryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return ticketType.cast(DoiRequest.builder().withIdentifier(ticketIdentifier).build());
+        }
+        return ticketType.cast(PublishingRequestCase.createQuery(ticketIdentifier));
     }
     
     SortableIdentifier getResourceIdentifier();
     
-    void validateRequirements(Publication publication) throws NotFoundException, ConflictException;
+    void validateCreationRequirements(Publication publication) throws ConflictException;
+    
+    void validateCompletionRequirements(Publication publication);
+    
+    default TicketEntry complete(Publication publication) {
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.COMPLETED);
+        validateCompletionRequirements(publication);
+        return updated;
+    }
+    
+    TicketEntry copy();
+    
+    TicketStatus getStatus();
+    
+    void setStatus(TicketStatus ticketStatus);
     
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
@@ -72,5 +105,20 @@ public interface TicketEntry extends Entity {
         var entry = createOpeningCaseObject(userInstance, publication.getIdentifier());
         setServiceControlledFields(entry, clock, identifierProvider);
         return entry;
+    }
+    
+    final class Constants {
+        
+        public static final String STATUS_FIELD = "status";
+        public static final String MODIFIED_DATE_FIELD = "modifiedDate";
+        public static final String CREATED_DATE_FIELD = "createdDate";
+        public static final String OWNER_FIELD = "owner";
+        public static final String CUSTOMER_ID_FIELD = "customerId";
+        public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
+        public static final String IDENTIFIER_FIELD = "identifier";
+        
+        private Constants() {
+        
+        }
     }
 }

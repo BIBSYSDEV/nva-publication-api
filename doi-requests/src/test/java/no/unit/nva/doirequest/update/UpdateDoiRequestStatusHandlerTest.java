@@ -27,7 +27,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -84,7 +84,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
         
         var updatedDoiRequest = fetchDoiRequestDirectlyFromService(publication);
-        assertThat(updatedDoiRequest.getStatus(), is(equalTo(DoiRequestStatus.COMPLETED)));
+        assertThat(updatedDoiRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
     
     @Test
@@ -144,7 +144,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     
     private InputStream createAuthorizedRestRequestWithInvalidIdentifier(Publication publication)
         throws JsonProcessingException {
-        return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, DoiRequestStatus.COMPLETED);
+        return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, TicketStatus.COMPLETED);
     }
     
     private Environment setupEnvironment() {
@@ -161,14 +161,14 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
         return createAuthorizedRestRequest(publication,
             publication.getIdentifier().toString(),
-            DoiRequestStatus.COMPLETED);
+            TicketStatus.COMPLETED);
     }
     
     private InputStream createAuthorizedRestRequest(Publication publication,
                                                     String identifier,
-                                                    DoiRequestStatus doiRequestStatus)
+                                                    TicketStatus ticketStatus)
         throws JsonProcessingException {
-        var body = createUpdateRequest(doiRequestStatus);
+        var body = createUpdateRequest(ticketStatus);
         var pathParameters = createPathParameters(identifier);
         var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
@@ -181,7 +181,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     }
     
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
-        var body = createUpdateRequest(DoiRequestStatus.COMPLETED);
+        var body = createUpdateRequest(TicketStatus.COMPLETED);
         var pathParameters = createPathParameters(publication.getIdentifier().toString());
         var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
@@ -198,9 +198,9 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         );
     }
     
-    private ApiUpdateDoiRequest createUpdateRequest(DoiRequestStatus doiRequestStatus) {
+    private ApiUpdateDoiRequest createUpdateRequest(TicketStatus ticketStatus) {
         var body = new ApiUpdateDoiRequest();
-        body.setDoiRequestStatus(doiRequestStatus);
+        body.setDoiRequestStatus(ticketStatus);
         return body;
     }
     

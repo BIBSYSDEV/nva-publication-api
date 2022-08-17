@@ -15,7 +15,7 @@ import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -31,7 +31,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty()
-    private DoiRequestStatus status;
+    private TicketStatus status;
     @JsonProperty
     private Instant modifiedDate;
     @JsonProperty
@@ -79,12 +79,12 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     }
     
     @JacocoGenerated
-    public DoiRequestStatus getStatus() {
+    public TicketStatus getStatus() {
         return status;
     }
     
     @JacocoGenerated
-    public void setStatus(DoiRequestStatus status) {
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
     

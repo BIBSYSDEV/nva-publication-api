@@ -23,7 +23,6 @@ import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
@@ -50,15 +49,12 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     public static final String SOME_CURATOR = "some@curator";
     public static final Context CONTEXT = mock(Context.class);
     public static final String ALLOW_ALL_ORIGIN = "*";
-    public static final String SOME_VALID_HOST = "localhost";
-    public static final String HTTPS = "https";
     private ResourceService resourcesService;
     private MessageService messageService;
     private CreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
     private Publication samplePublication;
-    private Environment environment;
     private DoiRequestService doiRequestService;
     
     @BeforeEach
@@ -68,7 +64,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
-        environment = setupEnvironment();
+        Environment environment = setupEnvironment();
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
@@ -167,10 +163,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
         requestBody.setMessageType(MessageType.DOI_REQUEST);
         return requestBody;
-    }
-    
-    private void createDoiRequestForSamplePublication() throws BadRequestException {
-        doiRequestService.createDoiRequest(extractOwner(samplePublication), samplePublication.getIdentifier());
     }
     
     private URI extractLocationFromResponse() throws JsonProcessingException {

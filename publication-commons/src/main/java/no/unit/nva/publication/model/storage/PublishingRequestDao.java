@@ -63,7 +63,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     @Override
     public Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
-        return fetchItem(client, PublishingRequestDao.class);
+        return fetchItemWithClient(client, PublishingRequestDao.class);
     }
     
     @Override

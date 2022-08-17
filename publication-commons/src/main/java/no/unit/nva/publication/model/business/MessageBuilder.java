@@ -28,7 +28,7 @@ public class MessageBuilder {
         return this;
     }
     
-    public MessageBuilder withStatus(MessageStatus status) {
+    public MessageBuilder withStatus(TicketStatus status) {
         message.setStatus(status);
         return this;
     }
@@ -72,7 +72,7 @@ public class MessageBuilder {
         return message;
     }
     
-    public MessageBuilder withRowVersion(UUID rowVersion) {
+    public MessageBuilder withVersion(UUID rowVersion) {
         message.setVersion(rowVersion);
         return this;
     }

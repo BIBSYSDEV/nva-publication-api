@@ -1,23 +1,21 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(MessageDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class MessageDao extends TicketDao
+public class MessageDao extends Dao
     implements DynamoEntryByIdentifier, JoinWithResource {
     
     public static final String TYPE = "Message";
@@ -35,13 +33,6 @@ public class MessageDao extends TicketDao
         throw new UnsupportedOperationException();
     }
     
-    //TODO: cover when refactoring to ticket system is completed
-    @JacocoGenerated
-    @Override
-    public Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
-        throw new UnsupportedOperationException();
-    }
-    
     public MessageDao(Message message) {
         super();
         this.data = message;
@@ -56,10 +47,10 @@ public class MessageDao extends TicketDao
         return new MessageDao(message);
     }
     
-    public static MessageDao listMessagesForCustomerAndStatus(URI customerId, MessageStatus messageStatus) {
+    public static MessageDao listMessagesForCustomerAndStatus(URI customerId, TicketStatus ticketStatus) {
         Message message = Message.builder()
             .withCustomerId(customerId)
-            .withStatus(messageStatus)
+            .withStatus(ticketStatus)
             .build();
         return new MessageDao(message);
     }
