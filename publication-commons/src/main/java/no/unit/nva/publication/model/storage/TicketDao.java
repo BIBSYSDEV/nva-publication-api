@@ -19,16 +19,15 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import nva.commons.core.SingletonCollector;
 
 @JsonSubTypes({
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
@@ -54,16 +53,6 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         throw new UnsupportedOperationException();
     }
     
-    public static <T extends TicketEntry> QueryRequest queryByCustomerAndResource(URI customerId,
-                                                                                  SortableIdentifier resourceIdentifier,
-                                                                                  Class<T> ticketType) {
-        var queryObject = TicketDao.createQueryObject(resourceIdentifier, customerId, ticketType);
-        return new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResource(queryObject.joinByResourceOrderedType()));
-    }
-    
     public abstract Optional<TicketDao> fetchItem(AmazonDynamoDB client);
     
     public PutItemRequest createPutItemRequest() {
@@ -75,6 +64,20 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
             .withConditionExpression(condition.getConditionExpression())
             .withExpressionAttributeNames(condition.getExpressionAttributeNames())
             .withExpressionAttributeValues(condition.getExpressionAttributeValues());
+    }
+    
+    public TicketDao fetchByResourceIdentifier(AmazonDynamoDB client) {
+        QueryRequest queryRequest = new QueryRequest()
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .withKeyConditions(byResource(joinByResourceOrderedType()));
+        
+        var item = client.query(queryRequest)
+            .getItems()
+            .stream()
+            .collect(SingletonCollector.collect());
+        
+        return DynamoEntry.parseAttributeValuesMap(item, this.getClass());
     }
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
@@ -96,25 +99,6 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
             .map(item -> DynamoEntry.parseAttributeValuesMap(item, ticketDaoType))
             .map(TicketDao.class::cast)
             .toOptional();
-    }
-    
-    private static <T extends TicketEntry> TicketDao createQueryObject(SortableIdentifier resourceIdentifier,
-                                                                       URI customerId,
-                                                                       Class<T> ticketType) {
-        if (DoiRequest.class.equals(ticketType)) {
-            var doiRequest = DoiRequest.builder()
-                .withResourceIdentifier(resourceIdentifier)
-                .withCustomerId(customerId)
-                .build();
-            return new DoiRequestDao(doiRequest);
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
-            var request = new PublishingRequestCase();
-            request.setResourceIdentifier(resourceIdentifier);
-            request.setCustomerId(customerId);
-            return new PublishingRequestDao(request);
-        }
-        throw new UnsupportedOperationException();
     }
     
     private static class UpdateCaseButNotOwnerCondition {

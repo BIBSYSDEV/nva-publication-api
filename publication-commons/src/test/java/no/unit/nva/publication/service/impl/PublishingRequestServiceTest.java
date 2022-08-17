@@ -268,14 +268,17 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());
     }
     
-    @Test
-    void shouldRetrievePublishingRequestByCustomerIdAndResourceIdentifier() throws ApiGatewayException {
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should retrieve eventually consistent ticket")
+    @MethodSource("ticketProvider")
+    void shouldRetrievePublishingRequestByCustomerIdAndResourceIdentifier(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
         var publication = persistDraftPublication(owner);
-        var publishingRequest = createPublishingRequest(publication);
+        var expectedTicket = createPersistedTicket(publication,ticketType);
         var retrievedRequest =
             ticketService.getTicketByResourceIdentifier(publication.getPublisher().getId(),
-                publication.getIdentifier(), PublishingRequestCase.class);
-        assertThat(retrievedRequest, is(equalTo(publishingRequest)));
+                publication.getIdentifier(), ticketType);
+        assertThat(retrievedRequest, is(equalTo(expectedTicket)));
     }
     
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,

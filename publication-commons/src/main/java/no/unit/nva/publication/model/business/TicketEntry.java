@@ -3,6 +3,7 @@ package no.unit.nva.publication.model.business;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import java.time.Clock;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -26,7 +27,19 @@ public interface TicketEntry extends Entity {
         return newTicket;
     }
     
-    static <T extends TicketEntry> T createNewTicket(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
+    static <T extends TicketEntry> T queryObject(URI customerId,
+                                                 SortableIdentifier resourceIdentifier,
+                                                 Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return ticketType.cast(DoiRequest.builder()
+                .withResourceIdentifier(resourceIdentifier)
+                .withCustomerId(customerId)
+                .build());
+        }
+        return ticketType.cast(PublishingRequestCase.createQuery(customerId,resourceIdentifier));
+    }
+    
+    static <T extends TicketEntry> T queryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return ticketType.cast(DoiRequest.builder().withIdentifier(ticketIdentifier).build());
         }

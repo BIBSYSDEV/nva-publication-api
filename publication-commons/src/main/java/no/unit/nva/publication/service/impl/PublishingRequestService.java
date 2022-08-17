@@ -1,7 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.model.business.TicketEntry.createNewTicket;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
@@ -13,7 +12,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -21,7 +19,6 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.FunctionWithException;
 
 public class PublishingRequestService extends ServiceWithTransactions {
@@ -77,7 +74,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     
     public <T extends TicketEntry> T fetchTicketByIdentifier(SortableIdentifier ticketIdentifier, Class<T> ticketType)
         throws NotFoundException {
-        var ticketDao = createNewTicket(ticketIdentifier, ticketType).toDao();
+        var ticketDao = TicketEntry.queryObject(ticketIdentifier, ticketType).toDao();
         var queryResult = ticketDao.fetchByIdentifier(client, ticketDao.getClass());
         return ticketType.cast(queryResult.getData());
     }
@@ -86,14 +83,9 @@ public class PublishingRequestService extends ServiceWithTransactions {
                                                                              SortableIdentifier resourceIdentifier,
                                                                              Class<T> ticketType) {
         
-        var query = TicketDao.queryByCustomerAndResource(customerId, resourceIdentifier, ticketType);
-        
-        var queryResult = client.query(query);
-        return queryResult.getItems().stream()
-            .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
-            .map(PublishingRequestDao::getData)
-            .collect(SingletonCollector.tryCollect())
-            .orElseThrow();
+        var dao=TicketEntry.queryObject(customerId,resourceIdentifier,ticketType).toDao();
+        var persistedDao = ((TicketDao)dao).fetchByResourceIdentifier(client);
+        return ticketType.cast(persistedDao.getData());
     }
     
     @Override
