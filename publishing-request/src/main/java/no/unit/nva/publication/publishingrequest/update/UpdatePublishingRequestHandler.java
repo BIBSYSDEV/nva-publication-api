@@ -51,8 +51,8 @@ public class UpdatePublishingRequestHandler
                                  requestService.fetchTicketByPublicationAndRequestIdentifiers(publicationIdentifier,
                                      publishingRequestIdentifier);
         
-        final var updatedRequest = currentRequest.complete();
-        var updatedEntry = requestService.updateTicket(updatedRequest);
+        
+        var updatedEntry = requestService.completeTicket(currentRequest);
         return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) updatedEntry);
     }
     

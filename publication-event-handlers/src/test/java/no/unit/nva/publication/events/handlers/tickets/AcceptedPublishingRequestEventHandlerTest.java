@@ -55,7 +55,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldPublishPublicationWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {
         var publication = createPublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var approvedPublishingRequest = pendingPublishingRequest.complete();
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -78,7 +78,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldLogFailingReasonsWhenPublishingFails() throws ApiGatewayException, IOException {
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var approvedPublishingRequest = pendingPublishingRequest.complete();
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
         var event = createEvent(pendingPublishingRequest,approvedPublishingRequest);
         var logger = LogUtils.getTestingAppenderForRootLogger();
         

@@ -60,7 +60,7 @@ public class PendingPublishingRequestEventHandler
         var updateEvent = parseInput(input);
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
         if (customerAllowsPublishing(publishingRequest)) {
-            publishingRequestService.updateTicket(publishingRequest.complete());
+            attempt(() -> publishingRequestService.completeTicket(publishingRequest)).orElseThrow();
         }
         
         return null;

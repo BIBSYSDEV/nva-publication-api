@@ -8,7 +8,6 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -21,19 +20,22 @@ public interface TicketEntry extends Entity {
                                                                Class<T> ticketType,
                                                                Clock clock,
                                                                Supplier<SortableIdentifier> identifierProvider)
-        throws ConflictException, NotFoundException {
+        throws ConflictException {
         var newTicket = createNewTicketEntry(publication, ticketType, clock, identifierProvider);
-        newTicket.validateRequirements(publication);
+        newTicket.validateCreationRequirements(publication);
         return newTicket;
     }
     
     SortableIdentifier getResourceIdentifier();
     
-    void validateRequirements(Publication publication) throws NotFoundException, ConflictException;
+    void validateCreationRequirements(Publication publication) throws ConflictException;
     
-    default TicketEntry complete() {
+    void validateCompletionRequirements(Publication publication);
+    
+    default TicketEntry complete(Publication publication) {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
+        validateCompletionRequirements(publication);
         return updated;
     }
     

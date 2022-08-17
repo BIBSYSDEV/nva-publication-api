@@ -17,6 +17,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -29,8 +30,6 @@ public class PublishingRequestService extends ServiceWithTransactions {
     public static final String TICKET_NOT_FOUND_FOR_RESOURCE =
         "Could not find requested ticket for Resource: ";
     
-    public static final String DOUBLE_QUOTES = "\"";
-    public static final String EMPTY_STRING = "";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private final AmazonDynamoDB client;
     private final Clock clock;
@@ -67,10 +66,11 @@ public class PublishingRequestService extends ServiceWithTransactions {
             .orElseThrow(() -> handleFetchPublishingRequestByResourceError(dataEntry.getIdentifier()));
     }
     
-    public TicketEntry updateTicket(TicketEntry ticketEntry) {
-        var entryUpdate = ticketEntry.copy();
-        entryUpdate.setModifiedDate(clock.instant());
-        entryUpdate.setVersion(Entity.nextVersion());
+    public TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
+        var completed = attempt(() -> ticketEntry.complete(publication))
+            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+        var entryUpdate = indicateThatUpdateHasOccurred(completed);
         var putItemRequest = ((TicketDao) entryUpdate.toDao()).createPutItemRequest();
         client.putItem(putItemRequest);
         return entryUpdate;
@@ -118,6 +118,17 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return new NotFoundException(TICKET_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
     }
     
+    private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
+        return new BadRequestException(exception.getMessage(), exception);
+    }
+    
+    private TicketEntry indicateThatUpdateHasOccurred(TicketEntry ticketEntry) {
+        var entryUpdate = ticketEntry.copy();
+        entryUpdate.setModifiedDate(clock.instant());
+        entryUpdate.setVersion(Entity.nextVersion());
+        return entryUpdate;
+    }
+    
     private Publication fetchPublication(TicketEntry ticketEntry) throws ForbiddenException {
         var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
         return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
@@ -127,7 +138,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     //TODO: try to remove suppression.
     @SuppressWarnings("unchecked")
     private <T extends TicketEntry> T createTicketForPublication(Publication publication, Class<T> ticketType)
-        throws ConflictException, NotFoundException {
+        throws ConflictException {
         //TODO: Do something about the clock and identifier provider dependencies, if possible.
         var ticketEntry = createNewTicket(publication, ticketType, clock, identifierProvider);
         var request = ticketEntry.toDao().createInsertionTransactionRequest();
@@ -142,5 +153,4 @@ public class PublishingRequestService extends ServiceWithTransactions {
         var queryDao = TicketDao.queryObject(queryObject, ticketType);
         return queryDao.fetchItem(client);
     }
-    
 }

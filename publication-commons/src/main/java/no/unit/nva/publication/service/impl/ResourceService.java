@@ -35,7 +35,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
@@ -49,6 +48,7 @@ import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
@@ -143,7 +143,6 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishResource(userInstance, resourceIdentifier);
     }
     
-    @SuppressWarnings(RAWTYPES)
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         List<Dao> daos = readResourceService
@@ -194,7 +193,7 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.updateOwner(identifier, oldOwner, newOwner);
     }
     
-    public Publication updatePublication(Publication resourceUpdate) throws NotFoundException {
+    public Publication updatePublication(Publication resourceUpdate){
         return updateResourceService.updatePublication(resourceUpdate);
     }
     
@@ -295,7 +294,6 @@ public class ResourceService extends ServiceWithTransactions {
             .orElse(null);
     }
     
-    @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
         throws BadRequestException {
         List<TransactWriteItem> transactionItems = new ArrayList<>();
@@ -310,7 +308,6 @@ public class ResourceService extends ServiceWithTransactions {
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
     
-    @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
         Optional<DoiRequestDao> doiRequest = extractDoiRequest(daos);
         if (doiRequest.isPresent()) {
@@ -329,7 +326,6 @@ public class ResourceService extends ServiceWithTransactions {
                 .collect(Collectors.toList());
     }
     
-    @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> deleteResourceTransactionItems(List<Dao> daos)
         throws BadRequestException {
         ResourceDao resourceDao = extractResourceDao(daos);

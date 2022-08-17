@@ -21,15 +21,6 @@ class PublishingRequestCaseTest {
         assertThat(copy, is(not(sameInstance(original))));
     }
     
-    @Test
-    void shouldReturnCopyOfOriginalWithApprovedStatusButAllOtherFieldsTheSame() {
-        var original = createSample(TicketStatus.PENDING);
-        var approved = original.complete();
-        var expected = original.copy();
-        expected.setStatus(TicketStatus.COMPLETED);
-        assertThat(approved, is(equalTo(expected)));
-    }
-    
     private PublishingRequestCase createSample(TicketStatus status) {
         var sample = randomPublishingRequest();
         sample.setStatus(status);

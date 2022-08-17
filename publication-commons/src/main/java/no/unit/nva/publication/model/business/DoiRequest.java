@@ -132,11 +132,6 @@ public class DoiRequest implements TicketEntry {
     }
     
     @Override
-    public DoiRequest complete() {
-        return (DoiRequest) TicketEntry.super.complete();
-    }
-    
-    @Override
     public Publication toPublication() {
         
         Reference reference = new Reference.Builder()
@@ -235,10 +230,23 @@ public class DoiRequest implements TicketEntry {
     }
     
     @Override
-    public void validateRequirements(Publication publication) throws ConflictException {
+    public void validateCreationRequirements(Publication publication) throws ConflictException {
         if (publicationDoesNotHaveAnExpectedStatus(publication)) {
             throw new ConflictException(String.format(WRONG_PUBLICATION_STATUS_ERROR, ACCEPTABLE_PUBLICATION_STATUSES));
         }
+        validateCompletionRequirements(publication);
+    }
+    
+    @Override
+    public void validateCompletionRequirements(Publication publication) {
+        if (attemptingToCreateFindableDoiForNonPublishedPublication(publication)) {
+            throw new InvalidTicketStatusTransitionException("Cannot approve DoiRequest for non-published publication");
+        }
+    }
+    
+    @Override
+    public DoiRequest complete(Publication publication) {
+        return (DoiRequest) TicketEntry.super.complete(publication);
     }
     
     @Override
@@ -391,6 +399,11 @@ public class DoiRequest implements TicketEntry {
                && Objects.equals(getResourcePublicationYear(), that.getResourcePublicationYear())
                && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getContributors(), that.getContributors());
+    }
+    
+    private boolean attemptingToCreateFindableDoiForNonPublishedPublication(Publication publication) {
+        return !PublicationStatus.PUBLISHED.equals(publication.getStatus())
+               && TicketStatus.COMPLETED.equals(getStatus());
     }
     
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {

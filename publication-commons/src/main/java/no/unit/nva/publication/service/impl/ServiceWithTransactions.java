@@ -18,7 +18,6 @@ import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.Dao;
@@ -26,6 +25,7 @@ import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.FunctionWithException;
 

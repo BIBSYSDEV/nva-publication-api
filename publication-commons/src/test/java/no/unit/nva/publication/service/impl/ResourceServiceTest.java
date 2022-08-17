@@ -64,7 +64,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
@@ -79,6 +78,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
@@ -282,7 +282,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
         
-        assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserIdentifier())));
+        assertThat(newResource.getResourceOwner().getOwner(), is(equalTo(newOwner.getUserIdentifier())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
     }
     
@@ -721,7 +721,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.create(resource.getOwner(), resource.getPublisher().getId());
+        UserInstance userInstance = UserInstance.fromPublication(resource);
         
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
@@ -819,7 +819,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws ApiGatewayException {
         var samplePublication = createPublication(resourceService, PublicationGenerator.randomPublication());
         var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
-        var userInstance = UserInstance.create(samplePublication.getOwner(), samplePublication.getPublisher().getId());
+        var userInstance = UserInstance.fromPublication(samplePublication);
         
         var sampleMessageIdentifier = messageService.createMessage(userInstance, samplePublication, randomString(),
             MessageType.SUPPORT);
@@ -868,11 +868,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var logger = LogUtils.getTestingAppenderForRootLogger();
         var sampleResource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.create(sampleResource.getOwner(), null);
-        assertThrows(RuntimeException.class,
-            () -> resourceService.publishPublication(userInstance, sampleResource.getIdentifier()));
+        UserInstance userInstance = UserInstance.fromPublication(sampleResource);
+        var resourceIdentifier = sampleResource.getIdentifier();
+        assertThrows(RuntimeException.class, () -> resourceService.publishPublication(userInstance, resourceIdentifier));
         assertThat(logger.getMessages(), containsString(userInstance.getUserIdentifier()));
-        assertThat(logger.getMessages(), containsString(sampleResource.getIdentifier().toString()));
+        assertThat(logger.getMessages(), containsString(resourceIdentifier.toString()));
     }
     
     private Publication generatePublication() {

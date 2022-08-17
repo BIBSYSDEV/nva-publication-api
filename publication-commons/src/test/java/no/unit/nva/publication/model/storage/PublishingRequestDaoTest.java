@@ -101,9 +101,9 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publication = PublicationGenerator.randomPublication();
-        var publishingRequestCase = randomPublishingRequest(publication).complete();
+        var publishingRequestCase = randomPublishingRequest(publication).complete(publication);
         publishingRequestCase.setStatus(randomElement(TicketStatus.values()));
-        return (PublishingRequestDao) publishingRequestCase.toDao();
+        return publishingRequestCase.toDao();
     }
     
     private Publication createPublication() throws ApiGatewayException {

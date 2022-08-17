@@ -4,26 +4,23 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InternalErrorException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -63,11 +60,6 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         this.resourceService = resourceService;
         this.messageService = messageService;
         this.doiRequestService = requestService;
-    }
-    
-    @Override
-    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        super.handleRequest(input, output, context);
     }
     
     @Override

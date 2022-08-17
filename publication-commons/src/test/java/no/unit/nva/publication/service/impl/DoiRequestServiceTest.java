@@ -32,13 +32,13 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -224,7 +224,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(result, is(equalTo(List.of(expectedDoiRequest))));
     }
     
-    //TODO: Remove once ticket service is in place. Will be iImplemented through search
+    //TODO: Remove once ticket service is in place. Will be implemented through search
     // not sure what this test is testing.
     @Test
     void listDoiRequestsForUserReturnsAllRelevantDoiRequestsEvenWhenPaginationIsNecessary() throws ApiGatewayException {
@@ -277,6 +277,8 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThat(updatedDoiRequest.getModifiedDate(), is(equalTo(DOI_REQUEST_UPDATE_TIME)));
     }
     
+    
+    //TODO: Remove once ticket service is in place. Will be implemented through search
     @Test
     void updateDoiRequestUpdatesStatusIndexForDoiRequest()
         throws ApiGatewayException {
@@ -296,12 +298,14 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         assertThatDoiRequestHasBeenRemovedFromCuratorsView(sampleCurator, doiRequestIdentifier);
     }
     
+    //TODO: Remove once ticket service is in place.
     @Test
     void getDoiRequestThrowsNotFoundExceptionWhenDoiRequestWasNotFound() {
         UserInstance someUser = randomUserInstance();
         Executable action = () -> doiRequestService.getDoiRequest(someUser, SortableIdentifier.next());
         assertThrows(NotFoundException.class, action);
     }
+    
     
     @Test
     void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()

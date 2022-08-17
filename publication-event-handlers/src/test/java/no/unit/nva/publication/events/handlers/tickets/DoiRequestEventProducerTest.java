@@ -146,7 +146,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
                ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
         var draftRequest = DoiRequest.fromPublication(publication);
-        var approvedRequest = draftRequest.complete();
+        var approvedRequest = draftRequest.complete(publication);
         var event = createEvent(draftRequest, approvedRequest);
         
         handler.handleRequest(event, outputStream, context);

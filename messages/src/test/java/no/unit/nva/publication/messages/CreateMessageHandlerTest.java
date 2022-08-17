@@ -23,7 +23,6 @@ import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
@@ -164,10 +163,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
         requestBody.setMessageType(MessageType.DOI_REQUEST);
         return requestBody;
-    }
-    
-    private void createDoiRequestForSamplePublication() throws BadRequestException {
-        doiRequestService.createDoiRequest(extractOwner(samplePublication), samplePublication.getIdentifier());
     }
     
     private URI extractLocationFromResponse() throws JsonProcessingException {

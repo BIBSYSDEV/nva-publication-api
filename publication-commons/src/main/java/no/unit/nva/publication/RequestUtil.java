@@ -2,9 +2,9 @@ package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.exception.BadRequestException;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public final class RequestUtil {
         try {
             logger.info("Trying to read Publication identifier...");
             identifier = requestInfo.getPathParameters().get(PUBLICATION_IDENTIFIER);
-            logger.info("Requesting publication metadata for ID:" + identifier);
+            logger.info("Requesting publication metadata for ID: {}", identifier);
             return new SortableIdentifier(identifier);
         } catch (Exception e) {
             throw new BadRequestException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);

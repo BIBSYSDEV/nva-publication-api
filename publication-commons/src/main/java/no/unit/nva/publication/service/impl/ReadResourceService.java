@@ -23,13 +23,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
@@ -85,7 +85,7 @@ public class ReadResourceService {
         var queryRequest = queryObject.creteQueryForFetchingByIdentifier();
         var result = client.query(queryRequest);
         ResourceDao fetchedDao = queryResultToSingleResource(identifier, result);
-        return (Resource) fetchedDao.getData();
+        return fetchedDao.getData();
     }
     
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {

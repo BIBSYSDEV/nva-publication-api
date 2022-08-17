@@ -19,6 +19,7 @@ import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
+@SuppressWarnings("PMD.GodClass")
 public class Message implements TicketEntry,
                                 JsonSerializable {
     
@@ -71,14 +72,6 @@ public class Message implements TicketEntry,
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
             .withMessageType(messageType)
             .build();
-    }
-    
-    @Deprecated
-    public static Message supportMessage(UserInstance sender,
-                                         Publication publication,
-                                         String messageText,
-                                         Clock clock) {
-        return create(sender, publication, messageText, null, clock, MessageType.SUPPORT);
     }
     
     @JsonProperty("recipient")
@@ -199,7 +192,14 @@ public class Message implements TicketEntry,
     //TODO: remove method or cover when Message is not a Ticket anymore.
     @JacocoGenerated
     @Override
-    public void validateRequirements(Publication publication) {
+    public void validateCreationRequirements(Publication publication) {
+    
+    }
+    
+    //TODO: remove method or cover when Message is not a Ticket anymore.
+    @JacocoGenerated
+    @Override
+    public void validateCompletionRequirements(Publication publication) {
     
     }
     

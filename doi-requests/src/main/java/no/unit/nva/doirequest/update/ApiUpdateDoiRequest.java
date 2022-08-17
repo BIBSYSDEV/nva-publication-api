@@ -1,8 +1,8 @@
 package no.unit.nva.doirequest.update;
 
 import java.util.Optional;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.business.TicketStatus;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
 public class ApiUpdateDoiRequest {

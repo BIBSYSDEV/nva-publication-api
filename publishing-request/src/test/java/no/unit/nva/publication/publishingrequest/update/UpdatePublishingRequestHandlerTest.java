@@ -95,9 +95,9 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             PublishingRequestCaseDto.class);
         var responseBody = response.getBodyObject(PublishingRequestCaseDto.class);
         
-        var expectedPublishingRequest = publishingRequest.complete();
+        var expectedPublishingRequest = publishingRequest.complete(publication);
         var expectedResponseBody =
-            PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) expectedPublishingRequest);
+            PublishingRequestCaseDto.createResponseObject(expectedPublishingRequest);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(responseBody, is(equalTo(expectedResponseBody)));
         assertThat(responseBody.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
@@ -255,7 +255,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         publishingRequest = requestService.createTicket(publishingRequest,PublishingRequestCase.class);
         
         if (TicketStatus.COMPLETED == status) {
-            requestService.updateTicket(publishingRequest.complete());
+            requestService.completeTicket(publishingRequest.complete(publication));
         }
         return publishingRequest;
     }

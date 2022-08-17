@@ -84,7 +84,7 @@ public class PublishingRequestCase implements TicketEntry {
     }
     
     @Override
-    public void validateRequirements(Publication publication) throws ConflictException {
+    public void validateCreationRequirements(Publication publication) throws ConflictException {
         if (PublicationStatus.PUBLISHED == publication.getStatus()) {
             throw new ConflictException(ALREADY_PUBLISHED_ERROR);
         }
@@ -94,8 +94,12 @@ public class PublishingRequestCase implements TicketEntry {
     }
     
     @Override
-    public PublishingRequestCase complete() {
-        return (PublishingRequestCase) TicketEntry.super.complete();
+    public void validateCompletionRequirements(Publication publication) {
+    }
+    
+    @Override
+    public PublishingRequestCase complete(Publication publication) {
+        return (PublishingRequestCase) TicketEntry.super.complete(publication);
     }
     
     @Override

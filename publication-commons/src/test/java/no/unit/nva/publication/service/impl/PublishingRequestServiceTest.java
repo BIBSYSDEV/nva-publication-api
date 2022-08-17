@@ -47,6 +47,7 @@ import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -224,12 +225,31 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         
         var persistedTicket = ticketService.createTicket(ticketRequest, ticketType);
         
-        var updatedTicket = ticketService.updateTicket(persistedTicket.complete());
+        ticketService.completeTicket(persistedTicket);
+        var updatedTicket = ticketService.fetchTicket(persistedTicket, ticketType);
         
-        var updatedPublicationRequest =
-            ticketService.fetchTicket(updatedTicket, ticketType);
-        assertThat(updatedPublicationRequest.getStatusString(), is(equalTo(TicketStatus.COMPLETED.toString())));
-        assertThat(updatedPublicationRequest.getModifiedDate(), is(equalTo(TICKET_UPDATE_TIME)));
+        var expectedTicket = persistedTicket.copy();
+        expectedTicket.setStatus(TicketStatus.COMPLETED);
+        expectedTicket.setVersion(updatedTicket.getVersion());
+        expectedTicket.setModifiedDate(TICKET_UPDATE_TIME);
+        
+        assertThat(updatedTicket, is(equalTo(expectedTicket)));
+    }
+    
+    @Test
+    void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
+        throws ApiGatewayException {
+        Publication publication = persistDraftPublication(owner);
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        
+        var ticketUpdateRequest = ticket.complete(publication);
+        assertThrows(BadRequestException.class, () -> ticketService.completeTicket(ticketUpdateRequest));
+    }
+    
+    private TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var ticket = createUnpersistedTicket(ticketType, publication);
+        return ticketService.createTicket(ticket, ticketType);
     }
     
     @Test
