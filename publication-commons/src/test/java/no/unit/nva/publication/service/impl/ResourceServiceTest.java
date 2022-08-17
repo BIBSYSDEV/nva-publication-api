@@ -866,13 +866,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource()
         throws ApiGatewayException {
-        var logger = LogUtils.getTestingAppenderForRootLogger();
-        var sampleResource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.fromPublication(sampleResource);
-        var resourceIdentifier = sampleResource.getIdentifier();
-        assertThrows(RuntimeException.class, () -> resourceService.publishPublication(userInstance, resourceIdentifier));
-        assertThat(logger.getMessages(), containsString(userInstance.getUserIdentifier()));
-        assertThat(logger.getMessages(), containsString(resourceIdentifier.toString()));
+        
+        var samplePublication = createUnpublishablePublication();
+        var userInstance = UserInstance.fromPublication(samplePublication);
+        var exception = assertThrows(InvalidPublicationException.class,
+            () -> resourceService.publishPublication(userInstance, samplePublication.getIdentifier()));
+        assertThat(exception.getMessage(),containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+    }
+    
+    private Publication createUnpublishablePublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        publication.getEntityDescription().setMainTitle(null);
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
     private Publication generatePublication() {

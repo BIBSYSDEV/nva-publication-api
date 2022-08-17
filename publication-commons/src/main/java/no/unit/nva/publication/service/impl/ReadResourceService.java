@@ -102,10 +102,7 @@ public class ReadResourceService {
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject))
-            .orElseThrow(fail -> logQueryRelatedDataAndThrowException(fail,
-                userInstance,
-                resourceIdentifier));
+        QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject)).orElseThrow();
         QueryResult queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
     }
@@ -144,16 +141,6 @@ public class ReadResourceService {
             .stream()
             .map(Resource::toPublication)
             .collect(Collectors.toList());
-    }
-    
-    private RuntimeException logQueryRelatedDataAndThrowException(Failure<QueryRequest> fail,
-                                                                  UserInstance userInstance,
-                                                                  SortableIdentifier resourceIdentifier) {
-        
-        logger.error("Could not fetch Resource for user:");
-        logger.error("UserInstance {}", userInstance.toJsonString());
-        logger.error("Resource identifier: {}", resourceIdentifier);
-        return new RuntimeException(fail.getException());
     }
     
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
