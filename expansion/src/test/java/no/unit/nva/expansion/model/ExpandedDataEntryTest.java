@@ -27,13 +27,11 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +46,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private MessageService messageService = new FakeMessageService();
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
-    private DoiRequestService doiRequestService;
+    private TicketService ticketService;
     
     public static Stream<Class<?>> entryTypes() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
@@ -60,10 +58,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
         this.messageService = new MessageService(client, clock);
-        this.doiRequestService = new DoiRequestService(client, clock);
-        var publishingRequestService = new TicketService(client, clock);
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
-            doiRequestService, publishingRequestService);
+        this.ticketService = new TicketService(client, clock);
+        this.resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
     }
     
     @Test
@@ -108,8 +105,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var expandedDataEntry =
             ExpandedDataEntryWithAssociatedPublication.create(type, resourceExpansionService,
                 resourceService,
-                doiRequestService,
-                messageService);
+                messageService,
+                ticketService);
         SortableIdentifier identifier = expandedDataEntry.getExpandedDataEntry().identifyExpandedEntry();
         SortableIdentifier expectedIdentifier = extractExpectedIdentifier(expandedDataEntry);
         assertThat(identifier, is(equalTo(expectedIdentifier)));
@@ -117,15 +114,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     private static ExpandedDoiRequest randomDoiRequest(Publication publication,
                                                        ResourceExpansionService resourceExpansionService,
-                                                       DoiRequestService doiRequestService,
-                                                       MessageService messageService)
-        throws BadRequestException, NotFoundException {
+                                                       MessageService messageService,
+                                                       TicketService ticketService)
+        throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
-        var doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
-            publication.getIdentifier());
+        var doiRequest = DoiRequest.fromPublication(publication);
+        var persistedDoiRequest = ticketService.createTicket(doiRequest,doiRequest.getClass());
         messageService.createMessage(userInstance, publication, randomString(), MessageType.DOI_REQUEST);
-        var doiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-        return attempt(() -> ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService))
+        return attempt(() -> ExpandedDoiRequest.create(persistedDoiRequest, resourceExpansionService, messageService))
             .orElseThrow();
     }
     
@@ -136,12 +132,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return expandedResourceConversation;
     }
     
-    private DoiRequest createDoiRequest(Publication publication) throws BadRequestException, NotFoundException {
-        var userInstance = UserInstance.fromPublication(publication);
-        var doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
-            publication.getIdentifier());
-        return doiRequestService.getDoiRequest(userInstance,
-            doiRequestIdentifier);
+    private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
+        return ticketService.createTicket(DoiRequest.fromPublication(publication),DoiRequest.class);
     }
     
     private Publication createPublication() throws ApiGatewayException {
@@ -189,14 +181,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             Class<?> expandedDataEntryClass,
             ResourceExpansionService resourceExpansionService,
             ResourceService resourceService,
-            DoiRequestService doiRequestService,
-            MessageService messageService) throws ApiGatewayException {
+            MessageService messageService,
+            TicketService ticketService) throws ApiGatewayException {
             var publication = createPublication(resourceService);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication,
-                    resourceExpansionService, doiRequestService, messageService));
+                    resourceExpansionService, messageService,ticketService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     createExpandedPublishingRequest(publication, resourceService, messageService,

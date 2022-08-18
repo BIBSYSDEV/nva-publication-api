@@ -67,16 +67,14 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
         var queryObject = PublishingRequestCase.createQuery(userInstance,
             resourceIdentifier,
             requestIdentifier);
-        return ticketService.fetchTicket(queryObject,PublishingRequestCase.class);
+        return ticketService.fetchTicket(queryObject, PublishingRequestCase.class);
     }
     
     private PublishingRequestCase fetchPublishingRequestForElevatedUser(UserInstance userInstance,
                                                                         SortableIdentifier resourceIdentifier) {
-        PublishingRequestCase persistedRequest;
-        persistedRequest = (PublishingRequestCase)
-                               ticketService.getTicketByResourceIdentifier(userInstance.getOrganizationUri(),
-                                   resourceIdentifier, PublishingRequestCase.class);
-        return persistedRequest;
+        return ticketService.fetchTicketByResourceIdentifier(userInstance.getOrganizationUri(),
+                resourceIdentifier, PublishingRequestCase.class)
+            .orElseThrow();
     }
     
     private SortableIdentifier extractIdentifier(RequestInfo requestInfo, String pathParameterName) {

@@ -122,6 +122,13 @@ public class DoiRequest implements TicketEntry {
         return new DoiRequestBuilder();
     }
     
+    public static DoiRequest createQueryObject(Resource resource) {
+        return DoiRequest.builder()
+            .withCustomerId(resource.getCustomerId())
+            .withResourceIdentifier(resource.getIdentifier())
+            .build();
+    }
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
@@ -403,7 +410,8 @@ public class DoiRequest implements TicketEntry {
     }
     
     private boolean attemptingToCreateFindableDoiForNonPublishedPublication(Publication publication) {
-        return !PublicationStatus.PUBLISHED.equals(publication.getStatus()) && TicketStatus.COMPLETED.equals(getStatus());
+        return !PublicationStatus.PUBLISHED.equals(publication.getStatus())
+               && TicketStatus.COMPLETED.equals(getStatus());
     }
     
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
@@ -413,4 +421,5 @@ public class DoiRequest implements TicketEntry {
     private boolean updateIsAboutTheSameResource(Resource resource) {
         return resource.getIdentifier().equals(this.getResourceIdentifier());
     }
+    
 }

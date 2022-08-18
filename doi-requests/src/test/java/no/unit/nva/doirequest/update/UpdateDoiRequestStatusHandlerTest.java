@@ -153,10 +153,11 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     }
     
     private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) {
-        return ticketService.getTicketByResourceIdentifier(
-            publication.getPublisher().getId(),
-            publication.getIdentifier(),
-            DoiRequest.class);
+        return ticketService.fetchTicketByResourceIdentifier(
+                publication.getPublisher().getId(),
+                publication.getIdentifier(),
+                DoiRequest.class)
+            .orElseThrow();
     }
     
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {

@@ -33,17 +33,16 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -75,13 +74,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         resourceService = new ResourceService(client, CLOCK);
         var messageService = new MessageService(client, CLOCK);
-        var publishingRequestService = new TicketService(client, CLOCK);
-        var doiRequestService = new DoiRequestService(client, CLOCK);
+        var ticketService = new TicketService(client, CLOCK);
+        
         
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, messageService, doiRequestService,
-                publishingRequestService);
+            new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }

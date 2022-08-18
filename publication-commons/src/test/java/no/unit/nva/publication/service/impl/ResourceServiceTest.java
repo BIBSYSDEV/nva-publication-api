@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
@@ -119,7 +120,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
     private ResourceService resourceService;
     private Clock clock;
-    private DoiRequestService doiRequestService;
+    private TicketService ticketService;
     private MessageService messageService;
     
     @BeforeEach
@@ -127,7 +128,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         super.init();
         Clock clock = setupClock();
         resourceService = new ResourceService(client, clock);
-        doiRequestService = new DoiRequestService(client, clock);
+        ticketService = new TicketService(client, clock);
         messageService = new MessageService(client, clock, SortableIdentifier::next);
     }
     
@@ -587,15 +588,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void publishResourceUpdatesResourceStatusInResourceWithDoiRequest()
+    void shouldKeepTheResourceInSyncWithTheAssociatedDoiRequestWhenResourceIsPublished()
         throws ApiGatewayException {
-        Publication publication = createSampleResourceWithDoi();
-        SortableIdentifier doiRequestIdentifier = createDoiRequest(publication).getIdentifier();
-        publishResource(publication);
+        var publication = createSampleResourceWithDoi();
         
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        DoiRequest actualDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+        var doiRequest = ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
+        assertThat(doiRequest.getResourceStatus(), is(equalTo(PublicationStatus.DRAFT)));
         
+        var publishedResource = publishResource(publication);
+        assertThat(publishedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        
+        var actualDoiRequest = ticketService.fetchTicket(doiRequest, DoiRequest.class);
         assertThat(actualDoiRequest.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
     
@@ -669,16 +672,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceUpdatesLinkedDoiRequestUponUpdate()
         throws ApiGatewayException {
-        var doiRequestService = new DoiRequestService(client, clock);
         var resource = createSampleResourceWithDoi(); // 1st clock tick
         var originalDoiRequest = createDoiRequest(resource); // 2nd clock tick
         
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource); // 3rd clock tick
         
-        UserInstance userInstance = UserInstance.create(resource.getResourceOwner(), resource.getPublisher().getId());
-        var updatedDoiRequest = doiRequestService
-            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+        var updatedDoiRequest = ticketService.fetchTicket(originalDoiRequest, DoiRequest.class);
         
         var expectedDoiRequest = originalDoiRequest.copy();
         expectedDoiRequest.setResourceTitle(ANOTHER_TITLE);
@@ -692,15 +692,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceUpdatesAllFieldsInDoiRequest()
         throws ApiGatewayException {
-        var doiRequestService = new DoiRequestService(client, clock);
         var initialPublication = createPublication(resourceService, PublicationGenerator.randomPublication());
-        var userInstance = UserInstance.fromPublication(initialPublication);
         var initialDoiRequest = createDoiRequest(initialPublication);
         var publicationUpdate = updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(initialPublication);
         resourceService.updatePublication(publicationUpdate);
         
-        var updatedDoiRequest = doiRequestService
-            .getDoiRequestByResourceIdentifier(userInstance, initialPublication.getIdentifier());
+        var updatedDoiRequest = ticketService.fetchTicket(initialDoiRequest, DoiRequest.class);
         
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
             initialPublication,
@@ -718,17 +715,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
         throws ApiGatewayException {
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.fromPublication(resource);
-        
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
         
-        Executable action = () -> doiRequestService
-            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+        var expectedNonExistingTicket =
+            ticketService.fetchTicketByResourceIdentifier(resource.getPublisher().getId(),
+                resource.getIdentifier(), DoiRequest.class);
         
-        assertThrows(NotFoundException.class, action);
+        assertThat(expectedNonExistingTicket, is(emptyOptional()));
     }
     
     @Test
@@ -804,7 +799,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     @Test
     void getResourceByIdentifierThrowsNotFoundExceptionWhenResourceDoesNotExist() {
-        TestAppender testAppender = LogUtils.getTestingAppender(ReadResourceService.class);
         SortableIdentifier someIdentifier = SortableIdentifier.next();
         Executable action = () -> resourceService.getPublicationByIdentifier(someIdentifier);
         
@@ -815,7 +809,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws ApiGatewayException {
         var samplePublication = createPublication(resourceService, PublicationGenerator.randomPublication());
-        var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
+        var sampleDoiRequestIdentifier =
+            ticketService.createTicket(DoiRequest.fromPublication(samplePublication), DoiRequest.class).getIdentifier();
         var userInstance = UserInstance.fromPublication(samplePublication);
         
         var sampleMessageIdentifier = messageService.createMessage(userInstance, samplePublication, randomString(),
@@ -1007,10 +1002,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private DoiRequest createDoiRequest(Publication resource)
-        throws BadRequestException, NotFoundException {
-        UserInstance userInstance = UserInstance.fromPublication(resource);
-        doiRequestService.createDoiRequest(userInstance, resource.getIdentifier());
-        return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+        throws ApiGatewayException {
+        return ticketService.createTicket(DoiRequest.fromPublication(resource), DoiRequest.class);
     }
     
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {

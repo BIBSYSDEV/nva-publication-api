@@ -28,7 +28,6 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -55,7 +54,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private InputStream input;
     private Publication samplePublication;
-    private DoiRequestService doiRequestService;
     
     @BeforeEach
     public void initialize() throws ApiGatewayException {
@@ -63,7 +61,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         
         resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         Environment environment = setupEnvironment();
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();

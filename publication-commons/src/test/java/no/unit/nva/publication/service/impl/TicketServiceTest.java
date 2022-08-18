@@ -64,7 +64,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class TicketServiceTest extends ResourcesLocalTest {
     
     public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
-   
+    
     private static final Instant TICKET_CREATION_TIME = randomInstant();
     private static final Instant TICKET_UPDATE_TIME = randomInstant(TICKET_CREATION_TIME);
     private ResourceService resourceService;
@@ -149,7 +149,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @Test
     void shouldThrowConflictExceptionWhenRequestingToPublishAlreadyPublishedPublication() throws ApiGatewayException {
-        var publication = persistPublication(owner,PUBLISHED);
+        var publication = persistPublication(owner, PUBLISHED);
         var publishingRequest = TestingUtils.createPublishingRequest(publication);
         Executable action = () -> ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
         assertThrows(ConflictException.class, action);
@@ -267,15 +267,18 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should retrieve eventually consistent ticket")
+    @DisplayName("should retrieve ticket by customer id and resource identifier")
     @MethodSource("ticketProvider")
-    void shouldRetrievePublishingRequestByCustomerIdAndResourceIdentifier(Class<? extends TicketEntry> ticketType)
+    void shouldRetrieveTicketByCustomerIdAndResourceIdentifier(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var expectedTicket = createPersistedTicket(publication, ticketType);
         var retrievedRequest =
-            ticketService.getTicketByResourceIdentifier(publication.getPublisher().getId(),
-                publication.getIdentifier(), ticketType);
+            ticketService.fetchTicketByResourceIdentifier(
+                    publication.getPublisher().getId(),
+                    publication.getIdentifier(),
+                    ticketType)
+                .orElseThrow();
         assertThat(retrievedRequest, is(equalTo(expectedTicket)));
     }
     
@@ -300,7 +303,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         var ticket = createUnpersistedTicket(ticketType, publication);
         return ticketService.createTicket(ticket, ticketType);
     }
-    
     
     private Publication persistEmptyPublication(UserInstance owner) throws ApiGatewayException {
         var publication = new Publication.Builder()
@@ -379,5 +381,4 @@ class TicketServiceTest extends ResourcesLocalTest {
         
         return resourceService.getPublication(persistedPublication);
     }
-    
 }
