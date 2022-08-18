@@ -403,9 +403,7 @@ public class DoiRequest implements TicketEntry {
     }
     
     private boolean attemptingToCreateFindableDoiForNonPublishedPublication(Publication publication) {
-        var x = !PublicationStatus.PUBLISHED.equals(publication.getStatus());
-        var y = TicketStatus.COMPLETED.equals(getStatus());
-        return x && y;
+        return !PublicationStatus.PUBLISHED.equals(publication.getStatus()) && TicketStatus.COMPLETED.equals(getStatus());
     }
     
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {

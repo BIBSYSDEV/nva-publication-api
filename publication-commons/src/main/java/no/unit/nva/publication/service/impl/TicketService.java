@@ -38,11 +38,6 @@ public class TicketService extends ServiceWithTransactions {
         this(client, clock, DEFAULT_IDENTIFIER_PROVIDER);
     }
     
-    @JacocoGenerated
-    public static TicketService defaultService() {
-        return new TicketService(PublicationServiceConfig.defaultDynamoDbClient(), Clock.systemDefaultZone());
-    }
-    
     protected TicketService(AmazonDynamoDB client,
                             Clock clock,
                             Supplier<SortableIdentifier> identifierProvider) {
@@ -51,6 +46,11 @@ public class TicketService extends ServiceWithTransactions {
         this.clock = clock;
         this.identifierProvider = identifierProvider;
         resourceService = new ResourceService(client, clock, identifierProvider);
+    }
+    
+    @JacocoGenerated
+    public static TicketService defaultService() {
+        return new TicketService(PublicationServiceConfig.defaultDynamoDbClient(), Clock.systemDefaultZone());
     }
     
     public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
