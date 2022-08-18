@@ -32,9 +32,9 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -46,7 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
+class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
     public static final String HTTP_PATH_SEPARATOR = "/";
     public static final ResourceOwner NOT_THE_RESOURCE_OWNER = new ResourceOwner(randomString(), randomUri());
@@ -62,7 +62,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     private Clock mockClock;
     private ByteArrayOutputStream outputStream;
     private Context context;
-    private DoiRequestService doiRequestService;
+    private TicketService ticketService;
     private MessageService messageService;
     
     @BeforeEach
@@ -70,28 +70,28 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         init();
         setupClock();
         resourceService = new ResourceService(client, mockClock);
-        doiRequestService = new DoiRequestService(client, mockClock);
+        ticketService = new TicketService(client, mockClock);
         messageService = new MessageService(client, mockClock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
         
-        handler = new CreateDoiRequestHandler(resourceService, doiRequestService, messageService, environment);
+        handler = new CreateDoiRequestHandler(resourceService, ticketService, messageService, environment);
     }
     
     @Test
-    public void createDoiRequestStoresNewDoiRequestForPublishedResource()
+    void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
         sendRequest(publication, publication.getResourceOwner());
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         String doiRequestIdentifier = extractLocationHeader(response);
-        DoiRequest doiRequest = readDoiRequestDirectlyFromService(publication, doiRequestIdentifier);
+        DoiRequest doiRequest = readDoiRequestDirectlyFromService(new SortableIdentifier(doiRequestIdentifier));
         assertThat(doiRequest, is(not(nullValue())));
     }
     
     @Test
-    public void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
+    void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
         
@@ -104,7 +104,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    public void createDoiRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
+    void createDoiRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
         InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
             .withBody(request)
@@ -118,7 +118,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    public void createDoiRequestReturnsBadRequestErrorWenDoiRequestAlreadyExists()
+    void createDoiRequestReturnsBadRequestErrorWenDoiRequestAlreadyExists()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
         
@@ -174,13 +174,9 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
             .build();
     }
     
-    private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier)
+    private DoiRequest readDoiRequestDirectlyFromService(SortableIdentifier doiRequestIdentifier)
         throws NotFoundException {
-        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner(),
-            publication.getPublisher().getId());
-        
-        return doiRequestService.getDoiRequest(userInstance, new SortableIdentifier(
-            doiRequestIdentifier));
+        return ticketService.fetchTicketByIdentifier(doiRequestIdentifier, DoiRequest.class);
     }
     
     private String extractLocationHeader(GatewayResponse<Void> response) {

@@ -79,7 +79,7 @@ public class TicketService extends ServiceWithTransactions {
         return ticketType.cast(queryResult.getData());
     }
     
-    public <T extends TicketEntry> TicketEntry getTicketByResourceIdentifier(URI customerId,
+    public <T extends TicketEntry> T getTicketByResourceIdentifier(URI customerId,
                                                                              SortableIdentifier resourceIdentifier,
                                                                              Class<T> ticketType) {
         
