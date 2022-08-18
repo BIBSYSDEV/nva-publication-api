@@ -9,6 +9,7 @@ import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventPro
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,6 +29,7 @@ import java.time.Clock;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -48,7 +50,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
-    private static final DoiRequest EMPTY = null;
     private DoiRequestEventProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
@@ -144,7 +145,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     void shouldCreateUpdateEventWhenPublicationHasNoDoiAndADraftDoiRequestGetsApproved()
         throws JsonProcessingException,
                ApiGatewayException {
-        var publication = persistPublicationWithoutDoi();
+        var publication = persistPublicationWithoutDoi(PublicationStatus.PUBLISHED);
         var draftRequest = DoiRequest.fromPublication(publication);
         var approvedRequest = draftRequest.complete(publication);
         var event = createEvent(draftRequest, approvedRequest);
@@ -186,7 +187,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
-    void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication,Entity> entityProvider)
+    void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
         throws JsonProcessingException, ApiGatewayException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
@@ -211,13 +212,19 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
     
     private Publication persistPublicationWithoutDoi() throws ApiGatewayException {
-        var publication = randomPublication();
-        publication.setDoi(null);
-        return persistPublication(publication);
+        return persistPublicationWithoutDoi(randomElement(PublicationStatus.values()));
     }
     
-    private DataEntryUpdateEvent newDoiRequestEvent(DoiRequest doiRequestWithoutResourceIdentifier) {
-        return createDataEntry(EMPTY, doiRequestWithoutResourceIdentifier);
+    private Publication persistPublicationWithoutDoi(PublicationStatus publicationStatus) throws ApiGatewayException {
+        var publication = randomPublication();
+        publication.setDoi(null);
+        var persistedPublication = persistPublication(publication);
+        
+        if (PublicationStatus.PUBLISHED.equals(publicationStatus)) {
+            resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
+                persistedPublication.getIdentifier());
+        }
+        return resourceService.getPublication(persistedPublication);
     }
     
     private Publication updateTitle(Publication publication) {

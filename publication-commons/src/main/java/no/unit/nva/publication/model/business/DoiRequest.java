@@ -51,6 +51,7 @@ public class DoiRequest implements TicketEntry {
     public static final Set<PublicationStatus> ACCEPTABLE_PUBLICATION_STATUSES = Set.of(PublicationStatus.PUBLISHED,
         PublicationStatus.DRAFT);
     private static final URI UNKNOWN_USER_AFFILIATION = null;
+    public static final String DOI_REQUEST_APPROVAL_FAILURE = "Cannot approve DoiRequest for non-published publication";
     
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -119,6 +120,13 @@ public class DoiRequest implements TicketEntry {
     
     public static DoiRequestBuilder builder() {
         return new DoiRequestBuilder();
+    }
+    
+    public static DoiRequest createQueryObject(Resource resource) {
+        return DoiRequest.builder()
+            .withCustomerId(resource.getCustomerId())
+            .withResourceIdentifier(resource.getIdentifier())
+            .build();
     }
     
     @Override
@@ -240,7 +248,7 @@ public class DoiRequest implements TicketEntry {
     @Override
     public void validateCompletionRequirements(Publication publication) {
         if (attemptingToCreateFindableDoiForNonPublishedPublication(publication)) {
-            throw new InvalidTicketStatusTransitionException("Cannot approve DoiRequest for non-published publication");
+            throw new InvalidTicketStatusTransitionException(DOI_REQUEST_APPROVAL_FAILURE);
         }
     }
     
@@ -413,4 +421,5 @@ public class DoiRequest implements TicketEntry {
     private boolean updateIsAboutTheSameResource(Resource resource) {
         return resource.getIdentifier().equals(this.getResourceIdentifier());
     }
+    
 }

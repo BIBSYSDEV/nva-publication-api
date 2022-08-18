@@ -9,9 +9,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -47,6 +49,11 @@ public class TicketService extends ServiceWithTransactions {
         resourceService = new ResourceService(client, clock, identifierProvider);
     }
     
+    @JacocoGenerated
+    public static TicketService defaultService() {
+        return new TicketService(PublicationServiceConfig.defaultDynamoDbClient(), Clock.systemDefaultZone());
+    }
+    
     public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
         throws ApiGatewayException {
         //TODO: rename the method fetchPublication so that it reveals why we are fetching the publication.
@@ -64,7 +71,12 @@ public class TicketService extends ServiceWithTransactions {
     
     public TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-        var completed = attempt(() -> ticketEntry.complete(publication))
+        var existingTicket = fetchTicketByResourceIdentifier(
+            ticketEntry.getCustomerId(),
+            ticketEntry.getResourceIdentifier(),
+            ticketEntry.getClass()
+        ).orElseThrow();
+        var completed = attempt(() -> existingTicket.complete(publication))
             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
         var entryUpdate = indicateThatUpdateHasOccurred(completed);
         var putItemRequest = ((TicketDao) entryUpdate.toDao()).createPutItemRequest();
@@ -79,13 +91,12 @@ public class TicketService extends ServiceWithTransactions {
         return ticketType.cast(queryResult.getData());
     }
     
-    public <T extends TicketEntry> T getTicketByResourceIdentifier(URI customerId,
-                                                                             SortableIdentifier resourceIdentifier,
-                                                                             Class<T> ticketType) {
+    public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
+                                                                               SortableIdentifier resourceIdentifier,
+                                                                               Class<T> ticketType) {
         
-        var dao = TicketEntry.queryObject(customerId, resourceIdentifier, ticketType).toDao();
-        var persistedDao = ((TicketDao) dao).fetchByResourceIdentifier(client);
-        return ticketType.cast(persistedDao.getData());
+        TicketDao dao = (TicketDao) TicketEntry.queryObject(customerId, resourceIdentifier, ticketType).toDao();
+        return dao.fetchByResourceIdentifier(client).map(Dao::getData).map(ticketType::cast);
     }
     
     @Override

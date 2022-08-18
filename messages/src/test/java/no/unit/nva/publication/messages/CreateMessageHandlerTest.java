@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -28,7 +27,6 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -55,7 +53,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private InputStream input;
     private Publication samplePublication;
-    private DoiRequestService doiRequestService;
     
     @BeforeEach
     public void initialize() throws ApiGatewayException {
@@ -63,14 +60,12 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         
         resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         Environment environment = setupEnvironment();
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
     }
     
-   
     @Test
     void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
         throws IOException, NotFoundException {
@@ -85,7 +80,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     
     @Test
     void handlerReturnsBodyWithMessageId()
-        throws IOException,  NotFoundException {
+        throws IOException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
         
         input = createInput(requestBody);
@@ -149,20 +144,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
         return environment;
-    }
-    
-   
-    private void postDoiRequestMessage(CreateMessageRequest requestBody) throws IOException {
-        input = createInput(requestBody);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(HttpURLConnection.HTTP_CREATED));
-    }
-    
-    private CreateMessageRequest createDoiRequestMessage() {
-        CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
-        requestBody.setMessageType(MessageType.DOI_REQUEST);
-        return requestBody;
     }
     
     private URI extractLocationFromResponse() throws JsonProcessingException {

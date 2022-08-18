@@ -49,10 +49,9 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -71,12 +70,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
-    private DoiRequestService doiRequestService;
     private TicketService ticketService;
     
     public static Stream<Arguments> ticketTypeProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class)
-            .map(Arguments::arguments);
+        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::arguments);
     }
     
     @BeforeEach
@@ -304,8 +301,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private PublicationWithAllKindsOfCasesAndMessages createSamplePublicationWithConversations()
         throws ApiGatewayException {
-        return new PublicationWithAllKindsOfCasesAndMessages(resourceService, doiRequestService, messageService,
-            ticketService)
+        return new PublicationWithAllKindsOfCasesAndMessages(resourceService, messageService, ticketService)
             .create();
     }
     
@@ -321,10 +317,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private void initializeServices() {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client, CLOCK);
-        doiRequestService = new DoiRequestService(client, CLOCK);
         ticketService = new TicketService(client, CLOCK);
-        expansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
-            doiRequestService, ticketService);
+        expansionService = new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
     }
     
     private Publication createPublication() throws ApiGatewayException {
@@ -398,9 +392,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static class PublicationWithAllKindsOfCasesAndMessages {
         
         private final ResourceService resourceService;
-        private final DoiRequestService doiRequestService;
         private final MessageService messageService;
-        private TicketService ticketService;
+        private final TicketService ticketService;
         private Publication publication;
         private DoiRequest doiRequest;
         private UserInstance userInstance;
@@ -411,14 +404,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         
         public PublicationWithAllKindsOfCasesAndMessages(
             ResourceService resourceService,
-            DoiRequestService doiRequestService,
             MessageService messageService,
             TicketService ticketService
         
         ) {
             
             this.resourceService = resourceService;
-            this.doiRequestService = doiRequestService;
             this.messageService = messageService;
             this.ticketService = ticketService;
         }
@@ -464,13 +455,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             userInstance = UserInstance.fromPublication(sample);
             publication = resourceService.createPublication(userInstance, sample);
             
-            var doiRequestIdentifier = doiRequestService.createDoiRequest(publication);
-            doiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+            doiRequest = ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
             
             var publishingRequestCase =
                 PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
             publishingRequest =
-                ticketService.createTicket(publishingRequestCase,PublishingRequestCase.class);
+                ticketService.createTicket(publishingRequestCase, PublishingRequestCase.class);
             doiRequestMessages = createSomeMessages(MessageType.DOI_REQUEST);
             supportMessages = createSomeMessages(MessageType.SUPPORT);
             publishingRequestMessages = createSomeMessages(MessageType.PUBLISHING_REQUEST);

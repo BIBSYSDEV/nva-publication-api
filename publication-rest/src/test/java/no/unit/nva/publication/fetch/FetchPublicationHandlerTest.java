@@ -35,7 +35,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -56,7 +55,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         .constructParametricType(
             GatewayResponse.class,
             PublicationResponse.class);
-    public static final String DATECITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite"
+    public static final String DATACITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite"
                                                                + ".org/schema/kernel-4\">";
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
     private ResourceService publicationService;
@@ -65,7 +64,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
     private Environment environment;
-    private DoiRequestService doiRequestService;
     
     /**
      * Set up environment.
@@ -77,7 +75,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, environment);
@@ -85,7 +82,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
-    public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
+    void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication createdPublication = createPublication();
         String publicationIdentifier = createdPublication.getIdentifier().toString();
         
@@ -107,7 +104,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertTrue(gatewayResponse.getBody().contains(DATECITE_XML_RESOURCE_ELEMENT));
+        assertTrue(gatewayResponse.getBody().contains(DATACITE_XML_RESOURCE_ELEMENT));
     }
     
     @Test
@@ -161,7 +158,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
             .when(serviceThrowingException)
             .getPublicationByIdentifier(any(SortableIdentifier.class));
         
-        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,  environment);
+        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException, environment);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
         
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -171,7 +168,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
     
-  
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
         return restApiMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }

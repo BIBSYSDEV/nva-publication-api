@@ -23,10 +23,9 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
@@ -35,17 +34,14 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     
     private final ResourceService resourceService;
     private final MessageService messageService;
-    private final DoiRequestService doiRequestService;
     private final TicketService ticketService;
     
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         MessageService messageService,
-                                        DoiRequestService doiRequestService,
                                         TicketService ticketService) {
         
         this.resourceService = resourceService;
         this.messageService = messageService;
-        this.doiRequestService = doiRequestService;
         this.ticketService = ticketService;
     }
     
@@ -96,11 +92,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
     
     private ExpandedDataEntry updatePublishingRequestConversation(Message message) throws NotFoundException {
-        var publishingRequest = (PublishingRequestCase) ticketService
-            .getTicketByResourceIdentifier(message.getCustomerId(),
+        var publishingRequest = ticketService.fetchTicketByResourceIdentifier(
+                message.getCustomerId(),
                 message.getResourceIdentifier(),
-                PublishingRequestCase.class
-            );
+                PublishingRequestCase.class)
+            .orElseThrow();
         return ExpandedPublishingRequest.create(publishingRequest, resourceService, messageService, this);
     }
     
@@ -114,8 +110,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     
     private ExpandedDoiRequest updateDoiRequestConversation(Message message) throws NotFoundException {
         var doiRequest =
-            doiRequestService.getDoiRequestByResourceIdentifier(UserInstance.fromMessage(message),
-                message.getResourceIdentifier());
+            ticketService.fetchTicketByResourceIdentifier(
+                    message.getCustomerId(),
+                    message.getResourceIdentifier(),
+                    DoiRequest.class)
+                .orElseThrow();
         
         return ExpandedDoiRequest.create(doiRequest, this, messageService);
     }

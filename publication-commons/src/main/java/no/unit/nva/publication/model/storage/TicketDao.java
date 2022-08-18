@@ -66,18 +66,18 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
             .withExpressionAttributeValues(condition.getExpressionAttributeValues());
     }
     
-    public TicketDao fetchByResourceIdentifier(AmazonDynamoDB client) {
+    public Optional<TicketDao> fetchByResourceIdentifier(AmazonDynamoDB client) {
         QueryRequest queryRequest = new QueryRequest()
             .withTableName(RESOURCES_TABLE_NAME)
             .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .withKeyConditions(byResource(joinByResourceOrderedType()));
         
-        var item = client.query(queryRequest)
+        var dynamoFormat = client.query(queryRequest)
             .getItems()
             .stream()
-            .collect(SingletonCollector.collect());
-        
-        return DynamoEntry.parseAttributeValuesMap(item, this.getClass());
+            .collect(SingletonCollector.collectOrElse(null));
+        return Optional.ofNullable(dynamoFormat)
+            .map(item -> DynamoEntry.parseAttributeValuesMap(item, this.getClass()));
     }
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
