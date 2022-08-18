@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -67,7 +66,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         samplePublication = createSamplePublication();
     }
     
-   
     @Test
     void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
         throws IOException, NotFoundException {
@@ -82,7 +80,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     
     @Test
     void handlerReturnsBodyWithMessageId()
-        throws IOException,  NotFoundException {
+        throws IOException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
         
         input = createInput(requestBody);
@@ -146,20 +144,6 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
         return environment;
-    }
-    
-   
-    private void postDoiRequestMessage(CreateMessageRequest requestBody) throws IOException {
-        input = createInput(requestBody);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(HttpURLConnection.HTTP_CREATED));
-    }
-    
-    private CreateMessageRequest createDoiRequestMessage() {
-        CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
-        requestBody.setMessageType(MessageType.DOI_REQUEST);
-        return requestBody;
     }
     
     private URI extractLocationFromResponse() throws JsonProcessingException {
