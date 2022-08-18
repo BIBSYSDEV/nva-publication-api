@@ -55,7 +55,7 @@ public interface TicketEntry extends Entity {
     default TicketEntry complete(Publication publication) {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
-        validateCompletionRequirements(publication);
+        updated.validateCompletionRequirements(publication);
         return updated;
     }
     

@@ -5,7 +5,7 @@ import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapp
 import static no.unit.nva.doirequest.update.ApiUpdateDoiRequest.NO_CHANGE_REQUESTED_ERROR;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.INVALID_PUBLICATION_ID_ERROR;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.service.impl.DoiRequestService.UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE;
+import static no.unit.nva.publication.model.business.DoiRequest.DOI_REQUEST_APPROVAL_FAILURE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -30,12 +30,11 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +48,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
-    private DoiRequestService doiRequestService;
+    private TicketService ticketService;
     private UpdateDoiRequestStatusHandler handler;
     private ResourceService resourceService;
     private ByteArrayOutputStream outputStream;
@@ -65,8 +64,8 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
         
-        doiRequestService = new DoiRequestService(client, clock);
-        handler = new UpdateDoiRequestStatusHandler(setupEnvironment(), doiRequestService);
+        ticketService = new TicketService(client, clock);
+        handler = new UpdateDoiRequestStatusHandler(ticketService);
         resourceService = new ResourceService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
@@ -107,7 +106,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
-        assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
+        assertThat(problem.getDetail(), containsString(DOI_REQUEST_APPROVAL_FAILURE));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
     
@@ -153,9 +152,11 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         return environment;
     }
     
-    private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) throws NotFoundException {
-        return doiRequestService
-            .getDoiRequestByResourceIdentifier(UserInstance.fromPublication(publication), publication.getIdentifier());
+    private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) {
+        return ticketService.getTicketByResourceIdentifier(
+            publication.getPublisher().getId(),
+            publication.getIdentifier(),
+            DoiRequest.class);
     }
     
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
@@ -214,7 +215,8 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         publication = resourceService.createPublication(userInstance, publication);
-        doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
+        var doiRequest = DoiRequest.fromPublication(publication);
+        ticketService.createTicket(doiRequest, DoiRequest.class);
         return publication;
     }
 }

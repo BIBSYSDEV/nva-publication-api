@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -35,6 +36,11 @@ public class TicketService extends ServiceWithTransactions {
     
     public TicketService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_PROVIDER);
+    }
+    
+    @JacocoGenerated
+    public static TicketService defaultService() {
+        return new TicketService(PublicationServiceConfig.defaultDynamoDbClient(), Clock.systemDefaultZone());
     }
     
     protected TicketService(AmazonDynamoDB client,
@@ -64,7 +70,12 @@ public class TicketService extends ServiceWithTransactions {
     
     public TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-        var completed = attempt(() -> ticketEntry.complete(publication))
+        var existingTicket = getTicketByResourceIdentifier(
+            ticketEntry.getCustomerId(),
+            ticketEntry.getResourceIdentifier(),
+            ticketEntry.getClass()
+        );
+        var completed = attempt(() -> existingTicket.complete(publication))
             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
         var entryUpdate = indicateThatUpdateHasOccurred(completed);
         var putItemRequest = ((TicketDao) entryUpdate.toDao()).createPutItemRequest();
@@ -80,8 +91,8 @@ public class TicketService extends ServiceWithTransactions {
     }
     
     public <T extends TicketEntry> T getTicketByResourceIdentifier(URI customerId,
-                                                                             SortableIdentifier resourceIdentifier,
-                                                                             Class<T> ticketType) {
+                                                                   SortableIdentifier resourceIdentifier,
+                                                                   Class<T> ticketType) {
         
         var dao = TicketEntry.queryObject(customerId, resourceIdentifier, ticketType).toDao();
         var persistedDao = ((TicketDao) dao).fetchByResourceIdentifier(client);
