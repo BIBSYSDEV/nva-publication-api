@@ -27,16 +27,25 @@ public interface TicketEntry extends Entity {
         return newTicket;
     }
     
+    static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return DoiRequest.fromPublication(publication);
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
+            return createOpeningCaseObject(UserInstance.fromPublication(publication), publication.getIdentifier());
+        }
+        throw new RuntimeException("Unrecognized ticket type");
+    }
+    
     static <T extends TicketEntry> T queryObject(URI customerId,
                                                  SortableIdentifier resourceIdentifier,
                                                  Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return ticketType.cast(DoiRequest.builder()
-                .withResourceIdentifier(resourceIdentifier)
-                .withCustomerId(customerId)
-                .build());
+                                       .withResourceIdentifier(resourceIdentifier)
+                                       .withCustomerId(customerId)
+                                       .build());
         }
-        return ticketType.cast(PublishingRequestCase.createQuery(customerId,resourceIdentifier));
+        return ticketType.cast(PublishingRequestCase.createQuery(customerId, resourceIdentifier));
     }
     
     static <T extends TicketEntry> T queryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
