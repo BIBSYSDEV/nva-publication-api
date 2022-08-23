@@ -3,7 +3,7 @@ package no.unit.nva.publication.publishingrequest.read;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.publishingrequest.TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
@@ -50,7 +50,7 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
     private TicketEntry fetchPublishingRequest(RequestInfo requestInfo)
         throws NotFoundException, UnauthorizedException {
         var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
-        var requestIdentifier = extractIdentifier(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
+        var requestIdentifier = extractIdentifier(requestInfo, TICKET_IDENTIFIER_PATH_PARAMETER);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
         
         if (requestInfo.userIsAuthorized(AccessRight.APPROVE_PUBLISH_REQUEST.toString())) {

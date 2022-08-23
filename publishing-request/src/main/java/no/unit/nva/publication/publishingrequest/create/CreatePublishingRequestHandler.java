@@ -1,8 +1,8 @@
 package no.unit.nva.publication.publishingrequest.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
+import static no.unit.nva.publication.publishingrequest.TicketUtils.createUserInstance;
+import static no.unit.nva.publication.publishingrequest.TicketUtils.defaultRequestService;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;

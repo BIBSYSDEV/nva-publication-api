@@ -4,13 +4,13 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_CLOCK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
+import no.unit.nva.publication.publishingrequest.TicketUtils;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -44,11 +44,11 @@ public class UpdatePublishingRequestHandler
         var publicationIdentifier =
             readIdentifierFromPathParameter(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         var publishingRequestIdentifier =
-            readIdentifierFromPathParameter(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
+            readIdentifierFromPathParameter(requestInfo, TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER);
         
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
         var currentRequest =
-            requestService.fetchTicketByIdentifier(publishingRequestIdentifier, PublishingRequestCase.class);
+            requestService.fetchTicketByIdentifier(publishingRequestIdentifier);
         
         var updatedEntry = requestService.completeTicket(currentRequest);
         return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) updatedEntry);

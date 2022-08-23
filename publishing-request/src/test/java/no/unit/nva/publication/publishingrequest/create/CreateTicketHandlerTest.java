@@ -27,6 +27,8 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.publishingrequest.DoiRequestDto;
+import no.unit.nva.publication.publishingrequest.PublishingRequestDto;
 import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -83,9 +85,9 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_SEE_OTHER)));
         
         var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
-        
+    
         assertThatLocationHeaderHasExpectedFormat(publication, location);
-        assertThatLocationHeaderPointsToCreatedTicket(location, ticketType);
+        assertThatLocationHeaderPointsToCreatedTicket(location);
     }
     
     @ParameterizedTest(name = "ticket type: {0}")
@@ -204,12 +206,11 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
                    .orElseThrow();
     }
     
-    private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri,
-                                                               Class<? extends TicketEntry> ticketType)
+    private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)
         throws NotFoundException {
         var publication = fetchPublication(ticketUri);
         var ticketIdentifier = extractTicketIdentifierFromLocation(ticketUri);
-        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier, ticketType);
+        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
         assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(ticket.getIdentifier(), is(equalTo(ticketIdentifier)));
     }
@@ -221,9 +222,9 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
     
     private TicketDto constructDto(Class<? extends TicketEntry> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
-            return new DoiRequestDto();
+            return DoiRequestDto.empty();
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return new PublishingRequestDto();
+            return PublishingRequestDto.empty();
         }
         throw new RuntimeException("Unrecognized ticket type");
     }

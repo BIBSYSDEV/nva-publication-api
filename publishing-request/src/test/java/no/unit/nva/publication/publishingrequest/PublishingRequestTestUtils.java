@@ -8,8 +8,8 @@ import java.time.Instant;
 import java.util.function.Consumer;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 
 public class PublishingRequestTestUtils {
@@ -58,7 +58,7 @@ public class PublishingRequestTestUtils {
     private static Publication createAndPersistPublicationAndThenActOnIt(ResourceService resourceService,
                                                                          Consumer<Publication> action)
         throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
         var userInstance = UserInstance.fromPublication(publication);
         var storedResult = resourceService.createPublication(userInstance, publication);
         action.accept(storedResult);

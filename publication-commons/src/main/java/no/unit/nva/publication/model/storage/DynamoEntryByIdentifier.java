@@ -50,17 +50,17 @@ public interface DynamoEntryByIdentifier {
                 ":SortKeyValue", new AttributeValue(this.getByTypeAndIdentifierSortKey()));
         
         var query = new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-            .withKeyConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(expressionAttributeValues);
-        
+                        .withTableName(RESOURCES_TABLE_NAME)
+                        .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                        .withKeyConditionExpression(conditionExpression)
+                        .withExpressionAttributeNames(expressionAttributeNames)
+                        .withExpressionAttributeValues(expressionAttributeValues);
+    
         var result = client.query(query)
-            .getItems()
-            .stream()
-            .collect(SingletonCollector.tryCollect())
-            .orElseThrow(fail -> handleGetResourceByIdentifierError(this.getIdentifier()));
+                         .getItems()
+                         .stream()
+                         .collect(SingletonCollector.tryCollect())
+                         .orElseThrow(fail -> handleGetResourceByIdentifierError(this.getIdentifier()));
         
         return DynamoEntry.parseAttributeValuesMap(result, daoType);
     }

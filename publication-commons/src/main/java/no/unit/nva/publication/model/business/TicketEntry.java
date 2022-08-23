@@ -51,8 +51,11 @@ public interface TicketEntry extends Entity {
     static <T extends TicketEntry> T queryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return ticketType.cast(DoiRequest.builder().withIdentifier(ticketIdentifier).build());
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
+            return ticketType.cast(PublishingRequestCase.createQuery(ticketIdentifier));
+        } else {
+            throw new RuntimeException("Unsupported ticket type");
         }
-        return ticketType.cast(PublishingRequestCase.createQuery(ticketIdentifier));
     }
     
     SortableIdentifier getResourceIdentifier();

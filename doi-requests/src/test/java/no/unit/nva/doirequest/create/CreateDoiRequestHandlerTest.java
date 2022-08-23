@@ -176,7 +176,7 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
     private DoiRequest readDoiRequestDirectlyFromService(SortableIdentifier doiRequestIdentifier)
         throws NotFoundException {
-        return ticketService.fetchTicketByIdentifier(doiRequestIdentifier, DoiRequest.class);
+        return (DoiRequest) ticketService.fetchTicketByIdentifier(doiRequestIdentifier);
     }
     
     private String extractLocationHeader(GatewayResponse<Void> response) {

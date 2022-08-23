@@ -8,7 +8,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENT
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_CASE_PATH;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.update.UpdatePublishingRequestHandler.AUTHORIZATION_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -34,9 +33,10 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
+import no.unit.nva.publication.publishingrequest.TicketUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -173,7 +173,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withBody(dto)
             .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
                 publicationIdentifier.toString(),
-                PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+                TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER,
                 publishingRequestIdentifier.toString()))
             .build();
     }
@@ -199,7 +199,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     private static Map<String, String> constructPathParameters(Publication publication,
                                                                PublishingRequestCase publishingRequest) {
         return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
-            PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+            TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER,
             publishingRequest.getIdentifier().toString());
     }
     

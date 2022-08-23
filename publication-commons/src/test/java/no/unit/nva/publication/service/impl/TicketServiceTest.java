@@ -237,7 +237,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var expectedTicketEntry = createPersistedTicket(publication, ticketType);
         var actualTicketEntry =
-            ticketService.fetchTicketByIdentifier(expectedTicketEntry.getIdentifier(), ticketType);
+            ticketService.fetchTicketByIdentifier(expectedTicketEntry.getIdentifier());
         
         assertThat(actualTicketEntry, is(equalTo(expectedTicketEntry)));
     }
@@ -284,14 +284,35 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(retrievedRequest, is(equalTo(expectedTicket)));
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should get ticket by identifier without needing to specify type")
+    @MethodSource("ticketProvider")
+    void shouldGetTicketByIdentifierWithoutNeedingToSpecifyType(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var expectedTicket = createPersistedTicket(publication, ticketType);
+        var retrievedRequest = ticketService.fetchTicketByIdentifier(expectedTicket.getIdentifier());
+        assertThat(retrievedRequest, is(equalTo(expectedTicket)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should throw Exception when trying to fetch non existing ticket by identifier")
+    @MethodSource("ticketProvider")
+    void shouldThrowExceptionWhenTryingToFetchNonExistingTicketByIdentifier(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        persistPublication(owner, DRAFT);
+        
+        assertThrows(NotFoundException.class, () -> ticketService.fetchTicketByIdentifier(SortableIdentifier.next()));
+    }
+    
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
                                                                         AmazonDynamoDB client) {
         var mockedGetPublicationResponse = new GetItemResult().withItem(mockedPublicationResponse());
         var mockedResponseWhenItemNotYetInPlace = ResourceNotFoundException.class;
-    
+        
         var ticketEntry = createUnpersistedTicket(ticketType, randomPublicationWithoutDoi());
         var mockedResponseWhenItemFinallyInPlace = new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
-    
+        
         when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
         when(client.getItem(any()))
             .thenReturn(mockedGetPublicationResponse)
@@ -319,16 +340,16 @@ class TicketServiceTest extends ResourcesLocalTest {
     private DoiRequest expectedDoiRequestForEmptyPublication(Publication emptyPublication,
                                                              DoiRequest actualDoiRequest) {
         return DoiRequest.builder()
-            .withIdentifier(actualDoiRequest.getIdentifier())
-            .withResourceIdentifier(emptyPublication.getIdentifier())
-            .withOwner(emptyPublication.getResourceOwner().getOwner())
-            .withCustomerId(emptyPublication.getPublisher().getId())
-            .withStatus(TicketStatus.PENDING)
-            .withResourceStatus(DRAFT)
-            .withCreatedDate(actualDoiRequest.getCreatedDate())
-            .withModifiedDate(actualDoiRequest.getModifiedDate())
-            .withResourceModifiedDate(emptyPublication.getModifiedDate())
-            .build();
+                   .withIdentifier(actualDoiRequest.getIdentifier())
+                   .withResourceIdentifier(emptyPublication.getIdentifier())
+                   .withOwner(emptyPublication.getResourceOwner().getOwner())
+                   .withCustomerId(emptyPublication.getPublisher().getId())
+                   .withStatus(TicketStatus.PENDING)
+                   .withResourceStatus(DRAFT)
+                   .withCreatedDate(actualDoiRequest.getCreatedDate())
+                   .withModifiedDate(actualDoiRequest.getModifiedDate())
+                   .withResourceModifiedDate(emptyPublication.getModifiedDate())
+                   .build();
     }
     
     private TicketEntry createUnpersistedTicket(Class<?> ticketType, Publication publication) {

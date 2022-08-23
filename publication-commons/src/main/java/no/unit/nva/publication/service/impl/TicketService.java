@@ -10,7 +10,9 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -64,9 +66,9 @@ public class TicketService extends ServiceWithTransactions {
     public <T extends TicketEntry> T fetchTicket(TicketEntry dataEntry, Class<T> ticketType)
         throws NotFoundException {
         return fetchFromDatabase(dataEntry, ticketType)
-            .map(TicketDao::getData)
-            .map(ticketType::cast)
-            .orElseThrow(() -> handleFetchPublishingRequestByResourceError(dataEntry.getIdentifier()));
+                   .map(TicketDao::getData)
+                   .map(ticketType::cast)
+                   .orElseThrow(() -> handleFetchPublishingRequestByResourceError(dataEntry.getIdentifier()));
     }
     
     public TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
@@ -77,18 +79,18 @@ public class TicketService extends ServiceWithTransactions {
             ticketEntry.getClass()
         ).orElseThrow();
         var completed = attempt(() -> existingTicket.complete(publication))
-            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+                            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
         var entryUpdate = indicateThatUpdateHasOccurred(completed);
         var putItemRequest = ((TicketDao) entryUpdate.toDao()).createPutItemRequest();
         client.putItem(putItemRequest);
         return entryUpdate;
     }
     
-    public <T extends TicketEntry> T fetchTicketByIdentifier(SortableIdentifier ticketIdentifier, Class<T> ticketType)
+    public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)
         throws NotFoundException {
-        var ticketDao = TicketEntry.queryObject(ticketIdentifier, ticketType).toDao();
-        var queryResult = ticketDao.fetchByIdentifier(client, ticketDao.getClass());
-        return ticketType.cast(queryResult.getData());
+        return attempt(() -> fetchTicketByIdentifier(ticketIdentifier, DoiRequest.class))
+                   .or(() -> fetchTicketByIdentifier(ticketIdentifier, PublishingRequestCase.class))
+                   .orElseThrow(fail -> handleFetchingTicketByIdentifierFailure(fail.getException()));
     }
     
     public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
@@ -115,6 +117,21 @@ public class TicketService extends ServiceWithTransactions {
         return new NotFoundException(TICKET_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
     }
     
+    private <T extends TicketEntry> TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier,
+                                                                        Class<T> ticketType)
+        throws NotFoundException {
+        var ticketDao = TicketEntry.queryObject(ticketIdentifier, ticketType).toDao();
+        var queryResult = ticketDao.fetchByIdentifier(client, ticketDao.getClass());
+        return (TicketEntry) queryResult.getData();
+    }
+    
+    private NotFoundException handleFetchingTicketByIdentifierFailure(Exception exception) {
+        if (exception instanceof NotFoundException) {
+            return (NotFoundException) exception;
+        }
+        throw new RuntimeException(exception);
+    }
+    
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
         return new BadRequestException(exception.getMessage(), exception);
     }
@@ -129,7 +146,7 @@ public class TicketService extends ServiceWithTransactions {
     private Publication fetchPublication(TicketEntry ticketEntry) throws ForbiddenException {
         var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
         return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
-            .orElseThrow(fail -> new ForbiddenException());
+                   .orElseThrow(fail -> new ForbiddenException());
     }
     
     //TODO: try to remove suppression.
