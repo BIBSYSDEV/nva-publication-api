@@ -1,12 +1,13 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.TestingUtils.createOrganization;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
+import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -31,6 +32,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -46,6 +48,7 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -56,7 +59,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -72,8 +74,8 @@ class TicketServiceTest extends ResourcesLocalTest {
     private UserInstance owner;
     private Clock clock;
     
-    public static Stream<Arguments> ticketProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class), Arguments.of(PublishingRequestCase.class));
+    public static Stream<Class<?>> ticketProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class);
     }
     
     @BeforeEach
@@ -101,7 +103,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         
         assertThat(persistedTicket.getCreatedDate(), is(equalTo(TICKET_CREATION_TIME)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValues());
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("doi")));
     }
     
     @ParameterizedTest(name = "Publication status: {0}")
@@ -286,10 +288,10 @@ class TicketServiceTest extends ResourcesLocalTest {
                                                                         AmazonDynamoDB client) {
         var mockedGetPublicationResponse = new GetItemResult().withItem(mockedPublicationResponse());
         var mockedResponseWhenItemNotYetInPlace = ResourceNotFoundException.class;
-        
-        var ticketEntry = createUnpersistedTicket(ticketType, randomPublication());
+    
+        var ticketEntry = createUnpersistedTicket(ticketType, randomPublicationWithoutDoi());
         var mockedResponseWhenItemFinallyInPlace = new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
-        
+    
         when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
         when(client.getItem(any()))
             .thenReturn(mockedGetPublicationResponse)
@@ -304,12 +306,12 @@ class TicketServiceTest extends ResourcesLocalTest {
         return ticketService.createTicket(ticket, ticketType);
     }
     
-    private Publication persistEmptyPublication(UserInstance owner) throws ApiGatewayException {
+    private Publication persistEmptyPublication(UserInstance owner) {
         var publication = new Publication.Builder()
-            .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
-            .withPublisher(createOrganization(owner.getOrganizationUri()))
-            .withStatus(DRAFT)
-            .build();
+                              .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
+                              .withPublisher(createOrganization(owner.getOrganizationUri()))
+                              .withStatus(DRAFT)
+                              .build();
         
         return resourceService.createPublication(owner, publication);
     }
@@ -352,8 +354,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private Map<String, AttributeValue> mockedPublicationResponse() {
-        var publication = randomPublication();
-        publication.setStatus(DRAFT);
+        var publication = randomPublicationWithoutDoi().copy().withStatus(DRAFT).build();
         var resource = Resource.fromPublication(publication);
         var dao = new ResourceDao(resource);
         return dao.toDynamoFormat();
@@ -376,7 +377,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = createUnpersistedPublication(owner);
         publication.setStatus(publicationStatus);
-        
         var persistedPublication = resourceService.insertPreexistingPublication(publication);
         
         return resourceService.getPublication(persistedPublication);

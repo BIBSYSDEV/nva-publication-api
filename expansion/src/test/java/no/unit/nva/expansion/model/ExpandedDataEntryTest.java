@@ -64,8 +64,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldReturnExpandedResourceWithoutLossOfInformation() throws JsonProcessingException, ApiGatewayException {
-        var publication = createPublication();
+    void shouldReturnExpandedResourceWithoutLossOfInformation() throws JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
         var expandedResource = fromPublication(publication);
         var regeneratedPublication = objectMapper.readValue(expandedResource.toJsonString(), Publication.class);
         assertThat(regeneratedPublication, is(equalTo(publication)));
@@ -73,7 +73,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     @Test
     void shouldReturnExpandedDoiRequestWithoutLossOfInformation() throws ApiGatewayException {
-        var publication = createPublication();
+        var publication = createPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         ExpandedDoiRequest expandedDoiRequest =
             ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
@@ -91,7 +91,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     @Test
     void expandedDoiRequestShouldHaveTypeDoiRequest() throws ApiGatewayException {
-        var publication = createPublication();
+        var publication = createPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         var expandedResource =
             ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
@@ -133,12 +133,16 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
     
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
-        return ticketService.createTicket(DoiRequest.fromPublication(publication),DoiRequest.class);
+        return ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
     }
     
-    private Publication createPublication() throws ApiGatewayException {
-        var publication = randomPublication();
+    private Publication createPublicationWithoutDoi() {
+        var publication = randomPublicationWithoutDoi();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    }
+    
+    private static Publication randomPublicationWithoutDoi() {
+        return randomPublication().copy().withDoi(null).build();
     }
     
     private SortableIdentifier extractExpectedIdentifier(ExpandedDataEntryWithAssociatedPublication generatedData) {
@@ -198,26 +202,26 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     randomResourceConversation(publication));
             }
         }
-        
+    
         public Publication getPublication() {
             return publication;
         }
-        
+    
         public ExpandedDataEntry getExpandedDataEntry() {
             return expandedDataEntry;
         }
-        
-        private static Publication createPublication(ResourceService resourceService) throws ApiGatewayException {
-            var publication = randomPublication();
+    
+        private static Publication createPublication(ResourceService resourceService) {
+            var publication = randomPublicationWithoutDoi();
             publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
             return publication;
         }
-        
+    
         private static ExpandedDataEntryWithAssociatedPublication createExpandedResource(Publication publication) {
             ExpandedResource expandedResource = attempt(() -> fromPublication(publication)).orElseThrow();
             return new ExpandedDataEntryWithAssociatedPublication(publication, expandedResource);
         }
-        
+    
         private static ExpandedDataEntry createExpandedPublishingRequest(
             Publication publication,
             ResourceService resourceService,

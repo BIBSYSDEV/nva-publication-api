@@ -1,7 +1,11 @@
 package no.unit.nva.publication.publishingrequest.create;
 
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.publishingrequest.create.CreateTicketHandler.LOCATION_HEADER;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -35,9 +39,11 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.zalando.problem.Problem;
 
 class CreateTicketHandlerTest extends ResourcesLocalTest {
     
@@ -46,10 +52,6 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
     private TicketService ticketService;
-    
-    public static Stream<TicketDto> ticketDtoProvider() {
-        return Stream.of(new DoiRequestDto(), new PublishingRequestDto());
-    }
     
     public static Stream<Arguments> ticketEntryProvider() {
         return Stream.of(Arguments.of(DoiRequest.class), Arguments.of(PublishingRequestCase.class));
@@ -65,12 +67,16 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticketType")
-    @DisplayName("should persist ticket")
+    @DisplayName("should persist ticket when publication exists, user is publication owner and "
+                 + "publication meets ticket creation criteria")
     @MethodSource("ticketEntryProvider")
-    void shouldPersistTicket(Class<? extends TicketEntry> ticketType) throws IOException, ApiGatewayException {
-        var publication = createPersistedPublication();
+    void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
+        Class<? extends TicketEntry> ticketType) throws IOException, ApiGatewayException {
+        
+        var publication = createPersistedDraftPublication();
         var requestBody = constructDto(ticketType);
-        var input = createHttpTicketCreationRequest(requestBody, publication);
+        var owner = UserInstance.fromPublication(publication);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
         
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -80,6 +86,102 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
         
         assertThatLocationHeaderHasExpectedFormat(publication, location);
         assertThatLocationHeaderPointsToCreatedTicket(location, ticketType);
+    }
+    
+    @ParameterizedTest(name = "ticket type: {0}")
+    @DisplayName("should should not allow creating a ticket for non existing publication")
+    @MethodSource("ticketEntryProvider")
+    void shouldNotAllowTicketCreationForNonExistingPublication(Class<? extends TicketEntry> ticketType)
+        throws IOException {
+        var publication = nonPersistedPublication();
+        var requestBody = constructDto(ticketType);
+        var owner = UserInstance.fromPublication(publication);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(input, output, CONTEXT);
+        
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+    
+    @ParameterizedTest(name = "ticket type: {0}")
+    @DisplayName("should not allow users to create tickets for publications they do not own")
+    @MethodSource("ticketEntryProvider")
+    void shouldNotAllowUsersToCreateTicketsForPublicationsTheyDoNotOwn(Class<? extends TicketEntry> ticketType)
+        throws IOException, ApiGatewayException {
+        var publication = createPersistedDraftPublication();
+        var requestBody = constructDto(ticketType);
+        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var input = createHttpTicketCreationRequest(requestBody, publication, user);
+        handler.handleRequest(input, output, CONTEXT);
+        
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+    
+    @ParameterizedTest(name = "ticket type: {0}")
+    @DisplayName("should not allow users to create tickets for publications belonging to different organization"
+                 + "than the one they are currently logged in to")
+    @MethodSource("ticketEntryProvider")
+    void shouldNotAllowUsersToCreateTicketsForPublicationsBelongingToDifferentOrgThanTheOneTheyAreLoggedInTo(
+        Class<? extends TicketEntry> ticketType)
+        throws IOException, ApiGatewayException {
+        var publication = createPersistedDraftPublication();
+        var requestBody = constructDto(ticketType);
+        var user = UserInstance.create(publication.getResourceOwner().getOwner(), randomUri());
+        var input = createHttpTicketCreationRequest(requestBody, publication, user);
+        handler.handleRequest(input, output, CONTEXT);
+        
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+    
+    @ParameterizedTest(name = "ticket type: {0}")
+    @DisplayName("should not allow anonymous users to create tickets")
+    @MethodSource("ticketEntryProvider")
+    void shouldNotAllowAnonymousUsersToCreateTickets(Class<? extends TicketEntry> ticketType)
+        throws IOException, ApiGatewayException {
+        var publication = createPersistedDraftPublication();
+        var requestBody = constructDto(ticketType);
+        var input = createAnonymousHttpTicketCreationRequest(requestBody, publication);
+        handler.handleRequest(input, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+    }
+    
+    @Test
+    void shouldNotAllowDoiRequestTicketCreationWhenPublicationHasExistingDoiProducedByNvaOrLegacySystem()
+        throws IOException {
+        var publication = createPersistedPublicationWithDoi();
+        assertThat(publication.getDoi(), is(not(nullValue())));
+        var owner = UserInstance.fromPublication(publication);
+        var requestBody = constructDto(DoiRequest.class);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(input, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+    }
+    
+    @Test
+    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsPublished()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedDraftPublication();
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var owner = UserInstance.fromPublication(publication);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(input, output, CONTEXT);
+        
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+    }
+    
+    private Publication createPersistedPublicationWithDoi() {
+        var publication = randomPublication();
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    }
+    
+    private static Publication nonPersistedPublication() {
+        return randomPublication();
     }
     
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
@@ -126,13 +228,27 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
         throw new RuntimeException("Unrecognized ticket type");
     }
     
-    private Publication createPersistedPublication() throws ApiGatewayException {
+    private Publication createPersistedDraftPublication() throws ApiGatewayException {
         var publication = randomPublication();
+        publication.setDoi(null); // for creating DoiRequests
         publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         return resourceService.getPublication(publication);
     }
     
-    private InputStream createHttpTicketCreationRequest(TicketDto ticketDto, Publication publication)
+    private InputStream createHttpTicketCreationRequest(TicketDto ticketDto,
+                                                        Publication publication,
+                                                        UserInstance userCredentials)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+                   .withBody(ticketDto)
+                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+                   .withNvaUsername(userCredentials.getUserIdentifier())
+                   .withCustomerId(userCredentials.getOrganizationUri())
+                   .build();
+    }
+    
+    private InputStream createAnonymousHttpTicketCreationRequest(TicketDto ticketDto,
+                                                                 Publication publication)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)

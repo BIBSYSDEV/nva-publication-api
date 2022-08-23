@@ -11,7 +11,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -35,7 +34,6 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -146,12 +144,6 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, TicketStatus.COMPLETED);
     }
     
-    private Environment setupEnvironment() {
-        var environment = mock(Environment.class);
-        when(environment.readEnv(anyString())).thenReturn("*");
-        return environment;
-    }
-    
     private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) {
         return ticketService.fetchTicketByResourceIdentifier(
                 publication.getPublisher().getId(),
@@ -213,7 +205,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication createDraftPublicationAndDoiRequest() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
         var userInstance = UserInstance.fromPublication(publication);
         publication = resourceService.createPublication(userInstance, publication);
         var doiRequest = DoiRequest.fromPublication(publication);

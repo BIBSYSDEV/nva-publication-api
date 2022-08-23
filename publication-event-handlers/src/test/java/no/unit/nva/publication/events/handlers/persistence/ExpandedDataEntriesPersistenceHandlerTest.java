@@ -30,6 +30,7 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
@@ -144,36 +145,36 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
     
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = createResource().toPublication();
+        var publication = createPublicationWitoutDoi();
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject =
             PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
         var publishingRequest =
-            ticketService.createTicket(openingCaseObject,PublishingRequestCase.class);
+            ticketService.createTicket(openingCaseObject, PublishingRequestCase.class);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
     
     private ExpandedResource randomResource() throws JsonProcessingException, ApiGatewayException {
-        var resource = createResource();
+        var resource = Resource.fromPublication(createPublicationWitoutDoi());
         return (ExpandedResource) resourceExpansionService.expandEntry(resource);
     }
     
-    private Resource createResource() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
+    private Publication createPublicationWitoutDoi() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
         var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-        return resourceService.getResourceByIdentifier(persisted.getIdentifier());
+        return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
     
     private ExpandedDoiRequest randomDoiRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = createResource().toPublication();
+        var publication = createPublicationWitoutDoi();
         var doiRequest =
-            ticketService.createTicket(DoiRequest.fromPublication(publication),DoiRequest.class);
+            ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
         return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest);
     }
     
     private ExpandedResourceConversation randomResourceConversation()
         throws ApiGatewayException, JsonProcessingException {
-        var publication = createResource().toPublication();
+        var publication = createPublicationWitoutDoi();
         var userInstance = UserInstance.fromPublication(publication);
         var messageIdentifier = messageService.createMessage(userInstance, publication, randomString(),
             MessageType.SUPPORT);

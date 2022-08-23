@@ -82,7 +82,7 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException, IOException {
-        Publication publication = createPublication();
+        Publication publication = createPublicationWithoutDoi();
         sendRequest(publication, publication.getResourceOwner());
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         String doiRequestIdentifier = extractLocationHeader(response);
@@ -92,8 +92,8 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
     @Test
     void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
-        throws ApiGatewayException, IOException {
-        Publication publication = createPublication();
+        throws IOException {
+        Publication publication = createPublicationWithoutDoi();
         
         sendRequest(publication, NOT_THE_RESOURCE_OWNER);
         
@@ -119,8 +119,8 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
     @Test
     void createDoiRequestReturnsBadRequestErrorWenDoiRequestAlreadyExists()
-        throws ApiGatewayException, IOException {
-        Publication publication = createPublication();
+        throws IOException {
+        Publication publication = createPublicationWithoutDoi();
         
         sendRequest(publication, publication.getResourceOwner());
         
@@ -133,8 +133,8 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
     @Test
     void createDoiRequestStoresMessageAsDoiRelatedWhenMessageIsIncluded()
-        throws ApiGatewayException, IOException {
-        Publication publication = createPublication();
+        throws IOException {
+        Publication publication = createPublicationWithoutDoi();
         String expectedMessageText = randomString();
         
         sendRequest(publication, publication.getResourceOwner(), expectedMessageText);
@@ -194,8 +194,8 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
     }
     
-    private Publication createPublication() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication();
+    private Publication createPublicationWithoutDoi() {
+        Publication publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
 }
