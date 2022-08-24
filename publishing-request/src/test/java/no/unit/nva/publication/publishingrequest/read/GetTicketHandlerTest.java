@@ -2,8 +2,10 @@ package no.unit.nva.publication.publishingrequest.read;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistDraftPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -11,6 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -108,7 +112,8 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
     void shouldReturnTicketWhenCuratorIsRequester(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var ticket = createPersistedTicket(ticketType);
-        var request = createHttpRequestForElevatedUser(ticket, ticket.getCustomerId()).build();
+        var request =
+            createHttpRequestForElevatedUser(ticket, ticket.getCustomerId(), APPROVE_DOI_REQUEST).build();
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
@@ -122,7 +127,22 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
     void shouldReturnTicketWhenRequesterIsCuratorOfWrongInstitution(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var ticket = createPersistedTicket(ticketType);
-        var request = createHttpRequestForElevatedUser(ticket, randomUri()).build();
+        var request = createHttpRequestForElevatedUser(ticket, randomUri(), APPROVE_DOI_REQUEST).build();
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should return Not Found when requester is the wrong type of elevated user")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnNotFoundWhenRequestIsTheWrongTypeOfElevatedUser(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var ticket = createPersistedTicket(ticketType);
+        var wrongAccessRights = new HashSet<>(Arrays.asList(AccessRight.values()));
+        wrongAccessRights.remove(APPROVE_DOI_REQUEST);
+        var request =
+            createHttpRequestForElevatedUser(ticket, ticket.getCustomerId(), randomElement(wrongAccessRights)).build();
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
@@ -134,12 +154,14 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
             TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString());
     }
     
-    private HandlerRequestBuilder<TicketDto> createHttpRequestForElevatedUser(TicketEntry ticket, URI customerId)
+    private HandlerRequestBuilder<TicketDto> createHttpRequestForElevatedUser(TicketEntry ticket,
+                                                                              URI customerId,
+                                                                              AccessRight accessRight)
         throws NotFoundException {
         return createHttpRequest(ticket)
                    .withCustomerId(customerId)
                    .withNvaUsername(randomString())
-                   .withAccessRights(ticket.getCustomerId(), AccessRight.APPROVE_DOI_REQUEST.toString());
+                   .withAccessRights(ticket.getCustomerId(), accessRight.toString());
     }
     
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)
