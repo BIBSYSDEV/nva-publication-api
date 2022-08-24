@@ -115,7 +115,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             GatewayResponse.fromOutputStream(outputStream, PublishingRequestCaseDto.class);
         var responseBody = response.getBodyObject(PublishingRequestCaseDto.class);
         var actualIdentifierInResponseBody = extractIdentifierFromDto(responseBody);
-        var persistedRequest = requestService.fetchTicket(publishingRequest,PublishingRequestCase.class);
+        var persistedRequest = requestService.fetchTicket(publishingRequest);
         assertThat(persistedRequest.getIdentifier(), is(equalTo(actualIdentifierInResponseBody)));
         assertThat(persistedRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
@@ -260,7 +260,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         return publishingRequest;
     }
     
-    private Publication createPersistedPublication() throws ApiGatewayException {
+    private Publication createPersistedPublication() {
         var publication = PublicationGenerator.randomPublication();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }

@@ -39,14 +39,14 @@ public class CreatePublishingRequestHandler extends
         final var userInstance = createUserInstance(requestInfo);
         final var publicationIdentifier =
             new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER));
-        
+    
         var publishingRequest = PublishingRequestCase.createOpeningCaseObject(userInstance, publicationIdentifier);
         var newPublishingRequest =
             attempt(() -> requestService.createTicket(publishingRequest, PublishingRequestCase.class))
                 .orElseThrow(fail -> handleErrors(fail.getException()));
-        
-        var persistedRequest = requestService.fetchTicket(newPublishingRequest, PublishingRequestCase.class);
-        return PublishingRequestCaseDto.createResponseObject(persistedRequest);
+    
+        var persistedRequest = requestService.fetchTicket(newPublishingRequest);
+        return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) persistedRequest);
     }
     
     @Override

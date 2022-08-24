@@ -33,6 +33,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
@@ -129,6 +130,14 @@ public class DoiRequest implements TicketEntry {
                    .build();
     }
     
+    public static DoiRequest createQueryObject(UserInstance userInstance, SortableIdentifier ticketIdentifier) {
+        return DoiRequest.builder()
+                   .withOwner(userInstance.getUserIdentifier())
+                   .withCustomerId(userInstance.getOrganizationUri())
+                   .withIdentifier(ticketIdentifier)
+                   .build();
+    }
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
@@ -215,7 +224,7 @@ public class DoiRequest implements TicketEntry {
     }
     
     @Override
-    public DoiRequestDao toDao() {
+    public TicketDao toDao() {
         return new DoiRequestDao(this);
     }
     

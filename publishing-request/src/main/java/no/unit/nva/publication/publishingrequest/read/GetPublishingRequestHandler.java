@@ -64,10 +64,10 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
                                                                         SortableIdentifier resourceIdentifier,
                                                                         SortableIdentifier requestIdentifier)
         throws NotFoundException {
-        var queryObject = PublishingRequestCase.createQuery(userInstance,
+        var queryObject = PublishingRequestCase.createQueryObject(userInstance,
             resourceIdentifier,
             requestIdentifier);
-        return ticketService.fetchTicket(queryObject, PublishingRequestCase.class);
+        return (PublishingRequestCase) ticketService.fetchTicket(queryObject);
     }
     
     private PublishingRequestCase fetchPublishingRequestForElevatedUser(UserInstance userInstance,

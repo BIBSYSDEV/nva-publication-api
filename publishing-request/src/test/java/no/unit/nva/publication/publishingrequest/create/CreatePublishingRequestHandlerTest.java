@@ -36,8 +36,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
@@ -140,9 +140,9 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var publicationIdentifier = extractPublicationIdentifierFromPublishingRequestId(publishingRequestId);
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
         var userInfo = UserInstance.fromPublication(publication);
-        
-        var queryObject = PublishingRequestCase.createQuery(userInfo, publicationIdentifier, caseIdentifier);
-        return requestService.fetchTicket(queryObject,PublishingRequestCase.class);
+    
+        var queryObject = PublishingRequestCase.createQueryObject(userInfo, publicationIdentifier, caseIdentifier);
+        return (PublishingRequestCase) requestService.fetchTicket(queryObject);
     }
     
     private SortableIdentifier extractPublishingIdentifierFromPublishingRequestId(URI publishingRequestId) {

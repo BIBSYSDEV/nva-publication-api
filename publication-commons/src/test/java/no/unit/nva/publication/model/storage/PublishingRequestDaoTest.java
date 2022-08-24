@@ -19,8 +19,8 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,10 +63,11 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldReturnQueryObjectWithCompletePrimaryKey() {
         var sampleEntryIdentifier = SortableIdentifier.next();
-        var queryObject = PublishingRequestCase.createQuery(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER), null,
+        var queryObject = PublishingRequestCase.createQueryObject(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER),
+            null,
             sampleEntryIdentifier);
         var queryDao = PublishingRequestDao.queryObject(queryObject);
-        
+    
         assertThat(queryDao.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
         assertThat(queryDao.getPrimaryKeySortKey(),
             is(equalTo(expectedPublicationRequestPrimarySortKey(sampleEntryIdentifier))));
@@ -103,10 +104,10 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.randomPublication();
         var publishingRequestCase = randomPublishingRequest(publication).complete(publication);
         publishingRequestCase.setStatus(randomElement(TicketStatus.values()));
-        return publishingRequestCase.toDao();
+        return (PublishingRequestDao) publishingRequestCase.toDao();
     }
     
-    private Publication createPublication() throws ApiGatewayException {
+    private Publication createPublication() {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);

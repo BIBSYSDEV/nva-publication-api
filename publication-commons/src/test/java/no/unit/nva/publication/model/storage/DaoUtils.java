@@ -63,7 +63,7 @@ public final class DaoUtils {
     
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publishingRequest = randomPublishingRequest();
-        return publishingRequest.toDao();
+        return (PublishingRequestDao) publishingRequest.toDao();
     }
     
     private static MessageDao sampleMessageDao() {

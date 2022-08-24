@@ -602,7 +602,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publishedResource = publishResource(publication);
         assertThat(publishedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         
-        var actualDoiRequest = ticketService.fetchTicket(doiRequest, DoiRequest.class);
+        var actualDoiRequest = (DoiRequest) ticketService.fetchTicket(doiRequest);
         assertThat(actualDoiRequest.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
     
@@ -683,7 +683,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resource.setDoi(expectedDoi);
         resourceService.updatePublication(resource); // 3rd clock tick
     
-        var updatedDoiRequest = ticketService.fetchTicket(originalDoiRequest, DoiRequest.class);
+        var updatedDoiRequest = ticketService.fetchTicket(originalDoiRequest);
     
         var expectedDoiRequest = originalDoiRequest.copy();
         expectedDoiRequest.setResourceTitle(ANOTHER_TITLE);
@@ -702,16 +702,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var initialDoiRequest = createDoiRequest(initialPublication);
         var publicationUpdate = updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(initialPublication);
         resourceService.updatePublication(publicationUpdate);
-        
-        var updatedDoiRequest = ticketService.fetchTicket(initialDoiRequest, DoiRequest.class);
-        
+    
+        var updatedDoiRequest = (DoiRequest) ticketService.fetchTicket(initialDoiRequest);
+    
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
             initialPublication,
             initialDoiRequest,
             publicationUpdate,
             updatedDoiRequest
         );
-        
+    
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
         assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);

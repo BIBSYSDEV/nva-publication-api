@@ -19,6 +19,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
@@ -54,7 +55,7 @@ public class PublishingRequestCase implements TicketEntry {
     
     public static PublishingRequestCase createOpeningCaseObject(UserInstance userInstance,
                                                                 SortableIdentifier publicationIdentifier) {
-        
+    
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUserIdentifier());
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
@@ -63,31 +64,40 @@ public class PublishingRequestCase implements TicketEntry {
         return openingCaseObject;
     }
     
-    public static PublishingRequestCase createQuery(UserInstance userInstance,
-                                                    SortableIdentifier publicationIdentifier,
-                                                    SortableIdentifier publishingRequestIdentifier) {
+    public static PublishingRequestCase createQueryObject(UserInstance userInstance,
+                                                          SortableIdentifier publicationIdentifier,
+                                                          SortableIdentifier publishingRequestIdentifier) {
         return createPublishingRequestIdentifyingObject(userInstance,
             publicationIdentifier,
             publishingRequestIdentifier);
     }
     
-    public static PublishingRequestCase createQuery(SortableIdentifier resourceIdentifier, URI customerId) {
+    public static PublishingRequestCase createQueryObject(SortableIdentifier resourceIdentifier, URI customerId) {
         var queryObject = new PublishingRequestCase();
         queryObject.setResourceIdentifier(resourceIdentifier);
         queryObject.setCustomerId(customerId);
         return queryObject;
     }
     
-    public static PublishingRequestCase createQuery(SortableIdentifier ticketIdentifier) {
+    public static PublishingRequestCase createQueryObject(SortableIdentifier ticketIdentifier) {
         var queryObject = new PublishingRequestCase();
         queryObject.setIdentifier(ticketIdentifier);
         return queryObject;
     }
     
-    public static PublishingRequestCase createQuery(URI customerId, SortableIdentifier resourceIdentifier) {
+    public static PublishingRequestCase createQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
         var queryObject = new PublishingRequestCase();
         queryObject.setCustomerId(customerId);
         queryObject.setResourceIdentifier(resourceIdentifier);
+        return queryObject;
+    }
+    
+    public static PublishingRequestCase createQueryObject(UserInstance userInstance,
+                                                          SortableIdentifier ticketIdentifier) {
+        var queryObject = new PublishingRequestCase();
+        queryObject.setOwner(userInstance.getUserIdentifier());
+        queryObject.setCustomerId(userInstance.getOrganizationUri());
+        queryObject.setIdentifier(ticketIdentifier);
         return queryObject;
     }
     
@@ -213,7 +223,7 @@ public class PublishingRequestCase implements TicketEntry {
     }
     
     @Override
-    public PublishingRequestDao toDao() {
+    public TicketDao toDao() {
         return new PublishingRequestDao(this);
     }
     

@@ -2,6 +2,7 @@ package no.unit.nva.publication.publishingrequest.read;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistDraftPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -13,7 +14,6 @@ import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -27,7 +27,6 @@ import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -63,7 +62,8 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
     void shouldReturnTicketWhenClientIsOwnerOfAssociatedPublicationAndThereforeOfTheTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var ticket = createTicket(ticketType);
-        var request = createHttpRequest(ticket);
+        var publication = resourceService.getPublicationByIdentifier(ticket.getResourceIdentifier());
+        var request = createHttpRequest(publication, ticket);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
@@ -72,36 +72,64 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = " ticket type: {0}")
-    @DisplayName("should  return not found when ticket identifier is wrong")
+    @DisplayName("should  return not found when publication identifier exists, but ticket identifier does not "
+                 + "correspond to a ticket of that publication")
     @MethodSource("ticketTypeProvider")
-    void shouldReturnNotFoundWhenPublicationIdIsCorrectButTicketIdentifierIsWrong(
+    void shouldReturnNotFoundWhenPublicationIdentifierExistsButTicketIdentifierDoesCorrespondToPublication(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication(resourceService);
+        var otherPublication = createAndPersistDraftPublication(resourceService);
+        var ticket = createPersistedTicket(ticketType, otherPublication);
+        var request = createHttpRequest(publication, ticket);
+        handler.handleRequest(request, outputStream, context);
         
-        var ticket = createUnpersistedTicket(publication, ticketType);
-        var request = createHttpRequest(ticket);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+    }
+    
+    @ParameterizedTest(name = " ticket type: {0}")
+    @DisplayName("should  return not found when user is not the owner of the associated publication")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnNotFoundWhenUserIsNotTheOwnerOfTheAssociatedPublication(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
+        var publication = createAndPersistDraftPublication(resourceService);
+        var ticket = createPersistedTicket(ticketType, publication);
+        var request = createHttpRequest(publication, ticket, randomOwner());
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
     
-    private static Map<String, String> createPathParameters(TicketEntry ticket) {
+    private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
-            ticket.getResourceIdentifier().toString(),
+            publication.getIdentifier().toString(),
             TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString());
     }
     
-    private TicketEntry createUnpersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
-        throws ConflictException {
-        return TicketEntry.createNewTicket(publication, ticketType, Clock.systemDefaultZone(),
-            SortableIdentifier::next);
+    private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)
+        throws ApiGatewayException {
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        return ticketService.createTicket(ticket, ticketType);
     }
     
-    private InputStream createHttpRequest(TicketEntry ticket) throws JsonProcessingException {
+    private String randomOwner() {
+        return randomString();
+    }
+    
+    private InputStream createHttpRequest(Publication publication, TicketEntry ticket) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withCustomerId(ticket.getCustomerId())
                    .withNvaUsername(ticket.getOwner())
-                   .withPathParameters(createPathParameters(ticket))
+                   .withPathParameters(createPathParameters(publication, ticket))
+                   .build();
+    }
+    
+    private InputStream createHttpRequest(Publication publication, TicketEntry ticket, String owner)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withCustomerId(ticket.getCustomerId())
+                   .withNvaUsername(owner)
+                   .withPathParameters(createPathParameters(publication, ticket))
                    .build();
     }
     

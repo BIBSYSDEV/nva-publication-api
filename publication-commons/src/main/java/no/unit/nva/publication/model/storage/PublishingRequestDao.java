@@ -41,7 +41,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     public static QueryRequest queryPublishingRequestByResource(URI customerId,
                                                                 SortableIdentifier resourceIdentifier) {
-        var queryObject = PublishingRequestCase.createQuery(resourceIdentifier, customerId);
+        var queryObject = PublishingRequestCase.createQueryObject(resourceIdentifier, customerId);
         var dao = new PublishingRequestDao(queryObject);
         
         return new QueryRequest()
@@ -57,13 +57,13 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     public static PublishingRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                             SortableIdentifier resourceIdentifier) {
         var queryObject =
-            PublishingRequestCase.createQuery(resourceOwner, resourceIdentifier, null);
+            PublishingRequestCase.createQueryObject(resourceOwner, resourceIdentifier, null);
         return new PublishingRequestDao(queryObject);
     }
     
     @Override
     public Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
-        return fetchItemWithClient(client, PublishingRequestDao.class);
+        return fetchItemWithClient(client);
     }
     
     @Override
