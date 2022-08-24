@@ -9,10 +9,12 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.publishingrequest.TicketUtils;
 import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     
@@ -28,10 +30,40 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     protected TicketDto processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
-        var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        var ticket = ticketService.fetchTicket(userInstance, ticketIdentifier);
+        var ticket = fetchTicket(ticketIdentifier, requestInfo);
         validatePathParameters(publicationIdentifier, ticket);
         return TicketDto.fromTicket(ticket);
+    }
+    
+    private TicketEntry fetchTicket(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        return isElevatedUser(requestInfo)
+                   ? fetchForElevatedUser(ticketIdentifier, requestInfo)
+                   : fetchForPublicationOwner(ticketIdentifier, requestInfo);
+    }
+    
+    private static boolean isElevatedUser(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+    }
+    
+    private TicketEntry fetchForPublicationOwner(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
+        throws UnauthorizedException, NotFoundException {
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
+        return ticketService.fetchTicket(userInstance, ticketIdentifier);
+    }
+    
+    private TicketEntry fetchForElevatedUser(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
+        validateThatUserWorksForInstitution(requestInfo, ticket);
+        return ticket;
+    }
+    
+    private static void validateThatUserWorksForInstitution(RequestInfo requestInfo, TicketEntry ticket)
+        throws NotFoundException, UnauthorizedException {
+        if (!ticket.getCustomerId().equals(requestInfo.getCurrentCustomer())) {
+            throw new NotFoundException(TICKET_NOT_FOUND);
+        }
     }
     
     private static void validatePathParameters(SortableIdentifier publicationIdentifier, TicketEntry ticket)

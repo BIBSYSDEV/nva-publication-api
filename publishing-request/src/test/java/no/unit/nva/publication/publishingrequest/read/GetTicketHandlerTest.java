@@ -3,13 +3,13 @@ package no.unit.nva.publication.publishingrequest.read;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistDraftPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -25,8 +25,10 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,9 +63,9 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
     @MethodSource("ticketTypeProvider")
     void shouldReturnTicketWhenClientIsOwnerOfAssociatedPublicationAndThereforeOfTheTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
-        var ticket = createTicket(ticketType);
+        var ticket = createPersistedTicket(ticketType);
         var publication = resourceService.getPublicationByIdentifier(ticket.getResourceIdentifier());
-        var request = createHttpRequest(publication, ticket);
+        var request = createHttpRequest(publication, ticket).build();
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
@@ -80,7 +82,7 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistDraftPublication(resourceService);
         var otherPublication = createAndPersistDraftPublication(resourceService);
         var ticket = createPersistedTicket(ticketType, otherPublication);
-        var request = createHttpRequest(publication, ticket);
+        var request = createHttpRequest(publication, ticket).build();
         handler.handleRequest(request, outputStream, context);
         
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -94,7 +96,33 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication(resourceService);
         var ticket = createPersistedTicket(ticketType, publication);
-        var request = createHttpRequest(publication, ticket, randomOwner());
+        var request = createHttpRequest(publication, ticket, randomOwner()).build();
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should return ticket when curator is requester")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnTicketWhenCuratorIsRequester(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var ticket = createPersistedTicket(ticketType);
+        var request = createHttpRequestForElevatedUser(ticket, ticket.getCustomerId()).build();
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, TicketDto.class);
+        var ticketDto = response.getBodyObject(TicketDto.class);
+        var actualTicketEntry = ticketDto.toTicket();
+        assertThat(TicketDto.fromTicket(actualTicketEntry), is(equalTo(ticketDto)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should return Not Found when requester is curator of wrong institution")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnTicketWhenRequesterIsCuratorOfWrongInstitution(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var ticket = createPersistedTicket(ticketType);
+        var request = createHttpRequestForElevatedUser(ticket, randomUri()).build();
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
@@ -104,6 +132,14 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
             publication.getIdentifier().toString(),
             TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString());
+    }
+    
+    private HandlerRequestBuilder<TicketDto> createHttpRequestForElevatedUser(TicketEntry ticket, URI customerId)
+        throws NotFoundException {
+        return createHttpRequest(ticket)
+                   .withCustomerId(customerId)
+                   .withNvaUsername(randomString())
+                   .withAccessRights(ticket.getCustomerId(), AccessRight.APPROVE_DOI_REQUEST.toString());
     }
     
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)
@@ -116,24 +152,25 @@ class GetTicketHandlerTest extends ResourcesLocalTest {
         return randomString();
     }
     
-    private InputStream createHttpRequest(Publication publication, TicketEntry ticket) throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withCustomerId(ticket.getCustomerId())
-                   .withNvaUsername(ticket.getOwner())
-                   .withPathParameters(createPathParameters(publication, ticket))
-                   .build();
+    private HandlerRequestBuilder<TicketDto> createHttpRequest(TicketEntry ticket)
+        throws NotFoundException {
+        var publication = resourceService.getPublicationByIdentifier(ticket.getResourceIdentifier());
+        return createHttpRequest(publication, ticket);
     }
     
-    private InputStream createHttpRequest(Publication publication, TicketEntry ticket, String owner)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+    private HandlerRequestBuilder<TicketDto> createHttpRequest(Publication publication, TicketEntry ticket) {
+        return createHttpRequest(publication, ticket, ticket.getOwner());
+    }
+    
+    private HandlerRequestBuilder<TicketDto> createHttpRequest(Publication publication, TicketEntry ticket,
+                                                               String owner) {
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withCustomerId(ticket.getCustomerId())
                    .withNvaUsername(owner)
-                   .withPathParameters(createPathParameters(publication, ticket))
-                   .build();
+                   .withPathParameters(createPathParameters(publication, ticket));
     }
     
-    private TicketEntry createTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+    private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = createAndPersistDraftPublication(resourceService);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         return ticketService.createTicket(ticket, ticketType);
