@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.model.business.TicketEntry.createNewTicket;
+import static no.unit.nva.publication.model.business.TicketEntry.ticketTypes;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
@@ -10,7 +11,9 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -21,13 +24,13 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.FunctionWithException;
+import nva.commons.core.attempt.Try;
 
 public class TicketService extends ServiceWithTransactions {
     
-    public static final String TICKET_NOT_FOUND_FOR_RESOURCE =
-        "Could not find requested ticket for Resource: ";
-    
+    public static final String TICKET_NOT_FOUND = "Ticket not found";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private final AmazonDynamoDB client;
     private final Clock clock;
@@ -61,12 +64,26 @@ public class TicketService extends ServiceWithTransactions {
         return createTicketForPublication(associatedPublication, ticketType);
     }
     
-    public <T extends TicketEntry> T fetchTicket(TicketEntry dataEntry, Class<T> ticketType)
+    public TicketEntry fetchTicket(UserInstance userInstance, SortableIdentifier ticketIdentifier)
         throws NotFoundException {
-        return fetchFromDatabase(dataEntry, ticketType)
-            .map(TicketDao::getData)
-            .map(ticketType::cast)
-            .orElseThrow(() -> handleFetchPublishingRequestByResourceError(dataEntry.getIdentifier()));
+        /* TODO: this is to overcome the problem that we do not know the ticket type when the ticket is requested.
+         * We need to refactor the database primary index to not include the data type (Resource, Message,DoiRequest,
+         * * etc.).
+         * * * *  */
+        return ticketTypes()
+                   .map(ticketType -> TicketEntry.createQueryObject(userInstance, ticketIdentifier, ticketType))
+                   .map(attempt(this::fetchTicket))
+                   .flatMap(Try::stream)
+                   .collect(SingletonCollector.tryCollect())
+                   .orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
+    }
+    
+    public TicketEntry fetchTicket(TicketEntry dataEntry)
+        throws NotFoundException {
+        return fetchFromDatabase(dataEntry)
+                   .map(TicketDao::getData)
+                   .map(TicketEntry.class::cast)
+                   .orElseThrow(() -> new NotFoundException(TICKET_NOT_FOUND));
     }
     
     public TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
@@ -77,25 +94,25 @@ public class TicketService extends ServiceWithTransactions {
             ticketEntry.getClass()
         ).orElseThrow();
         var completed = attempt(() -> existingTicket.complete(publication))
-            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+                            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
         var entryUpdate = indicateThatUpdateHasOccurred(completed);
         var putItemRequest = ((TicketDao) entryUpdate.toDao()).createPutItemRequest();
         client.putItem(putItemRequest);
         return entryUpdate;
     }
     
-    public <T extends TicketEntry> T fetchTicketByIdentifier(SortableIdentifier ticketIdentifier, Class<T> ticketType)
+    public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)
         throws NotFoundException {
-        var ticketDao = TicketEntry.queryObject(ticketIdentifier, ticketType).toDao();
-        var queryResult = ticketDao.fetchByIdentifier(client, ticketDao.getClass());
-        return ticketType.cast(queryResult.getData());
+        return attempt(() -> fetchTicketByIdentifier(ticketIdentifier, DoiRequest.class))
+                   .or(() -> fetchTicketByIdentifier(ticketIdentifier, PublishingRequestCase.class))
+                   .orElseThrow(fail -> handleFetchingTicketByIdentifierFailure(fail.getException()));
     }
     
     public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
                                                                                SortableIdentifier resourceIdentifier,
                                                                                Class<T> ticketType) {
-        
-        TicketDao dao = (TicketDao) TicketEntry.queryObject(customerId, resourceIdentifier, ticketType).toDao();
+    
+        TicketDao dao = (TicketDao) TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
         return dao.fetchByResourceIdentifier(client).map(Dao::getData).map(ticketType::cast);
     }
     
@@ -110,9 +127,19 @@ public class TicketService extends ServiceWithTransactions {
         return clock;
     }
     
-    private static NotFoundException handleFetchPublishingRequestByResourceError(
-        SortableIdentifier resourceIdentifier) {
-        return new NotFoundException(TICKET_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
+    private <T extends TicketEntry> TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier,
+                                                                        Class<T> ticketType)
+        throws NotFoundException {
+        var ticketDao = TicketEntry.createQueryObject(ticketIdentifier, ticketType).toDao();
+        var queryResult = ticketDao.fetchByIdentifier(client, ticketDao.getClass());
+        return (TicketEntry) queryResult.getData();
+    }
+    
+    private NotFoundException handleFetchingTicketByIdentifierFailure(Exception exception) {
+        if (exception instanceof NotFoundException) {
+            return (NotFoundException) exception;
+        }
+        throw new RuntimeException(exception);
     }
     
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
@@ -129,7 +156,7 @@ public class TicketService extends ServiceWithTransactions {
     private Publication fetchPublication(TicketEntry ticketEntry) throws ForbiddenException {
         var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
         return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
-            .orElseThrow(fail -> new ForbiddenException());
+                   .orElseThrow(fail -> new ForbiddenException());
     }
     
     //TODO: try to remove suppression.
@@ -141,13 +168,12 @@ public class TicketService extends ServiceWithTransactions {
         var request = ticketEntry.toDao().createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);
         FunctionWithException<TicketEntry, TicketEntry, NotFoundException>
-            fetchTicketProvider = dataEntry -> fetchTicket(dataEntry, ticketType);
+            fetchTicketProvider = this::fetchTicket;
         return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
     }
     
-    private <T extends TicketEntry> Optional<TicketDao> fetchFromDatabase(TicketEntry queryObject,
-                                                                          Class<T> ticketType) {
-        var queryDao = TicketDao.queryObject(queryObject, ticketType);
+    private Optional<TicketDao> fetchFromDatabase(TicketEntry queryObject) {
+        var queryDao = TicketDao.queryObject(queryObject);
         return queryDao.fetchItem(client);
     }
 }

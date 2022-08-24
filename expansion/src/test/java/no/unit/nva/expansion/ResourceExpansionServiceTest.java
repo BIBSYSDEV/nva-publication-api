@@ -321,7 +321,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         expansionService = new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
     }
     
-    private Publication createPublication() throws ApiGatewayException {
+    private Publication createPublication() {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);
@@ -451,12 +451,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         }
         
         public PublicationWithAllKindsOfCasesAndMessages create() throws ApiGatewayException {
-            var sample = PublicationGenerator.randomPublication();
+            var sample = randomPublicationWithoutDoi();
             userInstance = UserInstance.fromPublication(sample);
             publication = resourceService.createPublication(userInstance, sample);
             
             doiRequest = ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
-            
+    
             var publishingRequestCase =
                 PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
             publishingRequest =
@@ -464,18 +464,22 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             doiRequestMessages = createSomeMessages(MessageType.DOI_REQUEST);
             supportMessages = createSomeMessages(MessageType.SUPPORT);
             publishingRequestMessages = createSomeMessages(MessageType.PUBLISHING_REQUEST);
-            
+    
             return this;
         }
-        
+    
+        private static Publication randomPublicationWithoutDoi() {
+            return PublicationGenerator.randomPublication().copy().withDoi(null).build();
+        }
+    
         public SortableIdentifier[] getSupportMessageIdentifiers() {
             return getSupportMessages().stream().map(Message::getIdentifier).collect(Collectors.toList())
-                .toArray(SortableIdentifier[]::new);
+                       .toArray(SortableIdentifier[]::new);
         }
-        
+    
         public SortableIdentifier[] getDoiRequestMessageIdentifiers() {
             return getDoiRequestMessages().stream().map(Message::getIdentifier).collect(Collectors.toList())
-                .toArray(SortableIdentifier[]::new);
+                       .toArray(SortableIdentifier[]::new);
         }
         
         private List<Message> createSomeMessages(MessageType messageType) {

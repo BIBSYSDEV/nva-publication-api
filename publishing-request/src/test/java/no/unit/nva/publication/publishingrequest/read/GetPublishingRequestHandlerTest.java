@@ -22,10 +22,10 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
-import no.unit.nva.publication.publishingrequest.PublishingRequestUtils;
+import no.unit.nva.publication.publishingrequest.TicketUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -96,9 +96,10 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
         var request = createCuratorRequest(publishingRequest);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublishingRequestCaseDto.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+    
         var actualResponseObject = response.getBodyObject(PublishingRequestCaseDto.class);
         var expectedResponseObject = PublishingRequestCaseDto.createResponseObject(publishingRequest);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualResponseObject, is(equalTo(expectedResponseObject)));
     }
     
@@ -106,33 +107,33 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
                                       Function<PublishingRequestCase, UserInstance> userProvider)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(userProvider.apply(publishingRequest).getUserIdentifier())
-            .withCustomerId(userProvider.apply(publishingRequest).getOrganizationUri())
-            .withPathParameters(constructPathParameters(publishingRequest))
-            .build();
+                   .withNvaUsername(userProvider.apply(publishingRequest).getUserIdentifier())
+                   .withCustomerId(userProvider.apply(publishingRequest).getOrganizationUri())
+                   .withPathParameters(constructPathParameters(publishingRequest))
+                   .build();
     }
     
     private InputStream createRequest(PublishingRequestCase publishingRequest) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(publishingRequest.getOwner())
-            .withCustomerId(publishingRequest.getCustomerId())
-            .withPathParameters(constructPathParameters(publishingRequest))
-            .build();
+                   .withNvaUsername(publishingRequest.getOwner())
+                   .withCustomerId(publishingRequest.getCustomerId())
+                   .withPathParameters(constructPathParameters(publishingRequest))
+                   .build();
     }
     
     private InputStream createCuratorRequest(PublishingRequestCase publishingRequest) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(randomString())
-            .withCustomerId(publishingRequest.getCustomerId())
-            .withAccessRights(publishingRequest.getCustomerId(), AccessRight.APPROVE_PUBLISH_REQUEST.toString())
-            .withPathParameters(constructPathParameters(publishingRequest))
-            .build();
+                   .withNvaUsername(randomString())
+                   .withCustomerId(publishingRequest.getCustomerId())
+                   .withAccessRights(publishingRequest.getCustomerId(), AccessRight.APPROVE_PUBLISH_REQUEST.toString())
+                   .withPathParameters(constructPathParameters(publishingRequest))
+                   .build();
     }
     
     private Map<String, String> constructPathParameters(PublishingRequestCase publishingRequest) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
             publishingRequest.getResourceIdentifier().toString(),
-            PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+            TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER,
             publishingRequest.getIdentifier().toString());
     }
     
@@ -140,7 +141,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
                 publication.getIdentifier());
-        return ticketService.createTicket(publishingRequest,PublishingRequestCase.class);
+        return ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
     }
     
     private Publication createPublication() throws ApiGatewayException {

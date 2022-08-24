@@ -25,8 +25,8 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.s3.S3Driver;
@@ -76,8 +76,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
-        var updatedPublishingRequest =
-            ticketService.fetchTicket(publishingRequest, PublishingRequestCase.class);
+        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
     
@@ -92,8 +91,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
-        var updatedPublishingRequest =
-            ticketService.fetchTicket(publishingRequest, PublishingRequestCase.class);
+        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
     }
     
@@ -108,8 +106,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
-        var updatedPublishingRequest =
-            ticketService.fetchTicket(publishingRequest, PublishingRequestCase.class);
+        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
         assertThat(logger.getMessages(), containsString(response.body()));
     }
@@ -142,7 +139,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
     }
     
-    private Publication createPublication() throws ApiGatewayException {
+    private Publication createPublication() {
         var publication = randomPublication();
         publication.setStatus(PublicationStatus.DRAFT);
         publication.setPublisher(new Organization.Builder().withId(CUSTOMER_ID).build());

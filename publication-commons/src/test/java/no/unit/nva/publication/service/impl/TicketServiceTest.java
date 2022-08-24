@@ -1,12 +1,13 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.TestingUtils.createOrganization;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
+import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -31,6 +32,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -46,6 +48,7 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -56,7 +59,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -72,8 +74,8 @@ class TicketServiceTest extends ResourcesLocalTest {
     private UserInstance owner;
     private Clock clock;
     
-    public static Stream<Arguments> ticketProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class), Arguments.of(PublishingRequestCase.class));
+    public static Stream<Class<?>> ticketProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class);
     }
     
     @BeforeEach
@@ -101,7 +103,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         
         assertThat(persistedTicket.getCreatedDate(), is(equalTo(TICKET_CREATION_TIME)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValues());
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("doi")));
     }
     
     @ParameterizedTest(name = "Publication status: {0}")
@@ -138,11 +140,11 @@ class TicketServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        
-        var firstTicket = createUnpersistedTicket(ticketType, publication);
+    
+        var firstTicket = createUnpersistedTicket(publication, ticketType);
         attempt(() -> ticketService.createTicket(firstTicket, ticketType)).orElseThrow();
-        
-        var secondTicket = createUnpersistedTicket(ticketType, publication);
+    
+        var secondTicket = createUnpersistedTicket(publication, ticketType);
         Executable action = () -> ticketService.createTicket(secondTicket, ticketType);
         assertThrows(TransactionFailedException.class, action);
     }
@@ -161,9 +163,34 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldThrowNotFoundExceptionWhenTicketWasNotFound(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var queryObject = createUnpersistedTicket(ticketType, publication);
-        Executable action = () -> ticketService.fetchTicket(queryObject, ticketType);
+        var queryObject = createUnpersistedTicket(publication, ticketType);
+        Executable action = () -> ticketService.fetchTicket(queryObject);
         assertThrows(NotFoundException.class, action);
+    }
+    
+    @ParameterizedTest(name = "type: {0}")
+    @DisplayName("should fetch ticket for user and identifier without specifying the ticket type")
+    @MethodSource("ticketProvider")
+    void shouldFetchTicketForUserAndIdentifierWithoutSpecifyingTheTicketType(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var persistedTicket = createPersistedTicket(publication, ticketType);
+        var userInstance = UserInstance.fromTicket(persistedTicket);
+        var ticketIdentifier = persistedTicket.getIdentifier();
+        var retrievedTicker = ticketService.fetchTicket(userInstance, ticketIdentifier);
+        assertThat(retrievedTicker, is(equalTo(persistedTicket)));
+    }
+    
+    @ParameterizedTest(name = "type: {0}")
+    @DisplayName("should throw Exception when specified ticket does not belong to requesting user")
+    @MethodSource("ticketProvider")
+    void shouldThrowExceptionWhenRequestedTicketDoesNotBelongToRequestingUser(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var persistedTicket = createPersistedTicket(publication, ticketType);
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        var ticketIdentifier = persistedTicket.getIdentifier();
+        assertThrows(NotFoundException.class, () -> ticketService.fetchTicket(userInstance, ticketIdentifier));
     }
     
     @Test
@@ -172,7 +199,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var emptyPublication = persistEmptyPublication(owner);
         var doiRequest = DoiRequest.fromPublication(emptyPublication);
         var ticket = ticketService.createTicket(doiRequest, DoiRequest.class);
-        var actualDoiRequest = ticketService.fetchTicket(ticket, DoiRequest.class);
+        var actualDoiRequest = ticketService.fetchTicket(ticket);
         var expectedDoiRequest = expectedDoiRequestForEmptyPublication(emptyPublication, actualDoiRequest);
         
         assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
@@ -185,7 +212,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         publication.setResourceOwner(new ResourceOwner(randomString(), randomUri()));
-        var ticket = createUnpersistedTicket(ticketType, publication);
+        var ticket = createUnpersistedTicket(publication, ticketType);
         
         Executable action = () -> ticketService.createTicket(ticket, ticketType);
         assertThrows(ForbiddenException.class, action);
@@ -199,7 +226,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var duplicateIdentifier = SortableIdentifier.next();
         ticketService = new TicketService(client, clock, () -> duplicateIdentifier);
-        var ticketEntry = createUnpersistedTicket(ticketType, publication);
+        var ticketEntry = createUnpersistedTicket(publication, ticketType);
         Executable action = () -> ticketService.createTicket(ticketEntry, ticketType);
         assertDoesNotThrow(action);
         assertThrows(TransactionFailedException.class, action);
@@ -212,19 +239,19 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
         var publication = persistPublication(owner, publicationStatus);
-        
-        var ticketRequest = createUnpersistedTicket(ticketType, publication);
-        
+    
+        var ticketRequest = createUnpersistedTicket(publication, ticketType);
+    
         var persistedTicket = ticketService.createTicket(ticketRequest, ticketType);
-        
+    
         ticketService.completeTicket(persistedTicket);
-        var updatedTicket = ticketService.fetchTicket(persistedTicket, ticketType);
-        
+        var updatedTicket = ticketService.fetchTicket(persistedTicket);
+    
         var expectedTicket = persistedTicket.copy();
         expectedTicket.setStatus(TicketStatus.COMPLETED);
         expectedTicket.setVersion(updatedTicket.getVersion());
         expectedTicket.setModifiedDate(TICKET_UPDATE_TIME);
-        
+    
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
     }
     
@@ -235,7 +262,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var expectedTicketEntry = createPersistedTicket(publication, ticketType);
         var actualTicketEntry =
-            ticketService.fetchTicketByIdentifier(expectedTicketEntry.getIdentifier(), ticketType);
+            ticketService.fetchTicketByIdentifier(expectedTicketEntry.getIdentifier());
         
         assertThat(actualTicketEntry, is(equalTo(expectedTicketEntry)));
     }
@@ -282,14 +309,35 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(retrievedRequest, is(equalTo(expectedTicket)));
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should get ticket by identifier without needing to specify type")
+    @MethodSource("ticketProvider")
+    void shouldGetTicketByIdentifierWithoutNeedingToSpecifyType(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var expectedTicket = createPersistedTicket(publication, ticketType);
+        var retrievedRequest = ticketService.fetchTicketByIdentifier(expectedTicket.getIdentifier());
+        assertThat(retrievedRequest, is(equalTo(expectedTicket)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should throw Exception when trying to fetch non existing ticket by identifier")
+    @MethodSource("ticketProvider")
+    void shouldThrowExceptionWhenTryingToFetchNonExistingTicketByIdentifier(Class<? extends TicketEntry> ignored)
+        throws ApiGatewayException {
+        persistPublication(owner, DRAFT);
+        
+        assertThrows(NotFoundException.class, () -> ticketService.fetchTicketByIdentifier(SortableIdentifier.next()));
+    }
+    
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
                                                                         AmazonDynamoDB client) {
         var mockedGetPublicationResponse = new GetItemResult().withItem(mockedPublicationResponse());
         var mockedResponseWhenItemNotYetInPlace = ResourceNotFoundException.class;
-        
-        var ticketEntry = createUnpersistedTicket(ticketType, randomPublication());
+    
+        var ticketEntry = createUnpersistedTicket(randomPublicationWithoutDoi(), ticketType);
         var mockedResponseWhenItemFinallyInPlace = new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
-        
+    
         when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
         when(client.getItem(any()))
             .thenReturn(mockedGetPublicationResponse)
@@ -300,36 +348,36 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     private TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        var ticket = createUnpersistedTicket(ticketType, publication);
+        var ticket = createUnpersistedTicket(publication, ticketType);
         return ticketService.createTicket(ticket, ticketType);
     }
     
-    private Publication persistEmptyPublication(UserInstance owner) throws ApiGatewayException {
+    private Publication persistEmptyPublication(UserInstance owner) {
         var publication = new Publication.Builder()
-            .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
-            .withPublisher(createOrganization(owner.getOrganizationUri()))
-            .withStatus(DRAFT)
-            .build();
+                              .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
+                              .withPublisher(createOrganization(owner.getOrganizationUri()))
+                              .withStatus(DRAFT)
+                              .build();
         
         return resourceService.createPublication(owner, publication);
     }
     
     private DoiRequest expectedDoiRequestForEmptyPublication(Publication emptyPublication,
-                                                             DoiRequest actualDoiRequest) {
+                                                             TicketEntry actualDoiRequest) {
         return DoiRequest.builder()
-            .withIdentifier(actualDoiRequest.getIdentifier())
-            .withResourceIdentifier(emptyPublication.getIdentifier())
-            .withOwner(emptyPublication.getResourceOwner().getOwner())
-            .withCustomerId(emptyPublication.getPublisher().getId())
-            .withStatus(TicketStatus.PENDING)
-            .withResourceStatus(DRAFT)
-            .withCreatedDate(actualDoiRequest.getCreatedDate())
-            .withModifiedDate(actualDoiRequest.getModifiedDate())
-            .withResourceModifiedDate(emptyPublication.getModifiedDate())
-            .build();
+                   .withIdentifier(actualDoiRequest.getIdentifier())
+                   .withResourceIdentifier(emptyPublication.getIdentifier())
+                   .withOwner(emptyPublication.getResourceOwner().getOwner())
+                   .withCustomerId(emptyPublication.getPublisher().getId())
+                   .withStatus(TicketStatus.PENDING)
+                   .withResourceStatus(DRAFT)
+                   .withCreatedDate(actualDoiRequest.getCreatedDate())
+                   .withModifiedDate(actualDoiRequest.getModifiedDate())
+                   .withResourceModifiedDate(emptyPublication.getModifiedDate())
+                   .build();
     }
     
-    private TicketEntry createUnpersistedTicket(Class<?> ticketType, Publication publication) {
+    private TicketEntry createUnpersistedTicket(Publication publication, Class<?> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.fromPublication(publication);
         }
@@ -352,8 +400,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private Map<String, AttributeValue> mockedPublicationResponse() {
-        var publication = randomPublication();
-        publication.setStatus(DRAFT);
+        var publication = randomPublicationWithoutDoi().copy().withStatus(DRAFT).build();
         var resource = Resource.fromPublication(publication);
         var dao = new ResourceDao(resource);
         return dao.toDynamoFormat();
@@ -376,7 +423,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = createUnpersistedPublication(owner);
         publication.setStatus(publicationStatus);
-        
         var persistedPublication = resourceService.insertPreexistingPublication(publication);
         
         return resourceService.getPublication(persistedPublication);

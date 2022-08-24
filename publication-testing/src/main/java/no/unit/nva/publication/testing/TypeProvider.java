@@ -14,6 +14,7 @@ public final class TypeProvider {
     
     }
     
+    
     public static Stream<Class<?>> listSubTypes(Class<?> type) {
         var types = fetchDirectSubtypes(type);
         var result = new ArrayList<Class<?>>();

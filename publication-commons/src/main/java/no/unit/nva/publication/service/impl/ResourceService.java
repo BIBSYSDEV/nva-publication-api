@@ -94,8 +94,7 @@ public class ResourceService extends ServiceWithTransactions {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
     
-    public Publication createPublication(UserInstance userInstance, Publication inputData)
-        throws ApiGatewayException {
+    public Publication createPublication(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -184,6 +183,7 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
     
+    // TODO rename to getPublicationForUsageWithElevatedRights
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toPublication();
     }

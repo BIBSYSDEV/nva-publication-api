@@ -23,9 +23,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.core.SingletonCollector;
 
@@ -43,14 +41,8 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         super();
     }
     
-    public static <T extends TicketEntry> TicketDao queryObject(TicketEntry ticketEntry, Class<T> ticketType) {
-        if (PublishingRequestCase.class.equals(ticketType)) {
-            return (PublishingRequestDao) ticketEntry.toDao();
-        }
-        if (DoiRequest.class.equals(ticketType)) {
-            return (DoiRequestDao) ticketEntry.toDao();
-        }
-        throw new UnsupportedOperationException();
+    public static TicketDao queryObject(TicketEntry ticketEntry) {
+        return (TicketDao) ticketEntry.toDao();
     }
     
     public abstract Optional<TicketDao> fetchItem(AmazonDynamoDB client);
@@ -59,8 +51,8 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         var condition = new UpdateCaseButNotOwnerCondition((TicketEntry) this.getData());
         
         return new PutItemRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withItem(toDynamoFormat())
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withItem(toDynamoFormat())
             .withConditionExpression(condition.getConditionExpression())
             .withExpressionAttributeNames(condition.getExpressionAttributeNames())
             .withExpressionAttributeValues(condition.getExpressionAttributeValues());
@@ -89,16 +81,14 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         return new TransactWriteItem().withPut(put);
     }
     
-    protected <T extends TicketDao> Optional<TicketDao> fetchItemWithClient(AmazonDynamoDB client,
-                                                                            Class<T> ticketDaoType) {
+    protected Optional<TicketDao> fetchItemWithClient(AmazonDynamoDB client) {
         var request = new GetItemRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withKey(primaryKey());
+                          .withTableName(RESOURCES_TABLE_NAME)
+                          .withKey(primaryKey());
         var queryResult = client.getItem(request);
         return attempt(queryResult::getItem)
-            .map(item -> DynamoEntry.parseAttributeValuesMap(item, ticketDaoType))
-            .map(TicketDao.class::cast)
-            .toOptional();
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
+                   .toOptional();
     }
     
     private static class UpdateCaseButNotOwnerCondition {

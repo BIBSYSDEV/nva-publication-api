@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Clock;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -27,23 +28,51 @@ public interface TicketEntry extends Entity {
         return newTicket;
     }
     
-    static <T extends TicketEntry> T queryObject(URI customerId,
-                                                 SortableIdentifier resourceIdentifier,
-                                                 Class<T> ticketType) {
-        if (DoiRequest.class.equals(ticketType)) {
-            return ticketType.cast(DoiRequest.builder()
-                .withResourceIdentifier(resourceIdentifier)
-                .withCustomerId(customerId)
-                .build());
-        }
-        return ticketType.cast(PublishingRequestCase.createQuery(customerId,resourceIdentifier));
+    static Stream<Class<? extends TicketEntry>> ticketTypes() {
+        return Stream.of(DoiRequest.class, PublishingRequestCase.class);
     }
     
-    static <T extends TicketEntry> T queryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
+    static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return DoiRequest.fromPublication(publication);
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
+            return createOpeningCaseObject(UserInstance.fromPublication(publication), publication.getIdentifier());
+        }
+        throw new RuntimeException("Unrecognized ticket type");
+    }
+    
+    static <T extends TicketEntry> T createQueryObject(URI customerId,
+                                                       SortableIdentifier resourceIdentifier,
+                                                       Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return ticketType.cast(DoiRequest.builder()
+                                       .withResourceIdentifier(resourceIdentifier)
+                                       .withCustomerId(customerId)
+                                       .build());
+        }
+        return ticketType.cast(PublishingRequestCase.createQueryObject(customerId, resourceIdentifier));
+    }
+    
+    static <T extends TicketEntry> T createQueryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return ticketType.cast(DoiRequest.builder().withIdentifier(ticketIdentifier).build());
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
+            return ticketType.cast(PublishingRequestCase.createQueryObject(ticketIdentifier));
+        } else {
+            throw new RuntimeException("Unsupported ticket type");
         }
-        return ticketType.cast(PublishingRequestCase.createQuery(ticketIdentifier));
+    }
+    
+    static TicketEntry createQueryObject(UserInstance userInstance,
+                                         SortableIdentifier ticketIdentifier,
+                                         Class<? extends TicketEntry> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return DoiRequest.createQueryObject(userInstance, ticketIdentifier);
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
+            return PublishingRequestCase.createQueryObject(userInstance, ticketIdentifier);
+        } else {
+            throw new RuntimeException("Unsupported ticket type");
+        }
     }
     
     SortableIdentifier getResourceIdentifier();

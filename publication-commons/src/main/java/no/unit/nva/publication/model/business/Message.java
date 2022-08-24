@@ -15,6 +15,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.core.JacocoGenerated;
 
@@ -144,7 +145,7 @@ public class Message implements TicketEntry,
     //TODO: cover this method when Message is not a ticket any more.
     @JacocoGenerated
     @Override
-    public MessageDao toDao() {
+    public Dao toDao() {
         return new MessageDao(this);
     }
     
