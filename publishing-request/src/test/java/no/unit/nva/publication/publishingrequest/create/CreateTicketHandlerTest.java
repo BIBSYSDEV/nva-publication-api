@@ -12,12 +12,10 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -30,10 +28,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.DoiRequestDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestDto;
 import no.unit.nva.publication.publishingrequest.TicketDto;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.publication.publishingrequest.TicketTest;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -47,13 +42,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 
-class CreateTicketHandlerTest extends ResourcesLocalTest {
+class CreateTicketHandlerTest extends TicketTest {
     
-    public static final FakeContext CONTEXT = new FakeContext();
     private CreateTicketHandler handler;
-    private ByteArrayOutputStream output;
-    private ResourceService resourceService;
-    private TicketService ticketService;
     
     public static Stream<Arguments> ticketEntryProvider() {
         return Stream.of(Arguments.of(DoiRequest.class), Arguments.of(PublishingRequestCase.class));
@@ -62,9 +53,6 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.output = new ByteArrayOutputStream();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(client, Clock.systemDefaultZone());
         this.handler = new CreateTicketHandler(ticketService, resourceService);
     }
     
@@ -74,8 +62,8 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
     @MethodSource("ticketEntryProvider")
     void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
         Class<? extends TicketEntry> ticketType) throws IOException, ApiGatewayException {
-        
-        var publication = createPersistedDraftPublication();
+    
+        var publication = createAndPersistDraftPublication();
         var requestBody = constructDto(ticketType);
         var owner = UserInstance.fromPublication(publication);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
@@ -182,9 +170,6 @@ class CreateTicketHandlerTest extends ResourcesLocalTest {
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
-    private static Publication nonPersistedPublication() {
-        return randomPublication();
-    }
     
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
         return new SortableIdentifier(UriWrapper.fromUri(location).getLastPathElement());
