@@ -19,6 +19,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -330,14 +331,19 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, () -> ticketService.fetchTicketByIdentifier(SortableIdentifier.next()));
     }
     
+    @Test
+    void shouldCloseDoiRequestWhenDoiRequestIsPending() {
+        fail();
+    }
+    
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
                                                                         AmazonDynamoDB client) {
         var mockedGetPublicationResponse = new GetItemResult().withItem(mockedPublicationResponse());
         var mockedResponseWhenItemNotYetInPlace = ResourceNotFoundException.class;
-    
+        
         var ticketEntry = createUnpersistedTicket(randomPublicationWithoutDoi(), ticketType);
         var mockedResponseWhenItemFinallyInPlace = new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
-    
+        
         when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
         when(client.getItem(any()))
             .thenReturn(mockedGetPublicationResponse)

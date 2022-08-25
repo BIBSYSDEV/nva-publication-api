@@ -48,10 +48,13 @@ public abstract class TicketDto implements JsonSerializable {
     public static Builder builder() {
         return new TicketDto.Builder();
     }
+    //publication/<>/ticket/<>/messages/<>
     
     public abstract Class<? extends TicketEntry> ticketType();
     
     public abstract TicketEntry toTicket();
+    
+    public abstract TicketStatus getStatus();
     
     @Override
     public String toString() {

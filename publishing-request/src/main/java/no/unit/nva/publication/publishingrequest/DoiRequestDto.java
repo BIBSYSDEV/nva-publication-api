@@ -64,6 +64,7 @@ public class DoiRequestDto extends TicketDto {
         return new DoiRequestDto(null, null, null, null, null, null, null);
     }
     
+    @Override
     public TicketStatus getStatus() {
         return status;
     }

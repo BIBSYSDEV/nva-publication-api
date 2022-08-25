@@ -126,6 +126,16 @@ public class PublishingRequestCase implements TicketEntry {
     }
     
     @Override
+    public void validateClosingRequirements(Publication publication) throws ConflictException {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void validateReopeningRequirements(Publication publication) throws ConflictException {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
     public PublishingRequestCase copy() {
         var copy = new PublishingRequestCase();
         copy.setIdentifier(this.getIdentifier());

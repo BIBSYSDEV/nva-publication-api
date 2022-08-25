@@ -47,7 +47,11 @@ public abstract class TicketTest extends ResourcesLocalTest {
     }
     
     protected TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        var publication = createAndPersistDraftPublication();
+        return createPersistedTicket(createAndPersistDraftPublication(), ticketType);
+    }
+    
+    protected TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         return ticketService.createTicket(ticket, ticketType);
     }
@@ -61,7 +65,7 @@ public abstract class TicketTest extends ResourcesLocalTest {
         return randomPublication();
     }
     
-    private void publish(Publication publication) {
+    protected void publish(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         attempt(() -> resourceService.publishPublication(userInstance, publication.getIdentifier()))
             .orElseThrow();

@@ -66,6 +66,7 @@ public class PublishingRequestDto extends TicketDto {
         return new PublishingRequestDto(null, null, null, null, null, null, null);
     }
     
+    @Override
     public TicketStatus getStatus() {
         return status;
     }

@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -81,12 +82,44 @@ public interface TicketEntry extends Entity {
     
     void validateCompletionRequirements(Publication publication);
     
+    default TicketEntry updateStatus(Publication publication, TicketStatus ticketStatus)
+        throws ConflictException, BadRequestException {
+        switch (ticketStatus) {
+            case COMPLETED:
+                return complete(publication);
+            case CLOSED:
+                return close(publication);
+            case PENDING:
+                return reopen(publication);
+            default:
+                throw new BadRequestException("Unknown status");
+        }
+    }
+    
     default TicketEntry complete(Publication publication) {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
         return updated;
     }
+    
+    default TicketEntry close(Publication publication) throws ConflictException {
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.CLOSED);
+        updated.validateClosingRequirements(publication);
+        return updated;
+    }
+    
+    void validateClosingRequirements(Publication publication) throws ConflictException;
+    
+    default TicketEntry reopen(Publication publication) throws ConflictException {
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.PENDING);
+        updated.validateReopeningRequirements(publication);
+        return updated;
+    }
+    
+    void validateReopeningRequirements(Publication publication) throws ConflictException;
     
     TicketEntry copy();
     
