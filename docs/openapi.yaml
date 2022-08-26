@@ -529,7 +529,60 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-
+  /{publicationIdentifier}/ticket:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+    post:
+      description: Create a new ticket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewTicketRequest"
+      responses:
+        201:
+          description: ACCEPTED
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Ticket"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateTicketFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+  /{publicationIdentifier}/ticket/{ticketIdentifier}:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    get:
+      description: Get an existing ticket
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Ticket"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
 components:
   schemas:
     Publication:
@@ -630,6 +683,22 @@ components:
           enum:
             - PENDING
             - APPROVED
+    NewTicketRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - DoiRequest
+            - PublishingRequest
+    Ticket:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - DoiRequest
+            - PublishingRequest
   securitySchemes:
     CognitoUserPool:
       type: apiKey
