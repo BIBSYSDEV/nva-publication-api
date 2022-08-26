@@ -269,15 +269,6 @@ public class DoiRequest implements TicketEntry {
         return (DoiRequest) TicketEntry.super.complete(publication);
     }
     
-    @Override
-    public void validateClosingRequirements(Publication publication) throws ConflictException {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public void validateReopeningRequirements(Publication publication) throws ConflictException {
-        throw new UnsupportedOperationException();
-    }
     
     @Override
     public DoiRequest copy() {

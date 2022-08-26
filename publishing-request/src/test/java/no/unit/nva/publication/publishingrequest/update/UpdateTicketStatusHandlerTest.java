@@ -25,6 +25,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class UpdateTicketStatusHandlerTest extends TicketTest {
@@ -105,6 +106,7 @@ class UpdateTicketStatusHandlerTest extends TicketTest {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
     }
     
+    @Disabled
     @Test
     void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedDoiRequest()
         throws ApiGatewayException, IOException {

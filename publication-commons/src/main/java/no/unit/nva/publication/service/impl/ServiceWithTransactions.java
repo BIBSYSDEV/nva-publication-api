@@ -14,7 +14,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import java.time.Clock;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +33,6 @@ public abstract class ServiceWithTransactions {
     
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
-    public static final String RAWTYPES = "rawtypes";
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
@@ -44,12 +43,12 @@ public abstract class ServiceWithTransactions {
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
-        
+    
         Put put = new Put()
-            .withItem(data.toDynamoFormat())
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+                      .withItem(data.toDynamoFormat())
+                      .withTableName(RESOURCES_TABLE_NAME)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
     }
     
@@ -76,7 +75,7 @@ public abstract class ServiceWithTransactions {
     
     protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
         return new TransactWriteItem()
-            .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
+                   .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
     }
     
     protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
@@ -96,8 +95,7 @@ public abstract class ServiceWithTransactions {
     }
     
     protected String nowAsString() {
-        String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(getClock().instant()))
-            .orElseThrow();
+        String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(Instant.now())).orElseThrow();
         return jsonString.replace(DOUBLE_QUOTES, EMPTY_STRING);
     }
     
@@ -106,7 +104,6 @@ public abstract class ServiceWithTransactions {
             .orElseThrow(this::handleTransactionFailure);
     }
     
-    protected abstract Clock getClock();
     
     private Void waitBeforeFetching() throws InterruptedException {
         Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);

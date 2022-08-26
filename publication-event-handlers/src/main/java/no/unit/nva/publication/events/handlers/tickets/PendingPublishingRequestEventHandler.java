@@ -11,7 +11,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -69,7 +68,7 @@ public class PendingPublishingRequestEventHandler
     @JacocoGenerated
     private static TicketService defaultPublishingRequestService() {
         return
-            new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+            new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT);
     }
     
     private boolean customerAllowsPublishing(PublishingRequestCase publishingRequest) {

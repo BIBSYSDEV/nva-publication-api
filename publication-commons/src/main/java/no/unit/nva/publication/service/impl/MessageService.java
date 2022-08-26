@@ -35,7 +35,6 @@ import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
 public class MessageService extends ServiceWithTransactions {
@@ -141,12 +140,6 @@ public class MessageService extends ServiceWithTransactions {
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
-    }
-    
-    @JacocoGenerated
-    @Override
-    protected Clock getClock() {
-        return clockForTimestamps;
     }
     
     private static Supplier<SortableIdentifier> defaultIdentifierSupplier() {

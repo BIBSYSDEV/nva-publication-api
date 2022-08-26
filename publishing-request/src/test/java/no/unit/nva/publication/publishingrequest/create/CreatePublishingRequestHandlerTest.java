@@ -51,7 +51,7 @@ class CreatePublishingRequestHandlerTest extends TicketTest {
         super.init();
         var mockClock = setupMockClock();
         this.resourceService = new ResourceService(client, mockClock);
-        this.ticketService = new TicketService(client, mockClock);
+        this.ticketService = new TicketService(client);
         handler = new CreatePublishingRequestHandler(ticketService);
     }
     

@@ -70,7 +70,7 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         init();
         setupClock();
         resourceService = new ResourceService(client, mockClock);
-        ticketService = new TicketService(client, mockClock);
+        ticketService = new TicketService(client);
         messageService = new MessageService(client, mockClock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);

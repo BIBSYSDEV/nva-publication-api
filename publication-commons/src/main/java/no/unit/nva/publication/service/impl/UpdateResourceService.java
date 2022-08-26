@@ -104,11 +104,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return client;
     }
     
-    @Override
-    protected Clock getClock() {
-        return clockForTimestamps;
-    }
-    
     PublishPublicationStatusResponse publishResource(UserInstance userInstance,
                                                      SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {

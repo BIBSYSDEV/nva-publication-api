@@ -62,7 +62,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
         
-        ticketService = new TicketService(client, clock);
+        ticketService = new TicketService(client);
         handler = new UpdateDoiRequestStatusHandler(ticketService);
         resourceService = new ResourceService(client, clock);
         outputStream = new ByteArrayOutputStream();

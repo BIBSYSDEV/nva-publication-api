@@ -56,7 +56,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(client);
         this.handler = new GetPublishingRequestHandler(ticketService);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();

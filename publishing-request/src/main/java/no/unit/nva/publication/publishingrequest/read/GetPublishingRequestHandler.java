@@ -6,7 +6,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENT
 import static no.unit.nva.publication.publishingrequest.TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -27,7 +26,7 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
     
     @JacocoGenerated
     public GetPublishingRequestHandler() {
-        this(new TicketService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone()));
+        this(new TicketService(DEFAULT_DYNAMODB_CLIENT));
     }
     
     protected GetPublishingRequestHandler(TicketService ticketService) {

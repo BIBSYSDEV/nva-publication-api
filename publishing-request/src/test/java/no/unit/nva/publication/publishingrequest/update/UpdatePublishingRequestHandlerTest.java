@@ -69,7 +69,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         super.init();
         var clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(super.client, clock);
-        this.requestService = new TicketService(client, clock);
+        this.requestService = new TicketService(client);
         this.outputStream = new ByteArrayOutputStream();
         this.handler = new UpdatePublishingRequestHandler(requestService);
     }

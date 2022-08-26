@@ -126,16 +126,6 @@ public class PublishingRequestCase implements TicketEntry {
     }
     
     @Override
-    public void validateClosingRequirements(Publication publication) throws ConflictException {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public void validateReopeningRequirements(Publication publication) throws ConflictException {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
     public PublishingRequestCase copy() {
         var copy = new PublishingRequestCase();
         copy.setIdentifier(this.getIdentifier());
@@ -175,12 +165,12 @@ public class PublishingRequestCase implements TicketEntry {
     
     @Override
     public Publication toPublication() {
-        
+    
         return new Publication.Builder()
-            .withIdentifier(getResourceIdentifier())
-            .withResourceOwner(new ResourceOwner(getOwner(), null))
-            .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
-            .build();
+                   .withIdentifier(getResourceIdentifier())
+                   .withResourceOwner(new ResourceOwner(getOwner(), null))
+                   .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
+                   .build();
     }
     
     @Override

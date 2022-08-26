@@ -71,7 +71,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         Clock clock = Clock.systemDefaultZone();
         resourceService = new ResourceService(client, clock);
         messageService = new MessageService(client, clock);
-        ticketService = new TicketService(client, clock);
+        ticketService = new TicketService(client);
         resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
     }
     

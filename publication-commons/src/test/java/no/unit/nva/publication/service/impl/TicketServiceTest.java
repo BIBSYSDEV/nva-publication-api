@@ -9,6 +9,8 @@ import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -16,10 +18,11 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -68,12 +71,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     
-    private static final Instant TICKET_CREATION_TIME = randomInstant();
-    private static final Instant TICKET_UPDATE_TIME = randomInstant(TICKET_CREATION_TIME);
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
     private Clock clock;
+    private Instant now;
     
     public static Stream<Class<?>> ticketProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -82,13 +84,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() {
         super.init();
-        clock = mock(Clock.class);
+        this.now = Instant.now();
         this.owner = randomUserInstance();
-        when(clock.instant())
-            .thenReturn(TICKET_CREATION_TIME)
-            .thenReturn(TICKET_UPDATE_TIME);
+        clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
-        this.ticketService = new TicketService(client, clock);
+        this.ticketService = new TicketService(client);
     }
     
     @ParameterizedTest(name = "Publication status: {0}")
@@ -101,8 +101,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         var persistedTicket = ticketService.createTicket(ticket, DoiRequest.class);
         
         copyServiceControlledFields(ticket, persistedTicket);
-        
-        assertThat(persistedTicket.getCreatedDate(), is(equalTo(TICKET_CREATION_TIME)));
+    
+        assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("doi")));
     }
@@ -125,9 +125,9 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TestingUtils.createPublishingRequest(publication);
         var persistedTicket = ticketService.createTicket(ticket, PublishingRequestCase.class);
-        
+    
         copyServiceControlledFields(ticket, persistedTicket);
-        assertThat(persistedTicket.getCreatedDate(), is(equalTo(TICKET_CREATION_TIME)));
+        assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket, doesNotHaveEmptyValues());
     }
@@ -226,7 +226,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var duplicateIdentifier = SortableIdentifier.next();
-        ticketService = new TicketService(client, clock, () -> duplicateIdentifier);
+        ticketService = new TicketService(client, () -> duplicateIdentifier);
         var ticketEntry = createUnpersistedTicket(publication, ticketType);
         Executable action = () -> ticketService.createTicket(ticketEntry, ticketType);
         assertDoesNotThrow(action);
@@ -249,11 +249,12 @@ class TicketServiceTest extends ResourcesLocalTest {
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
     
         var expectedTicket = persistedTicket.copy();
-        expectedTicket.setStatus(TicketStatus.COMPLETED);
+        expectedTicket.setStatus(COMPLETED);
         expectedTicket.setVersion(updatedTicket.getVersion());
-        expectedTicket.setModifiedDate(TICKET_UPDATE_TIME);
+        expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
     
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
+        assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
@@ -266,12 +267,6 @@ class TicketServiceTest extends ResourcesLocalTest {
             ticketService.fetchTicketByIdentifier(expectedTicketEntry.getIdentifier());
         
         assertThat(actualTicketEntry, is(equalTo(expectedTicketEntry)));
-    }
-    
-    private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
-        return PublishingRequestCase.class.equals(ticketType)
-                   ? DRAFT
-                   : PUBLISHED;
     }
     
     @Test
@@ -288,7 +283,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldRetrieveEventuallyConsistentTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var client = mock(AmazonDynamoDB.class);
         var expectedTicketEntry = createMockResponsesImitatingEventualConsistency(ticketType, client);
-        var service = new TicketService(client, Clock.systemDefaultZone());
+        var service = new TicketService(client);
         var response = service.createTicket(randomPublishingRequest(), ticketType);
         assertThat(response, is(equalTo(expectedTicketEntry)));
         verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());
@@ -331,9 +326,34 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, () -> ticketService.fetchTicketByIdentifier(SortableIdentifier.next()));
     }
     
-    @Test
-    void shouldCloseDoiRequestWhenDoiRequestIsPending() {
-        fail();
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should close ticket when ticket is pending and request action is to close the ticket")
+    @MethodSource("ticketProvider")
+    void shouldCloseTicketWhenTicketIsPendingAndRequestedActionIsToCloseTheTicket(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var pendingTicket = createPersistedTicket(publication, ticketType);
+        ticketService.close(pendingTicket);
+        var completedTicket = ticketService.fetchTicket(pendingTicket);
+        assertThat(completedTicket.getStatus(), is(equalTo(CLOSED)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should not allow closing ticket when ticket is completed")
+    @MethodSource("ticketProvider")
+    void shouldNotAllowClosingTicketWhenTicketIsCompleted(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var pendingTicket = createPersistedTicket(publication, ticketType);
+        
+        ticketService.completeTicket(pendingTicket);
+        assertThrows(BadRequestException.class, () -> ticketService.close(pendingTicket));
+        var actualTicket = ticketService.fetchTicket(pendingTicket);
+        assertThat(actualTicket.getStatus(), is(equalTo(COMPLETED)));
+    }
+    
+    private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
+        return DoiRequest.class.equals(ticketType) ? PUBLISHED : DRAFT;
     }
     
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
@@ -417,7 +437,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         request.setIdentifier(SortableIdentifier.next());
         request.setOwner(randomString());
         request.setResourceIdentifier(SortableIdentifier.next());
-        request.setStatus(TicketStatus.COMPLETED);
+        request.setStatus(COMPLETED);
         request.setCreatedDate(randomInstant());
         request.setModifiedDate(randomInstant());
         request.setCustomerId(randomUri());

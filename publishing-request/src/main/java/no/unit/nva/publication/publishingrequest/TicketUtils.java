@@ -1,7 +1,6 @@
 package no.unit.nva.publication.publishingrequest;
 
 import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
-import java.time.Clock;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.RequestInfo;
@@ -23,6 +22,6 @@ public final class TicketUtils {
     
     @JacocoGenerated
     public static TicketService defaultRequestService() {
-        return new TicketService(defaultDynamoDbClient(), Clock.systemDefaultZone());
+        return new TicketService(defaultDynamoDbClient());
     }
 }

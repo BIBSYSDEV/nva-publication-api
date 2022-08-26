@@ -58,7 +58,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
         this.messageService = new MessageService(client, clock);
-        this.ticketService = new TicketService(client, clock);
+        this.ticketService = new TicketService(client);
         this.resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
     }

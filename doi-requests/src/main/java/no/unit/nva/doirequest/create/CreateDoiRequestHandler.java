@@ -48,7 +48,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     private CreateDoiRequestHandler(AmazonDynamoDB client, Clock clock) {
         this(
             new ResourceService(client, clock),
-            new TicketService(client, clock),
+            new TicketService(client),
             new MessageService(client, clock),
             new Environment());
     }

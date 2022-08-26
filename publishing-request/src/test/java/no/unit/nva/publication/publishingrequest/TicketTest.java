@@ -31,7 +31,7 @@ public abstract class TicketTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(client);
         this.output = new ByteArrayOutputStream();
     }
     

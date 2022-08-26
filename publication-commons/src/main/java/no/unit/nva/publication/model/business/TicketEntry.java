@@ -4,11 +4,13 @@ import static no.unit.nva.publication.model.business.PublishingRequestCase.creat
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
-import java.time.Clock;
+import java.time.Instant;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 
@@ -21,10 +23,9 @@ public interface TicketEntry extends Entity {
     
     static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication,
                                                                Class<T> ticketType,
-                                                               Clock clock,
                                                                Supplier<SortableIdentifier> identifierProvider)
         throws ConflictException {
-        var newTicket = createNewTicketEntry(publication, ticketType, clock, identifierProvider);
+        var newTicket = createNewTicketEntry(publication, ticketType, identifierProvider);
         newTicket.validateCreationRequirements(publication);
         return newTicket;
     }
@@ -82,20 +83,6 @@ public interface TicketEntry extends Entity {
     
     void validateCompletionRequirements(Publication publication);
     
-    default TicketEntry updateStatus(Publication publication, TicketStatus ticketStatus)
-        throws ConflictException, BadRequestException {
-        switch (ticketStatus) {
-            case COMPLETED:
-                return complete(publication);
-            case CLOSED:
-                return close(publication);
-            case PENDING:
-                return reopen(publication);
-            default:
-                throw new BadRequestException("Unknown status");
-        }
-    }
-    
     default TicketEntry complete(Publication publication) {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
@@ -103,23 +90,22 @@ public interface TicketEntry extends Entity {
         return updated;
     }
     
-    default TicketEntry close(Publication publication) throws ConflictException {
+    default TicketEntry close() throws ApiGatewayException {
+        validateClosingRequirements();
         var updated = this.copy();
         updated.setStatus(TicketStatus.CLOSED);
-        updated.validateClosingRequirements(publication);
+        updated.setVersion(UUID.randomUUID());
+        updated.setModifiedDate(Instant.now());
         return updated;
     }
     
-    void validateClosingRequirements(Publication publication) throws ConflictException;
-    
-    default TicketEntry reopen(Publication publication) throws ConflictException {
-        var updated = this.copy();
-        updated.setStatus(TicketStatus.PENDING);
-        updated.validateReopeningRequirements(publication);
-        return updated;
+    default void validateClosingRequirements() throws ApiGatewayException {
+        if (!getStatus().equals(TicketStatus.PENDING)) {
+            var errorMessage =
+                String.format("Cannot close a ticket that has any other status than %s", TicketStatus.PENDING);
+            throw new BadRequestException(errorMessage);
+        }
     }
-    
-    void validateReopeningRequirements(Publication publication) throws ConflictException;
     
     TicketEntry copy();
     
@@ -130,30 +116,27 @@ public interface TicketEntry extends Entity {
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
         Class<T> ticketType,
-        Clock clock,
         Supplier<SortableIdentifier> identifierProvider) {
         
         if (DoiRequest.class.equals(ticketType)) {
-            return createNewDoiRequest(publication, clock, identifierProvider);
+            return createNewDoiRequest(publication, identifierProvider);
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
-            return createNewPublishingRequestEntry(publication, clock, identifierProvider);
+            return createNewPublishingRequestEntry(publication, identifierProvider);
         }
         throw new UnsupportedOperationException();
     }
     
     private static TicketEntry createNewDoiRequest(Publication publication,
-                                                   Clock clock,
                                                    Supplier<SortableIdentifier> identifierProvider) {
         var doiRequest = DoiRequest.fromPublication(publication);
-        setServiceControlledFields(doiRequest, clock, identifierProvider);
+        setServiceControlledFields(doiRequest, identifierProvider);
         return doiRequest;
     }
     
     private static void setServiceControlledFields(TicketEntry ticketEntry,
-                                                   Clock clock,
                                                    Supplier<SortableIdentifier> identifierProvider) {
-        var now = clock.instant();
+        var now = Instant.now();
         ticketEntry.setCreatedDate(now);
         ticketEntry.setModifiedDate(now);
         ticketEntry.setVersion(Entity.nextVersion());
@@ -161,11 +144,10 @@ public interface TicketEntry extends Entity {
     }
     
     private static TicketEntry createNewPublishingRequestEntry(Publication publication,
-                                                               Clock clock,
                                                                Supplier<SortableIdentifier> identifierProvider) {
         var userInstance = UserInstance.fromPublication(publication);
         var entry = createOpeningCaseObject(userInstance, publication.getIdentifier());
-        setServiceControlledFields(entry, clock, identifierProvider);
+        setServiceControlledFields(entry, identifierProvider);
         return entry;
     }
     

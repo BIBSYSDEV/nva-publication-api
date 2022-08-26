@@ -59,7 +59,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(client);
         
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();

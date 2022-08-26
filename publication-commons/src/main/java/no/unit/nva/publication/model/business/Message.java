@@ -17,7 +17,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -202,16 +201,6 @@ public class Message implements TicketEntry,
     @JacocoGenerated
     @Override
     public void validateCompletionRequirements(Publication publication) {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public void validateClosingRequirements(Publication publication) throws ConflictException {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public void validateReopeningRequirements(Publication publication) throws ConflictException {
         throw new UnsupportedOperationException();
     }
     

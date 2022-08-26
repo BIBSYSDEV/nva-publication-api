@@ -74,7 +74,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         resourceService = new ResourceService(client, CLOCK);
         var messageService = new MessageService(client, CLOCK);
-        var ticketService = new TicketService(client, CLOCK);
+        var ticketService = new TicketService(client);
         
         
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();

@@ -77,7 +77,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         
         resourceService = new ResourceService(dynamoClient, CLOCK);
         messageService = new MessageService(dynamoClient, CLOCK);
-        ticketService = new TicketService(dynamoClient, CLOCK);
+        ticketService = new TicketService(dynamoClient);
         
         this.resourceExpansionService = setupResourceExpansionService();
     }

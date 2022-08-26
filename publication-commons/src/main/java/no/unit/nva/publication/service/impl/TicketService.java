@@ -6,6 +6,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -33,28 +34,25 @@ public class TicketService extends ServiceWithTransactions {
     public static final String TICKET_NOT_FOUND = "Ticket not found";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private final AmazonDynamoDB client;
-    private final Clock clock;
     
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
     
-    public TicketService(AmazonDynamoDB client, Clock clock) {
-        this(client, clock, DEFAULT_IDENTIFIER_PROVIDER);
+    public TicketService(AmazonDynamoDB client) {
+        this(client, DEFAULT_IDENTIFIER_PROVIDER);
     }
     
     protected TicketService(AmazonDynamoDB client,
-                            Clock clock,
                             Supplier<SortableIdentifier> identifierProvider) {
         super();
         this.client = client;
-        this.clock = clock;
         this.identifierProvider = identifierProvider;
-        resourceService = new ResourceService(client, clock, identifierProvider);
+        resourceService = new ResourceService(client, Clock.systemDefaultZone(), identifierProvider);
     }
     
     @JacocoGenerated
     public static TicketService defaultService() {
-        return new TicketService(PublicationServiceConfig.defaultDynamoDbClient(), Clock.systemDefaultZone());
+        return new TicketService(PublicationServiceConfig.defaultDynamoDbClient());
     }
     
     public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
@@ -111,20 +109,26 @@ public class TicketService extends ServiceWithTransactions {
     public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
                                                                                SortableIdentifier resourceIdentifier,
                                                                                Class<T> ticketType) {
-    
+        
         TicketDao dao = (TicketDao) TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
         return dao.fetchByResourceIdentifier(client).map(Dao::getData).map(ticketType::cast);
+    }
+    
+    public TicketEntry close(TicketEntry pendingTicket) throws ApiGatewayException {
+        //TODO: can we get both entries at the same time using the single table design?
+        resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
+        var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
+        var closedTicket = persistedTicket.close();
+        
+        var dao = (TicketDao) closedTicket.toDao();
+        var putItemRequest = dao.createPutItemRequest();
+        client.putItem(putItemRequest);
+        return closedTicket;
     }
     
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
-    }
-    
-    @Override
-    @JacocoGenerated
-    protected Clock getClock() {
-        return clock;
     }
     
     private <T extends TicketEntry> TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier,
@@ -148,7 +152,7 @@ public class TicketService extends ServiceWithTransactions {
     
     private TicketEntry indicateThatUpdateHasOccurred(TicketEntry ticketEntry) {
         var entryUpdate = ticketEntry.copy();
-        entryUpdate.setModifiedDate(clock.instant());
+        entryUpdate.setModifiedDate(Instant.now());
         entryUpdate.setVersion(Entity.nextVersion());
         return entryUpdate;
     }
@@ -164,7 +168,7 @@ public class TicketService extends ServiceWithTransactions {
     private <T extends TicketEntry> T createTicketForPublication(Publication publication, Class<T> ticketType)
         throws ConflictException {
         //TODO: Do something about the clock and identifier provider dependencies, if possible.
-        var ticketEntry = createNewTicket(publication, ticketType, clock, identifierProvider);
+        var ticketEntry = createNewTicket(publication, ticketType, identifierProvider);
         var request = ticketEntry.toDao().createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);
         FunctionWithException<TicketEntry, TicketEntry, NotFoundException>

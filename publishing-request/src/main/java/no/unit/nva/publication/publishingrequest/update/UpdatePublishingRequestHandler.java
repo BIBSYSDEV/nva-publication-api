@@ -1,7 +1,6 @@
 package no.unit.nva.publication.publishingrequest.update;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_CLOCK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static nva.commons.core.attempt.Try.attempt;
@@ -28,7 +27,7 @@ public class UpdatePublishingRequestHandler
     
     @JacocoGenerated
     public UpdatePublishingRequestHandler() {
-        this(new TicketService(DEFAULT_DYNAMODB_CLIENT, DEFAULT_CLOCK));
+        this(new TicketService(DEFAULT_DYNAMODB_CLIENT));
     }
     
     public UpdatePublishingRequestHandler(TicketService requestService) {
