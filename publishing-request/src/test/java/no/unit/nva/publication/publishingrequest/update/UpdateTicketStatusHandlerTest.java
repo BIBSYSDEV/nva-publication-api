@@ -3,6 +3,7 @@ package no.unit.nva.publication.publishingrequest.update;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -25,7 +26,6 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class UpdateTicketStatusHandlerTest extends TicketTest {
@@ -87,7 +87,7 @@ class UpdateTicketStatusHandlerTest extends TicketTest {
                IOException {
         var publication = createAndPersistDraftPublication();
         var ticket = (DoiRequest) createPersistedTicket(publication, DoiRequest.class);
-        ticket.setStatus(TicketStatus.COMPLETED);
+        ticket.setStatus(COMPLETED);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -99,27 +99,26 @@ class UpdateTicketStatusHandlerTest extends TicketTest {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedTicket(publication, DoiRequest.class);
-        var completedTicket = ticketService.completeTicket(ticket);
+        var completedTicket = ticketService.updateTicketStatus(ticket, COMPLETED);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
     }
     
-    @Disabled
     @Test
     void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedDoiRequest()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedTicket(publication, DoiRequest.class);
-        ticketService.completeTicket(ticket);
+        ticketService.updateTicketStatus(ticket, COMPLETED);
         var decompletedTicket = (DoiRequest) ticket;
         decompletedTicket.setStatus(TicketStatus.PENDING);
         var request = authorizedUserCompletesTicket(decompletedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var actualTicket = ticketService.fetchTicket(ticket);
-        assertThat(actualTicket.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
+        assertThat(actualTicket.getStatus(), is(equalTo(COMPLETED)));
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
     

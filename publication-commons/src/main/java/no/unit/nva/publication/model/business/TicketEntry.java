@@ -87,6 +87,8 @@ public interface TicketEntry extends Entity {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
+        updated.setVersion(UUID.randomUUID());
+        updated.setModifiedDate(Instant.now());
         return updated;
     }
     

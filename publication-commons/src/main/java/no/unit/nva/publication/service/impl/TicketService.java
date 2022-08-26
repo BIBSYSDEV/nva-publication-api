@@ -6,16 +6,15 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -84,19 +83,16 @@ public class TicketService extends ServiceWithTransactions {
                    .orElseThrow(() -> new NotFoundException(TICKET_NOT_FOUND));
     }
     
-    public TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-        var existingTicket = fetchTicketByResourceIdentifier(
-            ticketEntry.getCustomerId(),
-            ticketEntry.getResourceIdentifier(),
-            ticketEntry.getClass()
-        ).orElseThrow();
-        var completed = attempt(() -> existingTicket.complete(publication))
-                            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
-        var entryUpdate = indicateThatUpdateHasOccurred(completed);
-        var putItemRequest = ((TicketDao) entryUpdate.toDao()).createPutItemRequest();
-        client.putItem(putItemRequest);
-        return entryUpdate;
+    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus)
+        throws ApiGatewayException {
+        switch (ticketStatus) {
+            case COMPLETED:
+                return completeTicket(ticketEntry);
+            case CLOSED:
+                return closeTicket(ticketEntry);
+            default:
+                throw new BadRequestException("Cannot update to status " + ticketStatus);
+        }
     }
     
     public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)
@@ -114,7 +110,27 @@ public class TicketService extends ServiceWithTransactions {
         return dao.fetchByResourceIdentifier(client).map(Dao::getData).map(ticketType::cast);
     }
     
-    public TicketEntry close(TicketEntry pendingTicket) throws ApiGatewayException {
+    @Override
+    protected AmazonDynamoDB getClient() {
+        return client;
+    }
+    
+    private TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
+        var existingTicket = fetchTicketByResourceIdentifier(
+            ticketEntry.getCustomerId(),
+            ticketEntry.getResourceIdentifier(),
+            ticketEntry.getClass()
+        ).orElseThrow();
+        var completed = attempt(() -> existingTicket.complete(publication))
+                            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+        
+        var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
+        client.putItem(putItemRequest);
+        return completed;
+    }
+    
+    private TicketEntry closeTicket(TicketEntry pendingTicket) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
         resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
@@ -124,11 +140,6 @@ public class TicketService extends ServiceWithTransactions {
         var putItemRequest = dao.createPutItemRequest();
         client.putItem(putItemRequest);
         return closedTicket;
-    }
-    
-    @Override
-    protected AmazonDynamoDB getClient() {
-        return client;
     }
     
     private <T extends TicketEntry> TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier,
@@ -148,13 +159,6 @@ public class TicketService extends ServiceWithTransactions {
     
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
         return new BadRequestException(exception.getMessage(), exception);
-    }
-    
-    private TicketEntry indicateThatUpdateHasOccurred(TicketEntry ticketEntry) {
-        var entryUpdate = ticketEntry.copy();
-        entryUpdate.setModifiedDate(Instant.now());
-        entryUpdate.setVersion(Entity.nextVersion());
-        return entryUpdate;
     }
     
     private Publication fetchPublication(TicketEntry ticketEntry) throws ForbiddenException {

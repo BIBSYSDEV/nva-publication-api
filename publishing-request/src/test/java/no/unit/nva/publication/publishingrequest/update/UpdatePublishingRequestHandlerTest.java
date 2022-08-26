@@ -7,6 +7,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_CASE_PATH;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.publishingrequest.update.UpdatePublishingRequestHandler.AUTHORIZATION_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -255,7 +256,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         publishingRequest = requestService.createTicket(publishingRequest,PublishingRequestCase.class);
         
         if (TicketStatus.COMPLETED == status) {
-            requestService.completeTicket(publishingRequest.complete(publication));
+            requestService.updateTicketStatus(publishingRequest.complete(publication), COMPLETED);
         }
         return publishingRequest;
     }

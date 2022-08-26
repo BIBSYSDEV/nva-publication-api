@@ -22,6 +22,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -59,9 +60,8 @@ public class PendingPublishingRequestEventHandler
         var updateEvent = parseInput(input);
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
         if (customerAllowsPublishing(publishingRequest)) {
-            attempt(() -> ticketService.completeTicket(publishingRequest)).orElseThrow();
+            attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED)).orElseThrow();
         }
-        
         return null;
     }
     

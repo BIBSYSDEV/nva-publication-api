@@ -30,7 +30,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
             throw new ForbiddenException();
         }
         
-        ticketService.completeTicket(ticket);
+        ticketService.updateTicketStatus(ticket, input.getStatus());
         return null;
     }
     

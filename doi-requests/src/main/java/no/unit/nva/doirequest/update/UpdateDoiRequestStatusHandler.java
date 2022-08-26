@@ -93,7 +93,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
             .withStatus(newTicketStatus)
             .build();
         if (TicketStatus.COMPLETED.equals(newTicketStatus)) {
-            ticketService.completeTicket(ticketEntry);
+            ticketService.updateTicketStatus(ticketEntry, TicketStatus.COMPLETED);
         } else {
             //TODO: implement rejection in the service
             throw new NotImplementedException();

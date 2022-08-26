@@ -245,7 +245,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
         var persistedTicket = ticketService.createTicket(ticketRequest, ticketType);
     
-        ticketService.completeTicket(persistedTicket);
+        ticketService.updateTicketStatus(persistedTicket, COMPLETED);
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
     
         var expectedTicket = persistedTicket.copy();
@@ -270,11 +270,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
+    void shouldThrowBadRequestExceptionWhenTryingToCompleteDoiReqeuestForDraftPublication()
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, DoiRequest.class);
-        assertThrows(BadRequestException.class, () -> ticketService.completeTicket(ticket));
+        assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(ticket, COMPLETED));
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
@@ -333,7 +333,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var pendingTicket = createPersistedTicket(publication, ticketType);
-        ticketService.close(pendingTicket);
+        ticketService.updateTicketStatus(pendingTicket, CLOSED);
         var completedTicket = ticketService.fetchTicket(pendingTicket);
         assertThat(completedTicket.getStatus(), is(equalTo(CLOSED)));
     }
@@ -345,9 +345,9 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var pendingTicket = createPersistedTicket(publication, ticketType);
-        
-        ticketService.completeTicket(pendingTicket);
-        assertThrows(BadRequestException.class, () -> ticketService.close(pendingTicket));
+    
+        ticketService.updateTicketStatus(pendingTicket, COMPLETED);
+        assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(pendingTicket, CLOSED));
         var actualTicket = ticketService.fetchTicket(pendingTicket);
         assertThat(actualTicket.getStatus(), is(equalTo(COMPLETED)));
     }

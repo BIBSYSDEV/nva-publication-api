@@ -3,6 +3,7 @@ package no.unit.nva.publication.publishingrequest.update;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -48,8 +49,8 @@ public class UpdatePublishingRequestHandler
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
         var currentRequest =
             requestService.fetchTicketByIdentifier(publishingRequestIdentifier);
-        
-        var updatedEntry = requestService.completeTicket(currentRequest);
+    
+        var updatedEntry = requestService.updateTicketStatus(currentRequest, COMPLETED);
         return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) updatedEntry);
     }
     
