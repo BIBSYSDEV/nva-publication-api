@@ -662,7 +662,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Path: /{publicationIdentifier}/ticket
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
