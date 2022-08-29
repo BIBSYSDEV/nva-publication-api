@@ -26,7 +26,10 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class UpdateTicketStatusHandlerTest extends TicketTest {
     
@@ -52,7 +55,6 @@ class UpdateTicketStatusHandlerTest extends TicketTest {
         assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
     }
     
-    // User is not curator
     @Test
     void shouldReturnForbiddenWhenRequestingUserIsNotCurator() throws IOException, ApiGatewayException {
         var publication = createPersistAndPublishPublication();
@@ -106,15 +108,16 @@ class UpdateTicketStatusHandlerTest extends TicketTest {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
     }
     
-    @Test
-    void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedDoiRequest()
+    @ParameterizedTest(name = "ticket type: {0}")
+    @DisplayName("should return a Bad Request response when attempting to re-open a ticket.")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedTicket(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
-        var publication = createPersistAndPublishPublication();
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var publication = createPublicationForTicket(ticketType);
+        var ticket = createPersistedTicket(publication, ticketType);
         ticketService.updateTicketStatus(ticket, COMPLETED);
-        var decompletedTicket = (DoiRequest) ticket;
-        decompletedTicket.setStatus(TicketStatus.PENDING);
-        var request = authorizedUserCompletesTicket(decompletedTicket);
+        ticket.setStatus(TicketStatus.PENDING);
+        var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var actualTicket = ticketService.fetchTicket(ticket);

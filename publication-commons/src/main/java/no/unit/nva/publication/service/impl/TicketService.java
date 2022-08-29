@@ -115,7 +115,7 @@ public class TicketService extends ServiceWithTransactions {
         return client;
     }
     
-    private TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+    protected TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
         var existingTicket = fetchTicketByResourceIdentifier(
             ticketEntry.getCustomerId(),
@@ -124,13 +124,13 @@ public class TicketService extends ServiceWithTransactions {
         ).orElseThrow();
         var completed = attempt(() -> existingTicket.complete(publication))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
-        
+    
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
         client.putItem(putItemRequest);
         return completed;
     }
     
-    private TicketEntry closeTicket(TicketEntry pendingTicket) throws ApiGatewayException {
+    protected TicketEntry closeTicket(TicketEntry pendingTicket) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
         resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());

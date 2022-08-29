@@ -29,7 +29,6 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         if (userIsNotAuthorized(requestInfo, ticket)) {
             throw new ForbiddenException();
         }
-        
         ticketService.updateTicketStatus(ticket, input.getStatus());
         return null;
     }

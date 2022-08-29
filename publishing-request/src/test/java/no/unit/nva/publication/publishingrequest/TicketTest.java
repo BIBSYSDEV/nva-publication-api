@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -33,6 +34,13 @@ public abstract class TicketTest extends ResourcesLocalTest {
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
         this.output = new ByteArrayOutputStream();
+    }
+    
+    protected Publication createPublicationForTicket(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        return DoiRequest.class.equals(ticketType)
+                   ? createPersistAndPublishPublication()
+                   : createAndPersistDraftPublication();
     }
     
     protected Publication createAndPersistDraftPublication()
