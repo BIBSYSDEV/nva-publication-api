@@ -15,11 +15,17 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.JacocoGenerated;
 
 public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     
     public static final String TICKET_NOT_FOUND = "Ticket not found";
     private final TicketService ticketService;
+    
+    @JacocoGenerated
+    public GetTicketHandler() {
+        this(TicketService.defaultService());
+    }
     
     public GetTicketHandler(TicketService ticketService) {
         super(Void.class);

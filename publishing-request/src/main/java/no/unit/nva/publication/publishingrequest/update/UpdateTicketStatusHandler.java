@@ -11,10 +11,16 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.JacocoGenerated;
 
 public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     
     private final TicketService ticketService;
+    
+    @JacocoGenerated
+    public UpdateTicketStatusHandler() {
+        this(TicketService.defaultService());
+    }
     
     public UpdateTicketStatusHandler(TicketService ticketService) {
         super(TicketDto.class);

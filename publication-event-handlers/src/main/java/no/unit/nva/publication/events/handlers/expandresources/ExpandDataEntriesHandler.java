@@ -1,9 +1,8 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
@@ -47,7 +46,7 @@ public class ExpandDataEntriesHandler
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
         this(new S3Driver(EVENTS_BUCKET),
-            defaultResourceExpansionService(defaultDynamoDbClient()));
+            defaultResourceExpansionService());
     }
     
     public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
@@ -76,20 +75,20 @@ public class ExpandDataEntriesHandler
     }
     
     @JacocoGenerated
-    private static ResourceExpansionService defaultResourceExpansionService(AmazonDynamoDB dynamoDbClient) {
-        return new ResourceExpansionServiceImpl(defaultResourceService(dynamoDbClient),
-            defaultMessageService(dynamoDbClient),
+    private static ResourceExpansionService defaultResourceExpansionService() {
+        return new ResourceExpansionServiceImpl(defaultResourceService(),
+            defaultMessageService(),
             TicketService.defaultService());
     }
     
     @JacocoGenerated
-    private static MessageService defaultMessageService(AmazonDynamoDB dynamoDbClient) {
-        return new MessageService(dynamoDbClient, Clock.systemDefaultZone());
+    private static MessageService defaultMessageService() {
+        return new MessageService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
     @JacocoGenerated
-    private static ResourceService defaultResourceService(AmazonDynamoDB dynamoDb) {
-        return new ResourceService(dynamoDb, Clock.systemDefaultZone());
+    private static ResourceService defaultResourceService() {
+        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
     private DataEntryUpdateEvent readBlobFromS3(EventReference input) {
