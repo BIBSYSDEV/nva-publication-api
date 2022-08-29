@@ -22,7 +22,7 @@ import nva.commons.core.SingletonCollector;
 @JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao
-    implements JoinWithResource, DynamoEntryByIdentifier, WithCristinIdentifier, JsonSerializable {
+    implements JoinWithResource, WithCristinIdentifier, JsonSerializable {
     
     public static final String CRISTIN_SOURCE = "Cristin";
     public static final String TYPE = "Resource";

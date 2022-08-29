@@ -10,9 +10,9 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.MessageService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -61,7 +61,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
         throws BadRequestException {
         if (userIsCurator(requestInfo)) {
             return
-                messageService.listMessagesForCurator(userInstance.getOrganizationUri(), MessageStatus.UNREAD);
+                messageService.listMessagesForCurator(userInstance.getOrganizationUri(), TicketStatus.UNREAD);
         } else if (bestEffortToIdentityCreatorsUntilTheyHaveTheirOwnAccessRight(requestInfo)) {
             return messageService.listMessagesForUser(userInstance);
         } else {

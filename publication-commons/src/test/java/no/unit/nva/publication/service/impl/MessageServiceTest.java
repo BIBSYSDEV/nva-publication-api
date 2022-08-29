@@ -33,8 +33,8 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -147,7 +147,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var savedMessages = createOneMessagePerPublication(createdPublications);
         
         var publisherId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
-        var actualConversation = messageService.listMessagesForCurator(publisherId, MessageStatus.UNREAD);
+        var actualConversation = messageService.listMessagesForCurator(publisherId, TicketStatus.UNREAD);
         
         var expectedConversation = constructExpectedCuratorsMessageView(publisherId, savedMessages);
         assertThat(actualConversation, contains(expectedConversation));
@@ -159,7 +159,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
         
         var customerId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
-        var actualConversations = messageService.listMessagesForCurator(customerId, MessageStatus.UNREAD);
+        var actualConversations = messageService.listMessagesForCurator(customerId, TicketStatus.UNREAD);
         
         var expectedConversations = constructExpectedCuratorsMessageView(customerId, allMessagesOfAllCustomers);
         
@@ -212,8 +212,8 @@ class MessageServiceTest extends ResourcesLocalTest {
         var originalMessage = messageService.getMessage(owner, messageIdentifier);
         messageService.markAsRead(originalMessage);
         var updatedMessage = messageService.getMessage(owner, messageIdentifier);
-        assertThat(originalMessage.getStatus(), is(equalTo(MessageStatus.UNREAD)));
-        assertThat(updatedMessage.getStatus(), is(equalTo(MessageStatus.READ)));
+        assertThat(originalMessage.getStatus(), is(equalTo(TicketStatus.UNREAD)));
+        assertThat(updatedMessage.getStatus(), is(equalTo(TicketStatus.READ)));
     }
     
     @Test

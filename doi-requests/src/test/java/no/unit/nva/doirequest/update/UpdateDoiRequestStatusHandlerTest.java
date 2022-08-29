@@ -5,13 +5,12 @@ import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapp
 import static no.unit.nva.doirequest.update.ApiUpdateDoiRequest.NO_CHANGE_REQUESTED_ERROR;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.INVALID_PUBLICATION_ID_ERROR;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.service.impl.DoiRequestService.UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE;
+import static no.unit.nva.publication.model.business.DoiRequest.DOI_REQUEST_APPROVAL_FAILURE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -27,16 +26,14 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -49,7 +46,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
-    private DoiRequestService doiRequestService;
+    private TicketService ticketService;
     private UpdateDoiRequestStatusHandler handler;
     private ResourceService resourceService;
     private ByteArrayOutputStream outputStream;
@@ -65,8 +62,8 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
         
-        doiRequestService = new DoiRequestService(client, clock);
-        handler = new UpdateDoiRequestStatusHandler(setupEnvironment(), doiRequestService);
+        ticketService = new TicketService(client);
+        handler = new UpdateDoiRequestStatusHandler(ticketService);
         resourceService = new ResourceService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
@@ -84,7 +81,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
         
         var updatedDoiRequest = fetchDoiRequestDirectlyFromService(publication);
-        assertThat(updatedDoiRequest.getStatus(), is(equalTo(DoiRequestStatus.COMPLETED)));
+        assertThat(updatedDoiRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
     
     @Test
@@ -107,7 +104,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
-        assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
+        assertThat(problem.getDetail(), containsString(DOI_REQUEST_APPROVAL_FAILURE));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
     
@@ -144,31 +141,28 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     
     private InputStream createAuthorizedRestRequestWithInvalidIdentifier(Publication publication)
         throws JsonProcessingException {
-        return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, DoiRequestStatus.COMPLETED);
+        return createAuthorizedRestRequest(publication, INVALID_IDENTIFIER, TicketStatus.COMPLETED);
     }
     
-    private Environment setupEnvironment() {
-        var environment = mock(Environment.class);
-        when(environment.readEnv(anyString())).thenReturn("*");
-        return environment;
-    }
-    
-    private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) throws NotFoundException {
-        return doiRequestService
-            .getDoiRequestByResourceIdentifier(UserInstance.fromPublication(publication), publication.getIdentifier());
+    private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) {
+        return ticketService.fetchTicketByResourceIdentifier(
+                publication.getPublisher().getId(),
+                publication.getIdentifier(),
+                DoiRequest.class)
+            .orElseThrow();
     }
     
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
         return createAuthorizedRestRequest(publication,
             publication.getIdentifier().toString(),
-            DoiRequestStatus.COMPLETED);
+            TicketStatus.COMPLETED);
     }
     
     private InputStream createAuthorizedRestRequest(Publication publication,
                                                     String identifier,
-                                                    DoiRequestStatus doiRequestStatus)
+                                                    TicketStatus ticketStatus)
         throws JsonProcessingException {
-        var body = createUpdateRequest(doiRequestStatus);
+        var body = createUpdateRequest(ticketStatus);
         var pathParameters = createPathParameters(identifier);
         var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
@@ -181,7 +175,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     }
     
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
-        var body = createUpdateRequest(DoiRequestStatus.COMPLETED);
+        var body = createUpdateRequest(TicketStatus.COMPLETED);
         var pathParameters = createPathParameters(publication.getIdentifier().toString());
         var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
@@ -198,9 +192,9 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         );
     }
     
-    private ApiUpdateDoiRequest createUpdateRequest(DoiRequestStatus doiRequestStatus) {
+    private ApiUpdateDoiRequest createUpdateRequest(TicketStatus ticketStatus) {
         var body = new ApiUpdateDoiRequest();
-        body.setDoiRequestStatus(doiRequestStatus);
+        body.setDoiRequestStatus(ticketStatus);
         return body;
     }
     
@@ -211,10 +205,11 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication createDraftPublicationAndDoiRequest() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
         var userInstance = UserInstance.fromPublication(publication);
         publication = resourceService.createPublication(userInstance, publication);
-        doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
+        var doiRequest = DoiRequest.fromPublication(publication);
+        ticketService.createTicket(doiRequest, DoiRequest.class);
         return publication;
     }
 }

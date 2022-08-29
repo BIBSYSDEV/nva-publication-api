@@ -1,9 +1,9 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
@@ -17,13 +17,12 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -80,18 +79,7 @@ public class ExpandDataEntriesHandler
     private static ResourceExpansionService defaultResourceExpansionService(AmazonDynamoDB dynamoDbClient) {
         return new ResourceExpansionServiceImpl(defaultResourceService(dynamoDbClient),
             defaultMessageService(dynamoDbClient),
-            defaultDoiRequestService(dynamoDbClient),
-            defaultPublishingRequestService(dynamoDbClient));
-    }
-    
-    @JacocoGenerated
-    private static PublishingRequestService defaultPublishingRequestService(AmazonDynamoDB dynamoDbClient) {
-        return new PublishingRequestService(dynamoDbClient, Clock.systemDefaultZone());
-    }
-    
-    @JacocoGenerated
-    private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB dynamoDbClient) {
-        return new DoiRequestService(dynamoDbClient, Clock.systemDefaultZone());
+            TicketService.defaultService());
     }
     
     @JacocoGenerated
@@ -102,11 +90,6 @@ public class ExpandDataEntriesHandler
     @JacocoGenerated
     private static ResourceService defaultResourceService(AmazonDynamoDB dynamoDb) {
         return new ResourceService(dynamoDb, Clock.systemDefaultZone());
-    }
-    
-    @JacocoGenerated
-    private static AmazonDynamoDB defaultDynamoDbClient() {
-        return AmazonDynamoDBClientBuilder.defaultClient();
     }
     
     private DataEntryUpdateEvent readBlobFromS3(EventReference input) {

@@ -38,7 +38,6 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.attempt.Failure;
 
 public class UpdateResourceService extends ServiceWithTransactions {
     
@@ -60,7 +59,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
     
-    public UpdateResourceService(AmazonDynamoDB client, String tableName, Clock clockForTimestamps,
+    public UpdateResourceService(AmazonDynamoDB client,
+                                 String tableName,
+                                 Clock clockForTimestamps,
                                  ReadResourceService readResourceService) {
         super();
         this.tableName = tableName;
@@ -76,11 +77,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);
         
-        UserInstance userInstance = UserInstance.create(resource.getResourceOwner().getOwner(),
-            resource.getCustomerId());
-        
         TransactWriteItem updateResourceTransactionItem = updateResource(resource);
-        Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(userInstance, resource);
+        Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(resource);
         ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(updateResourceTransactionItem);
         updateDoiRequestTransactionItem.ifPresent(transactionItems::add);
@@ -104,11 +102,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
-    }
-    
-    @Override
-    protected Clock getClock() {
-        return clockForTimestamps;
     }
     
     PublishPublicationStatusResponse publishResource(UserInstance userInstance,
@@ -144,34 +137,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
             .build();
     }
     
-    private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
-        Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
-            .orElse(this::handleNotFoundException);
+    private Optional<TransactWriteItem> updateDoiRequest(Resource resource) {
+        var queryObject = DoiRequest.createQueryObject(resource);
+        var queryDao = queryObject.toDao();
+        var existingDoiRequest = queryDao.fetchByResourceIdentifier(client)
+            .map(Dao::getData)
+            .map(DoiRequest.class::cast);
         
         return existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
             .map(DoiRequestDao::new)
             .map(DoiRequestDao::toDynamoFormat)
             .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
             .map(put -> new TransactWriteItem().withPut(put));
-    }
-    
-    private Optional<DoiRequest> handleNotFoundException(Failure<Optional<DoiRequest>> fail) {
-        if (errorIsNotFoundException(fail)) {
-            return Optional.empty();
-        }
-        throw new RuntimeException(fail.getException());
-    }
-    
-    private boolean errorIsNotFoundException(Failure<Optional<DoiRequest>> fail) {
-        return fail.getException() instanceof NotFoundException;
-    }
-    
-    private Optional<DoiRequest> fetchExistingDoiRequest(UserInstance userinstance, Resource resource)
-        throws NotFoundException {
-        return Optional.of(DoiRequestService.getDoiRequestByResourceIdentifier(userinstance,
-            resource.getIdentifier(),
-            tableName,
-            client));
     }
     
     private TransactWriteItem updateResource(Resource resourceUpdate) {

@@ -1,17 +1,17 @@
 package no.unit.nva.publication.publishingrequest.update;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_CLOCK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.publishingrequest.TicketUtils;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -24,14 +24,14 @@ public class UpdatePublishingRequestHandler
     extends ApiGatewayHandler<PublishingRequestCaseDto, PublishingRequestCaseDto> {
     
     public static final String AUTHORIZATION_ERROR = "User is not authorized to approve publishing requests";
-    private final PublishingRequestService requestService;
+    private final TicketService requestService;
     
     @JacocoGenerated
     public UpdatePublishingRequestHandler() {
-        this(new PublishingRequestService(DEFAULT_DYNAMODB_CLIENT, DEFAULT_CLOCK));
+        this(new TicketService(DEFAULT_DYNAMODB_CLIENT));
     }
     
-    public UpdatePublishingRequestHandler(PublishingRequestService requestService) {
+    public UpdatePublishingRequestHandler(TicketService requestService) {
         super(PublishingRequestCaseDto.class);
         this.requestService = requestService;
     }
@@ -44,16 +44,14 @@ public class UpdatePublishingRequestHandler
         var publicationIdentifier =
             readIdentifierFromPathParameter(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         var publishingRequestIdentifier =
-            readIdentifierFromPathParameter(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
+            readIdentifierFromPathParameter(requestInfo, TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER);
         
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
-        var currentRequest = (PublishingRequestCase)
-            requestService.fetchTicketByPublicationAndRequestIdentifiers(publicationIdentifier,
-                publishingRequestIdentifier);
-        
-        final var updatedRequest = currentRequest.approve();
-        var updatedEntry = requestService.updatePublishingRequest(updatedRequest);
-        return PublishingRequestCaseDto.createResponseObject(updatedEntry);
+        var currentRequest =
+            requestService.fetchTicketByIdentifier(publishingRequestIdentifier);
+    
+        var updatedEntry = requestService.updateTicketStatus(currentRequest, COMPLETED);
+        return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) updatedEntry);
     }
     
     @Override

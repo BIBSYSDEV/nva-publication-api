@@ -20,18 +20,16 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -48,7 +46,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private MessageService messageService = new FakeMessageService();
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
-    private DoiRequestService doiRequestService;
+    private TicketService ticketService;
     
     public static Stream<Class<?>> entryTypes() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
@@ -60,15 +58,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
         this.messageService = new MessageService(client, clock);
-        this.doiRequestService = new DoiRequestService(client, clock);
-        var publishingRequestService = new PublishingRequestService(client, clock);
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
-            doiRequestService, publishingRequestService);
+        this.ticketService = new TicketService(client);
+        this.resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
     }
     
     @Test
-    void shouldReturnExpandedResourceWithoutLossOfInformation() throws JsonProcessingException, ApiGatewayException {
-        var publication = createPublication();
+    void shouldReturnExpandedResourceWithoutLossOfInformation() throws JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
         var expandedResource = fromPublication(publication);
         var regeneratedPublication = objectMapper.readValue(expandedResource.toJsonString(), Publication.class);
         assertThat(regeneratedPublication, is(equalTo(publication)));
@@ -76,7 +73,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     @Test
     void shouldReturnExpandedDoiRequestWithoutLossOfInformation() throws ApiGatewayException {
-        var publication = createPublication();
+        var publication = createPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         ExpandedDoiRequest expandedDoiRequest =
             ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
@@ -94,7 +91,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     @Test
     void expandedDoiRequestShouldHaveTypeDoiRequest() throws ApiGatewayException {
-        var publication = createPublication();
+        var publication = createPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         var expandedResource =
             ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
@@ -108,8 +105,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var expandedDataEntry =
             ExpandedDataEntryWithAssociatedPublication.create(type, resourceExpansionService,
                 resourceService,
-                doiRequestService,
-                messageService);
+                messageService,
+                ticketService);
         SortableIdentifier identifier = expandedDataEntry.getExpandedDataEntry().identifyExpandedEntry();
         SortableIdentifier expectedIdentifier = extractExpectedIdentifier(expandedDataEntry);
         assertThat(identifier, is(equalTo(expectedIdentifier)));
@@ -117,15 +114,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     private static ExpandedDoiRequest randomDoiRequest(Publication publication,
                                                        ResourceExpansionService resourceExpansionService,
-                                                       DoiRequestService doiRequestService,
-                                                       MessageService messageService)
-        throws BadRequestException, NotFoundException {
+                                                       MessageService messageService,
+                                                       TicketService ticketService)
+        throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
-        var doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
-            publication.getIdentifier());
+        var doiRequest = DoiRequest.fromPublication(publication);
+        var persistedDoiRequest = ticketService.createTicket(doiRequest,doiRequest.getClass());
         messageService.createMessage(userInstance, publication, randomString(), MessageType.DOI_REQUEST);
-        var doiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-        return attempt(() -> ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService))
+        return attempt(() -> ExpandedDoiRequest.create(persistedDoiRequest, resourceExpansionService, messageService))
             .orElseThrow();
     }
     
@@ -136,17 +132,17 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return expandedResourceConversation;
     }
     
-    private DoiRequest createDoiRequest(Publication publication) throws BadRequestException, NotFoundException {
-        var userInstance = UserInstance.fromPublication(publication);
-        var doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
-            publication.getIdentifier());
-        return doiRequestService.getDoiRequest(userInstance,
-            doiRequestIdentifier);
+    private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
+        return ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
     }
     
-    private Publication createPublication() throws ApiGatewayException {
-        var publication = randomPublication();
+    private Publication createPublicationWithoutDoi() {
+        var publication = randomPublicationWithoutDoi();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    }
+    
+    private static Publication randomPublicationWithoutDoi() {
+        return randomPublication().copy().withDoi(null).build();
     }
     
     private SortableIdentifier extractExpectedIdentifier(ExpandedDataEntryWithAssociatedPublication generatedData) {
@@ -189,14 +185,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             Class<?> expandedDataEntryClass,
             ResourceExpansionService resourceExpansionService,
             ResourceService resourceService,
-            DoiRequestService doiRequestService,
-            MessageService messageService) throws ApiGatewayException {
+            MessageService messageService,
+            TicketService ticketService) throws ApiGatewayException {
             var publication = createPublication(resourceService);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication,
-                    resourceExpansionService, doiRequestService, messageService));
+                    resourceExpansionService, messageService,ticketService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     createExpandedPublishingRequest(publication, resourceService, messageService,
@@ -206,26 +202,26 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     randomResourceConversation(publication));
             }
         }
-        
+    
         public Publication getPublication() {
             return publication;
         }
-        
+    
         public ExpandedDataEntry getExpandedDataEntry() {
             return expandedDataEntry;
         }
-        
-        private static Publication createPublication(ResourceService resourceService) throws ApiGatewayException {
-            var publication = randomPublication();
+    
+        private static Publication createPublication(ResourceService resourceService) {
+            var publication = randomPublicationWithoutDoi();
             publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
             return publication;
         }
-        
+    
         private static ExpandedDataEntryWithAssociatedPublication createExpandedResource(Publication publication) {
             ExpandedResource expandedResource = attempt(() -> fromPublication(publication)).orElseThrow();
             return new ExpandedDataEntryWithAssociatedPublication(publication, expandedResource);
         }
-        
+    
         private static ExpandedDataEntry createExpandedPublishingRequest(
             Publication publication,
             ResourceService resourceService,
@@ -239,7 +235,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         private static PublishingRequestCase createRequestCase(Publication publication) {
             var requestCase = new PublishingRequestCase();
             requestCase.setIdentifier(SortableIdentifier.next());
-            requestCase.setStatus(PublishingRequestStatus.PENDING);
+            requestCase.setStatus(TicketStatus.PENDING);
             requestCase.setModifiedDate(Instant.now());
             requestCase.setCreatedDate(Instant.now());
             requestCase.setVersion(UUID.randomUUID());

@@ -44,15 +44,14 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -71,12 +70,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
-    private DoiRequestService doiRequestService;
-    private PublishingRequestService publishingRequestService;
+    private TicketService ticketService;
     
     public static Stream<Arguments> ticketTypeProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class)
-            .map(Arguments::arguments);
+        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::arguments);
     }
     
     @BeforeEach
@@ -304,8 +301,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private PublicationWithAllKindsOfCasesAndMessages createSamplePublicationWithConversations()
         throws ApiGatewayException {
-        return new PublicationWithAllKindsOfCasesAndMessages(resourceService, doiRequestService, messageService,
-            publishingRequestService)
+        return new PublicationWithAllKindsOfCasesAndMessages(resourceService, messageService, ticketService)
             .create();
     }
     
@@ -321,13 +317,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private void initializeServices() {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client, CLOCK);
-        doiRequestService = new DoiRequestService(client, CLOCK);
-        publishingRequestService = new PublishingRequestService(client, CLOCK);
-        expansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
-            doiRequestService, publishingRequestService);
+        ticketService = new TicketService(client);
+        expansionService = new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
     }
     
-    private Publication createPublication() throws ApiGatewayException {
+    private Publication createPublication() {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);
@@ -358,7 +352,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private Entity createPublishingRequest(Publication createdPublication) {
         var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setStatus(PublishingRequestStatus.PENDING);
+        publishingRequest.setStatus(TicketStatus.PENDING);
         publishingRequest.setCustomerId(createdPublication.getPublisher().getId());
         publishingRequest.setModifiedDate(Instant.now());
         publishingRequest.setCreatedDate(Instant.now());
@@ -398,9 +392,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static class PublicationWithAllKindsOfCasesAndMessages {
         
         private final ResourceService resourceService;
-        private final DoiRequestService doiRequestService;
         private final MessageService messageService;
-        private PublishingRequestService publishingRequestService;
+        private final TicketService ticketService;
         private Publication publication;
         private DoiRequest doiRequest;
         private UserInstance userInstance;
@@ -411,16 +404,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         
         public PublicationWithAllKindsOfCasesAndMessages(
             ResourceService resourceService,
-            DoiRequestService doiRequestService,
             MessageService messageService,
-            PublishingRequestService publishingRequestService
+            TicketService ticketService
         
         ) {
             
             this.resourceService = resourceService;
-            this.doiRequestService = doiRequestService;
             this.messageService = messageService;
-            this.publishingRequestService = publishingRequestService;
+            this.ticketService = ticketService;
         }
         
         public PublishingRequestCase getPublishingRequest() {
@@ -460,32 +451,35 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         }
         
         public PublicationWithAllKindsOfCasesAndMessages create() throws ApiGatewayException {
-            var sample = PublicationGenerator.randomPublication();
+            var sample = randomPublicationWithoutDoi();
             userInstance = UserInstance.fromPublication(sample);
             publication = resourceService.createPublication(userInstance, sample);
             
-            var doiRequestIdentifier = doiRequestService.createDoiRequest(publication);
-            doiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-            
+            doiRequest = ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
+    
             var publishingRequestCase =
                 PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
             publishingRequest =
-                publishingRequestService.createTicket(publishingRequestCase,PublishingRequestCase.class);
+                ticketService.createTicket(publishingRequestCase, PublishingRequestCase.class);
             doiRequestMessages = createSomeMessages(MessageType.DOI_REQUEST);
             supportMessages = createSomeMessages(MessageType.SUPPORT);
             publishingRequestMessages = createSomeMessages(MessageType.PUBLISHING_REQUEST);
-            
+    
             return this;
         }
-        
+    
+        private static Publication randomPublicationWithoutDoi() {
+            return PublicationGenerator.randomPublication().copy().withDoi(null).build();
+        }
+    
         public SortableIdentifier[] getSupportMessageIdentifiers() {
             return getSupportMessages().stream().map(Message::getIdentifier).collect(Collectors.toList())
-                .toArray(SortableIdentifier[]::new);
+                       .toArray(SortableIdentifier[]::new);
         }
-        
+    
         public SortableIdentifier[] getDoiRequestMessageIdentifiers() {
             return getDoiRequestMessages().stream().map(Message::getIdentifier).collect(Collectors.toList())
-                .toArray(SortableIdentifier[]::new);
+                       .toArray(SortableIdentifier[]::new);
         }
         
         private List<Message> createSomeMessages(MessageType messageType) {

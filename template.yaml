@@ -706,6 +706,46 @@ Resources:
             Path: /{publicationIdentifier}/support-case/{supportCaseIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
+  CreateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publishing-request
+      Handler: no.unit.nva.publication.publishingrequest.create.CreateTicketHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+  GetTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publishing-request
+      Handler: no.unit.nva.publication.publishingrequest.read.GetTicketHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
 
 
   #==========================Event Lambda functions====================================================

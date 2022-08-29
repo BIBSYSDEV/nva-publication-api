@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -23,11 +23,11 @@ public class PublishingRequestCaseDto implements PublishingRequestCaseDtoInterfa
     @JsonProperty(ID)
     private final URI id;
     @JsonProperty(STATUS)
-    private final PublishingRequestStatus status;
+    private final TicketStatus status;
     
     @JsonCreator
     public PublishingRequestCaseDto(@JsonProperty(ID) URI caseId,
-                                    @JsonProperty(STATUS) PublishingRequestStatus status) {
+                                    @JsonProperty(STATUS) TicketStatus status) {
         this.id = caseId;
         this.status = status;
     }
@@ -79,7 +79,7 @@ public class PublishingRequestCaseDto implements PublishingRequestCaseDtoInterfa
         return Objects.equals(getId(), that.getId());
     }
     
-    public PublishingRequestStatus getStatus() {
+    public TicketStatus getStatus() {
         return status;
     }
     

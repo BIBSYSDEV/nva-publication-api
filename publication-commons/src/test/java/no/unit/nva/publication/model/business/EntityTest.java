@@ -27,13 +27,19 @@ class EntityTest {
         var publication = PublicationGenerator.randomPublication();
         final var leftResource = Resource.fromPublication(publication);
         final var rightResource = leftResource.copy().withRowVersion(nextVersion()).build();
+        
         final var leftDoiRequest = DoiRequest.newDoiRequestForResource(leftResource, Instant.now());
-        final var rightDoiRequest = leftDoiRequest.copy().withRowVersion(nextVersion()).build();
+        final var rightDoiRequest = leftDoiRequest.copy();
+        rightDoiRequest.setVersion(nextVersion());
+        
         final var leftMessage = randomMessage(publication);
-        final var rightMessage = leftMessage.copy().withRowVersion(nextVersion()).build();
+        final var rightMessage = leftMessage.copy();
+        rightMessage.setVersion(nextVersion());
+        
         final var leftPublishingRequestCase = randomPublishingRequest(publication);
         final var rightPublishingRequestCase = leftPublishingRequestCase.copy();
         rightPublishingRequestCase.setVersion(UUID.randomUUID());
+        
         return Stream.of(new Tuple(leftResource, rightResource),
             new Tuple(leftDoiRequest, rightDoiRequest),
             new Tuple(leftMessage, rightMessage),
@@ -79,7 +85,7 @@ class EntityTest {
         publishingRequest.setOwner(publication.getResourceOwner().getOwner());
         publishingRequest.setCreatedDate(randomInstant());
         publishingRequest.setModifiedDate(randomInstant());
-        publishingRequest.setStatus(randomElement(PublishingRequestStatus.values()));
+        publishingRequest.setStatus(randomElement(TicketStatus.values()));
         return publishingRequest;
     }
     

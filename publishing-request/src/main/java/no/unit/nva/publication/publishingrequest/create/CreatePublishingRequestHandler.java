@@ -1,8 +1,8 @@
 package no.unit.nva.publication.publishingrequest.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
+import static no.unit.nva.publication.publishingrequest.TicketUtils.createUserInstance;
+import static no.unit.nva.publication.publishingrequest.TicketUtils.defaultRequestService;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -10,7 +10,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -20,14 +20,14 @@ import nva.commons.core.JacocoGenerated;
 public class CreatePublishingRequestHandler extends
                                             ApiGatewayHandler<PublishingRequestOpenCase, PublishingRequestCaseDto> {
     
-    private final PublishingRequestService requestService;
+    private final TicketService requestService;
     
     @JacocoGenerated
     public CreatePublishingRequestHandler() {
         this(defaultRequestService());
     }
     
-    public CreatePublishingRequestHandler(PublishingRequestService requestService) {
+    public CreatePublishingRequestHandler(TicketService requestService) {
         super(PublishingRequestOpenCase.class);
         this.requestService = requestService;
     }
@@ -39,14 +39,14 @@ public class CreatePublishingRequestHandler extends
         final var userInstance = createUserInstance(requestInfo);
         final var publicationIdentifier =
             new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER));
-        
+    
         var publishingRequest = PublishingRequestCase.createOpeningCaseObject(userInstance, publicationIdentifier);
         var newPublishingRequest =
             attempt(() -> requestService.createTicket(publishingRequest, PublishingRequestCase.class))
                 .orElseThrow(fail -> handleErrors(fail.getException()));
-        
-        var persistedRequest = requestService.fetchTicket(newPublishingRequest, PublishingRequestCase.class);
-        return PublishingRequestCaseDto.createResponseObject(persistedRequest);
+    
+        var persistedRequest = requestService.fetchTicket(newPublishingRequest);
+        return PublishingRequestCaseDto.createResponseObject((PublishingRequestCase) persistedRequest);
     }
     
     @Override

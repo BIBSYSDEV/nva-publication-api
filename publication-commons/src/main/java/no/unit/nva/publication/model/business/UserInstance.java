@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import java.net.URI;
+import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -50,6 +51,10 @@ public class UserInstance implements JsonSerializable {
         return UserInstance.create(message.getOwner(), message.getCustomerId());
     }
     
+    public static UserInstance fromTicket(TicketEntry ticket) {
+        return UserInstance.create(ticket.getOwner(), ticket.getCustomerId());
+    }
+    
     public URI getOrganizationUri() {
         return organizationUri;
     }
@@ -61,5 +66,26 @@ public class UserInstance implements JsonSerializable {
     @JacocoGenerated
     public URI getTopLevelOrgCristinId() {
         return topLevelOrgCristinId;
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getOrganizationUri(), getUserIdentifier(), getTopLevelOrgCristinId());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof UserInstance)) {
+            return false;
+        }
+        UserInstance that = (UserInstance) o;
+        return Objects.equals(getOrganizationUri(), that.getOrganizationUri()) && Objects.equals(
+            getUserIdentifier(), that.getUserIdentifier()) && Objects.equals(getTopLevelOrgCristinId(),
+            that.getTopLevelOrgCristinId());
     }
 }

@@ -3,21 +3,21 @@ package no.unit.nva.doirequest.update;
 import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.time.Clock;
 import java.util.Collections;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.NotAuthorizedException;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
+import no.unit.nva.publication.exception.NotImplementedException;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.DoiRequestService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
@@ -30,18 +30,17 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     public static final String API_SCHEME = "https";
     private static final String LOCATION_TEMPLATE_PUBLICATION = "%s://%s/publication/%s";
     private final String apiHost;
-    private final DoiRequestService doiRequestService;
+    private final TicketService ticketService;
     
     @JacocoGenerated
     public UpdateDoiRequestStatusHandler() {
-        this(defaultEnvironment(), defaultService());
+        this(TicketService.defaultService());
     }
     
-    public UpdateDoiRequestStatusHandler(Environment environment,
-                                         DoiRequestService doiRequestService) {
-        super(ApiUpdateDoiRequest.class, environment);
+    public UpdateDoiRequestStatusHandler(TicketService ticketService) {
+        super(ApiUpdateDoiRequest.class);
         this.apiHost = environment.readEnv(API_HOST_ENV_VARIABLE);
-        this.doiRequestService = doiRequestService;
+        this.ticketService = ticketService;
     }
     
     @Override
@@ -68,17 +67,6 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
         return HttpStatus.SC_ACCEPTED;
     }
     
-    @JacocoGenerated
-    private static DoiRequestService defaultService() {
-        return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(),
-            Clock.systemDefaultZone());
-    }
-    
-    @JacocoGenerated
-    private static Environment defaultEnvironment() {
-        return new Environment();
-    }
-    
     private void validateUser(RequestInfo requestInfo) throws NotAuthorizedException {
         if (userIsNotAuthorized(requestInfo)) {
             throw new NotAuthorizedException();
@@ -96,10 +84,20 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
     
     private void updateDoiRequestStatus(UserInstance userInstance,
-                                        DoiRequestStatus newDoiRequestStatus,
+                                        TicketStatus newTicketStatus,
                                         SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
-        doiRequestService.updateDoiRequest(userInstance, publicationIdentifier, newDoiRequestStatus);
+        TicketEntry ticketEntry = DoiRequest.builder()
+            .withCustomerId(userInstance.getOrganizationUri())
+            .withResourceIdentifier(publicationIdentifier)
+            .withStatus(newTicketStatus)
+            .build();
+        if (TicketStatus.COMPLETED.equals(newTicketStatus)) {
+            ticketService.updateTicketStatus(ticketEntry, TicketStatus.COMPLETED);
+        } else {
+            //TODO: implement rejection in the service
+            throw new NotImplementedException();
+        }
     }
     
     private void updateContentLocationHeader(SortableIdentifier publicationIdentifier) {

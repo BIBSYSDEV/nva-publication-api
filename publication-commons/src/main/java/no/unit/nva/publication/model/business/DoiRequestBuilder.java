@@ -29,7 +29,7 @@ public class DoiRequestBuilder {
         return this;
     }
     
-    public DoiRequestBuilder withStatus(DoiRequestStatus status) {
+    public DoiRequestBuilder withStatus(TicketStatus status) {
         doiRequest.setStatus(status);
         return this;
     }

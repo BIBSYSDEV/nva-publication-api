@@ -1,11 +1,11 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -15,12 +15,12 @@ import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,13 +35,13 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     
     private ResourceService resourceService;
-    private PublishingRequestService publishingRequestService;
+    private TicketService ticketService;
     
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(super.client, Clock.systemDefaultZone());
-        this.publishingRequestService = new PublishingRequestService(super.client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(super.client);
     }
     
     @Test
@@ -63,10 +63,11 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldReturnQueryObjectWithCompletePrimaryKey() {
         var sampleEntryIdentifier = SortableIdentifier.next();
-        var queryObject = PublishingRequestCase.createQuery(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER), null,
+        var queryObject = PublishingRequestCase.createQueryObject(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER),
+            null,
             sampleEntryIdentifier);
         var queryDao = PublishingRequestDao.queryObject(queryObject);
-        
+    
         assertThat(queryDao.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
         assertThat(queryDao.getPrimaryKeySortKey(),
             is(equalTo(expectedPublicationRequestPrimarySortKey(sampleEntryIdentifier))));
@@ -90,7 +91,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-        var persistedRquest = publishingRequestService.createTicket(publishingRequest, PublishingRequestCase.class);
+        var persistedRquest = ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
         var queryResult = client.query(query);
         var retrievedByPublicationIdentifier = queryResult.getItems().stream()
             .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
@@ -101,12 +102,12 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publication = PublicationGenerator.randomPublication();
-        var publishingRequestCase = randomPublishingRequest(publication).approve();
-        publishingRequestCase.setStatus(randomElement(PublishingRequestStatus.values()));
+        var publishingRequestCase = randomPublishingRequest(publication).complete(publication);
+        publishingRequestCase.setStatus(randomElement(TicketStatus.values()));
         return (PublishingRequestDao) publishingRequestCase.toDao();
     }
     
-    private Publication createPublication() throws ApiGatewayException {
+    private Publication createPublication() {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);

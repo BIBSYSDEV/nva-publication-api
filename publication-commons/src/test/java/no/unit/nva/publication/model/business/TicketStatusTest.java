@@ -14,7 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class DoiRequestStatusTest {
+class TicketStatusTest {
 
     public static final String UNKNOWN_VALUE = "ObviouslyUnknownValue";
 
@@ -22,13 +22,13 @@ class DoiRequestStatusTest {
     @ValueSource(strings = {"REQUESTED", "Pending", "APPROVED", "Completed", "REJECTED", "Closed"})
     void shouldAcceptTextualValueForEnum(String textualValue) throws JsonProcessingException {
         var jsonString = String.format("\"%s\"", textualValue);
-        var actualValue = JsonUtils.dtoObjectMapper.readValue(jsonString, DoiRequestStatus.class);
-        assertThat(actualValue, is(in(DoiRequestStatus.values())));
+        var actualValue = JsonUtils.dtoObjectMapper.readValue(jsonString, TicketStatus.class);
+        assertThat(actualValue, is(in(TicketStatus.values())));
     }
 
     @Test
     void shouldThrowExceptionWhenInputIsUnknownValue() {
-        Executable executable = () -> DoiRequestStatus.parse(UNKNOWN_VALUE);
+        Executable executable = () -> TicketStatus.parse(UNKNOWN_VALUE);
         assertThrows(IllegalArgumentException.class, executable);
     }
 
@@ -40,9 +40,9 @@ class DoiRequestStatusTest {
         "CLOSED,COMPLETED,COMPLETED",
     })
     @DisplayName("Should follow business rules for valid status changes on DoiRequestStatus")
-    void validStatusChanges(DoiRequestStatus existingState,
-                            DoiRequestStatus requestedChange,
-                            DoiRequestStatus expectedState) {
+    void validStatusChanges(TicketStatus existingState,
+                            TicketStatus requestedChange,
+                            TicketStatus expectedState) {
         assertThat(existingState.changeStatus(requestedChange), is(equalTo(expectedState)));
     }
     
@@ -56,8 +56,8 @@ class DoiRequestStatusTest {
         "CLOSED,CLOSED",
         "CLOSED,PENDING"
     })
-    void invalidStatusChanges(DoiRequestStatus existingState,
-                              DoiRequestStatus requestedChange) {
+    void invalidStatusChanges(TicketStatus existingState,
+                              TicketStatus requestedChange) {
         var actualException = assertThrows(IllegalArgumentException.class,
             () -> existingState.changeStatus(requestedChange));
         assertThat(actualException.getMessage(), is(equalTo(

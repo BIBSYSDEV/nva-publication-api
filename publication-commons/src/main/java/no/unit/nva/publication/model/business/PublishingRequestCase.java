@@ -1,5 +1,12 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOURCE_IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -12,22 +19,15 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class PublishingRequestCase
-    implements RowLevelSecurity,
-               TicketEntry {
+public class PublishingRequestCase implements TicketEntry {
     
     public static final String TYPE = "PublishingRequestCase";
-    public static final String STATUS_FIELD = "status";
-    public static final String MODIFIED_DATE_FIELD = "modifiedDate";
-    public static final String CREATED_DATE_FIELD = "createdDate";
-    public static final String OWNER_FIELD = "owner";
-    public static final String CUSTOMER_ID_FIELD = "customerId";
-    public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
-    public static final String IDENTIFIER_FIELD = "identifier";
+    
     public static final String ALREADY_PUBLISHED_ERROR =
         "Publication is already published.";
     public static final String MARKED_FOR_DELETION_ERROR =
@@ -38,7 +38,7 @@ public class PublishingRequestCase
     @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
     private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
-    private PublishingRequestStatus status;
+    private TicketStatus status;
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
     @JsonProperty(OWNER_FIELD)
@@ -55,27 +55,49 @@ public class PublishingRequestCase
     
     public static PublishingRequestCase createOpeningCaseObject(UserInstance userInstance,
                                                                 SortableIdentifier publicationIdentifier) {
-        
+    
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUserIdentifier());
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
         openingCaseObject.setResourceIdentifier(publicationIdentifier);
-        openingCaseObject.setStatus(PublishingRequestStatus.PENDING);
+        openingCaseObject.setStatus(TicketStatus.PENDING);
         return openingCaseObject;
     }
     
-    public static PublishingRequestCase createQuery(UserInstance userInstance,
-                                                    SortableIdentifier publicationIdentifier,
-                                                    SortableIdentifier publishingRequestIdentifier) {
+    public static PublishingRequestCase createQueryObject(UserInstance userInstance,
+                                                          SortableIdentifier publicationIdentifier,
+                                                          SortableIdentifier publishingRequestIdentifier) {
         return createPublishingRequestIdentifyingObject(userInstance,
             publicationIdentifier,
             publishingRequestIdentifier);
     }
     
-    public static PublishingRequestCase createQuery(SortableIdentifier resourceIdentifier, URI customerId) {
+    public static PublishingRequestCase createQueryObject(SortableIdentifier resourceIdentifier, URI customerId) {
         var queryObject = new PublishingRequestCase();
         queryObject.setResourceIdentifier(resourceIdentifier);
         queryObject.setCustomerId(customerId);
+        return queryObject;
+    }
+    
+    public static PublishingRequestCase createQueryObject(SortableIdentifier ticketIdentifier) {
+        var queryObject = new PublishingRequestCase();
+        queryObject.setIdentifier(ticketIdentifier);
+        return queryObject;
+    }
+    
+    public static PublishingRequestCase createQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
+        var queryObject = new PublishingRequestCase();
+        queryObject.setCustomerId(customerId);
+        queryObject.setResourceIdentifier(resourceIdentifier);
+        return queryObject;
+    }
+    
+    public static PublishingRequestCase createQueryObject(UserInstance userInstance,
+                                                          SortableIdentifier ticketIdentifier) {
+        var queryObject = new PublishingRequestCase();
+        queryObject.setOwner(userInstance.getUserIdentifier());
+        queryObject.setCustomerId(userInstance.getOrganizationUri());
+        queryObject.setIdentifier(ticketIdentifier);
         return queryObject;
     }
     
@@ -85,7 +107,7 @@ public class PublishingRequestCase
     }
     
     @Override
-    public void validateRequirements(Publication publication) throws ConflictException {
+    public void validateCreationRequirements(Publication publication) throws ConflictException {
         if (PublicationStatus.PUBLISHED == publication.getStatus()) {
             throw new ConflictException(ALREADY_PUBLISHED_ERROR);
         }
@@ -94,26 +116,41 @@ public class PublishingRequestCase
         }
     }
     
+    @Override
+    public void validateCompletionRequirements(Publication publication) {
+    }
+    
+    @Override
+    public PublishingRequestCase complete(Publication publication) {
+        return (PublishingRequestCase) TicketEntry.super.complete(publication);
+    }
+    
+    @Override
+    public PublishingRequestCase copy() {
+        var copy = new PublishingRequestCase();
+        copy.setIdentifier(this.getIdentifier());
+        copy.setStatus(this.getStatus());
+        copy.setModifiedDate(this.getModifiedDate());
+        copy.setCreatedDate(this.getCreatedDate());
+        copy.setVersion(this.getVersion());
+        copy.setCustomerId(this.getCustomerId());
+        copy.setResourceIdentifier(this.getResourceIdentifier());
+        copy.setOwner(this.getOwner());
+        return copy;
+    }
+    
+    @Override
+    public TicketStatus getStatus() {
+        return status;
+    }
+    
+    @Override
+    public void setStatus(TicketStatus status) {
+        this.status = status;
+    }
+    
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
-    }
-    
-    @Override
-    public URI getCustomerId() {
-        return customerId;
-    }
-    
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
-    }
-    
-    @Override
-    public String getOwner() {
-        return owner;
-    }
-    
-    public void setOwner(String owner) {
-        this.owner = owner;
     }
     
     @Override
@@ -128,12 +165,12 @@ public class PublishingRequestCase
     
     @Override
     public Publication toPublication() {
-        
+    
         return new Publication.Builder()
-            .withIdentifier(getResourceIdentifier())
-            .withResourceOwner(new ResourceOwner(getOwner(), null))
-            .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
-            .build();
+                   .withIdentifier(getResourceIdentifier())
+                   .withResourceOwner(new ResourceOwner(getOwner(), null))
+                   .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
+                   .build();
     }
     
     @Override
@@ -172,21 +209,38 @@ public class PublishingRequestCase
     }
     
     @Override
-    public PublishingRequestDao toDao() {
+    public String getOwner() {
+        return owner;
+    }
+    
+    @Override
+    public URI getCustomerId() {
+        return customerId;
+    }
+    
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
+    }
+    
+    @Override
+    public TicketDao toDao() {
         return new PublishingRequestDao(this);
-    }
-    
-    public PublishingRequestStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(PublishingRequestStatus status) {
-        this.status = status;
     }
     
     @Override
     public String getStatusString() {
         return status.toString();
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
+            getModifiedDate(), getCreatedDate());
     }
     
     @Override
@@ -208,32 +262,6 @@ public class PublishingRequestCase
                && Objects.equals(getCreatedDate(), that.getCreatedDate());
     }
     
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
-            getModifiedDate(), getCreatedDate());
-    }
-    
-    public PublishingRequestCase approve() {
-        var copy = copy();
-        copy.setStatus(PublishingRequestStatus.COMPLETED);
-        return copy;
-    }
-    
-    public PublishingRequestCase copy() {
-        var copy = new PublishingRequestCase();
-        copy.setIdentifier(this.getIdentifier());
-        copy.setStatus(this.getStatus());
-        copy.setModifiedDate(this.getModifiedDate());
-        copy.setCreatedDate(this.getCreatedDate());
-        copy.setVersion(this.getVersion());
-        copy.setCustomerId(this.getCustomerId());
-        copy.setResourceIdentifier(this.getResourceIdentifier());
-        copy.setOwner(this.getOwner());
-        return copy;
-    }
-    
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
         UserInstance userInstance,
         SortableIdentifier publicationIdentifier,
@@ -246,5 +274,4 @@ public class PublishingRequestCase
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);
         return newPublishingRequest;
     }
-    
 }

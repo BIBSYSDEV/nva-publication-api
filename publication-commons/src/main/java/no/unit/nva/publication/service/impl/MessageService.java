@@ -5,6 +5,7 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -27,15 +28,13 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 
 public class MessageService extends ServiceWithTransactions {
@@ -75,14 +74,10 @@ public class MessageService extends ServiceWithTransactions {
     
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
-        var query = queryObject.creteQueryForFetchingByIdentifier();
-        return client.query(query)
-            .getItems().stream()
-            .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+        return attempt(() -> queryObject.fetchByIdentifier(client, MessageDao.class))
             .map(MessageDao::getData)
-            .map(Message.class::cast)
-            .collect(SingletonCollector.tryCollect())
             .toOptional();
+        
     }
     
     /* TODO: consider using UpdateRequest to avoid doing the existence checking beforehand. At the present time
@@ -115,7 +110,7 @@ public class MessageService extends ServiceWithTransactions {
         MessageDao queryObject = MessageDao.queryObject(owner, identifier);
         Map<String, AttributeValue> item = fetchMessage(queryObject);
         MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
-        return (Message) result.getData();
+        return result.getData();
     }
     
     public Optional<ResourceConversation> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
@@ -126,8 +121,8 @@ public class MessageService extends ServiceWithTransactions {
         return ResourceConversation.fromMessageList(messagesPerResource).stream().findFirst();
     }
     
-    public List<ResourceConversation> listMessagesForCurator(URI customerId, MessageStatus messageStatus) {
-        MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
+    public List<ResourceConversation> listMessagesForCurator(URI customerId, TicketStatus ticketStatus) {
+        MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, ticketStatus);
         QueryRequest queryRequest = queryRequestForListingMessagesByCustomerAndStatus(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         List<Message> messagesPerResource = parseMessages(queryResult);
@@ -145,12 +140,6 @@ public class MessageService extends ServiceWithTransactions {
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
-    }
-    
-    @JacocoGenerated
-    @Override
-    protected Clock getClock() {
-        return clockForTimestamps;
     }
     
     private static Supplier<SortableIdentifier> defaultIdentifierSupplier() {

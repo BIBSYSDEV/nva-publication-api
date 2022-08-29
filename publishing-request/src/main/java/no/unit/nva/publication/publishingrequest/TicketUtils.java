@@ -1,19 +1,18 @@
 package no.unit.nva.publication.publishingrequest;
 
 import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
-import java.time.Clock;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
 //TODO: Rename or refactor class
-public final class PublishingRequestUtils {
+public final class TicketUtils {
     
-    public static final String PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER = "supportCaseIdentifier";
+    public static final String TICKET_IDENTIFIER_PATH_PARAMETER = "ticketIdentifier";
     
-    private PublishingRequestUtils() {
+    private TicketUtils() {
     
     }
     
@@ -22,7 +21,7 @@ public final class PublishingRequestUtils {
     }
     
     @JacocoGenerated
-    public static PublishingRequestService defaultRequestService() {
-        return new PublishingRequestService(defaultDynamoDbClient(), Clock.systemDefaultZone());
+    public static TicketService defaultRequestService() {
+        return new TicketService(defaultDynamoDbClient());
     }
 }

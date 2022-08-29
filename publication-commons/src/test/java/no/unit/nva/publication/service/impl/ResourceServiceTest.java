@@ -1,29 +1,32 @@
 package no.unit.nva.publication.service.impl;
 
+import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -64,21 +67,22 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.DoiRequestStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
@@ -105,7 +109,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                               + " does not have a field"
                                                                               + MAIN_TITLE_FIELD;
     public static final String ANOTHER_TITLE = "anotherTitle";
-    public static final URI SOME_DOI = URI.create("https://some-doi.example.org");
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final int BIG_PAGE = 10;
     public static final URI UNIMPORTANT_AFFILIATION = null;
@@ -113,22 +116,21 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final URI SOME_ORG = randomUri();
     public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    private static final Instant FIRST_CLOCK_TICK = Instant.parse("1900-12-03T10:15:30.00Z");
-    private static final Instant SECOND_CLOCK_TICK = Instant.parse("2000-01-03T00:00:18.00Z");
-    private static final Instant THIRD_CLOCK_TICK = Instant.parse("2010-01-03T02:00:25.00Z");
-    private static final Instant FOURTH_CLOCK_TICK = Instant.parse("2020-01-03T06:00:32.00Z");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
     private ResourceService resourceService;
-    private Clock clock;
-    private DoiRequestService doiRequestService;
+    
+    private TicketService ticketService;
     private MessageService messageService;
+    private Instant now;
+    private Clock clock;
     
     @BeforeEach
     public void init() {
         super.init();
-        Clock clock = setupClock();
+        clock = Clock.systemDefaultZone();
+        now = clock.instant();
         resourceService = new ResourceService(client, clock);
-        doiRequestService = new DoiRequestService(client, clock);
+        ticketService = new TicketService(client);
         messageService = new MessageService(client, clock, SortableIdentifier::next);
     }
     
@@ -138,76 +140,81 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
+    void shouldKeepImportedDataCreationDates()
         throws NotFoundException {
-        Publication inputPublication = generatePublication();
-        assertThat(inputPublication.getSubjects(), is(not(nullValue())));
-        verifyThatResourceClockWillReturnPredefinedCreationTime();
-        Instant publicationPredefinedTime = Instant.now();
+        var randomInstant = RandomDataGenerator.randomInstant();
+        var inputPublication = randomPublication().copy().withCreatedDate(randomInstant).build();
         
-        inputPublication.setCreatedDate(publicationPredefinedTime);
-        SortableIdentifier savedPublicationIdentifier =
+        var savedPublicationIdentifier =
             resourceService.createPublicationWithPredefinedCreationDate(inputPublication).getIdentifier();
-        Publication savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
+        var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
         
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
-        Diff diff = JAVERS.compare(inputPublication, savedPublication);
-        assertThat(publicationPredefinedTime, is(not(equalTo(FIRST_CLOCK_TICK))));
-        assertThat(diff.prettyPrint(), savedPublication, is(equalTo(inputPublication)));
+        
+        var possiblyErrorDiff = JAVERS.compare(inputPublication, savedPublication);
+        assertThat(possiblyErrorDiff.prettyPrint(), savedPublication, is(equalTo(inputPublication)));
     }
     
     @Test
-    void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
+    void shouldKeepImportedEntryCreationAndModifiedDates()
         throws NotFoundException {
-        Publication inputPublication = generatePublication();
-        Instant predefinedPublishTime = Instant.now();
-        
-        inputPublication.setPublishedDate(predefinedPublishTime);
-        inputPublication.setCreatedDate(FIRST_CLOCK_TICK);
-        inputPublication.setModifiedDate(SECOND_CLOCK_TICK);
-        inputPublication.setStatus(PublicationStatus.PUBLISHED);
-        
-        SortableIdentifier savedPublicationIdentifier =
-            resourceService
-                .createPublicationFromImportedEntry(inputPublication)
-                .getIdentifier();
-        Publication savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
+        var createdDate = randomInstant();
+        var modifiedDate = randomInstant();
+        var inputPublication = generatePublication()
+                                   .copy()
+                                   .withCreatedDate(createdDate)
+                                   .withModifiedDate(modifiedDate)
+                                   .withStatus(PUBLISHED)
+                                   .build();
+        var savedPublicationIdentifier =
+            resourceService.createPublicationFromImportedEntry(inputPublication).getIdentifier();
+        var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
         
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
         
         assertThat(savedPublication, is(equalTo(inputPublication)));
-        assertThat(savedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(savedPublication.getStatus(), is(equalTo(PUBLISHED)));
     }
     
     @Test
     void createResourceReturnsResourceWithCreatedAndModifiedDateSetByThePlatform() throws ApiGatewayException {
-        
-        Publication resource = generatePublication();
-        
-        UserInstance userInstance = UserInstance.fromPublication(resource);
-        Publication savedResource = resourceService.createPublication(userInstance, resource);
-        Publication readResource = resourceService.getPublication(savedResource);
-        Publication expectedResource = expectedResourceFromSampleResource(resource, savedResource);
-        
-        assertThat(savedResource, is(equalTo(expectedResource)));
+    
+        var input = generatePublication();
+        var notExpectedCreatedDate = randomInstant();
+        var notExpectedModifiedDate = randomInstant();
+        input.setCreatedDate(notExpectedCreatedDate);
+        input.setModifiedDate(notExpectedModifiedDate);
+    
+        var userInstance = UserInstance.fromPublication(input);
+        var savedResource = resourceService.createPublication(userInstance, input);
+        var readResource = resourceService.getPublication(savedResource);
+        var expectedResource = input.copy()
+                                   .withIdentifier(savedResource.getIdentifier())
+                                   .withStatus(DRAFT)
+                                   .withCreatedDate(readResource.getCreatedDate())
+                                   .withModifiedDate(readResource.getModifiedDate())
+                                   .withPublisher(readResource.getPublisher())
+                                   .build();
+        var diff = JAVERS.compare(expectedResource, savedResource);
+        assertThat(diff.prettyPrint(), savedResource, is(equalTo(expectedResource)));
         assertThat(readResource, is(equalTo(expectedResource)));
-        assertThat(readResource, is(not(sameInstance(expectedResource))));
+        assertThat(readResource.getCreatedDate(), is(not(equalTo(notExpectedCreatedDate))));
+        assertThat(readResource.getModifiedDate(), is(not(equalTo(notExpectedModifiedDate))));
     }
     
     @Test
-    void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
-        throws ApiGatewayException {
+    void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists() {
         final Publication sampleResource = randomPublication();
         final Publication collidingResource = sampleResource.copy()
-            .withPublisher(anotherPublisher())
-            .withResourceOwner(new ResourceOwner(SOME_OTHER_USER, null))
-            .build();
+                                                  .withPublisher(anotherPublisher())
+                                                  .withResourceOwner(new ResourceOwner(SOME_OTHER_USER, null))
+                                                  .build();
         ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers(sampleResource.getIdentifier());
         
-        createPublication(resourceService, sampleResource);
-        Executable action = () -> createPublication(resourceService, collidingResource);
+        createPersistedPublicationWithDoi(resourceService, sampleResource);
+        Executable action = () -> createPersistedPublicationWithDoi(resourceService, collidingResource);
         assertThrows(TransactionFailedException.class, action);
         
         assertThat(sampleResource.getIdentifier(), is(equalTo(collidingResource.getIdentifier())));
@@ -217,22 +224,21 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier()
-        throws ApiGatewayException {
+    void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier() {
         final Publication sampleResource = publicationWithIdentifier();
         final Publication anotherResource = publicationWithIdentifier();
         
-        createPublication(resourceService, sampleResource);
-        assertDoesNotThrow(() -> createPublication(resourceService, anotherResource));
+        createPersistedPublicationWithDoi(resourceService, sampleResource);
+        assertDoesNotThrow(() -> createPersistedPublicationWithDoi(resourceService, anotherResource));
     }
     
     @Test
-    void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() throws ApiGatewayException {
+    void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() {
         Publication publication = publicationWithoutIdentifier();
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         
         ResourceService resourceService = resourceServiceThatDoesNotReceivePublicationUpdateAfterCreation(client);
-        Publication actualPublication = createPublication(resourceService, publication);
+        Publication actualPublication = createPersistedPublicationWithDoi(resourceService, publication);
         assertThat(actualPublication, is(nullValue()));
     }
     
@@ -246,7 +252,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourceByIdentifierReturnsResourceWhenResourceExists()
         throws ApiGatewayException {
-        Publication sampleResource = createSampleResourceWithDoi();
+        Publication sampleResource = createPersistedPublicationWithDoi();
         UserInstance userInstance = UserInstance.fromPublication(sampleResource);
         Publication savedResource = resourceService.getPublication(userInstance, sampleResource.getIdentifier());
         assertThat(savedResource, is(equalTo(sampleResource)));
@@ -255,26 +261,26 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata()
         throws ApiGatewayException {
-        Publication sampleResource = createSampleResourceWithDoi();
-        
-        UserInstance oldOwner = UserInstance.fromPublication(sampleResource);
-        UserInstance newOwner = someOtherUser();
-        
-        resourceService.updateOwner(sampleResource.getIdentifier(), oldOwner, newOwner);
-        
-        assertThatResourceDoesNotExist(sampleResource);
-        
-        Publication newResource = resourceService.getPublication(newOwner, sampleResource.getIdentifier());
-        
-        Publication expectedResource = expectedUpdatedResource(sampleResource, newOwner);
-        Diff diff = JAVERS.compare(expectedResource, newResource);
+        var originalResource = createPersistedPublicationWithDoi();
+    
+        var oldOwner = UserInstance.fromPublication(originalResource);
+        var newOwner = someOtherUser();
+    
+        resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
+    
+        assertThatResourceDoesNotExist(originalResource);
+    
+        var newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
+    
+        var expectedResource = expectedUpdatedResource(originalResource, newResource, newOwner);
+        var diff = JAVERS.compare(expectedResource, newResource);
         assertThat(diff.prettyPrint(), newResource, is(equalTo(expectedResource)));
     }
     
     @Test
     void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated()
         throws ApiGatewayException {
-        Publication originalResource = createSampleResourceWithDoi();
+        Publication originalResource = createPersistedPublicationWithDoi();
         UserInstance oldOwner = UserInstance.fromPublication(originalResource);
         UserInstance newOwner = someOtherUser();
         
@@ -282,14 +288,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
         
-        assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserIdentifier())));
+        assertThat(newResource.getResourceOwner().getOwner(), is(equalTo(newOwner.getUserIdentifier())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
     }
     
     @Test
     void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
         throws ApiGatewayException {
-        Publication sampleResource = createSampleResourceWithDoi();
+        Publication sampleResource = createPersistedPublicationWithDoi();
         UserInstance oldOwner = UserInstance.fromPublication(sampleResource);
         UserInstance newOwner = someOtherUser();
         
@@ -298,13 +304,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThatResourceDoesNotExist(sampleResource);
         
         Publication newResource = resourceService.getPublication(newOwner, sampleResource.getIdentifier());
-        
-        assertThat(newResource.getModifiedDate(), is(equalTo(SECOND_CLOCK_TICK)));
+    
+        assertThat(newResource.getModifiedDate(), is(greaterThan(newResource.getCreatedDate())));
     }
     
     @Test
     void resourceIsUpdatedWhenResourceUpdateIsReceived() throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+        Publication resource = createPersistedPublicationWithDoi();
         Publication actualOriginalResource = resourceService.getPublication(resource);
         assertThat(actualOriginalResource, is(equalTo(resource)));
         
@@ -317,17 +323,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+    void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() {
+        Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
         resourceUpdate.setResourceOwner(new ResourceOwner(ANOTHER_OWNER, UNIMPORTANT_AFFILIATION));
         assertThatUpdateFails(resourceUpdate);
     }
     
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
-        throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+    void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey() {
+        Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
         
         resourceUpdate.setPublisher(newOrganization());
@@ -335,9 +340,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
-        throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+    void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey() {
+        Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
         
         resourceUpdate.setIdentifier(SortableIdentifier.next());
@@ -353,9 +357,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
             .thenThrow(expectedCause);
         
         ResourceService failingService = new ResourceService(client, clock);
-        
+    
         Publication resource = publicationWithIdentifier();
-        Executable action = () -> createPublication(failingService, resource);
+        Executable action = () -> createPersistedPublicationWithDoi(failingService, resource);
         TransactionFailedException actualException = assertThrows(TransactionFailedException.class, action);
         Throwable actualCause = actualException.getCause();
         assertThat(actualCause.getMessage(), is(equalTo(expectedMessage)));
@@ -424,7 +428,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
         Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
         QueryResult responseWithInvalidItem = new QueryResult()
-            .withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
+                                                  .withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
         
         ResourceService failingResourceService = new ResourceService(mockClient, clock);
@@ -452,41 +456,36 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void publishResourceSetsPublicationStatusToPublished()
+    void shouldPublishResourceWhenClientRequestsToPublish()
         throws ApiGatewayException {
-        
-        Publication resource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.fromPublication(resource);
+        var resource = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(resource);
         resourceService.publishPublication(userInstance, resource.getIdentifier());
-        Publication actualResource = resourceService.getPublication(resource);
+        var actualResource = resourceService.getPublication(resource);
         
-        Publication expectedResource = resource.copy()
-            .withStatus(PublicationStatus.PUBLISHED)
-            .withModifiedDate(SECOND_CLOCK_TICK)
-            .withPublishedDate(SECOND_CLOCK_TICK)
-            .build();
+        var expectedResource = resource.copy()
+                                   .withStatus(PUBLISHED)
+                                   .withModifiedDate(actualResource.getModifiedDate())
+                                   .withPublishedDate(actualResource.getPublishedDate())
+                                   .build();
         
         assertThat(actualResource, is(equalTo(expectedResource)));
     }
     
-    @Test
-    void publishResourceReturnsUpdatedResource() throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
-        publishResource(resource);
-        Publication updatedResource = resourceService.getPublication(resource);
-        Publication expectedResource = resource.copy()
-            .withStatus(PublicationStatus.PUBLISHED)
-            .withModifiedDate(SECOND_CLOCK_TICK)
-            .withPublishedDate(SECOND_CLOCK_TICK)
-            .build();
-        
-        assertThat(updatedResource, is(equalTo(expectedResource)));
+    private Publication createPersistedPublicationWithoutDoi() {
+        var publication = randomPublication().copy().withDoi(null).build();
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    }
+    
+    private Publication createPersistedPublicationWithoutDoi(Publication publication) {
+        var withoutDoi = publication.copy().withDoi(null).build();
+        return resourceService.createPublication(UserInstance.fromPublication(withoutDoi), withoutDoi);
     }
     
     @Test
     void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+        Publication resource = createPersistedPublicationWithDoi();
         
         UserInstance userInstance = UserInstance.fromPublication(resource);
         PublishPublicationStatusResponse response = resourceService.publishPublication(
@@ -498,7 +497,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void publishPublicationReturnsPublicationResponseThatNoActionWasTakenWhenResourceIsAlreadyPublished()
         throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+        Publication resource = createPersistedPublicationWithDoi();
         
         UserInstance userInstance = UserInstance.fromPublication(resource);
         resourceService.publishPublication(userInstance, resource.getIdentifier());
@@ -510,7 +509,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     @Test
     void byTypeCustomerStatusIndexIsUpdatedWhenResourceIsUpdated() throws ApiGatewayException {
-        Publication resourceWithStatusDraft = createSampleResourceWithDoi();
+        Publication resourceWithStatusDraft = createPersistedPublicationWithDoi();
         ResourceDao resourceDaoWithStatusDraft = new ResourceDao(Resource.fromPublication(resourceWithStatusDraft));
         
         assertThatResourceCanBeFoundInDraftResources(resourceDaoWithStatusDraft);
@@ -524,17 +523,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void publishPublicationSetsPublishedDate() throws ApiGatewayException {
+    void publishPublicationSetsPublishedDateToBeCurrentDate() throws ApiGatewayException {
         Publication updatedResource = createPublishedResource();
-        assertThat(updatedResource.getPublishedDate(), is(equalTo(SECOND_CLOCK_TICK)));
+        assertThat(updatedResource.getPublishedDate(), is(greaterThan(now)));
     }
     
     @Test
-    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle()
-        throws ApiGatewayException {
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle() {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().setMainTitle(null);
-        Publication savedResource = createPublication(resourceService, sampleResource);
+        Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
         
         Executable action = () -> resourceService.publishPublication(UserInstance.fromPublication(sampleResource),
             savedResource.getIdentifier());
@@ -546,11 +544,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     @Test
     void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkAndNoFiles()
-        throws ApiGatewayException, NoSuchFieldException {
+        throws NoSuchFieldException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(null);
         sampleResource.setFileSet(emptyFileSet());
-        Publication savedResource = createPublication(resourceService, sampleResource);
+        Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
         
         Executable action =
             () -> publishResource(savedResource);
@@ -559,9 +557,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         assertThat(actualMessage, containsString(InvalidPublicationException.ERROR_MESSAGE_TEMPLATE));
         assertThat(actualMessage, containsString(sampleResource.getClass()
-            .getDeclaredField(RESOURCE_LINK_FIELD).getName()));
+                                                     .getDeclaredField(RESOURCE_LINK_FIELD).getName()));
         assertThat(actualMessage, containsString(sampleResource.getClass()
-            .getDeclaredField(RESOURCE_FILE_SET_FIELD).getName()));
+                                                     .getDeclaredField(RESOURCE_FILE_SET_FIELD).getName()));
     }
     
     @Test
@@ -570,34 +568,36 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(SOME_LINK);
         sampleResource.setFileSet(emptyFileSet());
-        Publication savedResource = createPublication(resourceService, sampleResource);
+        Publication savedResource = createPersistedPublicationWithoutDoi();
         Publication updatedResource =
             publishResource(savedResource);
-        assertThat(updatedResource.getStatus().toString(), is(equalTo(PublicationStatus.PUBLISHED.toString())));
+        assertThat(updatedResource.getStatus().toString(), is(equalTo(PUBLISHED.toString())));
     }
     
     @Test
     void publishResourcePublishesResourceWhenResourceHasFilesButNoLink() throws ApiGatewayException {
-        
-        Publication sampleResource = createSampleResourceWithDoi();
+    
+        Publication sampleResource = createPersistedPublicationWithoutDoi();
         sampleResource.setLink(null);
-        
+    
         Publication updatedResource =
             publishResource(sampleResource);
-        assertThat(updatedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(updatedResource.getStatus(), is(equalTo(PUBLISHED)));
     }
     
     @Test
-    void publishResourceUpdatesResourceStatusInResourceWithDoiRequest()
+    void shouldKeepTheResourceInSyncWithTheAssociatedDoiRequestWhenResourceIsPublished()
         throws ApiGatewayException {
-        Publication publication = createSampleResourceWithDoi();
-        SortableIdentifier doiRequestIdentifier = createDoiRequest(publication).getIdentifier();
-        publishResource(publication);
+        var publication = createPersistedPublicationWithoutDoi();
         
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        DoiRequest actualDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+        var doiRequest = ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
+        assertThat(doiRequest.getResourceStatus(), is(equalTo(PublicationStatus.DRAFT)));
         
-        assertThat(actualDoiRequest.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        var publishedResource = publishResource(publication);
+        assertThat(publishedResource.getStatus(), is(equalTo(PUBLISHED)));
+        
+        var actualDoiRequest = (DoiRequest) ticketService.fetchTicket(doiRequest);
+        assertThat(actualDoiRequest.getResourceStatus(), is(equalTo(PUBLISHED)));
     }
     
     @Test
@@ -623,16 +623,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws ApiGatewayException {
-        Publication sampleResource = publicationWithoutIdentifier();
-        Publication savedResource = createPublication(resourceService, sampleResource);
-        assertThat(sampleResource.getIdentifier(), is(equalTo(null)));
-        assertThat(savedResource.getIdentifier(), is(notNullValue()));
+    void createResourceReturnsNewIdentifierWhenResourceIsCreated() {
+        Publication sampleResource = randomPublication();
+        Publication savedResource = createPersistedPublicationWithDoi(resourceService, sampleResource);
+        assertThat(savedResource.getIdentifier(), is(not(equalTo(sampleResource.getIdentifier()))));
     }
     
     @Test
     void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+        Publication resource = createPersistedPublicationWithDoi();
         
         Publication resourceUpdate =
             resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource),
@@ -645,9 +644,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void markPublicationForDeletionReturnsUpdatedResourceCanMarkDraftForDeletion()
+    void markPublicationForDeletionReturnsUpdatedResourceWithStatusDraftForDeletion()
         throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+        Publication resource = createPersistedPublicationWithDoi();
         var userInstance = UserInstance.fromPublication(resource);
         var resourceUpdate =
             resourceService.markPublicationForDeletion(userInstance, resource.getIdentifier());
@@ -657,7 +656,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void markPublicationForDeletionResourceThrowsErrorWhenDeletingPublicationThatIsMarkedForDeletion()
         throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+        Publication resource = createPersistedPublicationWithDoi();
         resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource), resource.getIdentifier());
         Publication actualResource = resourceService.getPublication(resource);
         assertThat(actualResource.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
@@ -670,47 +669,43 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceUpdatesLinkedDoiRequestUponUpdate()
         throws ApiGatewayException {
-        var doiRequestService = new DoiRequestService(client, clock);
-        var resource = createSampleResourceWithDoi(); // 1st clock tick
-        var originalDoiRequest = createDoiRequest(resource); // 2nd clock tick
-        
+        var resource = createPersistedPublicationWithoutDoi(); // 1st clock tick
+        final var expectedDoi = randomDoi();
+        final var originalDoiRequest = createDoiRequest(resource); // 2nd clock tick
+    
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
-        resourceService.updatePublication(resource); // 3rd clock tick
-        
-        UserInstance userInstance = UserInstance.create(resource.getResourceOwner(), resource.getPublisher().getId());
-        var updatedDoiRequest = doiRequestService
-            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
-        
-        var expectedDoiRequest = originalDoiRequest.copy()
-            .withResourceTitle(ANOTHER_TITLE)
-            .withResourceModifiedDate(THIRD_CLOCK_TICK)
-            .build();
+        resource.setDoi(expectedDoi);
+        var updatedPublication = resourceService.updatePublication(resource); // 3rd clock tick
+    
+        var updatedDoiRequest = ticketService.fetchTicket(originalDoiRequest);
+    
+        var expectedDoiRequest = originalDoiRequest.copy();
+        expectedDoiRequest.setResourceTitle(ANOTHER_TITLE);
+        expectedDoiRequest.setResourceModifiedDate(updatedPublication.getModifiedDate());
+        expectedDoiRequest.setDoi(expectedDoi);
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
-        
+    
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
     }
     
     @Test
     void updateResourceUpdatesAllFieldsInDoiRequest()
         throws ApiGatewayException {
-        var doiRequestService = new DoiRequestService(client, clock);
-        var initialPublication = createPublication(resourceService, PublicationGenerator.randomPublication());
-        var userInstance = UserInstance.fromPublication(initialPublication);
+        var initialPublication = createPersistedPublicationWithoutDoi();
         var initialDoiRequest = createDoiRequest(initialPublication);
         var publicationUpdate = updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(initialPublication);
         resourceService.updatePublication(publicationUpdate);
-        
-        var updatedDoiRequest = doiRequestService
-            .getDoiRequestByResourceIdentifier(userInstance, initialPublication.getIdentifier());
-        
+    
+        var updatedDoiRequest = (DoiRequest) ticketService.fetchTicket(initialDoiRequest);
+    
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
             initialPublication,
             initialDoiRequest,
             publicationUpdate,
             updatedDoiRequest
         );
-        
+    
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
         assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
@@ -718,25 +713,22 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
-        throws ApiGatewayException {
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
-        Publication resource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.create(resource.getOwner(), resource.getPublisher().getId());
-        
+    void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist() {
+        Publication resource = createPersistedPublicationWithoutDoi();
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
         
-        Executable action = () -> doiRequestService
-            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+        var expectedNonExistingTicket =
+            ticketService.fetchTicketByResourceIdentifier(resource.getPublisher().getId(),
+                resource.getIdentifier(), DoiRequest.class);
         
-        assertThrows(NotFoundException.class, action);
+        assertThat(expectedNonExistingTicket, is(emptyOptional()));
     }
     
     @Test
     void deleteDraftPublicationDeletesDraftResourceWithoutDoi()
         throws ApiGatewayException {
-        Publication publication = createSampleResourceWithoutDoi();
+        var publication = createPersistedPublicationWithoutDoi();
         assertThatIdentifierEntryHasBeenCreated();
         
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
@@ -750,11 +742,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi()
-        throws ApiGatewayException {
-        Publication publication = createSampleResourceWithDoi();
+    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() {
+        Publication publication = createPersistedPublicationWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
-        
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
         assertDoesNotThrow(fetchResourceAction);
         
@@ -769,7 +759,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished()
         throws ApiGatewayException {
-        Publication publication = createSampleResourceWithoutDoi();
+        Publication publication = createPersistedPublicationWithoutDoi();
         UserInstance userInstance = UserInstance.fromPublication(publication);
         resourceService.publishPublication(userInstance, publication.getIdentifier());
         assertThatIdentifierEntryHasBeenCreated();
@@ -787,7 +777,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest()
         throws ApiGatewayException {
-        Publication publication = createSampleResourceWithoutDoi();
+        Publication publication = createPersistedPublicationWithoutDoi();
         createDoiRequest(publication);
         
         UserInstance userInstance = UserInstance.fromPublication(publication);
@@ -798,7 +788,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     @Test
     void getResourceByIdentifierReturnsExistingResource() throws ApiGatewayException {
-        Publication resource = createSampleResourceWithoutDoi();
+        Publication resource = createPersistedPublicationWithDoi();
         
         Publication retrievedResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
         assertThat(retrievedResource, is(equalTo(resource)));
@@ -806,33 +796,31 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     @Test
     void getResourceByIdentifierThrowsNotFoundExceptionWhenResourceDoesNotExist() {
-        TestAppender testAppender = LogUtils.getTestingAppender(ReadResourceService.class);
         SortableIdentifier someIdentifier = SortableIdentifier.next();
         Executable action = () -> resourceService.getPublicationByIdentifier(someIdentifier);
         
         NotFoundException exception = assertThrows(NotFoundException.class, action);
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
-        assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX));
-        assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
     }
     
     @Test
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws ApiGatewayException {
-        var samplePublication = createPublication(resourceService, PublicationGenerator.randomPublication());
-        var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
-        var userInstance = UserInstance.create(samplePublication.getOwner(), samplePublication.getPublisher().getId());
+        var samplePublication = createPersistedPublicationWithoutDoi();
+        var sampleDoiRequestIdentifier =
+            ticketService.createTicket(DoiRequest.fromPublication(samplePublication), DoiRequest.class).getIdentifier();
+        var userInstance = UserInstance.fromPublication(samplePublication);
         
         var sampleMessageIdentifier = messageService.createMessage(userInstance, samplePublication, randomString(),
             MessageType.SUPPORT);
         
         var firstListingResult = fetchFirstDataEntry();
         var identifierInFirstScan = extractIdentifierFromFirstScanResult(firstListingResult);
-        
+    
         var secondListingResult = fetchRestOfDatabaseEntries(firstListingResult);
         var identifiersFromSecondScan = secondListingResult
-            .getDatabaseEntries().stream()
-            .map(Entity::getIdentifier)
-            .collect(Collectors.toList());
+                                            .getDatabaseEntries().stream()
+                                            .map(Entity::getIdentifier)
+                                            .collect(Collectors.toList());
         
         var expectedIdentifiers =
             new ArrayList<>(List.of(samplePublication.getIdentifier(),
@@ -865,42 +853,48 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource()
-        throws ApiGatewayException {
-        var logger = LogUtils.getTestingAppenderForRootLogger();
-        var sampleResource = createSampleResourceWithDoi();
-        UserInstance userInstance = UserInstance.create(sampleResource.getOwner(), null);
-        assertThrows(RuntimeException.class,
-            () -> resourceService.publishPublication(userInstance, sampleResource.getIdentifier()));
-        assertThat(logger.getMessages(), containsString(userInstance.getUserIdentifier()));
-        assertThat(logger.getMessages(), containsString(sampleResource.getIdentifier().toString()));
+    void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource() {
+        
+        var samplePublication = createUnpublishablePublication();
+        var userInstance = UserInstance.fromPublication(samplePublication);
+        var exception = assertThrows(InvalidPublicationException.class,
+            () -> resourceService.publishPublication(userInstance, samplePublication.getIdentifier()));
+        assertThat(exception.getMessage(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+    }
+    
+    private Publication createPersistedPublicationWithDoi(ResourceService resourceService, Publication sampleResource) {
+        return resourceService.createPublication(UserInstance.fromPublication(sampleResource), sampleResource);
+    }
+    
+    private Publication createPersistedPublicationWithDoi() {
+        return createPersistedPublicationWithDoi(resourceService, randomPublication());
+    }
+    
+    private Publication createUnpublishablePublication() {
+        var publication = randomPublication();
+        publication.getEntityDescription().setMainTitle(null);
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
     private Publication generatePublication() {
         return PublicationGenerator.publicationWithoutIdentifier();
     }
     
-    private Publication createPublication(ResourceService resourceService, Publication sampleResource)
-        throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.fromPublication(sampleResource);
-        return resourceService.createPublication(userInstance, sampleResource);
-    }
-    
     private Entity findMatchingSecondUpdate(List<Entity> secondUpdates, Entity firstUpdate) {
         return secondUpdates.stream()
-            .filter(resource -> resource.getIdentifier().equals(firstUpdate.getIdentifier()))
-            .collect(SingletonCollector.collect());
+                   .filter(resource -> resource.getIdentifier().equals(firstUpdate.getIdentifier()))
+                   .collect(SingletonCollector.collect());
     }
     
     private List<Entity> createManySampleResources(int numberOfResources) {
         return IntStream.range(0, numberOfResources)
-            .boxed()
-            .map(ignored -> PublicationGenerator.randomPublication())
-            .map(attempt(p -> createPublication(resourceService, p)))
-            .map(Try::orElseThrow)
-            .map(Resource::fromPublication)
-            .map(resource -> (Entity) resource)
-            .collect(Collectors.toList());
+                   .boxed()
+                   .map(ignored -> PublicationGenerator.randomPublication())
+                   .map(attempt(p -> createPersistedPublicationWithoutDoi()))
+                   .map(Try::orElseThrow)
+                   .map(Resource::fromPublication)
+                   .map(resource -> (Entity) resource)
+                   .collect(Collectors.toList());
     }
     
     private ListingResult<Entity> fetchRestOfDatabaseEntries(ListingResult<Entity> listingResult) {
@@ -909,9 +903,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private SortableIdentifier extractIdentifierFromFirstScanResult(ListingResult<Entity> listingResult) {
         return listingResult.getDatabaseEntries()
-            .stream()
-            .collect(SingletonCollector.collect())
-            .getIdentifier();
+                   .stream()
+                   .collect(SingletonCollector.collect())
+                   .getIdentifier();
     }
     
     private ListingResult<Entity> fetchFirstDataEntry() {
@@ -925,22 +919,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication publishResource(Publication resource) throws ApiGatewayException {
         resourceService.publishPublication(UserInstance.fromPublication(resource), resource.getIdentifier());
         return resourceService.getPublication(resource);
-    }
-    
-    private Clock setupClock() {
-        Clock clock = mock(Clock.class);
-        when(clock.instant())
-            .thenReturn(FIRST_CLOCK_TICK)
-            .thenReturn(SECOND_CLOCK_TICK)
-            .thenReturn(THIRD_CLOCK_TICK)
-            .thenReturn(FOURTH_CLOCK_TICK);
-        this.clock = clock;
-        return clock;
-    }
-    
-    private void verifyThatResourceClockWillReturnPredefinedCreationTime() {
-        assertThat(clock.instant(), is(equalTo(FIRST_CLOCK_TICK)));
-        clock = setupClock();
     }
     
     private ResourceService resourceServiceThatDoesNotReceivePublicationUpdateAfterCreation(AmazonDynamoDB client) {
@@ -974,42 +952,40 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                 DoiRequest initialDoiRequest,
                                                                 Publication publicationUpdate,
                                                                 DoiRequest updatedDoiRequest) {
-        
+    
         return DoiRequest.builder()
-            .withOwner(initialPublication.getResourceOwner().getOwner())
-            .withCustomerId(initialPublication.getPublisher().getId())
-            .withResourceIdentifier(initialPublication.getIdentifier())
-            .withIdentifier(initialDoiRequest.getIdentifier())
-            .withCreatedDate(initialDoiRequest.getCreatedDate())
-            .withModifiedDate(updatedDoiRequest.getModifiedDate())
-            .withDoi(publicationUpdate.getDoi())
-            .withStatus(DoiRequestStatus.PENDING)
-            .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
-            .withResourceStatus(publicationUpdate.getStatus())
-            .withResourceModifiedDate(publicationUpdate.getModifiedDate())
-            .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
-            .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
-            .withContributors(publicationUpdate.getEntityDescription().getContributors())
-            .withResourcePublicationInstance(
-                publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
-            .withRowVersion(updatedDoiRequest.getVersion())
-            .build();
+                   .withOwner(initialPublication.getResourceOwner().getOwner())
+                   .withCustomerId(initialPublication.getPublisher().getId())
+                   .withResourceIdentifier(initialPublication.getIdentifier())
+                   .withIdentifier(initialDoiRequest.getIdentifier())
+                   .withCreatedDate(initialDoiRequest.getCreatedDate())
+                   .withModifiedDate(updatedDoiRequest.getModifiedDate())
+                   .withDoi(publicationUpdate.getDoi())
+                   .withStatus(TicketStatus.PENDING)
+                   .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
+                   .withResourceStatus(publicationUpdate.getStatus())
+                   .withResourceModifiedDate(publicationUpdate.getModifiedDate())
+                   .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
+                   .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
+                   .withContributors(publicationUpdate.getEntityDescription().getContributors())
+                   .withResourcePublicationInstance(
+                       publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+                   .withRowVersion(updatedDoiRequest.getVersion())
+                   .build();
     }
     
     private Publication updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(Publication existingPublication) {
         return PublicationGenerator.randomPublication()
-            .copy()
-            .withIdentifier(existingPublication.getIdentifier())
-            .withPublisher(existingPublication.getPublisher())
-            .withResourceOwner(existingPublication.getResourceOwner())
-            .build();
+                   .copy()
+                   .withIdentifier(existingPublication.getIdentifier())
+                   .withPublisher(existingPublication.getPublisher())
+                   .withResourceOwner(existingPublication.getResourceOwner())
+                   .build();
     }
     
     private DoiRequest createDoiRequest(Publication resource)
-        throws BadRequestException, NotFoundException {
-        UserInstance userInstance = UserInstance.fromPublication(resource);
-        doiRequestService.createDoiRequest(userInstance, resource.getIdentifier());
-        return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+        throws ApiGatewayException {
+        return ticketService.createTicket(DoiRequest.fromPublication(resource), DoiRequest.class);
     }
     
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {
@@ -1019,7 +995,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(publishedResource.isPresent(), is(true));
         
         ResourceDao actualResourceDao = publishedResource.orElseThrow();
-        assertThat(actualResourceDao.getData().getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(actualResourceDao.getData().getStatus(), is(equalTo(PUBLISHED)));
     }
     
     private void verifyThatTheResourceWasMovedFromtheDrafts(ResourceDao resourceDaoWithStatusDraft) {
@@ -1034,42 +1010,30 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private ResourceDao queryObjectForPublishedResource(Publication resourceWithStatusDraft) {
         Resource resourceWithStatusPublished = Resource.fromPublication(resourceWithStatusDraft).copy()
-            .withStatus(PublicationStatus.PUBLISHED)
-            .build();
+                                                   .withStatus(PUBLISHED)
+                                                   .build();
         return new ResourceDao(resourceWithStatusPublished);
     }
     
     private QueryResult queryForDraftResource(ResourceDao resourceDao) {
         
         return client.query(new QueryRequest()
-            .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
-            .withIndexName(DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-            .withKeyConditions(resourceDao.fetchEntryByTypeCustomerStatusKey())
+                                .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                .withIndexName(DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+                                .withKeyConditions(resourceDao.fetchEntryByTypeCustomerStatusKey())
         );
     }
     
     private Optional<ResourceDao> parseResult(QueryResult result) {
         return result.getItems().stream()
-            .map(map -> parseAttributeValuesMap(map, ResourceDao.class))
-            .findAny();
+                   .map(map -> parseAttributeValuesMap(map, ResourceDao.class))
+                   .findAny();
     }
     
     private Publication createPublishedResource() throws ApiGatewayException {
-        Publication resource = createSampleResourceWithDoi();
+        Publication resource = createPersistedPublicationWithoutDoi();
         publishResource(resource);
         return resourceService.getPublication(resource);
-    }
-    
-    private Publication expectedResourceFromSampleResource(Publication sampleResource, Publication savedResource) {
-        
-        return sampleResource.copy()
-            .withIdentifier(savedResource.getIdentifier())
-            .withPublisher(organizationWithoutLabels(sampleResource))
-            .withResourceOwner(sampleResource.getResourceOwner())
-            .withCreatedDate(FIRST_CLOCK_TICK)
-            .withModifiedDate(FIRST_CLOCK_TICK)
-            .withStatus(PublicationStatus.DRAFT)
-            .build();
     }
     
     private Organization organizationWithoutLabels(Publication sampleResource) {
@@ -1095,36 +1059,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return
             Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
                 .map(publication -> injectOwner(userInstance, publication))
-                .map(attempt(res -> createPublication(resourceService, res)))
+                .map(attempt(res -> createPersistedPublicationWithDoi(resourceService, res)))
                 .map(Try::orElseThrow)
                 .collect(Collectors.toSet());
     }
     
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
         return publication.copy()
-            .withResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), AFFILIATION_NOT_IMPORTANT))
-            .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
-            .build();
+                   .withResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), AFFILIATION_NOT_IMPORTANT))
+                   .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
+                   .build();
     }
     
-    private Publication expectedUpdatedResource(Publication sampleResource, UserInstance newOwner) {
-        return sampleResource.copy()
-            .withResourceOwner(new ResourceOwner(newOwner.getUserIdentifier(), AFFILIATION_NOT_IMPORTANT))
-            .withPublisher(userOrganization(newOwner))
-            .withCreatedDate(sampleResource.getCreatedDate())
-            .withModifiedDate(SECOND_CLOCK_TICK)
-            .build();
-    }
-    
-    private Publication createSampleResourceWithoutDoi() throws ApiGatewayException {
-        var originalResource = publicationWithIdentifier().copy().withDoi(null).build();
-        return createPublication(resourceService, originalResource);
-    }
-    
-    private Publication createSampleResourceWithDoi() throws ApiGatewayException {
-        var originalResource = publicationWithIdentifier();
-        originalResource.setDoi(SOME_DOI);
-        return createPublication(resourceService, originalResource);
+    private Publication expectedUpdatedResource(Publication originalResource,
+                                                Publication updatedResource,
+                                                UserInstance expectedOwner) {
+        return originalResource.copy()
+                   .withResourceOwner(new ResourceOwner(expectedOwner.getUserIdentifier(), AFFILIATION_NOT_IMPORTANT))
+                   .withPublisher(userOrganization(expectedOwner))
+                   .withCreatedDate(originalResource.getCreatedDate())
+                   .withModifiedDate(updatedResource.getModifiedDate())
+                   .build();
     }
     
     private void assertThatUpdateFails(Publication resourceUpdate) {
@@ -1150,7 +1105,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private String fetchMainTitleFieldName() {
         return attempt(() -> EntityDescription.class.getDeclaredField(MAIN_TITLE_FIELD).getName())
-            .orElseThrow(fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
+                   .orElseThrow(fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
     }
     
     private void assertThatResourceDoesNotExist(Publication sampleResource) {

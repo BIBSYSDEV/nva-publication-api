@@ -15,10 +15,12 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
+@SuppressWarnings("PMD.GodClass")
 public class Message implements TicketEntry,
                                 JsonSerializable {
     
@@ -32,7 +34,7 @@ public class Message implements TicketEntry,
     @JsonProperty("customerId")
     private URI customerId;
     @JsonProperty("status")
-    private MessageStatus status;
+    private TicketStatus status;
     @JsonProperty("sender")
     private String sender;
     @JsonProperty("resourceIdentifier")
@@ -69,16 +71,8 @@ public class Message implements TicketEntry,
                                  Clock clock,
                                  MessageType messageType) {
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
-            .withMessageType(messageType)
-            .build();
-    }
-    
-    @Deprecated
-    public static Message supportMessage(UserInstance sender,
-                                         Publication publication,
-                                         String messageText,
-                                         Clock clock) {
-        return create(sender, publication, messageText, null, clock, MessageType.SUPPORT);
+                   .withMessageType(messageType)
+                   .build();
     }
     
     @JsonProperty("recipient")
@@ -101,11 +95,11 @@ public class Message implements TicketEntry,
     }
     
     public Message markAsRead(Clock clock) {
-        return this.copy()
-            .withStatus(MessageStatus.READ)
-            .withModifiedTime(clock.instant())
-            .withRowVersion(UUID.randomUUID())
-            .build();
+        var copy = this.copy();
+        copy.setStatus(TicketStatus.READ);
+        copy.setModifiedDate(clock.instant());
+        copy.setVersion(UUID.randomUUID());
+        return copy;
     }
     
     public MessageType getMessageType() {
@@ -151,7 +145,7 @@ public class Message implements TicketEntry,
     //TODO: cover this method when Message is not a ticket any more.
     @JacocoGenerated
     @Override
-    public MessageDao toDao() {
+    public Dao toDao() {
         return new MessageDao(this);
     }
     
@@ -173,11 +167,13 @@ public class Message implements TicketEntry,
         this.customerId = customerId;
     }
     
-    public MessageStatus getStatus() {
+    @Override
+    public TicketStatus getStatus() {
         return status;
     }
     
-    public void setStatus(MessageStatus status) {
+    @Override
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
     
@@ -197,8 +193,15 @@ public class Message implements TicketEntry,
     //TODO: remove method or cover when Message is not a Ticket anymore.
     @JacocoGenerated
     @Override
-    public void validateRequirements(Publication publication) {
+    public void validateCreationRequirements(Publication publication) {
+        throw new UnsupportedOperationException();
+    }
     
+    //TODO: remove method or cover when Message is not a Ticket anymore.
+    @JacocoGenerated
+    @Override
+    public void validateCompletionRequirements(Publication publication) {
+        throw new UnsupportedOperationException();
     }
     
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
@@ -274,20 +277,22 @@ public class Message implements TicketEntry,
         return toJsonString();
     }
     
-    public MessageBuilder copy() {
+    @Override
+    public Message copy() {
         return Message.builder()
-            .withCreatedTime(this.getCreatedDate())
-            .withCustomerId(this.getCustomerId())
-            .withIdentifier(this.getIdentifier())
-            .withMessageType(this.getMessageType())
-            .withResourceIdentifier(getResourceIdentifier())
-            .withStatus(this.getStatus())
-            .withOwner(this.getOwner())
-            .withSender(this.getSender())
-            .withText(this.getText())
-            .withResourceTitle(this.getResourceTitle())
-            .withModifiedTime(this.getModifiedDate())
-            .withRowVersion(this.getVersion());
+                   .withCreatedTime(this.getCreatedDate())
+                   .withCustomerId(this.getCustomerId())
+                   .withIdentifier(this.getIdentifier())
+                   .withMessageType(this.getMessageType())
+                   .withResourceIdentifier(getResourceIdentifier())
+                   .withStatus(this.getStatus())
+                   .withOwner(this.getOwner())
+                   .withSender(this.getSender())
+                   .withText(this.getText())
+                   .withResourceTitle(this.getResourceTitle())
+                   .withModifiedTime(this.getModifiedDate())
+                   .withVersion(this.getVersion())
+                   .build();
     }
     
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
@@ -296,23 +301,23 @@ public class Message implements TicketEntry,
         
         var now = clock.instant();
         return Message.builder()
-            .withStatus(MessageStatus.UNREAD)
-            .withResourceIdentifier(publication.getIdentifier())
-            .withCustomerId(sender.getOrganizationUri())
-            .withText(messageText)
-            .withSender(sender.getUserIdentifier())
-            .withOwner(publication.getResourceOwner().getOwner())
-            .withResourceTitle(extractTitle(publication))
-            .withCreatedTime(now)
-            .withModifiedTime(now)
-            .withIdentifier(messageIdentifier)
-            .withRowVersion(nextVersion());
+                   .withStatus(TicketStatus.UNREAD)
+                   .withResourceIdentifier(publication.getIdentifier())
+                   .withCustomerId(sender.getOrganizationUri())
+                   .withText(messageText)
+                   .withSender(sender.getUserIdentifier())
+                   .withOwner(publication.getResourceOwner().getOwner())
+                   .withResourceTitle(extractTitle(publication))
+                   .withCreatedTime(now)
+                   .withModifiedTime(now)
+                   .withIdentifier(messageIdentifier)
+                   .withVersion(nextVersion());
     }
     
     private static String extractTitle(Publication publication) {
         return Optional.of(publication)
-            .map(Publication::getEntityDescription)
-            .map(EntityDescription::getMainTitle)
-            .orElse(null);
+                   .map(Publication::getEntityDescription)
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
     }
 }

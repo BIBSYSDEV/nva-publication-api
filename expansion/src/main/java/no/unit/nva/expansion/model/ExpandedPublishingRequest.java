@@ -16,7 +16,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingRequestStatus;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -39,7 +39,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     @JsonProperty("organizationIds")
     private Set<URI> organizationIds;
     @JsonProperty(STATUS_FIELD)
-    private PublishingRequestStatus status;
+    private TicketStatus status;
     
     public ExpandedPublishingRequest() {
         this.messages = MessageCollection.empty(MessageType.PUBLISHING_REQUEST);
@@ -59,11 +59,11 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         return createRequest(publishingRequestCase, publication, messageCollection, organizationIds);
     }
     
-    public PublishingRequestStatus getStatus() {
+    public TicketStatus getStatus() {
         return status;
     }
     
-    public void setStatus(PublishingRequestStatus status) {
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
     
