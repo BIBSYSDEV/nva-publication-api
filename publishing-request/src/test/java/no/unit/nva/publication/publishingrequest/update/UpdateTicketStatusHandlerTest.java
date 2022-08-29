@@ -13,9 +13,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.publishingrequest.TicketDto;
@@ -29,11 +32,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.zalando.problem.Problem;
 
 class UpdateTicketStatusHandlerTest extends TicketTest {
     
     private UpdateTicketStatusHandler handler;
+    
+    public static Stream<Arguments> ticketAndBadStatusProvider() {
+        return Stream.of(
+            Arguments.of(DoiRequest.class, PublicationStatus.DRAFT),
+            Arguments.of(DoiRequest.class, PublicationStatus.DRAFT_FOR_DELETION),
+            Arguments.of(PublishingRequestCase.class, PublicationStatus.DRAFT_FOR_DELETION));
+    }
     
     @BeforeEach
     public void setup() {
@@ -84,19 +96,6 @@ class UpdateTicketStatusHandlerTest extends TicketTest {
     }
     
     @Test
-    void shouldReturnBadRequestWhenUserAttemptsToCompleteTicketForDoiRequestOnDraftPublication()
-        throws ApiGatewayException,
-               IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = (DoiRequest) createPersistedTicket(publication, DoiRequest.class);
-        ticket.setStatus(COMPLETED);
-        var request = authorizedUserCompletesTicket(ticket);
-        handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
-    }
-    
-    @Test
     void shouldReturnAcceptedWhenCompletingAnAlreadyCompletedDoiRequestTicket()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
@@ -122,6 +121,21 @@ class UpdateTicketStatusHandlerTest extends TicketTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var actualTicket = ticketService.fetchTicket(ticket);
         assertThat(actualTicket.getStatus(), is(equalTo(COMPLETED)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+    }
+    
+    @ParameterizedTest(name = "ticket type: {0} with status {1}")
+    @DisplayName("should return a Bad Request when attempting to complete incompletable ticket cases")
+    @MethodSource("ticketAndBadStatusProvider")
+    void shouldReturnBadRequestWhenAttemptingToCompleteIncompletableTicketCases(Class<? extends TicketEntry> ticketType,
+                                                                                PublicationStatus publicationStatus)
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistDraftPublication();
+        var ticket = createPersistedTicket(publication, ticketType);
+        resourceService.updatePublication(publication.copy().withStatus(publicationStatus).build());
+        var request = authorizedUserCompletesTicket(ticket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
     

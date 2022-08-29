@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -41,6 +42,12 @@ public abstract class TicketTest extends ResourcesLocalTest {
         return DoiRequest.class.equals(ticketType)
                    ? createPersistAndPublishPublication()
                    : createAndPersistDraftPublication();
+    }
+    
+    protected Publication createAndPersistPublication(PublicationStatus status) {
+        var publication = randomPublicationWithoutDoi();
+        publication.setStatus(status);
+        return resourceService.createPublicationWithPredefinedCreationDate(publication);
     }
     
     protected Publication createAndPersistDraftPublication()
@@ -87,10 +94,14 @@ public abstract class TicketTest extends ResourcesLocalTest {
     
     private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)
         throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
+        var publication = randomPublicationWithoutDoi();
         var userInstance = UserInstance.fromPublication(publication);
         var storedResult = resourceService.createPublication(userInstance, publication);
         action.accept(storedResult);
         return resourceService.getPublication(storedResult);
+    }
+    
+    private static Publication randomPublicationWithoutDoi() {
+        return PublicationGenerator.randomPublication().copy().withDoi(null).build();
     }
 }
