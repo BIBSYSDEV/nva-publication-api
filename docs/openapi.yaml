@@ -422,6 +422,8 @@ paths:
             application/json:
               schema:
                 $ref: "/components/schemas/Ticket"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateTicketFunction.Arn}/invocations
@@ -449,6 +451,55 @@ paths:
             application/json:
               schema:
                 $ref: "/components/schemas/Ticket"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+    put:
+      description: Update the status of an existing ticket
+      requestBody:
+        description: A Ticket Object containing the new ticket status
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+      responses:
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Ticket"
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        409:
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
@@ -542,19 +593,6 @@ components:
           type: string
           enum:
             - MarkMessageAsReadRequest
-    PublishingRequestCase:
-      type: object
-      properties:
-        type:
-          type: string
-        id:
-          type: string
-          format: uri
-        status:
-          type: string
-          enum:
-            - PENDING
-            - APPROVED
     NewTicketRequest:
       type: object
       properties:
