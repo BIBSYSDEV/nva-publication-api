@@ -1,6 +1,9 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -26,11 +29,22 @@ public class MessageDao extends Dao
         super();
     }
     
-    //TODO: cover when refactoring to ticket system is completed
-    @JacocoGenerated
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        throw new UnsupportedOperationException();
+        
+        var uniqueIdentifierEntry = new IdentifierEntry(this.getIdentifier().toString());
+        var messageEntry = transactionItem(this);
+        var identityEntry = transactionItem(uniqueIdentifierEntry);
+        return new TransactWriteItemsRequest()
+                   .withTransactItems(messageEntry, identityEntry);
+    }
+    
+    private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {
+        var put = new Put()
+                      .withTableName(RESOURCES_TABLE_NAME)
+                      .withItem(dynamoEntry.toDynamoFormat());
+        
+        return new TransactWriteItem().withPut(put);
     }
     
     public MessageDao(Message message) {
@@ -40,26 +54,26 @@ public class MessageDao extends Dao
     
     public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
         Message message = Message.builder()
-            .withOwner(owner.getUserIdentifier())
-            .withCustomerId(owner.getOrganizationUri())
-            .withIdentifier(identifier)
-            .build();
+                              .withOwner(owner.getUserIdentifier())
+                              .withCustomerId(owner.getOrganizationUri())
+                              .withIdentifier(identifier)
+                              .build();
         return new MessageDao(message);
     }
     
     public static MessageDao listMessagesForCustomerAndStatus(URI customerId, TicketStatus ticketStatus) {
         Message message = Message.builder()
-            .withCustomerId(customerId)
-            .withStatus(ticketStatus)
-            .build();
+                              .withCustomerId(customerId)
+                              .withStatus(ticketStatus)
+                              .build();
         return new MessageDao(message);
     }
     
     public static MessageDao listMessagesAndResourcesForUser(UserInstance owner) {
         Message message = Message.builder()
-            .withCustomerId(owner.getOrganizationUri())
-            .withOwner(owner.getUserIdentifier())
-            .build();
+                              .withCustomerId(owner.getOrganizationUri())
+                              .withOwner(owner.getUserIdentifier())
+                              .build();
         return new MessageDao(message);
     }
     

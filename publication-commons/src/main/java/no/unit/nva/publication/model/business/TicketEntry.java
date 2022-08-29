@@ -76,7 +76,6 @@ public interface TicketEntry extends Entity {
             throw new RuntimeException("Unsupported ticket type");
         }
     }
-    
     SortableIdentifier getResourceIdentifier();
     
     void validateCreationRequirements(Publication publication) throws ConflictException;
