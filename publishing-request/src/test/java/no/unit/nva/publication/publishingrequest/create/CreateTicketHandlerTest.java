@@ -28,7 +28,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.DoiRequestDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestDto;
 import no.unit.nva.publication.publishingrequest.TicketDto;
-import no.unit.nva.publication.publishingrequest.TicketTest;
+import no.unit.nva.publication.publishingrequest.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -42,7 +42,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 
-class CreateTicketHandlerTest extends TicketTest {
+class CreateTicketHandlerTest extends TicketTestLocal {
     
     private CreateTicketHandler handler;
     

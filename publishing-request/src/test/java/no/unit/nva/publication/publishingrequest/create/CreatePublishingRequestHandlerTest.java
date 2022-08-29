@@ -29,7 +29,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
-import no.unit.nva.publication.publishingrequest.TicketTest;
+import no.unit.nva.publication.publishingrequest.TicketTestLocal;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -42,7 +42,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-class CreatePublishingRequestHandlerTest extends TicketTest {
+class CreatePublishingRequestHandlerTest extends TicketTestLocal {
     
     private CreatePublishingRequestHandler handler;
     
