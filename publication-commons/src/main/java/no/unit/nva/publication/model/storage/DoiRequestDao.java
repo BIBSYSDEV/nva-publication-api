@@ -24,7 +24,7 @@ public class DoiRequestDao extends TicketDao
     JoinWithResource,
     JsonSerializable {
     
-    public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
+    public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     public static final String TYPE = "DoiRequest";
     private DoiRequest data;
     

@@ -26,7 +26,7 @@ public class ResourceDao extends Dao
     
     public static final String CRISTIN_SOURCE = "Cristin";
     public static final String TYPE = "Resource";
-    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
+    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
     private Resource data;
     
     public ResourceDao() {

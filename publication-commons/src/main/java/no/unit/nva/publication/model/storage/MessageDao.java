@@ -22,7 +22,7 @@ public class MessageDao extends Dao
     implements DynamoEntryByIdentifier, JoinWithResource {
     
     public static final String TYPE = "Message";
-    private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "c";
+    private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "z";
     private Message data;
     
     public MessageDao() {

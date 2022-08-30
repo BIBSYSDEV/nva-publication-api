@@ -143,8 +143,8 @@ public class ReadResourceService {
         var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
         Map<String, Condition> keyConditions = queryObject
             .byResource(
-                doiRequestQueryObject.joinByResourceContainedOrderedType(),
-                queryObject.joinByResourceContainedOrderedType()
+                queryObject.joinByResourceContainedOrderedType(),
+                doiRequestQueryObject.joinByResourceContainedOrderedType()
             );
         return new QueryRequest()
             .withTableName(tableName)

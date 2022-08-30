@@ -1,25 +1,31 @@
 package no.unit.nva.publication.publishingrequest.read;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.publishingrequest.TicketTest;
 import no.unit.nva.publication.publishingrequest.TicketUtils;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
@@ -34,11 +40,13 @@ import org.zalando.problem.Problem;
 class GetTicketHandlerTest extends TicketTest {
     
     private GetTicketHandler handler;
+    private MessageService messageService;
     
     @BeforeEach
     public void setup() {
         super.init();
         this.handler = new GetTicketHandler(ticketService);
+        this.messageService = new MessageService(client, Clock.systemDefaultZone());
     }
     
     @ParameterizedTest(name = " ticket type: {0}")
@@ -126,6 +134,25 @@ class GetTicketHandlerTest extends TicketTest {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should return ticket with messages when ticket has messages")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnTicketWithMessagesWhenTicketHasMessages(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var ticket = createPersistedTicket(ticketType);
+        var sender = UserInstance.fromTicket(ticket);
+        var expectedMessage = messageService.createMessage(ticket, sender, randomString());
+        
+        var request = createHttpRequest(ticket).build();
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        
+        var responseBody = response.getBodyObject(TicketDto.class);
+        var expectedDto = MessageDto.fromMessage(expectedMessage);
+        assertThat(expectedDto, is(in(responseBody.getMessages())));
     }
     
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {

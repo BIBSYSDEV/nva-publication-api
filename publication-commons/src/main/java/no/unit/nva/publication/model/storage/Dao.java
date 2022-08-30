@@ -26,7 +26,8 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonSubTypes({
     @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
-    @JsonSubTypes.Type(TicketDao.class)
+    @JsonSubTypes.Type(TicketDao.class),
+    @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class)
 })
 public abstract class Dao
     implements DynamoEntry,

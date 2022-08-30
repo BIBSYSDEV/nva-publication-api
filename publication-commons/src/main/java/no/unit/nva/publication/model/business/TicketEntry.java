@@ -1,15 +1,18 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -76,6 +79,7 @@ public interface TicketEntry extends Entity {
             throw new RuntimeException("Unsupported ticket type");
         }
     }
+    
     SortableIdentifier getResourceIdentifier();
     
     void validateCreationRequirements(Publication publication) throws ConflictException;
@@ -113,6 +117,12 @@ public interface TicketEntry extends Entity {
     TicketStatus getStatus();
     
     void setStatus(TicketStatus ticketStatus);
+    
+    // TODO: evaluate naming and JsonIgnore
+    @JsonIgnore
+    default List<Message> fetchMessages(TicketService ticketService) {
+        return ticketService.fetchTicketMessages(this);
+    }
     
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,

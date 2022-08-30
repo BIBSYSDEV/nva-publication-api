@@ -1,5 +1,6 @@
 package no.unit.nva.publication.publishingrequest;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -7,9 +8,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -43,6 +47,7 @@ public class PublishingRequestDto extends TicketDto {
     private final URI publicationId;
     @JsonProperty(ID_FIELD)
     private final URI id;
+    private final List<MessageDto> messages;
     
     @JsonCreator
     public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
@@ -51,7 +56,8 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(VERSION_FIELD) UUID version,
                                 @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
                                 @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId,
-                                @JsonProperty(ID_FIELD) URI id) {
+                                @JsonProperty(ID_FIELD) URI id,
+                                @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages) {
         super();
         this.status = status;
         this.createdDate = createdDate;
@@ -60,15 +66,11 @@ public class PublishingRequestDto extends TicketDto {
         this.identifier = identifier;
         this.publicationId = publicationId;
         this.id = id;
+        this.messages = messages;
     }
     
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null);
-    }
-    
-    @Override
-    public TicketStatus getStatus() {
-        return status;
+        return new PublishingRequestDto(null, null, null, null, null, null, null, null);
     }
     
     public Instant getCreatedDate() {
@@ -106,6 +108,16 @@ public class PublishingRequestDto extends TicketDto {
         ticket.setIdentifier(getIdentifier());
         ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationId()));
         return ticket;
+    }
+    
+    @Override
+    public TicketStatus getStatus() {
+        return status;
+    }
+    
+    @Override
+    public List<MessageDto> getMessages() {
+        return nonNull(messages) ? messages : Collections.emptyList();
     }
     
     @Override

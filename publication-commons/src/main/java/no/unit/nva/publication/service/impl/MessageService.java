@@ -69,6 +69,7 @@ public class MessageService extends ServiceWithTransactions {
                                             String messageText,
                                             MessageType messageType) {
         requireMessageIsNotBlank(messageText);
+    
         Message message = createMessageEntry(sender, publication, messageText, messageType);
         return writeMessageToDb(message);
     }

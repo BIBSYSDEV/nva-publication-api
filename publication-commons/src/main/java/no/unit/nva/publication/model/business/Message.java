@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,10 +18,11 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 public class Message implements TicketEntry,
                                 JsonSerializable {
     
@@ -256,6 +258,7 @@ public class Message implements TicketEntry,
                    .withResourceTitle(this.getResourceTitle())
                    .withModifiedDate(this.getModifiedDate())
                    .withVersion(this.getVersion())
+                   .withTicketIdentifier(this.getTicketIdentifier())
                    .build();
     }
     
@@ -267,6 +270,12 @@ public class Message implements TicketEntry,
     @Override
     public void setStatus(TicketStatus status) {
         this.status = status;
+    }
+    
+    @JacocoGenerated
+    @Override
+    public List<Message> fetchMessages(TicketService ticketService) {
+        throw new UnsupportedOperationException();
     }
     
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
@@ -291,8 +300,11 @@ public class Message implements TicketEntry,
     
     @Override
     @JacocoGenerated
-    public String toString() {
-        return toJsonString();
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
+            getResourceIdentifier(),
+            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(),
+            getMessageType());
     }
     
     @Override
@@ -316,17 +328,13 @@ public class Message implements TicketEntry,
                && Objects.equals(getCreatedDate(), message.getCreatedDate())
                && Objects.equals(getModifiedDate(), message.getModifiedDate())
                && Objects.equals(getResourceTitle(), message.getResourceTitle())
-               && getMessageType() == message.getMessageType()
-               && Objects.equals(getVersion(), message.getVersion());
+               && getMessageType() == message.getMessageType();
     }
     
     @Override
     @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-            getResourceIdentifier(),
-            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(), getMessageType(),
-            getVersion());
+    public String toString() {
+        return toJsonString();
     }
     
     private static MessageType calculateMessageType(TicketEntry ticketEntry) {
@@ -366,8 +374,8 @@ public class Message implements TicketEntry,
     }
     
     public static final class Builder {
-        
-        private Message message;
+    
+        private final Message message;
         
         private Builder() {
             message = new Message();

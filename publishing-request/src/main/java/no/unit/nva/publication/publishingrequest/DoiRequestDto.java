@@ -1,5 +1,6 @@
 package no.unit.nva.publication.publishingrequest;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -7,9 +8,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -42,6 +46,7 @@ public class DoiRequestDto extends TicketDto {
     private final URI publicationId;
     @JsonProperty(ID_FIELD)
     private final URI id;
+    private final List<MessageDto> messages;
     
     @JsonCreator
     public DoiRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
@@ -49,7 +54,9 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                          @JsonProperty(VERSION_FIELD) UUID version,
                          @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                         @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId, @JsonProperty(ID_FIELD) URI id) {
+                         @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId,
+                         @JsonProperty(ID_FIELD) URI id,
+                         @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages) {
         super();
         this.status = status;
         this.createdDate = createdDate;
@@ -58,15 +65,21 @@ public class DoiRequestDto extends TicketDto {
         this.identifier = identifier;
         this.publicationId = publicationId;
         this.id = id;
+        this.messages = messages;
     }
     
     public static TicketDto empty() {
-        return new DoiRequestDto(null, null, null, null, null, null, null);
+        return new DoiRequestDto(null, null, null, null, null, null, null, null);
     }
     
     @Override
     public TicketStatus getStatus() {
         return status;
+    }
+    
+    @Override
+    public List<MessageDto> getMessages() {
+        return nonNull(messages) ? messages : Collections.emptyList();
     }
     
     public Instant getCreatedDate() {
