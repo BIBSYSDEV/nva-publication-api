@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -50,6 +51,7 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
@@ -94,6 +96,11 @@ public class ResourceService extends ServiceWithTransactions {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
     
+    @JacocoGenerated
+    public static ResourceService defaultService() {
+        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+    }
+    
     public Publication createPublication(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
@@ -131,9 +138,9 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication markPublicationForDeletion(UserInstance userInstance,
                                                   SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        
+    
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier))
-            .toPublication();
+                   .toPublication();
     }
     
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
@@ -145,7 +152,7 @@ public class ResourceService extends ServiceWithTransactions {
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         List<Dao> daos = readResourceService
-            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         
         List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
@@ -217,11 +224,11 @@ public class ResourceService extends ServiceWithTransactions {
     
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
         return dataEntries
-            .stream()
-            .map(attempt(this::migrate))
-            .map(Try::orElseThrow)
-            .map(Entity::refreshVersion)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(attempt(this::migrate))
+                   .map(Try::orElseThrow)
+                   .map(Entity::refreshVersion)
+                   .collect(Collectors.toList());
     }
     
     private Organization createOrganization(UserInstance userInstance) {
@@ -251,33 +258,33 @@ public class ResourceService extends ServiceWithTransactions {
     
     private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
         return refreshedEntries.stream()
-            .map(Entity::toDao)
-            .map(Dao::toDynamoFormat)
-            .map(item -> new PutRequest().withItem(item))
-            .map(WriteRequest::new)
-            .collect(Collectors.toList());
+                   .map(Entity::toDao)
+                   .map(Dao::toDynamoFormat)
+                   .map(item -> new PutRequest().withItem(item))
+                   .map(WriteRequest::new)
+                   .collect(Collectors.toList());
     }
     
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
                                                                        Map<String, AttributeValue> startMarker) {
         return new ScanRequest()
-            .withTableName(tableName)
-            .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withLimit(pageSize)
-            .withExclusiveStartKey(startMarker)
-            .withFilterExpression(Dao.scanFilterExpression())
-            .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
-            .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
+                   .withTableName(tableName)
+                   .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                   .withLimit(pageSize)
+                   .withExclusiveStartKey(startMarker)
+                   .withFilterExpression(Dao.scanFilterExpression())
+                   .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
+                   .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
     }
     
     private List<Entity> extractDatabaseEntries(ScanResult response) {
         return response.getItems()
-            .stream()
-            .map(CorrectParsingErrors::apply)
-            .map(value -> parseAttributeValuesMap(value, Dao.class))
-            .map(Dao::getData)
-            .map(Entity.class::cast)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(CorrectParsingErrors::apply)
+                   .map(value -> parseAttributeValuesMap(value, Dao.class))
+                   .map(Dao::getData)
+                   .map(Entity.class::cast)
+                   .collect(Collectors.toList());
     }
     
     private Publication insertResource(Resource newResource) {
@@ -290,8 +297,8 @@ public class ResourceService extends ServiceWithTransactions {
     
     private Publication fetchSavedResource(Resource newResource) {
         return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
-            .map(Resource::toPublication)
-            .orElse(null);
+                   .map(Resource::toPublication)
+                   .orElse(null);
     }
     
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
@@ -359,7 +366,7 @@ public class ResourceService extends ServiceWithTransactions {
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
         return attempt(() -> sendUpdateRequest(updateRequest))
-            .orElseThrow(failure -> markForDeletionError(failure, resource));
+                   .orElseThrow(failure -> markForDeletionError(failure, resource));
     }
     
     private ApiGatewayException markForDeletionError(Failure<Resource> failure, Resource resource) {
@@ -399,15 +406,15 @@ public class ResourceService extends ServiceWithTransactions {
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
-        
+    
         UpdateItemRequest request = new UpdateItemRequest()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(expressionValuesMap)
-            .withReturnValues(ReturnValue.ALL_NEW);
+                                        .withTableName(tableName)
+                                        .withKey(dao.primaryKey())
+                                        .withUpdateExpression(updateExpression)
+                                        .withConditionExpression(conditionExpression)
+                                        .withExpressionAttributeNames(expressionAttributeNames)
+                                        .withExpressionAttributeValues(expressionValuesMap)
+                                        .withReturnValues(ReturnValue.ALL_NEW);
         logger.info("DeleteRequest:{}", request);
         return request;
     }
@@ -415,11 +422,11 @@ public class ResourceService extends ServiceWithTransactions {
     private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
         UpdateItemResult requestResult = client.updateItem(updateRequest);
         return Try.of(requestResult)
-            .map(UpdateItemResult::getAttributes)
-            .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
-            .map(ResourceDao::getData)
-            .map(Resource.class::cast)
-            .orElseThrow();
+                   .map(UpdateItemResult::getAttributes)
+                   .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
+                   .map(ResourceDao::getData)
+                   .map(Resource.class::cast)
+                   .orElseThrow();
     }
     
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
