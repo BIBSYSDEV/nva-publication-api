@@ -762,8 +762,6 @@ Resources:
               detail:
                 responsePayload:
                   topic: [ "PublicationService.DoiRequest.Update" ]
-                  newData:
-                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
