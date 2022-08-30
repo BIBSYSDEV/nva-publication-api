@@ -21,9 +21,9 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
@@ -43,6 +43,10 @@ public class DoiRequestEventProducer
     private final HttpClient httpClient;
     
     @JacocoGenerated
+    public DoiRequestEventProducer() {
+        this(ResourceService.defaultService(), HttpClient.newHttpClient());
+    }
+    
     public DoiRequestEventProducer(ResourceService resourceService, HttpClient httpClient) {
         super(DataEntryUpdateEvent.class);
         this.resourceService = resourceService;
