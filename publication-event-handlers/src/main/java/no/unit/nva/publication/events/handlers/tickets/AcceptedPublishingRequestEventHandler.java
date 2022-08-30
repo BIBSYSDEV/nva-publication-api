@@ -6,7 +6,6 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -30,7 +29,7 @@ public class AcceptedPublishingRequestEventHandler
     
     @JacocoGenerated
     public AcceptedPublishingRequestEventHandler() {
-        this(PublicationServiceConfig.defaultResourceService(), S3Driver.defaultS3Client().build());
+        this(ResourceService.defaultService(), S3Driver.defaultS3Client().build());
     }
     
     protected AcceptedPublishingRequestEventHandler(ResourceService resourceService, S3Client s3Client) {

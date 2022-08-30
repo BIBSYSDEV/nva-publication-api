@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -15,7 +14,6 @@ import nva.commons.core.paths.UriWrapper;
 public final class PublicationServiceConfig {
     
     public static final Environment ENVIRONMENT = new Environment();
-    public static final String URI_EMPTY_FRAGMENT = null;
     public static final String API_HOST = ENVIRONMENT.readEnv("API_HOST");
     @Deprecated
     public static final String MESSAGE_PATH = "/messages";
@@ -36,11 +34,6 @@ public final class PublicationServiceConfig {
     
     private PublicationServiceConfig() {
     
-    }
-    
-    @JacocoGenerated
-    public static ResourceService defaultResourceService() {
-        return new ResourceService(defaultDynamoDbClient(), Clock.systemDefaultZone());
     }
     
     @JacocoGenerated
