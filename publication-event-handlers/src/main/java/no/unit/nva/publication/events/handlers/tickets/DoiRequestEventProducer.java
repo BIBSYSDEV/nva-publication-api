@@ -64,8 +64,8 @@ public class DoiRequestEventProducer
         AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
         var s3Driver = new S3Driver(s3Client, inputEvent.getUri().getHost());
-        var string = s3Driver.readEvent(inputEvent.getUri());
-        var eventBody = DataEntryUpdateEvent.fromJson(string);
+        var eventString = s3Driver.readEvent(inputEvent.getUri());
+        var eventBody = DataEntryUpdateEvent.fromJson(eventString);
         validate(eventBody);
 
         return isEffectiveChange(eventBody)
