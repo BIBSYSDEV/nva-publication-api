@@ -138,7 +138,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication markPublicationForDeletion(UserInstance userInstance,
                                                   SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-    
+        
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier))
                    .toPublication();
     }
@@ -406,7 +406,7 @@ public class ResourceService extends ServiceWithTransactions {
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
-    
+        
         UpdateItemRequest request = new UpdateItemRequest()
                                         .withTableName(tableName)
                                         .withKey(dao.primaryKey())
