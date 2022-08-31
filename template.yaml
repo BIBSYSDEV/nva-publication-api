@@ -5,11 +5,7 @@ Description: >
 
   SAM Template for NVA Publication Service
 
-  Api:
-    Cors:
-      AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
+
 
 Parameters:
   CognitoAuthorizerArn:
@@ -65,6 +61,11 @@ Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
 
 Globals:
+  Api:
+    Cors:
+      AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
   Function:
     Timeout: 20
     MemorySize: 1800 # 1 vCPU
