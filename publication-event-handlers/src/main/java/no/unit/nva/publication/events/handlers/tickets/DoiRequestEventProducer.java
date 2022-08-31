@@ -15,6 +15,7 @@ import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -25,13 +26,15 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.s3.S3Client;
 
 /**
  * Sends messages to DoiRegistrar service for creating and updating DOIs.
  */
 public class DoiRequestEventProducer
-    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, DoiMetadataUpdateEvent> {
+    extends DestinationsEventBridgeEventHandler<EventReference, DoiMetadataUpdateEvent> {
     
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "DoiRequest does not reference any Resource";
     public static final String DOI_REQUEST_HAS_NO_IDENTIFIER = "DoiRequest has no identifier";
@@ -41,29 +44,35 @@ public class DoiRequestEventProducer
     private static final String HANDLER_DOES_NOT_DEAL_WITH_DELETIONS = "Handler does not deal with deletions";
     private final ResourceService resourceService;
     private final HttpClient httpClient;
-    
+    private final S3Client s3Client;
+
     @JacocoGenerated
     public DoiRequestEventProducer() {
-        this(ResourceService.defaultService(), HttpClient.newHttpClient());
+        this(ResourceService.defaultService(), HttpClient.newHttpClient(), S3Driver.defaultS3Client().build());
     }
     
-    public DoiRequestEventProducer(ResourceService resourceService, HttpClient httpClient) {
-        super(DataEntryUpdateEvent.class);
+    public DoiRequestEventProducer(ResourceService resourceService, HttpClient httpClient, S3Client s3Client) {
+        super(EventReference.class);
         this.resourceService = resourceService;
         this.httpClient = httpClient;
+        this.s3Client = s3Client;
     }
-    
+
     @Override
     protected DoiMetadataUpdateEvent processInputPayload(
-        DataEntryUpdateEvent input,
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
+        EventReference inputEvent,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
-        validate(input);
-        return isEffectiveChange(input)
-                   ? propagateEvent(input)
+        var s3Driver = new S3Driver(s3Client, inputEvent.getUri().getHost());
+        var string = s3Driver.readEvent(inputEvent.getUri());
+        var eventBody = DataEntryUpdateEvent.fromJson(string);
+        validate(eventBody);
+
+        return isEffectiveChange(eventBody)
+                   ? propagateEvent(eventBody)
                    : EMPTY_EVENT;
     }
-    
+
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
         var newEntry = input.getNewData();
         
