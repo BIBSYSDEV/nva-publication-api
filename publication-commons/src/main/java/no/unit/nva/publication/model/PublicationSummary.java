@@ -26,6 +26,7 @@ import nva.commons.core.paths.UriWrapper;
 public class PublicationSummary {
     
     public static final String TYPE = "PublicationSummary";
+    
     @JsonProperty("id")
     private URI publicationId;
     @JsonProperty("identifier")
@@ -221,7 +222,7 @@ public class PublicationSummary {
     }
     
     private static URI toPublicationId(SortableIdentifier identifier) {
-        return UriWrapper.fromUri(PublicationServiceConfig.ID_NAMESPACE)
-            .addChild(identifier.toString()).getUri();
+        return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
+                   .addChild(identifier.toString()).getUri();
     }
 }

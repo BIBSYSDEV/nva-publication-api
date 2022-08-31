@@ -51,6 +51,7 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
@@ -95,6 +96,8 @@ public class ResourceService extends ServiceWithTransactions {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
     
+    
+    @JacocoGenerated
     public static ResourceService defaultService() {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }

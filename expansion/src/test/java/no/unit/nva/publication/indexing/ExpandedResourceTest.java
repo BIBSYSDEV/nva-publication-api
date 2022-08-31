@@ -1,6 +1,5 @@
 package no.unit.nva.publication.indexing;
 
-import static no.unit.nva.expansion.ExpansionConfig.ID_NAMESPACE;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
@@ -40,6 +39,7 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.PublicationServiceConfig;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -80,7 +80,7 @@ class ExpandedResourceTest {
         Publication publication = PublicationGenerator.randomPublication(publicationInstance);
         var indexDocument = fromPublication(publication);
         ObjectNode json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
-        URI expectedUri = UriWrapper.fromUri(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
+        URI expectedUri = UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
         URI actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
         assertThat(actualUri, is(equalTo(expectedUri)));
     }
