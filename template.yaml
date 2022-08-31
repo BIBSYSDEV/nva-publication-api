@@ -739,6 +739,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           BASE_PATH: !Ref CustomDomainBasePath
           DOMAIN_NAME: !Ref ApiDomain
+          TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
