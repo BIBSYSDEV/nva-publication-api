@@ -23,11 +23,14 @@ import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -40,8 +43,11 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -55,7 +61,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private ResourceService resourceService;
     private FakeHttpClient<String> httpClient;
-    
+    private FakeS3Client s3Client;
+
     public static Stream<Function<Publication, Entity>> entityProvider() {
         return Stream.of(Resource::fromPublication, DoiRequest::fromPublication);
     }
@@ -69,14 +76,15 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         var response = FakeHttpResponse.create(randomString(), HttpURLConnection.HTTP_OK);
         this.httpClient = new FakeHttpClient<>(response);
-        handler = new DoiRequestEventProducer(resourceService, httpClient);
+        s3Client = new FakeS3Client();
+        handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }
     
     @Test
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateThatCannotBeReferenced()
-        throws ApiGatewayException {
+            throws ApiGatewayException, IOException {
         
         var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutIdentifier.setIdentifier(null);
@@ -88,7 +96,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutReferenceToResource()
-        throws ApiGatewayException {
+            throws ApiGatewayException, IOException {
         
         var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutResourceIdentifier.setResourceIdentifier(null);
@@ -101,20 +109,16 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
-        throws JsonProcessingException, ApiGatewayException {
+            throws IOException, ApiGatewayException {
         //Given a publication has a public Doi
         var publication = persistPublicationWithDoi();
         var publicationUpdate = updateTitle(publication);
         assertThat(publication.getDoi(), is(not(nullValue())));
         assertThat(publicationUpdate.getDoi(), is(equalTo(publication.getDoi())));
-        
-        var dataEntryUpdateEvent = new DataEntryUpdateEvent(randomString(),
-            Resource.fromPublication(publication),
-            Resource.fromPublication(publicationUpdate));
-        var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(dataEntryUpdateEvent);
-        
+
+        var event = createEvent(Resource.fromPublication(publication), Resource.fromPublication(publicationUpdate));
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(null, HTTP_NOT_FOUND));
-        this.handler = new DoiRequestEventProducer(resourceService, httpClient);
+        this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
         handler.handleRequest(event, outputStream, context);
         var actual = outputToPublicationHolder(outputStream);
         
@@ -123,17 +127,13 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void handlerCreatesUpdateDoiEventWhenPublicationHasAFindableDoi()
-        throws JsonProcessingException {
+            throws IOException {
         var publication = randomPublication();
         var updatedPublication = updateTitle(publication);
-        
-        var dataEntry = createDataEntry(
-            Resource.fromPublication(publication),
-            Resource.fromPublication(updatedPublication)
-        );
-        var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(dataEntry);
+        var event = createEvent(Resource.fromPublication(publication),
+                Resource.fromPublication(updatedPublication));
         this.httpClient = new FakeHttpClient<>(findableDoiResponse());
-        this.handler = new DoiRequestEventProducer(resourceService, httpClient);
+        this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
         
         handler.handleRequest(event, outputStream, context);
         var actual = outputToPublicationHolder(outputStream);
@@ -143,8 +143,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void shouldCreateUpdateEventWhenPublicationHasNoDoiAndADraftDoiRequestGetsApproved()
-        throws JsonProcessingException,
-               ApiGatewayException {
+            throws IOException,
+            ApiGatewayException {
         var publication = persistPublicationWithoutDoi(PublicationStatus.PUBLISHED);
         var draftRequest = DoiRequest.fromPublication(publication);
         var approvedRequest = draftRequest.complete(publication);
@@ -158,8 +158,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void shouldCreateNewDoiEventWhenPublicationHasNoDoiAndADraftDoiHasBeenRequested()
-        throws JsonProcessingException,
-               ApiGatewayException {
+            throws IOException,
+            ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
         var draftRequest = DoiRequest.fromPublication(publication);
         var event = createEvent(null, draftRequest);
@@ -171,7 +171,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldNotCreateEventForPublicationsWithoutDoi() throws JsonProcessingException, ApiGatewayException {
+    void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
         var publicationUpdate = publication.copy().withModifiedDate(randomInstant()).build();
         assertThat(publication.getModifiedDate(), is(not(equalTo(publicationUpdate.getModifiedDate()))));
@@ -188,7 +188,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws JsonProcessingException, ApiGatewayException {
+            throws IOException, ApiGatewayException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);
@@ -198,11 +198,15 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
     
-    private InputStream createEvent(Entity oldImage, Entity newImage) {
+    private InputStream createEvent(Entity oldImage, Entity newImage) throws IOException {
         var dataEntry = createDataEntry(oldImage, newImage);
-        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(dataEntry);
+        var s3driver = new S3Driver(s3Client, "ignored");
+        var content = dataEntry.toJsonString();
+        var eventBlobUri = s3driver.insertEvent(UnixPath.EMPTY_PATH, content);
+        var eventReference = new EventReference(randomString(), eventBlobUri);
+        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
     }
-    
+
     private DataEntryUpdateEvent createDataEntry(Entity draftRequest, Entity approvedRequest) {
         return new DataEntryUpdateEvent(randomString(), draftRequest, approvedRequest);
     }
@@ -242,7 +246,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return DoiRequest.fromPublication(publication);
     }
     
-    private Publication persistPublication(Publication publication) throws ApiGatewayException {
+    private Publication persistPublication(Publication publication) {
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
