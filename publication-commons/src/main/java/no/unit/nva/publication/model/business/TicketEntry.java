@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Instant;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -93,6 +95,13 @@ public interface TicketEntry extends Entity {
     TicketStatus getStatus();
     
     void setStatus(TicketStatus ticketStatus);
+    
+    default TicketEntry refresh() {
+        var refreshed = this.copy();
+        refreshed.setVersion(UUID.randomUUID());
+        refreshed.setModifiedDate(Instant.now());
+        return refreshed;
+    }
     
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
