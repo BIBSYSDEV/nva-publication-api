@@ -10,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -36,6 +37,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class DoiRequestEventProducer
     extends DestinationsEventBridgeEventHandler<EventReference, DoiMetadataUpdateEvent> {
     
+    public static final Duration MIN_INTERVAL_FOR_REREQUESTING_A_DOI = Duration.ofSeconds(10);
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "DoiRequest does not reference any Resource";
     public static final String DOI_REQUEST_HAS_NO_IDENTIFIER = "DoiRequest has no identifier";
     public static final String HEAD = "HEAD";
@@ -113,9 +115,9 @@ public class DoiRequestEventProducer
     
     private Boolean matchStatus(DoiRequest oldEntry, TicketStatus approved) {
         return Optional.of(oldEntry)
-            .map(DoiRequest::getStatus)
-            .map(approved::equals)
-            .orElse(false);
+                   .map(DoiRequest::getStatus)
+                   .map(approved::equals)
+                   .orElse(false);
     }
     
     private boolean resourceWithFindableDoiHasBeenUpdated(Resource newEntry) {
@@ -125,10 +127,10 @@ public class DoiRequestEventProducer
     private boolean doiIsFindable(URI doi) {
         var request = HttpRequest.newBuilder(doi).method(HEAD, BodyPublishers.noBody()).build();
         return attempt(() -> httpClient.send(request, BodyHandlers.ofString()))
-            .map(HttpResponse::statusCode)
-            .map(HTTP_FOUND::equals)
-            .toOptional()
-            .orElse(false);
+                   .map(HttpResponse::statusCode)
+                   .map(HTTP_FOUND::equals)
+                   .toOptional()
+                   .orElse(false);
     }
     
     private boolean hasDoi(Resource newEntry) {
@@ -175,19 +177,23 @@ public class DoiRequestEventProducer
     }
     
     private boolean isFirstDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
-        boolean b = publicationDoesNotHaveDoiFromBefore(newEntry);
-        return thereWasNoDoiRequestBefore(oldEntry) && b;
+        return thereHasBeenNoRecentDoiRequest(oldEntry, newEntry) && publicationDoesNotHaveDoiFromBefore(newEntry);
     }
     
-    private boolean thereWasNoDoiRequestBefore(DoiRequest oldEntry) {
-        return isNull(oldEntry);
+    private boolean thereHasBeenNoRecentDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
+        return isNull(oldEntry) || isOldDoiRequest(oldEntry, newEntry);
+    }
+    
+    private boolean isOldDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
+        var latestDateForRerequestingDoi = oldEntry.getModifiedDate().plus(MIN_INTERVAL_FOR_REREQUESTING_A_DOI);
+        return newEntry.getModifiedDate().isAfter(latestDateForRerequestingDoi);
     }
     
     private boolean publicationDoesNotHaveDoiFromBefore(DoiRequest doiRequest) {
         return attempt(() -> resourceService.getPublicationByIdentifier(doiRequest.getResourceIdentifier()))
-            .map(Publication::getDoi)
-            .map(Objects::isNull)
-            .orElseThrow();
+                   .map(Publication::getDoi)
+                   .map(Objects::isNull)
+                   .orElseThrow();
     }
     
     private boolean isEffectiveChange(DataEntryUpdateEvent updateEvent) {

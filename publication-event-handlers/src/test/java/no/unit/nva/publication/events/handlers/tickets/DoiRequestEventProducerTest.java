@@ -8,6 +8,7 @@ import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ob
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.DOI_REQUEST_HAS_NO_IDENTIFIER;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.MIN_INTERVAL_FOR_REREQUESTING_A_DOI;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -29,7 +30,6 @@ import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -188,12 +188,42 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-            throws IOException, ApiGatewayException {
+        throws IOException, ApiGatewayException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);
         handler.handleRequest(event, outputStream, context);
-        DoiMetadataUpdateEvent actual = outputToPublicationHolder(outputStream);
+        var actual = outputToPublicationHolder(outputStream);
+        
+        assertThat(actual, is(equalTo(EMPTY_EVENT)));
+    }
+    
+    @Test
+    void shouldSendRequestForDraftingADoiWhenThereHasBeenAnOldPreviousDoiRequestButNoDoiHasBeenCreated()
+        throws ApiGatewayException, IOException {
+        var publication = persistPublicationWithoutDoi();
+        var oldDoiRequest = DoiRequest.fromPublication(publication);
+        var longEnoughIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.plusMinutes(1);
+        oldDoiRequest.setModifiedDate(oldDoiRequest.getModifiedDate().minus(longEnoughIntervalForRerequesting));
+        var newDoiRequest = DoiRequest.fromPublication(publication);
+        var event = createEvent(oldDoiRequest, newDoiRequest);
+        handler.handleRequest(event, outputStream, context);
+        var actual = outputToPublicationHolder(outputStream);
+        
+        assertThat(actual.getTopic(), is(equalTo(REQUEST_DRAFT_DOI_EVENT_TOPIC)));
+    }
+    
+    @Test
+    void shouldNotSendRequestForDraftingADoiWhenThereHasBeenVeryRecentPreviousDoiRequestButNoDoiHasBeenCreated()
+        throws ApiGatewayException, IOException {
+        var publication = persistPublicationWithoutDoi();
+        var oldDoiRequest = DoiRequest.fromPublication(publication);
+        var tooShortIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.minusSeconds(1);
+        oldDoiRequest.setModifiedDate(oldDoiRequest.getModifiedDate().minus(tooShortIntervalForRerequesting));
+        var newDoiRequest = DoiRequest.fromPublication(publication);
+        var event = createEvent(oldDoiRequest, newDoiRequest);
+        handler.handleRequest(event, outputStream, context);
+        var actual = outputToPublicationHolder(outputStream);
         
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
@@ -211,7 +241,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return new DataEntryUpdateEvent(randomString(), draftRequest, approvedRequest);
     }
     
-    private Publication persistPublicationWithDoi() throws ApiGatewayException {
+    private Publication persistPublicationWithDoi() {
         return persistPublication(randomPublication());
     }
     
