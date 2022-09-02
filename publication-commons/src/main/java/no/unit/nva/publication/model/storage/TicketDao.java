@@ -9,6 +9,8 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOU
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -22,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -29,13 +33,13 @@ import nva.commons.core.SingletonCollector;
 
 @JsonSubTypes({
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
-    @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
     @JsonSubTypes.Type(name = PublishingRequestDao.TYPE, value = PublishingRequestDao.class),
 })
 public abstract class TicketDao extends Dao implements JoinWithResource {
     
     public static final String DOUBLE_QUOTES = "\"";
     public static final String EMPTY_STRING = "";
+    private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
     
     protected TicketDao() {
         super();
@@ -53,31 +57,48 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         return new PutItemRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withItem(toDynamoFormat())
-            .withConditionExpression(condition.getConditionExpression())
-            .withExpressionAttributeNames(condition.getExpressionAttributeNames())
-            .withExpressionAttributeValues(condition.getExpressionAttributeValues());
+                   .withConditionExpression(condition.getConditionExpression())
+                   .withExpressionAttributeNames(condition.getExpressionAttributeNames())
+                   .withExpressionAttributeValues(condition.getExpressionAttributeValues());
     }
     
     public Optional<TicketDao> fetchByResourceIdentifier(AmazonDynamoDB client) {
         QueryRequest queryRequest = new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(byResource(joinByResourceOrderedType()));
-        
+                                        .withTableName(RESOURCES_TABLE_NAME)
+                                        .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                                        .withKeyConditions(byResource(joinByResourceOrderedType()));
+    
         var dynamoFormat = client.query(queryRequest)
-            .getItems()
-            .stream()
-            .collect(SingletonCollector.collectOrElse(null));
+                               .getItems()
+                               .stream()
+                               .collect(SingletonCollector.collectOrElse(null));
         return Optional.ofNullable(dynamoFormat)
-            .map(item -> DynamoEntry.parseAttributeValuesMap(item, this.getClass()));
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, this.getClass()));
+    }
+    
+    public Stream<MessageDao> fetchTicketMessages(AmazonDynamoDB client) {
+        var query = new FetchMessagesQuery(this);
+        var request = new QueryRequest()
+                          .withTableName(RESOURCES_TABLE_NAME)
+                          .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                          .withKeyConditionExpression(query.getKeyConditionExpression())
+                          .withFilterExpression(query.getFilterExpression())
+                          .withExpressionAttributeNames(query.getExpressionAttributeNames())
+                          .withExpressionAttributeValues(query.getExpressionAttributeValues());
+        var result = client.query(request)
+                         .getItems()
+                         .stream()
+                         .map(item -> DynamoEntry.parseAttributeValuesMap(item, MessageDao.class))
+                         .collect(Collectors.toList());
+        return result.stream();
     }
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
         Put put = new Put()
-            .withItem(data.toDynamoFormat())
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+                      .withItem(data.toDynamoFormat())
+                      .withTableName(RESOURCES_TABLE_NAME)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
     }
     
@@ -85,10 +106,48 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         var request = new GetItemRequest()
                           .withTableName(RESOURCES_TABLE_NAME)
                           .withKey(primaryKey());
+    
         var queryResult = client.getItem(request);
         return attempt(queryResult::getItem)
                    .map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
                    .toOptional();
+    }
+    
+    private static class FetchMessagesQuery {
+        
+        private final TicketDao ticketDao;
+        private static final String FILTER_EXPRESSION = "#data.#ticketIdentifier = :ticketIdentifier";
+        private static final String KEY_CONDITION_EXPRESSION =
+            "#JoinByResourcePartitionKey = :PartitionKeyValue "
+            + "AND begins_with(#JoinByResourceSortKey,:SortKeyValuePrefix)";
+        
+        public FetchMessagesQuery(TicketDao ticketDao) {
+            this.ticketDao = ticketDao;
+        }
+        
+        public String getKeyConditionExpression() {
+            return KEY_CONDITION_EXPRESSION;
+        }
+        
+        public String getFilterExpression() {
+            return FILTER_EXPRESSION;
+        }
+        
+        public Map<String, String> getExpressionAttributeNames() {
+            return Map.of(
+                "#data", CONTAINED_DATA_FIELD_NAME,
+                "#ticketIdentifier", TICKET_IDENTIFIER_FIELD_NAME,
+                "#JoinByResourcePartitionKey", BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
+                "#JoinByResourceSortKey", BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME);
+        }
+        
+        public Map<String, AttributeValue> getExpressionAttributeValues() {
+            return Map.of(
+                ":ticketIdentifier", new AttributeValue(ticketDao.getIdentifier().toString()),
+                ":PartitionKeyValue", new AttributeValue(ticketDao.getByCustomerAndResourcePartitionKey()),
+                ":SortKeyValuePrefix", new AttributeValue(MessageDao.joinByResourceOrderedContainedType())
+            );
+        }
     }
     
     private static class UpdateCaseButNotOwnerCondition {
@@ -149,8 +208,8 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         
         private String dateAsString(Instant date) {
             return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(date))
-                .map(dateStr -> dateStr.replace(DOUBLE_QUOTES, EMPTY_STRING))
-                .orElseThrow();
+                       .map(dateStr -> dateStr.replace(DOUBLE_QUOTES, EMPTY_STRING))
+                       .orElseThrow();
         }
     }
 }

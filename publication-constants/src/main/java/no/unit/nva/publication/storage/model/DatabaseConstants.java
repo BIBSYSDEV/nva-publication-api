@@ -28,6 +28,7 @@ public final class DatabaseConstants {
     public static final String BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME = "SK3";
     public static final String RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME = "PK4";
     public static final String RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME = "SK4";
+    
     public static final String CUSTOMER_INDEX_FIELD_PREFIX = "Customer";
     public static final String STATUS_INDEX_FIELD_PREFIX = "Status";
     public static final String RESOURCE_INDEX_FIELD_PREFIX = "Resource";

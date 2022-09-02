@@ -7,16 +7,20 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -66,7 +70,7 @@ public class TicketService extends ServiceWithTransactions {
         /* TODO: this is to overcome the problem that we do not know the ticket type when the ticket is requested.
          * We need to refactor the database primary index to not include the data type (Resource, Message,DoiRequest,
          * * etc.).
-         * * * *  */
+         */
         return ticketTypes()
                    .map(ticketType -> TicketEntry.createQueryObject(userInstance, ticketIdentifier, ticketType))
                    .map(attempt(this::fetchTicket))
@@ -108,6 +112,13 @@ public class TicketService extends ServiceWithTransactions {
         
         TicketDao dao = (TicketDao) TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
         return dao.fetchByResourceIdentifier(client).map(Dao::getData).map(ticketType::cast);
+    }
+    
+    public List<Message> fetchTicketMessages(TicketEntry ticketEntry) {
+        var dao = (TicketDao) ticketEntry.toDao();
+        return dao.fetchTicketMessages(client)
+                   .map(MessageDao::getData)
+                   .collect(Collectors.toList());
     }
     
     @Override

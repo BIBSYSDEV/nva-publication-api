@@ -20,7 +20,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +47,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -76,6 +79,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     private UserInstance owner;
     private Clock clock;
     private Instant now;
+    private MessageService messageService;
     
     public static Stream<Class<?>> ticketProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -89,6 +93,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
         this.ticketService = new TicketService(client);
+        this.messageService = new MessageService(client, clock);
     }
     
     @ParameterizedTest(name = "Publication status: {0}")
@@ -257,6 +262,10 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
     }
     
+    private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
+        return DoiRequest.class.equals(ticketType) ? PUBLISHED : DRAFT;
+    }
+    
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve ticket by Identifier.")
     @MethodSource("ticketProvider")
@@ -352,8 +361,24 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(actualTicket.getStatus(), is(equalTo(COMPLETED)));
     }
     
-    private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
-        return DoiRequest.class.equals(ticketType) ? PUBLISHED : DRAFT;
+    @Test
+    void shouldReturnTheMessagesBelongingToTheTicket() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var publicationOwner = UserInstance.fromPublication(publication);
+        var ticketOfInterest = createPersistedTicket(publication, DoiRequest.class);
+        var expectedMessage = messageService.createMessage(ticketOfInterest, publicationOwner, randomString());
+        var unexpectedMessage = createOtherTicketWithMessage(publication, publicationOwner);
+    
+        var ticket = ticketService.fetchTicket(publicationOwner, ticketOfInterest.getIdentifier());
+        var ticketMessages = ticket.fetchMessages(ticketService);
+        assertThat(expectedMessage, is(in(ticketMessages)));
+        assertThat(unexpectedMessage, is(not(in(ticketMessages))));
+    }
+    
+    private Message createOtherTicketWithMessage(Publication publication, UserInstance publicationOwner)
+        throws ApiGatewayException {
+        var someOtherTicket = createPersistedTicket(publication, PublishingRequestCase.class);
+        return messageService.createMessage(someOtherTicket, publicationOwner, randomString());
     }
     
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,

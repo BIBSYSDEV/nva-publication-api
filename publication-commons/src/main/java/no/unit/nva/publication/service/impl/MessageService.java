@@ -29,6 +29,7 @@ import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
@@ -68,16 +69,28 @@ public class MessageService extends ServiceWithTransactions {
                                             String messageText,
                                             MessageType messageType) {
         requireMessageIsNotBlank(messageText);
+    
         Message message = createMessageEntry(sender, publication, messageText, messageType);
         return writeMessageToDb(message);
+    }
+    
+    public Message createMessage(TicketEntry ticketEntry, UserInstance userInstance, String messageText) {
+        var newMessage = Message.create(ticketEntry, userInstance, messageText);
+        var dao = new MessageDao(newMessage);
+        var transactionRequest = dao.createInsertionTransactionRequest();
+        client.transactWriteItems(transactionRequest);
+        return fetchEventualConsistentDataEntry(newMessage, this::getMessageByIdentifier).orElseThrow();
     }
     
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
         return attempt(() -> queryObject.fetchByIdentifier(client, MessageDao.class))
-            .map(MessageDao::getData)
-            .toOptional();
-        
+                   .map(MessageDao::getData)
+                   .toOptional();
+    }
+    
+    private Message getMessageByIdentifier(Message message) {
+        return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
     }
     
     /* TODO: consider using UpdateRequest to avoid doing the existence checking beforehand. At the present time
@@ -89,8 +102,8 @@ public class MessageService extends ServiceWithTransactions {
         var messageUpdate = existingMessage.markAsRead(clockForTimestamps);
         var dao = new MessageDao(messageUpdate);
         var putRequest = new PutItemRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withItem(dao.toDynamoFormat());
+                             .withTableName(RESOURCES_TABLE_NAME)
+                             .withItem(dao.toDynamoFormat());
         client.putItem(putRequest);
         return messageUpdate;
     }
@@ -160,24 +173,24 @@ public class MessageService extends ServiceWithTransactions {
     
     private List<Message> parseMessages(QueryResult queryResult) {
         return queryResult.getItems()
-            .stream()
-            .map(item -> parseAttributeValuesMap(item, MessageDao.class))
-            .map(MessageDao::getData)
-            .map(Message.class::cast)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+                   .map(MessageDao::getData)
+                   .map(Message.class::cast)
+                   .collect(Collectors.toList());
     }
     
     private QueryRequest queryForFetchingAllMessagesForAUser(MessageDao queryObject) {
         return new QueryRequest()
-            .withTableName(tableName)
-            .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
+                   .withTableName(tableName)
+                   .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
     }
     
     private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
         return new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-            .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
+                   .withTableName(tableName)
+                   .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+                   .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
     }
     
     private Message createMessageEntry(UserInstance sender,
@@ -201,16 +214,16 @@ public class MessageService extends ServiceWithTransactions {
     private QueryRequest queryForRetrievingMessagesAndRespectiveResource(ResourceDao queryObject) {
         String entityType = MessageDao.joinByResourceOrderedContainedType();
         Map<String, Condition> keyCondition = queryObject.byResource(entityType);
-        
+    
         return new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(keyCondition);
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                   .withKeyConditions(keyCondition);
     }
     
     private GetItemRequest getMessageByPrimaryKey(MessageDao queryObject) {
         return new GetItemRequest()
-            .withTableName(tableName)
-            .withKey(queryObject.primaryKey());
+                   .withTableName(tableName)
+                   .withKey(queryObject.primaryKey());
     }
 }

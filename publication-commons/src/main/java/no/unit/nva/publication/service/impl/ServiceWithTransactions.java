@@ -2,6 +2,8 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
+import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.DOI_REQUEST_INDEX_IN_QUERY_RESULT;
+import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
@@ -37,10 +39,7 @@ public abstract class ServiceWithTransactions {
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
     public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
-    public static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
-    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
-    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
     
@@ -80,16 +79,16 @@ public abstract class ServiceWithTransactions {
     
     protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS));
+            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT));
         }
         return Optional.empty();
     }
     
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
         } else if (onlyResourceExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }

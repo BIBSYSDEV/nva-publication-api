@@ -38,7 +38,8 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
         var ticket = fetchTicket(ticketIdentifier, requestInfo);
         validatePathParameters(publicationIdentifier, ticket);
-        return TicketDto.fromTicket(ticket);
+        var messages = ticket.fetchMessages(ticketService);
+        return TicketDto.fromTicket(ticket, messages);
     }
     
     private TicketEntry fetchTicket(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)

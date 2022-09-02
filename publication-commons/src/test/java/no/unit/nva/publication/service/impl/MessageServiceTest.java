@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -32,8 +33,11 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -66,6 +70,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     private MessageService messageService;
     private ResourceService resourceService;
     private UserInstance owner;
+    private TicketService ticketService;
     
     @BeforeEach
     public void initialize() {
@@ -73,9 +78,38 @@ class MessageServiceTest extends ResourcesLocalTest {
         var clock = mockClock();
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
+        ticketService = new TicketService(client);
         owner = randomUserInstance();
     }
     
+    @Test
+    void shouldPersistMessageWithReferenceToATicket() throws ApiGatewayException {
+        var publication = createDraftPublication(owner);
+        var ticket = createTicket(publication, randomTicketType());
+        var message = publicationOwnerSendsMessage(ticket, randomString());
+        var persistedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
+        assertThat(persistedMessage.getTicketIdentifier(), is(equalTo(ticket.getIdentifier())));
+        assertThat(persistedMessage.getText(), is(equalTo(message.getText())));
+    }
+    
+    private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
+        var userInfo = UserInstance.fromTicket(ticket);
+        return messageService.createMessage(ticket, userInfo, messageText);
+    }
+    
+    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        return ticketService.createTicket(ticket, ticketType);
+    }
+    
+    private Class<? extends TicketEntry> randomTicketType() {
+        var ticketTypes =
+            Stream.of(DoiRequest.class, PublishingRequestCase.class).collect(Collectors.toList());
+        return randomElement(ticketTypes);
+    }
+    
+    //not relevant
     @ParameterizedTest(name = "should persist message of type {0}")
     @EnumSource(MessageType.class)
     void shouldPersistMessageOfType(MessageType messageType) throws ApiGatewayException {
@@ -106,6 +140,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
     
+    //not relevant
     @Test
     void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
         throws ApiGatewayException {
@@ -141,6 +176,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThrows(TransactionFailedException.class, action);
     }
     
+    //not relevant
     @Test
     void listMessagesForCustomerAndStatusListsAllMessagesForGivenCustomerAndStatus() throws NotFoundException {
         var createdPublications = createPublicationsOfDifferentOwnersInSameOrg();
@@ -153,6 +189,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(actualConversation, contains(expectedConversation));
     }
     
+    //not relevant
     @Test
     void listMessagesForCustomerAndStatusReturnsMessagesOfSingleCustomer() throws NotFoundException {
         var createdPublications = createPublicationsOfDifferentOwnersInDifferentOrg();
@@ -166,6 +203,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(actualConversations, contains(expectedConversations));
     }
     
+    //TODO: there should be a listing of tickets instead of messages.
     @Test
     void listMessagesForUserReturnsAllMessagesConnectedToUser() throws ApiGatewayException {
         var publication1 = createDraftPublication(owner);
@@ -195,6 +233,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(message.getRecipient(), is(equalTo(publication.getResourceOwner().getOwner())));
     }
     
+    //TODO: discuss with product owner what the actual requirements are here.
     @Test
     void shouldSetRecipientAsSupportServiceWhenSenderIsOwner() throws ApiGatewayException {
         var publication = createDraftPublication(owner);
@@ -205,7 +244,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldMarkAsReadMessageWhenInputMessageExists() throws ApiGatewayException {
+    void shouldBeAbleToMarkMessageAnReadWhenInputMessageExists() throws ApiGatewayException {
         var publication = createDraftPublication(owner);
         var messageIdentifier =
             messageService.createMessage(owner, publication, randomString(), randomElement(MessageType.values()));
@@ -240,9 +279,9 @@ class MessageServiceTest extends ResourcesLocalTest {
     
     private List<Message> filterBasedOnCustomerId(URI customerId, List<Message> allMessagesOfAllOwnersAndCustomers) {
         return allMessagesOfAllOwnersAndCustomers
-            .stream()
-            .filter(message -> message.getCustomerId().equals(customerId))
-            .collect(Collectors.toList());
+                   .stream()
+                   .filter(message -> message.getCustomerId().equals(customerId))
+                   .collect(Collectors.toList());
     }
     
     private Message[] toArray(List<Message> insertedMessages) {
@@ -255,13 +294,13 @@ class MessageServiceTest extends ResourcesLocalTest {
                 .withMainTitle(insertedPublication.getEntityDescription().getMainTitle())
                 .withContributors(Collections.emptyList())
                 .build();
-        
+    
         return new Publication.Builder()
-            .withIdentifier(insertedPublication.getIdentifier())
-            .withResourceOwner(insertedPublication.getResourceOwner())
-            .withPublisher(insertedPublication.getPublisher())
-            .withEntityDescription(entityDescription)
-            .build();
+                   .withIdentifier(insertedPublication.getIdentifier())
+                   .withResourceOwner(insertedPublication.getResourceOwner())
+                   .withPublisher(insertedPublication.getPublisher())
+                   .withEntityDescription(entityDescription)
+                   .build();
     }
     
     private MessageService serviceProducingDuplicateIdentifiers() {
@@ -272,10 +311,10 @@ class MessageServiceTest extends ResourcesLocalTest {
         var publicationOfSomeOrg = PublicationGenerator.publicationWithoutIdentifier();
         var someOtherOrg = new Organization.Builder().withId(SOME_OTHER_ORG).build();
         var publicationOfDifferentOrg = publicationOfSomeOrg
-            .copy()
-            .withResourceOwner(RANDOM_RESOURCE_OWNER)
-            .withPublisher(someOtherOrg)
-            .build();
+                                            .copy()
+                                            .withResourceOwner(RANDOM_RESOURCE_OWNER)
+                                            .withPublisher(someOtherOrg)
+                                            .build();
         var newPublications = List.of(publicationOfSomeOrg, publicationOfDifferentOrg);
         return persistPublications(newPublications);
     }
@@ -295,23 +334,23 @@ class MessageServiceTest extends ResourcesLocalTest {
     private List<Publication> createPublicationsOfDifferentOwnersInSameOrg() {
         var publicationOfSomeOwner = PublicationGenerator.publicationWithoutIdentifier();
         var publicationOfDifferentOwner = PublicationGenerator.publicationWithoutIdentifier()
-            .copy().withResourceOwner(RANDOM_RESOURCE_OWNER).build();
+                                              .copy().withResourceOwner(RANDOM_RESOURCE_OWNER).build();
         var newPublications = List.of(publicationOfSomeOwner, publicationOfDifferentOwner);
         return persistPublications(newPublications);
     }
     
     private List<Publication> persistPublications(List<Publication> newPublications) {
         return newPublications.stream()
-            .map(attempt(pub -> createPublication(resourceService, pub)))
-            .map(Try::orElseThrow)
-            .collect(Collectors.toList());
+                   .map(attempt(pub -> createPublication(resourceService, pub)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
     }
     
     private Supplier<SortableIdentifier> duplicateIdentifierSupplier() {
         return () -> SOME_IDENTIFIER;
     }
     
-    private Publication createDraftPublication(UserInstance owner) throws ApiGatewayException {
+    private Publication createDraftPublication(UserInstance owner) {
         var publication = createUnpersistedPublication(owner);
         return resourceService.createPublication(owner, publication);
     }
@@ -325,11 +364,11 @@ class MessageServiceTest extends ResourcesLocalTest {
     private List<Message> insertSampleMessages(Publication publication) {
         var publicationOwner = UserInstance.fromPublication(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
-            .map(ignoredValue -> randomString())
-            .map(message -> createSimpleMessage(publication, message, randomMessageType()))
-            .map(attempt(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier)))
-            .map(Try::orElseThrow)
-            .collect(Collectors.toList());
+                   .map(ignoredValue -> randomString())
+                   .map(message -> createSimpleMessage(publication, message, randomMessageType()))
+                   .map(attempt(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
     }
     
     private MessageType randomMessageType() {

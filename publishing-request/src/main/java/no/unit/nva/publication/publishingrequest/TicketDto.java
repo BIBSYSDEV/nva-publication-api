@@ -2,17 +2,24 @@ package no.unit.nva.publication.publishingrequest;
 
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -25,11 +32,20 @@ import nva.commons.core.paths.UriWrapper;
 })
 public abstract class TicketDto implements JsonSerializable {
     
+    public static final String MESSAGES_FIELD = "messages";
+    
     public static TicketDto fromTicket(TicketEntry ticket) {
-        return create(ticket);
+        return fromTicket(ticket, Collections.emptyList());
     }
     
-    public static TicketDto create(TicketEntry ticket) {
+    public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages) {
+        return create(ticket, messages);
+    }
+    
+    public static TicketDto create(TicketEntry ticket, Collection<Message> messages) {
+        var messageDtos = messages.stream()
+                              .map(MessageDto::fromMessage)
+                              .collect(Collectors.toList());
         return TicketDto.builder()
                    .withCreatedDate(ticket.getCreatedDate())
                    .withStatus(ticket.getStatus())
@@ -38,6 +54,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withIdentifier(ticket.getIdentifier())
                    .withPublicationId(createPublicationId(ticket.getResourceIdentifier()))
                    .withId(createTicketId(ticket))
+                   .withMessages(messageDtos)
                    .build(ticket.getClass());
     }
     
@@ -59,6 +76,9 @@ public abstract class TicketDto implements JsonSerializable {
     public String toString() {
         return toJsonString();
     }
+    
+    @JsonProperty(MESSAGES_FIELD)
+    public abstract List<MessageDto> getMessages();
     
     protected SortableIdentifier extractResourceIdentifier(URI publicationId) {
         var idString = UriWrapper.fromUri(publicationId).getLastPathElement();
@@ -88,6 +108,7 @@ public abstract class TicketDto implements JsonSerializable {
         private SortableIdentifier identifier;
         private URI publicationId;
         private URI id;
+        private List<MessageDto> messages;
         
         private Builder() {
         }
@@ -116,18 +137,24 @@ public abstract class TicketDto implements JsonSerializable {
             this.identifier = identifier;
             return this;
         }
-        
+    
         public Builder withPublicationId(URI publicationId) {
             this.publicationId = publicationId;
             return this;
         }
-        
+    
         public Builder withId(URI id) {
             this.id = id;
             return this;
         }
-        
+    
+        public Builder withMessages(List<MessageDto> messages) {
+            this.messages = messages;
+            return this;
+        }
+    
         public TicketDto build(Class<? extends TicketEntry> ticketType) {
+        
             if (DoiRequest.class.equals(ticketType)) {
                 return new DoiRequestDto(status,
                     createdDate,
@@ -135,7 +162,8 @@ public abstract class TicketDto implements JsonSerializable {
                     version,
                     identifier,
                     publicationId,
-                    id);
+                    id,
+                    messages);
             } else if (PublishingRequestCase.class.equals(ticketType)) {
                 return new PublishingRequestDto(status,
                     createdDate,
@@ -143,9 +171,10 @@ public abstract class TicketDto implements JsonSerializable {
                     version,
                     identifier,
                     publicationId,
-                    id);
+                    id,
+                    messages);
             }
-            throw new RuntimeException("Unsupported DTO type");
+            throw new RuntimeException("Unsupported type");
         }
     }
 }

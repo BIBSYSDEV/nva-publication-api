@@ -107,10 +107,10 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     void createDoiRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
         InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
-            .withBody(request)
-            .withNvaUsername(NOT_THE_RESOURCE_OWNER.getOwner())
-            .withCustomerId(SOME_PUBLISHER)
-            .build();
+                                      .withBody(request)
+                                      .withNvaUsername(NOT_THE_RESOURCE_OWNER.getOwner())
+                                      .withCustomerId(SOME_PUBLISHER)
+                                      .build();
         
         handler.handleRequest(inputStream, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -167,11 +167,12 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), message);
         return new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
-            .withCustomerId(publication.getPublisher().getId())
-            .withNvaUsername(owner.getOwner())
-            .withPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-            .withBody(request)
-            .build();
+                   .withCustomerId(publication.getPublisher().getId())
+                   .withNvaUsername(owner.getOwner())
+                   .withPathParameters(
+                       Map.of(RequestUtil.PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                   .withBody(request)
+                   .build();
     }
     
     private DoiRequest readDoiRequestDirectlyFromService(SortableIdentifier doiRequestIdentifier)

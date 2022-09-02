@@ -1,6 +1,6 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.Entity.nextVersion;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -12,6 +12,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -51,7 +52,7 @@ class EntityTest {
     @ParameterizedTest(name = "should return equals true when two resources differ only in their row version")
     @MethodSource("resourceProvider")
     void shouldReturnEqualsTrueWhenTwoResourcesDifferOnlyInTheirRowVersion(Tuple tuple) {
-        assertThat(tuple.left, doesNotHaveEmptyValues());
+        assertThat(tuple.left, doesNotHaveEmptyValuesIgnoringFields(Set.of("ticketIdentifier")));
         assertThat(tuple.right.getVersion(), is(not(equalTo(tuple.left.getVersion()))));
         assertThat(tuple.right, is(equalTo(tuple.left)));
     }
@@ -62,7 +63,8 @@ class EntityTest {
     @ParameterizedTest(name = "should return the same hash code when two resources differ only in their row version")
     @MethodSource("resourceProvider")
     void shouldReturnTheSameHashCodeWhenTwoResourcesDifferOnlyInTheirRowVersion(Tuple tuple) {
-        assertThat(tuple.left, doesNotHaveEmptyValues());
+        //TODO remove ignoring value after ticket service is in place
+        assertThat(tuple.left, doesNotHaveEmptyValuesIgnoringFields(Set.of("ticketIdentifier")));
         assertThat(tuple.left.getVersion(), is(not(equalTo(tuple.right.getVersion()))));
         assertThat(tuple.left.hashCode(), is(equalTo(tuple.right.hashCode())));
     }
