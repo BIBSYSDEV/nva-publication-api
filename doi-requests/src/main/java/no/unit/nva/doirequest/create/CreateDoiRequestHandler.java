@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.create;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -7,6 +8,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -14,6 +17,7 @@ import no.unit.nva.publication.exception.InternalErrorException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -31,10 +35,11 @@ import nva.commons.core.attempt.Failure;
 
 public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest, Void> {
     
-    public static final String DOI_ALREADY_EXISTS_ERROR = "A DOI request already exists";
     public static final String USER_IS_NOT_OWNER_ERROR = "User does not own the specific publication";
     
     private static final Clock CLOCK = Clock.systemDefaultZone();
+    public static final String PUBLICATION_HAS_DOI_ALREADY = "Publication has already been assigned a DOI";
+    public static final String RECENT_DOI_REQUEST_ERROR = "A new DoiRequest was created recently";
     private final TicketService ticketService;
     private final MessageService messageService;
     private final ResourceService resourceService;
@@ -100,22 +105,51 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         }
     }
     
-    private DoiRequest createDoiRequest(Publication publication)
-        throws ApiGatewayException {
+    private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
         return attempt(() -> DoiRequest.fromPublication(publication))
-            .map(createTicketRequest -> ticketService.createTicket(createTicketRequest, DoiRequest.class))
-            .orElseThrow(this::handleError);
+                   .map(createTicketRequest -> ticketService.createTicket(createTicketRequest, DoiRequest.class))
+                   .or(() -> handleAlreadyExistingDoiRequestError(publication))
+                   .orElseThrow(this::handleError);
     }
     
     private ApiGatewayException handleError(Failure<DoiRequest> fail) {
         Exception exception = fail.getException();
         if (exception instanceof TransactionFailedException) {
-            return new BadRequestException(DOI_ALREADY_EXISTS_ERROR);
+            throw new RuntimeException(exception);
         } else if (exception instanceof ApiGatewayException) {
             return (ApiGatewayException) fail.getException();
         } else {
             return new InternalErrorException(fail.getException());
         }
+    }
+    
+    private DoiRequest handleAlreadyExistingDoiRequestError(Publication publication) throws BadRequestException {
+        if (publicationDoesNotHaveADoi(publication)) {
+            var customerId = publication.getPublisher().getId();
+            var identifier = publication.getIdentifier();
+            return (DoiRequest) refreshExistingExistingTicket(customerId, identifier);
+        }
+        throw new BadRequestException(PUBLICATION_HAS_DOI_ALREADY);
+    }
+    
+    private boolean publicationDoesNotHaveADoi(Publication publication) {
+        return isNull(publication.getDoi());
+    }
+    
+    private TicketEntry refreshExistingExistingTicket(URI customerId, SortableIdentifier identifier)
+        throws BadRequestException {
+        var ticket = ticketService.fetchTicketByResourceIdentifier(customerId, identifier, DoiRequest.class)
+                         .orElseThrow();
+        if (doiRequestSatisfiesBasicRuleProtectingUsFromCreatingLargeAmountsOfHangingDraftDoiRequests(ticket)) {
+            return ticketService.refreshTicket(ticket);
+        }
+        throw new BadRequestException(RECENT_DOI_REQUEST_ERROR);
+    }
+    
+    private static boolean doiRequestSatisfiesBasicRuleProtectingUsFromCreatingLargeAmountsOfHangingDraftDoiRequests(
+        DoiRequest ticket) {
+        //TODO replace with Duration.ofDays(1)
+        return ticket.getModifiedDate().isBefore(Instant.now().minus(Duration.ofMinutes(1)));
     }
     
     private Map<String, String> additionalHeaders(SortableIdentifier doiRequestIdentifier) {

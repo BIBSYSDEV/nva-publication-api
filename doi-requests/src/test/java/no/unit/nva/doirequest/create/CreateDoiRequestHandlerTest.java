@@ -1,6 +1,9 @@
 package no.unit.nva.doirequest.create;
 
 import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
+import static no.unit.nva.doirequest.create.CreateDoiRequestHandler.PUBLICATION_HAS_DOI_ALREADY;
+import static no.unit.nva.doirequest.create.CreateDoiRequestHandler.RECENT_DOI_REQUEST_ERROR;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -8,8 +11,10 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.HttpHeaders;
@@ -19,9 +24,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -30,6 +36,7 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -53,13 +60,10 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
     public static final int SINGLE_MESSAGE = 0;
     public static final String ALLOW_ALL_ORIGINS = "*";
-    private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
-    private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
-    private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
-    private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
+    
     private CreateDoiRequestHandler handler;
     private ResourceService resourceService;
-    private Clock mockClock;
+    private Clock clock;
     private ByteArrayOutputStream outputStream;
     private Context context;
     private TicketService ticketService;
@@ -68,14 +72,15 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() {
         init();
-        setupClock();
-        resourceService = new ResourceService(client, mockClock);
-        ticketService = new TicketService(client, mockClock);
-        messageService = new MessageService(client, mockClock);
+    
+        clock = Clock.systemDefaultZone();
+        resourceService = new ResourceService(client, clock);
+        ticketService = new TicketService(client, clock);
+        messageService = new MessageService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
-        
+    
         handler = new CreateDoiRequestHandler(resourceService, ticketService, messageService, environment);
     }
     
@@ -107,10 +112,10 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     void createDoiRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
         InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
-            .withBody(request)
-            .withNvaUsername(NOT_THE_RESOURCE_OWNER.getOwner())
-            .withCustomerId(SOME_PUBLISHER)
-            .build();
+                                      .withBody(request)
+                                      .withNvaUsername(NOT_THE_RESOURCE_OWNER.getOwner())
+                                      .withCustomerId(SOME_PUBLISHER)
+                                      .build();
         
         handler.handleRequest(inputStream, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -118,10 +123,9 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void createDoiRequestReturnsBadRequestErrorWenDoiRequestAlreadyExists()
+    void createDoiRequestReturnsBadRequestErrorWhenPublicationHasADoiAlready()
         throws IOException {
-        Publication publication = createPublicationWithoutDoi();
-        
+        Publication publication = createPublicationWithDoi();
         sendRequest(publication, publication.getResourceOwner());
         
         outputStream = new ByteArrayOutputStream();
@@ -129,6 +133,8 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        var problem = response.getBodyObject(Problem.class);
+        assertThat(problem.getDetail(), containsString(PUBLICATION_HAS_DOI_ALREADY));
     }
     
     @Test
@@ -138,14 +144,49 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         String expectedMessageText = randomString();
         
         sendRequest(publication, publication.getResourceOwner(), expectedMessageText);
-        
+    
         Optional<ResourceConversation> resourceMessages = messageService.getMessagesForResource(
             UserInstance.fromPublication(publication),
             publication.getIdentifier());
-        
+    
         var savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
         assertThat(savedMessage.getMessageType(), is(equalTo(MessageType.DOI_REQUEST)));
+    }
+    
+    @Test
+    void shouldUpdateDoiRequestIfDoiRequestExistsButPublicationHasNoDoiAndThereIsLowChanceOfCreatingHangingDraftDois()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithoutDoi();
+        var newTicketRequest = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+        var doiRequest = ticketService.createTicket(newTicketRequest, DoiRequest.class);
+        setModifiedDateToBeAtLeastOneDayOld(doiRequest);
+        var request = createRequest(publication, publication.getResourceOwner(), randomString());
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+    
+    @Test
+    void shouldThrowBadRequestWhenDoiRequestExistsPublicationHasNoDoiAndThereIsHighChanceOfCreatingHangingDraftDois()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithoutDoi();
+        var newTicketRequest = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+        ticketService.createTicket(newTicketRequest, DoiRequest.class);
+        var request = createRequest(publication, publication.getResourceOwner(), randomString());
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        var problem = response.getBodyObject(Problem.class);
+        assertThat(problem.getDetail(), containsString(RECENT_DOI_REQUEST_ERROR));
+    }
+    
+    private void setModifiedDateToBeAtLeastOneDayOld(DoiRequest doiRequest) {
+        doiRequest.setModifiedDate(doiRequest.getModifiedDate().minus(Duration.ofDays(1)));
+        doiRequest.setVersion(UUID.randomUUID());
+        PutItemRequest putItemRequest = doiRequest.toDao().createPutItemRequest();
+        
+        client.putItem(putItemRequest);
     }
     
     public void sendRequest(Publication publication, ResourceOwner owner, String message) throws IOException {
@@ -167,11 +208,12 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), message);
         return new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
-            .withCustomerId(publication.getPublisher().getId())
-            .withNvaUsername(owner.getOwner())
-            .withPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-            .withBody(request)
-            .build();
+                   .withCustomerId(publication.getPublisher().getId())
+                   .withNvaUsername(owner.getOwner())
+                   .withPathParameters(
+                       Map.of(RequestUtil.PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                   .withBody(request)
+                   .build();
     }
     
     private DoiRequest readDoiRequestDirectlyFromService(SortableIdentifier doiRequestIdentifier)
@@ -185,17 +227,13 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         return headerArray[headerArray.length - 1];
     }
     
-    private void setupClock() {
-        mockClock = mock(Clock.class);
-        when(mockClock.instant())
-            .thenReturn(PUBLICATION_CREATION_TIME)
-            .thenReturn(PUBLICATION_UPDATE_TIME)
-            .thenReturn(DOI_REQUEST_CREATION_TIME)
-            .thenReturn(DOI_REQUEST_UPDATE_TIME);
-    }
-    
     private Publication createPublicationWithoutDoi() {
         Publication publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    }
+    
+    private Publication createPublicationWithDoi() {
+        Publication publication = PublicationGenerator.randomPublication().copy().withDoi(randomDoi()).build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
 }

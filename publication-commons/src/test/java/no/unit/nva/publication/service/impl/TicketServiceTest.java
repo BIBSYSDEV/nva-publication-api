@@ -16,7 +16,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -330,14 +332,27 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, () -> ticketService.fetchTicketByIdentifier(SortableIdentifier.next()));
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should update modified date and version when refreshing a ticket")
+    @MethodSource("ticketProvider")
+    void shouldUpdateModifiedDateAndVersionWhenRefreshing(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, InterruptedException {
+        var publication = persistPublication(owner, DRAFT);
+        var originalTicket = createPersistedTicket(publication, ticketType);
+        var refreshed = ticketService.refreshTicket(originalTicket);
+        Thread.sleep(1);
+        assertThat(refreshed.getModifiedDate(), is(greaterThan(originalTicket.getModifiedDate())));
+        assertThat(refreshed.getVersion(), is(not(equalTo(originalTicket.getVersion()))));
+    }
+    
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
                                                                         AmazonDynamoDB client) {
         var mockedGetPublicationResponse = new GetItemResult().withItem(mockedPublicationResponse());
         var mockedResponseWhenItemNotYetInPlace = ResourceNotFoundException.class;
-    
+        
         var ticketEntry = createUnpersistedTicket(randomPublicationWithoutDoi(), ticketType);
         var mockedResponseWhenItemFinallyInPlace = new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
-    
+        
         when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
         when(client.getItem(any()))
             .thenReturn(mockedGetPublicationResponse)

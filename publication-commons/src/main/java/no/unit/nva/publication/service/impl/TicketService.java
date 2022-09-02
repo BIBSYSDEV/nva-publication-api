@@ -111,9 +111,16 @@ public class TicketService extends ServiceWithTransactions {
     public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
                                                                                SortableIdentifier resourceIdentifier,
                                                                                Class<T> ticketType) {
-    
+        
         TicketDao dao = (TicketDao) TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
         return dao.fetchByResourceIdentifier(client).map(Dao::getData).map(ticketType::cast);
+    }
+    
+    public TicketEntry refreshTicket(TicketEntry ticket) {
+        var refreshedTicket = ticket.refresh();
+        var dao = (TicketDao) refreshedTicket.toDao();
+        client.putItem(dao.createPutItemRequest());
+        return refreshedTicket;
     }
     
     @Override
