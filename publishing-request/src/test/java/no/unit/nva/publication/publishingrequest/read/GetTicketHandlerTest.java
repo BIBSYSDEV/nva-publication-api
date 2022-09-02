@@ -23,7 +23,7 @@ import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.TicketDto;
-import no.unit.nva.publication.publishingrequest.TicketTest;
+import no.unit.nva.publication.publishingrequest.TicketTestLocal;
 import no.unit.nva.publication.publishingrequest.TicketUtils;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -37,7 +37,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 
-class GetTicketHandlerTest extends TicketTest {
+class GetTicketHandlerTest extends TicketTestLocal {
     
     private GetTicketHandler handler;
     private MessageService messageService;

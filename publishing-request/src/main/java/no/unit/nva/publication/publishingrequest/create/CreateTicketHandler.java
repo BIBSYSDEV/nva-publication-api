@@ -16,6 +16,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
@@ -23,6 +24,11 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     public static final String LOCATION_HEADER = "Location";
     private final TicketService ticketService;
     private final ResourceService resourceService;
+    
+    @JacocoGenerated
+    public CreateTicketHandler() {
+        this(TicketService.defaultService(), ResourceService.defaultService());
+    }
     
     public CreateTicketHandler(TicketService ticketService, ResourceService resourceService) {
         super(TicketDto.class);

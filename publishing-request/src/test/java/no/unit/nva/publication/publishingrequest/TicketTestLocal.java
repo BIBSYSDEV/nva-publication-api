@@ -19,7 +19,7 @@ import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.stubs.FakeContext;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 
-public abstract class TicketTest extends ResourcesLocalTest {
+public abstract class TicketTestLocal extends ResourcesLocalTest {
     
     public static final FakeContext CONTEXT = new FakeContext();
     protected ResourceService resourceService;

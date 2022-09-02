@@ -1,14 +1,13 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static no.unit.nva.publication.PublicationServiceConfig.defaultResourceService;
 import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
-        this(defaultResourceService(), defaultEventBridgeClient());
+        this(ResourceService.defaultService(), defaultEventBridgeClient());
     }
     
     public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient) {

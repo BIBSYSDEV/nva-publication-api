@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.TicketEntry.createNewTicket;
 import static no.unit.nva.publication.model.business.TicketEntry.ticketTypes;
 import static nva.commons.core.attempt.Try.attempt;
@@ -12,7 +13,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -55,7 +55,7 @@ public class TicketService extends ServiceWithTransactions {
     
     @JacocoGenerated
     public static TicketService defaultService() {
-        return new TicketService(PublicationServiceConfig.defaultDynamoDbClient());
+        return new TicketService(DEFAULT_DYNAMODB_CLIENT);
     }
     
     public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
