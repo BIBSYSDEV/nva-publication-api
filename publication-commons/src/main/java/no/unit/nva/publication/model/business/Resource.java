@@ -64,7 +64,7 @@ public class Resource implements Entity {
     private Set<AdditionalIdentifier> additionalIdentifiers;
     @JsonProperty
     private List<URI> subjects;
-    @JsonProperty(VERSION)
+    @JsonProperty(VERSION_FIELD)
     private UUID version;
     
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {

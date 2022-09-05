@@ -25,7 +25,7 @@ import no.unit.nva.publication.model.storage.Dao;
 })
 public interface Entity {
     
-    String VERSION = "version";
+    String VERSION_FIELD = "version";
     
     static UUID nextVersion() {
         return UUID.randomUUID();
@@ -39,7 +39,7 @@ public interface Entity {
     Publication toPublication();
     
     @JsonAlias("rowVersion")
-    @JsonProperty(VERSION)
+    @JsonProperty(VERSION_FIELD)
     UUID getVersion();
     
     void setVersion(UUID rowVersion);

@@ -7,7 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,23 +92,6 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(persistedMessage.getText(), is(equalTo(message.getText())));
     }
     
-    private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
-        var userInfo = UserInstance.fromTicket(ticket);
-        return messageService.createMessage(ticket, userInfo, messageText);
-    }
-    
-    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        return ticketService.createTicket(ticket, ticketType);
-    }
-    
-    private Class<? extends TicketEntry> randomTicketType() {
-        var ticketTypes =
-            Stream.of(DoiRequest.class, PublishingRequestCase.class).collect(Collectors.toList());
-        return randomElement(ticketTypes);
-    }
-    
     //not relevant
     @ParameterizedTest(name = "should persist message of type {0}")
     @EnumSource(MessageType.class)
@@ -123,32 +106,13 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(expectedMessage, is(equalTo(message)));
     }
     
-    @Test
-    void createDoiRequestMessageStoresNewMessageInDatabaseIndicatingThatIsConnectedToTheRespectiveDoiRequest()
-        throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
-        var messageText = randomString();
-        var messageIdentifier = createDoiRequestMessage(publication, messageText);
-        var savedMessage = fetchMessage(owner, messageIdentifier);
-        var expectedMessage = constructExpectedDoiRequestMessage(
-            messageIdentifier,
-            publication,
-            messageText);
-        
-        assertThat(savedMessage.getMessageType(), is(MessageType.DOI_REQUEST));
-        
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
-    }
-    
     //not relevant
     @Test
-    void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
-        throws ApiGatewayException {
+    void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource() {
         var insertedPublication = createDraftPublication(owner);
         var insertedMessages = insertSampleMessages(insertedPublication);
         
-        var resourceConversationOpt =
-            messageService.getMessagesForResource(owner, insertedPublication.getIdentifier());
+        var resourceConversationOpt = messageService.getMessagesForResource(owner, insertedPublication.getIdentifier());
         
         assertThat(resourceConversationOpt.isPresent(), is(true));
         var resourceConversation = resourceConversationOpt.orElseThrow();
@@ -163,8 +127,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "should throw Exception when type is {0} and identifier is duplicate")
     @EnumSource(MessageType.class)
-    void shouldThrowExceptionWhenDuplicateIdentifierIsInserted(MessageType messageType)
-        throws ApiGatewayException {
+    void shouldThrowExceptionWhenDuplicateIdentifierIsInserted(MessageType messageType) {
         messageService = serviceProducingDuplicateIdentifiers();
         var publication = createDraftPublication(owner);
         
@@ -205,7 +168,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     
     //TODO: there should be a listing of tickets instead of messages.
     @Test
-    void listMessagesForUserReturnsAllMessagesConnectedToUser() throws ApiGatewayException {
+    void listMessagesForUserReturnsAllMessagesConnectedToUser() {
         var publication1 = createDraftPublication(owner);
         var publication2 = createDraftPublication(owner);
         
@@ -256,7 +219,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldThrowExceptionWhenTryingToMarkNonExistentMessageAsRead() throws ApiGatewayException {
+    void shouldThrowExceptionWhenTryingToMarkNonExistentMessageAsRead() {
         var publication = createDraftPublication(owner);
         var nonPersistedMessage = Message.create(owner, publication, randomString(), SortableIdentifier.next(),
             Clock.systemDefaultZone(), MessageType.SUPPORT);
@@ -264,15 +227,29 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, () -> messageService.markAsRead(nonPersistedMessage));
     }
     
+    private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
+        var userInfo = UserInstance.fromTicket(ticket);
+        return messageService.createMessage(ticket, userInfo, messageText);
+    }
+    
+    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        return ticketService.createTicket(ticket, ticketType);
+    }
+    
+    private Class<? extends TicketEntry> randomTicketType() {
+        var ticketTypes = Stream.of(DoiRequest.class, PublishingRequestCase.class).collect(Collectors.toList());
+        return randomElement(ticketTypes);
+    }
+    
     private ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {
         return ResourceConversation.fromMessageList(messagesForPublication).get(SINGLE_EXPECTED_ELEMENT);
     }
     
-    private ResourceConversation[] constructExpectedCuratorsMessageView(
-        URI customerId,
-        List<Message> allMessagesOfAllOwnersAndCustomers) {
-        var messagesOfSpecifiedCustomer =
-            filterBasedOnCustomerId(customerId, allMessagesOfAllOwnersAndCustomers);
+    private ResourceConversation[] constructExpectedCuratorsMessageView(URI customerId,
+                                                                        List<Message> allMessagesOfAllOwnersAndCustomers) {
+        var messagesOfSpecifiedCustomer = filterBasedOnCustomerId(customerId, allMessagesOfAllOwnersAndCustomers);
         var conversationList = ResourceConversation.fromMessageList(messagesOfSpecifiedCustomer);
         return conversationList.toArray(new ResourceConversation[0]);
     }
@@ -355,8 +332,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         return resourceService.createPublication(owner, publication);
     }
     
-    private Publication createPublication(ResourceService resourceService, Publication publication)
-        throws ApiGatewayException {
+    private Publication createPublication(ResourceService resourceService, Publication publication) {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);
     }
@@ -378,17 +354,6 @@ class MessageServiceTest extends ResourcesLocalTest {
     private Message fetchMessage(UserInstance publicationOwner, SortableIdentifier messageIdentifier)
         throws NotFoundException {
         return messageService.getMessage(publicationOwner, messageIdentifier);
-    }
-    
-    private SortableIdentifier createDoiRequestMessage(Publication publication, String message) {
-        var publicationOwner = UserInstance.fromPublication(publication);
-        var sender = UserInstance.create(SOME_SENDER, publicationOwner.getOrganizationUri());
-        return createDoiRequestMessage(publication, message, sender);
-    }
-    
-    private SortableIdentifier createDoiRequestMessage(Publication publication, String message, UserInstance sender) {
-        return attempt(
-            () -> messageService.createMessage(sender, publication, message, MessageType.DOI_REQUEST)).orElseThrow();
     }
     
     private SortableIdentifier createSimpleMessage(Publication publication, String message, MessageType messageType) {
@@ -414,13 +379,5 @@ class MessageServiceTest extends ResourcesLocalTest {
         var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
         var clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
         return Message.create(sender, publication, messageText, messageIdentifier, clock, messageType);
-    }
-    
-    private Message constructExpectedDoiRequestMessage(SortableIdentifier messageIdentifier,
-                                                       Publication publication,
-                                                       String messageText) {
-        var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
-        var clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
-        return Message.create(sender, publication, messageText, messageIdentifier, clock, MessageType.DOI_REQUEST);
     }
 }

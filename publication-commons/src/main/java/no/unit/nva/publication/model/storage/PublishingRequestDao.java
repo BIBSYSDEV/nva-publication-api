@@ -3,7 +3,6 @@ package no.unit.nva.publication.model.storage;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
-import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
@@ -59,11 +57,6 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
         var queryObject =
             PublishingRequestCase.createQueryObject(resourceOwner, resourceIdentifier, null);
         return new PublishingRequestDao(queryObject);
-    }
-    
-    @Override
-    public Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
-        return fetchItemWithClient(client);
     }
     
     @Override

@@ -3,6 +3,7 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
@@ -65,6 +66,16 @@ public class ExpandedResourceConversation extends ResourceConversation
     @Override
     public Set<URI> getOrganizationIds() {
         return organizationIds;
+    }
+    
+    @Override
+    public Instant getCreatedDate() {
+        return null;
+    }
+    
+    @Override
+    public Instant getModifiedDate() {
+        return null;
     }
     
     @Override
