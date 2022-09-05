@@ -34,6 +34,7 @@ import nva.commons.core.SingletonCollector;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
     @JsonSubTypes.Type(name = PublishingRequestDao.TYPE, value = PublishingRequestDao.class),
+    @JsonSubTypes.Type(name = GeneralSupportRequestDao.TYPE, value = GeneralSupportRequestDao.class)
 })
 public abstract class TicketDao extends Dao implements JoinWithResource {
     
@@ -49,7 +50,9 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         return (TicketDao) ticketEntry.toDao();
     }
     
-    public abstract Optional<TicketDao> fetchItem(AmazonDynamoDB client);
+    public final Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
+        return fetchItemWithClient(client);
+    }
     
     public PutItemRequest createPutItemRequest() {
         var condition = new UpdateCaseButNotOwnerCondition((TicketEntry) this.getData());
@@ -115,11 +118,11 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     
     private static class FetchMessagesQuery {
         
-        private final TicketDao ticketDao;
         private static final String FILTER_EXPRESSION = "#data.#ticketIdentifier = :ticketIdentifier";
         private static final String KEY_CONDITION_EXPRESSION =
             "#JoinByResourcePartitionKey = :PartitionKeyValue "
             + "AND begins_with(#JoinByResourceSortKey,:SortKeyValuePrefix)";
+        private final TicketDao ticketDao;
         
         public FetchMessagesQuery(TicketDao ticketDao) {
             this.ticketDao = ticketDao;
@@ -182,7 +185,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                 "#modifiedDate", MODIFIED_DATE_FIELD,
                 "#owner", OWNER_FIELD,
                 "#resourceIdentifier", RESOURCE_IDENTIFIER_FIELD,
-                "#version", Entity.VERSION
+                "#version", Entity.VERSION_FIELD
             );
             
             this.expressionAttributeValues =

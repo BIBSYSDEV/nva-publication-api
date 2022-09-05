@@ -20,7 +20,8 @@ import nva.commons.apigateway.exceptions.ConflictException;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
-    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)
+    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
+    @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)
 })
 public interface TicketEntry extends Entity {
     
@@ -34,7 +35,7 @@ public interface TicketEntry extends Entity {
     }
     
     static Stream<Class<? extends TicketEntry>> ticketTypes() {
-        return Stream.of(DoiRequest.class, PublishingRequestCase.class);
+        return Stream.of(DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class);
     }
     
     static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
@@ -42,6 +43,8 @@ public interface TicketEntry extends Entity {
             return DoiRequest.fromPublication(publication);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return createOpeningCaseObject(UserInstance.fromPublication(publication), publication.getIdentifier());
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
+            return GeneralSupportRequest.fromPublication(publication);
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
@@ -55,7 +58,13 @@ public interface TicketEntry extends Entity {
                                        .withCustomerId(customerId)
                                        .build());
         }
-        return ticketType.cast(PublishingRequestCase.createQueryObject(customerId, resourceIdentifier));
+        if (PublishingRequestCase.class.equals(ticketType)) {
+            return ticketType.cast(PublishingRequestCase.createQueryObject(customerId, resourceIdentifier));
+        }
+        if (GeneralSupportRequest.class.equals(ticketType)) {
+            return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
+        }
+        throw new UnsupportedOperationException();
     }
     
     static <T extends TicketEntry> T createQueryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
@@ -63,8 +72,10 @@ public interface TicketEntry extends Entity {
             return ticketType.cast(DoiRequest.builder().withIdentifier(ticketIdentifier).build());
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return ticketType.cast(PublishingRequestCase.createQueryObject(ticketIdentifier));
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
+            return ticketType.cast(GeneralSupportRequest.createQueryObject(ticketIdentifier));
         } else {
-            throw new RuntimeException("Unsupported ticket type");
+            throw new UnsupportedOperationException();
         }
     }
     
@@ -75,9 +86,18 @@ public interface TicketEntry extends Entity {
             return DoiRequest.createQueryObject(userInstance, ticketIdentifier);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return PublishingRequestCase.createQueryObject(userInstance, ticketIdentifier);
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
+            return GeneralSupportRequest.createQueryObject(userInstance, ticketIdentifier);
         } else {
             throw new RuntimeException("Unsupported ticket type");
         }
+    }
+    
+    static TicketEntry createNewGeneralSupportRequest(Publication publication,
+                                                      Supplier<SortableIdentifier> identifierProvider) {
+        var ticket = GeneralSupportRequest.fromPublication(publication);
+        setServiceControlledFields(ticket, identifierProvider);
+        return ticket;
     }
     
     SortableIdentifier getResourceIdentifier();
@@ -128,12 +148,15 @@ public interface TicketEntry extends Entity {
         Publication publication,
         Class<T> ticketType,
         Supplier<SortableIdentifier> identifierProvider) {
-        
+    
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
             return createNewPublishingRequestEntry(publication, identifierProvider);
+        }
+        if (GeneralSupportRequest.class.equals(ticketType)) {
+            return createNewGeneralSupportRequest(publication, identifierProvider);
         }
         throw new UnsupportedOperationException();
     }

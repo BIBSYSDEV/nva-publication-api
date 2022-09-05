@@ -4,6 +4,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.TestingUtils.createGeneralSupportRequest;
 import static no.unit.nva.publication.TestingUtils.createOrganization;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
@@ -47,6 +48,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -77,7 +79,6 @@ class TicketServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
-    private Clock clock;
     private Instant now;
     private MessageService messageService;
     
@@ -85,12 +86,16 @@ class TicketServiceTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
     
+    public static Stream<Class<?>> uniqueTicketsProvider() {
+        return Stream.of(DoiRequest.class, PublishingRequestCase.class);
+    }
+    
     @BeforeEach
     public void initialize() {
         super.init();
         this.now = Instant.now();
         this.owner = randomUserInstance();
-        clock = Clock.systemDefaultZone();
+        Clock clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
         this.ticketService = new TicketService(client);
         this.messageService = new MessageService(client, clock);
@@ -137,19 +142,30 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, doesNotHaveEmptyValues());
     }
     
+    @Test
+    void shouldCreateGeneralSupportCaseForAnyPublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = TestingUtils.createGeneralSupportRequest(publication);
+        var persistedTicket = ticketService.createTicket(ticket, GeneralSupportRequest.class);
+        copyServiceControlledFields(ticket, persistedTicket);
+        assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
+        assertThat(persistedTicket, is(equalTo(ticket)));
+        assertThat(persistedTicket, doesNotHaveEmptyValues());
+    }
+    
     // This action fails with a TransactionFailedException which contains no information about why the transaction
     // failed, which may fail because of multiple reasons including what we are testing for here.
     @ParameterizedTest(name = "type: {0}")
     @DisplayName("should throw Error when more than one tickets exist for one publication for type")
-    @MethodSource("ticketProvider")
+    @MethodSource("uniqueTicketsProvider")
     void shouldThrowExceptionOnMoreThanOnePublishingRequestsForTheSamePublication(
         Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-    
+        
         var firstTicket = createUnpersistedTicket(publication, ticketType);
         attempt(() -> ticketService.createTicket(firstTicket, ticketType)).orElseThrow();
-    
+        
         var secondTicket = createUnpersistedTicket(publication, ticketType);
         Executable action = () -> ticketService.createTicket(secondTicket, ticketType);
         assertThrows(TransactionFailedException.class, action);
@@ -375,6 +391,17 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(unexpectedMessage, is(not(in(ticketMessages))));
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should throw NotFound Exception when trying to complete non existing ticket for existing publication")
+    @MethodSource("ticketProvider")
+    void shouldThrowNotFoundExceptionWhenTryingToCompleteNonExistingTicketForExistingPublication(
+        Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var nonExisingTicket = createUnpersistedTicket(publication, ticketType);
+        assertThrows(NotFoundException.class, () -> ticketService.completeTicket(nonExisingTicket));
+    }
+    
     private Message createOtherTicketWithMessage(Publication publication, UserInstance publicationOwner)
         throws ApiGatewayException {
         var someOtherTicket = createPersistedTicket(publication, PublishingRequestCase.class);
@@ -433,21 +460,26 @@ class TicketServiceTest extends ResourcesLocalTest {
             return DoiRequest.fromPublication(publication);
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
-            return crateRandomPublishingRequest(publication);
+            return createRandomPublishingRequest(publication);
         }
+        if (GeneralSupportRequest.class.equals(ticketType)) {
+            return createGeneralSupportRequest(publication);
+        }
+    
         throw new UnsupportedOperationException();
     }
     
-    private PublishingRequestCase crateRandomPublishingRequest(Publication publication) {
+    private PublishingRequestCase createRandomPublishingRequest(Publication publication) {
         var publishingRequest = TestingUtils.createPublishingRequest(publication);
         publishingRequest.setIdentifier(SortableIdentifier.next());
         return publishingRequest;
     }
     
-    private void copyServiceControlledFields(TicketEntry doiRequestCreationRequest, TicketEntry persistedTicket) {
-        doiRequestCreationRequest.setCreatedDate(persistedTicket.getCreatedDate());
-        doiRequestCreationRequest.setModifiedDate(persistedTicket.getModifiedDate());
-        doiRequestCreationRequest.setIdentifier(persistedTicket.getIdentifier());
+    private void copyServiceControlledFields(TicketEntry originalTicket, TicketEntry persistedTicket) {
+        originalTicket.setCreatedDate(persistedTicket.getCreatedDate());
+        originalTicket.setModifiedDate(persistedTicket.getModifiedDate());
+        originalTicket.setIdentifier(persistedTicket.getIdentifier());
+        originalTicket.setVersion(persistedTicket.getVersion());
     }
     
     private Map<String, AttributeValue> mockedPublicationResponse() {

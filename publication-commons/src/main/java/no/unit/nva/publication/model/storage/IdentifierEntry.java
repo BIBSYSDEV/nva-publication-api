@@ -20,8 +20,12 @@ public class IdentifierEntry extends UniquenessEntry {
         super(identifier);
     }
     
-    public static IdentifierEntry create(DynamoEntry withIdentifier) {
-        return new IdentifierEntry(withIdentifier.getIdentifier().toString());
+    public IdentifierEntry(DynamoEntry dynamoEntry) {
+        this(dynamoEntry.getIdentifier().toString());
+    }
+    
+    public static IdentifierEntry create(DynamoEntry dynamoEntry) {
+        return new IdentifierEntry(dynamoEntry.getIdentifier().toString());
     }
     
     @Override

@@ -112,7 +112,7 @@ public interface JoinWithResource {
         Condition sortKeyCondition = new Condition()
                                          .withAttributeValueList(new AttributeValue(selectedType))
                                          .withComparisonOperator(ComparisonOperator.BEGINS_WITH);
-        
+    
         return Map.of(
             BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
             BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME, sortKeyCondition
@@ -121,6 +121,22 @@ public interface JoinWithResource {
     
     SortableIdentifier getIdentifier();
     
+    /**
+     * The type of the Entry (e.g. Resource, DoiRequest, etc) prefixed with a letter in order to impose an order when we
+     * present all Entries connected to a Resource.
+     *
+     * <p>
+     * Example: <br/>If the orderedType for a Resource is a:Resource, for a DoiRequest is b:DoiRequest and for a Message
+     * is z:Message, then, when we list all entries associated with a Resource, we would get the entries ordered as
+     * shown below:*
+     * <ol>
+     *    <li>Resource</li>
+     *    <li>DoiRequest</li>
+     *    <li>Message</li>
+     * </ol>
+     *
+     * @return the type of the entry prefixed with a letter imposing an order when entries are joined by Resource
+     */
     @JsonIgnore
     String joinByResourceOrderedType();
     

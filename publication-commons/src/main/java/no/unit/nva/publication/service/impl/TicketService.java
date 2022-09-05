@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -81,8 +82,7 @@ public class TicketService extends ServiceWithTransactions {
     
     public TicketEntry fetchTicket(TicketEntry dataEntry)
         throws NotFoundException {
-        return fetchFromDatabase(dataEntry)
-                   .map(TicketDao::getData)
+        return fetchFromDatabase(dataEntry).map(TicketDao::getData)
                    .map(TicketEntry.class::cast)
                    .orElseThrow(() -> new NotFoundException(TICKET_NOT_FOUND));
     }
@@ -103,6 +103,7 @@ public class TicketService extends ServiceWithTransactions {
         throws NotFoundException {
         return attempt(() -> fetchTicketByIdentifier(ticketIdentifier, DoiRequest.class))
                    .or(() -> fetchTicketByIdentifier(ticketIdentifier, PublishingRequestCase.class))
+                   .or(() -> fetchTicketByIdentifier(ticketIdentifier, GeneralSupportRequest.class))
                    .orElseThrow(fail -> handleFetchingTicketByIdentifierFailure(fail.getException()));
     }
     
@@ -128,11 +129,10 @@ public class TicketService extends ServiceWithTransactions {
     
     protected TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-        var existingTicket = fetchTicketByResourceIdentifier(
-            ticketEntry.getCustomerId(),
-            ticketEntry.getResourceIdentifier(),
-            ticketEntry.getClass()
-        ).orElseThrow();
+        var existingTicket =
+            attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
+                .orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
+    
         var completed = attempt(() -> existingTicket.complete(publication))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
     

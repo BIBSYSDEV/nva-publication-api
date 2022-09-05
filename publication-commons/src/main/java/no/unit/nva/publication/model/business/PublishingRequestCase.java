@@ -9,6 +9,7 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOU
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
@@ -24,6 +25,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeName(PublishingRequestCase.TYPE)
 public class PublishingRequestCase implements TicketEntry {
     
     public static final String TYPE = "PublishingRequestCase";
