@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.persistence;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.GENERAL_SUPPORT_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.PUBLISHING_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
@@ -27,15 +28,18 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -140,8 +144,17 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
             return new PersistedEntryWithExpectedType(randomResourceConversation(), MESSAGES_INDEX);
         } else if (ExpandedPublishingRequest.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomPublishingRequest(), PUBLISHING_REQUESTS_INDEX);
+        } else if (ExpandedGeneralSupportRequest.class.equals(expandedEntryType)) {
+            return new PersistedEntryWithExpectedType(randomGeneralSupportRequest(), GENERAL_SUPPORT_REQUESTS_INDEX);
         }
         throw new RuntimeException();
+    }
+    
+    private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWitoutDoi();
+        var openingCaseObject = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
+        var request = ticketService.createTicket(openingCaseObject, GeneralSupportRequest.class);
+        return resourceExpansionService.expandEntry(request);
     }
     
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
