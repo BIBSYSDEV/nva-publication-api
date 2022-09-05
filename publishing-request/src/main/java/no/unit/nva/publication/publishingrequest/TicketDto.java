@@ -19,6 +19,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -28,7 +29,8 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(DoiRequestDto.class),
-    @JsonSubTypes.Type(PublishingRequestDto.class)
+    @JsonSubTypes.Type(PublishingRequestDto.class),
+    @JsonSubTypes.Type(GeneralSupportRequestDto.class)
 })
 public abstract class TicketDto implements JsonSerializable {
     
@@ -156,16 +158,11 @@ public abstract class TicketDto implements JsonSerializable {
         public TicketDto build(Class<? extends TicketEntry> ticketType) {
         
             if (DoiRequest.class.equals(ticketType)) {
-                return new DoiRequestDto(status,
-                    createdDate,
-                    modifiedDate,
-                    version,
-                    identifier,
-                    publicationId,
-                    id,
-                    messages);
+                return createDoiRequestDto();
             } else if (PublishingRequestCase.class.equals(ticketType)) {
-                return new PublishingRequestDto(status,
+                return createPublishingRequestDto();
+            } else if (GeneralSupportRequest.class.equals(ticketType)) {
+                return new GeneralSupportRequestDto(status,
                     createdDate,
                     modifiedDate,
                     version,
@@ -175,6 +172,28 @@ public abstract class TicketDto implements JsonSerializable {
                     messages);
             }
             throw new RuntimeException("Unsupported type");
+        }
+    
+        private PublishingRequestDto createPublishingRequestDto() {
+            return new PublishingRequestDto(status,
+                createdDate,
+                modifiedDate,
+                version,
+                identifier,
+                publicationId,
+                id,
+                messages);
+        }
+    
+        private DoiRequestDto createDoiRequestDto() {
+            return new DoiRequestDto(status,
+                createdDate,
+                modifiedDate,
+                version,
+                identifier,
+                publicationId,
+                id,
+                messages);
         }
     }
 }
