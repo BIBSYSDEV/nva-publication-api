@@ -69,16 +69,6 @@ public class ExpandedResourceConversation extends ResourceConversation
     }
     
     @Override
-    public Instant getCreatedDate() {
-        return null;
-    }
-    
-    @Override
-    public Instant getModifiedDate() {
-        return null;
-    }
-    
-    @Override
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
     }

@@ -20,19 +20,10 @@ public interface ExpandedTicket extends ExpandedDataEntry {
     
     String PUBLICATION_FIELD = "publication";
     String ORGANIZATION_IDS_FIELD = "organizationIds";
-    String CREATED_DATE_FIELD = "createdDate";
-    String MODIFIED_DATE_FIELD = "modifiedDate";
     
     @JsonProperty(PUBLICATION_FIELD)
     PublicationSummary getPublicationSummary();
     
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     Set<URI> getOrganizationIds();
-    
-    @JsonAlias("date")
-    @JsonProperty(CREATED_DATE_FIELD)
-    Instant getCreatedDate();
-    
-    @JsonProperty(MODIFIED_DATE_FIELD)
-    Instant getModifiedDate();
 }

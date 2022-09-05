@@ -41,7 +41,6 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -347,24 +346,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             var request = createPublishingRequest(createdPublication);
             return new DataEntryWithAssociatedPublication(request, createdPublication);
         }
-        if(GeneralSupportRequest.class.equals(resourceUpdateType)){
-            var request = createGeneralSupportRequest(createdPublication);
-            return new DataEntryWithAssociatedPublication(request, createdPublication);
-        }
         
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
-    }
-    
-    private GeneralSupportRequest createGeneralSupportRequest(Publication createdPublication) {
-        var request = new GeneralSupportRequest();
-        request.setStatus(TicketStatus.PENDING);
-        request.setCustomerId(createdPublication.getPublisher().getId());
-        request.setCreatedDate(Instant.now());
-        request.setModifiedDate(Instant.now());
-        request.setResourceIdentifier(createdPublication.getIdentifier());
-        request.setVersion(UUID.randomUUID());
-        request.setIdentifier(SortableIdentifier.next());
-        return request;
     }
     
     private Entity createPublishingRequest(Publication createdPublication) {

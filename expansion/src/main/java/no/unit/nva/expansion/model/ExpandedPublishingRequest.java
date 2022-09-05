@@ -162,8 +162,6 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         entry.setMessages(messages);
         entry.setOrganizationIds(organizationIds);
         entry.setStatus(dataEntry.getStatus());
-        entry.createdDate = dataEntry.getCreatedDate();
-        entry.modifiedDate = dataEntry.getModifiedDate();
         return entry;
     }
     
