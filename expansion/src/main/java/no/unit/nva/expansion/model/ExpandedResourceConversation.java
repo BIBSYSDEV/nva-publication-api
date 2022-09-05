@@ -3,7 +3,6 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;

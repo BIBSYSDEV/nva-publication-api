@@ -1,12 +1,10 @@
 package no.unit.nva.expansion.model;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Set;
 import no.unit.nva.publication.model.PublicationSummary;
 
