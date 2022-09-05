@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -41,10 +40,6 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     private Set<URI> organizationIds;
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
-    @JsonProperty(CREATED_DATE_FIELD)
-    private Instant createdDate;
-    @JsonProperty(MODIFIED_DATE_FIELD)
-    private Instant modifiedDate;
     
     public ExpandedPublishingRequest() {
         this.messages = MessageCollection.empty(MessageType.PUBLISHING_REQUEST);
@@ -109,16 +104,6 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     @Override
     public Set<URI> getOrganizationIds() {
         return nonNull(organizationIds) ? organizationIds : Collections.emptySet();
-    }
-    
-    @Override
-    public Instant getCreatedDate() {
-        return this.createdDate;
-    }
-    
-    @Override
-    public Instant getModifiedDate() {
-        return this.modifiedDate;
     }
     
     public void setOrganizationIds(Set<URI> organizationIds) {
