@@ -13,6 +13,7 @@ import no.unit.nva.publication.model.PublicationSummary;
     @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
     @JsonSubTypes.Type(name = ExpandedResourceConversation.TYPE, value = ExpandedResourceConversation.class),
     @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
+    @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class)
 })
 public interface ExpandedTicket extends ExpandedDataEntry {
     
@@ -24,4 +25,13 @@ public interface ExpandedTicket extends ExpandedDataEntry {
     
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     Set<URI> getOrganizationIds();
+    
+    final class Constants {
+        
+        public static final String IDENTIFIER_FIELD = "identifier";
+        
+        private Constants() {
+        
+        }
+    }
 }

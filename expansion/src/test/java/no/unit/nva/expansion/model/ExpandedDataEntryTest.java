@@ -22,6 +22,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -119,10 +120,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
         var doiRequest = DoiRequest.fromPublication(publication);
-        var persistedDoiRequest = ticketService.createTicket(doiRequest,doiRequest.getClass());
+        var persistedDoiRequest = ticketService.createTicket(doiRequest, doiRequest.getClass());
         messageService.createMessage(userInstance, publication, randomString(), MessageType.DOI_REQUEST);
         return attempt(() -> ExpandedDoiRequest.create(persistedDoiRequest, resourceExpansionService, messageService))
-            .orElseThrow();
+                   .orElseThrow();
     }
     
     private static ExpandedResourceConversation randomResourceConversation(Publication publication) {
@@ -132,6 +133,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return expandedResourceConversation;
     }
     
+    private static Publication randomPublicationWithoutDoi() {
+        return randomPublication().copy().withDoi(null).build();
+    }
+    
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
         return ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
     }
@@ -139,10 +144,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private Publication createPublicationWithoutDoi() {
         var publication = randomPublicationWithoutDoi();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-    }
-    
-    private static Publication randomPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).build();
     }
     
     private SortableIdentifier extractExpectedIdentifier(ExpandedDataEntryWithAssociatedPublication generatedData) {
@@ -162,12 +163,12 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     private String extractIdFromSerializedObject(ExpandedDataEntry entry) {
         return Try.of(entry)
-            .map(ExpandedDataEntry::toJsonString)
-            .map(objectMapper::readTree)
-            .map(json -> (ObjectNode) json)
-            .map(json -> json.at(IDENTIFIER_JSON_PTR))
-            .map(JsonNode::textValue)
-            .orElseThrow();
+                   .map(ExpandedDataEntry::toJsonString)
+                   .map(objectMapper::readTree)
+                   .map(json -> (ObjectNode) json)
+                   .map(json -> json.at(IDENTIFIER_JSON_PTR))
+                   .map(JsonNode::textValue)
+                   .orElseThrow();
     }
     
     private static class ExpandedDataEntryWithAssociatedPublication {
@@ -192,11 +193,15 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 return createExpandedResource(publication);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication,
-                    resourceExpansionService, messageService,ticketService));
+                    resourceExpansionService, messageService, ticketService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     createExpandedPublishingRequest(publication, resourceService, messageService,
                         resourceExpansionService));
+            } else if (expandedDataEntryClass.equals(ExpandedGeneralSupportRequest.class)) {
+                var result = new ExpandedDataEntryWithAssociatedPublication(publication,
+                    createExpandedGeneralSupportRequest(publication, resourceService, resourceExpansionService));
+                return result;
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     randomResourceConversation(publication));
@@ -209,6 +214,15 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
         public ExpandedDataEntry getExpandedDataEntry() {
             return expandedDataEntry;
+        }
+    
+        private static ExpandedDataEntry createExpandedGeneralSupportRequest(
+            Publication publication,
+            ResourceService resourceService,
+            ResourceExpansionService resourceExpansionService) throws NotFoundException {
+            var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
+            return
+                ExpandedGeneralSupportRequest.create(request, resourceService, resourceExpansionService);
         }
     
         private static Publication createPublication(ResourceService resourceService) {
@@ -227,12 +241,12 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             ResourceService resourceService,
             MessageService messageService,
             ResourceExpansionService resourceExpansionService) throws NotFoundException {
-            PublishingRequestCase requestCase = createRequestCase(publication);
+            PublishingRequestCase requestCase = createPublishingRequestCase(publication);
             return ExpandedPublishingRequest.create(requestCase, resourceService, messageService,
                 resourceExpansionService);
         }
-        
-        private static PublishingRequestCase createRequestCase(Publication publication) {
+    
+        private static PublishingRequestCase createPublishingRequestCase(Publication publication) {
             var requestCase = new PublishingRequestCase();
             requestCase.setIdentifier(SortableIdentifier.next());
             requestCase.setStatus(TicketStatus.PENDING);

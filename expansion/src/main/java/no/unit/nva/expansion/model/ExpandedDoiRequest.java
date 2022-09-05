@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static no.unit.nva.expansion.model.ExpandedTicket.Constants.IDENTIFIER_FIELD;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -15,8 +16,8 @@ import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -28,7 +29,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     
     public static final String TYPE = "DoiRequest";
     
-    @JsonProperty
+    @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
     @JsonProperty()
     private TicketStatus status;

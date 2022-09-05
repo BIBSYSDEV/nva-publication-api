@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
@@ -17,6 +18,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -58,6 +60,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                 resourceService,
                 messageService,
                 this);
+        } else if (dataEntry instanceof GeneralSupportRequest) {
+            return ExpandedGeneralSupportRequest.create((GeneralSupportRequest) dataEntry,
+                resourceService,
+                this);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
@@ -69,10 +75,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             var resourceIdentifier = ((TicketEntry) dataEntry).getResourceIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
-                .stream()
-                .map(this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+                       .stream()
+                       .map(
+                           this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
+                       .flatMap(Collection::stream)
+                       .collect(Collectors.toSet());
         }
         return Collections.emptySet();
     }
@@ -96,7 +103,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                 message.getCustomerId(),
                 message.getResourceIdentifier(),
                 PublishingRequestCase.class)
-            .orElseThrow();
+                                    .orElseThrow();
         return ExpandedPublishingRequest.create(publishingRequest, resourceService, messageService, this);
     }
     

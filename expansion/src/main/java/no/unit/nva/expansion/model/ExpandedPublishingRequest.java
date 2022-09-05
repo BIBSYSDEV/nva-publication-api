@@ -2,6 +2,7 @@ package no.unit.nva.expansion.model;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.expansion.model.ExpandedTicket.Constants.IDENTIFIER_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -26,7 +27,6 @@ import nva.commons.core.JacocoGenerated;
 public class ExpandedPublishingRequest implements ExpandedTicket {
     
     public static final String TYPE = "PublishingRequest";
-    public static final String IDENTIFIER_FIELD = "identifier";
     public static final String MESSAGES_FIELD = "messages";
     public static final String STATUS_FIELD = "status";
     

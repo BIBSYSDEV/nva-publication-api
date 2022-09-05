@@ -14,17 +14,13 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Stack;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -41,6 +37,7 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -121,7 +118,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "should process all ResourceUpdate types:{0}")
-    @MethodSource("fetchDataEntryTypes")
+    @MethodSource("dataEntryTypeProvider")
     void shouldProcessAllResourceUpdateTypes(Class<?> resourceUpdateType)
         throws IOException, ApiGatewayException {
         var resource = generateResourceUpdate(resourceUpdateType);
@@ -209,36 +206,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(ticket.getPublicationSummary().getTitle(), is(equalTo(expectedTitle)));
     }
     
-    private static List<Class<?>> fetchDataEntryTypes() {
-        var types = fetchDirectSubtypes(Entity.class);
-        var nestedTypes = new Stack<Type>();
-        var result = new ArrayList<Class<?>>();
-        nestedTypes.addAll(types);
-        while (!nestedTypes.isEmpty()) {
-            var currentType = nestedTypes.pop();
-            if (isTypeWithSubtypes(currentType)) {
-                var subTypes = fetchDirectSubtypes(currentType.value());
-                nestedTypes.addAll(subTypes);
-            } else {
-                result.add(currentType.value());
-            }
-        }
-        return result;
-    }
-    
-    private static boolean isTypeWithSubtypes(Type type) {
-        return type.value().getAnnotationsByType(JsonSubTypes.class).length > 0;
-    }
-    
-    private static List<Type> fetchDirectSubtypes(Class<?> type) {
-        var annotations = type.getAnnotationsByType(JsonSubTypes.class);
-        return Arrays.asList(annotations[0].value());
+    private static List<Class<?>> dataEntryTypeProvider() {
+        return TypeProvider.listSubTypes(Entity.class).collect(Collectors.toList());
     }
     
     private static List<Class<?>> listTicketTypes() {
-        JsonSubTypes[] annotations = TicketEntry.class.getAnnotationsByType(JsonSubTypes.class);
-        Type[] types = annotations[0].value();
-        return Arrays.stream(types).map(Type::value).collect(Collectors.toList());
+        return TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList());
     }
     
     private static List<Class<?>> listPublicationInstanceTypes() {
@@ -251,9 +224,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var expectedMessageTexts =
             expectedMessages.stream().map(Message::getText).collect(Collectors.toList());
         var actualMessageTexts = actualMessages.getMessages()
-            .stream()
-            .map(Message::getText)
-            .collect(Collectors.toList());
+                                     .stream()
+                                     .map(Message::getText)
+                                     .collect(Collectors.toList());
         assertThat(actualMessageTexts, containsInAnyOrder(expectedMessageTexts.toArray(String[]::new)));
     }
     
@@ -273,11 +246,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         PublicationWithAllKindsOfCasesAndMessages samplePublication,
         ExpandedResourceConversation expandedGeneralSupportConversation) {
         var actualMessageIdentifiers = expandedGeneralSupportConversation.getMessageCollections()
-            .stream()
-            .map(MessageCollection::getMessages)
-            .flatMap(Collection::stream)
-            .map(Message::getIdentifier)
-            .collect(Collectors.toList());
+                                           .stream()
+                                           .map(MessageCollection::getMessages)
+                                           .flatMap(Collection::stream)
+                                           .map(Message::getIdentifier)
+                                           .collect(Collectors.toList());
         
         assertThat(actualMessageIdentifiers, contains(samplePublication.getSupportMessageIdentifiers()));
         assertThatNoItemInNonDesiredCollectionExistsInTheActualCollection(
@@ -292,17 +265,17 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private List<SortableIdentifier> extractMessageIdentifiersFromExpandedDoiRequest(
         ExpandedDoiRequest expandedDoiRequest) {
         return expandedDoiRequest
-            .getDoiRequestMessages()
-            .getMessages()
-            .stream()
-            .map(Message::getIdentifier)
-            .collect(Collectors.toList());
+                   .getDoiRequestMessages()
+                   .getMessages()
+                   .stream()
+                   .map(Message::getIdentifier)
+                   .collect(Collectors.toList());
     }
     
     private PublicationWithAllKindsOfCasesAndMessages createSamplePublicationWithConversations()
         throws ApiGatewayException {
         return new PublicationWithAllKindsOfCasesAndMessages(resourceService, messageService, ticketService)
-            .create();
+                   .create();
     }
     
     private Message sendSupportMessage(Publication createdPublication)
@@ -346,7 +319,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             var request = createPublishingRequest(createdPublication);
             return new DataEntryWithAssociatedPublication(request, createdPublication);
         }
-        
+        if (GeneralSupportRequest.class.equals(resourceUpdateType)) {
+            var request = GeneralSupportRequest.fromPublication(createdPublication);
+            return new DataEntryWithAssociatedPublication(request, createdPublication);
+        }
+    
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
     }
     
@@ -484,15 +461,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         
         private List<Message> createSomeMessages(MessageType messageType) {
             return smallStream()
-                .map(ignored -> createMessage(messageType))
-                .collect(Collectors.toList());
+                       .map(ignored -> createMessage(messageType))
+                       .collect(Collectors.toList());
         }
         
         private Message createMessage(MessageType support) {
             return attempt(
                 () -> messageService.createMessage(userInstance, publication, randomString(), support))
-                .map(messageIdentifier -> messageService.getMessage(userInstance, messageIdentifier))
-                .orElseThrow();
+                       .map(messageIdentifier -> messageService.getMessage(userInstance, messageIdentifier))
+                       .orElseThrow();
         }
         
         private Stream<Integer> smallStream() {
