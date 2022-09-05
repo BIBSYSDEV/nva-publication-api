@@ -199,9 +199,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     createExpandedPublishingRequest(publication, resourceService, messageService,
                         resourceExpansionService));
             } else if (expandedDataEntryClass.equals(ExpandedGeneralSupportRequest.class)) {
-                var result = new ExpandedDataEntryWithAssociatedPublication(publication,
+                return new ExpandedDataEntryWithAssociatedPublication(publication,
                     createExpandedGeneralSupportRequest(publication, resourceService, resourceExpansionService));
-                return result;
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     randomResourceConversation(publication));
