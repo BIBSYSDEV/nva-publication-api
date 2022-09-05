@@ -28,8 +28,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(DoiRequestDto.class),
-    @JsonSubTypes.Type(PublishingRequestDto.class),
-    @JsonSubTypes.Type(GeneralSupportRequestDto.class)
+    @JsonSubTypes.Type(PublishingRequestDto.class)
 })
 public abstract class TicketDto implements JsonSerializable {
     
@@ -138,53 +137,44 @@ public abstract class TicketDto implements JsonSerializable {
             this.identifier = identifier;
             return this;
         }
-        
+    
         public Builder withPublicationId(URI publicationId) {
             this.publicationId = publicationId;
             return this;
         }
-        
+    
         public Builder withId(URI id) {
             this.id = id;
             return this;
         }
-        
+    
         public Builder withMessages(List<MessageDto> messages) {
             this.messages = messages;
             return this;
         }
-        
+    
         public TicketDto build(Class<? extends TicketEntry> ticketType) {
+        
             if (DoiRequest.class.equals(ticketType)) {
-                return createDoiRequestDto();
+                return new DoiRequestDto(status,
+                    createdDate,
+                    modifiedDate,
+                    version,
+                    identifier,
+                    publicationId,
+                    id,
+                    messages);
             } else if (PublishingRequestCase.class.equals(ticketType)) {
-                return createPublishingRequestDto();
-            } else if (GeneralSupportRequestDto.class.equals(ticketType)) {
-                return new GeneralSupportRequestDto();
+                return new PublishingRequestDto(status,
+                    createdDate,
+                    modifiedDate,
+                    version,
+                    identifier,
+                    publicationId,
+                    id,
+                    messages);
             }
             throw new RuntimeException("Unsupported type");
-        }
-        
-        private PublishingRequestDto createPublishingRequestDto() {
-            return new PublishingRequestDto(status,
-                createdDate,
-                modifiedDate,
-                version,
-                identifier,
-                publicationId,
-                id,
-                messages);
-        }
-        
-        private DoiRequestDto createDoiRequestDto() {
-            return new DoiRequestDto(status,
-                createdDate,
-                modifiedDate,
-                version,
-                identifier,
-                publicationId,
-                id,
-                messages);
         }
     }
 }
