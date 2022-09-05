@@ -1,6 +1,7 @@
 package no.unit.nva.publication.publishingrequest;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -12,6 +13,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -40,7 +42,8 @@ class TicketDtoTest {
         var parsedDto = TicketDto.fromJson(json);
         var bo = parsedDto.toTicket();
         var regeneratedDto = TicketDto.fromTicket(bo);
-        assertThat(originalDto, doesNotHaveEmptyValues());
+        //the Business Object does not have "messages" field. Messages can be fetched though from the database.
+        assertThat(originalDto, doesNotHaveEmptyValuesIgnoringFields(Set.of("messages")));
         assertThat(regeneratedDto, is(equalTo(originalDto)));
     }
     
@@ -55,7 +58,6 @@ class TicketDtoTest {
                    .withCreatedDate(randomInstant())
                    .withId(createTicketId(publicationId, ticketIdentifier))
                    .withStatus(randomElement(TicketStatus.values()))
-                   .withMessages(randomMessage())
                    .build(ticketType);
     }
     
