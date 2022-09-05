@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
@@ -17,6 +18,7 @@ public class PersistedDocumentConsumptionAttributes {
     public static final String MESSAGES_INDEX = "messages";
     public static final String DOI_REQUESTS_INDEX = "doirequests";
     public static final String PUBLISHING_REQUESTS_INDEX = "publishingrequests";
+    public static final String GENERAL_SUPPORT_REQUESTS_INDEX = "generalSupportRequests";
     
     public static final String INDEX_FIELD = "index";
     public static final String DOCUMENT_IDENTIFIER = "documentIdentifier";
@@ -47,6 +49,9 @@ public class PersistedDocumentConsumptionAttributes {
                 expandedEntry.identifyExpandedEntry());
         } else if (expandedEntry instanceof ExpandedPublishingRequest) {
             return new PersistedDocumentConsumptionAttributes(PUBLISHING_REQUESTS_INDEX,
+                expandedEntry.identifyExpandedEntry());
+        } else if (expandedEntry instanceof ExpandedGeneralSupportRequest) {
+            return new PersistedDocumentConsumptionAttributes(GENERAL_SUPPORT_REQUESTS_INDEX,
                 expandedEntry.identifyExpandedEntry());
         }
         throw new UnsupportedOperationException(
