@@ -60,11 +60,6 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                 resourceService,
                 messageService,
                 this);
-        } else if (dataEntry instanceof GeneralSupportRequest) {
-            return ExpandedGeneralSupportRequest.create((GeneralSupportRequest) dataEntry,
-                this,
-                resourceService,
-                ticketService);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
