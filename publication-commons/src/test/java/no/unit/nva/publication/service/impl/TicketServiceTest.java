@@ -10,6 +10,7 @@ import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.publication.model.business.TicketEntry.createQueryObject;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -400,6 +401,24 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var nonExisingTicket = createUnpersistedTicket(publication, ticketType);
         assertThrows(NotFoundException.class, () -> ticketService.completeTicket(nonExisingTicket));
+    }
+    
+    //TODO: remove this test when ticket service is in place
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("Legacy functionality: should retrieve tickets that are unique to a publication by "
+                 + "publication identifier")
+    @MethodSource("uniqueTicketsProvider")
+    void shouldCompleteTicketByResourceIdentifierWhenTicketIsUniqueForAPublication(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = createPersistedTicket(publication, ticketType);
+        var queryObject = createQueryObject(ticket.getCustomerId(), ticket.getResourceIdentifier(), ticketType);
+        var completedTicket = ticketService.completeTicket(queryObject);
+        var expectedTicket = ticket.copy();
+        expectedTicket.setStatus(COMPLETED);
+        expectedTicket.setModifiedDate(completedTicket.getModifiedDate());
+        expectedTicket.setVersion(completedTicket.getVersion());
+        assertThat(completedTicket, is(equalTo(expectedTicket)));
     }
     
     private Message createOtherTicketWithMessage(Publication publication, UserInstance publicationOwner)

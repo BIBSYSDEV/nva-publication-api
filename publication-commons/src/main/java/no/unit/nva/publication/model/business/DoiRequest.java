@@ -269,7 +269,6 @@ public class DoiRequest implements TicketEntry {
         return (DoiRequest) TicketEntry.super.complete(publication);
     }
     
-    
     @Override
     public DoiRequest copy() {
         return DoiRequest.builder()

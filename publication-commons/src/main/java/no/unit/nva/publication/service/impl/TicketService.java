@@ -131,6 +131,7 @@ public class TicketService extends ServiceWithTransactions {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
+                .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
                 .orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
     
         var completed = attempt(() -> existingTicket.complete(publication))
@@ -146,11 +147,17 @@ public class TicketService extends ServiceWithTransactions {
         resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
         var closedTicket = persistedTicket.close();
-        
+    
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         client.putItem(putItemRequest);
         return closedTicket;
+    }
+    
+    //TODO: should try to fetch ticket only by ticket identifier
+    private TicketEntry fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(TicketEntry ticketEntry) {
+        return fetchTicketByResourceIdentifier(ticketEntry.getCustomerId(),
+            ticketEntry.getResourceIdentifier(), ticketEntry.getClass()).orElseThrow();
     }
     
     private <T extends TicketEntry> TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier,
