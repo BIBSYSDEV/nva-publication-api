@@ -82,8 +82,7 @@ public class TicketService extends ServiceWithTransactions {
     
     public TicketEntry fetchTicket(TicketEntry dataEntry)
         throws NotFoundException {
-        var foo = fetchFromDatabase(dataEntry);
-        return foo.map(TicketDao::getData)
+        return fetchFromDatabase(dataEntry).map(TicketDao::getData)
                    .map(TicketEntry.class::cast)
                    .orElseThrow(() -> new NotFoundException(TICKET_NOT_FOUND));
     }
