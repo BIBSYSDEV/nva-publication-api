@@ -8,7 +8,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -33,18 +32,13 @@ public interface DynamoEntryByIdentifier {
     
     Entity getData();
     
-    @JsonIgnore
-    default String getContainedDataType() {
-        return getData().getType();
-    }
-    
-    default <T extends Dao> T fetchByIdentifier(AmazonDynamoDB client, Class<T> daoType) throws NotFoundException {
+    default Dao fetchByIdentifier(AmazonDynamoDB client) throws NotFoundException {
         var conditionExpression = "#IndexKey = :IndexKeyValue AND #SortKey = :SortKeyValue";
-        
+    
         Map<String, String> expressionAttributeNames =
             Map.of("#IndexKey", BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME,
                 "#SortKey", BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME);
-        
+    
         Map<String, AttributeValue> expressionAttributeValues =
             Map.of(":IndexKeyValue", new AttributeValue(this.getByTypeAndIdentifierPartitionKey()),
                 ":SortKeyValue", new AttributeValue(this.getByTypeAndIdentifierSortKey()));
@@ -61,8 +55,8 @@ public interface DynamoEntryByIdentifier {
                          .stream()
                          .collect(SingletonCollector.tryCollect())
                          .orElseThrow(fail -> handleGetResourceByIdentifierError(this.getIdentifier()));
-        
-        return DynamoEntry.parseAttributeValuesMap(result, daoType);
+    
+        return DynamoEntry.parseAttributeValuesMap(result, Dao.class);
     }
     
     private static NotFoundException handleGetResourceByIdentifierError(SortableIdentifier identifier) {
@@ -70,8 +64,10 @@ public interface DynamoEntryByIdentifier {
     }
     
     private String entryTypeAndIdentifier() {
-        return getContainedDataType()
+        return indexingType()
                + DatabaseConstants.KEY_FIELDS_DELIMITER
                + getIdentifier().toString();
     }
+    
+    String indexingType();
 }

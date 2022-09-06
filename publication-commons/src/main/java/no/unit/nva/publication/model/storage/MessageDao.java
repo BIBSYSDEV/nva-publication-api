@@ -29,24 +29,6 @@ public class MessageDao extends Dao
         super();
     }
     
-    @Override
-    public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        
-        var uniqueIdentifierEntry = new IdentifierEntry(this.getIdentifier().toString());
-        var messageEntry = transactionItem(this);
-        var identityEntry = transactionItem(uniqueIdentifierEntry);
-        return new TransactWriteItemsRequest()
-                   .withTransactItems(messageEntry, identityEntry);
-    }
-    
-    private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {
-        var put = new Put()
-                      .withTableName(RESOURCES_TABLE_NAME)
-                      .withItem(dynamoEntry.toDynamoFormat());
-        
-        return new TransactWriteItem().withPut(put);
-    }
-    
     public MessageDao(Message message) {
         super();
         this.data = message;
@@ -92,13 +74,23 @@ public class MessageDao extends Dao
     }
     
     @Override
-    public String getType() {
+    public String indexingType() {
         return TYPE;
     }
     
     @Override
     public URI getCustomerId() {
         return data.getCustomerId();
+    }
+    
+    @Override
+    public TransactWriteItemsRequest createInsertionTransactionRequest() {
+        
+        var uniqueIdentifierEntry = new IdentifierEntry(this.getIdentifier().toString());
+        var messageEntry = transactionItem(this);
+        var identityEntry = transactionItem(uniqueIdentifierEntry);
+        return new TransactWriteItemsRequest()
+                   .withTransactItems(messageEntry, identityEntry);
     }
     
     @Override
@@ -133,5 +125,13 @@ public class MessageDao extends Dao
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return data.getResourceIdentifier();
+    }
+    
+    private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {
+        var put = new Put()
+                      .withTableName(RESOURCES_TABLE_NAME)
+                      .withItem(dynamoEntry.toDynamoFormat());
+        
+        return new TransactWriteItem().withPut(put);
     }
 }

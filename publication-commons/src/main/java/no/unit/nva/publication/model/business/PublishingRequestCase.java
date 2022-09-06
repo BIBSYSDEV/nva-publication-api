@@ -81,25 +81,10 @@ public class PublishingRequestCase implements TicketEntry {
         return queryObject;
     }
     
-    public static PublishingRequestCase createQueryObject(SortableIdentifier ticketIdentifier) {
-        var queryObject = new PublishingRequestCase();
-        queryObject.setIdentifier(ticketIdentifier);
-        return queryObject;
-    }
-    
     public static PublishingRequestCase createQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
         var queryObject = new PublishingRequestCase();
         queryObject.setCustomerId(customerId);
         queryObject.setResourceIdentifier(resourceIdentifier);
-        return queryObject;
-    }
-    
-    public static PublishingRequestCase createQueryObject(UserInstance userInstance,
-                                                          SortableIdentifier ticketIdentifier) {
-        var queryObject = new PublishingRequestCase();
-        queryObject.setOwner(userInstance.getUserIdentifier());
-        queryObject.setCustomerId(userInstance.getOrganizationUri());
-        queryObject.setIdentifier(ticketIdentifier);
         return queryObject;
     }
     

@@ -1,13 +1,24 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -22,7 +33,7 @@ import nva.commons.core.SingletonCollector;
 @JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao
-    implements JoinWithResource, WithCristinIdentifier, JsonSerializable {
+    implements JoinWithResource, JsonSerializable, DynamoEntryByIdentifier {
     
     public static final String CRISTIN_SOURCE = "Cristin";
     public static final String TYPE = "Resource";
@@ -56,11 +67,6 @@ public class ResourceDao extends Dao
         return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + data.getType();
     }
     
-    @JsonIgnore
-    public String getContainedType() {
-        return this.getContainedDataType();
-    }
-    
     @Override
     public Resource getData() {
         return data;
@@ -72,7 +78,7 @@ public class ResourceDao extends Dao
     }
     
     @Override
-    public String getType() {
+    public String indexingType() {
         return this.getData().getType();
     }
     
@@ -93,14 +99,39 @@ public class ResourceDao extends Dao
         return data.getOwner();
     }
     
-    @Override
-    public Optional<String> getCristinIdentifier() {
+    @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
+    public String getResourceByCristinIdentifierPartitionKey() {
+        return extractCristinIdentifier().isEmpty() ? null
+                   : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + extractCristinIdentifier();
+    }
+    
+    @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
+    public String getResourceByCristinIdentifierSortKey() {
+        return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
+    }
+    
+    public QueryRequest createQueryFindByCristinIdentifier() {
+        return new QueryRequest()
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
+                   .withKeyConditions(createConditionsWithCristinIdentifier());
+    }
+    
+    public Map<String, Condition> createConditionsWithCristinIdentifier() {
+        Condition condition = new Condition()
+                                  .withComparisonOperator(ComparisonOperator.EQ)
+                                  .withAttributeValueList(
+                                      new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
+        return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
+    }
+    
+    public Optional<String> extractCristinIdentifier() {
         String cristinIdentifierValue = Optional.ofNullable(data.getAdditionalIdentifiers())
-            .stream()
-            .flatMap(Collection::stream)
-            .filter(this::keyEqualsCristin)
-            .map(AdditionalIdentifier::getValue)
-            .collect(SingletonCollector.collectOrElse(null));
+                                            .stream()
+                                            .flatMap(Collection::stream)
+                                            .filter(this::keyEqualsCristin)
+                                            .map(AdditionalIdentifier::getValue)
+                                            .collect(SingletonCollector.collectOrElse(null));
         return Optional.ofNullable(cristinIdentifierValue);
     }
     
@@ -136,8 +167,8 @@ public class ResourceDao extends Dao
     
     private boolean keyEqualsCristin(AdditionalIdentifier identifier) {
         return Optional.ofNullable(identifier)
-            .map(AdditionalIdentifier::getSource)
-            .map(CRISTIN_SOURCE::equals)
-            .orElse(false);
+                   .map(AdditionalIdentifier::getSource)
+                   .map(CRISTIN_SOURCE::equals)
+                   .orElse(false);
     }
 }

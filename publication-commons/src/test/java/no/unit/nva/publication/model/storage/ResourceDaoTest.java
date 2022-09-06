@@ -48,7 +48,7 @@ class ResourceDaoTest {
         var dao = new ResourceDao(resource);
         
         String primaryPartitionKey = ResourceDao.constructPrimaryPartitionKey(SAMPLE_PUBLISHER, SAMPLE_USER);
-        String expectedKey = dao.getContainedType()
+        String expectedKey = dao.indexingType()
                              + KEY_FIELDS_DELIMITER
                              + PUBLISHER_IDENTIFIER
                              + KEY_FIELDS_DELIMITER
@@ -70,9 +70,9 @@ class ResourceDaoTest {
         String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
         ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
         Iterator<String> fieldNames = jsonNode.fieldNames();
-        List<String> fieldNamelist = new ArrayList<>();
-        fieldNames.forEachRemaining(fieldNamelist::add);
-        for (String field : fieldNamelist) {
+        List<String> fieldNameList = new ArrayList<>();
+        fieldNames.forEachRemaining(fieldNameList::add);
+        for (String field : fieldNameList) {
             assertThat(StringUtils.startsWithAny(field, "PK", "SK", "data", "type"), is(true));
         }
     }

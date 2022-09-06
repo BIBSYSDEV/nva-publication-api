@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -32,10 +31,6 @@ public interface TicketEntry extends Entity {
         var newTicket = createNewTicketEntry(publication, ticketType, identifierProvider);
         newTicket.validateCreationRequirements(publication);
         return newTicket;
-    }
-    
-    static Stream<Class<? extends TicketEntry>> ticketTypes() {
-        return Stream.of(DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class);
     }
     
     static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
@@ -67,37 +62,19 @@ public interface TicketEntry extends Entity {
         throw new UnsupportedOperationException();
     }
     
-    static <T extends TicketEntry> T createQueryObject(SortableIdentifier ticketIdentifier, Class<T> ticketType) {
-        if (DoiRequest.class.equals(ticketType)) {
-            return ticketType.cast(DoiRequest.builder().withIdentifier(ticketIdentifier).build());
-        } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return ticketType.cast(PublishingRequestCase.createQueryObject(ticketIdentifier));
-        } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return ticketType.cast(GeneralSupportRequest.createQueryObject(ticketIdentifier));
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-    
-    static TicketEntry createQueryObject(UserInstance userInstance,
-                                         SortableIdentifier ticketIdentifier,
-                                         Class<? extends TicketEntry> ticketType) {
-        if (DoiRequest.class.equals(ticketType)) {
-            return DoiRequest.createQueryObject(userInstance, ticketIdentifier);
-        } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return PublishingRequestCase.createQueryObject(userInstance, ticketIdentifier);
-        } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return GeneralSupportRequest.createQueryObject(userInstance, ticketIdentifier);
-        } else {
-            throw new RuntimeException("Unsupported ticket type");
-        }
-    }
-    
     static TicketEntry createNewGeneralSupportRequest(Publication publication,
                                                       Supplier<SortableIdentifier> identifierProvider) {
         var ticket = GeneralSupportRequest.fromPublication(publication);
         setServiceControlledFields(ticket, identifierProvider);
         return ticket;
+    }
+    
+    static UntypedTicketQueryObject createQueryObject(UserInstance userInstance, SortableIdentifier ticketIdentifier) {
+        return new UntypedTicketQueryObject(userInstance, ticketIdentifier);
+    }
+    
+    static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
+        return new UntypedTicketQueryObject(ticketIdentifier);
     }
     
     SortableIdentifier getResourceIdentifier();

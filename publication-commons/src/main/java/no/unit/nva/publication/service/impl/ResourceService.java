@@ -266,7 +266,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                    .withLimit(pageSize)
                    .withExclusiveStartKey(startMarker)
-                   .withFilterExpression(Dao.scanFilterExpression())
+                   .withFilterExpression(Dao.scanFilterExpressionForDataEntries())
                    .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
                    .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
     }

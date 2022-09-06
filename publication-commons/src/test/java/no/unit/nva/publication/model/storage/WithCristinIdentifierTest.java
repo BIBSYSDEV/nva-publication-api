@@ -1,8 +1,8 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static no.unit.nva.publication.model.storage.DaoUtils.sampleResourceDao;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -26,8 +26,8 @@ public class WithCristinIdentifierTest extends ResourcesLocalTest {
     public void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId() {
         ResourceDao dao = sampleResourceDao();
         client.putItem(toPutItemRequest(dao));
-        WithCristinIdentifier actualResult = queryDbFindByCristinIdentifier(dao);
-        WithCristinIdentifier expectedItem = dao;
+        ResourceDao actualResult = queryDbFindByCristinIdentifier(dao);
+        ResourceDao expectedItem = dao;
         assertThat(actualResult, is(equalTo(expectedItem)));
     }
     
@@ -52,12 +52,12 @@ public class WithCristinIdentifierTest extends ResourcesLocalTest {
             .build());
     }
     
-    private WithCristinIdentifier queryDbFindByCristinIdentifier(WithCristinIdentifier dao) {
+    private ResourceDao queryDbFindByCristinIdentifier(ResourceDao dao) {
         QueryRequest queryRequest = dao.createQueryFindByCristinIdentifier();
         return client.query(queryRequest)
-            .getItems()
-            .stream()
-            .map(item -> DynamoEntry.parseAttributeValuesMap(item, dao.getClass()))
-            .collect(SingletonCollector.collectOrElse(null));
+                   .getItems()
+                   .stream()
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, dao.getClass()))
+                   .collect(SingletonCollector.collectOrElse(null));
     }
 }

@@ -10,7 +10,6 @@ import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
-import static no.unit.nva.publication.model.business.TicketEntry.createQueryObject;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -20,6 +19,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.collection.IsIn.in;
@@ -41,6 +41,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -64,6 +65,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -191,17 +193,19 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, action);
     }
     
-    @ParameterizedTest(name = "type: {0}")
-    @DisplayName("should fetch ticket for user and identifier without specifying the ticket type")
-    @MethodSource("ticketProvider")
-    void shouldFetchTicketForUserAndIdentifierWithoutSpecifyingTheTicketType(Class<? extends TicketEntry> ticketType)
+    @Test
+    void shouldPersistAllTypesOfTicketsForAResourceWithoutConflictsAndAlsoBeingAbleToRetrieveAllTickets()
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var persistedTicket = createPersistedTicket(publication, ticketType);
-        var userInstance = UserInstance.fromTicket(persistedTicket);
-        var ticketIdentifier = persistedTicket.getIdentifier();
-        var retrievedTicker = ticketService.fetchTicket(userInstance, ticketIdentifier);
-        assertThat(retrievedTicker, is(equalTo(persistedTicket)));
+        var tickets = ticketProvider()
+                          .map(ticketType -> createPersistedTicket(publication, ticketType))
+                          .collect(Collectors.toList());
+        var retrievedTickets =
+            tickets.stream()
+                .map(attempt(t -> ticketService.fetchTicket(UserInstance.fromTicket(t), t.getIdentifier())))
+                .map(Try::orElseThrow)
+                .collect(Collectors.toList());
+        assertThat(retrievedTickets, containsInAnyOrder(tickets.toArray(TicketEntry[]::new)));
     }
     
     @ParameterizedTest(name = "type: {0}")
@@ -412,13 +416,28 @@ class TicketServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = createPersistedTicket(publication, ticketType);
-        var queryObject = createQueryObject(ticket.getCustomerId(), ticket.getResourceIdentifier(), ticketType);
-        var completedTicket = ticketService.completeTicket(queryObject);
+        var ticketFetchedByResourceIdentifier = legacyQueryObject(ticketType, publication);
+        var completedTicket = ticketService.completeTicket(ticketFetchedByResourceIdentifier);
         var expectedTicket = ticket.copy();
         expectedTicket.setStatus(COMPLETED);
         expectedTicket.setModifiedDate(completedTicket.getModifiedDate());
         expectedTicket.setVersion(completedTicket.getVersion());
         assertThat(completedTicket, is(equalTo(expectedTicket)));
+    }
+    
+    private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return DoiRequest.builder()
+                       .withCustomerId(publication.getPublisher().getId())
+                       .withResourceIdentifier(publication.getIdentifier())
+                       .build();
+        }
+        if (PublishingRequestCase.class.equals(ticketType)) {
+            return PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
+                publication.getIdentifier());
+        }
+        throw new UnsupportedOperationException("Legacy access pattern supported for strictly only DoiRequests and "
+                                                + "PublishingRequests");
     }
     
     private Message createOtherTicketWithMessage(Publication publication, UserInstance publicationOwner)
@@ -443,10 +462,10 @@ class TicketServiceTest extends ResourcesLocalTest {
         return ticketEntry;
     }
     
-    private TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
+    private TicketEntry createPersistedTicket(Publication publication, Class<?> ticketType) {
         var ticket = createUnpersistedTicket(publication, ticketType);
-        return ticketService.createTicket(ticket, ticketType);
+        return attempt(
+            () -> ticketService.createTicket(ticket, (Class<? extends TicketEntry>) ticketType)).orElseThrow();
     }
     
     private Publication persistEmptyPublication(UserInstance owner) {
