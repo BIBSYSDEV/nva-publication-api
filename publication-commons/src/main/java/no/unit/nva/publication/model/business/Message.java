@@ -83,7 +83,7 @@ public class Message implements TicketEntry,
                    .withIdentifier(SortableIdentifier.next())
                    .withText(message)
                    .withSender(sender.getUserIdentifier())
-                   .withResourceTitle("TO BE DELETED")
+                   .withResourceTitle("NOT_USED")
                    .withStatus(TicketStatus.UNREAD)
                    .withResourceIdentifier(ticket.getResourceIdentifier())
                    .withTicketIdentifier(ticket.getIdentifier())
@@ -344,7 +344,10 @@ public class Message implements TicketEntry,
         if (ticketEntry instanceof PublishingRequestCase) {
             return MessageType.PUBLISHING_REQUEST;
         }
-        return MessageType.SUPPORT;
+        if (ticketEntry instanceof GeneralSupportRequest) {
+            return MessageType.SUPPORT;
+        }
+        throw new UnsupportedOperationException("Unknown ticket type");
     }
     
     private static Builder buildMessage(UserInstance sender, Publication publication,

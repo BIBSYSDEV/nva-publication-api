@@ -4,6 +4,7 @@ package no.unit.nva.publication.publishingrequest;
 public final class TicketUtils {
     
     public static final String TICKET_IDENTIFIER_PATH_PARAMETER = "ticketIdentifier";
+    public static final String TICKET_PATH = "ticket";
     
     private TicketUtils() {
     

@@ -33,22 +33,23 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
@@ -72,6 +73,10 @@ class MessageServiceTest extends ResourcesLocalTest {
     private UserInstance owner;
     private TicketService ticketService;
     
+    public static Stream<Class<?>> ticketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class);
+    }
+    
     @BeforeEach
     public void initialize() {
         super.init();
@@ -82,10 +87,13 @@ class MessageServiceTest extends ResourcesLocalTest {
         owner = randomUserInstance();
     }
     
-    @Test
-    void shouldPersistMessageWithReferenceToATicket() throws ApiGatewayException {
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should persist message with reference to a ticket")
+    @MethodSource("ticketTypeProvider")
+    void shouldPersistMessageWithReferenceToATicket(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
         var publication = createDraftPublication(owner);
-        var ticket = createTicket(publication, randomTicketType());
+        var ticket = createTicket(publication, ticketType);
         var message = publicationOwnerSendsMessage(ticket, randomString());
         var persistedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
         assertThat(persistedMessage.getTicketIdentifier(), is(equalTo(ticket.getIdentifier())));
@@ -236,11 +244,6 @@ class MessageServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         return ticketService.createTicket(ticket, ticketType);
-    }
-    
-    private Class<? extends TicketEntry> randomTicketType() {
-        var ticketTypes = Stream.of(DoiRequest.class, PublishingRequestCase.class).collect(Collectors.toList());
-        return randomElement(ticketTypes);
     }
     
     private ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {

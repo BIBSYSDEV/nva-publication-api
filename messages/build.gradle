@@ -1,6 +1,7 @@
 dependencies {
 
     implementation project(":publication-commons")
+//    implementation project(":publishing-request")
 
     implementation libs.nva.apigateway
     implementation libs.nva.core
@@ -18,8 +19,10 @@ dependencies {
     testImplementation libs.jackson.core
 
     testImplementation project(":publication-testing")
-    testImplementation libs.nva.datamodel.testutils
     testImplementation project(":doi-requests")
+    testImplementation libs.nva.datamodel.testutils
+
+
     testImplementation libs.javafaker
     testImplementation libs.zalando
     testImplementation libs.nva.testutils
