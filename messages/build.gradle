@@ -1,7 +1,6 @@
 dependencies {
 
     implementation project(":publication-commons")
-//    implementation project(":publishing-request")
 
     implementation libs.nva.apigateway
     implementation libs.nva.core
