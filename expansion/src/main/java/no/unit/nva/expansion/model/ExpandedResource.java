@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.ExpansionConfig.ID_NAMESPACE;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
@@ -24,6 +23,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.PublicationServiceConfig;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -134,7 +134,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static ObjectNode createJsonWithId(Publication publication) throws JsonProcessingException {
         String jsonString = objectMapper.writeValueAsString(publication);
         ObjectNode json = (ObjectNode) objectMapper.readTree(jsonString);
-        URI id = UriWrapper.fromUri(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
+        URI id = UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
         json.put(ID_FIELD_NAME, id.toString());
         return json;
     }

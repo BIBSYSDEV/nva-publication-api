@@ -121,11 +121,18 @@ public interface TicketEntry extends Entity {
         return ticketService.fetchTicketMessages(this);
     }
     
+    default TicketEntry refresh() {
+        var refreshed = this.copy();
+        refreshed.setVersion(UUID.randomUUID());
+        refreshed.setModifiedDate(Instant.now());
+        return refreshed;
+    }
+    
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
         Class<T> ticketType,
         Supplier<SortableIdentifier> identifierProvider) {
-    
+        
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);
         }

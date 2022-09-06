@@ -114,7 +114,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var persistedTicket = ticketService.createTicket(ticket, DoiRequest.class);
         
         copyServiceControlledFields(ticket, persistedTicket);
-    
+        
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("doi")));
@@ -138,7 +138,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TestingUtils.createPublishingRequest(publication);
         var persistedTicket = ticketService.createTicket(ticket, PublishingRequestCase.class);
-    
+        
         copyServiceControlledFields(ticket, persistedTicket);
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
@@ -266,25 +266,21 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
         var publication = persistPublication(owner, publicationStatus);
-    
+        
         var ticketRequest = createUnpersistedTicket(publication, ticketType);
-    
+        
         var persistedTicket = ticketService.createTicket(ticketRequest, ticketType);
-    
+        
         ticketService.updateTicketStatus(persistedTicket, COMPLETED);
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
-    
+        
         var expectedTicket = persistedTicket.copy();
         expectedTicket.setStatus(COMPLETED);
         expectedTicket.setVersion(updatedTicket.getVersion());
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
-    
+        
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
-    }
-    
-    private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
-        return DoiRequest.class.equals(ticketType) ? PUBLISHED : DRAFT;
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
@@ -375,7 +371,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var pendingTicket = createPersistedTicket(publication, ticketType);
-    
+        
         ticketService.updateTicketStatus(pendingTicket, COMPLETED);
         assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(pendingTicket, CLOSED));
         var actualTicket = ticketService.fetchTicket(pendingTicket);
@@ -389,7 +385,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var ticketOfInterest = createPersistedTicket(publication, DoiRequest.class);
         var expectedMessage = messageService.createMessage(ticketOfInterest, publicationOwner, randomString());
         var unexpectedMessage = createOtherTicketWithMessage(publication, publicationOwner);
-    
+        
         var ticket = ticketService.fetchTicket(publicationOwner, ticketOfInterest.getIdentifier());
         var ticketMessages = ticket.fetchMessages(ticketService);
         assertThat(expectedMessage, is(in(ticketMessages)));
@@ -425,6 +421,19 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(completedTicket, is(equalTo(expectedTicket)));
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should update modified date and version when refreshing a ticket")
+    @MethodSource("ticketProvider")
+    void shouldUpdateModifiedDateAndVersionWhenRefreshing(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, InterruptedException {
+        var publication = persistPublication(owner, DRAFT);
+        var originalTicket = createPersistedTicket(publication, ticketType);
+        var refreshed = ticketService.refreshTicket(originalTicket);
+        Thread.sleep(1);
+        assertThat(refreshed.getModifiedDate(), is(greaterThan(originalTicket.getModifiedDate())));
+        assertThat(refreshed.getVersion(), is(not(equalTo(originalTicket.getVersion()))));
+    }
+    
     private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.builder()
@@ -438,6 +447,10 @@ class TicketServiceTest extends ResourcesLocalTest {
         }
         throw new UnsupportedOperationException("Legacy access pattern supported for strictly only DoiRequests and "
                                                 + "PublishingRequests");
+    }
+    
+    private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
+        return DoiRequest.class.equals(ticketType) ? PUBLISHED : DRAFT;
     }
     
     private Message createOtherTicketWithMessage(Publication publication, UserInstance publicationOwner)
@@ -503,7 +516,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         if (GeneralSupportRequest.class.equals(ticketType)) {
             return createGeneralSupportRequest(publication);
         }
-    
+        
         throw new UnsupportedOperationException();
     }
     

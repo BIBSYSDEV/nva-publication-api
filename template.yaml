@@ -5,22 +5,7 @@ Description: >
 
   SAM Template for NVA Publication Service
 
-Globals:
-  Function:
-    Timeout: 20
-    MemorySize: 1800 # 1 vCPU
-    Environment:
-      Variables:
-        COGNITO_HOST: !Ref CognitoAuthorizationUri
-        API_HOST: !Ref ApiDomain
-        API_SCHEME: 'https'
-    Architectures:
-      - arm64
-  Api:
-    Cors:
-      AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
+
 
 Parameters:
   CognitoAuthorizerArn:
@@ -74,6 +59,24 @@ Parameters:
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
+
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+  Function:
+    Timeout: 20
+    MemorySize: 1800 # 1 vCPU
+    Environment:
+      Variables:
+        COGNITO_HOST: !Ref CognitoAuthorizationUri
+        API_HOST: !Ref ApiDomain
+        API_SCHEME: 'https'
+        ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+    Architectures:
+      - arm64
 
 Resources:
 
@@ -365,7 +368,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -385,7 +387,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -411,7 +412,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -453,7 +453,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
@@ -473,7 +472,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
@@ -492,7 +490,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -514,7 +511,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -536,7 +532,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -556,7 +551,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -576,7 +570,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -596,7 +589,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -615,7 +607,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -629,13 +620,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: messages
-      Handler:  no.unit.nva.publication.messages.update.UpdateMessageHandler::handleRequest
+      Handler: no.unit.nva.publication.messages.update.UpdateMessageHandler::handleRequest
       Runtime: java11
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -656,7 +646,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -677,7 +666,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -697,7 +685,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -753,6 +740,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           BASE_PATH: !Ref CustomDomainBasePath
           DOMAIN_NAME: !Ref ApiDomain
+          TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -762,8 +750,6 @@ Resources:
               detail:
                 responsePayload:
                   topic: [ "PublicationService.DoiRequest.Update" ]
-                  newData:
-                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -787,7 +773,6 @@ Resources:
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -820,7 +805,6 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -853,7 +837,6 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -884,7 +867,6 @@ Resources:
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -910,7 +892,6 @@ Resources:
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -937,7 +918,6 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -999,7 +979,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1060,7 +1039,6 @@ Resources:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1138,7 +1116,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         Event:

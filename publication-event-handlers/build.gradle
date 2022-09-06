@@ -61,4 +61,5 @@ test {
     environment "AWS_REGION", "AWS_REGION"
     environment "TABLE_NAME", "ResourcesTable"
     environment "AWS_REGION", "eu-west-1"
+    environment "ID_NAMESPACE", "https://www.example.org/publication"
 }

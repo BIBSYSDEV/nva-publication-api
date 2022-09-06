@@ -100,6 +100,13 @@ public class TicketService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
     
+    public TicketEntry refreshTicket(TicketEntry ticket) {
+        var refreshedTicket = ticket.refresh();
+        var dao = (TicketDao) refreshedTicket.toDao();
+        client.putItem(dao.createPutItemRequest());
+        return refreshedTicket;
+    }
+    
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
@@ -111,10 +118,10 @@ public class TicketService extends ServiceWithTransactions {
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
                 .orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
-    
+        
         var completed = attempt(() -> existingTicket.complete(publication))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
-    
+        
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
         client.putItem(putItemRequest);
         return completed;
@@ -125,7 +132,7 @@ public class TicketService extends ServiceWithTransactions {
         resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
         var closedTicket = persistedTicket.close();
-    
+        
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         client.putItem(putItemRequest);
