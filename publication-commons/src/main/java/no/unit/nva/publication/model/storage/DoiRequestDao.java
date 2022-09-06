@@ -67,10 +67,6 @@ public class DoiRequestDao extends TicketDao
         return new DoiRequestDao(doi);
     }
     
-    public static String getContainedType() {
-        return DoiRequest.TYPE;
-    }
-    
     public String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + data.getType();
     }
@@ -83,11 +79,6 @@ public class DoiRequestDao extends TicketDao
     @Override
     public void setData(Entity data) {
         this.data = (DoiRequest) data;
-    }
-    
-    @Override
-    public String getType() {
-        return getContainedType();
     }
     
     @Override

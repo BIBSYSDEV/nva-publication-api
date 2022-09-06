@@ -32,6 +32,7 @@ import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -84,8 +85,9 @@ public class MessageService extends ServiceWithTransactions {
     
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
-        return attempt(() -> queryObject.fetchByIdentifier(client, MessageDao.class))
-                   .map(MessageDao::getData)
+        return attempt(() -> queryObject.fetchByIdentifier(client))
+                   .map(Dao::getData)
+                   .map(Message.class::cast)
                    .toOptional();
     }
     

@@ -130,14 +130,6 @@ public class DoiRequest implements TicketEntry {
                    .build();
     }
     
-    public static DoiRequest createQueryObject(UserInstance userInstance, SortableIdentifier ticketIdentifier) {
-        return DoiRequest.builder()
-                   .withOwner(userInstance.getUserIdentifier())
-                   .withCustomerId(userInstance.getOrganizationUri())
-                   .withIdentifier(ticketIdentifier)
-                   .build();
-    }
-    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;

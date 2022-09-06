@@ -52,14 +52,14 @@ class DoiRequestDaoTest {
             is(equalTo(expectedDoiRequestPrimarySortKey(sampleEntryIdentifier))));
     }
     
-    private String expectedDoiRequestPrimarySortKey(SortableIdentifier entryIdenfiier) {
-        return DoiRequestDao.getContainedType()
+    private String expectedDoiRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
+        return TicketDao.TICKETS_INDEXING_TYPE
                + KEY_FIELDS_DELIMITER
-               + entryIdenfiier.toString();
+               + entryIdentifier.toString();
     }
     
     private String expectedDoiRequestPrimaryPartitionKey() {
-        return DoiRequestDao.getContainedType()
+        return TicketDao.TICKETS_INDEXING_TYPE
                + KEY_FIELDS_DELIMITER
                + SAMPLE_PUBLISHER_IDENTIFIER
                + KEY_FIELDS_DELIMITER

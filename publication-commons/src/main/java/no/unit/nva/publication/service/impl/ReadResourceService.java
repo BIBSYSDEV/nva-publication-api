@@ -68,10 +68,10 @@ public class ReadResourceService {
     }
     
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        
+    
         var queryObject = new ResourceDao(resourceQueryObject(identifier));
-        var queryResult = queryObject.fetchByIdentifier(client, ResourceDao.class);
-        return queryResult.getData();
+        var queryResult = queryObject.fetchByIdentifier(client);
+        return (Resource) queryResult.getData();
     }
     
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {

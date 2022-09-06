@@ -31,18 +31,13 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
     }
     
     @Override
-    public Entity getData() {
+    public GeneralSupportRequest getData() {
         return this.data;
     }
     
     @Override
     public void setData(Entity data) {
         this.data = (GeneralSupportRequest) data;
-    }
-    
-    @Override
-    public String getType() {
-        return TYPE;
     }
     
     @Override
@@ -64,7 +59,7 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
     
     @Override
     public String joinByResourceOrderedType() {
-        return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + getType();
+        return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + indexingType();
     }
     
     @Override

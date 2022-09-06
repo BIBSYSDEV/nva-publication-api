@@ -56,7 +56,7 @@ public class WithByTypeCustomerStatusIndexTest {
     }
     
     private String constructExpectedPartitionKeyFormat(Dao dao) {
-        return dao.getType()
+        return dao.indexingType()
                + KEY_FIELDS_DELIMITER
                + CUSTOMER_INDEX_FIELD_PREFIX
                + KEY_FIELDS_DELIMITER

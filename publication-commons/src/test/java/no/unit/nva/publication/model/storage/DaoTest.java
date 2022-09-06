@@ -24,8 +24,6 @@ import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
@@ -43,11 +41,11 @@ class DaoTest extends ResourcesLocalTest {
         super.init();
     }
     
-    @ParameterizedTest(name = "getType returns name of the contained object: {0}")
+    @ParameterizedTest(name = "dataType returns name of the contained object: {0}")
     @MethodSource("instanceProvider")
     void getTypeReturnsNameOfTheContainedObject(Dao daoInstance) {
         String expectedType = daoInstance.getData().getClass().getSimpleName();
-        assertThat(daoInstance.getType(), is(equalTo(expectedType)));
+        assertThat(daoInstance.dataType(), is(equalTo(expectedType)));
     }
     
     @ParameterizedTest(name = "getIdentifier returns the identifier of the contained object: {0}")
@@ -79,7 +77,7 @@ class DaoTest extends ResourcesLocalTest {
         String primaryKeyPartitionKey = jsonNode.get(PRIMARY_KEY_PARTITION_KEY_NAME).textValue();
         
         String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-            daoInstance.getType(),
+            daoInstance.indexingType(),
             daoInstance.getCustomerIdentifier(),
             daoInstance.getOwner()
         );
@@ -96,7 +94,7 @@ class DaoTest extends ResourcesLocalTest {
         String primaryKeySortKey = jsonNode.get(PRIMARY_KEY_SORT_KEY_NAME).textValue();
         
         String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-            daoInstance.getType(),
+            daoInstance.indexingType(),
             daoInstance.getIdentifier().toString());
         assertThat(primaryKeySortKey, is(equalTo(expectedFormat)));
     }
@@ -113,7 +111,7 @@ class DaoTest extends ResourcesLocalTest {
         String byTypeCustomerStatusIndexPartitionKey = dao.getByTypeCustomerStatusPartitionKey();
         
         String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-            dao.getType(),
+            dao.indexingType(),
             CUSTOMER_INDEX_FIELD_PREFIX,
             dao.getCustomerIdentifier(),
             STATUS_INDEX_FIELD_PREFIX,
@@ -131,7 +129,7 @@ class DaoTest extends ResourcesLocalTest {
         String byTypeCustomerStatusIndexPartitionKey = dao.getByTypeCustomerStatusSortKey();
         
         String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-            dao.getType(),
+            dao.indexingType(),
             dao.getIdentifier().toString());
         
         assertThat(byTypeCustomerStatusIndexPartitionKey, is(equalTo(expectedFormat)));
@@ -187,26 +185,6 @@ class DaoTest extends ResourcesLocalTest {
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValues());
         assertThat(retrievedDao, is(equalTo(originalDao)));
-    }
-    
-    @ParameterizedTest(name = "should return filter expression that filters out non data entries:{0}")
-    @MethodSource("instanceProvider")
-    void shouldReturnFilteringExpressionThatFiltersOutNonDataEntries(Dao sampleDao) {
-        IdentifierEntry identifier = IdentifierEntry.create(sampleDao);
-        client.putItem(RESOURCES_TABLE_NAME, identifier.toDynamoFormat());
-        client.putItem(RESOURCES_TABLE_NAME, sampleDao.toDynamoFormat());
-        
-        ScanRequest scanRequest = new ScanRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withFilterExpression(Dao.scanFilterExpression())
-            .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
-            .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
-        ScanResult result = client.scan(scanRequest);
-        
-        Dao actualItem = result.getItems().stream().map(value -> parseAttributeValuesMap(value, Dao.class))
-            .collect(SingletonCollector.collect());
-        
-        assertThat(actualItem, is(equalTo(sampleDao)));
     }
     
     private static Stream<Dao> instanceProvider() {

@@ -43,9 +43,9 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
         var dao = new PublishingRequestDao(queryObject);
         
         return new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(dao.byResource(dao.joinByResourceOrderedType()));
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                   .withKeyConditions(dao.byResource(dao.joinByResourceOrderedType()));
     }
     
     public static PublishingRequestDao queryObject(PublishingRequestCase queryObject) {
@@ -57,37 +57,6 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
         var queryObject =
             PublishingRequestCase.createQueryObject(resourceOwner, resourceIdentifier, null);
         return new PublishingRequestDao(queryObject);
-    }
-    
-    @Override
-    public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        var publicationRequestEntry = createPublishingRequestInsertionEntry(data);
-        var identifierEntry = createUniqueIdentifierEntry(data);
-        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry(data);
-        return new TransactWriteItemsRequest()
-            .withTransactItems(
-                identifierEntry,
-                publicationRequestEntry,
-                publishingRequestUniquenessEntry);
-    }
-    
-    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequestCase publishingRequest) {
-        var publishingRequestUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
-        return newPutTransactionItem(publishingRequestUniquenessEntry);
-    }
-    
-    private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequestCase publicationRequest) {
-        var dynamoEntry = new PublishingRequestDao(publicationRequest);
-        return newPutTransactionItem(dynamoEntry);
-    }
-    
-    private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
-        var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
-        return newPutTransactionItem(identifierEntry);
-    }
-    
-    public static String getContainedType() {
-        return PublishingRequestCase.TYPE;
     }
     
     @JsonIgnore
@@ -106,13 +75,20 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     }
     
     @Override
-    public String getType() {
-        return getContainedType();
+    public URI getCustomerId() {
+        return data.getCustomerId();
     }
     
     @Override
-    public URI getCustomerId() {
-        return data.getCustomerId();
+    public TransactWriteItemsRequest createInsertionTransactionRequest() {
+        var publicationRequestEntry = createPublishingRequestInsertionEntry(data);
+        var identifierEntry = createUniqueIdentifierEntry(data);
+        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry(data);
+        return new TransactWriteItemsRequest()
+                   .withTransactItems(
+                       identifierEntry,
+                       publicationRequestEntry,
+                       publishingRequestUniquenessEntry);
     }
     
     @Override
@@ -153,6 +129,21 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     @JacocoGenerated
     public String toString() {
         return toJsonString();
+    }
+    
+    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequestCase publishingRequest) {
+        var publishingRequestUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
+        return newPutTransactionItem(publishingRequestUniquenessEntry);
+    }
+    
+    private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequestCase publicationRequest) {
+        var dynamoEntry = new PublishingRequestDao(publicationRequest);
+        return newPutTransactionItem(dynamoEntry);
+    }
+    
+    private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
+        var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
+        return newPutTransactionItem(identifierEntry);
     }
 }
 

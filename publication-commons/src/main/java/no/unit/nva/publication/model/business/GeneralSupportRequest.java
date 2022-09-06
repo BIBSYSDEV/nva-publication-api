@@ -65,21 +65,6 @@ public class GeneralSupportRequest implements TicketEntry {
         return ticket;
     }
     
-    public static GeneralSupportRequest createQueryObject(SortableIdentifier ticketIdentifier) {
-        var queryObject = new GeneralSupportRequest();
-        queryObject.setIdentifier(ticketIdentifier);
-        return queryObject;
-    }
-    
-    public static GeneralSupportRequest createQueryObject(UserInstance userInstance,
-                                                          SortableIdentifier ticketIdentifier) {
-        var queryObject = new GeneralSupportRequest();
-        queryObject.setIdentifier(ticketIdentifier);
-        queryObject.setOwner(userInstance.getUserIdentifier());
-        queryObject.setCustomerId(userInstance.getOrganizationUri());
-        return queryObject;
-    }
-    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;

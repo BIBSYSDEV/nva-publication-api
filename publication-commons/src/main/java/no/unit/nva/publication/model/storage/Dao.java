@@ -45,11 +45,22 @@ public abstract class Dao
         return pathParts[pathParts.length - 1];
     }
     
-    public static String scanFilterExpression() {
+    /**
+     * Filtering expression to be used when we need to scan the whole database and perform actions on every data entry.
+     * This expression excludes Uniqueness entries (i.e. entries for guaranteeing the uniqueness of certain values * see
+     * link below). This filter is used primarily when migrating the Resources table.
+     * <p>
+     * *
+     * {@see * <a
+     * href=https://aws.amazon.com/blogs/database/simulating-amazon-dynamodb-unique-constraints-using-transactions>
+     * documentation </a>}
+     *
+     * @return filtering expression string.
+     */
+    public static String scanFilterExpressionForDataEntries() {
         return "begins_with (#PK, :Resource) or "
-               + "begins_with(#PK, :DoiRequest) or "
-               + "begins_with(#PK, :Message) or "
-               + "begins_with(#PK, :PublishingRequestCase)";
+               + "begins_with(#PK, :Ticket) or "
+               + "begins_with(#PK, :Message)";
     }
     
     // replaces the hash values in the filter expression with the actual key name
@@ -60,9 +71,8 @@ public abstract class Dao
     // replaces the colon values in the filter expression with the actual value
     public static Map<String, AttributeValue> scanFilterExpressionAttributeValues() {
         return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
-            ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE + KEY_FIELDS_DELIMITER),
-            ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER),
-            ":PublishingRequestCase", new AttributeValue(PublishingRequestDao.TYPE + KEY_FIELDS_DELIMITER)
+            ":Ticket", new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER),
+            ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER)
         );
     }
     
@@ -80,7 +90,7 @@ public abstract class Dao
     @Override
     @JacocoGenerated
     public final String getPrimaryKeySortKey() {
-        return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
+        return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, indexingType(), getIdentifier());
     }
     
     @Override
@@ -99,10 +109,10 @@ public abstract class Dao
     public final String getByTypeCustomerStatusPartitionKey() {
         String publisherId = customerIdentifier();
         Optional<String> publicationStatus = extractStatus();
-        
+    
         return publicationStatus
-            .map(status -> formatByTypeCustomerStatusIndexPartitionKey(publisherId, status))
-            .orElse(null);
+                   .map(status -> formatByTypeCustomerStatusIndexPartitionKey(publisherId, status))
+                   .orElse(null);
     }
     
     @Override
@@ -110,7 +120,7 @@ public abstract class Dao
     public final String getByTypeCustomerStatusSortKey() {
         //Codacy complains that identifier is already a String
         SortableIdentifier identifier = getData().getIdentifier();
-        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, this.getType(), identifier.toString());
+        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, this.indexingType(), identifier.toString());
     }
     
     @JsonIgnore
@@ -119,14 +129,15 @@ public abstract class Dao
     }
     
     @JsonIgnore
-    public abstract String getType();
+    @Override
+    public abstract String indexingType();
     
     @JsonIgnore
     public abstract URI getCustomerId();
     
     @Override
     @JsonIgnore
-    public final SortableIdentifier getIdentifier() {
+    public SortableIdentifier getIdentifier() {
         return getData().getIdentifier();
     }
     
@@ -137,13 +148,17 @@ public abstract class Dao
     
     public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
     
+    public final String dataType() {
+        return getData().getType();
+    }
+    
     protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
         String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
         return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
     }
     
     protected String formatPrimaryPartitionKey(String publisherId, String owner) {
-        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, getType(), publisherId, owner);
+        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, indexingType(), publisherId, owner);
     }
     
     @JsonIgnore
@@ -151,16 +166,16 @@ public abstract class Dao
     
     private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
         return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,
-            getType(),
+            indexingType(),
             publisherId,
             status);
     }
     
     private Optional<String> extractStatus() {
         return attempt(this::getData)
-            .map(Entity.class::cast)
-            .map(Entity::getStatusString)
-            .toOptional();
+                   .map(Entity.class::cast)
+                   .map(Entity::getStatusString)
+                   .toOptional();
     }
     
     private String customerIdentifier() {

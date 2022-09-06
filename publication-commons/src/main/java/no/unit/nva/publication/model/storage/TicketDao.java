@@ -16,6 +16,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -41,21 +42,25 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     public static final String DOUBLE_QUOTES = "\"";
     public static final String EMPTY_STRING = "";
     private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
+    public static final String TICKETS_INDEXING_TYPE = "Ticket";
     
     protected TicketDao() {
         super();
     }
     
-    public static TicketDao queryObject(TicketEntry ticketEntry) {
-        return (TicketDao) ticketEntry.toDao();
-    }
-    
-    public final Optional<TicketDao> fetchItem(AmazonDynamoDB client) {
-        return fetchItemWithClient(client);
+    public final Optional<TicketDao> fetchTicket(AmazonDynamoDB client) {
+        var request = new GetItemRequest()
+                          .withTableName(RESOURCES_TABLE_NAME)
+                          .withKey(primaryKey());
+        
+        return attempt(() -> client.getItem(request))
+                   .map(GetItemResult::getItem)
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
+                   .toOptional();
     }
     
     public PutItemRequest createPutItemRequest() {
-        var condition = new UpdateCaseButNotOwnerCondition((TicketEntry) this.getData());
+        var condition = new UpdateCaseButNotOwnerCondition(this.getData());
         
         return new PutItemRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
@@ -105,16 +110,13 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         return new TransactWriteItem().withPut(put);
     }
     
-    protected Optional<TicketDao> fetchItemWithClient(AmazonDynamoDB client) {
-        var request = new GetItemRequest()
-                          .withTableName(RESOURCES_TABLE_NAME)
-                          .withKey(primaryKey());
-    
-        var queryResult = client.getItem(request);
-        return attempt(queryResult::getItem)
-                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
-                   .toOptional();
+    @Override
+    public final String indexingType() {
+        return TICKETS_INDEXING_TYPE;
     }
+    
+    @Override
+    public abstract TicketEntry getData();
     
     private static class FetchMessagesQuery {
         

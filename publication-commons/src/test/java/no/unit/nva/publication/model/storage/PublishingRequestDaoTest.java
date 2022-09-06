@@ -94,9 +94,10 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         var persistedRquest = ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
         var queryResult = client.query(query);
         var retrievedByPublicationIdentifier = queryResult.getItems().stream()
-            .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
-            .map(PublishingRequestDao::getData)
-            .collect(SingletonCollector.collect());
+                                                   .map(item -> parseAttributeValuesMap(item,
+                                                       PublishingRequestDao.class))
+                                                   .map(PublishingRequestDao::getData)
+                                                   .collect(SingletonCollector.collect());
         assertThat(retrievedByPublicationIdentifier, is(equalTo(persistedRquest)));
     }
     
@@ -114,13 +115,13 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     }
     
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
-        return PublishingRequestDao.getContainedType()
+        return TicketDao.TICKETS_INDEXING_TYPE
                + KEY_FIELDS_DELIMITER
                + entryIdentifier.toString();
     }
     
     private String expectedPublicationRequestPrimaryPartitionKey() {
-        return PublishingRequestDao.getContainedType()
+        return TicketDao.TICKETS_INDEXING_TYPE
                + KEY_FIELDS_DELIMITER
                + SAMPLE_CUSTOMER_IDENTIFIER
                + KEY_FIELDS_DELIMITER
