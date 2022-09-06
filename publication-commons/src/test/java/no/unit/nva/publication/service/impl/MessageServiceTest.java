@@ -211,7 +211,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var messageIdentifier =
             messageService.createMessage(owner, publication, randomString(), randomElement(MessageType.values()));
         var message = messageService.getMessage(owner, messageIdentifier);
-        assertThat(message.getRecipient(), is(equalTo(Message.SUPPORT_SERVICE_RECIPIENT)));
+        assertThat(message.getRecipient(), is(equalTo(Message.SUPPORT_SERVICE_CORRESPONDENT)));
     }
     
     @Test

@@ -8,6 +8,8 @@ import nva.commons.core.JacocoGenerated;
 
 public class UntypedTicketQueryObject extends TicketDao {
     
+    public static final String EMPTY_USER_NAME = null;
+    public static final UserInstance EMPTY_OWNER = null;
     private final SortableIdentifier identifier;
     private final UserInstance owner;
     
@@ -18,7 +20,7 @@ public class UntypedTicketQueryObject extends TicketDao {
     }
     
     public UntypedTicketQueryObject(SortableIdentifier ticketIdentifier) {
-        this(null, ticketIdentifier);
+        this(EMPTY_OWNER, ticketIdentifier);
     }
     
     @JacocoGenerated

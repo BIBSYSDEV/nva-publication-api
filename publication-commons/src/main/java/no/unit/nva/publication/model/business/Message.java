@@ -27,7 +27,7 @@ public class Message implements TicketEntry,
                                 JsonSerializable {
     
     public static final String TYPE = "Message";
-    public static final String SUPPORT_SERVICE_RECIPIENT = "SupportService";
+    public static final String SUPPORT_SERVICE_CORRESPONDENT = "SupportService";
     
     @JsonProperty("identifier")
     private SortableIdentifier identifier;
@@ -111,7 +111,7 @@ public class Message implements TicketEntry,
     
     @JsonProperty("recipient")
     public String getRecipient() {
-        return owner.equals(sender) ? SUPPORT_SERVICE_RECIPIENT : owner;
+        return owner.equals(sender) ? SUPPORT_SERVICE_CORRESPONDENT : owner;
     }
     
     public void setRecipient(String recipient) {
