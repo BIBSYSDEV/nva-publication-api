@@ -434,6 +434,30 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(refreshed.getVersion(), is(not(equalTo(originalTicket.getVersion()))));
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should update modified date and version when refreshing a ticket")
+    @MethodSource("ticketProvider")
+    void shouldReturnTicketForElevatedUserOfSameInstitution(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = createPersistedTicket(publication, ticketType);
+        var elevatedUser = UserInstance.create(randomString(), ticket.getCustomerId());
+        var retrievedTicket = ticketService.fetchTicketForElevatedUser(elevatedUser, ticket.getIdentifier());
+        assertThat(retrievedTicket, is(equalTo(ticket)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should update modified date and version when refreshing a ticket")
+    @MethodSource("ticketProvider")
+    void shouldThrowNotFoundExceptionWhenUserIsElevatedUserOfAlienInstitution(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = createPersistedTicket(publication, ticketType);
+        var elevatedUser = UserInstance.create(randomString(), randomUri());
+        Executable action = () -> ticketService.fetchTicketForElevatedUser(elevatedUser, ticket.getIdentifier());
+        assertThrows(NotFoundException.class, action);
+    }
+    
     private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.builder()

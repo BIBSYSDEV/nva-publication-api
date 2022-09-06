@@ -72,7 +72,7 @@ public class UpdateMessageHandler extends ApiGatewayHandler<UpdateMessageRequest
     }
     
     private boolean supportIsTheRecipient(Message message) {
-        return Message.SUPPORT_SERVICE_RECIPIENT.equals(message.getRecipient());
+        return Message.SUPPORT_SERVICE_CORRESPONDENT.equals(message.getRecipient());
     }
     
     private boolean callerIsCurator(RequestInfo requestInfo) {

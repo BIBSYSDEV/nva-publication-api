@@ -65,7 +65,7 @@ public class TicketService extends ServiceWithTransactions {
         return queryObject
                    .fetchTicket(client)
                    .map(TicketDao::getData)
-                   .orElseThrow(() -> new NotFoundException(TICKET_NOT_FOUND));
+                   .orElseThrow(() -> notFoundException());
     }
     
     public TicketEntry fetchTicket(TicketEntry dataEntry)
@@ -107,6 +107,21 @@ public class TicketService extends ServiceWithTransactions {
         return refreshedTicket;
     }
     
+    public TicketEntry fetchTicketForElevatedUser(UserInstance user, SortableIdentifier ticketIdentifier)
+        throws NotFoundException {
+        var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
+        return attempt(() -> queryObject.fetchByIdentifier(client))
+                   .map(Dao::getData)
+                   .map(TicketEntry.class::cast)
+                   .toOptional()
+                   .filter(ticketEntry -> ticketEntry.getCustomerId().equals(user.getOrganizationUri()))
+                   .orElseThrow(TicketService::notFoundException);
+    }
+    
+    private static NotFoundException notFoundException() {
+        return new NotFoundException(TICKET_NOT_FOUND);
+    }
+    
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
@@ -117,7 +132,7 @@ public class TicketService extends ServiceWithTransactions {
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
-                .orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
+                .orElseThrow(fail -> notFoundException());
         
         var completed = attempt(() -> existingTicket.complete(publication))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
@@ -151,7 +166,6 @@ public class TicketService extends ServiceWithTransactions {
         var queryResult = queryObject.fetchByIdentifier(client);
         return (TicketEntry) queryResult.getData();
     }
-    
     
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
         return new BadRequestException(exception.getMessage(), exception);
