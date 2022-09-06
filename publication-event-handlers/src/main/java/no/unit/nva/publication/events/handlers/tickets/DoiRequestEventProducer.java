@@ -10,29 +10,34 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.s3.S3Client;
 
 /**
  * Sends messages to DoiRegistrar service for creating and updating DOIs.
  */
 public class DoiRequestEventProducer
-    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, DoiMetadataUpdateEvent> {
+    extends DestinationsEventBridgeEventHandler<EventReference, DoiMetadataUpdateEvent> {
     
+    public static final Duration MIN_INTERVAL_FOR_REREQUESTING_A_DOI = Duration.ofSeconds(10);
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "DoiRequest does not reference any Resource";
     public static final String DOI_REQUEST_HAS_NO_IDENTIFIER = "DoiRequest has no identifier";
     public static final String HEAD = "HEAD";
@@ -41,25 +46,35 @@ public class DoiRequestEventProducer
     private static final String HANDLER_DOES_NOT_DEAL_WITH_DELETIONS = "Handler does not deal with deletions";
     private final ResourceService resourceService;
     private final HttpClient httpClient;
-    
+    private final S3Client s3Client;
+
     @JacocoGenerated
-    public DoiRequestEventProducer(ResourceService resourceService, HttpClient httpClient) {
-        super(DataEntryUpdateEvent.class);
+    public DoiRequestEventProducer() {
+        this(ResourceService.defaultService(), HttpClient.newHttpClient(), S3Driver.defaultS3Client().build());
+    }
+    
+    public DoiRequestEventProducer(ResourceService resourceService, HttpClient httpClient, S3Client s3Client) {
+        super(EventReference.class);
         this.resourceService = resourceService;
         this.httpClient = httpClient;
+        this.s3Client = s3Client;
     }
-    
+
     @Override
     protected DoiMetadataUpdateEvent processInputPayload(
-        DataEntryUpdateEvent input,
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
+        EventReference inputEvent,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
-        validate(input);
-        return isEffectiveChange(input)
-                   ? propagateEvent(input)
+        var s3Driver = new S3Driver(s3Client, inputEvent.getUri().getHost());
+        var eventString = s3Driver.readEvent(inputEvent.getUri());
+        var eventBody = DataEntryUpdateEvent.fromJson(eventString);
+        validate(eventBody);
+
+        return isEffectiveChange(eventBody)
+                   ? propagateEvent(eventBody)
                    : EMPTY_EVENT;
     }
-    
+
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
         var newEntry = input.getNewData();
         
@@ -100,9 +115,9 @@ public class DoiRequestEventProducer
     
     private Boolean matchStatus(DoiRequest oldEntry, TicketStatus approved) {
         return Optional.of(oldEntry)
-            .map(DoiRequest::getStatus)
-            .map(approved::equals)
-            .orElse(false);
+                   .map(DoiRequest::getStatus)
+                   .map(approved::equals)
+                   .orElse(false);
     }
     
     private boolean resourceWithFindableDoiHasBeenUpdated(Resource newEntry) {
@@ -112,10 +127,10 @@ public class DoiRequestEventProducer
     private boolean doiIsFindable(URI doi) {
         var request = HttpRequest.newBuilder(doi).method(HEAD, BodyPublishers.noBody()).build();
         return attempt(() -> httpClient.send(request, BodyHandlers.ofString()))
-            .map(HttpResponse::statusCode)
-            .map(HTTP_FOUND::equals)
-            .toOptional()
-            .orElse(false);
+                   .map(HttpResponse::statusCode)
+                   .map(HTTP_FOUND::equals)
+                   .toOptional()
+                   .orElse(false);
     }
     
     private boolean hasDoi(Resource newEntry) {
@@ -162,19 +177,23 @@ public class DoiRequestEventProducer
     }
     
     private boolean isFirstDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
-        boolean b = publicationDoesNotHaveDoiFromBefore(newEntry);
-        return thereWasNoDoiRequestBefore(oldEntry) && b;
+        return thereHasBeenNoRecentDoiRequest(oldEntry, newEntry) && publicationDoesNotHaveDoiFromBefore(newEntry);
     }
     
-    private boolean thereWasNoDoiRequestBefore(DoiRequest oldEntry) {
-        return isNull(oldEntry);
+    private boolean thereHasBeenNoRecentDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
+        return isNull(oldEntry) || isOldDoiRequest(oldEntry, newEntry);
+    }
+    
+    private boolean isOldDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
+        var latestDateForRerequestingDoi = oldEntry.getModifiedDate().plus(MIN_INTERVAL_FOR_REREQUESTING_A_DOI);
+        return newEntry.getModifiedDate().isAfter(latestDateForRerequestingDoi);
     }
     
     private boolean publicationDoesNotHaveDoiFromBefore(DoiRequest doiRequest) {
         return attempt(() -> resourceService.getPublicationByIdentifier(doiRequest.getResourceIdentifier()))
-            .map(Publication::getDoi)
-            .map(Objects::isNull)
-            .orElseThrow();
+                   .map(Publication::getDoi)
+                   .map(Objects::isNull)
+                   .orElseThrow();
     }
     
     private boolean isEffectiveChange(DataEntryUpdateEvent updateEvent) {

@@ -8,14 +8,13 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
-import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -70,8 +69,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             .orElseGet(Publication::new);
         var createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
-        
-        return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
+    
+        return PublicationResponse.fromPublication(createdPublication);
     }
     
     @Override

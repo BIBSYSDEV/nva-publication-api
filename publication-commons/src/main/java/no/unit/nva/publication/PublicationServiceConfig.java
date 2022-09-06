@@ -19,8 +19,8 @@ public final class PublicationServiceConfig {
     public static final URI PUBLICATION_HOST_URI = UriWrapper.fromHost(API_HOST).addChild(PUBLICATION_PATH).getUri();
     @Deprecated
     public static final String MESSAGE_PATH = "/messages";
-    @Deprecated
-    public static final String ID_NAMESPACE = ENVIRONMENT.readEnv("ID_NAMESPACE");
+    public static final String SUPPORT_CASE_PATH = "support-case";
+
     public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER = "publicationIdentifier";
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
     public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
@@ -33,7 +33,7 @@ public final class PublicationServiceConfig {
     }
     
     @JacocoGenerated
-    private static AmazonDynamoDB defaultDynamoDbClient() {
+    public static AmazonDynamoDB defaultDynamoDbClient() {
         return AmazonDynamoDBClientBuilder
                    .standard()
                    .withRegion(AWS_REGION)
