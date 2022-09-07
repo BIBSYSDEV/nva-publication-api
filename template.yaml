@@ -614,7 +614,7 @@ Resources:
           Type: Api
           Properties:
             Path: /tickets
-            Method: post
+            Method: get
             RestApiId: !Ref NvaPublicationApi
 
   NvaListMessagesFunction:
