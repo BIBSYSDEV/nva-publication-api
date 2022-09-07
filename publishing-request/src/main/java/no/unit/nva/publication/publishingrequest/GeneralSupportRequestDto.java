@@ -93,7 +93,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     @JacocoGenerated
     @Override
     public Class<? extends TicketEntry> ticketType() {
-        throw new UnsupportedOperationException();
+        return GeneralSupportRequest.class;
     }
     
     @Override

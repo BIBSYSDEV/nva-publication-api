@@ -598,6 +598,25 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
+  ListTicketsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publishing-request
+      Handler: no.unit.nva.publication.publishingrequest.read.ListTicketsHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /tickets
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
   NvaListMessagesFunction:
     Type: AWS::Serverless::Function
     Properties:
