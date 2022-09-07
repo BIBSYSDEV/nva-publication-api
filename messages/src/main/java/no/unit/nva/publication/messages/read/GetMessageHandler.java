@@ -9,6 +9,7 @@ import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIE
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -25,16 +26,20 @@ public class GetMessageHandler extends ApiGatewayHandler<Void, Void> {
     
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) {
-        var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
-        var ticketIdentifier = extractIdentifier(requestInfo, TICKET_IDENTIFIER_PATH_PARAMETER);
-        var redirectUri = UriWrapper.fromHost(API_HOST)
-                              .addChild(PUBLICATION_PATH)
-                              .addChild(resourceIdentifier.toString())
-                              .addChild(TICKET_PATH)
-                              .addChild(ticketIdentifier.toString())
-                              .getUri();
+        var redirectUri = constructAssociatedTicketUri(requestInfo);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, redirectUri.toString()));
         return null;
+    }
+    
+    private URI constructAssociatedTicketUri(RequestInfo requestInfo) {
+        var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
+        var ticketIdentifier = extractIdentifier(requestInfo, TICKET_IDENTIFIER_PATH_PARAMETER);
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(PUBLICATION_PATH)
+                   .addChild(resourceIdentifier.toString())
+                   .addChild(TICKET_PATH)
+                   .addChild(ticketIdentifier.toString())
+                   .getUri();
     }
     
     @Override
