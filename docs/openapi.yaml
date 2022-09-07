@@ -294,7 +294,7 @@ paths:
           description: "Created"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateMessageFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaLegacyCreateMessageFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
@@ -503,6 +503,47 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+  /{publicationIdentifier}/ticket/{ticketIdentifier}/message:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    post:
+      description: Add message to ticket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDoiRequest'
+      responses:
+        '201':
+          description: "Created"
+          headers:
+            "Location":
+              description: The URI of the created message
+              schema:
+                type: string
+        '403':
+          description: "Forbidden"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaNewCreateMessageFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY

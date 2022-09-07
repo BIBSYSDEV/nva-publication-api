@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages;
+package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;

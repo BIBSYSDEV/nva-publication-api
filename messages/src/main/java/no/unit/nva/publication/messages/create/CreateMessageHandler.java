@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages;
+package no.unit.nva.publication.messages.create;
 
 import static java.util.Objects.isNull;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;

@@ -560,11 +560,11 @@ Resources:
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
-  NvaCreateMessageFunction:
+  NvaLegacyCreateMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: messages
-      Handler: no.unit.nva.publication.messages.CreateMessageHandler::handleRequest
+      Handler: no.unit.nva.publication.messages.create.CreateMessageHandler::handleRequest
       Runtime: java11
       Environment:
         Variables:
@@ -576,6 +576,25 @@ Resources:
           Type: Api
           Properties:
             Path: /messages
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  NvaNewCreateMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler: no.unit.nva.publication.messages.create.NewCreateMessageHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/message
             Method: post
             RestApiId: !Ref NvaPublicationApi
 

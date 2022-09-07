@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages;
+package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;

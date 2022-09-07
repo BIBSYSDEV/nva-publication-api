@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages;
+package no.unit.nva.publication.messages.create;
 
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static nva.commons.core.attempt.Try.attempt;
@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.messages.MessageApiConfig;
 import no.unit.nva.publication.messages.model.NewMessageDto;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
