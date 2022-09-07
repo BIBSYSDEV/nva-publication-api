@@ -1,67 +1,49 @@
 package no.unit.nva.publication.messages.read;
 
-import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_CLOCK;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
-import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
+import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
+import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.messages.MessageApiConfig;
-import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.service.impl.MessageService;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
-public class GetMessageHandler extends ApiGatewayHandler<Void, MessageDto> {
-    
-    private final MessageService messageService;
+public class GetMessageHandler extends ApiGatewayHandler<Void, Void> {
     
     @JacocoGenerated
     public GetMessageHandler() {
-        this(new MessageService(DEFAULT_DYNAMODB_CLIENT, DEFAULT_CLOCK));
-    }
-    
-    protected GetMessageHandler(MessageService messageService) {
         super(Void.class);
-        this.messageService = messageService;
     }
     
     @Override
-    protected MessageDto processInput(Void input, RequestInfo requestInfo, Context context) throws NotFoundException {
-        var messageIdentifier = extractIdentifier(requestInfo);
-        return messageService.getMessageByIdentifier(messageIdentifier)
-            .map(MessageDto::fromMessage)
-            .filter(message -> clientIsAuthorizedToSeeTheMessage(message, requestInfo))
-            .orElseThrow(() -> new NotFoundException(MESSAGE_NOT_FOUND));
+    protected Void processInput(Void input, RequestInfo requestInfo, Context context) {
+        var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
+        var ticketIdentifier = extractIdentifier(requestInfo, TICKET_IDENTIFIER_PATH_PARAMETER);
+        var redirectUri = UriWrapper.fromHost(API_HOST)
+                              .addChild(PUBLICATION_PATH)
+                              .addChild(resourceIdentifier.toString())
+                              .addChild(TICKET_PATH)
+                              .addChild(ticketIdentifier.toString())
+                              .getUri();
+        addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, redirectUri.toString()));
+        return null;
     }
     
     @Override
-    protected Integer getSuccessStatusCode(Void input, MessageDto output) {
-        return HTTP_OK;
+    protected Integer getSuccessStatusCode(Void input, Void output) {
+        return HTTP_SEE_OTHER;
     }
     
-    private boolean clientIsAuthorizedToSeeTheMessage(MessageDto message, RequestInfo requestInfo) {
-        return userIsCurator(requestInfo)
-               || userIsPublicationOwner(message, requestInfo)
-               || requestInfo.clientIsInternalBackend();
-    }
-    
-    private boolean userIsPublicationOwner(MessageDto message, RequestInfo requestInfo) {
-        return attempt(() -> message.getOwnerIdentifier().equals(requestInfo.getNvaUsername()))
-            .orElse(fail -> false);
-    }
-    
-    private boolean userIsCurator(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString());
-    }
-    
-    private SortableIdentifier extractIdentifier(RequestInfo requestInfo) throws NotFoundException {
-        return attempt(() -> new SortableIdentifier(
-            requestInfo.getPathParameter(MessageApiConfig.MESSAGE_IDENTIFIER_PATH_PARAMETER)))
-            .orElseThrow(fail -> new NotFoundException(MESSAGE_NOT_FOUND));
+    private SortableIdentifier extractIdentifier(RequestInfo requestInfo, String pathParameter) {
+        return attempt(() -> new SortableIdentifier(requestInfo.getPathParameter(pathParameter)))
+                   .orElseThrow();
     }
 }

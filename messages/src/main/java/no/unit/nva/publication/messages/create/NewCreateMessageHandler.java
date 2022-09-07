@@ -43,16 +43,30 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return null;
     }
     
+    @Override
+    protected Integer getSuccessStatusCode(CreateMessageRequest input, Void output) {
+        return HttpURLConnection.HTTP_CREATED;
+    }
+    
+    private static boolean userIsElevatedUser(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+    }
+    
+    private static String createLocationHeader(Message message) {
+        return NewMessageDto.constructMessageId(message).toString();
+    }
+    
+    private static SortableIdentifier extractTicketIdentifier(RequestInfo requestInfo) {
+        var identifierString = requestInfo.getPathParameter(MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER);
+        return new SortableIdentifier(identifierString);
+    }
+    
     private TicketEntry fetchTicketForUser(RequestInfo requestInfo, SortableIdentifier ticketIdentifier,
                                            UserInstance user)
         throws ApiGatewayException {
         return userIsElevatedUser(requestInfo) ?
                    fetchTicketForElevatedUser(ticketIdentifier, user)
                    : fetchTicketForPublicationOwner(ticketIdentifier, user);
-    }
-    
-    private static boolean userIsElevatedUser(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
     }
     
     private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, UserInstance user)
@@ -77,19 +91,5 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
             throw (RuntimeException) exception;
         }
         throw new RuntimeException(exception);
-    }
-    
-    @Override
-    protected Integer getSuccessStatusCode(CreateMessageRequest input, Void output) {
-        return HttpURLConnection.HTTP_CREATED;
-    }
-    
-    private static String createLocationHeader(Message message) {
-        return NewMessageDto.constructMessageId(message).toString();
-    }
-    
-    private static SortableIdentifier extractTicketIdentifier(RequestInfo requestInfo) {
-        var identifierString = requestInfo.getPathParameter(MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER);
-        return new SortableIdentifier(identifierString);
     }
 }
