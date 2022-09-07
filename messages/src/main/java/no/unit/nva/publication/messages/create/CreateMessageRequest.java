@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages;
+package no.unit.nva.publication.messages.create;
 
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.MessageType;
