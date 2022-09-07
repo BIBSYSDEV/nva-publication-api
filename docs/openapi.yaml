@@ -547,6 +547,25 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+  /tickets:
+    get:
+      description: List tickets for user
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketCollection"
+
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListTicketsHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
 components:
   schemas:
     Publication:
@@ -650,6 +669,17 @@ components:
           enum:
             - DoiRequest
             - PublishingRequest
+            - GeneralSupportRequest
+    TicketCollection:
+      type: object
+      properties:
+        type:
+          type: string
+        tickets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ticket"
+
   securitySchemes:
     CognitoUserPool:
       type: apiKey
