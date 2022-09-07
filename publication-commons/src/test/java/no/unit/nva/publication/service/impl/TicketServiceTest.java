@@ -523,6 +523,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         return ticketEntry;
     }
     
+    @SuppressWarnings("unchecked")
     private TicketEntry createPersistedTicket(Publication publication, Class<?> ticketType) {
         var ticket = createUnpersistedTicket(publication, ticketType);
         return attempt(
