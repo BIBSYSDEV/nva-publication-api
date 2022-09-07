@@ -10,10 +10,16 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.JacocoGenerated;
 
 public class ListTicketsHandler extends ApiGatewayHandler<Void, TicketCollection> {
     
     private final TicketService ticketService;
+    
+    @JacocoGenerated
+    public ListTicketsHandler() {
+        this(TicketService.defaultService());
+    }
     
     public ListTicketsHandler(TicketService ticketService) {
         super(Void.class);
@@ -30,13 +36,13 @@ public class ListTicketsHandler extends ApiGatewayHandler<Void, TicketCollection
         return TicketCollection.fromTickets(tickets);
     }
     
-    private TicketDto createDto(TicketEntry ticket) {
-        var messages = ticket.fetchMessages(ticketService);
-        return TicketDto.fromTicket(ticket, messages);
-    }
-    
     @Override
     protected Integer getSuccessStatusCode(Void input, TicketCollection output) {
         return HTTP_OK;
+    }
+    
+    private TicketDto createDto(TicketEntry ticket) {
+        var messages = ticket.fetchMessages(ticketService);
+        return TicketDto.fromTicket(ticket, messages);
     }
 }
