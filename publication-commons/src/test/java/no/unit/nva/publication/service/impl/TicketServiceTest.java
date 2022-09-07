@@ -20,6 +20,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.collection.IsIn.in;
@@ -42,6 +43,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -458,6 +460,29 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, action);
     }
     
+    @Test
+    void shouldListTicketsForUser() {
+        var expectedTickets = IntStream.range(0, 2).boxed()
+                                  .map(attempt(ignored -> persistPublication(owner, DRAFT)))
+                                  .flatMap(Try::stream)
+                                  .flatMap(this::createTicketsOfAllTypes)
+                                  .collect(Collectors.toList());
+        
+        var actualTickets = ticketService.fetchTicketsForUser(owner).collect(Collectors.toList());
+        assertThat(actualTickets, containsInAnyOrder(expectedTickets.toArray(TicketEntry[]::new)));
+    }
+    
+    @Test
+    void shouldReturnEmptyListWhenUserHasNoTickets() throws ApiGatewayException {
+        persistPublication(owner, DRAFT);
+        var actualTickets = ticketService.fetchTicketsForUser(owner).collect(Collectors.toList());
+        assertThat(actualTickets, is(empty()));
+    }
+    
+    private Stream<TicketEntry> createTicketsOfAllTypes(Publication publication) {
+        return ticketProvider().map(ticketType -> createPersistedTicket(publication, ticketType));
+    }
+    
     private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.builder()
@@ -477,8 +502,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         return DoiRequest.class.equals(ticketType) ? PUBLISHED : DRAFT;
     }
     
-    private Message createOtherTicketWithMessage(Publication publication, UserInstance publicationOwner)
-        throws ApiGatewayException {
+    private Message createOtherTicketWithMessage(Publication publication, UserInstance publicationOwner) {
         var someOtherTicket = createPersistedTicket(publication, PublishingRequestCase.class);
         return messageService.createMessage(someOtherTicket, publicationOwner, randomString());
     }
@@ -499,6 +523,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         return ticketEntry;
     }
     
+    @SuppressWarnings("unchecked")
     private TicketEntry createPersistedTicket(Publication publication, Class<?> ticketType) {
         var ticket = createUnpersistedTicket(publication, ticketType);
         return attempt(

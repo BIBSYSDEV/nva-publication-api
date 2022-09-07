@@ -70,13 +70,13 @@ public class MessageService extends ServiceWithTransactions {
                                             String messageText,
                                             MessageType messageType) {
         requireMessageIsNotBlank(messageText);
-    
+        
         Message message = createMessageEntry(sender, publication, messageText, messageType);
         return writeMessageToDb(message);
     }
     
-    public Message createMessage(TicketEntry ticketEntry, UserInstance userInstance, String messageText) {
-        var newMessage = Message.create(ticketEntry, userInstance, messageText);
+    public Message createMessage(TicketEntry ticketEntry, UserInstance sender, String messageText) {
+        var newMessage = Message.create(ticketEntry, sender, messageText);
         var dao = new MessageDao(newMessage);
         var transactionRequest = dao.createInsertionTransactionRequest();
         client.transactWriteItems(transactionRequest);
