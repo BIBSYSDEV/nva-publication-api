@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -115,8 +114,6 @@ public interface TicketEntry extends Entity {
     
     void setStatus(TicketStatus ticketStatus);
     
-    // TODO: evaluate naming and JsonIgnore
-    @JsonIgnore
     default List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);
     }

@@ -10,11 +10,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -65,7 +67,7 @@ public class TicketService extends ServiceWithTransactions {
         return queryObject
                    .fetchTicket(client)
                    .map(TicketDao::getData)
-                   .orElseThrow(() -> notFoundException());
+                   .orElseThrow(TicketService::notFoundException);
     }
     
     public TicketEntry fetchTicket(TicketEntry dataEntry)
@@ -116,6 +118,11 @@ public class TicketService extends ServiceWithTransactions {
                    .toOptional()
                    .filter(ticketEntry -> ticketEntry.getCustomerId().equals(user.getOrganizationUri()))
                    .orElseThrow(TicketService::notFoundException);
+    }
+    
+    public Stream<TicketEntry> fetchTicketsForUser(UserInstance userInstance) {
+        var queryObject = UntypedTicketQueryObject.create(userInstance);
+        return queryObject.fetchTicketsForUser(client);
     }
     
     private static NotFoundException notFoundException() {

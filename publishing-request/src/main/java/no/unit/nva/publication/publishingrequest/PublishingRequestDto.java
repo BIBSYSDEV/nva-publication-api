@@ -122,13 +122,6 @@ public class PublishingRequestDto extends TicketDto {
     
     @Override
     @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getVersion(), getIdentifier(),
-            getPublicationId(), id);
-    }
-    
-    @Override
-    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -143,6 +136,14 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getVersion(), that.getVersion())
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getPublicationId(), that.getPublicationId())
-               && Objects.equals(id, that.id);
+               && Objects.equals(id, that.id)
+               && Objects.equals(getMessages(), that.getMessages());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getVersion(), getIdentifier(),
+            getPublicationId(), id, getMessages());
     }
 }
