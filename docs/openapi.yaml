@@ -524,7 +524,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: ''#/components/schemas/CreateDoiRequest'
+              $ref: '#/components/schemas/CreateDoiRequest'
       responses:
         '201':
           description: "Created"
