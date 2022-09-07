@@ -9,7 +9,7 @@ public final class MessageApiConfig {
     
     public static final String LOCATION_HEADER = "Location";
     
-    public static final String TICKET_IDENTIFIER_PATH_PARAMETER = "ticket";
+    public static final String TICKET_IDENTIFIER_PATH_PARAMETER = "ticketIdentifier";
     
     private MessageApiConfig() {
     }
