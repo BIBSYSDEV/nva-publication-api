@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
@@ -37,6 +38,7 @@ import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
 public class MessageService extends ServiceWithTransactions {
@@ -63,6 +65,11 @@ public class MessageService extends ServiceWithTransactions {
         tableName = RESOURCES_TABLE_NAME;
         this.clockForTimestamps = clockForTimestamps;
         this.identifierSupplier = identifierSupplier;
+    }
+    
+    @JacocoGenerated
+    public static MessageService defaultService() {
+        return new MessageService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
     public SortableIdentifier createMessage(UserInstance sender,

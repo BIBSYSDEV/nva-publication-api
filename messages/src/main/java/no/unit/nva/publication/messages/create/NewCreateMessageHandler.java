@@ -19,11 +19,17 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JacocoGenerated;
 
 public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
     
     private final MessageService messageService;
     private final TicketService ticketService;
+    
+    @JacocoGenerated
+    public NewCreateMessageHandler() {
+        this(MessageService.defaultService(), TicketService.defaultService());
+    }
     
     public NewCreateMessageHandler(MessageService messageService, TicketService ticketService) {
         super(CreateMessageRequest.class);
@@ -37,7 +43,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         var ticketIdentifier = extractTicketIdentifier(requestInfo);
         var user = UserInstance.fromRequestInfo(requestInfo);
         var ticket = fetchTicketForUser(requestInfo, ticketIdentifier, user);
-    
+        
         var message = messageService.createMessage(ticket, user, input.getMessage());
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
         return null;
