@@ -4,6 +4,8 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
@@ -14,6 +16,7 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
+@JsonTypeInfo(use = Id.NAME, property = "type")
 public class MessageDto implements JsonSerializable {
     
     public static final String TEXT_FIELD = "text";
@@ -53,9 +56,9 @@ public class MessageDto implements JsonSerializable {
     public static URI constructMessageId(SortableIdentifier messageIdentifier) {
         if (nonNull(messageIdentifier)) {
             return UriWrapper.fromUri(PUBLICATION_HOST_URI)
-                .addChild(MESSAGE_PATH)
-                .addChild(messageIdentifier.toString())
-                .getUri();
+                       .addChild(MESSAGE_PATH)
+                       .addChild(messageIdentifier.toString())
+                       .getUri();
         }
         return null;
     }
