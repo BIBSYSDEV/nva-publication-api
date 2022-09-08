@@ -158,7 +158,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
             publication.getIdentifier().toString(),
-            TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString());
+            TicketUtils.TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
     }
     
     private HandlerRequestBuilder<TicketDto> createHttpRequestForElevatedUser(TicketEntry ticket,

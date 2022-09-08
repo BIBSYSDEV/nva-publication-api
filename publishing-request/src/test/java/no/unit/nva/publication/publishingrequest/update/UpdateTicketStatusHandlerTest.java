@@ -152,7 +152,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
                    .withCustomerId(customer)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
                        ticket.getResourceIdentifier().toString(),
-                       TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString()))
+                       TicketUtils.TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString()))
                    .build();
     }
 }

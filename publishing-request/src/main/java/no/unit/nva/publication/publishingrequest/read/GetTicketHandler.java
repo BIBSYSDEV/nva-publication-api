@@ -86,7 +86,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     }
     
     private static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo) {
-        return new SortableIdentifier(requestInfo.getPathParameter(TicketUtils.TICKET_IDENTIFIER_PATH_PARAMETER));
+        return new SortableIdentifier(requestInfo.getPathParameter(TicketUtils.TICKET_IDENTIFIER_PARAMETER_NAME));
     }
     
     @Override

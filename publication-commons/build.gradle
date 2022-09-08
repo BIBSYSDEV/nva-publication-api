@@ -39,6 +39,7 @@ test {
     environment "API_HOST", "api.dev.nva.aws.unit.no"
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "http://example.org"
+    environment "RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES", "5"
 }
 
 
