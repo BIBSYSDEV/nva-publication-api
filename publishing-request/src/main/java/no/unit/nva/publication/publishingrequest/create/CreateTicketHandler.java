@@ -1,6 +1,8 @@
 package no.unit.nva.publication.publishingrequest.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
+import static no.unit.nva.publication.publishingrequest.TicketUtils.TICKET_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -58,9 +60,9 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     
     private static String createTicketLocation(SortableIdentifier publicationIdentifier, TicketEntry createdTicket) {
         return UriWrapper.fromHost(API_HOST)
-                   .addChild("publication")
+                   .addChild(PUBLICATION_PATH)
                    .addChild(publicationIdentifier.toString())
-                   .addChild("ticket")
+                   .addChild(TICKET_PATH)
                    .addChild(createdTicket.getIdentifier().toString())
                    .getUri()
                    .toString();
