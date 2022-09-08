@@ -69,11 +69,11 @@ public interface TicketEntry extends Entity {
     }
     
     static UntypedTicketQueryObject createQueryObject(UserInstance userInstance, SortableIdentifier ticketIdentifier) {
-        return new UntypedTicketQueryObject(userInstance, ticketIdentifier);
+        return UntypedTicketQueryObject.create(userInstance, ticketIdentifier);
     }
     
     static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
-        return new UntypedTicketQueryObject(ticketIdentifier);
+        return UntypedTicketQueryObject.create(ticketIdentifier);
     }
     
     SortableIdentifier getResourceIdentifier();

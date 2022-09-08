@@ -70,8 +70,8 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     private TicketEntry fetchTicketForUser(RequestInfo requestInfo, SortableIdentifier ticketIdentifier,
                                            UserInstance user)
         throws ApiGatewayException {
-        return userIsElevatedUser(requestInfo) ?
-                   fetchTicketForElevatedUser(ticketIdentifier, user)
+        return userIsElevatedUser(requestInfo)
+                   ? fetchTicketForElevatedUser(ticketIdentifier, user)
                    : fetchTicketForPublicationOwner(ticketIdentifier, user);
     }
     

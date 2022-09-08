@@ -1,5 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.publication.PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
@@ -7,7 +9,9 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,8 +20,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.QuerySpliterator;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 
@@ -39,6 +46,7 @@ public abstract class Dao
     public static final String CONTAINED_DATA_FIELD_NAME = "data";
     public static final String UNSUPORTED_SET_IDENTIFIER_ERROR =
         "Daos cannot set their identifier. They get it from their contained data";
+    public static final boolean SINGLE_THREADED = false;
     
     public static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
@@ -49,9 +57,8 @@ public abstract class Dao
      * Filtering expression to be used when we need to scan the whole database and perform actions on every data entry.
      * This expression excludes Uniqueness entries (i.e. entries for guaranteeing the uniqueness of certain values * see
      * link below). This filter is used primarily when migrating the Resources table.
-     * <p>
-     * *
-     * {@see * <a
+     *
+     * <p>{@see * <a
      * href=https://aws.amazon.com/blogs/database/simulating-amazon-dynamodb-unique-constraints-using-transactions>
      * documentation </a>}
      *
@@ -159,6 +166,13 @@ public abstract class Dao
     
     protected String formatPrimaryPartitionKey(String publisherId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, indexingType(), publisherId, owner);
+    }
+    
+    protected static Stream<Dao> fetchAllQueryResults(AmazonDynamoDB client,
+                                                      QueryRequest queryRequest) {
+        var queryIterator = new QuerySpliterator(client, queryRequest, RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES);
+        return StreamSupport.stream(queryIterator, SINGLE_THREADED)
+                   .map(item -> parseAttributeValuesMap(item, Dao.class));
     }
     
     @JsonIgnore

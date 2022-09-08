@@ -4,6 +4,7 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -39,7 +40,6 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.PublicationServiceConfig;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -77,11 +77,12 @@ class ExpandedResourceTest {
     @MethodSource("publicationInstanceProvider")
     void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier(Class<?> publicationInstance)
         throws JsonProcessingException {
-        Publication publication = PublicationGenerator.randomPublication(publicationInstance);
+        var publication = PublicationGenerator.randomPublication(publicationInstance);
         var indexDocument = fromPublication(publication);
-        ObjectNode json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
-        URI expectedUri = UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
-        URI actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
+        var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
+        var expectedUri =
+            UriWrapper.fromUri(PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
+        var actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
         assertThat(actualUri, is(equalTo(expectedUri)));
     }
     

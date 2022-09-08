@@ -31,7 +31,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        
+    
         if (userIsNotAuthorized(requestInfo, ticket)) {
             throw new ForbiddenException();
         }
@@ -39,12 +39,14 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         return null;
     }
     
+    @Override
+    protected Integer getSuccessStatusCode(TicketDto input, Void output) {
+        return HttpURLConnection.HTTP_ACCEPTED;
+    }
+    
     private static boolean userIsNotAuthorized(RequestInfo requestInfo, TicketEntry ticket)
         throws UnauthorizedException {
-        return !(
-            isAuthorizedToCompleteTickets(requestInfo)
-            && isUserFromSameCustomerAsTicket(requestInfo, ticket)
-        );
+        return !(isAuthorizedToCompleteTickets(requestInfo) && isUserFromSameCustomerAsTicket(requestInfo, ticket));
     }
     
     private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
@@ -54,10 +56,5 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     
     private static boolean isAuthorizedToCompleteTickets(RequestInfo requestInfo) {
         return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
-    }
-    
-    @Override
-    protected Integer getSuccessStatusCode(TicketDto input, Void output) {
-        return HttpURLConnection.HTTP_ACCEPTED;
     }
 }

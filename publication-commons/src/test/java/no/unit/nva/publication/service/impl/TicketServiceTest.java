@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.lang.StrictMath.ceil;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
@@ -49,6 +50,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -58,6 +60,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -71,15 +74,18 @@ import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class TicketServiceTest extends ResourcesLocalTest {
     
     public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
+    public static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
     
     private ResourceService resourceService;
     private TicketService ticketService;
@@ -460,16 +466,27 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, action);
     }
     
-    @Test
-    void shouldListTicketsForUser() {
-        var expectedTickets = IntStream.range(0, 2).boxed()
-                                  .map(attempt(ignored -> persistPublication(owner, DRAFT)))
-                                  .flatMap(Try::stream)
-                                  .flatMap(this::createTicketsOfAllTypes)
-                                  .collect(Collectors.toList());
+    @ParameterizedTest(name = "number of tickets:{0}")
+    @DisplayName("should list all tickets for a user")
+    @Timeout(TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET)
+    @ValueSource(doubles = {0.5, 1.0, 1.5, 2.0, 2.5})
+    void shouldListTicketsForUser(double timesTheResultSetSize) {
+        int numberOfTickets =
+            (int) ceil(PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES * timesTheResultSetSize);
+        var expectedTickets =
+            IntStream.range(0, numberOfTickets).boxed()
+                .map(attempt(ignored -> persistPublication(owner, DRAFT)))
+                .flatMap(Try::stream)
+                .map(this::persistGeneralSupportRequest)
+                .collect(Collectors.toList());
         
         var actualTickets = ticketService.fetchTicketsForUser(owner).collect(Collectors.toList());
         assertThat(actualTickets, containsInAnyOrder(expectedTickets.toArray(TicketEntry[]::new)));
+    }
+    
+    private GeneralSupportRequest persistGeneralSupportRequest(Publication publication) {
+        var ticket = createGeneralSupportRequest(publication);
+        return attempt(() -> ticketService.createTicket(ticket, GeneralSupportRequest.class)).orElseThrow();
     }
     
     @Test
@@ -477,10 +494,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         persistPublication(owner, DRAFT);
         var actualTickets = ticketService.fetchTicketsForUser(owner).collect(Collectors.toList());
         assertThat(actualTickets, is(empty()));
-    }
-    
-    private Stream<TicketEntry> createTicketsOfAllTypes(Publication publication) {
-        return ticketProvider().map(ticketType -> createPersistedTicket(publication, ticketType));
     }
     
     private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
@@ -528,6 +541,18 @@ class TicketServiceTest extends ResourcesLocalTest {
         var ticket = createUnpersistedTicket(publication, ticketType);
         return attempt(
             () -> ticketService.createTicket(ticket, (Class<? extends TicketEntry>) ticketType)).orElseThrow();
+    }
+    
+    @Test
+    void shouldReturnAllResultsOfaQuery() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var tickets = IntStream.range(0, 2)
+                          .boxed()
+                          .map(ticketType -> createPersistedTicket(publication, GeneralSupportRequest.class))
+                          .collect(Collectors.toList());
+        var query = UntypedTicketQueryObject.create(UserInstance.fromPublication(publication));
+        var retrievedTickets = query.fetchTicketsForUser(client).collect(Collectors.toList());
+        assertThat(retrievedTickets.size(), is(equalTo(tickets.size())));
     }
     
     private Publication persistEmptyPublication(UserInstance owner) {

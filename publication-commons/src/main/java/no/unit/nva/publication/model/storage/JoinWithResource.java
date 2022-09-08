@@ -98,8 +98,9 @@ public interface JoinWithResource {
      * @param selectedType the input type.
      * @return a Map for using in the
      *     {@link com.amazonaws.services.dynamodbv2.model.QueryRequest#withKeyConditions(Map)} method. #HashKey =
-     *     :ByResourceIndexHashKey (Customer:<cid>:Resource:<rid>) AND #SortKey begins_with :ByResourceIndexSortKey
-     *     (d:Message:<mid>) *
+     *     :ByResourceIndexHashKey (Customer:SomeCustomerId:Resource:SomeResourceId)
+     *       AND #SortKey begins_with :ByResourceIndexSortKey
+     *     (d:Message:SomeId)
      */
     //TODO: type should be an enum
     default Map<String, Condition> byResource(String selectedType) {
@@ -125,10 +126,9 @@ public interface JoinWithResource {
      * The type of the Entry (e.g. Resource, DoiRequest, etc) prefixed with a letter in order to impose an order when we
      * present all Entries connected to a Resource.
      *
-     * <p>
-     * Example: <br/>If the orderedType for a Resource is a:Resource, for a DoiRequest is b:DoiRequest and for a Message
-     * is z:Message, then, when we list all entries associated with a Resource, we would get the entries ordered as
-     * shown below:*
+     * <p>Example: <br/>If the orderedType for a Resource is a:Resource, for a DoiRequest is b:DoiRequest and for
+     * a Message is z:Message, then, when we list all entries associated with a Resource, we would get the entries
+     * ordered as shown below:*
      * <ol>
      *    <li>Resource</li>
      *    <li>DoiRequest</li>
