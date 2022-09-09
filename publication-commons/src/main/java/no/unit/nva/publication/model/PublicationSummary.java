@@ -17,7 +17,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -63,16 +62,6 @@ public class PublicationSummary {
         publicationSummary.setOwner(doiRequest.getOwner());
         publicationSummary.setPublicationInstance(doiRequest.getResourcePublicationInstance());
         publicationSummary.setStatus(doiRequest.getResourceStatus());
-        return publicationSummary;
-    }
-    
-    public static PublicationSummary create(Message message) {
-        var publicationSummary = new PublicationSummary();
-        publicationSummary.setPublicationId(extractPublicationId(message));
-        publicationSummary.setPublicationIdentifier(message.getResourceIdentifier());
-        publicationSummary.setTitle(message.getResourceTitle());
-        publicationSummary.setOwner(message.getOwner());
-        publicationSummary.setContributors(Collections.emptyList());
         return publicationSummary;
     }
     

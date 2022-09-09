@@ -16,7 +16,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.messages.MessagesTest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -109,7 +109,7 @@ class UpdateMessageHandlerTest extends MessagesTest {
     
     private Message constructExpectedMessage(Message originalMessage, Message updatedMessage) {
         var copy = originalMessage.copy();
-        copy.setStatus(TicketStatus.READ);
+        copy.setStatus(MessageStatus.READ);
         copy.setModifiedDate(updatedMessage.getModifiedDate());
         copy.setVersion(updatedMessage.getVersion());
         return copy;

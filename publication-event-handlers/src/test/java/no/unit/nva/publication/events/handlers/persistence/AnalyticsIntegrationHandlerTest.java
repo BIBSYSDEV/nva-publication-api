@@ -38,7 +38,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
@@ -58,12 +57,11 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private AnalyticsIntegrationHandler analyticsIntegration;
     private ByteArrayOutputStream outputStream;
-    private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private AmazonDynamoDB dynamoClient;
-    private MessageService messageService;
+    
     private TicketService ticketService;
     
     @BeforeEach()
@@ -71,12 +69,11 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         super.init();
         this.dynamoClient = super.client;
         this.outputStream = new ByteArrayOutputStream();
-        this.s3Client = new FakeS3Client();
+        FakeS3Client s3Client = new FakeS3Client();
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
         
         resourceService = new ResourceService(dynamoClient, CLOCK);
-        messageService = new MessageService(dynamoClient, CLOCK);
         ticketService = new TicketService(dynamoClient);
         
         this.resourceExpansionService = setupResourceExpansionService();
@@ -114,8 +111,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
     
     private ResourceExpansionServiceImpl setupResourceExpansionService() {
-        var notImportantMessageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
-        return new ResourceExpansionServiceImpl(resourceService, notImportantMessageService, ticketService);
+        return new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
     
     private void assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(EventReference inputEvent,
@@ -130,9 +126,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     
     private String[] splitFilenameFromFileEnding(EventReference inputEvent) {
         return UriWrapper.fromUri(inputEvent.getUri())
-            .toS3bucketPath()
-            .getLastPathElement()
-            .split(FILENAME_AND_FILE_ENDING_SEPRATOR);
+                   .toS3bucketPath()
+                   .getLastPathElement()
+                   .split(FILENAME_AND_FILE_ENDING_SEPRATOR);
     }
     
     private EventReference generateEventForExpandedPublication() throws IOException {
@@ -152,12 +148,12 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     
     private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
-        
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
+        var messages = doiRequest.fetchMessages(ticketService);
+        return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, ticketService);
     }
     
-    private Publication insertSamplePublication() throws ApiGatewayException {
+    private Publication insertSamplePublication() {
         var samplePublication = PublicationGenerator.randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = resourceService.createPublication(userInstance, samplePublication);

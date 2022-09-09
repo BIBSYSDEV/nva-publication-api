@@ -1,99 +1,68 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.expansion.model.ExpandedTicket.Constants.IDENTIFIER_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Objects;
+import java.util.List;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
-public class ExpandedPublishingRequest implements ExpandedTicket {
+public class ExpandedPublishingRequest extends ExpandedTicket {
     
     public static final String TYPE = "PublishingRequest";
-    public static final String MESSAGES_FIELD = "messages";
     public static final String STATUS_FIELD = "status";
     
-    @JsonProperty(IDENTIFIER_FIELD)
-    private SortableIdentifier identifier;
     @JsonProperty(PUBLICATION_FIELD)
     private PublicationSummary publicationSummary;
-    @JsonProperty(MESSAGES_FIELD)
-    private MessageCollection messages;
+    
     @JsonProperty("organizationIds")
     private Set<URI> organizationIds;
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
+    private URI customerId;
+    private String owner;
+    private Instant modifiedDate;
+    private Instant createdDate;
     
     public ExpandedPublishingRequest() {
-        this.messages = MessageCollection.empty(MessageType.PUBLISHING_REQUEST);
+        super();
     }
     
-    public static ExpandedPublishingRequest create(PublishingRequestCase publishingRequestCase,
-                                                   ResourceService resourceService,
-                                                   MessageService messageService,
-                                                   ResourceExpansionService resourceExpansionService)
+    public static ExpandedPublishingRequest createEntry(PublishingRequestCase publishingRequestCase,
+                                                        ResourceService resourceService,
+                                                        ResourceExpansionService resourceExpansionService,
+                                                        TicketService ticketService)
         throws NotFoundException {
-        var userInstance =
-            UserInstance.create(publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
-        var messageCollection =
-            fetchAllMessagesForPublishingRequestCase(publishingRequestCase, messageService, userInstance);
+        
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
-        return createRequest(publishingRequestCase, publication, messageCollection, organizationIds);
-    }
-    
-    public TicketStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(TicketStatus status) {
-        this.status = status;
-    }
-    
-    @JacocoGenerated
-    public SortableIdentifier getIdentifier() {
-        return identifier;
-    }
-    
-    public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
+        var messages = publishingRequestCase.fetchMessages(ticketService);
+        return createRequest(publishingRequestCase, publication, organizationIds, messages);
     }
     
     @JacocoGenerated
     @Override
     public String toJsonString() {
-        return ExpandedTicket.super.toJsonString();
+        return super.toJsonString();
     }
     
     @Override
     public SortableIdentifier identifyExpandedEntry() {
-        return getIdentifier();
-    }
-    
-    @JacocoGenerated
-    public MessageCollection getMessages() {
-        return isNull(messages) ? MessageCollection.empty(MessageType.PUBLISHING_REQUEST) : messages;
-    }
-    
-    public void setMessages(MessageCollection messages) {
-        this.messages = messages;
+        return extractIdentifier(getId());
     }
     
     @Override
@@ -106,6 +75,28 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         return nonNull(organizationIds) ? organizationIds : Collections.emptySet();
     }
     
+    @Override
+    public TicketEntry toTicketEntry() {
+        var publishingRequest = new PublishingRequestCase();
+        publishingRequest.setResourceIdentifier(extractIdentifier(this.getPublicationSummary().getPublicationId()));
+        publishingRequest.setCustomerId(this.getCustomerId());
+        publishingRequest.setIdentifier(extractIdentifier(this.getId()));
+        publishingRequest.setOwner(this.getOwner());
+        publishingRequest.setModifiedDate(this.getModifiedDate());
+        publishingRequest.setCreatedDate(this.getCreatedDate());
+        publishingRequest.setStatus(this.getStatus());
+        return publishingRequest;
+    }
+    
+    @Override
+    public TicketStatus getStatus() {
+        return status;
+    }
+    
+    public void setStatus(TicketStatus status) {
+        this.status = status;
+    }
+    
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
     }
@@ -114,57 +105,59 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         this.publicationSummary = publicationSummary;
     }
     
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getPublicationSummary(), getMessages(), getOrganizationIds(), getStatus());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ExpandedPublishingRequest)) {
-            return false;
-        }
-        ExpandedPublishingRequest that = (ExpandedPublishingRequest) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getPublicationSummary(), that.getPublicationSummary())
-               && Objects.equals(getMessages(), that.getMessages())
-               && Objects.equals(getOrganizationIds(), that.getOrganizationIds())
-               && getStatus() == that.getStatus();
-    }
-    
     private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
-                                                    Publication publication,
-                                                    MessageCollection messages,
-                                                    Set<URI> organizationIds) {
+                                                           Publication publication,
+                                                           Set<URI> organizationIds,
+                                                           List<Message> messages) {
+        var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
-        entry.setIdentifier(dataEntry.getIdentifier());
-        entry.setPublicationSummary(PublicationSummary.create(publication));
-        entry.setMessages(messages);
+        entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
+        entry.setPublicationSummary(publicationSummary);
         entry.setOrganizationIds(organizationIds);
         entry.setStatus(dataEntry.getStatus());
+        entry.setCustomerId(dataEntry.getCustomerId());
+        entry.setCreatedDate(dataEntry.getCreatedDate());
+        entry.setModifiedDate(dataEntry.getModifiedDate());
+        entry.setOwner(dataEntry.getOwner());
+        entry.setMessages(messages);
         return entry;
     }
     
     private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
                                                 ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(publishingRequestCase.getResourceIdentifier()))
-            .orElseThrow();
+        return attempt(() -> resourceService.getPublicationByIdentifier(
+            publishingRequestCase.getResourceIdentifier())).orElseThrow();
     }
     
-    private static MessageCollection fetchAllMessagesForPublishingRequestCase(
-        PublishingRequestCase publishingRequestCase,
-        MessageService messageService, UserInstance userInstance) {
-        return messageService.getMessagesForResource(userInstance, publishingRequestCase.getResourceIdentifier())
-            .map(ExpandedPublishingRequest::retainPublishingRequestMessages)
-            .orElse(MessageCollection.empty(MessageType.PUBLISHING_REQUEST));
+    private Instant getCreatedDate() {
+        return this.createdDate;
     }
     
-    private static MessageCollection retainPublishingRequestMessages(ResourceConversation conversation) {
-        return conversation.getMessageCollectionOfType(MessageType.PUBLISHING_REQUEST);
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+    
+    private Instant getModifiedDate() {
+        return this.modifiedDate;
+    }
+    
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
+    }
+    
+    private String getOwner() {
+        return this.owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    
+    private URI getCustomerId() {
+        return customerId;
+    }
+    
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
     }
 }

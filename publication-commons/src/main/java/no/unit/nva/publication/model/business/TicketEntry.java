@@ -125,6 +125,11 @@ public interface TicketEntry extends Entity {
         return refreshed;
     }
     
+    default TicketEntry persist(TicketService ticketService) throws ApiGatewayException {
+        // this is the only place that deprecated should be called.
+        return ticketService.createTicket(this, this.getClass());
+    }
+    
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
         Class<T> ticketType,

@@ -8,7 +8,6 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
@@ -43,9 +42,6 @@ public class PersistedDocumentConsumptionAttributes {
                 expandedEntry.identifyExpandedEntry());
         } else if (expandedEntry instanceof ExpandedDoiRequest) {
             return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX,
-                expandedEntry.identifyExpandedEntry());
-        } else if (expandedEntry instanceof ExpandedResourceConversation) {
-            return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX,
                 expandedEntry.identifyExpandedEntry());
         } else if (expandedEntry instanceof ExpandedPublishingRequest) {
             return new PersistedDocumentConsumptionAttributes(PUBLISHING_REQUESTS_INDEX,

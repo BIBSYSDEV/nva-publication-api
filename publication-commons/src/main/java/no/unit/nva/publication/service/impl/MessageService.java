@@ -3,40 +3,29 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import java.net.URI;
 import java.time.Clock;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InvalidInputException;
-import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.MessageDao;
-import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -84,7 +73,7 @@ public class MessageService extends ServiceWithTransactions {
     
     public Message createMessage(TicketEntry ticketEntry, UserInstance sender, String messageText) {
         var newMessage = Message.create(ticketEntry, sender, messageText);
-        var dao = new MessageDao(newMessage);
+        var dao = newMessage.toDao();
         var transactionRequest = dao.createInsertionTransactionRequest();
         client.transactWriteItems(transactionRequest);
         return fetchEventualConsistentDataEntry(newMessage, this::getMessageByIdentifier).orElseThrow();
@@ -109,7 +98,7 @@ public class MessageService extends ServiceWithTransactions {
     public Message markAsRead(Message message) throws NotFoundException {
         var existingMessage = getMessage(UserInstance.fromMessage(message), message.getIdentifier());
         var messageUpdate = existingMessage.markAsRead(clockForTimestamps);
-        var dao = new MessageDao(messageUpdate);
+        var dao = messageUpdate.toDao();
         var putRequest = new PutItemRequest()
                              .withTableName(RESOURCES_TABLE_NAME)
                              .withItem(dao.toDynamoFormat());
@@ -135,30 +124,6 @@ public class MessageService extends ServiceWithTransactions {
         return result.getData();
     }
     
-    public Optional<ResourceConversation> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
-        ResourceDao queryObject = ResourceDao.queryObject(user, identifier);
-        QueryRequest queryRequest = queryForRetrievingMessagesAndRespectiveResource(queryObject);
-        QueryResult queryResult = client.query(queryRequest);
-        List<Message> messagesPerResource = parseMessages(queryResult);
-        return ResourceConversation.fromMessageList(messagesPerResource).stream().findFirst();
-    }
-    
-    public List<ResourceConversation> listMessagesForCurator(URI customerId, TicketStatus ticketStatus) {
-        MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, ticketStatus);
-        QueryRequest queryRequest = queryRequestForListingMessagesByCustomerAndStatus(queryObject);
-        QueryResult queryResult = client.query(queryRequest);
-        List<Message> messagesPerResource = parseMessages(queryResult);
-        return ResourceConversation.fromMessageList(messagesPerResource);
-    }
-    
-    public List<ResourceConversation> listMessagesForUser(UserInstance owner) {
-        MessageDao queryObject = MessageDao.listMessagesAndResourcesForUser(owner);
-        QueryRequest queryRequest = queryForFetchingAllMessagesForAUser(queryObject);
-        QueryResult queryResult = client.query(queryRequest);
-        List<Message> messagesPerResource = parseMessages(queryResult);
-        return ResourceConversation.fromMessageList(messagesPerResource);
-    }
-    
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
@@ -180,28 +145,6 @@ public class MessageService extends ServiceWithTransactions {
         return item;
     }
     
-    private List<Message> parseMessages(QueryResult queryResult) {
-        return queryResult.getItems()
-                   .stream()
-                   .map(item -> parseAttributeValuesMap(item, MessageDao.class))
-                   .map(MessageDao::getData)
-                   .map(Message.class::cast)
-                   .collect(Collectors.toList());
-    }
-    
-    private QueryRequest queryForFetchingAllMessagesForAUser(MessageDao queryObject) {
-        return new QueryRequest()
-                   .withTableName(tableName)
-                   .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
-    }
-    
-    private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
-        return new QueryRequest()
-                   .withTableName(tableName)
-                   .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-                   .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
-    }
-    
     private Message createMessageEntry(UserInstance sender,
                                        Publication publication,
                                        String messageText,
@@ -218,16 +161,6 @@ public class MessageService extends ServiceWithTransactions {
         if (StringUtils.isBlank(messageText)) {
             throw new InvalidInputException(EMPTY_MESSAGE_ERROR);
         }
-    }
-    
-    private QueryRequest queryForRetrievingMessagesAndRespectiveResource(ResourceDao queryObject) {
-        String entityType = MessageDao.joinByResourceOrderedContainedType();
-        Map<String, Condition> keyCondition = queryObject.byResource(entityType);
-    
-        return new QueryRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withKeyConditions(keyCondition);
     }
     
     private GetItemRequest getMessageByPrimaryKey(MessageDao queryObject) {

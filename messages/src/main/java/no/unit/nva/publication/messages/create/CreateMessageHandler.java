@@ -12,7 +12,7 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InvalidInputException;
-import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.messages.model.MessageDto;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;

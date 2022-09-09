@@ -82,8 +82,6 @@ public class DoiRequest implements TicketEntry {
     @JsonProperty
     private String resourcePublicationYear;
     @JsonProperty
-    private URI doi;
-    @JsonProperty
     private List<Contributor> contributors;
     private UUID version;
     
@@ -112,7 +110,6 @@ public class DoiRequest implements TicketEntry {
         doiRequest.setStatus(TicketStatus.PENDING);
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
-        doiRequest.setDoi(resource.getDoi());
         doiRequest.setVersion(nextVersion());
         
         doiRequest.validate();
@@ -161,7 +158,6 @@ public class DoiRequest implements TicketEntry {
         return new Publication.Builder()
                    .withIdentifier(getResourceIdentifier())
                    .withModifiedDate(getResourceModifiedDate())
-                   .withDoi(getDoi())
                    .withStatus(getResourceStatus())
                    .withEntityDescription(entityDescription)
                    .withPublisher(customer)
@@ -277,7 +273,6 @@ public class DoiRequest implements TicketEntry {
                    .withResourcePublicationInstance(getResourcePublicationInstance())
                    .withResourcePublicationDate(getResourcePublicationDate())
                    .withResourcePublicationYear(getResourcePublicationYear())
-                   .withDoi(getDoi())
                    .withContributors(getContributors())
                    .withRowVersion(getVersion())
                    .build();
@@ -346,14 +341,6 @@ public class DoiRequest implements TicketEntry {
         this.resourcePublicationYear = resourcePublicationYear;
     }
     
-    public URI getDoi() {
-        return doi;
-    }
-    
-    public void setDoi(URI doi) {
-        this.doi = doi;
-    }
-    
     public List<Contributor> getContributors() {
         return contributors;
     }
@@ -384,7 +371,7 @@ public class DoiRequest implements TicketEntry {
             getResourceModifiedDate(),
             getResourcePublicationInstance(), getResourcePublicationDate(),
             getResourcePublicationYear(),
-            getDoi(), getContributors());
+            getContributors());
     }
     
     @Override
@@ -409,7 +396,6 @@ public class DoiRequest implements TicketEntry {
                && Objects.equals(getResourcePublicationInstance(), that.getResourcePublicationInstance())
                && Objects.equals(getResourcePublicationDate(), that.getResourcePublicationDate())
                && Objects.equals(getResourcePublicationYear(), that.getResourcePublicationYear())
-               && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getContributors(), that.getContributors());
     }
     
