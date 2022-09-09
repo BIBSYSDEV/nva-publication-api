@@ -55,6 +55,19 @@ public class TicketService extends ServiceWithTransactions {
         return new TicketService(DEFAULT_DYNAMODB_CLIENT);
     }
     
+    //TODO make the method protected or package private and use TicketEntry#persist instead.
+    
+    /**
+     * Method should be protected or package-private
+     *
+     * @param ticketEntry the ticket entry to be persisted
+     * @param ticketType  the type of the ticket
+     * @param <T>         the TicketEntry class
+     * @return the persisted ticket type with service updated fields.
+     * @throws ApiGatewayException when an expected error occurs that needs to be sent to the client
+     * @deprecated Use TicketEntry#persist instead.
+     */
+    @Deprecated(since = " TicketEntry#persist")
     public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
         throws ApiGatewayException {
         var associatedPublication = fetchPublicationToEnsureItExists(ticketEntry);
@@ -125,8 +138,11 @@ public class TicketService extends ServiceWithTransactions {
         return queryObject.fetchTicketsForUser(client);
     }
     
-    private static NotFoundException notFoundException() {
-        return new NotFoundException(TICKET_NOT_FOUND);
+    public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)
+        throws NotFoundException {
+        var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
+        var queryResult = queryObject.fetchByIdentifier(client);
+        return (TicketEntry) queryResult.getData();
     }
     
     @Override
@@ -154,24 +170,21 @@ public class TicketService extends ServiceWithTransactions {
         resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
         var closedTicket = persistedTicket.close();
-        
+    
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         client.putItem(putItemRequest);
         return closedTicket;
     }
     
+    private static NotFoundException notFoundException() {
+        return new NotFoundException(TICKET_NOT_FOUND);
+    }
+    
     //TODO: should try to fetch ticket only by ticket identifier
     private TicketEntry fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(TicketEntry ticketEntry) {
         return fetchTicketByResourceIdentifier(ticketEntry.getCustomerId(),
             ticketEntry.getResourceIdentifier(), ticketEntry.getClass()).orElseThrow();
-    }
-    
-    public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)
-        throws NotFoundException {
-        var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
-        var queryResult = queryObject.fetchByIdentifier(client);
-        return (TicketEntry) queryResult.getData();
     }
     
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {

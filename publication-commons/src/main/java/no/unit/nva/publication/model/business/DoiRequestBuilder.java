@@ -90,11 +90,6 @@ public class DoiRequestBuilder {
         return this;
     }
     
-    public DoiRequestBuilder withDoi(URI doi) {
-        doiRequest.setDoi(doi);
-        return this;
-    }
-    
     public DoiRequest build() {
         return this.doiRequest;
     }

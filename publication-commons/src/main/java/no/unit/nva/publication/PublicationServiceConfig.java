@@ -26,6 +26,7 @@ public final class PublicationServiceConfig {
     public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     public static final Clock DEFAULT_CLOCK = Clock.systemDefaultZone();
+    public static final String TICKET_PATH = "ticket";
     private static final int DEFAULT_RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES = 200;
     public static final Integer RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES = readDynamoDbQueryResultsPageSize();
     

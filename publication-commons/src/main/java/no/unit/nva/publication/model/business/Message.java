@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.publication.model.business.Entity.nextVersion;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -8,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,13 +16,11 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
-import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
-public class Message implements TicketEntry,
-                                JsonSerializable {
+public class Message implements Entity, JsonSerializable {
     
     public static final String TYPE = "Message";
     public static final String SUPPORT_SERVICE_CORRESPONDENT = "SupportService";
@@ -35,8 +31,11 @@ public class Message implements TicketEntry,
     private String owner;
     @JsonProperty("customerId")
     private URI customerId;
+    @JsonAlias("rowVersion")
+    @JsonProperty("version")
+    private UUID version;
     @JsonProperty("status")
-    private TicketStatus status;
+    private MessageStatus status;
     @JsonProperty("sender")
     private String sender;
     @JsonProperty("resourceIdentifier")
@@ -57,9 +56,6 @@ public class Message implements TicketEntry,
     private String resourceTitle;
     @JsonProperty("messageType")
     private MessageType messageType;
-    @JsonAlias("rowVersion")
-    @JsonProperty("version")
-    private UUID version;
     
     @JacocoGenerated
     public Message() {
@@ -76,7 +72,6 @@ public class Message implements TicketEntry,
         return builder()
                    .withCreatedDate(now)
                    .withModifiedDate(now)
-                   .withVersion(UUID.randomUUID())
                    .withCustomerId(ticket.getCustomerId())
                    .withOwner(ticket.getOwner())
                    .withMessageType(calculateMessageType(ticket))
@@ -84,12 +79,14 @@ public class Message implements TicketEntry,
                    .withText(message)
                    .withSender(sender.getUserIdentifier())
                    .withResourceTitle("NOT_USED")
-                   .withStatus(TicketStatus.UNREAD)
                    .withResourceIdentifier(ticket.getResourceIdentifier())
                    .withTicketIdentifier(ticket.getIdentifier())
+                   .withStatus(MessageStatus.UNREAD)
+                   .withVersion(UUID.randomUUID())
                    .build();
     }
     
+    //TODO: remove when ticket service is in place and doirequest and publishing-request services are deleted
     public static Message create(UserInstance sender,
                                  Publication publication,
                                  String messageText,
@@ -99,6 +96,14 @@ public class Message implements TicketEntry,
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
                    .withMessageType(messageType)
                    .build();
+    }
+    
+    public MessageStatus getStatus() {
+        return status;
+    }
+    
+    public void setStatus(MessageStatus status) {
+        this.status = status;
     }
     
     public SortableIdentifier getTicketIdentifier() {
@@ -118,11 +123,50 @@ public class Message implements TicketEntry,
         // DO NOTHING
     }
     
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getVersion(), getStatus(), getSender(),
+            getResourceIdentifier(), getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(),
+            getResourceTitle(), getMessageType());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Message)) {
+            return false;
+        }
+        Message message = (Message) o;
+        return Objects.equals(getIdentifier(), message.getIdentifier())
+               && Objects.equals(getOwner(), message.getOwner())
+               && Objects.equals(getCustomerId(), message.getCustomerId())
+               && Objects.equals(getVersion(), message.getVersion())
+               && getStatus() == message.getStatus()
+               && Objects.equals(getSender(), message.getSender())
+               && Objects.equals(getResourceIdentifier(), message.getResourceIdentifier())
+               && Objects.equals(getTicketIdentifier(), message.getTicketIdentifier())
+               && Objects.equals(getText(), message.getText())
+               && Objects.equals(getCreatedDate(), message.getCreatedDate())
+               && Objects.equals(getModifiedDate(), message.getModifiedDate())
+               && Objects.equals(getResourceTitle(), message.getResourceTitle())
+               && getMessageType() == message.getMessageType();
+    }
+    
+    @Override
+    @JacocoGenerated
+    public String toString() {
+        return toJsonString();
+    }
+    
     public Message markAsRead(Clock clock) {
         var copy = this.copy();
-        copy.setStatus(TicketStatus.READ);
+        copy.setStatus(MessageStatus.READ);
         copy.setModifiedDate(clock.instant());
-        copy.setVersion(UUID.randomUUID());
+        
         return copy;
     }
     
@@ -149,14 +193,12 @@ public class Message implements TicketEntry,
         throw new UnsupportedOperationException();
     }
     
-    @JacocoGenerated
     @Override
     public UUID getVersion() {
         return this.version;
     }
     
     @Override
-    @JacocoGenerated
     public void setVersion(UUID version) {
         this.version = version;
     }
@@ -196,8 +238,6 @@ public class Message implements TicketEntry,
         return customerId;
     }
     
-    //TODO: cover this method when Message is not a ticket any more.
-    @JacocoGenerated
     @Override
     public Dao toDao() {
         return new MessageDao(this);
@@ -224,26 +264,14 @@ public class Message implements TicketEntry,
         this.sender = sender;
     }
     
-    @Override
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }
     
-    //TODO: remove method or cover when Message is not a Ticket anymore.
-    @JacocoGenerated
-    @Override
-    public void validateCreationRequirements(Publication publication) {
-        throw new UnsupportedOperationException();
+    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
+        this.resourceIdentifier = resourceIdentifier;
     }
     
-    //TODO: remove method or cover when Message is not a Ticket anymore.
-    @JacocoGenerated
-    @Override
-    public void validateCompletionRequirements(Publication publication) {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
     public Message copy() {
         return Message.builder()
                    .withCreatedDate(this.getCreatedDate())
@@ -251,35 +279,15 @@ public class Message implements TicketEntry,
                    .withIdentifier(this.getIdentifier())
                    .withMessageType(this.getMessageType())
                    .withResourceIdentifier(getResourceIdentifier())
-                   .withStatus(this.getStatus())
                    .withOwner(this.getOwner())
                    .withSender(this.getSender())
                    .withText(this.getText())
                    .withResourceTitle(this.getResourceTitle())
                    .withModifiedDate(this.getModifiedDate())
-                   .withVersion(this.getVersion())
                    .withTicketIdentifier(this.getTicketIdentifier())
+                   .withVersion(this.getVersion())
+                   .withStatus(this.getStatus())
                    .build();
-    }
-    
-    @Override
-    public TicketStatus getStatus() {
-        return status;
-    }
-    
-    @Override
-    public void setStatus(TicketStatus status) {
-        this.status = status;
-    }
-    
-    @JacocoGenerated
-    @Override
-    public List<Message> fetchMessages(TicketService ticketService) {
-        throw new UnsupportedOperationException();
-    }
-    
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
     }
     
     public String getText() {
@@ -296,45 +304,6 @@ public class Message implements TicketEntry,
     
     public void setResourceTitle(String resourceTitle) {
         this.resourceTitle = resourceTitle;
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-            getResourceIdentifier(),
-            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(),
-            getMessageType());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Message)) {
-            return false;
-        }
-        Message message = (Message) o;
-        return Objects.equals(getIdentifier(), message.getIdentifier())
-               && Objects.equals(getOwner(), message.getOwner())
-               && Objects.equals(getCustomerId(), message.getCustomerId())
-               && getStatus() == message.getStatus()
-               && Objects.equals(getSender(), message.getSender())
-               && Objects.equals(getResourceIdentifier(), message.getResourceIdentifier())
-               && Objects.equals(getTicketIdentifier(), message.getTicketIdentifier())
-               && Objects.equals(getText(), message.getText())
-               && Objects.equals(getCreatedDate(), message.getCreatedDate())
-               && Objects.equals(getModifiedDate(), message.getModifiedDate())
-               && Objects.equals(getResourceTitle(), message.getResourceTitle())
-               && getMessageType() == message.getMessageType();
-    }
-    
-    @Override
-    @JacocoGenerated
-    public String toString() {
-        return toJsonString();
     }
     
     private static MessageType calculateMessageType(TicketEntry ticketEntry) {
@@ -356,7 +325,6 @@ public class Message implements TicketEntry,
         
         var now = clock.instant();
         return Message.builder()
-                   .withStatus(TicketStatus.UNREAD)
                    .withResourceIdentifier(publication.getIdentifier())
                    .withCustomerId(sender.getOrganizationUri())
                    .withText(messageText)
@@ -366,7 +334,8 @@ public class Message implements TicketEntry,
                    .withCreatedDate(now)
                    .withModifiedDate(now)
                    .withIdentifier(messageIdentifier)
-                   .withVersion(nextVersion());
+                   .withStatus(MessageStatus.UNREAD)
+                   .withVersion(UUID.randomUUID());
     }
     
     private static String extractTitle(Publication publication) {
@@ -399,11 +368,6 @@ public class Message implements TicketEntry,
             return this;
         }
         
-        public Builder withStatus(TicketStatus status) {
-            message.setStatus(status);
-            return this;
-        }
-        
         public Builder withSender(String sender) {
             message.setSender(sender);
             return this;
@@ -433,24 +397,29 @@ public class Message implements TicketEntry,
             message.setModifiedDate(modifiedDate);
             return this;
         }
-        
+    
         public Builder withResourceTitle(String resourceTitle) {
             message.setResourceTitle(resourceTitle);
             return this;
         }
-        
+    
         public Builder withMessageType(MessageType messageType) {
             message.setMessageType(messageType);
             return this;
         }
-        
+    
+        public Message build() {
+            return message;
+        }
+    
+        public Builder withStatus(MessageStatus status) {
+            message.setStatus(status);
+            return this;
+        }
+    
         public Builder withVersion(UUID version) {
             message.setVersion(version);
             return this;
-        }
-        
-        public Message build() {
-            return message;
         }
     }
 }

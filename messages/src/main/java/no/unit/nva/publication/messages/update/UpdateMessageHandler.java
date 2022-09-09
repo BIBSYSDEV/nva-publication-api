@@ -9,7 +9,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.function.Function;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.messages.model.MessageDto;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.service.impl.MessageService;
 import nva.commons.apigateway.AccessRight;

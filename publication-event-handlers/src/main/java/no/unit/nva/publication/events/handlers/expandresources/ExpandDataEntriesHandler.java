@@ -19,7 +19,6 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
@@ -77,13 +76,7 @@ public class ExpandDataEntriesHandler
     @JacocoGenerated
     private static ResourceExpansionService defaultResourceExpansionService() {
         return new ResourceExpansionServiceImpl(defaultResourceService(),
-            defaultMessageService(),
             TicketService.defaultService());
-    }
-    
-    @JacocoGenerated
-    private static MessageService defaultMessageService() {
-        return new MessageService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
     @JacocoGenerated

@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;

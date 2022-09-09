@@ -682,7 +682,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var expectedDoiRequest = originalDoiRequest.copy();
         expectedDoiRequest.setResourceTitle(ANOTHER_TITLE);
         expectedDoiRequest.setResourceModifiedDate(updatedPublication.getModifiedDate());
-        expectedDoiRequest.setDoi(expectedDoi);
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     
@@ -960,7 +959,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withIdentifier(initialDoiRequest.getIdentifier())
                    .withCreatedDate(initialDoiRequest.getCreatedDate())
                    .withModifiedDate(updatedDoiRequest.getModifiedDate())
-                   .withDoi(publicationUpdate.getDoi())
                    .withStatus(TicketStatus.PENDING)
                    .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
                    .withResourceStatus(publicationUpdate.getStatus())
@@ -1034,10 +1032,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication resource = createPersistedPublicationWithoutDoi();
         publishResource(resource);
         return resourceService.getPublication(resource);
-    }
-    
-    private Organization organizationWithoutLabels(Publication sampleResource) {
-        return new Organization.Builder().withId(sampleResource.getPublisher().getId()).build();
     }
     
     private ResourceService resourceServiceProvidingDuplicateIdentifiers(SortableIdentifier identifier) {

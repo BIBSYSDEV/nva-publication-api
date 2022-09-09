@@ -1,36 +1,27 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.model.ExpandedTicket.Constants.IDENTIFIER_FIELD;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
-public final class ExpandedDoiRequest implements WithOrganizationScope, ExpandedTicket {
+public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrganizationScope {
     
     public static final String TYPE = "DoiRequest";
     
-    @JsonProperty(IDENTIFIER_FIELD)
-    private SortableIdentifier identifier;
     @JsonProperty()
     private TicketStatus status;
     @JsonProperty
@@ -48,37 +39,18 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private URI doi;
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     private Set<URI> organizationIds;
-    @JsonProperty("messages")
-    private MessageCollection doiRequestMessages;
     
-    public static ExpandedDoiRequest create(DoiRequest doiRequest,
-                                            ResourceExpansionService expansionService,
-                                            MessageService messageService)
+    public static ExpandedDoiRequest createEntry(DoiRequest doiRequest,
+                                                 ResourceExpansionService expansionService,
+                                                 TicketService ticketService)
         throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
-        expandedDoiRequest.setDoiRequestMessages(fetchDoiRequestMessagesForResource(messageService, doiRequest));
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
+        expandedDoiRequest.setMessages(doiRequest.fetchMessages(ticketService));
         return expandedDoiRequest;
     }
     
-    public MessageCollection getDoiRequestMessages() {
-        return doiRequestMessages;
-    }
-    
-    public void setDoiRequestMessages(MessageCollection doiRequestMessages) {
-        this.doiRequestMessages = doiRequestMessages;
-    }
-    
-    @JacocoGenerated
-    public SortableIdentifier getIdentifier() {
-        return identifier;
-    }
-    
-    @JacocoGenerated
-    public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
-    }
-    
+    @Override
     @JacocoGenerated
     public TicketStatus getStatus() {
         return status;
@@ -162,12 +134,12 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         this.organizationIds = organizationIds;
     }
     
-    public DoiRequest toDoiRequest() {
+    @Override
+    public DoiRequest toTicketEntry() {
         DoiRequest doiRequest = new DoiRequest();
-        doiRequest.setDoi(this.getDoi());
         doiRequest.setContributors(this.getPublicationSummary().getContributors());
         doiRequest.setCreatedDate(this.getCreatedDate());
-        doiRequest.setIdentifier(this.getIdentifier());
+        doiRequest.setIdentifier(this.identifyExpandedEntry());
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
         doiRequest.setOwner(this.getOwner());
@@ -184,36 +156,10 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     
     @Override
     public SortableIdentifier identifyExpandedEntry() {
-        return getIdentifier();
+        return extractIdentifier(getId());
     }
     
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getModifiedDate(), getCreatedDate(),
-            getCustomerId(), getOwner(), getPublicationSummary(), getDoi(), getOrganizationIds());
-    }
     
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ExpandedDoiRequest)) {
-            return false;
-        }
-        ExpandedDoiRequest that = (ExpandedDoiRequest) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
-               && getStatus() == that.getStatus()
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getPublicationSummary(), that.getPublicationSummary())
-               && Objects.equals(getDoi(), that.getDoi())
-               && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
-    }
     
     private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
                                                                 ResourceExpansionService resourceExpansionService)
@@ -221,28 +167,13 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         return resourceExpansionService.getOrganizationIds(doiRequest);
     }
     
-    private static MessageCollection fetchDoiRequestMessagesForResource(MessageService messageService,
-                                                                        DoiRequest doiRequest) {
-        
-        UserInstance userInstance = UserInstance.fromDoiRequest(doiRequest);
-        return fetchAllMessagesForResource(messageService, doiRequest, userInstance)
-            .map(conversation -> conversation.getMessageCollectionOfType(MessageType.DOI_REQUEST))
-            .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
-    }
-    
-    private static Optional<ResourceConversation> fetchAllMessagesForResource(MessageService messageService,
-                                                                              DoiRequest doiRequest,
-                                                                              UserInstance userInstance) {
-        return messageService.getMessagesForResource(userInstance, doiRequest.getResourceIdentifier());
-    }
-    
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
     private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest) {
+        var publicationSummary = PublicationSummary.create(doiRequest);
         ExpandedDoiRequest request = new ExpandedDoiRequest();
-        request.setDoi(doiRequest.getDoi());
-        request.setPublicationSummary(PublicationSummary.create(doiRequest));
+        request.setPublicationSummary(publicationSummary);
         request.setCreatedDate(doiRequest.getCreatedDate());
-        request.setIdentifier(doiRequest.getIdentifier());
+        request.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
         request.setCustomerId(doiRequest.getCustomerId());
         request.setModifiedDate(doiRequest.getModifiedDate());
         request.setOwner(doiRequest.getOwner());

@@ -11,7 +11,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -21,26 +20,23 @@ import org.junit.jupiter.api.Test;
 
 class MessageTest {
     
-    public static final String SOME_SENDER = "some@sender";
-    public static final URI SOME_ORG = URI.create("https://example.org/123");
     public static final String MESSAGE_IDENTIFIER_FIELD = "identifier";
-    private static final UserInstance SAMPLE_SENDER = sampleSender();
     
     @Test
-    public void statusStringReturnsStringRepresentationOfStatus() {
-        TicketStatus messageStatus = TicketStatus.READ;
+    void statusStringReturnsStringRepresentationOfStatus() {
+        var messageStatus = MessageStatus.READ;
         Message message = Message.builder().withStatus(messageStatus).build();
         assertThat(message.getStatusString(), is(equalTo(messageStatus.toString())));
     }
     
     @Test
-    public void toPublicationThrowsUnsupportedException() {
+    void toPublicationThrowsUnsupportedException() {
         Message message = new Message();
         assertThrows(UnsupportedOperationException.class, message::toPublication);
     }
     
     @Test
-    public void toStringReturnsAJsonString() throws JsonProcessingException, ConflictException {
+    void toStringReturnsAJsonString() throws JsonProcessingException, ConflictException {
         var message = createSampleMessage();
         String json = message.toString();
         Message recreatedMessage = dynamoDbObjectMapper.readValue(json, Message.class);
@@ -71,9 +67,5 @@ class MessageTest {
         var copy = message.copy();
         assertThat(message, doesNotHaveEmptyValues());
         assertThat(copy, is(equalTo(message)));
-    }
-    
-    private static UserInstance sampleSender() {
-        return UserInstance.create(SOME_SENDER, SOME_ORG);
     }
 }

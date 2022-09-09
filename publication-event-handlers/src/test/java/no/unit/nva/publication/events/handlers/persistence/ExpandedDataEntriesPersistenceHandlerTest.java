@@ -4,7 +4,6 @@ import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ob
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.GENERAL_SUPPORT_REQUESTS_INDEX;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.PUBLISHING_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -31,12 +30,10 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -76,7 +73,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, clock);
         messageService = new MessageService(client, clock);
         ticketService = new TicketService(client);
-        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
+        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
     
     @BeforeEach
@@ -140,8 +137,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
             return new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX);
         } else if (ExpandedDoiRequest.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX);
-        } else if (ExpandedResourceConversation.class.equals(expandedEntryType)) {
-            return new PersistedEntryWithExpectedType(randomResourceConversation(), MESSAGES_INDEX);
         } else if (ExpandedPublishingRequest.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomPublishingRequest(), PUBLISHING_REQUESTS_INDEX);
         } else if (ExpandedGeneralSupportRequest.class.equals(expandedEntryType)) {
@@ -183,16 +178,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var doiRequest =
             ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
         return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest);
-    }
-    
-    private ExpandedResourceConversation randomResourceConversation()
-        throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWitoutDoi();
-        var userInstance = UserInstance.fromPublication(publication);
-        var messageIdentifier = messageService.createMessage(userInstance, publication, randomString(),
-            MessageType.SUPPORT);
-        var message = messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
-        return (ExpandedResourceConversation) resourceExpansionService.expandEntry(message);
     }
     
     private EventReference sendEvent() throws JsonProcessingException {

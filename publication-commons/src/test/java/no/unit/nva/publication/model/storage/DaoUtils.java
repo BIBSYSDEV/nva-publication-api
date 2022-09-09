@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
@@ -57,13 +56,11 @@ public final class DaoUtils {
     public static DoiRequestDao doiRequestDao() {
         var publication = randomPublicationEligibleForDoiRequest();
         var doiRequest = DoiRequest.fromPublication(publication);
-        doiRequest.setDoi(randomDoi());
         return new DoiRequestDao(doiRequest);
     }
     
     public static DoiRequestDao doiRequestDao(ResourceDao resourceDao) {
         var doiRequest = DoiRequest.newDoiRequestForResource(resourceDao.getData());
-        doiRequest.setDoi(randomDoi());
         return new DoiRequestDao(doiRequest);
     }
     
