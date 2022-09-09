@@ -105,6 +105,38 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         this.publicationSummary = publicationSummary;
     }
     
+    public Instant getCreatedDate() {
+        return this.createdDate;
+    }
+    
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+    
+    public Instant getModifiedDate() {
+        return this.modifiedDate;
+    }
+    
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
+    }
+    
+    public String getOwner() {
+        return this.owner;
+    }
+    
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    
+    public URI getCustomerId() {
+        return customerId;
+    }
+    
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
+    }
+    
     private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
                                                            Publication publication,
                                                            Set<URI> organizationIds,
@@ -127,37 +159,5 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                 ResourceService resourceService) {
         return attempt(() -> resourceService.getPublicationByIdentifier(
             publishingRequestCase.getResourceIdentifier())).orElseThrow();
-    }
-    
-    private Instant getCreatedDate() {
-        return this.createdDate;
-    }
-    
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-    
-    private Instant getModifiedDate() {
-        return this.modifiedDate;
-    }
-    
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-    
-    private String getOwner() {
-        return this.owner;
-    }
-    
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-    
-    private URI getCustomerId() {
-        return customerId;
-    }
-    
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
     }
 }

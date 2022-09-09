@@ -13,6 +13,7 @@ import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -206,11 +207,11 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var tickets = ticketProvider().map(ticketType -> createPersistedTicket(publication, ticketType))
                           .collect(Collectors.toList());
-        var retrievedTickets = tickets.stream()
-                                   .map(attempt(
-                                       t -> ticketService.fetchTicket(UserInstance.fromTicket(t), t.getIdentifier())))
-                                   .map(Try::orElseThrow)
-                                   .collect(Collectors.toList());
+        var retrievedTickets =
+            tickets.stream()
+                .map(attempt(ticket -> ticketService.fetchTicket(fromTicket(ticket), ticket.getIdentifier())))
+                .map(Try::orElseThrow)
+                .collect(Collectors.toList());
         assertThat(retrievedTickets, containsInAnyOrder(tickets.toArray(TicketEntry[]::new)));
     }
     
@@ -471,16 +472,28 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(actualTickets, containsInAnyOrder(expectedTickets.toArray(TicketEntry[]::new)));
     }
     
-    private GeneralSupportRequest persistGeneralSupportRequest(Publication publication) {
-        return attempt(() -> createGeneralSupportRequest(publication).persist(ticketService)).map(
-            GeneralSupportRequest.class::cast).orElseThrow();
-    }
-    
     @Test
     void shouldReturnEmptyListWhenUserHasNoTickets() throws ApiGatewayException {
         persistPublication(owner, DRAFT);
         var actualTickets = ticketService.fetchTicketsForUser(owner).collect(Collectors.toList());
         assertThat(actualTickets, is(empty()));
+    }
+    
+    @Test
+    void shouldReturnAllResultsOfaQuery() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var tickets = IntStream.range(0, 2)
+                          .boxed()
+                          .map(ticketType -> createPersistedTicket(publication, GeneralSupportRequest.class))
+                          .collect(Collectors.toList());
+        var query = UntypedTicketQueryObject.create(UserInstance.fromPublication(publication));
+        var retrievedTickets = query.fetchTicketsForUser(client).collect(Collectors.toList());
+        assertThat(retrievedTickets.size(), is(equalTo(tickets.size())));
+    }
+    
+    private GeneralSupportRequest persistGeneralSupportRequest(Publication publication) {
+        return attempt(() -> createGeneralSupportRequest(publication).persist(ticketService)).map(
+            GeneralSupportRequest.class::cast).orElseThrow();
     }
     
     private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
@@ -524,18 +537,6 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     private TicketEntry createPersistedTicket(Publication publication, Class<?> ticketType) {
         return attempt(() -> createUnpersistedTicket(publication, ticketType).persist(ticketService)).orElseThrow();
-    }
-    
-    @Test
-    void shouldReturnAllResultsOfaQuery() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var tickets = IntStream.range(0, 2)
-                          .boxed()
-                          .map(ticketType -> createPersistedTicket(publication, GeneralSupportRequest.class))
-                          .collect(Collectors.toList());
-        var query = UntypedTicketQueryObject.create(UserInstance.fromPublication(publication));
-        var retrievedTickets = query.fetchTicketsForUser(client).collect(Collectors.toList());
-        assertThat(retrievedTickets.size(), is(equalTo(tickets.size())));
     }
     
     private Publication persistEmptyPublication(UserInstance owner) {
