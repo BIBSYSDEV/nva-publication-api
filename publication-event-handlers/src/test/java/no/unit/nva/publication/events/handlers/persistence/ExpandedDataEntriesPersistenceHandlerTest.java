@@ -2,10 +2,8 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.GENERAL_SUPPORT_REQUESTS_INDEX;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.PUBLISHING_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -39,7 +37,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
@@ -63,7 +60,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
     private TicketService ticketService;
-    private MessageService messageService;
     private ResourceExpansionService resourceExpansionService;
     
     @BeforeEach
@@ -71,7 +67,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         super.init();
         Clock clock = Clock.systemDefaultZone();
         resourceService = new ResourceService(client, clock);
-        messageService = new MessageService(client, clock);
         ticketService = new TicketService(client);
         resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
@@ -136,47 +131,46 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         if (ExpandedResource.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX);
         } else if (ExpandedDoiRequest.class.equals(expandedEntryType)) {
-            return new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX);
+            return new PersistedEntryWithExpectedType(randomDoiRequest(), TICKETS_INDEX);
         } else if (ExpandedPublishingRequest.class.equals(expandedEntryType)) {
-            return new PersistedEntryWithExpectedType(randomPublishingRequest(), PUBLISHING_REQUESTS_INDEX);
+            return new PersistedEntryWithExpectedType(randomPublishingRequest(), TICKETS_INDEX);
         } else if (ExpandedGeneralSupportRequest.class.equals(expandedEntryType)) {
-            return new PersistedEntryWithExpectedType(randomGeneralSupportRequest(), GENERAL_SUPPORT_REQUESTS_INDEX);
+            return new PersistedEntryWithExpectedType(randomGeneralSupportRequest(), TICKETS_INDEX);
         }
         throw new RuntimeException();
     }
     
     private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWitoutDoi();
-        var openingCaseObject = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
-        var request = ticketService.createTicket(openingCaseObject, GeneralSupportRequest.class);
-        return resourceExpansionService.expandEntry(request);
+        var publication = createPublicationWithoutDoi();
+        var openingCaseObject =
+            TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class).persist(ticketService);
+        return resourceExpansionService.expandEntry(openingCaseObject);
     }
     
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWitoutDoi();
+        var publication = createPublicationWithoutDoi();
         var userInstance = UserInstance.fromPublication(publication);
-        var openingCaseObject =
-            PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-        var publishingRequest =
-            ticketService.createTicket(openingCaseObject, PublishingRequestCase.class);
+        var publishingRequest = PublishingRequestCase
+                                    .createOpeningCaseObject(userInstance, publication.getIdentifier())
+                                    .persist(ticketService);
+    
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
     
     private ExpandedResource randomResource() throws JsonProcessingException, ApiGatewayException {
-        var resource = Resource.fromPublication(createPublicationWitoutDoi());
+        var resource = Resource.fromPublication(createPublicationWithoutDoi());
         return (ExpandedResource) resourceExpansionService.expandEntry(resource);
     }
     
-    private Publication createPublicationWitoutDoi() throws ApiGatewayException {
+    private Publication createPublicationWithoutDoi() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
         var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
     
     private ExpandedDoiRequest randomDoiRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWitoutDoi();
-        var doiRequest =
-            ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
+        var publication = createPublicationWithoutDoi();
+        var doiRequest = DoiRequest.fromPublication(publication).persist(ticketService);
         return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest);
     }
     
