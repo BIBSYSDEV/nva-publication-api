@@ -832,26 +832,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldUpdateResourceRowVersionWhenEntityIsRefreshed() {
-        int arbitraryNumberOfResources = 40;
-        int numberOfTotalExpectedDatabaseEntries = 2 * arbitraryNumberOfResources; //due to identity entries
-        var sampleResources = createManySampleResources(arbitraryNumberOfResources);
-        
-        resourceService.refreshResources(sampleResources);
-        var firstUpdates =
-            resourceService.scanResources(numberOfTotalExpectedDatabaseEntries, null).getDatabaseEntries();
-        
-        resourceService.refreshResources(sampleResources);
-        var secondUpdates =
-            resourceService.scanResources(numberOfTotalExpectedDatabaseEntries, null).getDatabaseEntries();
-        
-        for (var firstUpdate : firstUpdates) {
-            Entity secondUpdate = findMatchingSecondUpdate(secondUpdates, firstUpdate);
-            assertThat(secondUpdate.getVersion(), is(not(equalTo(firstUpdate.getVersion()))));
-        }
-    }
-    
-    @Test
     void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource() {
         
         var samplePublication = createUnpublishablePublication();
@@ -968,7 +948,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withContributors(publicationUpdate.getEntityDescription().getContributors())
                    .withResourcePublicationInstance(
                        publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
-                   .withRowVersion(updatedDoiRequest.getVersion())
                    .build();
     }
     
@@ -988,12 +967,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {
         ResourceDao resourceDaoWithStatusPublished = queryObjectForPublishedResource(resourceWithStatusDraft);
-        
+    
         Optional<ResourceDao> publishedResource = searchForResource(resourceDaoWithStatusPublished);
         assertThat(publishedResource.isPresent(), is(true));
-        
-        ResourceDao actualResourceDao = publishedResource.orElseThrow();
-        assertThat(actualResourceDao.getData().getStatus(), is(equalTo(PUBLISHED)));
+    
+        var actualResourceDao = publishedResource.orElseThrow();
+        var resource = (Resource) actualResourceDao.getData();
+        assertThat(resource.getStatus(), is(equalTo(PUBLISHED)));
     }
     
     private void verifyThatTheResourceWasMovedFromtheDrafts(ResourceDao resourceDaoWithStatusDraft) {

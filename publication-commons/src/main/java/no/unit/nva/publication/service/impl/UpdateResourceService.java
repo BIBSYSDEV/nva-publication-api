@@ -110,7 +110,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         List<Dao> daos = readResourceService
             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         var dao = extractResourceDao(daos);
-        var resource = dao.getData();
+        var resource = (Resource) dao.getData();
         if (resourceIsPublished(resource)) {
             return publishCompletedStatus();
         }
@@ -185,8 +185,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
     
     private TransactWriteItem publishUpdateRequest(ResourceDao dao, String nowString) {
-        
-        var resource = dao.getData();
+    
+        var resource = (Resource) dao.getData();
         resource.setStatus(PublicationStatus.PUBLISHED);
         final String updateExpression = "SET"
                                         + " #data.#status = :newStatus, "

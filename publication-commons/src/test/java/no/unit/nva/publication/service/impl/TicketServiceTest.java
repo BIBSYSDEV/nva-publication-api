@@ -279,7 +279,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         
         var expectedTicket = persistedTicket.copy();
         expectedTicket.setStatus(COMPLETED);
-        expectedTicket.setVersion(updatedTicket.getVersion());
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
         
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
@@ -413,7 +412,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         var expectedTicket = ticket.copy();
         expectedTicket.setStatus(COMPLETED);
         expectedTicket.setModifiedDate(completedTicket.getModifiedDate());
-        expectedTicket.setVersion(completedTicket.getVersion());
         assertThat(completedTicket, is(equalTo(expectedTicket)));
     }
     
@@ -427,7 +425,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         var refreshed = ticketService.refreshTicket(originalTicket);
         Thread.sleep(1);
         assertThat(refreshed.getModifiedDate(), is(greaterThan(originalTicket.getModifiedDate())));
-        assertThat(refreshed.getVersion(), is(not(equalTo(originalTicket.getVersion()))));
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
@@ -588,7 +585,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         originalTicket.setCreatedDate(persistedTicket.getCreatedDate());
         originalTicket.setModifiedDate(persistedTicket.getModifiedDate());
         originalTicket.setIdentifier(persistedTicket.getIdentifier());
-        originalTicket.setVersion(persistedTicket.getVersion());
     }
     
     private Map<String, AttributeValue> mockedPublicationResponse() {

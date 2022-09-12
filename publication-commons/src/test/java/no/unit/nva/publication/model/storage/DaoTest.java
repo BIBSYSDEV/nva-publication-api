@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -13,7 +14,11 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
@@ -26,15 +31,37 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.testing.TypeProvider;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class DaoTest extends ResourcesLocalTest {
+    
+    public static Stream<Class<?>> entityProvider() {
+        return TypeProvider.listSubTypes(Entity.class);
+    }
     
     @BeforeEach
     public void init() {
@@ -178,13 +205,78 @@ class DaoTest extends ResourcesLocalTest {
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         client.putItem(RESOURCES_TABLE_NAME, dynamoMap);
         Map<String, AttributeValue> savedMap = client
-            .getItem(RESOURCES_TABLE_NAME, originalDao.primaryKey())
-            .getItem();
+                                                   .getItem(RESOURCES_TABLE_NAME, originalDao.primaryKey())
+                                                   .getItem();
         assertThat(dynamoMap, is(equalTo(savedMap)));
-        
+    
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValues());
         assertThat(retrievedDao, is(equalTo(originalDao)));
+    }
+    
+    @ParameterizedTest(name = "Dao type:{0}")
+    @DisplayName("should generate a new version whenever it is instantiated through a Business Object")
+    @MethodSource("entityProvider")
+    void shouldGenerateNewVersionWheneverIsInstantiatedThroughBusinessObject(Class<?> entityType)
+        throws ConflictException {
+        var entity = (Entity) generateEntity(entityType);
+        var dao = entity.toDao();
+        var dao2 = entity.toDao();
+        assertThat(dao.getVersion(), is(not(nullValue())));
+        assertThat(dao2.getVersion(), is(not(nullValue())));
+        assertThat(dao.getVersion(), is(not(equalTo(dao2.getVersion()))));
+    }
+    
+    @ParameterizedTest(name = "Dao type:{0}")
+    @DisplayName("dao has only type, data, version, PK, and SK fields")
+    @MethodSource("entityProvider")
+    void daoOnlyHasOnlyTypeDataVersionPKAndSKFields(Class<?> entityType)
+        throws JsonProcessingException, ConflictException {
+        var entity = (Entity) generateEntity(entityType);
+        var dao = entity.toDao();
+        String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
+        ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
+        Iterator<String> fieldNames = jsonNode.fieldNames();
+        List<String> fieldNameList = new ArrayList<>();
+        fieldNames.forEachRemaining(fieldNameList::add);
+        assertThat(fieldNameList, everyItem(anyOf(
+            startsWith("PK"),
+            startsWith("SK"),
+            startsWith("data"),
+            startsWith("type"),
+            startsWith("version")))
+        );
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Object generateEntity(Class<?> entityType)
+        throws ConflictException {
+        
+        if (Resource.class.equals(entityType)) {
+            return Resource.fromPublication(randomPublication());
+        } else if (DoiRequest.class.equals(entityType)) {
+            return createTicket((Class<? extends TicketEntry>) entityType);
+        } else if (PublishingRequestCase.class.equals(entityType)) {
+            return createTicket((Class<? extends TicketEntry>) entityType);
+        } else if (GeneralSupportRequest.class.equals(entityType)) {
+            return createTicket((Class<? extends TicketEntry>) entityType);
+        } else if (Message.class.equals(entityType)) {
+            var ticket = createTicket(DoiRequest.class);
+            return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+        }
+        throw new UnsupportedOperationException();
+    }
+    
+    private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
+        return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next);
+    }
+    
+    private static Publication draftPublicationWithoutDoi() {
+        return randomPublication()
+                   .copy()
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withDoi(null)
+                   .build();
     }
     
     private static Stream<Dao> instanceProvider() {
@@ -193,9 +285,9 @@ class DaoTest extends ResourcesLocalTest {
     
     private QueryRequest queryByTypeCustomerStatusIndex(Dao originalResource) {
         return new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-            .withKeyConditions(originalResource.fetchEntryByTypeCustomerStatusKey());
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+                   .withKeyConditions(originalResource.fetchEntryByTypeCustomerStatusKey());
     }
     
     private JsonNode serializeInstance(Dao daoInstance) throws JsonProcessingException {

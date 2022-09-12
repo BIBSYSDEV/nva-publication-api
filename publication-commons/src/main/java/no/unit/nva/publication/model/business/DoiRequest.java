@@ -3,7 +3,6 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
-import static no.unit.nva.publication.model.business.Entity.nextVersion;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
@@ -20,7 +19,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -83,7 +81,6 @@ public class DoiRequest implements TicketEntry {
     private String resourcePublicationYear;
     @JsonProperty
     private List<Contributor> contributors;
-    private UUID version;
     
     public DoiRequest() {
     
@@ -110,7 +107,6 @@ public class DoiRequest implements TicketEntry {
         doiRequest.setStatus(TicketStatus.PENDING);
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
-        doiRequest.setVersion(nextVersion());
         
         doiRequest.validate();
         return doiRequest;
@@ -166,15 +162,6 @@ public class DoiRequest implements TicketEntry {
                    .build();
     }
     
-    @Override
-    public UUID getVersion() {
-        return version;
-    }
-    
-    @Override
-    public void setVersion(UUID rowVersion) {
-        this.version = rowVersion;
-    }
     
     @Override
     public String getType() {
@@ -274,7 +261,6 @@ public class DoiRequest implements TicketEntry {
                    .withResourcePublicationDate(getResourcePublicationDate())
                    .withResourcePublicationYear(getResourcePublicationYear())
                    .withContributors(getContributors())
-                   .withRowVersion(getVersion())
                    .build();
     }
     

@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -23,7 +22,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -64,8 +62,6 @@ public class Resource implements Entity {
     private Set<AdditionalIdentifier> additionalIdentifiers;
     @JsonProperty
     private List<URI> subjects;
-    @JsonProperty(VERSION_FIELD)
-    private UUID version;
     
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
@@ -90,30 +86,24 @@ public class Resource implements Entity {
     
     public static Resource fromPublication(Publication publication) {
         return Resource.builder()
-            .withIdentifier(publication.getIdentifier())
-            .withResourceOwner(publication.getResourceOwner())
-            .withCreatedDate(publication.getCreatedDate())
-            .withModifiedDate(publication.getModifiedDate())
-            .withIndexedDate(publication.getIndexedDate())
-            .withPublishedDate(publication.getPublishedDate())
-            .withStatus(publication.getStatus())
-            .withPublishedDate(publication.getPublishedDate())
-            .withFileSet(publication.getFileSet())
-            .withPublisher(publication.getPublisher())
-            .withLink(publication.getLink())
-            .withProjects(publication.getProjects())
-            .withEntityDescription(publication.getEntityDescription())
-            .withDoi(publication.getDoi())
-            .withHandle(publication.getHandle())
-            .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
-            .withSubjects(publication.getSubjects())
-            .withRowVersion(Entity.nextVersion())
-            .build();
-    }
-    
-    @Override
-    public String getType() {
-        return TYPE;
+                   .withIdentifier(publication.getIdentifier())
+                   .withResourceOwner(publication.getResourceOwner())
+                   .withCreatedDate(publication.getCreatedDate())
+                   .withModifiedDate(publication.getModifiedDate())
+                   .withIndexedDate(publication.getIndexedDate())
+                   .withPublishedDate(publication.getPublishedDate())
+                   .withStatus(publication.getStatus())
+                   .withPublishedDate(publication.getPublishedDate())
+                   .withFileSet(publication.getFileSet())
+                   .withPublisher(publication.getPublisher())
+                   .withLink(publication.getLink())
+                   .withProjects(publication.getProjects())
+                   .withEntityDescription(publication.getEntityDescription())
+                   .withDoi(publication.getDoi())
+                   .withHandle(publication.getHandle())
+                   .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
+                   .withSubjects(publication.getSubjects())
+                   .build();
     }
     
     public static ResourceBuilder builder() {
@@ -146,20 +136,31 @@ public class Resource implements Entity {
         this.identifier = identifier;
     }
     
-    public PublicationStatus getStatus() {
-        return status;
+    @Override
+    public Publication toPublication() {
+        return new Publication.Builder()
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(getResourceOwner())
+                   .withStatus(getStatus())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withPublisher(getPublisher())
+                   .withPublishedDate(getPublishedDate())
+                   .withLink(getLink())
+                   .withFileSet(getFileSet())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withSubjects(getSubjects())
+                   .build();
     }
     
-    public void setStatus(PublicationStatus status) {
-        this.status = status;
-    }
-    
-    public Organization getPublisher() {
-        return publisher;
-    }
-    
-    public void setPublisher(Organization publisher) {
-        this.publisher = publisher;
+    @Override
+    public String getType() {
+        return TYPE;
     }
     
     @Override
@@ -180,6 +181,44 @@ public class Resource implements Entity {
     @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
+    }
+    
+    @JsonIgnore
+    @Override
+    public String getOwner() {
+        return getResourceOwner().getOwner();
+    }
+    
+    @Override
+    @JsonIgnore
+    public URI getCustomerId() {
+        return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
+    }
+    
+    @Override
+    public Dao toDao() {
+        return new ResourceDao(this);
+    }
+    
+    @Override
+    public String getStatusString() {
+        return nonNull(getStatus()) ? getStatus().toString() : null;
+    }
+    
+    public PublicationStatus getStatus() {
+        return status;
+    }
+    
+    public void setStatus(PublicationStatus status) {
+        this.status = status;
+    }
+    
+    public Organization getPublisher() {
+        return publisher;
+    }
+    
+    public void setPublisher(Organization publisher) {
+        this.publisher = publisher;
     }
     
     public Instant getPublishedDate() {
@@ -246,82 +285,25 @@ public class Resource implements Entity {
         this.handle = handle;
     }
     
-    @Override
-    public String getStatusString() {
-        return nonNull(getStatus()) ? getStatus().toString() : null;
-    }
-    
     public ResourceBuilder copy() {
         return Resource.builder()
-            .withIdentifier(getIdentifier())
-            .withStatus(getStatus())
-            .withResourceOwner(getResourceOwner())
-            .withResourceOwner(getResourceOwner())
-            .withPublisher(getPublisher())
-            .withCreatedDate(getCreatedDate())
-            .withModifiedDate(getModifiedDate())
-            .withPublishedDate(getPublishedDate())
-            .withIndexedDate(getIndexedDate())
-            .withLink(getLink())
-            .withFileSet(getFileSet())
-            .withProjects(getProjects())
-            .withEntityDescription(getEntityDescription())
-            .withDoi(getDoi())
-            .withHandle(getHandle())
-            .withAdditionalIdentifiers(getAdditionalIdentifiers())
-            .withSubjects(getSubjects())
-            .withRowVersion(getVersion());
-    }
-    
-    @Override
-    public Publication toPublication() {
-        return new Publication.Builder()
-            .withIdentifier(getIdentifier())
-            .withResourceOwner(getResourceOwner())
-            .withStatus(getStatus())
-            .withCreatedDate(getCreatedDate())
-            .withModifiedDate(getModifiedDate())
-            .withIndexedDate(getIndexedDate())
-            .withPublisher(getPublisher())
-            .withPublishedDate(getPublishedDate())
-            .withLink(getLink())
-            .withFileSet(getFileSet())
-            .withProjects(getProjects())
-            .withEntityDescription(getEntityDescription())
-            .withDoi(getDoi())
-            .withHandle(getHandle())
-            .withAdditionalIdentifiers(getAdditionalIdentifiers())
-            .withSubjects(getSubjects())
-            .build();
-    }
-    
-    @Override
-    @JacocoGenerated
-    public UUID getVersion() {
-        return version;
-    }
-    
-    @Override
-    @JacocoGenerated
-    public void setVersion(UUID version) {
-        this.version = version;
-    }
-    
-    @Override
-    public Dao toDao() {
-        return new ResourceDao(this);
-    }
-    
-    @Override
-    @JsonIgnore
-    public URI getCustomerId() {
-        return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
-    }
-    
-    @JsonIgnore
-    @Override
-    public String getOwner() {
-        return getResourceOwner().getOwner();
+                   .withIdentifier(getIdentifier())
+                   .withStatus(getStatus())
+                   .withResourceOwner(getResourceOwner())
+                   .withResourceOwner(getResourceOwner())
+                   .withPublisher(getPublisher())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withPublishedDate(getPublishedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withLink(getLink())
+                   .withFileSet(getFileSet())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withSubjects(getSubjects());
     }
     
     public List<URI> getSubjects() {

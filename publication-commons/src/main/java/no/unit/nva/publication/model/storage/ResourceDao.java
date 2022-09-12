@@ -24,7 +24,6 @@ import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
@@ -38,15 +37,13 @@ public class ResourceDao extends Dao
     public static final String CRISTIN_SOURCE = "Cristin";
     public static final String TYPE = "Resource";
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
-    private Resource data;
     
     public ResourceDao() {
         this(new Resource());
     }
     
     public ResourceDao(Resource resource) {
-        super();
-        this.data = resource;
+        super(resource);
     }
     
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
@@ -64,17 +61,7 @@ public class ResourceDao extends Dao
     
     @JsonIgnore
     public String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + data.getType();
-    }
-    
-    @Override
-    public Resource getData() {
-        return data;
-    }
-    
-    @Override
-    public void setData(Entity resource) {
-        this.data = (Resource) resource;
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + getData().getType();
     }
     
     @Override
@@ -84,7 +71,7 @@ public class ResourceDao extends Dao
     
     @Override
     public URI getCustomerId() {
-        return data.getPublisher().getId();
+        return getResource().getPublisher().getId();
     }
     
     //TODO: cover when refactoring to ticket system is completed
@@ -96,7 +83,7 @@ public class ResourceDao extends Dao
     
     @Override
     protected String getOwner() {
-        return data.getOwner();
+        return getData().getOwner();
     }
     
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
@@ -126,13 +113,18 @@ public class ResourceDao extends Dao
     }
     
     public Optional<String> extractCristinIdentifier() {
-        String cristinIdentifierValue = Optional.ofNullable(data.getAdditionalIdentifiers())
+        String cristinIdentifierValue = Optional.ofNullable(getResource().getAdditionalIdentifiers())
                                             .stream()
                                             .flatMap(Collection::stream)
                                             .filter(this::keyEqualsCristin)
                                             .map(AdditionalIdentifier::getValue)
                                             .collect(SingletonCollector.collectOrElse(null));
         return Optional.ofNullable(cristinIdentifierValue);
+    }
+    
+    @JsonIgnore
+    public Resource getResource() {
+        return (Resource) getData();
     }
     
     @Override

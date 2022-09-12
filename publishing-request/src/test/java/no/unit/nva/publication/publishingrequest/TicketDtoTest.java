@@ -10,7 +10,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -46,7 +45,6 @@ class TicketDtoTest {
         var ticketIdentifier = SortableIdentifier.next();
         return TicketDto.builder()
                    .withPublicationId(publicationId)
-                   .withVersion(UUID.randomUUID())
                    .withModifiedDate(randomInstant())
                    .withIdentifier(ticketIdentifier)
                    .withCreatedDate(randomInstant())

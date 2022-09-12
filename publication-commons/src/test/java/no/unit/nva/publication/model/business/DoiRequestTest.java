@@ -65,7 +65,6 @@ class DoiRequestTest {
         
         var regeneratedDoiRequest = DoiRequest.fromPublication(generatedPublication);
         regeneratedDoiRequest.setIdentifier(originalDoiRequest.getIdentifier());
-        regeneratedDoiRequest.setVersion(originalDoiRequest.getVersion());
         regeneratedDoiRequest.setCreatedDate(originalDoiRequest.getCreatedDate());
         regeneratedDoiRequest.setModifiedDate(originalDoiRequest.getModifiedDate());
         // when transformed to Publication we do not have control over the rowVersion anymore because

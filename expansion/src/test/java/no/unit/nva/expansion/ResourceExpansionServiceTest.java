@@ -81,7 +81,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var ticket = TicketEntry.requestNewTicket(publication, ticketType).persist(ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var regeneratedTicket = expandedTicket.toTicketEntry();
-        regeneratedTicket.setVersion(ticket.getVersion());
         
         assertThat(ticket, doesNotHaveEmptyValues());
         assertThat(regeneratedTicket, is(equalTo(ticket)));

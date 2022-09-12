@@ -26,7 +26,6 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Map;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -162,7 +161,6 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
     private void setModifiedDateToBeAtLeastOneDayOld(DoiRequest doiRequest) {
         doiRequest.setModifiedDate(doiRequest.getModifiedDate().minus(Duration.ofDays(1)));
-        doiRequest.setVersion(UUID.randomUUID());
         PutItemRequest putItemRequest = doiRequest.toDao().createPutItemRequest();
         
         client.putItem(putItemRequest);

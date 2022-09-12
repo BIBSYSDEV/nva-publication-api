@@ -60,7 +60,8 @@ public final class DaoUtils {
     }
     
     public static DoiRequestDao doiRequestDao(ResourceDao resourceDao) {
-        var doiRequest = DoiRequest.newDoiRequestForResource(resourceDao.getData());
+        var resource = (Resource) resourceDao.getData();
+        var doiRequest = DoiRequest.newDoiRequestForResource(resource);
         return new DoiRequestDao(doiRequest);
     }
     

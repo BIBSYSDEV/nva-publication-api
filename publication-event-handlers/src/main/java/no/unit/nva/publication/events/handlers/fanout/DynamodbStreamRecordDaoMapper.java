@@ -33,16 +33,16 @@ public final class DynamodbStreamRecordDaoMapper {
      * @return a Dao instance
      * @throws JsonProcessingException JsonProcessingException
      */
-    public static Optional<Entity> toDao(Map<String, AttributeValue> recordImage)
+    public static Optional<Entity> toEntity(Map<String, AttributeValue> recordImage)
         throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
         DynamoEntry dynamoEntry = objectMapper.readValue(item.toJSON(), DynamoEntry.class);
         return Optional.of(dynamoEntry)
-            .filter(entry -> isDao(dynamoEntry))
-            .map(Dao.class::cast)
-            .map(Dao::getData)
-            .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
+                   .filter(entry -> isDao(dynamoEntry))
+                   .map(Dao.class::cast)
+                   .map(Dao::getData)
+                   .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
     }
     
     private static boolean isDao(DynamoEntry dynamoEntry) {

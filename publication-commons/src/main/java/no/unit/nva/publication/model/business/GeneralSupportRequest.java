@@ -14,7 +14,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -30,8 +29,6 @@ public class GeneralSupportRequest implements TicketEntry {
     public static final String TYPE = "GeneralSupportRequest";
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
-    @JsonProperty(VERSION_FIELD)
-    private UUID version;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
     @JsonProperty(MODIFIED_DATE_FIELD)
@@ -54,7 +51,6 @@ public class GeneralSupportRequest implements TicketEntry {
         ticket.setModifiedDate(Instant.now());
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdentifier(SortableIdentifier.next());
-        ticket.setVersion(UUID.randomUUID());
         return ticket;
     }
     
@@ -79,16 +75,6 @@ public class GeneralSupportRequest implements TicketEntry {
     @Override
     public Publication toPublication() {
         throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public UUID getVersion() {
-        return this.version;
-    }
-    
-    @Override
-    public void setVersion(UUID version) {
-        this.version = version;
     }
     
     @Override
@@ -167,7 +153,6 @@ public class GeneralSupportRequest implements TicketEntry {
     public TicketEntry copy() {
         var copy = new GeneralSupportRequest();
         copy.setStatus(this.getStatus());
-        copy.setVersion(this.getVersion());
         copy.setModifiedDate(this.getModifiedDate());
         copy.setIdentifier(this.getIdentifier());
         copy.setType(this.getType());
@@ -191,8 +176,7 @@ public class GeneralSupportRequest implements TicketEntry {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getVersion(), getCreatedDate(), getModifiedDate(), getOwner(),
-            getCustomerId(),
+        return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
             getResourceIdentifier(), getStatus());
     }
     
@@ -207,7 +191,6 @@ public class GeneralSupportRequest implements TicketEntry {
         }
         GeneralSupportRequest that = (GeneralSupportRequest) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getVersion(), that.getVersion())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getOwner(), that.getOwner())

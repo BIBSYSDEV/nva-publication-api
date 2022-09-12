@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -86,7 +85,6 @@ public interface TicketEntry extends Entity {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
-        updated.setVersion(UUID.randomUUID());
         updated.setModifiedDate(Instant.now());
         return updated;
     }
@@ -95,7 +93,6 @@ public interface TicketEntry extends Entity {
         validateClosingRequirements();
         var updated = this.copy();
         updated.setStatus(TicketStatus.CLOSED);
-        updated.setVersion(UUID.randomUUID());
         updated.setModifiedDate(Instant.now());
         return updated;
     }
@@ -120,7 +117,6 @@ public interface TicketEntry extends Entity {
     
     default TicketEntry refresh() {
         var refreshed = this.copy();
-        refreshed.setVersion(UUID.randomUUID());
         refreshed.setModifiedDate(Instant.now());
         return refreshed;
     }
@@ -159,7 +155,6 @@ public interface TicketEntry extends Entity {
         var now = Instant.now();
         ticketEntry.setCreatedDate(now);
         ticketEntry.setModifiedDate(now);
-        ticketEntry.setVersion(Entity.nextVersion());
         ticketEntry.setIdentifier(identifierProvider.get());
     }
     

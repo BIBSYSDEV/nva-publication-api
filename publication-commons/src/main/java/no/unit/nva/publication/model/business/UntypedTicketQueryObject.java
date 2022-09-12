@@ -35,18 +35,6 @@ public final class UntypedTicketQueryObject extends TicketDao {
         return new UntypedTicketQueryObject(userInstance, null);
     }
     
-    @JacocoGenerated
-    @Override
-    public TicketEntry getData() {
-        throw new UnsupportedOperationException();
-    }
-    
-    @JacocoGenerated
-    @Override
-    public void setData(Entity data) {
-        throw new UnsupportedOperationException();
-    }
-    
     @Override
     public URI getCustomerId() {
         return owner.getOrganizationUri();

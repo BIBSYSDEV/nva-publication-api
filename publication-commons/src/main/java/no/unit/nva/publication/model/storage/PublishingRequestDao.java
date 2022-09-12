@@ -13,7 +13,6 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -25,7 +24,6 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "c";
     public static final String TYPE = "PublishingRequestCase";
-    private PublishingRequestCase data;
     
     @JacocoGenerated
     public PublishingRequestDao() {
@@ -33,8 +31,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     }
     
     public PublishingRequestDao(TicketEntry data) {
-        super();
-        this.data = (PublishingRequestCase) data;
+        super(data);
     }
     
     public static QueryRequest queryPublishingRequestByResource(URI customerId,
@@ -65,25 +62,15 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     }
     
     @Override
-    public PublishingRequestCase getData() {
-        return data;
-    }
-    
-    @Override
-    public void setData(Entity data) {
-        this.data = (PublishingRequestCase) data;
-    }
-    
-    @Override
     public URI getCustomerId() {
-        return data.getCustomerId();
+        return getData().getCustomerId();
     }
     
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        var publicationRequestEntry = createPublishingRequestInsertionEntry(data);
-        var identifierEntry = createUniqueIdentifierEntry(data);
-        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry(data);
+        var publicationRequestEntry = createPublishingRequestInsertionEntry();
+        var identifierEntry = createUniqueIdentifierEntry();
+        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry();
         return new TransactWriteItemsRequest()
                    .withTransactItems(
                        identifierEntry,
@@ -93,7 +80,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     @Override
     protected String getOwner() {
-        return data.getOwner();
+        return getData().getOwner();
     }
     
     @Override
@@ -103,7 +90,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     @Override
     public SortableIdentifier getResourceIdentifier() {
-        return data.getResourceIdentifier();
+        return getTicketEntry().getResourceIdentifier();
     }
     
     @Override
@@ -131,18 +118,19 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
         return toJsonString();
     }
     
-    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequestCase publishingRequest) {
-        var publishingRequestUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
+    private TransactWriteItem createPublishingRequestUniquenessEntry() {
+        var publishingRequestUniquenessEntry =
+            UniquePublishingRequestEntry.create((PublishingRequestCase) getData());
         return newPutTransactionItem(publishingRequestUniquenessEntry);
     }
     
-    private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequestCase publicationRequest) {
-        var dynamoEntry = new PublishingRequestDao(publicationRequest);
+    private TransactWriteItem createPublishingRequestInsertionEntry() {
+        var dynamoEntry = new PublishingRequestDao(getTicketEntry());
         return newPutTransactionItem(dynamoEntry);
     }
     
-    private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
-        var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
+    private TransactWriteItem createUniqueIdentifierEntry() {
+        var identifierEntry = new IdentifierEntry(getData().getIdentifier().toString());
         return newPutTransactionItem(identifierEntry);
     }
 }
