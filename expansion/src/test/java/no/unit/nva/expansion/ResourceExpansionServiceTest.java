@@ -78,7 +78,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldCopyAllPubliclyVisibleFieldsFromTicketToExpandedTicket(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var regeneratedTicket = expandedTicket.toTicketEntry();
         
@@ -94,7 +94,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandAssociatedTicketWhenMessageIsCreated(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
         
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
@@ -119,7 +119,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
         var ticketToBeExpanded = TicketEntry
                                      .requestNewTicket(publication, GeneralSupportRequest.class)
-                                     .createNew(ticketService);
+                                     .persistNewTicket(ticketService);
         
         var expectedMessage = messageService.createMessage(ticketToBeExpanded, owner, randomString());
         
@@ -134,7 +134,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldAddResourceTitleToExpandedTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException,
                                                                                                 JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         
         var expectedTitle = publication.getEntityDescription().getMainTitle();
@@ -158,11 +158,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private List<Message> messagesOfDifferentTickets(Publication publication, UserInstance owner,
                                                      Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
+        var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
+                                          .persistNewTicket(ticketService);
         var firstUnexpectedMessage = messageService.createMessage(differentTicketSameType, owner, randomString());
         var differentTicketType = someOtherTicketType(ticketType);
         var differentTicketDifferentType =
-            TicketEntry.requestNewTicket(publication, differentTicketType).createNew(ticketService);
+            TicketEntry.requestNewTicket(publication, differentTicketType).persistNewTicket(ticketService);
         var secondUnexpectedMessage = messageService.createMessage(differentTicketDifferentType, owner, randomString());
         return new ArrayList<>(List.of(firstUnexpectedMessage, secondUnexpectedMessage));
     }
@@ -175,7 +176,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
+        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
     }
     
     private void initializeServices() {

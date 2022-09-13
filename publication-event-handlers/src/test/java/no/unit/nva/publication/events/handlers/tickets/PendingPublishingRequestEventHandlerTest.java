@@ -128,7 +128,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldNotCompleteAlreadyCompletedTicketsAndEnterInfiniteLoop() throws ApiGatewayException, IOException {
         var publication = createPublication();
         var completedTicket = TicketEntry.requestNewTicket(publication, PublishingRequestCase.class)
-                                  .createNew(ticketService)
+                                  .persistNewTicket(ticketService)
                                   .complete(publication);
         completedTicket = ticketService.updateTicketStatus(completedTicket, TicketStatus.COMPLETED);
         
@@ -174,7 +174,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publishingRequest =
             PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
                 publication.getIdentifier());
-        return ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
+        return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
     
     private Publication createPublication() {

@@ -1,6 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
@@ -19,13 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -114,7 +111,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         if (resourceIsPublished(resource)) {
             return publishCompletedStatus();
         }
-        validateForPublishing(resource);
+        assertThatPublicationHasMinimumMandatoryFields(resource.toPublication());
         setResourceStatusToPublished(daos, dao);
         return publishingInProgressStatus();
     }
@@ -255,46 +252,4 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
     }
     
-    private void validateForPublishing(Resource resource) throws InvalidPublicationException {
-        
-        if (resourceHasNoTitle(resource)) {
-            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
-        } else if (resourceHasNeitherLinkNorFile(resource)) {
-            throwErrorWhenPublishingResourceWithoutData(resource);
-        }
-    }
-    
-    private boolean resourceHasNeitherLinkNorFile(Resource resource) {
-        return isNull(resource.getLink()) && emptyResourceFiles(resource);
-    }
-    
-    private boolean resourceHasNoTitle(Resource resource) {
-        return Optional.of(resource)
-            .map(Resource::getEntityDescription)
-            .map(EntityDescription::getMainTitle)
-            .isEmpty();
-    }
-    
-    private void throwErrorWhenPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {
-        String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-        String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
-        throw new InvalidPublicationException(List.of(files, linkField));
-    }
-    
-    private void throwErrorWhenPublishingResourceWithoutMainTitle(Resource resource)
-        throws InvalidPublicationException {
-        throw new
-                  InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
-    }
-    
-    private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
-        return resource.getClass().getDeclaredField(resourceField).getName();
-    }
-    
-    private boolean emptyResourceFiles(Resource resource) {
-        return Optional.ofNullable(resource.getFileSet())
-            .map(FileSet::getFiles)
-            .map(List::isEmpty)
-            .orElse(true);
-    }
 }

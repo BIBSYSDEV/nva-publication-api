@@ -60,19 +60,19 @@ public interface TicketEntry extends Entity {
         throw new UnsupportedOperationException();
     }
     
-    static TicketEntry createNewGeneralSupportRequest(Publication publication,
-                                                      Supplier<SortableIdentifier> identifierProvider) {
-        var ticket = GeneralSupportRequest.fromPublication(publication);
-        setServiceControlledFields(ticket, identifierProvider);
-        return ticket;
-    }
-    
     static UntypedTicketQueryObject createQueryObject(UserInstance userInstance, SortableIdentifier ticketIdentifier) {
         return UntypedTicketQueryObject.create(userInstance, ticketIdentifier);
     }
     
     static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
         return UntypedTicketQueryObject.create(ticketIdentifier);
+    }
+    
+    static TicketEntry createNewGeneralSupportRequest(Publication publication,
+                                                      Supplier<SortableIdentifier> identifierProvider) {
+        var ticket = GeneralSupportRequest.fromPublication(publication);
+        setServiceControlledFields(ticket, identifierProvider);
+        return ticket;
     }
     
     SortableIdentifier getResourceIdentifier();
@@ -121,7 +121,7 @@ public interface TicketEntry extends Entity {
         return refreshed;
     }
     
-    default TicketEntry createNew(TicketService ticketService) throws ApiGatewayException {
+    default TicketEntry persistNewTicket(TicketService ticketService) throws ApiGatewayException {
         // this is the only place that deprecated should be called.
         return ticketService.createTicket(this, this.getClass());
     }

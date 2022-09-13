@@ -160,16 +160,32 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var requestBody = constructDto(PublishingRequestCase.class);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
-        
+    
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+    }
+    
+    @Test
+    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable() throws IOException {
+        var publication = createUnpublishablePublication();
+        var owner = UserInstance.fromPublication(publication);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(input, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+    }
+    
+    private Publication createUnpublishablePublication() {
+        var publication = randomPublication().copy().withEntityDescription(null).build();
+        publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return publication;
     }
     
     private Publication createPersistedPublicationWithDoi() {
         var publication = randomPublication();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
-    
     
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
         return new SortableIdentifier(UriWrapper.fromUri(location).getLastPathElement());

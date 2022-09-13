@@ -45,7 +45,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var user = UserInstance.fromRequestInfo(requestInfo);
         var publication = fetchPublication(publicationIdentifier, user);
         var newTicket = TicketEntry.requestNewTicket(publication, input.ticketType());
-        var createdTicket = ticketService.createTicket(newTicket, newTicket.getClass());
+        var createdTicket = newTicket.persistNewTicket(ticketService);
         var ticketLocation = createTicketLocation(publicationIdentifier, createdTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
     
