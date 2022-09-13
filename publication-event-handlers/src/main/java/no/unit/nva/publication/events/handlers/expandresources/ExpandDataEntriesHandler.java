@@ -44,8 +44,7 @@ public class ExpandDataEntriesHandler
     
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
-        this(new S3Driver(EVENTS_BUCKET),
-            defaultResourceExpansionService());
+        this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService());
     }
     
     public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
