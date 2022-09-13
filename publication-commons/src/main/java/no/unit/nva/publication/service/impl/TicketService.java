@@ -198,11 +198,10 @@ public class TicketService extends ServiceWithTransactions {
                    .orElseThrow(fail -> new ForbiddenException());
     }
     
-    //TODO: try to remove suppression.
     @SuppressWarnings("unchecked")
     private <T extends TicketEntry> T createTicketForPublication(Publication publication, Class<T> ticketType)
         throws ConflictException {
-        //TODO: Do something about the clock and identifier provider dependencies, if possible.
+    
         var ticketEntry = createNewTicket(publication, ticketType, identifierProvider);
         var request = ticketEntry.toDao().createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);
