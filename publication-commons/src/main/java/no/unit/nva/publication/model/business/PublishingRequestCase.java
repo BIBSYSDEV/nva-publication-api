@@ -279,8 +279,8 @@ public class PublishingRequestCase implements TicketEntry {
     
     private static void throwErrorWhenPublishingResourceWithoutData(Publication resource)
         throws InvalidPublicationException {
-        String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-        String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
+        var linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
+        var files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
         throw new InvalidPublicationException(List.of(files, linkField));
     }
     
