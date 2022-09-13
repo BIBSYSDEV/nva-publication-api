@@ -120,13 +120,30 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var ticketToBeExpanded = TicketEntry
                                      .requestNewTicket(publication, GeneralSupportRequest.class)
                                      .persistNewTicket(ticketService);
-        
+    
         var expectedMessage = messageService.createMessage(ticketToBeExpanded, owner, randomString());
-        
+    
         var unexpectedMessages = messagesOfDifferentTickets(publication, owner, GeneralSupportRequest.class);
         var expandedEntry = (ExpandedTicket) expansionService.expandEntry(ticketToBeExpanded);
         assertThat(expandedEntry.getMessages(), contains(expectedMessage));
         assertThat(unexpectedMessages, everyItem(not(in(expandedEntry.getMessages()))));
+    }
+    
+    @Test
+    void shouldExpandAssociatedTicketAndNotTheMessageItselfWhenNewMessageArrivesForExpansion()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = persistDraftPublicationWithoutDoi();
+        var owner = UserInstance.fromPublication(publication);
+        
+        var ticketToBeExpanded = TicketEntry
+                                     .requestNewTicket(publication, GeneralSupportRequest.class)
+                                     .persistNewTicket(ticketService);
+        
+        var messageThatWillLeadToTicketExpansion =
+            messageService.createMessage(ticketToBeExpanded, owner, randomString());
+        
+        var expandedTicket = (ExpandedTicket) expansionService.expandEntry(messageThatWillLeadToTicketExpansion);
+        assertThat(expandedTicket.getMessages(), contains(messageThatWillLeadToTicketExpansion));
     }
     
     @ParameterizedTest(name = "should add resource title to expanded ticket:{0}")
