@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.core.SingletonCollector;
 
@@ -48,6 +47,10 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         super();
     }
     
+    protected TicketDao(TicketEntry ticketEntry) {
+        super(ticketEntry);
+    }
+    
     public final Optional<TicketDao> fetchTicket(AmazonDynamoDB client) {
         var request = new GetItemRequest()
                           .withTableName(RESOURCES_TABLE_NAME)
@@ -60,7 +63,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     }
     
     public PutItemRequest createPutItemRequest() {
-        var condition = new UpdateCaseButNotOwnerCondition(this.getData());
+        var condition = new UpdateCaseButNotOwnerCondition(this);
         
         return new PutItemRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
@@ -115,8 +118,9 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         return TICKETS_INDEXING_TYPE;
     }
     
-    @Override
-    public abstract TicketEntry getData();
+    protected TicketEntry getTicketEntry() {
+        return (TicketEntry) getData();
+    }
     
     private static class FetchMessagesQuery {
         
@@ -161,8 +165,8 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         private Map<String, String> expressionAttributeNames;
         private Map<String, AttributeValue> expressionAttributeValues;
         
-        public UpdateCaseButNotOwnerCondition(TicketEntry entryUpdate) {
-            createCondition(entryUpdate);
+        public UpdateCaseButNotOwnerCondition(TicketDao dao) {
+            createCondition(dao);
         }
         
         public String getConditionExpression() {
@@ -177,8 +181,8 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
             return expressionAttributeValues;
         }
         
-        private void createCondition(TicketEntry entryUpdate) {
-            
+        private void createCondition(TicketDao dao) {
+            var entryUpdate = (TicketEntry) dao.getData();
             this.expressionAttributeNames = Map.of(
                 "#data", CONTAINED_DATA_FIELD_NAME,
                 "#createdDate", CREATED_DATE_FIELD,
@@ -187,7 +191,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                 "#modifiedDate", MODIFIED_DATE_FIELD,
                 "#owner", OWNER_FIELD,
                 "#resourceIdentifier", RESOURCE_IDENTIFIER_FIELD,
-                "#version", Entity.VERSION_FIELD
+                "#version", VERSION_FIELD
             );
             
             this.expressionAttributeValues =
@@ -198,7 +202,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                     ":modifiedDate", new AttributeValue(dateAsString(entryUpdate.getModifiedDate())),
                     ":owner", new AttributeValue(entryUpdate.getOwner()),
                     ":resourceIdentifier", new AttributeValue(entryUpdate.getResourceIdentifier().toString()),
-                    ":version", new AttributeValue(entryUpdate.getVersion().toString())
+                    ":version", new AttributeValue(dao.getVersion().toString())
                 );
             
             this.conditionExpression =
@@ -208,7 +212,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                 + "AND #data.#modifiedDate <> :modifiedDate "
                 + "AND #data.#owner = :owner "
                 + "AND #data.#resourceIdentifier = :resourceIdentifier "
-                + "AND #data.#version <> :version ";
+                + "AND #version <> :version ";
         }
         
         private String dateAsString(Instant date) {

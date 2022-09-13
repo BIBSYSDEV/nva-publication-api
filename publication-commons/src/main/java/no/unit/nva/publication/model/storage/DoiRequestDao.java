@@ -10,7 +10,6 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
@@ -24,7 +23,6 @@ public class DoiRequestDao extends TicketDao
     
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     public static final String TYPE = "DoiRequest";
-    private DoiRequest data;
     
     @JacocoGenerated
     public DoiRequestDao() {
@@ -32,8 +30,7 @@ public class DoiRequestDao extends TicketDao
     }
     
     public DoiRequestDao(DoiRequest doiRequest) {
-        super();
-        this.data = doiRequest;
+        super(doiRequest);
     }
     
     public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
@@ -68,22 +65,12 @@ public class DoiRequestDao extends TicketDao
     }
     
     public String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + data.getType();
-    }
-    
-    @Override
-    public DoiRequest getData() {
-        return data;
-    }
-    
-    @Override
-    public void setData(Entity data) {
-        this.data = (DoiRequest) data;
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + getData().getType();
     }
     
     @Override
     public URI getCustomerId() {
-        return data.getCustomerId();
+        return getData().getCustomerId();
     }
     
     @Override
@@ -101,7 +88,7 @@ public class DoiRequestDao extends TicketDao
     
     @Override
     protected String getOwner() {
-        return data.getOwner();
+        return getData().getOwner();
     }
     
     @Override
@@ -113,7 +100,7 @@ public class DoiRequestDao extends TicketDao
     @Override
     @JsonIgnore
     public SortableIdentifier getResourceIdentifier() {
-        return data.getResourceIdentifier();
+        return getTicketEntry().getResourceIdentifier();
     }
     
     @Override
@@ -143,16 +130,16 @@ public class DoiRequestDao extends TicketDao
     
     private TransactWriteItem createUniqueDoiRequestEntry() {
         UniqueDoiRequestEntry uniqueDoiRequestEntry = new UniqueDoiRequestEntry(
-            data.getResourceIdentifier().toString());
+            getTicketEntry().getResourceIdentifier().toString());
         return newPutTransactionItem(uniqueDoiRequestEntry);
     }
     
     private TransactWriteItem createDoiRequestInsertionEntry() {
-        return newPutTransactionItem(new DoiRequestDao(data));
+        return newPutTransactionItem(new DoiRequestDao((DoiRequest) getTicketEntry()));
     }
     
     private TransactWriteItem createUniqueIdentifierEntry() {
-        IdentifierEntry identifierEntry = new IdentifierEntry(data.getIdentifier().toString());
+        IdentifierEntry identifierEntry = new IdentifierEntry(getData().getIdentifier().toString());
         return newPutTransactionItem(identifierEntry);
     }
 }

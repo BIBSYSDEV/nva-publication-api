@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -27,7 +26,6 @@ public class PublishingRequestDto extends TicketDto {
     public static final String STATUS_FIELD = "status";
     public static final String CREATED_DATE_FIELD = "createdDate";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
-    public static final String VERSION_FIELD = "version";
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String PUBLICATION_ID_FIELD = "publicationId";
     public static final String ID_FIELD = "id";
@@ -38,8 +36,6 @@ public class PublishingRequestDto extends TicketDto {
     private final Instant createdDate;
     @JsonProperty(MODIFIED_DATE_FIELD)
     private final Instant modifiedDate;
-    @JsonProperty(VERSION_FIELD)
-    private final UUID version;
     @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
     @JsonProperty(PUBLICATION_ID_FIELD)
@@ -52,7 +48,6 @@ public class PublishingRequestDto extends TicketDto {
     public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
                                 @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                 @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
-                                @JsonProperty(VERSION_FIELD) UUID version,
                                 @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
                                 @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId,
                                 @JsonProperty(ID_FIELD) URI id,
@@ -61,7 +56,6 @@ public class PublishingRequestDto extends TicketDto {
         this.status = status;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
-        this.version = version;
         this.identifier = identifier;
         this.publicationId = publicationId;
         this.id = id;
@@ -69,7 +63,7 @@ public class PublishingRequestDto extends TicketDto {
     }
     
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null);
+        return new PublishingRequestDto(null, null, null, null, null, null, null);
     }
     
     public Instant getCreatedDate() {
@@ -78,10 +72,6 @@ public class PublishingRequestDto extends TicketDto {
     
     public Instant getModifiedDate() {
         return modifiedDate;
-    }
-    
-    public UUID getVersion() {
-        return version;
     }
     
     public SortableIdentifier getIdentifier() {
@@ -103,7 +93,6 @@ public class PublishingRequestDto extends TicketDto {
         ticket.setCreatedDate(getCreatedDate());
         ticket.setStatus(getStatus());
         ticket.setModifiedDate(getModifiedDate());
-        ticket.setVersion(getVersion());
         ticket.setIdentifier(getIdentifier());
         ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationId()));
         return ticket;
@@ -132,7 +121,6 @@ public class PublishingRequestDto extends TicketDto {
         return getStatus() == that.getStatus()
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getVersion(), that.getVersion())
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getPublicationId(), that.getPublicationId())
                && Objects.equals(id, that.id)
@@ -142,7 +130,7 @@ public class PublishingRequestDto extends TicketDto {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getVersion(), getIdentifier(),
+        return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
             getPublicationId(), id, getMessages());
     }
 }

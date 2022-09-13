@@ -56,9 +56,8 @@ public class TicketService extends ServiceWithTransactions {
     }
     
     //TODO make the method protected or package private and use TicketEntry#persist instead.
-    
     /**
-     * Method should be protected or package-private
+     * Method should be protected or package-private.
      *
      * @param ticketEntry the ticket entry to be persisted
      * @param ticketType  the type of the ticket
@@ -80,6 +79,7 @@ public class TicketService extends ServiceWithTransactions {
         return queryObject
                    .fetchTicket(client)
                    .map(TicketDao::getData)
+                   .map(TicketEntry.class::cast)
                    .orElseThrow(TicketService::notFoundException);
     }
     
@@ -112,6 +112,7 @@ public class TicketService extends ServiceWithTransactions {
         var dao = (TicketDao) ticketEntry.toDao();
         return dao.fetchTicketMessages(client)
                    .map(MessageDao::getData)
+                   .map(Message.class::cast)
                    .collect(Collectors.toList());
     }
     

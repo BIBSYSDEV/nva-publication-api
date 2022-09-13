@@ -78,10 +78,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldCopyAllPubliclyVisibleFieldsFromTicketToExpandedTicket(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persist(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var regeneratedTicket = expandedTicket.toTicketEntry();
-        regeneratedTicket.setVersion(ticket.getVersion());
         
         assertThat(ticket, doesNotHaveEmptyValues());
         assertThat(regeneratedTicket, is(equalTo(ticket)));
@@ -95,7 +94,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandAssociatedTicketWhenMessageIsCreated(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persist(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
         
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
@@ -117,10 +116,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldIncludedOnlyMessagesAssociatedToExpandedTicket() throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
         var owner = UserInstance.fromPublication(publication);
-        
+    
         var ticketToBeExpanded = TicketEntry
                                      .requestNewTicket(publication, GeneralSupportRequest.class)
-                                     .persist(ticketService);
+                                     .createNew(ticketService);
         
         var expectedMessage = messageService.createMessage(ticketToBeExpanded, owner, randomString());
         
@@ -135,7 +134,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldAddResourceTitleToExpandedTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException,
                                                                                                 JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persist(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         
         var expectedTitle = publication.getEntityDescription().getMainTitle();
@@ -159,11 +158,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private List<Message> messagesOfDifferentTickets(Publication publication, UserInstance owner,
                                                      Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType).persist(ticketService);
+        var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
         var firstUnexpectedMessage = messageService.createMessage(differentTicketSameType, owner, randomString());
         var differentTicketType = someOtherTicketType(ticketType);
         var differentTicketDifferentType =
-            TicketEntry.requestNewTicket(publication, differentTicketType).persist(ticketService);
+            TicketEntry.requestNewTicket(publication, differentTicketType).createNew(ticketService);
         var secondUnexpectedMessage = messageService.createMessage(differentTicketDifferentType, owner, randomString());
         return new ArrayList<>(List.of(firstUnexpectedMessage, secondUnexpectedMessage));
     }
@@ -176,7 +175,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persist(ticketService);
+        return TicketEntry.requestNewTicket(publication, ticketType).createNew(ticketService);
     }
     
     private void initializeServices() {

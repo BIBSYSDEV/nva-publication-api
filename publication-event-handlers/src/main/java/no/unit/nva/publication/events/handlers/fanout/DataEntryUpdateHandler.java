@@ -1,7 +1,7 @@
 package no.unit.nva.publication.events.handlers.fanout;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
-import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toDao;
+import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toEntity;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
@@ -77,8 +77,8 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
         return new DataEntryUpdateEvent(
             dynamoDbRecord.getEventName(),
-            getDao(dynamoDbRecord.getDynamodb().getOldImage()),
-            getDao(dynamoDbRecord.getDynamodb().getNewImage())
+            getEntity(dynamoDbRecord.getDynamodb().getOldImage()),
+            getEntity(dynamoDbRecord.getDynamodb().getNewImage())
         );
     }
     
@@ -91,10 +91,10 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(s3Content, DynamodbStreamRecord.class)).orElseThrow();
     }
     
-    private Entity getDao(Map<String, AttributeValue> image) {
-        return attempt(() -> toDao(image))
-            .toOptional(this::logFailureInDebugging)
-            .flatMap(Function.identity()).orElse(NO_VALUE);
+    private Entity getEntity(Map<String, AttributeValue> image) {
+        return attempt(() -> toEntity(image))
+                   .toOptional(this::logFailureInDebugging)
+                   .flatMap(Function.identity()).orElse(NO_VALUE);
     }
     
     private void logFailureInDebugging(Failure<Optional<Entity>> fail) {

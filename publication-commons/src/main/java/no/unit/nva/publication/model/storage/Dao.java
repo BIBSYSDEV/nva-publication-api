@@ -19,7 +19,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -44,9 +46,23 @@ public abstract class Dao
     
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String CONTAINED_DATA_FIELD_NAME = "data";
+    public static final String VERSION_FIELD = "version";
     public static final String UNSUPORTED_SET_IDENTIFIER_ERROR =
         "Daos cannot set their identifier. They get it from their contained data";
     public static final boolean SINGLE_THREADED = false;
+    private Entity data;
+    
+    @JsonProperty(VERSION_FIELD)
+    private UUID version;
+    
+    protected Dao() {
+    
+    }
+    
+    protected Dao(Entity data) {
+        this.version = UUID.randomUUID();
+        this.data = data;
+    }
     
     public static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
@@ -83,6 +99,14 @@ public abstract class Dao
         );
     }
     
+    public UUID getVersion() {
+        return version;
+    }
+    
+    public void setVersion(UUID version) {
+        this.version = version;
+    }
+    
     @Override
     public final String getPrimaryKeyPartitionKey() {
         return formatPrimaryPartitionKey(getCustomerId(), getOwner());
@@ -108,15 +132,23 @@ public abstract class Dao
     
     @Override
     @JsonProperty(CONTAINED_DATA_FIELD_NAME)
-    public abstract Entity getData();
+    public final Entity getData() {
+        return this.data;
+    }
     
-    public abstract void setData(Entity data);
+    public final void setData(Entity data) {
+        this.data = data;
+    }
+    
+    @JsonIgnore
+    @Override
+    public abstract String indexingType();
     
     @Override
     public final String getByTypeCustomerStatusPartitionKey() {
         String publisherId = customerIdentifier();
         Optional<String> publicationStatus = extractStatus();
-    
+        
         return publicationStatus
                    .map(status -> formatByTypeCustomerStatusIndexPartitionKey(publisherId, status))
                    .orElse(null);
@@ -134,10 +166,6 @@ public abstract class Dao
     public final String getCustomerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
     }
-    
-    @JsonIgnore
-    @Override
-    public abstract String indexingType();
     
     @JsonIgnore
     public abstract URI getCustomerId();
@@ -159,13 +187,24 @@ public abstract class Dao
         return getData().getType();
     }
     
-    protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
-        String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
-        return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getVersion());
     }
     
-    protected String formatPrimaryPartitionKey(String publisherId, String owner) {
-        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, indexingType(), publisherId, owner);
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Dao)) {
+            return false;
+        }
+        Dao dao = (Dao) o;
+        return Objects.equals(getData(), dao.getData())
+               && Objects.equals(getVersion(), dao.getVersion());
     }
     
     protected static Stream<Dao> fetchAllQueryResults(AmazonDynamoDB client,
@@ -173,6 +212,15 @@ public abstract class Dao
         var queryIterator = new QuerySpliterator(client, queryRequest, RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES);
         return StreamSupport.stream(queryIterator, SINGLE_THREADED)
                    .map(item -> parseAttributeValuesMap(item, Dao.class));
+    }
+    
+    protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
+        String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
+        return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
+    }
+    
+    protected String formatPrimaryPartitionKey(String publisherId, String owner) {
+        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, indexingType(), publisherId, owner);
     }
     
     @JsonIgnore

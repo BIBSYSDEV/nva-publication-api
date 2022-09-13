@@ -67,7 +67,7 @@ class MessageDaoTest extends ResourcesLocalTest {
         var expectedUri = URI.create("https://example.com");
         var queryObject = MessageDao.listMessagesForCustomerAndStatus(expectedUri, expectedMessageStatus);
         assertThat(queryObject.getCustomerId(), is(equalTo(expectedUri)));
-        assertThat(queryObject.getData().getStatus(), is(equalTo(expectedMessageStatus)));
+        assertThat(queryObject.getMessage().getStatus(), is(equalTo(expectedMessageStatus)));
     }
     
     @Test
@@ -79,9 +79,9 @@ class MessageDaoTest extends ResourcesLocalTest {
     
     private Message fetchMessageFromDatabase(MessageDao queryObject) {
         return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
-            .map(GetItemResult::getItem)
-            .map(item -> parseAttributeValuesMap(item, MessageDao.class))
-            .map(MessageDao::getData)
+                   .map(GetItemResult::getItem)
+                   .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+                   .map(MessageDao::getMessage)
             .orElseThrow();
     }
     

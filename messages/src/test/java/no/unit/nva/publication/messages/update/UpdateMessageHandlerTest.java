@@ -111,7 +111,6 @@ class UpdateMessageHandlerTest extends MessagesTest {
         var copy = originalMessage.copy();
         copy.setStatus(MessageStatus.READ);
         copy.setModifiedDate(updatedMessage.getModifiedDate());
-        copy.setVersion(updatedMessage.getVersion());
         return copy;
     }
     

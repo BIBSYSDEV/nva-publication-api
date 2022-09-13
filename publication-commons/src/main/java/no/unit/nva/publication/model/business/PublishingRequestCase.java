@@ -13,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -49,8 +48,6 @@ public class PublishingRequestCase implements TicketEntry {
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
-    
-    private UUID version;
     
     public PublishingRequestCase() {
     }
@@ -119,7 +116,6 @@ public class PublishingRequestCase implements TicketEntry {
         copy.setStatus(this.getStatus());
         copy.setModifiedDate(this.getModifiedDate());
         copy.setCreatedDate(this.getCreatedDate());
-        copy.setVersion(this.getVersion());
         copy.setCustomerId(this.getCustomerId());
         copy.setResourceIdentifier(this.getResourceIdentifier());
         copy.setOwner(this.getOwner());
@@ -158,16 +154,6 @@ public class PublishingRequestCase implements TicketEntry {
                    .withResourceOwner(new ResourceOwner(getOwner(), null))
                    .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
                    .build();
-    }
-    
-    @Override
-    public UUID getVersion() {
-        return version;
-    }
-    
-    @Override
-    public void setVersion(UUID version) {
-        this.version = version;
     }
     
     @Override

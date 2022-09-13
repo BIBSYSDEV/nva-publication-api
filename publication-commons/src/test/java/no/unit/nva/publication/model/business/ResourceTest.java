@@ -55,8 +55,6 @@ class ResourceTest {
         assertThat(resource, doesNotHaveEmptyValues());
         Publication publication = resource.toPublication();
         Resource fromPublication = Resource.fromPublication(publication);
-        //inject row version because conversion to publication changes the row version
-        fromPublication.setVersion(resource.getVersion());
         Diff diff = javers.compare(resource, fromPublication);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
     }

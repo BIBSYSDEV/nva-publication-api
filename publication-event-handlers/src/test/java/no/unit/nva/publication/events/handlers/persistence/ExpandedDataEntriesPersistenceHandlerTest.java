@@ -143,7 +143,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var openingCaseObject =
-            TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class).persist(ticketService);
+            TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class).createNew(ticketService);
         return resourceExpansionService.expandEntry(openingCaseObject);
     }
     
@@ -152,7 +152,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var publishingRequest = PublishingRequestCase
                                     .createOpeningCaseObject(userInstance, publication.getIdentifier())
-                                    .persist(ticketService);
+                                    .createNew(ticketService);
     
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
@@ -170,7 +170,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     
     private ExpandedDoiRequest randomDoiRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
-        var doiRequest = DoiRequest.fromPublication(publication).persist(ticketService);
+        var doiRequest = DoiRequest.fromPublication(publication).createNew(ticketService);
         return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest);
     }
     

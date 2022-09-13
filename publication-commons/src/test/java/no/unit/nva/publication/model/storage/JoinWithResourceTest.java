@@ -30,11 +30,12 @@ class JoinWithResourceTest extends ResourcesLocalTest {
     void byResourceIdentifierKeyReturnsDoiRequestWithReferencedResource() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao);
-        assertThat(doiRequestDao.getData().getResourceIdentifier(), is(equalTo(resourceDao.getData().getIdentifier())));
-        
+        assertThat(doiRequestDao.getTicketEntry().getResourceIdentifier(),
+            is(equalTo(resourceDao.getData().getIdentifier())));
+    
         client.putItem(toPutItemRequest(resourceDao));
         client.putItem(toPutItemRequest(doiRequestDao));
-        
+    
         QueryResult result = client.query(new QueryRequest()
                                               .withTableName(RESOURCES_TABLE_NAME)
                                               .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
@@ -58,15 +59,16 @@ class JoinWithResourceTest extends ResourcesLocalTest {
     void byResourceIdentifierKeyReturnsSingleTypeWhenLeftAndRightTypeAreEqual() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao);
-        assertThat(doiRequestDao.getData().getResourceIdentifier(), is(equalTo(resourceDao.getData().getIdentifier())));
-        
+        assertThat(doiRequestDao.getTicketEntry().getResourceIdentifier(),
+            is(equalTo(resourceDao.getData().getIdentifier())));
+    
         client.putItem(toPutItemRequest(resourceDao));
         client.putItem(toPutItemRequest(doiRequestDao));
-        
+    
         QueryRequest query = fetchResourceAndDoiRequest(resourceDao,
             doiRequestDao.joinByResourceContainedOrderedType());
         QueryResult result = client.query(query);
-        
+    
         List<JoinWithResource> retrievedData = parseResult(result);
         
         DoiRequestDao retrievedDoiRequestDao = (DoiRequestDao) retrievedData.get(0);

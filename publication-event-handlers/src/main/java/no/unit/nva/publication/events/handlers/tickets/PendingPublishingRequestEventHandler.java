@@ -59,10 +59,14 @@ public class PendingPublishingRequestEventHandler
                                        Context context) {
         var updateEvent = parseInput(input);
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
-        if (customerAllowsPublishing(publishingRequest)) {
+        if (customerAllowsPublishing(publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
             attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED)).orElseThrow();
         }
         return null;
+    }
+    
+    private static boolean ticketHasNotBeenCompleted(PublishingRequestCase publishingRequest) {
+        return !TicketStatus.COMPLETED.equals(publishingRequest.getStatus());
     }
     
     @JacocoGenerated

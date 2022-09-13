@@ -5,12 +5,12 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -23,15 +23,13 @@ public class MessageDao extends Dao
     
     public static final String TYPE = "Message";
     private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "z";
-    private Message data;
     
     public MessageDao() {
         super();
     }
     
     public MessageDao(Message message) {
-        super();
-        this.data = message;
+        super(message);
     }
     
     public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
@@ -63,15 +61,6 @@ public class MessageDao extends Dao
         return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + TYPE;
     }
     
-    @Override
-    public Message getData() {
-        return data;
-    }
-    
-    @Override
-    public void setData(Entity data) {
-        this.data = (Message) data;
-    }
     
     @Override
     public String indexingType() {
@@ -80,7 +69,7 @@ public class MessageDao extends Dao
     
     @Override
     public URI getCustomerId() {
-        return data.getCustomerId();
+        return getData().getCustomerId();
     }
     
     @Override
@@ -93,9 +82,14 @@ public class MessageDao extends Dao
                    .withTransactItems(messageEntry, identityEntry);
     }
     
+    @JsonIgnore
+    public Message getMessage() {
+        return (Message) getData();
+    }
+    
     @Override
     protected String getOwner() {
-        return data.getOwner();
+        return getData().getOwner();
     }
     
     @JacocoGenerated
@@ -124,7 +118,7 @@ public class MessageDao extends Dao
     
     @Override
     public SortableIdentifier getResourceIdentifier() {
-        return data.getResourceIdentifier();
+        return ((Message) getData()).getResourceIdentifier();
     }
     
     private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {

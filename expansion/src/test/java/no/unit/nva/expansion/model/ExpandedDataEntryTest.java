@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
@@ -229,7 +228,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setStatus(TicketStatus.PENDING);
             requestCase.setModifiedDate(Instant.now());
             requestCase.setCreatedDate(Instant.now());
-            requestCase.setVersion(UUID.randomUUID());
             requestCase.setCustomerId(publication.getPublisher().getId());
             requestCase.setResourceIdentifier(publication.getIdentifier());
             requestCase.setOwner(publication.getResourceOwner().getOwner());

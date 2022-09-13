@@ -9,7 +9,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -31,9 +30,6 @@ public class Message implements Entity, JsonSerializable {
     private String owner;
     @JsonProperty("customerId")
     private URI customerId;
-    @JsonAlias("rowVersion")
-    @JsonProperty("version")
-    private UUID version;
     @JsonProperty("status")
     private MessageStatus status;
     @JsonProperty("sender")
@@ -82,7 +78,6 @@ public class Message implements Entity, JsonSerializable {
                    .withResourceIdentifier(ticket.getResourceIdentifier())
                    .withTicketIdentifier(ticket.getIdentifier())
                    .withStatus(MessageStatus.UNREAD)
-                   .withVersion(UUID.randomUUID())
                    .build();
     }
     
@@ -126,7 +121,7 @@ public class Message implements Entity, JsonSerializable {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getVersion(), getStatus(), getSender(),
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
             getResourceIdentifier(), getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(),
             getResourceTitle(), getMessageType());
     }
@@ -144,7 +139,6 @@ public class Message implements Entity, JsonSerializable {
         return Objects.equals(getIdentifier(), message.getIdentifier())
                && Objects.equals(getOwner(), message.getOwner())
                && Objects.equals(getCustomerId(), message.getCustomerId())
-               && Objects.equals(getVersion(), message.getVersion())
                && getStatus() == message.getStatus()
                && Objects.equals(getSender(), message.getSender())
                && Objects.equals(getResourceIdentifier(), message.getResourceIdentifier())
@@ -191,16 +185,6 @@ public class Message implements Entity, JsonSerializable {
     @Override
     public Publication toPublication() {
         throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public UUID getVersion() {
-        return this.version;
-    }
-    
-    @Override
-    public void setVersion(UUID version) {
-        this.version = version;
     }
     
     @Override
@@ -285,7 +269,6 @@ public class Message implements Entity, JsonSerializable {
                    .withResourceTitle(this.getResourceTitle())
                    .withModifiedDate(this.getModifiedDate())
                    .withTicketIdentifier(this.getTicketIdentifier())
-                   .withVersion(this.getVersion())
                    .withStatus(this.getStatus())
                    .build();
     }
@@ -334,8 +317,7 @@ public class Message implements Entity, JsonSerializable {
                    .withCreatedDate(now)
                    .withModifiedDate(now)
                    .withIdentifier(messageIdentifier)
-                   .withStatus(MessageStatus.UNREAD)
-                   .withVersion(UUID.randomUUID());
+                   .withStatus(MessageStatus.UNREAD);
     }
     
     private static String extractTitle(Publication publication) {
@@ -414,11 +396,6 @@ public class Message implements Entity, JsonSerializable {
     
         public Builder withStatus(MessageStatus status) {
             message.setStatus(status);
-            return this;
-        }
-    
-        public Builder withVersion(UUID version) {
-            message.setVersion(version);
             return this;
         }
     }

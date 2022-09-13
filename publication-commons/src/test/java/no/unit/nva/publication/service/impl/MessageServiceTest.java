@@ -87,7 +87,6 @@ class MessageServiceTest extends ResourcesLocalTest {
             messageService.createMessage(sender, publication, messageText, messageType);
         var message = messageService.getMessage(owner, messageIdentifier);
         var expectedMessage = constructExpectedMessage(messageIdentifier, publication, messageText, messageType);
-        expectedMessage.setVersion(message.getVersion());
         assertThat(expectedMessage, is(equalTo(message)));
     }
     

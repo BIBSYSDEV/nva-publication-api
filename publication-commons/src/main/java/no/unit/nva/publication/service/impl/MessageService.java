@@ -121,7 +121,7 @@ public class MessageService extends ServiceWithTransactions {
         MessageDao queryObject = MessageDao.queryObject(owner, identifier);
         Map<String, AttributeValue> item = fetchMessage(queryObject);
         MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
-        return result.getData();
+        return (Message) result.getData();
     }
     
     @Override

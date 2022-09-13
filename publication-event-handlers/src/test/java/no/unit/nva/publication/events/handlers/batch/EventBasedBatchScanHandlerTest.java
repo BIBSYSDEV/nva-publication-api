@@ -30,11 +30,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -79,16 +80,13 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         Publication createdPublication = createPublication(PublicationGenerator.randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        final var initialRowVersion = initialResource.getVersion();
-        
+        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client);
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
-        Resource updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        
-        var updatedRowVersion =
-            resourceService.getResourceByIdentifier(createdPublication.getIdentifier()).getVersion();
-        
+        var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client);
+    
         assertThat(updatedResource, is(equalTo(initialResource)));
-        assertThat(updatedRowVersion, is(not(equalTo(initialRowVersion))));
+        assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
     }
     
     @Test
@@ -182,8 +180,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     
     private void pushInitialEntryInEventBridge(ScanDatabaseRequest initialRequest) {
         var entry = PutEventsRequestEntry.builder()
-            .detail(initialRequest.toJsonString())
-            .build();
+                        .detail(initialRequest.toJsonString())
+                        .build();
         eventBridgeClient.getRequestEntries().add(entry);
     }
     

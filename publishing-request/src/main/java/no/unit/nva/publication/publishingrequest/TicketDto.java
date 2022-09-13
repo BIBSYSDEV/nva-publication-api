@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
@@ -51,7 +50,6 @@ public abstract class TicketDto implements JsonSerializable {
                    .withCreatedDate(ticket.getCreatedDate())
                    .withStatus(ticket.getStatus())
                    .withModifiedDate(ticket.getModifiedDate())
-                   .withVersion(ticket.getVersion())
                    .withIdentifier(ticket.getIdentifier())
                    .withPublicationId(createPublicationId(ticket.getResourceIdentifier()))
                    .withId(createTicketId(ticket))
@@ -105,7 +103,6 @@ public abstract class TicketDto implements JsonSerializable {
         private TicketStatus status;
         private Instant createdDate;
         private Instant modifiedDate;
-        private UUID version;
         private SortableIdentifier identifier;
         private URI publicationId;
         private URI id;
@@ -126,11 +123,6 @@ public abstract class TicketDto implements JsonSerializable {
         
         public Builder withModifiedDate(Instant modifiedDate) {
             this.modifiedDate = modifiedDate;
-            return this;
-        }
-        
-        public Builder withVersion(UUID version) {
-            this.version = version;
             return this;
         }
         
@@ -164,7 +156,6 @@ public abstract class TicketDto implements JsonSerializable {
                 return new GeneralSupportRequestDto(status,
                     createdDate,
                     modifiedDate,
-                    version,
                     identifier,
                     publicationId,
                     id,
@@ -177,7 +168,6 @@ public abstract class TicketDto implements JsonSerializable {
             return new PublishingRequestDto(status,
                 createdDate,
                 modifiedDate,
-                version,
                 identifier,
                 publicationId,
                 id,
@@ -188,7 +178,6 @@ public abstract class TicketDto implements JsonSerializable {
             return new DoiRequestDto(status,
                 createdDate,
                 modifiedDate,
-                version,
                 identifier,
                 publicationId,
                 id,

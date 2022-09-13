@@ -3,7 +3,6 @@ package no.unit.nva.publication.model.business;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.PublicationDate;
@@ -92,10 +91,5 @@ public class DoiRequestBuilder {
     
     public DoiRequest build() {
         return this.doiRequest;
-    }
-    
-    public DoiRequestBuilder withRowVersion(UUID rowVersion) {
-        doiRequest.setVersion(rowVersion);
-        return this;
     }
 }

@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.sampleResourceDao;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
@@ -11,19 +10,13 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.SingletonCollector;
-import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,19 +69,7 @@ class ResourceDaoTest extends ResourcesLocalTest {
             is(equalTo(null)));
     }
     
-    @Test
-    void resourceDaoOnlySerializesTypeDataPKAndSKFields()
-        throws JsonProcessingException {
-        ResourceDao dao = sampleResourceDao();
-        String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
-        ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
-        Iterator<String> fieldNames = jsonNode.fieldNames();
-        List<String> fieldNameList = new ArrayList<>();
-        fieldNames.forEachRemaining(fieldNameList::add);
-        for (String field : fieldNameList) {
-            assertThat(StringUtils.startsWithAny(field, "PK", "SK", "data", "type"), is(true));
-        }
-    }
+
     
     @Test
     void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId() {
@@ -113,7 +94,7 @@ class ResourceDaoTest extends ResourcesLocalTest {
     
     protected static ResourceDao createResourceDaoWithoutCristinIdentifier() {
         return new ResourceDao(sampleResourceDao()
-                                   .getData()
+                                   .getResource()
                                    .copy()
                                    .withAdditionalIdentifiers(null)
                                    .build());
