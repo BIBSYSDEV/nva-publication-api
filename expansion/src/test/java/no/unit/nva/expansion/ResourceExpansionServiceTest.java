@@ -158,6 +158,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private List<Message> messagesOfDifferentTickets(Publication publication, UserInstance owner,
                                                      Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
+
         var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
                                           .persistNewTicket(ticketService);
         var firstUnexpectedMessage = messageService.createMessage(differentTicketSameType, owner, randomString());

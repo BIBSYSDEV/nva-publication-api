@@ -121,7 +121,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         publication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var ticket = DoiRequest.fromPublication(publication);
         var persistedTicket = ticket.persistNewTicket(ticketService);
-        
         copyServiceControlledFields(ticket, persistedTicket);
         
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
@@ -146,6 +145,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldCreatePublishingRequestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TestingUtils.createPublishingRequest(publication);
+        
         var persistedTicket = ticket.persistNewTicket(ticketService);
         
         copyServiceControlledFields(ticket, persistedTicket);
@@ -245,7 +245,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         publication.setResourceOwner(new ResourceOwner(randomString(), randomUri()));
         var ticket = createUnpersistedTicket(publication, ticketType);
-    
         Executable action = () -> ticket.persistNewTicket(ticketService);
         assertThrows(ForbiddenException.class, action);
     }
@@ -271,8 +270,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
         var publication = persistPublication(owner, publicationStatus);
-    
         var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
+
         
         ticketService.updateTicketStatus(persistedTicket, COMPLETED);
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
@@ -489,8 +488,8 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private GeneralSupportRequest persistGeneralSupportRequest(Publication publication) {
-        return attempt(() -> createGeneralSupportRequest(publication).persistNewTicket(ticketService)).map(
-            GeneralSupportRequest.class::cast).orElseThrow();
+        return attempt(() -> createGeneralSupportRequest(publication).persistNewTicket(ticketService))
+                   .map(GeneralSupportRequest.class::cast).orElseThrow();
     }
     
     private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
