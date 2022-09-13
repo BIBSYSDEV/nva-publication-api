@@ -40,7 +40,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         } else if (dataEntry instanceof Message) {
             var message = (Message) dataEntry;
             var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
-            expandEntry(ticket);
+            return expandEntry(ticket);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
