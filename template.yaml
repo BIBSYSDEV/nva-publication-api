@@ -819,7 +819,12 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update", "PublicationService.PublishingRequest.Update" ]
+                  topic:
+                    - "PublicationService.Resource.Update"
+                    - "PublicationService.Message.Update"
+                    - "PublicationService.DoiRequest.Update"
+                    - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.GeneralSupportRequest.Update"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
