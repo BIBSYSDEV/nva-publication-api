@@ -178,7 +178,6 @@ class GetTicketHandlerTest extends TicketTestLocal {
         ticket.markUnreadForOwner().persistUpdate(ticketService);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.isSeenByOwner(), is(false));
-        var owner = UserInstance.fromTicket(ticket);
         var request = createHttpRequest(ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
