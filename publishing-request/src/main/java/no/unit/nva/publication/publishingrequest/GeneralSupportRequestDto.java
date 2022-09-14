@@ -1,13 +1,11 @@
 package no.unit.nva.publication.publishingrequest;
 
-import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -39,8 +37,6 @@ public class GeneralSupportRequestDto extends TicketDto {
     private final SortableIdentifier identifier;
     @JsonProperty(PUBLICATION_ID_FIELD)
     private final URI publicationId;
-    @JsonProperty(MESSAGES_FIELD)
-    private final List<MessageDto> messages;
     
     public GeneralSupportRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
                                     @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
@@ -48,15 +44,19 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
                                     @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId,
                                     @JsonProperty(ID_FIELD) URI id,
-                                    @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages) {
-        super();
+                                    @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
+                                    @JsonProperty(SEEN_BY_OWNER_FIELD) Boolean seenByOwner) {
+        super(messages, seenByOwner);
         this.status = status;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
         this.publicationId = publicationId;
         this.id = id;
-        this.messages = messages;
+    }
+    
+    public static GeneralSupportRequestDto empty() {
+        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null);
     }
     
     public URI getId() {
@@ -99,11 +99,6 @@ public class GeneralSupportRequestDto extends TicketDto {
     @Override
     public TicketStatus getStatus() {
         return status;
-    }
-    
-    @Override
-    public List<MessageDto> getMessages() {
-        return nonNull(messages) ? messages : Collections.emptyList();
     }
     
     @Override

@@ -144,15 +144,46 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedTicket(ticketType);
         var sender = UserInstance.fromTicket(ticket);
         var expectedMessage = messageService.createMessage(ticket, sender, randomString());
-        
+    
         var request = createHttpRequest(ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
-        
+    
         var responseBody = response.getBodyObject(TicketDto.class);
         var expectedDto = MessageDto.fromMessage(expectedMessage);
         assertThat(expectedDto, is(in(responseBody.getMessages())));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should return seen by owner true when ticket is new ")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnSeenByOwnerTrueWhenTicketIsNew(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var ticket = createPersistedTicket(ticketType);
+        var request = createHttpRequest(ticket).build();
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var responseBody = response.getBodyObject(TicketDto.class);
+        assertThat(responseBody.isSeenByOwner(), is(true));
+    }
+    
+    @ParameterizedTest(name = "ticketType:{0}")
+    @DisplayName("should mark ticket as Unread for the publication owner when ticket is marked as unread")
+    @MethodSource("ticketTypeProvider")
+    void shouldMarkTicketAsUnreadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
+        var ticket = createPersistedTicket(ticketType);
+        ticket.markUnreadForOwner().persistUpdate(ticketService);
+        var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.isSeenByOwner(), is(false));
+        var owner = UserInstance.fromTicket(ticket);
+        var request = createHttpRequest(ticket).build();
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
+        var responseBody = response.getBodyObject(TicketDto.class);
+        assertThat(responseBody.isSeenByOwner(), is(false));
     }
     
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {

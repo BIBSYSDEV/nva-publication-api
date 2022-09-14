@@ -22,13 +22,16 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.DoiRequestDto;
+import no.unit.nva.publication.publishingrequest.GeneralSupportRequestDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestDto;
 import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.publishingrequest.TicketTestLocal;
+import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -47,7 +50,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     private CreateTicketHandler handler;
     
     public static Stream<Arguments> ticketEntryProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class), Arguments.of(PublishingRequestCase.class));
+        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
     }
     
     @BeforeEach
@@ -176,6 +179,23 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
     }
     
+    @ParameterizedTest(name = "ticketType:{0}")
+    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
+    @MethodSource("ticketEntryProvider")
+    void shouldMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
+        var publication = createPersistedDraftPublication();
+        var owner = UserInstance.fromPublication(publication);
+        var requestBody = constructDto(ticketType);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(input, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
+                                                          .getLastPathElement());
+        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
+        assertThat(ticket.isSeenByOwner(), is(equalTo(true)));
+    }
+    
     private Publication createUnpublishablePublication() {
         var publication = randomPublication().copy().withEntityDescription(null).build();
         publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
@@ -226,7 +246,10 @@ class CreateTicketHandlerTest extends TicketTestLocal {
             return DoiRequestDto.empty();
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return PublishingRequestDto.empty();
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
+            return GeneralSupportRequestDto.empty();
         }
+    
         throw new RuntimeException("Unrecognized ticket type");
     }
     

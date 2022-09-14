@@ -38,7 +38,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
-public class DoiRequest implements TicketEntry {
+public class DoiRequest extends TicketEntry {
     
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String TYPE = "DoiRequest";
@@ -83,7 +83,7 @@ public class DoiRequest implements TicketEntry {
     private List<Contributor> contributors;
     
     public DoiRequest() {
-    
+        super();
     }
     
     public static DoiRequest fromPublication(Publication publication) {
@@ -241,7 +241,7 @@ public class DoiRequest implements TicketEntry {
     
     @Override
     public DoiRequest complete(Publication publication) {
-        return (DoiRequest) TicketEntry.super.complete(publication);
+        return (DoiRequest) super.complete(publication);
     }
     
     @Override

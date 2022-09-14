@@ -1,5 +1,6 @@
 package no.unit.nva.publication.publishingrequest;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,6 +34,16 @@ import nva.commons.core.paths.UriWrapper;
 public abstract class TicketDto implements JsonSerializable {
     
     public static final String MESSAGES_FIELD = "messages";
+    public static final String SEEN_BY_OWNER_FIELD = "seenByOwner";
+    @JsonProperty(SEEN_BY_OWNER_FIELD)
+    private final Boolean seenByOwner;
+    @JsonProperty(MESSAGES_FIELD)
+    private List<MessageDto> messages;
+    
+    protected TicketDto(List<MessageDto> messages, Boolean seenByOwner) {
+        this.messages = messages;
+        this.seenByOwner = seenByOwner;
+    }
     
     public static TicketDto fromTicket(TicketEntry ticket) {
         return fromTicket(ticket, Collections.emptyList());
@@ -54,6 +65,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationId(createPublicationId(ticket.getResourceIdentifier()))
                    .withId(createTicketId(ticket))
                    .withMessages(messageDtos)
+                   .withSeenByOwner(ticket.isSeenByOwner())
                    .build(ticket.getClass());
     }
     
@@ -76,8 +88,17 @@ public abstract class TicketDto implements JsonSerializable {
         return toJsonString();
     }
     
-    @JsonProperty(MESSAGES_FIELD)
-    public abstract List<MessageDto> getMessages();
+    public final void setMessages(List<MessageDto> messages) {
+        this.messages = messages;
+    }
+    
+    public final List<MessageDto> getMessages() {
+        return nonNull(messages) ? messages : Collections.emptyList();
+    }
+    
+    public boolean isSeenByOwner() {
+        return seenByOwner;
+    }
     
     protected SortableIdentifier extractResourceIdentifier(URI publicationId) {
         var idString = UriWrapper.fromUri(publicationId).getLastPathElement();
@@ -107,6 +128,7 @@ public abstract class TicketDto implements JsonSerializable {
         private URI publicationId;
         private URI id;
         private List<MessageDto> messages;
+        private boolean seenByOwner;
         
         private Builder() {
         }
@@ -159,9 +181,15 @@ public abstract class TicketDto implements JsonSerializable {
                     identifier,
                     publicationId,
                     id,
-                    messages);
+                    messages,
+                    seenByOwner);
             }
             throw new RuntimeException("Unsupported type");
+        }
+    
+        public Builder withSeenByOwner(boolean seenByOwner) {
+            this.seenByOwner = seenByOwner;
+            return this;
         }
     
         private PublishingRequestDto createPublishingRequestDto() {
@@ -171,7 +199,8 @@ public abstract class TicketDto implements JsonSerializable {
                 identifier,
                 publicationId,
                 id,
-                messages);
+                messages,
+                seenByOwner);
         }
     
         private DoiRequestDto createDoiRequestDto() {
@@ -181,7 +210,8 @@ public abstract class TicketDto implements JsonSerializable {
                 identifier,
                 publicationId,
                 id,
-                messages);
+                messages,
+                seenByOwner);
         }
     }
 }

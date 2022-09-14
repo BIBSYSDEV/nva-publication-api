@@ -34,7 +34,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(PublishingRequestCase.TYPE)
 //TODO fix God class
 @SuppressWarnings("PMD.GodClass")
-public class PublishingRequestCase implements TicketEntry {
+public class PublishingRequestCase extends TicketEntry {
     
     public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
     
@@ -63,6 +63,7 @@ public class PublishingRequestCase implements TicketEntry {
     private Instant createdDate;
     
     public PublishingRequestCase() {
+        super();
     }
     
     public static PublishingRequestCase createOpeningCaseObject(UserInstance userInstance,
@@ -131,7 +132,7 @@ public class PublishingRequestCase implements TicketEntry {
     
     @Override
     public PublishingRequestCase complete(Publication publication) {
-        return (PublishingRequestCase) TicketEntry.super.complete(publication);
+        return (PublishingRequestCase) super.complete(publication);
     }
     
     @Override

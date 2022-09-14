@@ -88,6 +88,8 @@ public class TicketService extends ServiceWithTransactions {
         return fetchTicket(UserInstance.fromTicket(dataEntry), dataEntry.getIdentifier());
     }
     
+    //TODO: should not return anything because we cannot return the persisted entry after a PUT
+    // and right now we are returning the input object.
     public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus)
         throws ApiGatewayException {
         switch (ticketStatus) {
@@ -144,6 +146,12 @@ public class TicketService extends ServiceWithTransactions {
         var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
         var queryResult = queryObject.fetchByIdentifier(client);
         return (TicketEntry) queryResult.getData();
+    }
+    
+    public void updateTicket(TicketEntry ticketEntry) {
+        var dao = (TicketDao) ticketEntry.toDao();
+        var putItem = dao.createPutItemRequest();
+        client.putItem(putItem);
     }
     
     @Override

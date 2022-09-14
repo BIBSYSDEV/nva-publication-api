@@ -24,7 +24,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(GeneralSupportRequest.TYPE)
-public class GeneralSupportRequest implements TicketEntry {
+public class GeneralSupportRequest extends TicketEntry {
     
     public static final String TYPE = "GeneralSupportRequest";
     @JsonProperty(IDENTIFIER_FIELD)
@@ -41,6 +41,10 @@ public class GeneralSupportRequest implements TicketEntry {
     private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
+    
+    public GeneralSupportRequest() {
+        super();
+    }
     
     public static TicketEntry fromPublication(Publication publication) {
         var ticket = new GeneralSupportRequest();

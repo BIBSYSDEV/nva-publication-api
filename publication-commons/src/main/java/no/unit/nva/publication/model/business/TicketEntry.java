@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -13,6 +14,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -20,18 +22,95 @@ import nva.commons.apigateway.exceptions.ConflictException;
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
     @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)
 })
-public interface TicketEntry extends Entity {
+public abstract class TicketEntry implements Entity {
     
-    static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication,
-                                                               Class<T> ticketType,
-                                                               Supplier<SortableIdentifier> identifierProvider)
+    public static final String SEEN_BY_OWNER_FIELD = "seenByOwner";
+    @JsonProperty(SEEN_BY_OWNER_FIELD)
+    private boolean seenByOwner;
+    
+    public TicketEntry() {
+        seenByOwner = false;
+    }
+    
+    public void persistUpdate(TicketService ticketService) {
+        ticketService.updateTicket(this);
+    }
+    
+    public abstract SortableIdentifier getResourceIdentifier();
+    
+    public abstract void validateCreationRequirements(Publication publication) throws ConflictException;
+    
+    public abstract void validateCompletionRequirements(Publication publication);
+    
+    public TicketEntry complete(Publication publication) {
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.COMPLETED);
+        updated.validateCompletionRequirements(publication);
+        updated.setModifiedDate(Instant.now());
+        return updated;
+    }
+    
+    public final TicketEntry close() throws ApiGatewayException {
+        validateClosingRequirements();
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.CLOSED);
+        updated.setModifiedDate(Instant.now());
+        return updated;
+    }
+    
+    public void validateClosingRequirements() throws ApiGatewayException {
+        if (!getStatus().equals(TicketStatus.PENDING)) {
+            var errorMessage =
+                String.format("Cannot close a ticket that has any other status than %s", TicketStatus.PENDING);
+            throw new BadRequestException(errorMessage);
+        }
+    }
+    
+    public abstract TicketEntry copy();
+    
+    public abstract TicketStatus getStatus();
+    
+    public abstract void setStatus(TicketStatus ticketStatus);
+    
+    public final List<Message> fetchMessages(TicketService ticketService) {
+        return ticketService.fetchTicketMessages(this);
+    }
+    
+    public final TicketEntry refresh() {
+        var refreshed = this.copy();
+        refreshed.setModifiedDate(Instant.now());
+        return refreshed;
+    }
+    
+    public final TicketEntry persistNewTicket(TicketService ticketService) throws ApiGatewayException {
+        // this is the only place that deprecated should be called.
+        return ticketService.createTicket(this, this.getClass());
+    }
+    
+    public final boolean isSeenByOwner() {
+        return seenByOwner;
+    }
+    
+    public final void setSeenByOwner(boolean seenByOwner) {
+        this.seenByOwner = seenByOwner;
+    }
+    
+    public final TicketEntry markUnreadForOwner() {
+        seenByOwner = false;
+        this.setModifiedDate(Instant.now());
+        return this;
+    }
+    
+    public static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication,
+                                                                      Class<T> ticketType,
+                                                                      Supplier<SortableIdentifier> identifierProvider)
         throws ConflictException {
         var newTicket = createNewTicketEntry(publication, ticketType, identifierProvider);
         newTicket.validateCreationRequirements(publication);
         return newTicket;
     }
     
-    static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
+    public static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.fromPublication(publication);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
@@ -42,9 +121,9 @@ public interface TicketEntry extends Entity {
         throw new RuntimeException("Unrecognized ticket type");
     }
     
-    static <T extends TicketEntry> T createQueryObject(URI customerId,
-                                                       SortableIdentifier resourceIdentifier,
-                                                       Class<T> ticketType) {
+    public static <T extends TicketEntry> T createQueryObject(URI customerId,
+                                                              SortableIdentifier resourceIdentifier,
+                                                              Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return ticketType.cast(DoiRequest.builder()
                                        .withResourceIdentifier(resourceIdentifier)
@@ -60,70 +139,24 @@ public interface TicketEntry extends Entity {
         throw new UnsupportedOperationException();
     }
     
-    static UntypedTicketQueryObject createQueryObject(UserInstance userInstance, SortableIdentifier ticketIdentifier) {
+    public static UntypedTicketQueryObject createQueryObject(UserInstance userInstance,
+                                                             SortableIdentifier ticketIdentifier) {
         return UntypedTicketQueryObject.create(userInstance, ticketIdentifier);
     }
     
-    static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
+    public static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
         return UntypedTicketQueryObject.create(ticketIdentifier);
     }
     
-    static TicketEntry createNewGeneralSupportRequest(Publication publication,
-                                                      Supplier<SortableIdentifier> identifierProvider) {
+    public static TicketEntry createNewGeneralSupportRequest(Publication publication,
+                                                             Supplier<SortableIdentifier> identifierProvider) {
         var ticket = GeneralSupportRequest.fromPublication(publication);
         setServiceControlledFields(ticket, identifierProvider);
         return ticket;
     }
     
-    SortableIdentifier getResourceIdentifier();
-    
-    void validateCreationRequirements(Publication publication) throws ConflictException;
-    
-    void validateCompletionRequirements(Publication publication);
-    
-    default TicketEntry complete(Publication publication) {
-        var updated = this.copy();
-        updated.setStatus(TicketStatus.COMPLETED);
-        updated.validateCompletionRequirements(publication);
-        updated.setModifiedDate(Instant.now());
-        return updated;
-    }
-    
-    default TicketEntry close() throws ApiGatewayException {
-        validateClosingRequirements();
-        var updated = this.copy();
-        updated.setStatus(TicketStatus.CLOSED);
-        updated.setModifiedDate(Instant.now());
-        return updated;
-    }
-    
-    default void validateClosingRequirements() throws ApiGatewayException {
-        if (!getStatus().equals(TicketStatus.PENDING)) {
-            var errorMessage =
-                String.format("Cannot close a ticket that has any other status than %s", TicketStatus.PENDING);
-            throw new BadRequestException(errorMessage);
-        }
-    }
-    
-    TicketEntry copy();
-    
-    TicketStatus getStatus();
-    
-    void setStatus(TicketStatus ticketStatus);
-    
-    default List<Message> fetchMessages(TicketService ticketService) {
-        return ticketService.fetchTicketMessages(this);
-    }
-    
-    default TicketEntry refresh() {
-        var refreshed = this.copy();
-        refreshed.setModifiedDate(Instant.now());
-        return refreshed;
-    }
-    
-    default TicketEntry persistNewTicket(TicketService ticketService) throws ApiGatewayException {
-        // this is the only place that deprecated should be called.
-        return ticketService.createTicket(this, this.getClass());
+    public TicketEntry fetch(TicketService ticketService) throws NotFoundException {
+        return ticketService.fetchTicket(this);
     }
     
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
@@ -166,7 +199,7 @@ public interface TicketEntry extends Entity {
         return entry;
     }
     
-    final class Constants {
+    public static final class Constants {
         
         public static final String STATUS_FIELD = "status";
         public static final String MODIFIED_DATE_FIELD = "modifiedDate";
