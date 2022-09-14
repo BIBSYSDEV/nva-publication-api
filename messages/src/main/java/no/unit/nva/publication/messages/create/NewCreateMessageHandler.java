@@ -45,6 +45,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         var ticket = fetchTicketForUser(requestInfo, ticketIdentifier, user);
         
         var message = messageService.createMessage(ticket, user, input.getMessage());
+        ticket.markUnseenByOwner().persistUpdate(ticketService);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
         return null;
     }

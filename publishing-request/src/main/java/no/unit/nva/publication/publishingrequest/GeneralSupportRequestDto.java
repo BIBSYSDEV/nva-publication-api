@@ -93,6 +93,7 @@ public class GeneralSupportRequestDto extends TicketDto {
         request.setResourceIdentifier(extractResourceIdentifier(this.getPublicationId()));
         request.setCreatedDate(this.getCreatedDate());
         request.setModifiedDate(this.getModifiedDate());
+        request.setSeenByOwner(this.getSeenByOwner());
         return request;
     }
     

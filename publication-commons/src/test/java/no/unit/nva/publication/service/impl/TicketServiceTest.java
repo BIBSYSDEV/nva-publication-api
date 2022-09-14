@@ -450,6 +450,20 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, action);
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should mark ticket as Unseen by owner when requested")
+    @MethodSource("ticketProvider")
+    void shouldMarkTicketAsUnSeenByOwnerWhenRequested(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = createPersistedTicket(publication, ticketType);
+        assertThat(ticket.getSeenByOwner(), is(true));
+        ticket.copy().markUnseenByOwner().persistUpdate(ticketService);
+        var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.getSeenByOwner(), is(false));
+        assertThat(updatedTicket.getModifiedDate(), is(greaterThan(ticket.getModifiedDate())));
+    }
+    
     @ParameterizedTest(name = "number of tickets:{0}")
     @DisplayName("should list all tickets for a user")
     @Timeout(TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET)

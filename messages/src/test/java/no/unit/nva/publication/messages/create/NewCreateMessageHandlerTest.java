@@ -21,6 +21,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -40,23 +41,30 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     
     private ResourceService resourceService;
     private TicketService ticketService;
-    private MessageService messageService;
     private NewCreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
+    
+    public static Stream<Arguments> ticketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
+    }
     
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
-        this.messageService = new MessageService(client, Clock.systemDefaultZone());
+        MessageService messageService = new MessageService(client, Clock.systemDefaultZone());
         this.handler = new NewCreateMessageHandler(messageService, ticketService);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
@@ -119,10 +127,25 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), randomUri());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
-        
+    
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+    
+    @ParameterizedTest(name = "ticketType:{0}")
+    @DisplayName("should mark ticket as unread for publication owner when curator sends a message")
+    @MethodSource("ticketTypeProvider")
+    void shouldMarkTicketAsUnreadForPublicationOwnerWhenCuratorSendsAMessage(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var publication = draftPublicationWithoutDoi();
+        var ticket = createTicket(publication, ticketType);
+        assertThat(ticket.getSeenByOwner(), is(true));
+        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
+        handler.handleRequest(request, output, context);
+        var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.getSeenByOwner(), is(false));
     }
     
     private void assertThatMessageContainsTextAndCorrectCorrespondentInfo(String expectedText,
@@ -204,7 +227,12 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
-        var newTicket = TicketEntry.requestNewTicket(publication, randomTicketType());
+        return createTicket(publication, randomTicketType());
+    }
+    
+    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var newTicket = TicketEntry.requestNewTicket(publication, ticketType);
         return ticketService.createTicket(newTicket, newTicket.getClass());
     }
     

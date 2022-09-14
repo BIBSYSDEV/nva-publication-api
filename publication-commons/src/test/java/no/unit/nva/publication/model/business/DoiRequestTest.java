@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -60,9 +59,8 @@ class DoiRequestTest {
         
         var originalDoiRequest = DoiRequest.fromPublication(PublicationGenerator.randomPublication());
         
-        assertThat(originalDoiRequest, doesNotHaveEmptyValues());
         var generatedPublication = originalDoiRequest.toPublication();
-        
+    
         var regeneratedDoiRequest = DoiRequest.fromPublication(generatedPublication);
         regeneratedDoiRequest.setIdentifier(originalDoiRequest.getIdentifier());
         regeneratedDoiRequest.setCreatedDate(originalDoiRequest.getCreatedDate());

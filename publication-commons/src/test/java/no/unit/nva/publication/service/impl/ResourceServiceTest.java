@@ -948,6 +948,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withContributors(publicationUpdate.getEntityDescription().getContributors())
                    .withResourcePublicationInstance(
                        publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+                   .withSeenByOwner(initialDoiRequest.getSeenByOwner())
                    .build();
     }
     
@@ -962,7 +963,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private DoiRequest createDoiRequest(Publication resource)
         throws ApiGatewayException {
-        return ticketService.createTicket(DoiRequest.fromPublication(resource), DoiRequest.class);
+        return (DoiRequest) DoiRequest.fromPublication(resource).persistNewTicket(ticketService);
     }
     
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {

@@ -25,11 +25,11 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 public abstract class TicketEntry implements Entity {
     
     public static final String SEEN_BY_OWNER_FIELD = "seenByOwner";
-    @JsonProperty(SEEN_BY_OWNER_FIELD)
-    private boolean seenByOwner;
     
-    public TicketEntry() {
-        seenByOwner = false;
+    @JsonProperty(SEEN_BY_OWNER_FIELD)
+    private Boolean seenByOwner;
+    
+    protected TicketEntry() {
     }
     
     public void persistUpdate(TicketService ticketService) {
@@ -87,15 +87,15 @@ public abstract class TicketEntry implements Entity {
         return ticketService.createTicket(this, this.getClass());
     }
     
-    public final boolean isSeenByOwner() {
+    public final Boolean getSeenByOwner() {
         return seenByOwner;
     }
     
-    public final void setSeenByOwner(boolean seenByOwner) {
+    public final void setSeenByOwner(Boolean seenByOwner) {
         this.seenByOwner = seenByOwner;
     }
     
-    public final TicketEntry markUnreadForOwner() {
+    public final TicketEntry markUnseenByOwner() {
         seenByOwner = false;
         this.setModifiedDate(Instant.now());
         return this;

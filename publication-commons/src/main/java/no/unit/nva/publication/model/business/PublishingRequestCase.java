@@ -74,6 +74,7 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
         openingCaseObject.setResourceIdentifier(publicationIdentifier);
         openingCaseObject.setStatus(TicketStatus.PENDING);
+        openingCaseObject.setSeenByOwner(true);
         return openingCaseObject;
     }
     
@@ -145,6 +146,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setCustomerId(this.getCustomerId());
         copy.setResourceIdentifier(this.getResourceIdentifier());
         copy.setOwner(this.getOwner());
+        copy.setSeenByOwner(this.getSeenByOwner());
         return copy;
     }
     

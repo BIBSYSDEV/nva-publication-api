@@ -97,6 +97,7 @@ public class DoiRequestDto extends TicketDto {
         ticket.setModifiedDate(getModifiedDate());
         ticket.setIdentifier(getIdentifier());
         ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationId()));
+        ticket.setSeenByOwner(getSeenByOwner());
         return ticket;
     }
     

@@ -193,7 +193,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        assertThat(ticket.isSeenByOwner(), is(equalTo(true)));
+        assertThat(ticket.getSeenByOwner(), is(equalTo(true)));
     }
     
     private Publication createUnpublishablePublication() {

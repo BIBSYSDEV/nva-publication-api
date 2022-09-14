@@ -166,7 +166,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         var responseBody = response.getBodyObject(TicketDto.class);
-        assertThat(responseBody.isSeenByOwner(), is(true));
+        assertThat(responseBody.getSeenByOwner(), is(true));
     }
     
     @ParameterizedTest(name = "ticketType:{0}")
@@ -175,14 +175,14 @@ class GetTicketHandlerTest extends TicketTestLocal {
     void shouldMarkTicketAsUnreadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var ticket = createPersistedTicket(ticketType);
-        ticket.markUnreadForOwner().persistUpdate(ticketService);
+        ticket.markUnseenByOwner().persistUpdate(ticketService);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.isSeenByOwner(), is(false));
+        assertThat(updatedTicket.getSeenByOwner(), is(false));
         var request = createHttpRequest(ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var responseBody = response.getBodyObject(TicketDto.class);
-        assertThat(responseBody.isSeenByOwner(), is(false));
+        assertThat(responseBody.getSeenByOwner(), is(false));
     }
     
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {

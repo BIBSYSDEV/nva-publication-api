@@ -38,7 +38,7 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(SEEN_BY_OWNER_FIELD)
     private final Boolean seenByOwner;
     @JsonProperty(MESSAGES_FIELD)
-    private List<MessageDto> messages;
+    private final List<MessageDto> messages;
     
     protected TicketDto(List<MessageDto> messages, Boolean seenByOwner) {
         this.messages = messages;
@@ -65,7 +65,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationId(createPublicationId(ticket.getResourceIdentifier()))
                    .withId(createTicketId(ticket))
                    .withMessages(messageDtos)
-                   .withSeenByOwner(ticket.isSeenByOwner())
+                   .withSeenByOwner(ticket.getSeenByOwner())
                    .build(ticket.getClass());
     }
     
@@ -88,15 +88,11 @@ public abstract class TicketDto implements JsonSerializable {
         return toJsonString();
     }
     
-    public final void setMessages(List<MessageDto> messages) {
-        this.messages = messages;
-    }
-    
     public final List<MessageDto> getMessages() {
         return nonNull(messages) ? messages : Collections.emptyList();
     }
     
-    public boolean isSeenByOwner() {
+    public Boolean getSeenByOwner() {
         return seenByOwner;
     }
     
