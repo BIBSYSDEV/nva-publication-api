@@ -62,8 +62,8 @@ public final class UntypedTicketQueryObject extends TicketDao {
     }
     
     @Override
-    protected String getOwner() {
-        return owner.getUserIdentifier();
+    protected User getOwner() {
+        return new User(owner.getUsername());
     }
     
     @JacocoGenerated

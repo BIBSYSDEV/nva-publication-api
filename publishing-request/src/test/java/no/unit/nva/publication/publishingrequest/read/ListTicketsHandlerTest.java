@@ -103,7 +103,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     
     private static InputStream buildHttpRequest(UserInstance user) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withNvaUsername(user.getUserIdentifier())
+                   .withNvaUsername(user.getUsername())
                    .withCustomerId(user.getOrganizationUri())
                    .build();
     }
@@ -112,7 +112,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         var publication = randomPublication().copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withPublisher(new Organization.Builder().withId(owner.getOrganizationUri()).build())
-                              .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(), null))
+                              .withResourceOwner(new ResourceOwner(owner.getUsername(), null))
                               .withDoi(null)
                               .build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);

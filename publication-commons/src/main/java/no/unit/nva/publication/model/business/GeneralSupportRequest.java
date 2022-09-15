@@ -34,7 +34,7 @@ public class GeneralSupportRequest extends TicketEntry {
     @JsonProperty(MODIFIED_DATE_FIELD)
     private Instant modifiedDate;
     @JsonProperty(OWNER_FIELD)
-    private String owner;
+    private User owner;
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
     @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
@@ -108,11 +108,11 @@ public class GeneralSupportRequest extends TicketEntry {
     }
     
     @Override
-    public String getOwner() {
+    public User getOwner() {
         return this.owner;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     
@@ -209,7 +209,10 @@ public class GeneralSupportRequest extends TicketEntry {
         return Optional.of(publication).map(Publication::getPublisher).map(Organization::getId).orElse(null);
     }
     
-    private static String extractOwner(Publication publication) {
-        return Optional.of(publication).map(Publication::getResourceOwner).map(ResourceOwner::getOwner).orElse(null);
+    private static User extractOwner(Publication publication) {
+        return Optional.of(publication).map(Publication::getResourceOwner)
+                   .map(ResourceOwner::getOwner)
+                   .map(User::new)
+                   .orElse(null);
     }
 }

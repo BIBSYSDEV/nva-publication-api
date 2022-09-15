@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceTest {
     
-    public static final String SOME_OWNER = "some@owner.no";
+    public static final User SOME_OWNER = new User("some@owner.no");
     public static final URI SOME_HOST = URI.create("https://example.org/");
     public static final String DOI_REQUEST_FIELD = "doiRequest";
     private final Javers javers = JaversBuilder.javers().build();

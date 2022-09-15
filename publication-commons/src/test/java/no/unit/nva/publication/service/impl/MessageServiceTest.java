@@ -23,6 +23,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
@@ -111,7 +112,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var messageIdentifier =
             messageService.createMessage(sender, publication, randomString(), randomElement(MessageType.values()));
         var message = messageService.getMessage(owner, messageIdentifier);
-        assertThat(message.getRecipient(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(message.getRecipient(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
     }
     
     //TODO: discuss with product owner what the actual requirements are here.

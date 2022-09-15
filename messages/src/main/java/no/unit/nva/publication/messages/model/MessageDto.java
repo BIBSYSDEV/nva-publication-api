@@ -13,6 +13,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -25,9 +26,9 @@ public class MessageDto implements JsonSerializable {
     @JsonProperty("identifier")
     private SortableIdentifier messageIdentifier;
     @JsonProperty("sender")
-    private String senderIdentifier;
+    private User sender;
     @JsonProperty("owner")
-    private String ownerIdentifier;
+    private User owner;
     @JsonProperty(TEXT_FIELD)
     private String text;
     @JsonProperty("date")
@@ -35,14 +36,14 @@ public class MessageDto implements JsonSerializable {
     @JsonProperty("messageType")
     private String messageType;
     @JsonProperty("recipient")
-    private String recipient;
+    private User recipient;
     @JsonProperty("status")
     private MessageStatus status;
     
     public static MessageDto fromMessage(Message message) {
         MessageDto messageDto = new MessageDto();
-        messageDto.setOwnerIdentifier(message.getOwner());
-        messageDto.setSenderIdentifier(message.getSender());
+        messageDto.setOwner(message.getOwner());
+        messageDto.setSender(message.getSender());
         messageDto.setText(message.getText());
         messageDto.setDate(message.getCreatedDate());
         messageDto.setMessageId(constructMessageId(message.getIdentifier()));
@@ -64,12 +65,12 @@ public class MessageDto implements JsonSerializable {
     }
     
     @JacocoGenerated
-    public String getRecipient() {
+    public User getRecipient() {
         return recipient;
     }
     
     @JacocoGenerated
-    public void setRecipient(String recipient) {
+    public void setRecipient(User recipient) {
         this.recipient = recipient;
     }
     
@@ -98,8 +99,8 @@ public class MessageDto implements JsonSerializable {
     public int hashCode() {
         return Objects.hash(getMessageId(),
             getMessageIdentifier(),
-            getSenderIdentifier(),
-            getOwnerIdentifier(),
+            getSender(),
+            getOwner(),
             getText(),
             getDate(),
             getMessageType());
@@ -118,8 +119,8 @@ public class MessageDto implements JsonSerializable {
         return Objects.equals(getMessageType(), that.getMessageType())
                && Objects.equals(getMessageId(), that.getMessageId())
                && Objects.equals(getMessageIdentifier(), that.getMessageIdentifier())
-               && Objects.equals(getSenderIdentifier(), that.getSenderIdentifier())
-               && Objects.equals(getOwnerIdentifier(), that.getOwnerIdentifier())
+               && Objects.equals(getSender(), that.getSender())
+               && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getText(), that.getText())
                && Objects.equals(getDate(), that.getDate());
     }
@@ -171,22 +172,22 @@ public class MessageDto implements JsonSerializable {
     }
     
     @JacocoGenerated
-    public String getSenderIdentifier() {
-        return senderIdentifier;
+    public User getSender() {
+        return sender;
     }
     
     @JacocoGenerated
-    public void setSenderIdentifier(String senderIdentifier) {
-        this.senderIdentifier = senderIdentifier;
+    public void setSender(User sender) {
+        this.sender = sender;
     }
     
     @JacocoGenerated
-    public String getOwnerIdentifier() {
-        return ownerIdentifier;
+    public User getOwner() {
+        return owner;
     }
     
     @JacocoGenerated
-    public void setOwnerIdentifier(String ownerIdentifier) {
-        this.ownerIdentifier = ownerIdentifier;
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 }

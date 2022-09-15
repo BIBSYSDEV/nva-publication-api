@@ -106,7 +106,7 @@ class DaoTest extends ResourcesLocalTest {
         String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
             daoInstance.indexingType(),
             daoInstance.getCustomerIdentifier(),
-            daoInstance.getOwner()
+            daoInstance.getOwner().toString()
         );
         
         assertThat(primaryKeyPartitionKey, is(equalTo(expectedFormat)));

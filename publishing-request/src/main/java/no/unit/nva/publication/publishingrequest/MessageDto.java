@@ -14,6 +14,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -26,9 +27,9 @@ public class MessageDto implements JsonSerializable {
     @JsonProperty("identifier")
     private SortableIdentifier messageIdentifier;
     @JsonProperty("sender")
-    private String senderIdentifier;
+    private User senderIdentifier;
     @JsonProperty("owner")
-    private String ownerIdentifier;
+    private User ownerIdentifier;
     @JsonProperty(TEXT_FIELD)
     private String text;
     @JsonProperty("date")
@@ -36,7 +37,7 @@ public class MessageDto implements JsonSerializable {
     @JsonProperty("messageType")
     private String messageType;
     @JsonProperty("recipient")
-    private String recipient;
+    private User recipient;
     @JsonProperty("status")
     private MessageStatus status;
     
@@ -65,12 +66,12 @@ public class MessageDto implements JsonSerializable {
     }
     
     @JacocoGenerated
-    public String getRecipient() {
+    public User getRecipient() {
         return recipient;
     }
     
     @JacocoGenerated
-    public void setRecipient(String recipient) {
+    public void setRecipient(User recipient) {
         this.recipient = recipient;
     }
     
@@ -172,22 +173,22 @@ public class MessageDto implements JsonSerializable {
     }
     
     @JacocoGenerated
-    public String getSenderIdentifier() {
+    public User getSenderIdentifier() {
         return senderIdentifier;
     }
     
     @JacocoGenerated
-    public void setSenderIdentifier(String senderIdentifier) {
+    public void setSenderIdentifier(User senderIdentifier) {
         this.senderIdentifier = senderIdentifier;
     }
     
     @JacocoGenerated
-    public String getOwnerIdentifier() {
+    public User getOwnerIdentifier() {
         return ownerIdentifier;
     }
     
     @JacocoGenerated
-    public void setOwnerIdentifier(String ownerIdentifier) {
+    public void setOwnerIdentifier(User ownerIdentifier) {
         this.ownerIdentifier = ownerIdentifier;
     }
 }

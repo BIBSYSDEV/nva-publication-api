@@ -10,6 +10,7 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
@@ -33,7 +34,7 @@ public class DoiRequestDao extends TicketDao
         super(doiRequest);
     }
     
-    public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
+    public static DoiRequestDao queryObject(URI publisherId, User owner, SortableIdentifier doiRequestIdentifier) {
         DoiRequest doi = DoiRequest.builder()
                              .withIdentifier(doiRequestIdentifier)
                              .withOwner(owner)
@@ -50,7 +51,7 @@ public class DoiRequestDao extends TicketDao
         return new DoiRequestDao(doiRequest);
     }
     
-    public static DoiRequestDao queryObject(URI publisherId, String owner) {
+    public static DoiRequestDao queryObject(URI publisherId, User owner) {
         return queryObject(publisherId, owner, null);
     }
     
@@ -58,7 +59,7 @@ public class DoiRequestDao extends TicketDao
                                                                      SortableIdentifier resourceIdentifier) {
         DoiRequest doi = DoiRequest.builder()
                              .withResourceIdentifier(resourceIdentifier)
-                             .withOwner(resourceOwner.getUserIdentifier())
+                             .withOwner(resourceOwner.getUser())
                              .withCustomerId(resourceOwner.getOrganizationUri())
                              .build();
         return new DoiRequestDao(doi);
@@ -87,7 +88,7 @@ public class DoiRequestDao extends TicketDao
     }
     
     @Override
-    protected String getOwner() {
+    protected User getOwner() {
         return getData().getOwner();
     }
     

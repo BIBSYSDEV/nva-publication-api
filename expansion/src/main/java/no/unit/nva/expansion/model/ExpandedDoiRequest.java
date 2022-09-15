@@ -12,6 +12,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -32,7 +33,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     @JsonProperty
     private URI customerId;
     @JsonProperty
-    private String owner;
+    private User owner;
     
     private PublicationSummary publicationSummary;
     @JsonProperty("doi")
@@ -92,12 +93,12 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     }
     
     @JacocoGenerated
-    public String getOwner() {
+    public User getOwner() {
         return owner;
     }
     
     @JacocoGenerated
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     

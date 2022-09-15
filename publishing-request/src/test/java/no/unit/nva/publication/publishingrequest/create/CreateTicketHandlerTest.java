@@ -26,7 +26,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.DoiRequestDto;
 import no.unit.nva.publication.publishingrequest.GeneralSupportRequestDto;
@@ -195,7 +194,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        assertThat(ticket.getViewedBy(), hasItem(new User(ticket.getOwner())));
+        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
     }
     
     private Publication createUnpublishablePublication() {
@@ -269,7 +268,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
                    .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
-                   .withNvaUsername(userCredentials.getUserIdentifier())
+                   .withNvaUsername(userCredentials.getUsername())
                    .withCustomerId(userCredentials.getOrganizationUri())
                    .build();
     }

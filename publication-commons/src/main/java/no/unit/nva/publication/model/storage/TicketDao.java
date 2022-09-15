@@ -199,7 +199,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                     ":customerId", new AttributeValue(entryUpdate.getCustomerId().toString()),
                     ":identifier", new AttributeValue(entryUpdate.getIdentifier().toString()),
                     ":modifiedDate", new AttributeValue(dateAsString(entryUpdate.getModifiedDate())),
-                    ":owner", new AttributeValue(entryUpdate.getOwner()),
+                    ":owner", new AttributeValue(entryUpdate.getOwner().toString()),
                     ":resourceIdentifier", new AttributeValue(entryUpdate.getResourceIdentifier().toString()),
                     ":version", new AttributeValue(dao.getVersion().toString())
                 );

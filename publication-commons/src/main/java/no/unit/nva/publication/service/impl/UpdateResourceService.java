@@ -131,7 +131,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .copy()
                    .withPublisher(userOrganization(newOwner))
                    .withResourceOwner(Owner.fromResourceOwner(
-                       new ResourceOwner(newOwner.getUserIdentifier(), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
+                       new ResourceOwner(newOwner.getUsername(), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
                    .withModifiedDate(clockForTimestamps.instant())
                    .build();
     }

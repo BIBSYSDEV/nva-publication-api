@@ -83,10 +83,10 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var request = createNewMessageRequestForNonElevatedUser(publication, ticket, user, expectedText);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        
+    
         assertThatResponseContainsCorrectInformation(response, ticket);
         var expectedRecipient = Message.SUPPORT_SERVICE_CORRESPONDENT;
-        var expectedSender = UserInstance.fromPublication(publication).getUserIdentifier();
+        var expectedSender = UserInstance.fromPublication(publication).getUser();
         assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
             expectedRecipient);
     }
@@ -111,13 +111,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
-        
+    
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        
+    
         assertThatResponseContainsCorrectInformation(response, ticket);
-        var expectedSender = sender.getUserIdentifier();
-        var expectedRecipient = UserInstance.fromPublication(publication).getUserIdentifier();
+        var expectedSender = sender.getUser();
+        var expectedRecipient = UserInstance.fromPublication(publication).getUser();
         assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
             expectedRecipient);
     }
@@ -143,18 +143,18 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = draftPublicationWithoutDoi();
         var ticket = createTicket(publication, ticketType);
-        assertThat(ticket.getViewedBy(), hasItem(new User(ticket.getOwner())));
+        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getViewedBy(), not(hasItem(new User(ticket.getOwner()))));
+        assertThat(updatedTicket.getViewedBy(), not(hasItem(ticket.getOwner())));
     }
     
     private void assertThatMessageContainsTextAndCorrectCorrespondentInfo(String expectedText,
                                                                           TicketEntry ticket,
-                                                                          String expectedSender,
-                                                                          String expectedRecipient) {
+                                                                          User expectedSender,
+                                                                          User expectedRecipient) {
         var actualMessage = ticket.fetchMessages(ticketService).stream().collect(SingletonCollector.collect());
         assertThat(actualMessage.getText(), is(equalTo(expectedText)));
         assertThat("Recepient was:" + actualMessage.getRecipient(), actualMessage.getRecipient(),
@@ -197,7 +197,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(pathParameters(publication, ticket))
                    .withBody(messageBody(randomString))
-                   .withNvaUsername(userInstance.getUserIdentifier())
+                   .withNvaUsername(userInstance.getUsername())
                    .withCustomerId(userInstance.getOrganizationUri())
                    .build();
     }
@@ -209,7 +209,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(pathParameters(publication, ticket))
                    .withBody(messageBody(randomString))
-                   .withNvaUsername(user.getUserIdentifier())
+                   .withNvaUsername(user.getUsername())
                    .withCustomerId(user.getOrganizationUri())
                    .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
                    .build();

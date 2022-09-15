@@ -45,7 +45,7 @@ public interface Entity {
     
     void setModifiedDate(Instant now);
     
-    String getOwner();
+    User getOwner();
     
     URI getCustomerId();
     

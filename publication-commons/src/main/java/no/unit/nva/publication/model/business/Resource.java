@@ -63,7 +63,7 @@ public class Resource implements Entity {
     private List<URI> subjects;
     
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
-        return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
+        return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
             resourceIdentifier);
     }
     
@@ -73,7 +73,7 @@ public class Resource implements Entity {
         return resource;
     }
     
-    public static Resource emptyResource(String username,
+    public static Resource emptyResource(User username,
                                          URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
@@ -184,8 +184,8 @@ public class Resource implements Entity {
     
     @JsonIgnore
     @Override
-    public String getOwner() {
-        return getResourceOwner().getUser().toString();
+    public User getOwner() {
+        return getResourceOwner().getUser();
     }
     
     @Override

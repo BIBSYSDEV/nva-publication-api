@@ -72,7 +72,7 @@ class GetMessageHandlerTest {
     private InputStream createHttpRequest(UserInstance sender, Message message)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withNvaUsername(sender.getUserIdentifier())
+                   .withNvaUsername(sender.getUsername())
                    .withCustomerId(sender.getOrganizationUri())
                    .withPathParameters(messagePathParameters(message))
                    .build();

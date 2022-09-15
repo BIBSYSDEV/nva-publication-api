@@ -459,7 +459,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, ticketType);
-        var owner = new User(ticket.getOwner());
+        var owner = ticket.getOwner();
         assertThat(ticket.getViewedBy(), hasItem(owner));
         ticket.copy().markUnreadByOwner().persistUpdate(ticketService);
         var updatedTicket = ticket.fetch(ticketService);
@@ -555,7 +555,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     private Publication persistEmptyPublication(UserInstance owner) {
         var publication = new Publication.Builder().withResourceOwner(
-                new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
+                new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
                               .withPublisher(createOrganization(owner.getOrganizationUri()))
                               .withStatus(DRAFT)
                               .build();
@@ -568,7 +568,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         return DoiRequest.builder()
                    .withIdentifier(actualDoiRequest.getIdentifier())
                    .withResourceIdentifier(emptyPublication.getIdentifier())
-                   .withOwner(emptyPublication.getResourceOwner().getOwner())
+                   .withOwner(new User(emptyPublication.getResourceOwner().getOwner()))
                    .withCustomerId(emptyPublication.getPublisher().getId())
                    .withStatus(TicketStatus.PENDING)
                    .withResourceStatus(DRAFT)
@@ -614,7 +614,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     private PublishingRequestCase randomPublishingRequest() {
         var request = new PublishingRequestCase();
         request.setIdentifier(SortableIdentifier.next());
-        request.setOwner(randomString());
+        request.setOwner(new User(randomString()));
         request.setResourceIdentifier(SortableIdentifier.next());
         request.setStatus(COMPLETED);
         request.setCreatedDate(randomInstant());

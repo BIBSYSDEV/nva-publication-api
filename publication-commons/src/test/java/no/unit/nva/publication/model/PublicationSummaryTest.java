@@ -12,6 +12,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,7 @@ class PublicationSummaryTest {
         assertThat(summary, doesNotHaveEmptyValues());
         assertThat(summary.getPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
-        assertThat(summary.getOwner(), is(equalTo(publication.getOwner())));
+        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
         assertThat(summary.getStatus(), is(equalTo(publication.getStatus())));
         assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));

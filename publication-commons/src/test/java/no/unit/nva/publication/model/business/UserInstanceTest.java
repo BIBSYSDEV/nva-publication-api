@@ -22,7 +22,7 @@ class UserInstanceTest {
     void shouldReturnUserInstanceFromPublication() {
         Publication publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
-        assertThat(userInstance.getUserIdentifier(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
     
@@ -31,7 +31,7 @@ class UserInstanceTest {
         var publication = PublicationGenerator.randomPublication();
         var doiRequest = DoiRequest.fromPublication(publication);
         var userInstance = UserInstance.fromDoiRequest(doiRequest);
-        assertThat(userInstance.getUserIdentifier(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
     
@@ -42,7 +42,7 @@ class UserInstanceTest {
         var message = Message.create(UserInstance.fromPublication(publication), publication, randomString(),
             SortableIdentifier.next(), Clock.systemDefaultZone(), MessageType.SUPPORT);
         var userInstance = UserInstance.fromMessage(message);
-        assertThat(userInstance.getUserIdentifier(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
     
@@ -56,7 +56,7 @@ class UserInstanceTest {
                               .build();
         var requestInfo = RequestInfo.fromRequest(httpRequest);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        assertThat(userInstance.getUserIdentifier(), is(equalTo(username)));
+        assertThat(userInstance.getUsername(), is(equalTo(username)));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(customerId)));
     }
 }

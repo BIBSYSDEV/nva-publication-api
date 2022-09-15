@@ -56,7 +56,7 @@ public class PublishingRequestCase extends TicketEntry {
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
     @JsonProperty(OWNER_FIELD)
-    private String owner;
+    private User owner;
     @JsonProperty(MODIFIED_DATE_FIELD)
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
@@ -70,7 +70,7 @@ public class PublishingRequestCase extends TicketEntry {
                                                                 SortableIdentifier publicationIdentifier) {
     
         var openingCaseObject = new PublishingRequestCase();
-        openingCaseObject.setOwner(userInstance.getUserIdentifier());
+        openingCaseObject.setOwner(userInstance.getUser());
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
         openingCaseObject.setResourceIdentifier(publicationIdentifier);
         openingCaseObject.setStatus(TicketStatus.PENDING);
@@ -179,7 +179,7 @@ public class PublishingRequestCase extends TicketEntry {
     
         return new Publication.Builder()
                    .withIdentifier(getResourceIdentifier())
-                   .withResourceOwner(new ResourceOwner(getOwner(), null))
+                   .withResourceOwner(new ResourceOwner(getOwner().toString(), null))
                    .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
                    .build();
     }
@@ -210,7 +210,7 @@ public class PublishingRequestCase extends TicketEntry {
     }
     
     @Override
-    public String getOwner() {
+    public User getOwner() {
         return owner;
     }
     
@@ -233,7 +233,7 @@ public class PublishingRequestCase extends TicketEntry {
         return status.toString();
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     
@@ -269,7 +269,7 @@ public class PublishingRequestCase extends TicketEntry {
         SortableIdentifier publishingRequestIdentifier) {
     
         var newPublishingRequest = new PublishingRequestCase();
-        newPublishingRequest.setOwner(userInstance.getUserIdentifier());
+        newPublishingRequest.setOwner(userInstance.getUser());
         newPublishingRequest.setCustomerId(userInstance.getOrganizationUri());
         newPublishingRequest.setResourceIdentifier(publicationIdentifier);
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);

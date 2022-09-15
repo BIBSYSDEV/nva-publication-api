@@ -18,6 +18,7 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -33,7 +34,7 @@ public class PublicationSummary {
     @JsonProperty("mainTitle")
     private String title;
     @JsonProperty
-    private String owner;
+    private User owner;
     @JsonProperty
     private Instant createdDate;
     @JsonProperty
@@ -71,7 +72,7 @@ public class PublicationSummary {
         publicationSummary.setPublicationIdentifier(publication.getIdentifier());
         publicationSummary.setCreatedDate(publication.getCreatedDate());
         publicationSummary.setModifiedDate(publication.getModifiedDate());
-        publicationSummary.setOwner(publication.getResourceOwner().getOwner());
+        publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner()));
         publicationSummary.setStatus(publication.getStatus());
         if (nonNull(publication.getEntityDescription())) {
             publicationSummary.setContributors(publication.getEntityDescription().getContributors());
@@ -198,11 +199,11 @@ public class PublicationSummary {
         this.createdDate = createdDate;
     }
     
-    public String getOwner() {
+    public User getOwner() {
         return owner;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     

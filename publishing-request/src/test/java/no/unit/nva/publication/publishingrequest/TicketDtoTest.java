@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.ViewedBy;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.core.paths.UriWrapper;
@@ -48,7 +49,7 @@ class TicketDtoTest {
                    .withCreatedDate(randomInstant())
                    .withId(createTicketId(publicationId, ticketIdentifier))
                    .withStatus(randomElement(TicketStatus.values()))
-                   .withViewedBy(ViewedBy.addAll(randomString()))
+                   .withViewedBy(ViewedBy.addAll(new User(randomString())))
                    .build(ticketType);
     }
     

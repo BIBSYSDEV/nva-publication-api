@@ -76,6 +76,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -287,8 +288,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
         
         Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
-        
-        assertThat(newResource.getResourceOwner().getOwner(), is(equalTo(newOwner.getUserIdentifier())));
+    
+        assertThat(newResource.getResourceOwner().getOwner(), is(equalTo(newOwner.getUsername())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
     }
     
@@ -933,7 +934,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                 DoiRequest updatedDoiRequest) {
     
         return DoiRequest.builder()
-                   .withOwner(initialPublication.getResourceOwner().getOwner())
+                   .withOwner(new User(initialPublication.getResourceOwner().getOwner()))
                    .withCustomerId(initialPublication.getPublisher().getId())
                    .withResourceIdentifier(initialPublication.getIdentifier())
                    .withIdentifier(initialDoiRequest.getIdentifier())
@@ -1041,7 +1042,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
         return publication.copy()
-                   .withResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), AFFILIATION_NOT_IMPORTANT))
+                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
                    .build();
     }
@@ -1050,7 +1051,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                 Publication updatedResource,
                                                 UserInstance expectedOwner) {
         return originalResource.copy()
-                   .withResourceOwner(new ResourceOwner(expectedOwner.getUserIdentifier(), AFFILIATION_NOT_IMPORTANT))
+                   .withResourceOwner(new ResourceOwner(expectedOwner.getUsername(), AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(userOrganization(expectedOwner))
                    .withCreatedDate(originalResource.getCreatedDate())
                    .withModifiedDate(updatedResource.getModifiedDate())

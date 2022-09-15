@@ -229,7 +229,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
     
     private Owner createResourceOwner(UserInstance userInstance) {
-        return new Owner(userInstance.getUserIdentifier(), userInstance.getTopLevelOrgCristinId());
+        return new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId());
     }
     
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {

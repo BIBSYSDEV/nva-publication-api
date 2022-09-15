@@ -51,7 +51,7 @@ class UpdateMessageHandlerTest extends MessagesTest {
     }
     
     @Test
-    void shouldMarkMessageAsMarkedWhenSenderIsCuratorAndTheOwnerReceivesTheMessage()
+    void shouldMarkMessageAsReadWhenSenderIsCuratorAndTheOwnerReceivesTheMessage()
         throws ApiGatewayException, IOException {
         var publication = createPublication();
         var messageIdentifier = curatorCreatesMessage(publication);

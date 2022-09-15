@@ -25,7 +25,7 @@ class PublishingRequestTest {
     void shouldBeConvertableToPublicationObject() {
         var publication = sampleRequest.toPublication();
         assertThat(sampleRequest.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(sampleRequest.getOwner(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(sampleRequest.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
         assertThat(sampleRequest.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
     }
     
@@ -42,7 +42,7 @@ class PublishingRequestTest {
         var objectForCreatingNewEntry = PublishingRequestCase.createOpeningCaseObject(userInstance,
             publicationIdentifier);
         assertThat(objectForCreatingNewEntry.getResourceIdentifier(), is(equalTo(publicationIdentifier)));
-        assertThat(objectForCreatingNewEntry.getOwner(), is(equalTo(userInstance.getUserIdentifier())));
+        assertThat(objectForCreatingNewEntry.getOwner(), is(equalTo(userInstance.getUser())));
         assertThat(objectForCreatingNewEntry.getCustomerId(), is(equalTo(userInstance.getOrganizationUri())));
     }
 }

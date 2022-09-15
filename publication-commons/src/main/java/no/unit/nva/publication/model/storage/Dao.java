@@ -27,6 +27,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.QuerySpliterator;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 
@@ -109,7 +110,7 @@ public abstract class Dao
     
     @Override
     public final String getPrimaryKeyPartitionKey() {
-        return formatPrimaryPartitionKey(getCustomerId(), getOwner());
+        return formatPrimaryPartitionKey(getCustomerId(), getOwner().toString());
     }
     
     @Override
@@ -224,7 +225,7 @@ public abstract class Dao
     }
     
     @JsonIgnore
-    protected abstract String getOwner();
+    protected abstract User getOwner();
     
     private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
         return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,

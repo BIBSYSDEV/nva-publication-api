@@ -17,15 +17,10 @@ public class ViewedBy implements Set<User> {
         this.views = Objects.nonNull(viewedBy) ? viewedBy : new HashSet<>();
     }
     
-    public static ViewedBy addAll(String... users) {
+    public static ViewedBy addAll(User... users) {
         var viewedBy = Arrays.stream(users)
-                           .map(User::new)
                            .collect(Collectors.toSet());
         return new ViewedBy(new HashSet<>(viewedBy));
-    }
-    
-    public void remove(String owner) {
-        views.remove(new User(owner));
     }
     
     @JacocoGenerated

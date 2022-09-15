@@ -13,6 +13,7 @@ import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
@@ -34,7 +35,7 @@ public class MessageDao extends Dao
     
     public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
         Message message = Message.builder()
-                              .withOwner(owner.getUserIdentifier())
+                              .withOwner(owner.getUser())
                               .withCustomerId(owner.getOrganizationUri())
                               .withIdentifier(identifier)
                               .build();
@@ -52,7 +53,7 @@ public class MessageDao extends Dao
     public static MessageDao listMessagesAndResourcesForUser(UserInstance owner) {
         Message message = Message.builder()
                               .withCustomerId(owner.getOrganizationUri())
-                              .withOwner(owner.getUserIdentifier())
+                              .withOwner(owner.getUser())
                               .build();
         return new MessageDao(message);
     }
@@ -88,7 +89,7 @@ public class MessageDao extends Dao
     }
     
     @Override
-    protected String getOwner() {
+    protected User getOwner() {
         return getData().getOwner();
     }
     

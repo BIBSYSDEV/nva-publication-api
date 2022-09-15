@@ -68,7 +68,7 @@ public class DoiRequest extends TicketEntry {
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
     @JsonProperty(OWNER_FIELD)
-    private String owner;
+    private User owner;
     @JsonProperty("resourceTitle")
     private String resourceTitle;
     @JsonProperty
@@ -157,7 +157,7 @@ public class DoiRequest extends TicketEntry {
                    .withStatus(getResourceStatus())
                    .withEntityDescription(entityDescription)
                    .withPublisher(customer)
-                   .withResourceOwner(new ResourceOwner(getOwner(), UNKNOWN_USER_AFFILIATION))
+                   .withResourceOwner(new ResourceOwner(getOwner().toString(), UNKNOWN_USER_AFFILIATION))
                    .build();
     }
     
@@ -187,7 +187,7 @@ public class DoiRequest extends TicketEntry {
     }
     
     @Override
-    public String getOwner() {
+    public User getOwner() {
         return owner;
     }
     
@@ -210,7 +210,7 @@ public class DoiRequest extends TicketEntry {
         this.customerId = customerId;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     
@@ -443,8 +443,8 @@ public class DoiRequest extends TicketEntry {
             doiRequest.setCustomerId(customerId);
             return this;
         }
-        
-        public Builder withOwner(String owner) {
+    
+        public Builder withOwner(User owner) {
             doiRequest.setOwner(owner);
             return this;
         }

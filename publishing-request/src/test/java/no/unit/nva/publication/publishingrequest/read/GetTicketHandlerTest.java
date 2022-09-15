@@ -169,7 +169,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         var responseBody = response.getBodyObject(TicketDto.class);
-        assertThat(responseBody.getViewedBy(), hasItem(new User(ticket.getOwner())));
+        assertThat(responseBody.getViewedBy(), hasItem(ticket.getOwner()));
     }
     
     @ParameterizedTest(name = "ticketType:{0}")
@@ -190,11 +190,11 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     private static void assertThatHandlerReturnsDtoMakingVisibleTheFactThatTheOwnerHasNotReadTheMessage(
         TicketEntry updatedTicket, TicketDto responseBody) {
-        assertThat(responseBody.getViewedBy(), not(hasItem(new User(updatedTicket.getOwner()))));
+        assertThat(responseBody.getViewedBy(), not(hasItem(updatedTicket.getOwner())));
     }
     
     private static void assertThatPersistedTicketsIsMarkedAsUnreadForTheOwner(TicketEntry updatedTicket) {
-        assertThat(updatedTicket.getViewedBy(), not(hasItem(new User(updatedTicket.getOwner()))));
+        assertThat(updatedTicket.getViewedBy(), not(hasItem(updatedTicket.getOwner())));
     }
     
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {
@@ -215,12 +215,11 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)
         throws ApiGatewayException {
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        return ticketService.createTicket(ticket, ticketType);
+        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
     }
     
-    private String randomOwner() {
-        return randomString();
+    private User randomOwner() {
+        return new User(randomString());
     }
     
     private HandlerRequestBuilder<TicketDto> createHttpRequest(TicketEntry ticket)
@@ -234,10 +233,10 @@ class GetTicketHandlerTest extends TicketTestLocal {
     }
     
     private HandlerRequestBuilder<TicketDto> createHttpRequest(Publication publication, TicketEntry ticket,
-                                                               String owner) {
+                                                               User owner) {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withCustomerId(ticket.getCustomerId())
-                   .withNvaUsername(owner)
+                   .withNvaUsername(owner.toString())
                    .withPathParameters(createPathParameters(publication, ticket));
     }
 }

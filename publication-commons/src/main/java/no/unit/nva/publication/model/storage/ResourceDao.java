@@ -25,6 +25,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
@@ -48,7 +49,7 @@ public class ResourceDao extends Dao
     
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         Resource resource = Resource.emptyResource(
-            userInstance.getUserIdentifier(),
+            userInstance.getUser(),
             userInstance.getOrganizationUri(),
             resourceIdentifier);
         return new ResourceDao(resource);
@@ -82,7 +83,7 @@ public class ResourceDao extends Dao
     }
     
     @Override
-    protected String getOwner() {
+    protected User getOwner() {
         return getData().getOwner();
     }
     
