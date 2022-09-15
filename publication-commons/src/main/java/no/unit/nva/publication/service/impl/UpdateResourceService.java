@@ -27,6 +27,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -129,8 +130,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return existingResource
                    .copy()
                    .withPublisher(userOrganization(newOwner))
-                   .withResourceOwner(
-                       new ResourceOwner(newOwner.getUserIdentifier(), AFFILIATION_UPDATE_NOT_UPDATE_YET))
+                   .withResourceOwner(Owner.fromResourceOwner(
+                       new ResourceOwner(newOwner.getUserIdentifier(), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
                    .withModifiedDate(clockForTimestamps.instant())
                    .build();
     }

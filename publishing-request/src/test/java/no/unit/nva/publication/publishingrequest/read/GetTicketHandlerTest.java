@@ -7,9 +7,11 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
@@ -20,6 +22,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.MessageDto;
 import no.unit.nva.publication.publishingrequest.TicketDto;
@@ -156,9 +159,9 @@ class GetTicketHandlerTest extends TicketTestLocal {
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should return seen by owner true when ticket is new ")
+    @DisplayName("should return viewed by owner when ticket is new ")
     @MethodSource("ticketTypeProvider")
-    void shouldReturnSeenByOwnerTrueWhenTicketIsNew(Class<? extends TicketEntry> ticketType)
+    void shouldReturnViewedByOwnerWhenTicketIsNew(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var ticket = createPersistedTicket(ticketType);
         var request = createHttpRequest(ticket).build();
@@ -166,23 +169,32 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         var responseBody = response.getBodyObject(TicketDto.class);
-        assertThat(responseBody.getSeenByOwner(), is(true));
+        assertThat(responseBody.getViewedBy(), hasItem(new User(ticket.getOwner())));
     }
     
     @ParameterizedTest(name = "ticketType:{0}")
     @DisplayName("should mark ticket as Unread for the publication owner when ticket is marked as unread")
     @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsUnreadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
+    void shouldMarkTicketAsUnreadForThePublicationOwnerWhenTicketIsMarkedAsUnread(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var ticket = createPersistedTicket(ticketType);
-        ticket.markUnseenByOwner().persistUpdate(ticketService);
+        ticket.markUnreadByOwner().persistUpdate(ticketService);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getSeenByOwner(), is(false));
+        assertThatPersistedTicketsIsMarkedAsUnreadForTheOwner(updatedTicket);
         var request = createHttpRequest(ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var responseBody = response.getBodyObject(TicketDto.class);
-        assertThat(responseBody.getSeenByOwner(), is(false));
+        assertThatHandlerReturnsDtoMakingVisibleTheFactThatTheOwnerHasNotReadTheMessage(updatedTicket, responseBody);
+    }
+    
+    private static void assertThatHandlerReturnsDtoMakingVisibleTheFactThatTheOwnerHasNotReadTheMessage(
+        TicketEntry updatedTicket, TicketDto responseBody) {
+        assertThat(responseBody.getViewedBy(), not(hasItem(new User(updatedTicket.getOwner()))));
+    }
+    
+    private static void assertThatPersistedTicketsIsMarkedAsUnreadForTheOwner(TicketEntry updatedTicket) {
+        assertThat(updatedTicket.getViewedBy(), not(hasItem(new User(updatedTicket.getOwner()))));
     }
     
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {

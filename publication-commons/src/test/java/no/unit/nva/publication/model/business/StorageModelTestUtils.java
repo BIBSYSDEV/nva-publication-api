@@ -2,7 +2,6 @@ package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static org.hamcrest.MatcherAssert.assertThat;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -25,7 +24,7 @@ public final class StorageModelTestUtils {
         sample.setCreatedDate(randomInstant());
         sample.setModifiedDate(randomInstant());
         sample.setStatus(TicketStatus.COMPLETED);
-        sample.setSeenByOwner(randomBoolean());
+        sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
         assertThat(sample, doesNotHaveEmptyValues());
         return sample;
     }

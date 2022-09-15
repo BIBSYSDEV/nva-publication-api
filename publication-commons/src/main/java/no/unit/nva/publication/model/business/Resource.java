@@ -19,7 +19,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 
@@ -35,7 +34,7 @@ public class Resource implements Entity {
     @JsonProperty
     private PublicationStatus status;
     @JsonProperty
-    private ResourceOwner resourceOwner;
+    private Owner resourceOwner;
     @JsonProperty
     private Organization publisher;
     @JsonProperty
@@ -79,7 +78,7 @@ public class Resource implements Entity {
                                          SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
         resource.setPublisher(new Organization.Builder().withId(organizationId).build());
-        resource.setResourceOwner(new ResourceOwner(username, NOT_IMPORTANT));
+        resource.setResourceOwner(new Owner(username, NOT_IMPORTANT));
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
@@ -87,7 +86,7 @@ public class Resource implements Entity {
     public static Resource fromPublication(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
-                   .withResourceOwner(publication.getResourceOwner())
+                   .withResourceOwner(Owner.fromResourceOwner(publication.getResourceOwner()))
                    .withCreatedDate(publication.getCreatedDate())
                    .withModifiedDate(publication.getModifiedDate())
                    .withIndexedDate(publication.getIndexedDate())
@@ -110,11 +109,11 @@ public class Resource implements Entity {
         return new ResourceBuilder();
     }
     
-    public ResourceOwner getResourceOwner() {
+    public Owner getResourceOwner() {
         return resourceOwner;
     }
     
-    public void setResourceOwner(ResourceOwner resourceOwner) {
+    public void setResourceOwner(Owner resourceOwner) {
         this.resourceOwner = resourceOwner;
     }
     
@@ -140,7 +139,7 @@ public class Resource implements Entity {
     public Publication toPublication() {
         return new Publication.Builder()
                    .withIdentifier(getIdentifier())
-                   .withResourceOwner(getResourceOwner())
+                   .withResourceOwner(getResourceOwner().toResourceOwner())
                    .withStatus(getStatus())
                    .withCreatedDate(getCreatedDate())
                    .withModifiedDate(getModifiedDate())
@@ -186,7 +185,7 @@ public class Resource implements Entity {
     @JsonIgnore
     @Override
     public String getOwner() {
-        return getResourceOwner().getOwner();
+        return getResourceOwner().getUser().toString();
     }
     
     @Override
@@ -289,8 +288,7 @@ public class Resource implements Entity {
         return Resource.builder()
                    .withIdentifier(getIdentifier())
                    .withStatus(getStatus())
-                   .withResourceOwner(getResourceOwner())
-                   .withResourceOwner(getResourceOwner())
+                   .withResourceOwner(Owner.fromResourceOwner(getResourceOwner().toResourceOwner()))
                    .withPublisher(getPublisher())
                    .withCreatedDate(getCreatedDate())
                    .withModifiedDate(getModifiedDate())

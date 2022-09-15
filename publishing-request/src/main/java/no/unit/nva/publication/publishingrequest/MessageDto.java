@@ -1,3 +1,4 @@
+
 package no.unit.nva.publication.publishingrequest;
 
 import static java.util.Objects.nonNull;

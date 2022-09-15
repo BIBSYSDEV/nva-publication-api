@@ -948,7 +948,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withContributors(publicationUpdate.getEntityDescription().getContributors())
                    .withResourcePublicationInstance(
                        publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
-                   .withSeenByOwner(initialDoiRequest.getSeenByOwner())
+                   .withViewedBy(initialDoiRequest.getViewedBy())
                    .build();
     }
     

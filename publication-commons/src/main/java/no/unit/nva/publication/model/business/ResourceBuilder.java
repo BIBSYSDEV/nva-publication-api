@@ -11,7 +11,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.ResourceOwner;
 
 public final class ResourceBuilder {
     
@@ -31,7 +30,7 @@ public final class ResourceBuilder {
         return this;
     }
     
-    public ResourceBuilder withResourceOwner(ResourceOwner resourceOwner) {
+    public ResourceBuilder withResourceOwner(Owner resourceOwner) {
         resource.setResourceOwner(resourceOwner);
         return this;
     }

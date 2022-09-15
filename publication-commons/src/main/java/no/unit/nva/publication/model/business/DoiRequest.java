@@ -108,7 +108,7 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.validate();
-        doiRequest.setSeenByOwner(true);
+        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
         return doiRequest;
     }
     
@@ -158,7 +158,6 @@ public class DoiRequest extends TicketEntry {
                    .withEntityDescription(entityDescription)
                    .withPublisher(customer)
                    .withResourceOwner(new ResourceOwner(getOwner(), UNKNOWN_USER_AFFILIATION))
-        
                    .build();
     }
     
@@ -260,7 +259,7 @@ public class DoiRequest extends TicketEntry {
                    .withResourcePublicationDate(getResourcePublicationDate())
                    .withResourcePublicationYear(getResourcePublicationYear())
                    .withContributors(getContributors())
-                   .withSeenByOwner(getSeenByOwner())
+                   .withViewedBy(this.getViewedBy())
                    .build();
     }
     
@@ -470,22 +469,22 @@ public class DoiRequest extends TicketEntry {
             doiRequest.setResourcePublicationDate(resourcePublicationDate);
             return this;
         }
-        
+    
         public Builder withResourcePublicationYear(String resourcePublicationYear) {
             doiRequest.setResourcePublicationYear(resourcePublicationYear);
             return this;
         }
-        
+    
         public Builder withContributors(List<Contributor> contributors) {
             doiRequest.setContributors(contributors);
             return this;
         }
-        
-        public Builder withSeenByOwner(Boolean seenByOwner) {
-            doiRequest.setSeenByOwner(seenByOwner);
+    
+        public Builder withViewedBy(Set<User> viewedBy) {
+            doiRequest.setViewedBy(viewedBy);
             return this;
         }
-        
+    
         public DoiRequest build() {
             return doiRequest;
         }

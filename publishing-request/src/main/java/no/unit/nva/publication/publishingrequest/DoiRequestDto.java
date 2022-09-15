@@ -9,10 +9,12 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -26,7 +28,6 @@ public class DoiRequestDto extends TicketDto {
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String PUBLICATION_ID_FIELD = "publicationId";
     public static final String ID_FIELD = "id";
-    public static final String SEEN_BY_OWNER_FIELD = "seenByOwner";
     
     @JsonProperty(STATUS_FIELD)
     private final TicketStatus status;
@@ -49,8 +50,8 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId,
                          @JsonProperty(ID_FIELD) URI id,
                          @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                         @JsonProperty(SEEN_BY_OWNER_FIELD) Boolean seenByOwner) {
-        super(messages, seenByOwner);
+                         @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
+        super(messages, viewedBy);
         this.status = status;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
@@ -97,7 +98,7 @@ public class DoiRequestDto extends TicketDto {
         ticket.setModifiedDate(getModifiedDate());
         ticket.setIdentifier(getIdentifier());
         ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationId()));
-        ticket.setSeenByOwner(getSeenByOwner());
+        ticket.setViewedBy(getViewedBy());
         return ticket;
     }
     

@@ -55,7 +55,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         var request = new GetItemRequest()
                           .withTableName(RESOURCES_TABLE_NAME)
                           .withKey(primaryKey());
-        
+    
         return attempt(() -> client.getItem(request))
                    .map(GetItemResult::getItem).map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
                    .toOptional();

@@ -10,8 +10,10 @@ import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIE
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,6 +29,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -140,12 +143,12 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = draftPublicationWithoutDoi();
         var ticket = createTicket(publication, ticketType);
-        assertThat(ticket.getSeenByOwner(), is(true));
+        assertThat(ticket.getViewedBy(), hasItem(new User(ticket.getOwner())));
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getSeenByOwner(), is(false));
+        assertThat(updatedTicket.getViewedBy(), not(hasItem(new User(ticket.getOwner()))));
     }
     
     private void assertThatMessageContainsTextAndCorrectCorrespondentInfo(String expectedText,
@@ -232,8 +235,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     
     private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        var newTicket = TicketEntry.requestNewTicket(publication, ticketType);
-        return ticketService.createTicket(newTicket, newTicket.getClass());
+        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
     }
     
     @SuppressWarnings("unchecked")

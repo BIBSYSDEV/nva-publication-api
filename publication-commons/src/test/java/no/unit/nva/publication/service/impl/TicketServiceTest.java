@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -62,6 +63,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -451,16 +453,17 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should mark ticket as Unseen by owner when requested")
+    @DisplayName("should mark ticket as Unread by owner when requested")
     @MethodSource("ticketProvider")
     void shouldMarkTicketAsUnSeenByOwnerWhenRequested(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, ticketType);
-        assertThat(ticket.getSeenByOwner(), is(true));
-        ticket.copy().markUnseenByOwner().persistUpdate(ticketService);
+        var owner = new User(ticket.getOwner());
+        assertThat(ticket.getViewedBy(), hasItem(owner));
+        ticket.copy().markUnreadByOwner().persistUpdate(ticketService);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getSeenByOwner(), is(false));
+        assertThat(updatedTicket.getViewedBy(), not(hasItem(owner)));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(ticket.getModifiedDate())));
     }
     

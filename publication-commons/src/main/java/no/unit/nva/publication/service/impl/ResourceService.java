@@ -35,10 +35,10 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -228,9 +228,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new Organization.Builder().withId(userInstance.getOrganizationUri()).build();
     }
     
-    private ResourceOwner createResourceOwner(UserInstance userInstance) {
-        return new ResourceOwner(userInstance.getUserIdentifier(),
-            userInstance.getTopLevelOrgCristinId());
+    private Owner createResourceOwner(UserInstance userInstance) {
+        return new Owner(userInstance.getUserIdentifier(), userInstance.getTopLevelOrgCristinId());
     }
     
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {

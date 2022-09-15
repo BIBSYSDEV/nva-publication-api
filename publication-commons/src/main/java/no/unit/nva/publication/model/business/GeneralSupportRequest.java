@@ -55,7 +55,7 @@ public class GeneralSupportRequest extends TicketEntry {
         ticket.setModifiedDate(Instant.now());
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdentifier(SortableIdentifier.next());
-        ticket.setSeenByOwner(true);
+        ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
         return ticket;
     }
     
@@ -165,6 +165,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setCustomerId(this.getCustomerId());
         copy.setOwner(this.getOwner());
         copy.setResourceIdentifier(this.getResourceIdentifier());
+        copy.setViewedBy(this.getViewedBy());
         return copy;
     }
     
@@ -176,13 +177,6 @@ public class GeneralSupportRequest extends TicketEntry {
     @Override
     public void setStatus(TicketStatus ticketStatus) {
         this.status = ticketStatus;
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-            getResourceIdentifier(), getStatus());
     }
     
     @Override
@@ -202,6 +196,13 @@ public class GeneralSupportRequest extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
                && getStatus() == that.getStatus();
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
+            getResourceIdentifier(), getStatus());
     }
     
     private static URI extractCustomerId(Publication publication) {
