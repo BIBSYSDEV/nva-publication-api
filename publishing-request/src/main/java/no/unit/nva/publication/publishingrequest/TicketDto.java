@@ -106,7 +106,7 @@ public abstract class TicketDto implements JsonSerializable {
     
     private static URI createTicketId(TicketEntry ticket) {
         return UriWrapper.fromUri(createPublicationId(ticket.getResourceIdentifier()))
-                   .addChild(TicketUtils.TICKET_PATH)
+                   .addChild(TicketConfig.TICKET_PATH)
                    .addChild(ticket.getIdentifier().toString())
                    .getUri();
     }

@@ -25,9 +25,9 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.MessageDto;
+import no.unit.nva.publication.publishingrequest.TicketConfig;
 import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.publishingrequest.TicketTestLocal;
-import no.unit.nva.publication.publishingrequest.TicketUtils;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -200,7 +200,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
             publication.getIdentifier().toString(),
-            TicketUtils.TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
+            TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
     }
     
     private HandlerRequestBuilder<TicketDto> createHttpRequestForElevatedUser(TicketEntry ticket,

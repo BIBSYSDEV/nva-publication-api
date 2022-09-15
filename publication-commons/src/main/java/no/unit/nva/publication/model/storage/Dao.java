@@ -184,6 +184,8 @@ public abstract class Dao
     
     public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
     
+    public abstract void updateExistingEntry(AmazonDynamoDB client);
+    
     public final String dataType() {
         return getData().getType();
     }

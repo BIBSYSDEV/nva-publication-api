@@ -11,6 +11,6 @@ public abstract class TicketHandler<I, O> extends ApiGatewayHandler<I, O> {
     }
     
     protected static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo) {
-        return new SortableIdentifier(requestInfo.getPathParameter(TicketUtils.TICKET_IDENTIFIER_PARAMETER_NAME));
+        return new SortableIdentifier(requestInfo.getPathParameter(TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME));
     }
 }

@@ -56,6 +56,7 @@ public class TicketService extends ServiceWithTransactions {
     }
     
     //TODO make the method protected or package private and use TicketEntry#persist instead.
+    
     /**
      * Method should be protected or package-private.
      *
@@ -149,9 +150,7 @@ public class TicketService extends ServiceWithTransactions {
     }
     
     public void updateTicket(TicketEntry ticketEntry) {
-        var dao = (TicketDao) ticketEntry.toDao();
-        var putItem = dao.createPutItemRequest();
-        client.putItem(putItem);
+        ticketEntry.toDao().updateExistingEntry(client);
     }
     
     @Override

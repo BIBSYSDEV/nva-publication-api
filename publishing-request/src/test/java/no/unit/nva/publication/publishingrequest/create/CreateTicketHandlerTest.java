@@ -4,6 +4,7 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.publication.publishingrequest.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -195,6 +196,23 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                                           .getLastPathElement());
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
+    }
+    
+    @ParameterizedTest(name = "ticketType:{0}")
+    @DisplayName("should mark ticket as Unread for the Curators when publication owner creates new ticket")
+    @MethodSource("ticketEntryProvider")
+    void shouldMarkTicketAsUnReadForTheCuratorsWhenPublicationOwnerCreatesNewTicket(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
+        var publication = createPersistedDraftPublication();
+        var owner = UserInstance.fromPublication(publication);
+        var requestBody = constructDto(ticketType);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(input, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
+                                                          .getLastPathElement());
+        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
+        assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
     }
     
     private Publication createUnpublishablePublication() {

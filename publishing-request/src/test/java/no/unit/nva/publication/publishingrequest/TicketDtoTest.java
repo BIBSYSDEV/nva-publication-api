@@ -60,7 +60,7 @@ class TicketDtoTest {
     
     private URI createTicketId(URI publicationId, SortableIdentifier ticketIdentifier) {
         return UriWrapper.fromUri(publicationId)
-                   .addChild(TicketUtils.TICKET_PATH)
+                   .addChild(TicketConfig.TICKET_PATH)
                    .addChild(ticketIdentifier.toString())
                    .getUri();
     }

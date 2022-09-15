@@ -6,8 +6,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.publishingrequest.TicketConfig;
 import no.unit.nva.publication.publishingrequest.TicketDto;
-import no.unit.nva.publication.publishingrequest.TicketUtils;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -86,7 +86,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     }
     
     private static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo) {
-        return new SortableIdentifier(requestInfo.getPathParameter(TicketUtils.TICKET_IDENTIFIER_PARAMETER_NAME));
+        return new SortableIdentifier(requestInfo.getPathParameter(TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME));
     }
     
     @Override

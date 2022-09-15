@@ -76,6 +76,11 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         return createAndPersistPublicationAndThenActOnIt(this::markForDeletion);
     }
     
+    protected TicketEntry persistTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+    }
+    
     protected Publication nonPersistedPublication() {
         return randomPublication();
     }

@@ -103,6 +103,12 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         return result.stream();
     }
     
+    public void updateExistingEntry(AmazonDynamoDB client) {
+        this.getData().setModifiedDate(Instant.now());
+        var putItem = this.createPutItemRequest();
+        client.putItem(putItem);
+    }
+    
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
         Put put = new Put()
                       .withItem(data.toDynamoFormat())

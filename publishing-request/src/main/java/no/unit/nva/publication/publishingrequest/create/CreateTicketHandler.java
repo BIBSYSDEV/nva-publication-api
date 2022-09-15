@@ -2,7 +2,7 @@ package no.unit.nva.publication.publishingrequest.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
-import static no.unit.nva.publication.publishingrequest.TicketUtils.TICKET_PATH;
+import static no.unit.nva.publication.publishingrequest.TicketConfig.TICKET_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
