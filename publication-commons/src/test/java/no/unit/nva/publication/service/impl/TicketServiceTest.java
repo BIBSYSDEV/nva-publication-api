@@ -455,7 +455,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should mark ticket as Unread by owner when requested")
     @MethodSource("ticketProvider")
-    void shouldMarkTicketAsUnSeenByOwnerWhenRequested(Class<? extends TicketEntry> ticketType)
+    void shouldMarkTicketAsUnreadByOwnerWhenRequested(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, ticketType);
