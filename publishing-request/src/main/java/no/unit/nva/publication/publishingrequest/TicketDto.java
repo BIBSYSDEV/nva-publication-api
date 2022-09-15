@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
@@ -23,6 +24,8 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.ViewedBy;
 import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -34,15 +37,15 @@ import nva.commons.core.paths.UriWrapper;
 public abstract class TicketDto implements JsonSerializable {
     
     public static final String MESSAGES_FIELD = "messages";
-    public static final String SEEN_BY_OWNER_FIELD = "seenByOwner";
-    @JsonProperty(SEEN_BY_OWNER_FIELD)
-    private final Boolean seenByOwner;
+    public static final String VIEWED_BY = "viewedBy";
+    @JsonProperty(VIEWED_BY)
+    private final Set<User> viewedBy;
     @JsonProperty(MESSAGES_FIELD)
-    private List<MessageDto> messages;
+    private final List<MessageDto> messages;
     
-    protected TicketDto(List<MessageDto> messages, Boolean seenByOwner) {
+    protected TicketDto(List<MessageDto> messages, Set<User> viewedBy) {
         this.messages = messages;
-        this.seenByOwner = seenByOwner;
+        this.viewedBy = new ViewedBy(viewedBy);
     }
     
     public static TicketDto fromTicket(TicketEntry ticket) {
@@ -65,7 +68,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationId(createPublicationId(ticket.getResourceIdentifier()))
                    .withId(createTicketId(ticket))
                    .withMessages(messageDtos)
-                   .withSeenByOwner(ticket.isSeenByOwner())
+                   .withViewedBy(ticket.getViewedBy())
                    .build(ticket.getClass());
     }
     
@@ -88,16 +91,12 @@ public abstract class TicketDto implements JsonSerializable {
         return toJsonString();
     }
     
-    public final void setMessages(List<MessageDto> messages) {
-        this.messages = messages;
-    }
-    
     public final List<MessageDto> getMessages() {
         return nonNull(messages) ? messages : Collections.emptyList();
     }
     
-    public boolean isSeenByOwner() {
-        return seenByOwner;
+    public Set<User> getViewedBy() {
+        return viewedBy;
     }
     
     protected SortableIdentifier extractResourceIdentifier(URI publicationId) {
@@ -128,7 +127,7 @@ public abstract class TicketDto implements JsonSerializable {
         private URI publicationId;
         private URI id;
         private List<MessageDto> messages;
-        private boolean seenByOwner;
+        private ViewedBy viewedBy;
         
         private Builder() {
         }
@@ -182,13 +181,13 @@ public abstract class TicketDto implements JsonSerializable {
                     publicationId,
                     id,
                     messages,
-                    seenByOwner);
+                    viewedBy);
             }
             throw new RuntimeException("Unsupported type");
         }
     
-        public Builder withSeenByOwner(boolean seenByOwner) {
-            this.seenByOwner = seenByOwner;
+        public Builder withViewedBy(Set<User> viewedBy) {
+            this.viewedBy = new ViewedBy(viewedBy);
             return this;
         }
     
@@ -200,7 +199,7 @@ public abstract class TicketDto implements JsonSerializable {
                 publicationId,
                 id,
                 messages,
-                seenByOwner);
+                viewedBy);
         }
     
         private DoiRequestDto createDoiRequestDto() {
@@ -211,7 +210,7 @@ public abstract class TicketDto implements JsonSerializable {
                 publicationId,
                 id,
                 messages,
-                seenByOwner);
+                viewedBy);
         }
     }
 }

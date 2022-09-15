@@ -24,6 +24,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -230,7 +231,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setCreatedDate(Instant.now());
             requestCase.setCustomerId(publication.getPublisher().getId());
             requestCase.setResourceIdentifier(publication.getIdentifier());
-            requestCase.setOwner(publication.getResourceOwner().getOwner());
+            requestCase.setOwner(new User(publication.getResourceOwner().getOwner()));
             return requestCase;
         }
     }

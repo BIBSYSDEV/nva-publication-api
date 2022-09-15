@@ -16,13 +16,17 @@ public class UserInstance implements JsonSerializable {
     
     public static final URI UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI = null;
     private final URI organizationUri;
-    private final String userIdentifier;
+    private final User user;
     private final URI topLevelOrgCristinId;
     
     protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId) {
-        this.userIdentifier = userIdentifier;
+        this.user = new User(userIdentifier);
         this.organizationUri = organizationUri;
         this.topLevelOrgCristinId = topLevelOrgCristinId;
+    }
+    
+    public static UserInstance create(User user, URI organizationUri) {
+        return new UserInstance(user.toString(), organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI);
     }
     
     public static UserInstance create(String userIdentifier, URI organizationUri) {
@@ -59,8 +63,12 @@ public class UserInstance implements JsonSerializable {
         return organizationUri;
     }
     
-    public String getUserIdentifier() {
-        return userIdentifier;
+    public String getUsername() {
+        return user.toString();
+    }
+    
+    public User getUser() {
+        return user;
     }
     
     @JacocoGenerated
@@ -71,7 +79,7 @@ public class UserInstance implements JsonSerializable {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getOrganizationUri(), getUserIdentifier(), getTopLevelOrgCristinId());
+        return Objects.hash(getOrganizationUri(), getUsername(), getTopLevelOrgCristinId());
     }
     
     @Override
@@ -85,7 +93,7 @@ public class UserInstance implements JsonSerializable {
         }
         UserInstance that = (UserInstance) o;
         return Objects.equals(getOrganizationUri(), that.getOrganizationUri()) && Objects.equals(
-            getUserIdentifier(), that.getUserIdentifier()) && Objects.equals(getTopLevelOrgCristinId(),
+            getUsername(), that.getUsername()) && Objects.equals(getTopLevelOrgCristinId(),
             that.getTopLevelOrgCristinId());
     }
 }

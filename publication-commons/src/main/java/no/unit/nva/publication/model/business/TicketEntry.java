@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -17,19 +18,74 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({
-    @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
+@JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
-    @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)
-})
+    @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)})
 public abstract class TicketEntry implements Entity {
     
-    public static final String SEEN_BY_OWNER_FIELD = "seenByOwner";
-    @JsonProperty(SEEN_BY_OWNER_FIELD)
-    private boolean seenByOwner;
+    public static final String VIEWED_BY_FIELD = "viewedBy";
+    @JsonProperty(VIEWED_BY_FIELD)
+    private ViewedBy viewedBy;
     
-    public TicketEntry() {
-        seenByOwner = false;
+    protected TicketEntry() {
+    }
+    
+    public static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication, Class<T> ticketType,
+                                                                      Supplier<SortableIdentifier> identifierProvider)
+        throws ConflictException {
+        var newTicket = createNewTicketEntry(publication, ticketType, identifierProvider);
+        newTicket.validateCreationRequirements(publication);
+        return newTicket;
+    }
+    
+    public static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return DoiRequest.fromPublication(publication);
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
+            return createOpeningCaseObject(UserInstance.fromPublication(publication), publication.getIdentifier());
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
+            return GeneralSupportRequest.fromPublication(publication);
+        }
+        throw new RuntimeException("Unrecognized ticket type");
+    }
+    
+    public static <T extends TicketEntry> T createQueryObject(URI customerId, SortableIdentifier resourceIdentifier,
+                                                              Class<T> ticketType) {
+        if (DoiRequest.class.equals(ticketType)) {
+            return ticketType.cast(
+                DoiRequest.builder().withResourceIdentifier(resourceIdentifier).withCustomerId(customerId).build());
+        }
+        if (PublishingRequestCase.class.equals(ticketType)) {
+            return ticketType.cast(PublishingRequestCase.createQueryObject(customerId, resourceIdentifier));
+        }
+        if (GeneralSupportRequest.class.equals(ticketType)) {
+            return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
+        }
+        throw new UnsupportedOperationException();
+    }
+    
+    public static UntypedTicketQueryObject createQueryObject(UserInstance userInstance,
+                                                             SortableIdentifier ticketIdentifier) {
+        return UntypedTicketQueryObject.create(userInstance, ticketIdentifier);
+    }
+    
+    public static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
+        return UntypedTicketQueryObject.create(ticketIdentifier);
+    }
+    
+    public static TicketEntry createNewGeneralSupportRequest(Publication publication,
+                                                             Supplier<SortableIdentifier> identifierProvider) {
+        var ticket = GeneralSupportRequest.fromPublication(publication);
+        setServiceControlledFields(ticket, identifierProvider);
+        return ticket;
+    }
+    
+    public Set<User> getViewedBy() {
+        return viewedBy;
+    }
+    
+    public void setViewedBy(Set<User> viewedBy) {
+        this.viewedBy = new ViewedBy(viewedBy);
     }
     
     public void persistUpdate(TicketService ticketService) {
@@ -60,8 +116,8 @@ public abstract class TicketEntry implements Entity {
     
     public void validateClosingRequirements() throws ApiGatewayException {
         if (!getStatus().equals(TicketStatus.PENDING)) {
-            var errorMessage =
-                String.format("Cannot close a ticket that has any other status than %s", TicketStatus.PENDING);
+            var errorMessage = String.format("Cannot close a ticket that has any other status than %s",
+                TicketStatus.PENDING);
             throw new BadRequestException(errorMessage);
         }
     }
@@ -87,82 +143,19 @@ public abstract class TicketEntry implements Entity {
         return ticketService.createTicket(this, this.getClass());
     }
     
-    public final boolean isSeenByOwner() {
-        return seenByOwner;
-    }
-    
-    public final void setSeenByOwner(boolean seenByOwner) {
-        this.seenByOwner = seenByOwner;
-    }
-    
-    public final TicketEntry markUnreadForOwner() {
-        seenByOwner = false;
+    public final TicketEntry markUnreadByOwner() {
+        viewedBy.remove(this.getOwner());
         this.setModifiedDate(Instant.now());
         return this;
-    }
-    
-    public static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication,
-                                                                      Class<T> ticketType,
-                                                                      Supplier<SortableIdentifier> identifierProvider)
-        throws ConflictException {
-        var newTicket = createNewTicketEntry(publication, ticketType, identifierProvider);
-        newTicket.validateCreationRequirements(publication);
-        return newTicket;
-    }
-    
-    public static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
-        if (DoiRequest.class.equals(ticketType)) {
-            return DoiRequest.fromPublication(publication);
-        } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return createOpeningCaseObject(UserInstance.fromPublication(publication), publication.getIdentifier());
-        } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return GeneralSupportRequest.fromPublication(publication);
-        }
-        throw new RuntimeException("Unrecognized ticket type");
-    }
-    
-    public static <T extends TicketEntry> T createQueryObject(URI customerId,
-                                                              SortableIdentifier resourceIdentifier,
-                                                              Class<T> ticketType) {
-        if (DoiRequest.class.equals(ticketType)) {
-            return ticketType.cast(DoiRequest.builder()
-                                       .withResourceIdentifier(resourceIdentifier)
-                                       .withCustomerId(customerId)
-                                       .build());
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
-            return ticketType.cast(PublishingRequestCase.createQueryObject(customerId, resourceIdentifier));
-        }
-        if (GeneralSupportRequest.class.equals(ticketType)) {
-            return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
-        }
-        throw new UnsupportedOperationException();
-    }
-    
-    public static UntypedTicketQueryObject createQueryObject(UserInstance userInstance,
-                                                             SortableIdentifier ticketIdentifier) {
-        return UntypedTicketQueryObject.create(userInstance, ticketIdentifier);
-    }
-    
-    public static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
-        return UntypedTicketQueryObject.create(ticketIdentifier);
-    }
-    
-    public static TicketEntry createNewGeneralSupportRequest(Publication publication,
-                                                             Supplier<SortableIdentifier> identifierProvider) {
-        var ticket = GeneralSupportRequest.fromPublication(publication);
-        setServiceControlledFields(ticket, identifierProvider);
-        return ticket;
     }
     
     public TicketEntry fetch(TicketService ticketService) throws NotFoundException {
         return ticketService.fetchTicket(this);
     }
     
-    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
-        Publication publication,
-        Class<T> ticketType,
-        Supplier<SortableIdentifier> identifierProvider) {
+    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(Publication publication,
+                                                                            Class<T> ticketType,
+                                                                            Supplier<SortableIdentifier> identifierProvider) {
         
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);

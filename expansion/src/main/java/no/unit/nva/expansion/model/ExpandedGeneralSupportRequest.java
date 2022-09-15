@@ -9,6 +9,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -25,7 +26,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     private Instant createdDate;
     private URI customerId;
     private TicketStatus status;
-    private String owner;
+    private User owner;
     
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
@@ -98,11 +99,11 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         this.status = status;
     }
     
-    private String getOwner() {
+    private User getOwner() {
         return this.owner;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     

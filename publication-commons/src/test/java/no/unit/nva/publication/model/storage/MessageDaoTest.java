@@ -31,7 +31,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     public static final UserInstance SAMPLE_SENDER = UserInstance.create(SAMPLE_SENDER_USERNAME, SAMPLE_ORG);
     public static final String SAMPLE_OWNER_USERNAME = "some@owner";
     public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
-    public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SAMPLE_OWNER.getUserIdentifier(),
+    public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SAMPLE_OWNER.getUsername(),
         SAMPLE_OWNER.getOrganizationUri());
     public static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     public static final String SAMPLE_TEXT = "some text";
@@ -73,7 +73,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     @Test
     void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
         var actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
-        assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUserIdentifier())));
+        assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUser())));
         assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getOrganizationUri())));
     }
     

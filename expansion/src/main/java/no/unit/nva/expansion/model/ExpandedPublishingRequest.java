@@ -16,6 +16,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -34,7 +35,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
     private URI customerId;
-    private String owner;
+    private User owner;
     private Instant modifiedDate;
     private Instant createdDate;
     
@@ -121,11 +122,11 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         this.modifiedDate = modifiedDate;
     }
     
-    public String getOwner() {
+    public User getOwner() {
         return this.owner;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     

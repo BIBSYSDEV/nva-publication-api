@@ -34,7 +34,7 @@ public class GeneralSupportRequest extends TicketEntry {
     @JsonProperty(MODIFIED_DATE_FIELD)
     private Instant modifiedDate;
     @JsonProperty(OWNER_FIELD)
-    private String owner;
+    private User owner;
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
     @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
@@ -55,6 +55,7 @@ public class GeneralSupportRequest extends TicketEntry {
         ticket.setModifiedDate(Instant.now());
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdentifier(SortableIdentifier.next());
+        ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
         return ticket;
     }
     
@@ -107,11 +108,11 @@ public class GeneralSupportRequest extends TicketEntry {
     }
     
     @Override
-    public String getOwner() {
+    public User getOwner() {
         return this.owner;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     
@@ -164,6 +165,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setCustomerId(this.getCustomerId());
         copy.setOwner(this.getOwner());
         copy.setResourceIdentifier(this.getResourceIdentifier());
+        copy.setViewedBy(this.getViewedBy());
         return copy;
     }
     
@@ -175,13 +177,6 @@ public class GeneralSupportRequest extends TicketEntry {
     @Override
     public void setStatus(TicketStatus ticketStatus) {
         this.status = ticketStatus;
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-            getResourceIdentifier(), getStatus());
     }
     
     @Override
@@ -203,11 +198,21 @@ public class GeneralSupportRequest extends TicketEntry {
                && getStatus() == that.getStatus();
     }
     
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
+            getResourceIdentifier(), getStatus());
+    }
+    
     private static URI extractCustomerId(Publication publication) {
         return Optional.of(publication).map(Publication::getPublisher).map(Organization::getId).orElse(null);
     }
     
-    private static String extractOwner(Publication publication) {
-        return Optional.of(publication).map(Publication::getResourceOwner).map(ResourceOwner::getOwner).orElse(null);
+    private static User extractOwner(Publication publication) {
+        return Optional.of(publication).map(Publication::getResourceOwner)
+                   .map(ResourceOwner::getOwner)
+                   .map(User::new)
+                   .orElse(null);
     }
 }

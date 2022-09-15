@@ -8,19 +8,20 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import org.junit.jupiter.api.Test;
 
 class DoiRequestDaoTest {
     
-    private static final String SAMPLE_USER = "some@onwer";
+    private static final User SAMPLE_USER = new User("some@onwer");
     private static final String SAMPLE_PUBLISHER_IDENTIFIER = "somePublsherId";
     private static final URI SAMPLE_PUBLISHER = URI.create("https://some.example.org/" + SAMPLE_PUBLISHER_IDENTIFIER);
     private static final UserInstance SAMPLE_USER_INSTANCE = UserInstance.create(SAMPLE_USER, SAMPLE_PUBLISHER);
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     
     @Test
-    public void queryByCustomerAndResourceIdentifierReturnsObjectWithPartitionKeyContainingPublisherAndResourceId() {
+    void queryByCustomerAndResourceIdentifierReturnsObjectWithPartitionKeyContainingPublisherAndResourceId() {
         
         DoiRequestDao queryObject =
             DoiRequestDao.queryByCustomerAndResourceIdentifier(SAMPLE_USER_INSTANCE, SAMPLE_RESOURCE_IDENTIFIER);
@@ -36,14 +37,14 @@ class DoiRequestDaoTest {
     }
     
     @Test
-    public void queryObjectWithOwnerAndResourceReturnsQueryObjectEnablingRetrievalOfAllDoiRequestsOfUser() {
+    void queryObjectWithOwnerAndResourceReturnsQueryObjectEnablingRetrievalOfAllDoiRequestsOfUser() {
         DoiRequestDao queryObject = DoiRequestDao.queryObject(SAMPLE_PUBLISHER, SAMPLE_USER);
         String expectedPrimaryPartitionKey = expectedDoiRequestPrimaryPartitionKey();
         assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPrimaryPartitionKey)));
     }
     
     @Test
-    public void queryObjectWithOwnerResourceAndEntryIdentifierReturnsQueryObjectWithCompletePrimaryKey() {
+    void queryObjectWithOwnerResourceAndEntryIdentifierReturnsQueryObjectWithCompletePrimaryKey() {
         SortableIdentifier sampleEntryIdentifier = SortableIdentifier.next();
         DoiRequestDao queryObject = DoiRequestDao.queryObject(SAMPLE_PUBLISHER, SAMPLE_USER, sampleEntryIdentifier);
         

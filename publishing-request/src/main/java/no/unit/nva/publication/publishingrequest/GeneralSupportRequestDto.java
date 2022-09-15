@@ -8,10 +8,12 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -45,8 +47,8 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId,
                                     @JsonProperty(ID_FIELD) URI id,
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                                    @JsonProperty(SEEN_BY_OWNER_FIELD) Boolean seenByOwner) {
-        super(messages, seenByOwner);
+                                    @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
+        super(messages, viewedBy);
         this.status = status;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
@@ -93,6 +95,7 @@ public class GeneralSupportRequestDto extends TicketDto {
         request.setResourceIdentifier(extractResourceIdentifier(this.getPublicationId()));
         request.setCreatedDate(this.getCreatedDate());
         request.setModifiedDate(this.getModifiedDate());
+        request.setViewedBy(this.getViewedBy());
         return request;
     }
     

@@ -68,7 +68,7 @@ public class DoiRequest extends TicketEntry {
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
     @JsonProperty(OWNER_FIELD)
-    private String owner;
+    private User owner;
     @JsonProperty("resourceTitle")
     private String resourceTitle;
     @JsonProperty
@@ -101,19 +101,19 @@ public class DoiRequest extends TicketEntry {
     public static DoiRequest newDoiRequestForResource(SortableIdentifier doiRequestIdentifier,
                                                       Resource resource,
                                                       Instant now) {
-        
+    
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(doiRequestIdentifier);
         doiRequest.setStatus(TicketStatus.PENDING);
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
-        
         doiRequest.validate();
+        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
         return doiRequest;
     }
     
-    public static DoiRequestBuilder builder() {
-        return new DoiRequestBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
     
     public static DoiRequest createQueryObject(Resource resource) {
@@ -157,11 +157,9 @@ public class DoiRequest extends TicketEntry {
                    .withStatus(getResourceStatus())
                    .withEntityDescription(entityDescription)
                    .withPublisher(customer)
-                   .withResourceOwner(new ResourceOwner(getOwner(), UNKNOWN_USER_AFFILIATION))
-        
+                   .withResourceOwner(new ResourceOwner(getOwner().toString(), UNKNOWN_USER_AFFILIATION))
                    .build();
     }
-    
     
     @Override
     public String getType() {
@@ -189,7 +187,7 @@ public class DoiRequest extends TicketEntry {
     }
     
     @Override
-    public String getOwner() {
+    public User getOwner() {
         return owner;
     }
     
@@ -212,7 +210,7 @@ public class DoiRequest extends TicketEntry {
         this.customerId = customerId;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     
@@ -261,6 +259,7 @@ public class DoiRequest extends TicketEntry {
                    .withResourcePublicationDate(getResourcePublicationDate())
                    .withResourcePublicationYear(getResourcePublicationYear())
                    .withContributors(getContributors())
+                   .withViewedBy(this.getViewedBy())
                    .build();
     }
     
@@ -400,5 +399,94 @@ public class DoiRequest extends TicketEntry {
     
     private boolean updateIsAboutTheSameResource(Resource resource) {
         return resource.getIdentifier().equals(this.getResourceIdentifier());
+    }
+    
+    public static final class Builder {
+        
+        private final DoiRequest doiRequest;
+        
+        private Builder() {
+            doiRequest = new DoiRequest();
+        }
+        
+        public Builder withIdentifier(SortableIdentifier identifier) {
+            doiRequest.setIdentifier(identifier);
+            return this;
+        }
+        
+        public Builder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
+            doiRequest.setResourceIdentifier(resourceIdentifier);
+            return this;
+        }
+        
+        public Builder withStatus(TicketStatus status) {
+            doiRequest.setStatus(status);
+            return this;
+        }
+        
+        public Builder withResourceStatus(PublicationStatus resourceStatus) {
+            doiRequest.setResourceStatus(resourceStatus);
+            return this;
+        }
+        
+        public Builder withModifiedDate(Instant modifiedDate) {
+            doiRequest.setModifiedDate(modifiedDate);
+            return this;
+        }
+        
+        public Builder withCreatedDate(Instant createdDate) {
+            doiRequest.setCreatedDate(createdDate);
+            return this;
+        }
+        
+        public Builder withCustomerId(URI customerId) {
+            doiRequest.setCustomerId(customerId);
+            return this;
+        }
+    
+        public Builder withOwner(User owner) {
+            doiRequest.setOwner(owner);
+            return this;
+        }
+        
+        public Builder withResourceTitle(String resourceTitle) {
+            doiRequest.setResourceTitle(resourceTitle);
+            return this;
+        }
+        
+        public Builder withResourceModifiedDate(Instant resourceModifiedDate) {
+            doiRequest.setResourceModifiedDate(resourceModifiedDate);
+            return this;
+        }
+        
+        public Builder withResourcePublicationInstance(
+            PublicationInstance<? extends Pages> resourcePublicationInstance) {
+            doiRequest.setResourcePublicationInstance(resourcePublicationInstance);
+            return this;
+        }
+        
+        public Builder withResourcePublicationDate(PublicationDate resourcePublicationDate) {
+            doiRequest.setResourcePublicationDate(resourcePublicationDate);
+            return this;
+        }
+    
+        public Builder withResourcePublicationYear(String resourcePublicationYear) {
+            doiRequest.setResourcePublicationYear(resourcePublicationYear);
+            return this;
+        }
+    
+        public Builder withContributors(List<Contributor> contributors) {
+            doiRequest.setContributors(contributors);
+            return this;
+        }
+    
+        public Builder withViewedBy(Set<User> viewedBy) {
+            doiRequest.setViewedBy(viewedBy);
+            return this;
+        }
+    
+        public DoiRequest build() {
+            return doiRequest;
+        }
     }
 }

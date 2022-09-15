@@ -7,6 +7,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.publishingrequest.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
@@ -193,7 +194,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        assertThat(ticket.isSeenByOwner(), is(equalTo(true)));
+        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
     }
     
     private Publication createUnpublishablePublication() {
@@ -267,7 +268,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
                    .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
-                   .withNvaUsername(userCredentials.getUserIdentifier())
+                   .withNvaUsername(userCredentials.getUsername())
                    .withCustomerId(userCredentials.getOrganizationUri())
                    .build();
     }

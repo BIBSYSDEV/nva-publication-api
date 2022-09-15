@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -14,7 +13,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Set;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -57,19 +55,18 @@ class DoiRequestTest {
     
     @Test
     void toPublicationPreservesPublicationRelatedFields() {
-        
+    
         var originalDoiRequest = DoiRequest.fromPublication(PublicationGenerator.randomPublication());
-        
-        assertThat(originalDoiRequest, doesNotHaveEmptyValues());
+    
         var generatedPublication = originalDoiRequest.toPublication();
-        
+    
         var regeneratedDoiRequest = DoiRequest.fromPublication(generatedPublication);
         regeneratedDoiRequest.setIdentifier(originalDoiRequest.getIdentifier());
         regeneratedDoiRequest.setCreatedDate(originalDoiRequest.getCreatedDate());
         regeneratedDoiRequest.setModifiedDate(originalDoiRequest.getModifiedDate());
-        // when transformed to Publication we do not have control over the rowVersion anymore because
-        // nva-datamodel-java is an external library.
-        assertThat(regeneratedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("version")));
+    
+        assertThat(originalDoiRequest, doesNotHaveEmptyValues());
+        assertThat(regeneratedDoiRequest, doesNotHaveEmptyValues());
         assertThat(regeneratedDoiRequest, is(equalTo(originalDoiRequest)));
     }
     

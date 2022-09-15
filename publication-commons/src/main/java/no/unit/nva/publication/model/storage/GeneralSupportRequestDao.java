@@ -8,6 +8,7 @@ import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.User;
 
 @JsonTypeName(GeneralSupportRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -38,7 +39,7 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
     }
     
     @Override
-    protected String getOwner() {
+    protected User getOwner() {
         return getData().getOwner();
     }
     

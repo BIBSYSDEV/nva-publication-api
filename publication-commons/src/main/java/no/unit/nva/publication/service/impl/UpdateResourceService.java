@@ -27,6 +27,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -105,7 +106,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                                                      SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = readResourceService
-            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         var dao = extractResourceDao(daos);
         var resource = (Resource) dao.getData();
         if (resourceIsPublished(resource)) {
@@ -118,7 +119,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private Publication fetchExistingPublication(Publication publication) {
         return attempt(() -> readResourceService.getPublication(publication))
-            .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
+                   .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
     
     private boolean resourceIsPublished(Entity resource) {
@@ -127,25 +128,25 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource
-            .copy()
-            .withPublisher(userOrganization(newOwner))
-            .withResourceOwner(new ResourceOwner(newOwner.getUserIdentifier(), AFFILIATION_UPDATE_NOT_UPDATE_YET))
-            .withModifiedDate(clockForTimestamps.instant())
-            .build();
+                   .copy()
+                   .withPublisher(userOrganization(newOwner))
+                   .withResourceOwner(Owner.fromResourceOwner(
+                       new ResourceOwner(newOwner.getUsername(), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
+                   .withModifiedDate(clockForTimestamps.instant())
+                   .build();
     }
     
     private Optional<TransactWriteItem> updateDoiRequest(Resource resource) {
         var queryObject = DoiRequest.createQueryObject(resource);
         var queryDao = queryObject.toDao();
         var existingDoiRequest = queryDao.fetchByResourceIdentifier(client)
-            .map(Dao::getData)
-            .map(DoiRequest.class::cast);
-        
+                                     .map(Dao::getData)
+                                     .map(DoiRequest.class::cast);
+    
         return existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
-            .map(DoiRequestDao::new)
-            .map(DoiRequestDao::toDynamoFormat)
-            .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
-            .map(put -> new TransactWriteItem().withPut(put));
+                   .map(DoiRequestDao::new).map(DoiRequestDao::toDynamoFormat)
+                   .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
+                   .map(put -> new TransactWriteItem().withPut(put));
     }
     
     private TransactWriteItem updateResource(Resource resourceUpdate) {
@@ -154,13 +155,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         
         Map<String, AttributeValue> primaryKeyConditionAttributeValues =
             primaryKeyEqualityConditionAttributeValues(resourceDao);
-        
+    
         Put put = new Put()
-            .withItem(resourceDao.toDynamoFormat())
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
-            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
+                      .withItem(resourceDao.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+                      .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
         
         return new TransactWriteItem().withPut(put);
     }
@@ -209,14 +210,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
             ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
             ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()));
-        
+    
         Update update = new Update()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionNamesMap)
-            .withExpressionAttributeValues(expressionValuesMap);
+                            .withTableName(tableName)
+                            .withKey(dao.primaryKey())
+                            .withUpdateExpression(updateExpression)
+                            .withConditionExpression(conditionExpression)
+                            .withExpressionAttributeNames(expressionNamesMap)
+                            .withExpressionAttributeValues(expressionValuesMap);
         return new TransactWriteItem().withUpdate(update);
     }
     
@@ -234,12 +235,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
             ":modifiedDate", new AttributeValue(nowString)
         );
-        
+    
         Update update = new Update().withTableName(tableName)
-            .withKey(doiRequestDao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(attributeValueMap);
+                            .withKey(doiRequestDao.primaryKey())
+                            .withUpdateExpression(updateExpression)
+                            .withExpressionAttributeNames(expressionAttributeNames)
+                            .withExpressionAttributeValues(attributeValueMap);
         
         return new TransactWriteItem().withUpdate(update);
     }
@@ -251,5 +252,4 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private PublishPublicationStatusResponse publishCompletedStatus() {
         return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
     }
-    
 }

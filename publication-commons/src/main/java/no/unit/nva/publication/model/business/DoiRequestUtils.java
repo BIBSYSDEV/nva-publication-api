@@ -17,7 +17,7 @@ public final class DoiRequestUtils {
     static DoiRequest extractDataFromResource(DoiRequest doiRequest, Resource resource) {
         var copy = doiRequest.copy();
         copy.setResourceIdentifier(resource.getIdentifier());
-        copy.setOwner(resource.getResourceOwner().getOwner());
+        copy.setOwner(resource.getResourceOwner().getUser());
         copy.setResourceModifiedDate(resource.getModifiedDate());
         copy.setResourcePublicationDate(extractPublicationDate(resource));
         copy.setCustomerId(resource.getCustomerId());

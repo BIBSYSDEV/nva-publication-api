@@ -22,18 +22,18 @@ import nva.commons.core.JacocoGenerated;
 public class Message implements Entity, JsonSerializable {
     
     public static final String TYPE = "Message";
-    public static final String SUPPORT_SERVICE_CORRESPONDENT = "SupportService";
+    public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     
     @JsonProperty("identifier")
     private SortableIdentifier identifier;
     @JsonProperty("owner")
-    private String owner;
+    private User owner;
     @JsonProperty("customerId")
     private URI customerId;
     @JsonProperty("status")
     private MessageStatus status;
     @JsonProperty("sender")
-    private String sender;
+    private User sender;
     @JsonProperty("resourceIdentifier")
     private SortableIdentifier resourceIdentifier;
     @JsonProperty("ticketIdentifier")
@@ -73,7 +73,7 @@ public class Message implements Entity, JsonSerializable {
                    .withMessageType(calculateMessageType(ticket))
                    .withIdentifier(SortableIdentifier.next())
                    .withText(message)
-                   .withSender(sender.getUserIdentifier())
+                   .withSender(sender.getUser())
                    .withResourceTitle("NOT_USED")
                    .withResourceIdentifier(ticket.getResourceIdentifier())
                    .withTicketIdentifier(ticket.getIdentifier())
@@ -110,7 +110,7 @@ public class Message implements Entity, JsonSerializable {
     }
     
     @JsonProperty("recipient")
-    public String getRecipient() {
+    public User getRecipient() {
         return owner.equals(sender) ? SUPPORT_SERVICE_CORRESPONDENT : owner;
     }
     
@@ -213,7 +213,7 @@ public class Message implements Entity, JsonSerializable {
     }
     
     @Override
-    public String getOwner() {
+    public User getOwner() {
         return owner;
     }
     
@@ -236,15 +236,15 @@ public class Message implements Entity, JsonSerializable {
         this.customerId = customerId;
     }
     
-    public void setOwner(String owner) {
+    public void setOwner(User owner) {
         this.owner = owner;
     }
     
-    public String getSender() {
+    public User getSender() {
         return sender;
     }
     
-    public void setSender(String sender) {
+    public void setSender(User sender) {
         this.sender = sender;
     }
     
@@ -311,8 +311,8 @@ public class Message implements Entity, JsonSerializable {
                    .withResourceIdentifier(publication.getIdentifier())
                    .withCustomerId(sender.getOrganizationUri())
                    .withText(messageText)
-                   .withSender(sender.getUserIdentifier())
-                   .withOwner(publication.getResourceOwner().getOwner())
+                   .withSender(sender.getUser())
+                   .withOwner(new User(publication.getResourceOwner().getOwner()))
                    .withResourceTitle(extractTitle(publication))
                    .withCreatedDate(now)
                    .withModifiedDate(now)
@@ -339,8 +339,8 @@ public class Message implements Entity, JsonSerializable {
             message.setIdentifier(identifier);
             return this;
         }
-        
-        public Builder withOwner(String owner) {
+    
+        public Builder withOwner(User owner) {
             message.setOwner(owner);
             return this;
         }
@@ -349,8 +349,8 @@ public class Message implements Entity, JsonSerializable {
             message.setCustomerId(customerId);
             return this;
         }
-        
-        public Builder withSender(String sender) {
+    
+        public Builder withSender(User sender) {
             message.setSender(sender);
             return this;
         }

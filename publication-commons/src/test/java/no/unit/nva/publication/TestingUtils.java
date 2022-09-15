@@ -38,7 +38,7 @@ public final class TestingUtils {
     public static Publication createUnpersistedPublication(UserInstance userInstance) {
         return randomPublicationWithoutDoi()
                    .copy()
-                   .withResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), randomOrgUnitId()))
+                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
                    .withPublisher(createOrganization(userInstance.getOrganizationUri()))
                    .build();
     }

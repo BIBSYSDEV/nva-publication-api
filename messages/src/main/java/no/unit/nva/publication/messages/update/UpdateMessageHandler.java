@@ -85,11 +85,11 @@ public class UpdateMessageHandler extends ApiGatewayHandler<UpdateMessageRequest
     }
     
     private boolean callerIsTheRecipient(Message message, RequestInfo requestInfo) throws UnauthorizedException {
-        return requestInfo.getNvaUsername().equals(message.getRecipient());
+        return requestInfo.getNvaUsername().equals(message.getRecipient().toString());
     }
     
     private boolean callerIsTheOwner(Message message, RequestInfo requestInfo) throws UnauthorizedException {
-        return requestInfo.getNvaUsername().equals(message.getOwner());
+        return requestInfo.getNvaUsername().equals(message.getOwner().toString());
     }
     
     private Message fetchMessage(RequestInfo requestInfo) throws NotFoundException {

@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -62,6 +63,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -450,6 +452,21 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, action);
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should mark ticket as Unread by owner when requested")
+    @MethodSource("ticketProvider")
+    void shouldMarkTicketAsUnreadByOwnerWhenRequested(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = createPersistedTicket(publication, ticketType);
+        var owner = ticket.getOwner();
+        assertThat(ticket.getViewedBy(), hasItem(owner));
+        ticket.copy().markUnreadByOwner().persistUpdate(ticketService);
+        var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.getViewedBy(), not(hasItem(owner)));
+        assertThat(updatedTicket.getModifiedDate(), is(greaterThan(ticket.getModifiedDate())));
+    }
+    
     @ParameterizedTest(name = "number of tickets:{0}")
     @DisplayName("should list all tickets for a user")
     @Timeout(TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET)
@@ -538,7 +555,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     private Publication persistEmptyPublication(UserInstance owner) {
         var publication = new Publication.Builder().withResourceOwner(
-                new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
+                new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
                               .withPublisher(createOrganization(owner.getOrganizationUri()))
                               .withStatus(DRAFT)
                               .build();
@@ -551,7 +568,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         return DoiRequest.builder()
                    .withIdentifier(actualDoiRequest.getIdentifier())
                    .withResourceIdentifier(emptyPublication.getIdentifier())
-                   .withOwner(emptyPublication.getResourceOwner().getOwner())
+                   .withOwner(new User(emptyPublication.getResourceOwner().getOwner()))
                    .withCustomerId(emptyPublication.getPublisher().getId())
                    .withStatus(TicketStatus.PENDING)
                    .withResourceStatus(DRAFT)
@@ -597,7 +614,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     private PublishingRequestCase randomPublishingRequest() {
         var request = new PublishingRequestCase();
         request.setIdentifier(SortableIdentifier.next());
-        request.setOwner(randomString());
+        request.setOwner(new User(randomString()));
         request.setResourceIdentifier(SortableIdentifier.next());
         request.setStatus(COMPLETED);
         request.setCreatedDate(randomInstant());
