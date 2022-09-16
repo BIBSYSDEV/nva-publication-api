@@ -1,11 +1,13 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -23,11 +25,14 @@ import nva.commons.apigateway.exceptions.NotFoundException;
     @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)})
 public abstract class TicketEntry implements Entity {
     
+    public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
+    
     public static final String VIEWED_BY_FIELD = "viewedBy";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     
     protected TicketEntry() {
+        viewedBy = ViewedBy.empty();
     }
     
     public static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication, Class<T> ticketType,
@@ -81,7 +86,7 @@ public abstract class TicketEntry implements Entity {
     }
     
     public Set<User> getViewedBy() {
-        return viewedBy;
+        return nonNull(viewedBy) ? viewedBy : Collections.emptySet();
     }
     
     public void setViewedBy(Set<User> viewedBy) {
@@ -145,7 +150,6 @@ public abstract class TicketEntry implements Entity {
     
     public final TicketEntry markUnreadByOwner() {
         viewedBy.remove(this.getOwner());
-        this.setModifiedDate(Instant.now());
         return this;
     }
     
@@ -153,9 +157,25 @@ public abstract class TicketEntry implements Entity {
         return ticketService.fetchTicket(this);
     }
     
-    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(Publication publication,
-                                                                            Class<T> ticketType,
-                                                                            Supplier<SortableIdentifier> identifierProvider) {
+    public TicketEntry markReadByOwner() {
+        viewedBy.add(getOwner());
+        return this;
+    }
+    
+    public TicketEntry markReadForCurators() {
+        viewedBy.add(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT);
+        return this;
+    }
+    
+    public TicketEntry markUnreadForCurators() {
+        viewedBy.remove(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT);
+        return this;
+    }
+    
+    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
+        Publication publication,
+        Class<T> ticketType,
+        Supplier<SortableIdentifier> identifierProvider) {
         
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);

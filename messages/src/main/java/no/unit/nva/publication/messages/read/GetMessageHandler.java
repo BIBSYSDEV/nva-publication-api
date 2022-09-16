@@ -2,7 +2,7 @@ package no.unit.nva.publication.messages.read;
 
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
@@ -32,7 +32,7 @@ public class GetMessageHandler extends ApiGatewayHandler<Void, Void> {
     }
     
     private URI constructAssociatedTicketUri(RequestInfo requestInfo) {
-        var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
+        var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
         var ticketIdentifier = extractIdentifier(requestInfo, TICKET_IDENTIFIER_PATH_PARAMETER);
         return UriWrapper.fromHost(API_HOST)
                    .addChild(PUBLICATION_PATH)

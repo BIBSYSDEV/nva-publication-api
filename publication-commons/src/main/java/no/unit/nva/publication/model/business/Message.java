@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -22,7 +23,6 @@ import nva.commons.core.JacocoGenerated;
 public class Message implements Entity, JsonSerializable {
     
     public static final String TYPE = "Message";
-    public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     
     @JsonProperty("identifier")
     private SortableIdentifier identifier;

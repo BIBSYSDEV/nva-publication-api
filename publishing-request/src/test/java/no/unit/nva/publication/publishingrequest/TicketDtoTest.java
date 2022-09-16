@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -60,7 +61,7 @@ class TicketDtoTest {
     
     private URI createTicketId(URI publicationId, SortableIdentifier ticketIdentifier) {
         return UriWrapper.fromUri(publicationId)
-                   .addChild(TicketUtils.TICKET_PATH)
+                   .addChild(PublicationServiceConfig.TICKET_PATH)
                    .addChild(ticketIdentifier.toString())
                    .getUri();
     }

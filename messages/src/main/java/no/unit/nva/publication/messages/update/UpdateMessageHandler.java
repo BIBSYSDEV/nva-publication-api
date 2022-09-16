@@ -5,6 +5,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_CLOCK;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_NOT_FOUND;
+import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.function.Function;
@@ -72,7 +73,7 @@ public class UpdateMessageHandler extends ApiGatewayHandler<UpdateMessageRequest
     }
     
     private boolean supportIsTheRecipient(Message message) {
-        return Message.SUPPORT_SERVICE_CORRESPONDENT.equals(message.getRecipient());
+        return SUPPORT_SERVICE_CORRESPONDENT.equals(message.getRecipient());
     }
     
     private boolean callerIsCurator(RequestInfo requestInfo) {

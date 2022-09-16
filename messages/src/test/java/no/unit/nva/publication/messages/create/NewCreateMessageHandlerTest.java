@@ -4,9 +4,10 @@ import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -85,7 +86,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
     
         assertThatResponseContainsCorrectInformation(response, ticket);
-        var expectedRecipient = Message.SUPPORT_SERVICE_CORRESPONDENT;
+        var expectedRecipient = SUPPORT_SERVICE_CORRESPONDENT;
         var expectedSender = UserInstance.fromPublication(publication).getUser();
         assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
             expectedRecipient);
@@ -224,7 +225,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     private static Map<String, String> pathParameters(Publication publication,
                                                       TicketEntry ticket) {
         return Map.of(
-            PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
+            PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publication.getIdentifier().toString(),
             TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString()
         );
     }

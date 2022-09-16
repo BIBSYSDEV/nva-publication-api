@@ -17,10 +17,20 @@ public class ViewedBy implements Set<User> {
         this.views = Objects.nonNull(viewedBy) ? viewedBy : new HashSet<>();
     }
     
+    public static ViewedBy empty() {
+        return new ViewedBy(new HashSet<>());
+    }
+    
     public static ViewedBy addAll(User... users) {
         var viewedBy = Arrays.stream(users)
                            .collect(Collectors.toSet());
         return new ViewedBy(new HashSet<>(viewedBy));
+    }
+    
+    @JacocoGenerated
+    @Override
+    public boolean addAll(Collection<? extends User> c) {
+        return views.addAll(c);
     }
     
     @JacocoGenerated
@@ -75,12 +85,6 @@ public class ViewedBy implements Set<User> {
     @Override
     public boolean containsAll(Collection<?> c) {
         return views.containsAll(c);
-    }
-    
-    @JacocoGenerated
-    @Override
-    public boolean addAll(Collection<? extends User> c) {
-        return views.addAll(c);
     }
     
     @JacocoGenerated

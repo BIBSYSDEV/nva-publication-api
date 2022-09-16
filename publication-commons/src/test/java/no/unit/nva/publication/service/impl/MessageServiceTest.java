@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -122,7 +123,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var messageIdentifier =
             messageService.createMessage(owner, publication, randomString(), randomElement(MessageType.values()));
         var message = messageService.getMessage(owner, messageIdentifier);
-        assertThat(message.getRecipient(), is(equalTo(Message.SUPPORT_SERVICE_CORRESPONDENT)));
+        assertThat(message.getRecipient(), is(equalTo(SUPPORT_SERVICE_CORRESPONDENT)));
     }
     
     @Test

@@ -7,6 +7,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -80,6 +81,12 @@ public class ResourceDao extends Dao
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
         throw new UnsupportedOperationException();
+    }
+    
+    @JacocoGenerated
+    @Override
+    public void updateExistingEntry(AmazonDynamoDB client) {
+        throw new UnsupportedOperationException("Not implemented yet.Call the appropriate resource service method");
     }
     
     @Override

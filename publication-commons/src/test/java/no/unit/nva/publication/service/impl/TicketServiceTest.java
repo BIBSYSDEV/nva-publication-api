@@ -96,7 +96,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     private Instant now;
     private MessageService messageService;
     
-    public static Stream<Class<?>> ticketProvider() {
+    public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
     
@@ -194,7 +194,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "type: {0}")
     @DisplayName("should throw NotFound Exception when ticket was not found")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldThrowNotFoundExceptionWhenTicketWasNotFound(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -207,7 +207,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldPersistAllTypesOfTicketsForAResourceWithoutConflictsAndAlsoBeingAbleToRetrieveAllTickets()
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var tickets = ticketProvider().map(ticketType -> createPersistedTicket(publication, ticketType))
+        var tickets = ticketTypeProvider().map(ticketType -> createPersistedTicket(publication, ticketType))
                           .collect(Collectors.toList());
         var retrievedTickets =
             tickets.stream()
@@ -219,7 +219,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "type: {0}")
     @DisplayName("should throw Exception when specified ticket does not belong to requesting user")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldThrowExceptionWhenRequestedTicketDoesNotBelongToRequestingUser(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -241,7 +241,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should throw Exception when user is not the resource owner")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldThrowExceptionWhenTheUserIsNotTheResourceOwner(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -253,7 +253,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should throw Exception when duplicate ticket identifier is created")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldThrowExceptionWhenDuplicateTicketIdentifierIsCreated(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -267,13 +267,12 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should persist updated ticket status when ticket status is updated")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldPersistUpdatedStatusWhenTicketStatusIsUpdated(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
         var publication = persistPublication(owner, publicationStatus);
         var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
-
         
         ticketService.updateTicketStatus(persistedTicket, COMPLETED);
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
@@ -288,7 +287,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve ticket by Identifier.")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldRetrieveTicketByIdentifier(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var expectedTicketEntry = createPersistedTicket(publication, ticketType);
@@ -306,7 +305,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve eventually consistent ticket")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldRetrieveEventuallyConsistentTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var client = mock(AmazonDynamoDB.class);
         var expectedTicketEntry = createMockResponsesImitatingEventualConsistency(ticketType, client);
@@ -318,7 +317,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve ticket by customer id and resource identifier")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldRetrieveTicketByCustomerIdAndResourceIdentifier(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -330,7 +329,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should get ticket by identifier without needing to specify type")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldGetTicketByIdentifierWithoutNeedingToSpecifyType(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -341,7 +340,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should throw Exception when trying to fetch non existing ticket by identifier")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldThrowExceptionWhenTryingToFetchNonExistingTicketByIdentifier(Class<? extends TicketEntry> ignored)
         throws ApiGatewayException {
         persistPublication(owner, DRAFT);
@@ -351,7 +350,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should close ticket when ticket is pending and request action is to close the ticket")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldCloseTicketWhenTicketIsPendingAndRequestedActionIsToCloseTheTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -363,7 +362,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should not allow closing ticket when ticket is completed")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldNotAllowClosingTicketWhenTicketIsCompleted(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
@@ -391,7 +390,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should throw NotFound Exception when trying to complete non existing ticket for existing publication")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldThrowNotFoundExceptionWhenTryingToCompleteNonExistingTicketForExistingPublication(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -418,7 +417,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should update modified date and version when refreshing a ticket")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldUpdateModifiedDateAndVersionWhenRefreshing(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, InterruptedException {
         var publication = persistPublication(owner, DRAFT);
@@ -430,7 +429,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should update modified date and version when refreshing a ticket")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldReturnTicketForElevatedUserOfSameInstitution(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -442,7 +441,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should update modified date and version when refreshing a ticket")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldThrowNotFoundExceptionWhenUserIsElevatedUserOfAlienInstitution(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -454,7 +453,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should mark ticket as Unread by owner when requested")
-    @MethodSource("ticketProvider")
+    @MethodSource("ticketTypeProvider")
     void shouldMarkTicketAsUnreadByOwnerWhenRequested(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
@@ -483,6 +482,55 @@ class TicketServiceTest extends ResourcesLocalTest {
     
         var actualTickets = ticketService.fetchTicketsForUser(owner).collect(Collectors.toList());
         assertThat(actualTickets, containsInAnyOrder(expectedTickets.toArray(TicketEntry[]::new)));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should mark ticket as Unread for owner")
+    @MethodSource("ticketTypeProvider")
+    void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
+                         .persistNewTicket(ticketService);
+        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
+        ticket.markUnreadByOwner().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should mark ticket as Read for owner")
+    @MethodSource("ticketTypeProvider")
+    void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        ticket.markUnreadByOwner().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
+        ticket.markReadByOwner().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should mark ticket as read for curator")
+    @MethodSource("ticketTypeProvider")
+    void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
+                         .persistNewTicket(ticketService);
+        assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
+        ticket.markReadForCurators().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
+    }
+    
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should mark ticket as unread for curator")
+    @MethodSource("ticketTypeProvider")
+    void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
+                         .persistNewTicket(ticketService);
+        ticket.markReadForCurators().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
+        ticket.markUnreadForCurators().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
     }
     
     @Test
