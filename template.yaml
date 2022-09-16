@@ -632,7 +632,7 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
-            Path: /publication/{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
