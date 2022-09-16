@@ -150,7 +150,6 @@ public abstract class TicketEntry implements Entity {
     
     public final TicketEntry markUnreadByOwner() {
         viewedBy.remove(this.getOwner());
-        viewedBy.remove(this.getOwner());
         return this;
     }
     

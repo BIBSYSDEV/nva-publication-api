@@ -485,9 +485,9 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should mark ticket as unread for owner")
+    @DisplayName("should mark ticket as Unread for owner")
     @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+    void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType)
                          .persistNewTicket(ticketService);
@@ -497,12 +497,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should mark ticket as Unread for owner")
+    @DisplayName("should mark ticket as Read for owner")
     @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+    void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
-                         .persistNewTicket(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
         ticket.markReadByOwner().persistUpdate(ticketService);

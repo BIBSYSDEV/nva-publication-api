@@ -49,6 +49,10 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
         return HttpURLConnection.HTTP_SEE_OTHER;
     }
     
+    private static boolean elevatedUserCanViewTicket(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+    }
+    
     private TicketEntry markTicket(UpdateViewStatusRequest input, RequestInfo requestInfo,
                                    SortableIdentifier ticketIdentifier) throws ApiGatewayException {
         if (isNull(input)) {
@@ -57,10 +61,6 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
         return elevatedUserCanViewTicket(requestInfo)
                    ? markTicketForElevatedUser(input, requestInfo, ticketIdentifier)
                    : markTicketForOwner(input, requestInfo, ticketIdentifier);
-    }
-    
-    private static boolean elevatedUserCanViewTicket(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
     }
     
     private TicketEntry markTicketForElevatedUser(UpdateViewStatusRequest input, RequestInfo requestInfo,
@@ -114,7 +114,7 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
     }
     
     private void markTicketForElevatedUser(UpdateViewStatusRequest input, TicketEntry ticket) {
-    
+        
         if (ViewStatus.READ.equals(input.getViewStatus())) {
             ticket.markReadForCurators().persistUpdate(ticketService);
         } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
