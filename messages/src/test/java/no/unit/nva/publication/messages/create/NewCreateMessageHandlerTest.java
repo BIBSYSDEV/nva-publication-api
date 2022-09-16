@@ -138,7 +138,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticketType:{0}")
-    @DisplayName("should mark ticket as unread for Publication Owner  and mark and as read for curators"
+    @DisplayName("should mark ticket as unread for Publication Owner and mark and as read for curators"
                  + "when curator sends a message")
     @MethodSource("ticketTypeProvider")
     void shouldMarkTicketAsUnreadForPublicationOwnerWhenCuratorSendsAMessage(Class<? extends TicketEntry> ticketType)
