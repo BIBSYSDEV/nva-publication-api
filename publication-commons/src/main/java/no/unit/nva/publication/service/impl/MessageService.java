@@ -79,15 +79,15 @@ public class MessageService extends ServiceWithTransactions {
         var transactionRequest = dao.createInsertionTransactionRequest();
         client.transactWriteItems(transactionRequest);
         
-        markTicketUnreadForRecipient(ticketEntry, sender);
+        markTicketReadForSenderAndUnreadForRecipient(ticketEntry, sender);
         return fetchEventualConsistentDataEntry(newMessage, this::getMessageByIdentifier).orElseThrow();
     }
     
-    private void markTicketUnreadForRecipient(TicketEntry ticketEntry, UserInstance sender) {
+    private void markTicketReadForSenderAndUnreadForRecipient(TicketEntry ticketEntry, UserInstance sender) {
         if (isOwner(sender, ticketEntry)) {
-            ticketEntry.markUnreadForCurators().persistUpdate(ticketService);
+            ticketEntry.markReadByOwner().markUnreadForCurators().persistUpdate(ticketService);
         } else {
-            ticketEntry.markUnreadByOwner().persistUpdate(ticketService);
+            ticketEntry.markUnreadByOwner().markReadForCurators().persistUpdate(ticketService);
         }
     }
     

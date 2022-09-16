@@ -138,34 +138,50 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticketType:{0}")
-    @DisplayName("should mark ticket as unread for Publication Owner when curator sends a message")
+    @DisplayName("should mark ticket as unread for Publication Owner  and mark and as read for curators"
+                 + "when curator sends a message")
     @MethodSource("ticketTypeProvider")
     void shouldMarkTicketAsUnreadForPublicationOwnerWhenCuratorSendsAMessage(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var publication = draftPublicationWithoutDoi();
         var ticket = createTicket(publication, ticketType);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
+        var sender = UserInstance.create("NOT_EXPECTED", publication.getPublisher().getId());
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), not(hasItem(ticket.getOwner())));
+        assertThat(updatedTicket.getViewedBy(), hasItem(SUPPORT_SERVICE_CORRESPONDENT));
     }
     
     @ParameterizedTest(name = "ticketType:{0}")
-    @DisplayName("should mark ticket as unread for Curator when Publication Owner sends a Message")
+    @DisplayName("should mark ticket as unread for Curator and read for Publication Owner "
+                 + "when Publication Owner sends a Message")
     @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsUnreadForCuratorWhenPublicationOwnerSendsAMessage(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException, IOException {
+    void shouldMarkTicketAsUnreadForCuratorAndReadForPublicationOwnerWhenOwnerSendsAMessage(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = draftPublicationWithoutDoi();
         var ticket = createTicket(publication, ticketType);
         ticket.markReadForCurators().persistUpdate(ticketService);
+        ticket.markUnreadByOwner().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
         assertThat(ticket.getViewedBy(), hasItem(SUPPORT_SERVICE_CORRESPONDENT));
+        
         var sender = UserInstance.create(ticket.getOwner(), ticket.getCustomerId());
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(updatedTicket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
+    }
+    
+    private static Map<String, String> pathParameters(Publication publication,
+                                                      TicketEntry ticket) {
+        return Map.of(
+            PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publication.getIdentifier().toString(),
+            TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString()
+        );
     }
     
     private void assertThatMessageContainsTextAndCorrectCorrespondentInfo(String expectedText,
@@ -222,10 +238,10 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     private InputStream createNewMessageRequestForElevatedUser(Publication publication,
                                                                TicketEntry ticket,
                                                                UserInstance user,
-                                                               String randomString) throws JsonProcessingException {
+                                                               String message) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(pathParameters(publication, ticket))
-                   .withBody(messageBody(randomString))
+                   .withBody(messageBody(message))
                    .withNvaUsername(user.getUsername())
                    .withCustomerId(user.getOrganizationUri())
                    .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
@@ -236,14 +252,6 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var request = new CreateMessageRequest();
         request.setMessage(message);
         return request;
-    }
-    
-    private static Map<String, String> pathParameters(Publication publication,
-                                                      TicketEntry ticket) {
-        return Map.of(
-            PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publication.getIdentifier().toString(),
-            TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString()
-        );
     }
     
     private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
