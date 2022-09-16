@@ -83,6 +83,7 @@ public class ResourceDao extends Dao
         throw new UnsupportedOperationException();
     }
     
+    @JacocoGenerated
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
         throw new UnsupportedOperationException("Not implemented yet.Call the appropriate resource service method");

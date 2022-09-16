@@ -83,6 +83,7 @@ public class MessageDao extends Dao
                    .withTransactItems(messageEntry, identityEntry);
     }
     
+    @JacocoGenerated
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
         throw new UnsupportedOperationException("Not supported yet. Not sure if a message can be updated");

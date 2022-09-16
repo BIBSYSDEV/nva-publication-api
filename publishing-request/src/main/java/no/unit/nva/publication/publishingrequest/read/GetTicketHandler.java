@@ -1,7 +1,7 @@
 package no.unit.nva.publication.publishingrequest.read;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -81,7 +81,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     }
     
     private SortableIdentifier extractPublicationIdentifierFromPath(RequestInfo requestInfo) {
-        var identifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER);
+        var identifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
         return new SortableIdentifier(identifierString);
     }
     

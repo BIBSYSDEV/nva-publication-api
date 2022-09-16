@@ -2,7 +2,7 @@ package no.unit.nva.publication.messages.read;
 
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -80,7 +80,7 @@ class GetMessageHandlerTest {
     
     private Map<String, String> messagePathParameters(Message message) {
         return Map.of(
-            PUBLICATION_IDENTIFIER_PATH_PARAMETER, message.getResourceIdentifier().toString(),
+            PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, message.getResourceIdentifier().toString(),
             TICKET_IDENTIFIER_PATH_PARAMETER, message.getTicketIdentifier().toString(),
             MESSAGE_IDENTIFIER_PATH_PARAMETER, message.getIdentifier().toString());
     }

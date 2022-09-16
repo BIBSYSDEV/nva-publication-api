@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.util.Objects;
+import java.util.Optional;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -15,8 +17,13 @@ public class UpdateViewStatusRequest {
     private final ViewStatus viewStatus;
     
     @JsonCreator
-    public UpdateViewStatusRequest(@JsonProperty(VIEW_STATUS) ViewStatus viewStatus) {
-        this.viewStatus = viewStatus;
+    public UpdateViewStatusRequest(@JsonProperty(VIEW_STATUS) ViewStatus viewStatus) throws BadRequestException {
+        this.viewStatus = parseStatus(viewStatus);
+    }
+    
+    private ViewStatus parseStatus(ViewStatus viewStatus) throws BadRequestException {
+        return Optional.ofNullable(viewStatus)
+                   .orElseThrow(() -> new BadRequestException("viewStatus must be " + ViewStatus.legalValues()));
     }
     
     @Override

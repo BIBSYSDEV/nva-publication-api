@@ -21,7 +21,7 @@ public final class PublicationServiceConfig {
     @Deprecated
     public static final String MESSAGE_PATH = "/messages";
     
-    public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER = "publicationIdentifier";
+    public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME = "publicationIdentifier";
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
     public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;

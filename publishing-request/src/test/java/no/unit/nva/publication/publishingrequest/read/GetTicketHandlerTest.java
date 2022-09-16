@@ -198,7 +198,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     }
     
     private static Map<String, String> createPathParameters(Publication publication, TicketEntry ticket) {
-        return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+        return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
             publication.getIdentifier().toString(),
             TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
     }
