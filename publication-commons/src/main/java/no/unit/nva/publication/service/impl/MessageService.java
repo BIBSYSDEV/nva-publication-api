@@ -41,6 +41,7 @@ public class MessageService extends ServiceWithTransactions {
     private final Clock clockForTimestamps;
     
     private final Supplier<SortableIdentifier> identifierSupplier;
+    private final TicketService ticketService;
     
     public MessageService(AmazonDynamoDB client, Clock clockForTimestamps) {
         this(client, clockForTimestamps, defaultIdentifierSupplier());
@@ -51,6 +52,7 @@ public class MessageService extends ServiceWithTransactions {
                           Supplier<SortableIdentifier> identifierSupplier) {
         super();
         this.client = client;
+        this.ticketService = new TicketService(client);
         tableName = RESOURCES_TABLE_NAME;
         this.clockForTimestamps = clockForTimestamps;
         this.identifierSupplier = identifierSupplier;
@@ -76,7 +78,21 @@ public class MessageService extends ServiceWithTransactions {
         var dao = newMessage.toDao();
         var transactionRequest = dao.createInsertionTransactionRequest();
         client.transactWriteItems(transactionRequest);
+        
+        markTicketUnreadForRecipient(ticketEntry, sender);
         return fetchEventualConsistentDataEntry(newMessage, this::getMessageByIdentifier).orElseThrow();
+    }
+    
+    private void markTicketUnreadForRecipient(TicketEntry ticketEntry, UserInstance sender) {
+        if (isOwner(sender, ticketEntry)) {
+            ticketEntry.markUnreadForCurators().persistUpdate(ticketService);
+        } else {
+            ticketEntry.markUnreadByOwner().persistUpdate(ticketService);
+        }
+    }
+    
+    private boolean isOwner(UserInstance sender, TicketEntry ticketEntry) {
+        return sender.getUser().equals(ticketEntry.getOwner());
     }
     
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {

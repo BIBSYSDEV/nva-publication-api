@@ -138,7 +138,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "ticketType:{0}")
-    @DisplayName("should mark ticket as unread for publication owner when curator sends a message")
+    @DisplayName("should mark ticket as unread for Publication Owner when curator sends a message")
     @MethodSource("ticketTypeProvider")
     void shouldMarkTicketAsUnreadForPublicationOwnerWhenCuratorSendsAMessage(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
@@ -150,6 +150,22 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), not(hasItem(ticket.getOwner())));
+    }
+    
+    @ParameterizedTest(name = "ticketType:{0}")
+    @DisplayName("should mark ticket as unread for Curator when Publication Owner sends a Message")
+    @MethodSource("ticketTypeProvider")
+    void shouldMarkTicketAsUnreadForCuratorWhenPublicationOwnerSendsAMessage(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var publication = draftPublicationWithoutDoi();
+        var ticket = createTicket(publication, ticketType);
+        ticket.markReadForCurators().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), hasItem(SUPPORT_SERVICE_CORRESPONDENT));
+        var sender = UserInstance.create(ticket.getOwner(), ticket.getCustomerId());
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
+        handler.handleRequest(request, output, context);
+        var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
     }
     
     private void assertThatMessageContainsTextAndCorrectCorrespondentInfo(String expectedText,
