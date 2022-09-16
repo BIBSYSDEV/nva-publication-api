@@ -153,6 +153,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setModifiedDate(dataEntry.getModifiedDate());
         entry.setOwner(dataEntry.getOwner());
         entry.setMessages(messages);
+        entry.setViewedBy(dataEntry.getViewedBy());
         return entry;
     }
     

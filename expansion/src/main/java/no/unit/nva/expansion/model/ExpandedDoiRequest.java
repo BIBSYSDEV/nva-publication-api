@@ -179,6 +179,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         request.setModifiedDate(doiRequest.getModifiedDate());
         request.setOwner(doiRequest.getOwner());
         request.setStatus(doiRequest.getStatus());
+        request.setViewedBy(doiRequest.getViewedBy());
         return request;
     }
 }

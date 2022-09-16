@@ -43,6 +43,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setMessages(dataEntry.fetchMessages(ticketService));
+        entry.setViewedBy(dataEntry.getViewedBy());
         return entry;
     }
     

@@ -17,6 +17,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -33,13 +34,15 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public static final String PUBLICATION_FIELD = "publication";
     public static final String ORGANIZATION_IDS_FIELD = "organizationIds";
     public static final String ID_FIELD = "id";
+    public static final String VIEWED_BY_FIELD = "viewedBy";
     private static final String MESSAGES_FIELD = "messages";
-    
     @JsonProperty(ID_FIELD)
     private URI id;
     
     @JsonProperty(MESSAGES_FIELD)
     private List<Message> messages;
+    @JsonProperty(VIEWED_BY_FIELD)
+    private Set<User> viewedBy;
     
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
@@ -65,6 +68,14 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
             );
         }
         throw new UnsupportedOperationException();
+    }
+    
+    public final Set<User> getViewedBy() {
+        return viewedBy;
+    }
+    
+    public final void setViewedBy(Set<User> viewedBy) {
+        this.viewedBy = viewedBy;
     }
     
     @JsonProperty(PUBLICATION_FIELD)
