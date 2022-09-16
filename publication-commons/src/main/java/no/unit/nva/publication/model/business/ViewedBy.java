@@ -123,4 +123,10 @@ public class ViewedBy implements Set<User> {
     public int hashCode() {
         return Objects.hash(views);
     }
+    
+    @JacocoGenerated
+    @Override
+    public String toString() {
+        return views.stream().map(Objects::toString).collect(Collectors.joining(","));
+    }
 }
