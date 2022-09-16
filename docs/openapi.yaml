@@ -547,6 +547,47 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+  /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    post:
+      description: Update Ticket viewed status.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateViewStatusRequest'
+      responses:
+        '303':
+          description: "See other"
+          headers:
+            "Location":
+              description: The URI of the updated ticket
+              schema:
+                type: string
+        '403':
+          description: "Forbidden"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketViewStatusHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
   /tickets:
     get:
       description: List tickets for user
@@ -670,6 +711,18 @@ components:
             - DoiRequest
             - PublishingRequest
             - GeneralSupportRequest
+    UpdateViewStatusRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - UpdateViewStatusRequest
+        viewedStatus:
+          type: string
+          enum:
+            - Read
+            - Unread
     TicketCollection:
       type: object
       properties:
