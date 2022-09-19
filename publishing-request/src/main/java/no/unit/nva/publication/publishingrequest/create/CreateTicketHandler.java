@@ -9,6 +9,7 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.publishingrequest.TicketDto;
@@ -45,11 +46,42 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var user = UserInstance.fromRequestInfo(requestInfo);
         var publication = fetchPublication(publicationIdentifier, user);
         var newTicket = TicketEntry.requestNewTicket(publication, input.ticketType());
-        var createdTicket = newTicket.persistNewTicket(ticketService);
+        var createdTicket = persistTicket(newTicket);
         var ticketLocation = createTicketLocation(publicationIdentifier, createdTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
     
         return null;
+    }
+    
+    private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
+        return attempt(() -> newTicket.persistNewTicket(ticketService))
+                   .orElse(fail -> handleCreationException(fail.getException(), newTicket));
+    }
+    
+    private TicketEntry handleCreationException(Exception exception, TicketEntry newTicket) throws ApiGatewayException {
+        if (exception instanceof TransactionFailedException) {
+            return updateAlreadyExistingTicket(newTicket);
+        }
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
+        }
+        if (exception instanceof ApiGatewayException) {
+            throw (ApiGatewayException) exception;
+        }
+        throw new RuntimeException(exception);
+    }
+    
+    private TicketEntry updateAlreadyExistingTicket(TicketEntry newTicket) {
+        var customerId = newTicket.getCustomerId();
+        var resourceIdentifier = newTicket.getResourceIdentifier();
+        return ticketService.fetchTicketByResourceIdentifier(customerId, resourceIdentifier, newTicket.getClass())
+                   .map(this::updateTicket)
+                   .orElseThrow();
+    }
+    
+    private TicketEntry updateTicket(TicketEntry ticket) {
+        ticket.persistUpdate(ticketService);
+        return ticket;
     }
     
     private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user)

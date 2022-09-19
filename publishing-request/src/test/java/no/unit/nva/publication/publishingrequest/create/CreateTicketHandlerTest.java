@@ -2,18 +2,21 @@ package no.unit.nva.publication.publishingrequest.create;
 
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.publication.publishingrequest.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -192,9 +195,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
-                                                          .getLastPathElement());
-        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
+        TicketEntry ticket = fetchTicket(response);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
     }
     
@@ -209,10 +210,39 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
+        TicketEntry ticket = fetchTicket(response);
+        assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
+    }
+    
+    @DisplayName("should update existing DoiRequest when new DOI is requested but a DoiRequest that has not been "
+                 + "fulfilled already exists")
+    @Test
+    void shouldUpdateExistingDoiRequestWhenNewDoiIsRequestedButUnfulfilledDoiRequestAlreadyExists()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedDraftPublication();
+        var owner = UserInstance.fromPublication(publication);
+        var requestBody = constructDto(DoiRequest.class);
+        
+        var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(firstRequest, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
+        var createdTicket = fetchTicket(response).copy();
+        
+        var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
+        output = new ByteArrayOutputStream();
+        handler.handleRequest(secondRequest, output, CONTEXT);
+        var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
+        
+        assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
+        var existingTicket = fetchTicket(secondResponse);
+        assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
+    }
+    
+    private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
-        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
+        return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
     
     private Publication createUnpublishablePublication() {
