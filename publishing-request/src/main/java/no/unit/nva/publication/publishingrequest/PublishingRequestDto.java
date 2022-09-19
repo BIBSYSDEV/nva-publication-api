@@ -30,8 +30,6 @@ public class PublishingRequestDto extends TicketDto {
     public static final String PUBLICATION_ID_FIELD = "publicationId";
     public static final String ID_FIELD = "id";
     
-    @JsonProperty(STATUS_FIELD)
-    private final TicketStatus status;
     @JsonProperty(CREATED_DATE_FIELD)
     private final Instant createdDate;
     @JsonProperty(MODIFIED_DATE_FIELD)
@@ -52,8 +50,7 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(ID_FIELD) URI id,
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                 @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
-        super(messages, viewedBy);
-        this.status = status;
+        super(status, messages, viewedBy);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -96,11 +93,6 @@ public class PublishingRequestDto extends TicketDto {
         ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationId()));
         ticket.setViewedBy(getViewedBy());
         return ticket;
-    }
-    
-    @Override
-    public TicketStatus getStatus() {
-        return status;
     }
     
     @Override

@@ -711,6 +711,16 @@ components:
             - DoiRequest
             - PublishingRequest
             - GeneralSupportRequest
+        viewedBy:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+            - Pending
+            - Completed
+            - Closed
     UpdateViewStatusRequest:
       type: object
       properties:

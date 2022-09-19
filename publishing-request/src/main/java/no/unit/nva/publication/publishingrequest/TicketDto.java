@@ -36,14 +36,18 @@ import nva.commons.core.paths.UriWrapper;
 })
 public abstract class TicketDto implements JsonSerializable {
     
+    public static final String STATUS_FIELD = "status";
     public static final String MESSAGES_FIELD = "messages";
     public static final String VIEWED_BY = "viewedBy";
+    @JsonProperty(STATUS_FIELD)
+    private final TicketStatus status;
     @JsonProperty(VIEWED_BY)
     private final Set<User> viewedBy;
     @JsonProperty(MESSAGES_FIELD)
     private final List<MessageDto> messages;
     
-    protected TicketDto(List<MessageDto> messages, Set<User> viewedBy) {
+    protected TicketDto(TicketStatus status, List<MessageDto> messages, Set<User> viewedBy) {
+        this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
     }
@@ -84,7 +88,9 @@ public abstract class TicketDto implements JsonSerializable {
     
     public abstract TicketEntry toTicket();
     
-    public abstract TicketStatus getStatus();
+    public final TicketStatus getStatus() {
+        return status;
+    }
     
     @Override
     public String toString() {
