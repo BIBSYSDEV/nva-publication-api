@@ -89,6 +89,13 @@ public class PublicationSummary {
         return publicationSummary;
     }
     
+    public static PublicationSummary create(URI publicationId, String publicationTitle) {
+        var publicationSummary = new PublicationSummary();
+        publicationSummary.setPublicationId(publicationId);
+        publicationSummary.setTitle(publicationTitle);
+        return publicationSummary;
+    }
+    
     public PublicationStatus getStatus() {
         return status;
     }

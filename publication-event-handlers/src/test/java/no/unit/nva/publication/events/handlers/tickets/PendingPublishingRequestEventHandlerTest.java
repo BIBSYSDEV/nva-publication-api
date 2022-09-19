@@ -98,11 +98,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
     }
     
-    private static String mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests() {
-        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
-            "customer_forbidding_publishing.json"));
-    }
-    
     @Test
     void shouldIgnorePublishingRequestAndLogResponseWhenCustomerCannotBeResolved()
         throws IOException, ApiGatewayException {
@@ -120,10 +115,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString(identityServiceResponse.body()));
     }
     
-    private static FakeHttpResponse<String> unresolvableCustomer() {
-        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
-    }
-    
     @Test
     void shouldNotCompleteAlreadyCompletedTicketsAndEnterInfiniteLoop() throws ApiGatewayException, IOException {
         var publication = createPublication();
@@ -139,9 +130,18 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
-        
+    
         var versionAfterEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
         assertThat(versionAfterEvent, is(equalTo(versionBeforeEvent)));
+    }
+    
+    private static String mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests() {
+        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
+            "customer_forbidding_publishing.json"));
+    }
+    
+    private static FakeHttpResponse<String> unresolvableCustomer() {
+        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
     }
     
     private static String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval() {
@@ -171,9 +171,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase createPendingPublishingRequest(Publication publication) throws ApiGatewayException {
-        var publishingRequest =
-            PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
-                publication.getIdentifier());
+        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
     

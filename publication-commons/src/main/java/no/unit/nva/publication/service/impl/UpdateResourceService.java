@@ -5,6 +5,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -19,19 +20,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -74,12 +77,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
         publication.setCreatedDate(persistedPublication.getCreatedDate());
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);
-        
+    
         TransactWriteItem updateResourceTransactionItem = updateResource(resource);
-        Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(resource);
+        List<TransactWriteItem> updateDoiRequestTransactionItem = updateTickets(resource);
         ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(updateResourceTransactionItem);
-        updateDoiRequestTransactionItem.ifPresent(transactionItems::add);
+        updateDoiRequestTransactionItem.forEach(transactionItems::add);
         
         TransactWriteItemsRequest request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
@@ -136,17 +139,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .build();
     }
     
-    private Optional<TransactWriteItem> updateDoiRequest(Resource resource) {
-        var queryObject = DoiRequest.createQueryObject(resource);
-        var queryDao = queryObject.toDao();
-        var existingDoiRequest = queryDao.fetchByResourceIdentifier(client)
-                                     .map(Dao::getData)
-                                     .map(DoiRequest.class::cast);
-    
-        return existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
-                   .map(DoiRequestDao::new).map(DoiRequestDao::toDynamoFormat)
-                   .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
-                   .map(put -> new TransactWriteItem().withPut(put));
+    private List<TransactWriteItem> updateTickets(Resource resource) {
+        var dao = new ResourceDao(resource);
+        var ticketDaos = dao.fetchAllTickets(client);
+        return ticketDaos.stream()
+                   .map(Dao::getData)
+                   .map(TicketEntry.class::cast)
+                   .map(ticket -> ticket.update(resource))
+                   .map(Entity::toDao)
+                   .map(DynamoEntry::toDynamoFormat)
+                   .map(dynamoEntry -> new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dynamoEntry))
+                   .map(put -> new TransactWriteItem().withPut(put))
+                   .collect(Collectors.toList());
     }
     
     private TransactWriteItem updateResource(Resource resourceUpdate) {
@@ -155,7 +159,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         
         Map<String, AttributeValue> primaryKeyConditionAttributeValues =
             primaryKeyEqualityConditionAttributeValues(resourceDao);
-    
+        
         Put put = new Put()
                       .withItem(resourceDao.toDynamoFormat())
                       .withTableName(tableName)

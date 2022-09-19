@@ -68,6 +68,7 @@ public interface JoinWithResource {
      */
     default Map<String, Condition> byResource(String greaterOrEqual,
                                               String lessOrEqual) {
+    
         Condition partitionKeyCondition = new Condition()
                                               .withAttributeValueList(
                                                   new AttributeValue(getByCustomerAndResourcePartitionKey()))
@@ -77,11 +78,15 @@ public interface JoinWithResource {
                                          .withAttributeValueList(new AttributeValue(greaterOrEqual),
                                              new AttributeValue(lessOrEqual + LAST_PRINTABLE_ASCII_CHAR))
                                          .withComparisonOperator(ComparisonOperator.BETWEEN);
-        
         return Map.of(
             BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
             BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME, sortKeyCondition
         );
+    }
+    
+    default Map<String, Condition> joinAllRelatedTicketsForResource() {
+        return byResource(TicketDao.ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE,
+            TicketDao.ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE);
     }
     
     /**
@@ -98,9 +103,8 @@ public interface JoinWithResource {
      * @param selectedType the input type.
      * @return a Map for using in the
      *     {@link com.amazonaws.services.dynamodbv2.model.QueryRequest#withKeyConditions(Map)} method. #HashKey =
-     *     :ByResourceIndexHashKey (Customer:SomeCustomerId:Resource:SomeResourceId)
-     *       AND #SortKey begins_with :ByResourceIndexSortKey
-     *     (d:Message:SomeId)
+     *     :ByResourceIndexHashKey (Customer:SomeCustomerId:Resource:SomeResourceId) AND #SortKey begins_with
+     *     :ByResourceIndexSortKey (d:Message:SomeId)
      */
     //TODO: type should be an enum
     default Map<String, Condition> byResource(String selectedType) {

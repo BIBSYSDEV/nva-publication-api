@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -27,7 +28,6 @@ public class PublishingRequestDto extends TicketDto {
     public static final String CREATED_DATE_FIELD = "createdDate";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String IDENTIFIER_FIELD = "identifier";
-    public static final String PUBLICATION_ID_FIELD = "publicationId";
     public static final String ID_FIELD = "id";
     
     @JsonProperty(CREATED_DATE_FIELD)
@@ -36,8 +36,6 @@ public class PublishingRequestDto extends TicketDto {
     private final Instant modifiedDate;
     @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
-    @JsonProperty(PUBLICATION_ID_FIELD)
-    private final URI publicationId;
     @JsonProperty(ID_FIELD)
     private final URI id;
     
@@ -46,15 +44,14 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                 @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                 @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                                @JsonProperty(PUBLICATION_ID_FIELD) URI publicationId,
+                                @JsonProperty(PUBLICATION_SUMMARY_FIELD) PublicationSummary publicationSummary,
                                 @JsonProperty(ID_FIELD) URI id,
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                 @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
-        super(status, messages, viewedBy);
+        super(status, messages, viewedBy, publicationSummary);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
-        this.publicationId = publicationId;
         this.id = id;
     }
     
@@ -74,10 +71,6 @@ public class PublishingRequestDto extends TicketDto {
         return identifier;
     }
     
-    public URI getPublicationId() {
-        return publicationId;
-    }
-    
     @Override
     public Class<? extends TicketEntry> ticketType() {
         return PublishingRequestCase.class;
@@ -90,7 +83,7 @@ public class PublishingRequestDto extends TicketDto {
         ticket.setStatus(getStatus());
         ticket.setModifiedDate(getModifiedDate());
         ticket.setIdentifier(getIdentifier());
-        ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationId()));
+        ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationSummary().getPublicationId()));
         ticket.setViewedBy(getViewedBy());
         return ticket;
     }
@@ -109,7 +102,8 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getPublicationId(), that.getPublicationId())
+               && Objects.equals(getPublicationSummary().getPublicationId(),
+            that.getPublicationSummary().getPublicationId())
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages());
     }
@@ -118,6 +112,6 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationId(), id, getMessages());
+            getPublicationSummary().getPublicationId(), id, getMessages());
     }
 }

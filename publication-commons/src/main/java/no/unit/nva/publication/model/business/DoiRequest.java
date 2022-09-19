@@ -95,7 +95,15 @@ public class DoiRequest extends TicketEntry {
     }
     
     public static DoiRequest newDoiRequestForResource(Resource resource, Instant now) {
-        return newDoiRequestForResource(SortableIdentifier.next(), resource, now);
+    
+        var doiRequest = extractDataFromResource(resource);
+        doiRequest.setIdentifier(SortableIdentifier.next());
+        doiRequest.setStatus(TicketStatus.PENDING);
+        doiRequest.setModifiedDate(now);
+        doiRequest.setCreatedDate(now);
+        doiRequest.validate();
+        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        return doiRequest;
     }
     
     public static DoiRequest newDoiRequestForResource(SortableIdentifier doiRequestIdentifier,
@@ -114,13 +122,6 @@ public class DoiRequest extends TicketEntry {
     
     public static Builder builder() {
         return new Builder();
-    }
-    
-    public static DoiRequest createQueryObject(Resource resource) {
-        return DoiRequest.builder()
-                   .withCustomerId(resource.getCustomerId())
-                   .withResourceIdentifier(resource.getIdentifier())
-                   .build();
     }
     
     @Override
@@ -334,6 +335,7 @@ public class DoiRequest extends TicketEntry {
         this.contributors = contributors;
     }
     
+    @Override
     public DoiRequest update(Resource resource) {
         if (updateIsAboutTheSameResource(resource)) {
             return extractDataFromResource(this, resource);
@@ -451,6 +453,7 @@ public class DoiRequest extends TicketEntry {
         
         public Builder withResourceTitle(String resourceTitle) {
             doiRequest.setResourceTitle(resourceTitle);
+            doiRequest.setPublicationTitle(resourceTitle);
             return this;
         }
         
