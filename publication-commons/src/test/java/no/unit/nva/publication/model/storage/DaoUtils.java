@@ -49,7 +49,7 @@ public final class DaoUtils {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao();
         MessageDao messageDao = sampleMessageDao();
-        PublishingRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
+        PublishingRequestDao approvePublicationRequestDao = sampleApprovePublishingRequestDao();
         return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
     }
     
@@ -70,7 +70,7 @@ public final class DaoUtils {
                    .withItem(resource.toDynamoFormat());
     }
     
-    private static PublishingRequestDao sampleApprovePublicationRequestDao() {
+    private static PublishingRequestDao sampleApprovePublishingRequestDao() {
         var publishingRequest = randomPublishingRequest();
         return (PublishingRequestDao) publishingRequest.toDao();
     }

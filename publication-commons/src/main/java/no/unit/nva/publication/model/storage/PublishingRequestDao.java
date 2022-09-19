@@ -69,13 +69,13 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        var publicationRequestEntry = createPublishingRequestInsertionEntry();
+        var publishingRequestInsertionEntry = createPublishingRequestInsertionEntry();
         var identifierEntry = createUniqueIdentifierEntry();
         var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry();
         return new TransactWriteItemsRequest()
                    .withTransactItems(
                        identifierEntry,
-                       publicationRequestEntry,
+                       publishingRequestInsertionEntry,
                        publishingRequestUniquenessEntry);
     }
     
