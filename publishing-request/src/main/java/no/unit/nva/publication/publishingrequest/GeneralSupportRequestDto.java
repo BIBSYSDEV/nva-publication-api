@@ -29,8 +29,6 @@ public class GeneralSupportRequestDto extends TicketDto {
     public static final String ID_FIELD = "id";
     @JsonProperty(ID_FIELD)
     private final URI id;
-    @JsonProperty(STATUS_FIELD)
-    private final TicketStatus status;
     @JsonProperty(CREATED_DATE_FIELD)
     private final Instant createdDate;
     @JsonProperty(MODIFIED_DATE_FIELD)
@@ -48,8 +46,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(ID_FIELD) URI id,
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                     @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
-        super(messages, viewedBy);
-        this.status = status;
+        super(status, messages, viewedBy);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -99,10 +96,6 @@ public class GeneralSupportRequestDto extends TicketDto {
         return request;
     }
     
-    @Override
-    public TicketStatus getStatus() {
-        return status;
-    }
     
     @Override
     @JacocoGenerated
