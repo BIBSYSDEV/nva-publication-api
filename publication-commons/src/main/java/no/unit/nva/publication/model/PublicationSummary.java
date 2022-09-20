@@ -144,16 +144,8 @@ public class PublicationSummary {
         this.contributors = contributors;
     }
     
-    @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(getPublicationId(), extractPublicationIdentifier(), getTitle(), getModifiedDate(),
-            getPublicationInstance(), getPublicationDate(),
-            getPublicationYear(), getContributors(), getStatus());
-    }
-    
     @JacocoGenerated
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -163,14 +155,22 @@ public class PublicationSummary {
         }
         PublicationSummary that = (PublicationSummary) o;
         return Objects.equals(getPublicationId(), that.getPublicationId())
-               && Objects.equals(extractPublicationIdentifier(), that.extractPublicationIdentifier())
                && Objects.equals(getTitle(), that.getTitle())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublicationDate(), that.getPublicationDate())
                && Objects.equals(getPublicationYear(), that.getPublicationYear())
                && Objects.equals(getContributors(), that.getContributors())
                && getStatus() == that.getStatus();
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getPublicationId(), getTitle(), getOwner(), getCreatedDate(), getModifiedDate(),
+            getPublicationInstance(), getPublicationDate(), getPublicationYear(), getContributors(), getStatus());
     }
     
     public Instant getCreatedDate() {
