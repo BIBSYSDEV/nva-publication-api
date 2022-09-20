@@ -31,8 +31,8 @@ public class PublicationDetails {
         return new PublicationDetails(publication.getIdentifier(), extractMainTitle(publication));
     }
     
-    public static PublicationDetails create(Resource publication) {
-        return new PublicationDetails(publication.getIdentifier(), extractMainTitle(publication));
+    public static PublicationDetails create(Resource resource) {
+        return new PublicationDetails(resource.getIdentifier(), extractMainTitle(resource));
     }
     
     public static PublicationDetails create(SortableIdentifier publicationIdentifier) {
