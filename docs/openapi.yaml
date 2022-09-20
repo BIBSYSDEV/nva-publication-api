@@ -357,49 +357,6 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-    put:
-      requestBody:
-        description: 'Mark message as read'
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/UpdateMessageRequest'
-            examples:
-              request:
-                value: { "type": "MarkMessageAsRead" }
-      responses:
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Message'
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      x-amazon-apigateway-integration:
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdateMessageFunction.Arn}/invocations
-        responses: { }
-        httpMethod: POST
-        type: AWS_PROXY
 
   /{publicationIdentifier}/ticket:
     parameters:

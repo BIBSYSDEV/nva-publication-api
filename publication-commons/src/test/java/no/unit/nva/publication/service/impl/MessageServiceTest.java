@@ -21,7 +21,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
@@ -29,7 +28,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -126,27 +124,6 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(message.getRecipient(), is(equalTo(SUPPORT_SERVICE_CORRESPONDENT)));
     }
     
-    @Test
-    void shouldBeAbleToMarkMessageAnReadWhenInputMessageExists() throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
-        var messageIdentifier =
-            messageService.createMessage(owner, publication, randomString(), randomElement(MessageType.values()));
-        var originalMessage = messageService.getMessage(owner, messageIdentifier);
-        messageService.markAsRead(originalMessage);
-        var updatedMessage = messageService.getMessage(owner, messageIdentifier);
-        assertThat(originalMessage.getStatus(), is(equalTo(MessageStatus.UNREAD)));
-        assertThat(updatedMessage.getStatus(), is(equalTo(MessageStatus.READ)));
-    }
-    
-    @Test
-    void shouldThrowExceptionWhenTryingToMarkNonExistentMessageAsRead() {
-        var publication = createDraftPublication(owner);
-        var nonPersistedMessage = Message.create(owner, publication, randomString(), SortableIdentifier.next(),
-            Clock.systemDefaultZone(), MessageType.SUPPORT);
-        
-        assertThrows(NotFoundException.class, () -> messageService.markAsRead(nonPersistedMessage));
-    }
-    
     private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
         var userInfo = UserInstance.fromTicket(ticket);
         return messageService.createMessage(ticket, userInfo, messageText);
@@ -154,18 +131,12 @@ class MessageServiceTest extends ResourcesLocalTest {
     
     private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        return ticketService.createTicket(ticket, ticketType);
+        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
     }
-    
-    
     
     private MessageService serviceProducingDuplicateIdentifiers() {
         return new MessageService(client, mockClock(), duplicateIdentifierSupplier());
     }
-    
-    
-    
     
     private Supplier<SortableIdentifier> duplicateIdentifierSupplier() {
         return () -> SOME_IDENTIFIER;
@@ -175,8 +146,6 @@ class MessageServiceTest extends ResourcesLocalTest {
         var publication = createUnpersistedPublication(owner);
         return resourceService.createPublication(owner, publication);
     }
-    
-    
     
     private SortableIdentifier createSimpleMessage(Publication publication, String message, MessageType messageType) {
         var publicationOwner = UserInstance.fromPublication(publication);

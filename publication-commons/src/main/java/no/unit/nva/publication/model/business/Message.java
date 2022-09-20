@@ -31,8 +31,6 @@ public class Message implements Entity, JsonSerializable {
     private User owner;
     @JsonProperty("customerId")
     private URI customerId;
-    @JsonProperty("status")
-    private MessageStatus status;
     @JsonProperty("sender")
     private User sender;
     @JsonProperty("resourceIdentifier")
@@ -78,7 +76,6 @@ public class Message implements Entity, JsonSerializable {
                    .withResourceTitle("NOT_USED")
                    .withResourceIdentifier(ticket.extractPublicationIdentifier())
                    .withTicketIdentifier(ticket.getIdentifier())
-                   .withStatus(MessageStatus.UNREAD)
                    .build();
     }
     
@@ -92,14 +89,6 @@ public class Message implements Entity, JsonSerializable {
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
                    .withMessageType(messageType)
                    .build();
-    }
-    
-    public MessageStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(MessageStatus status) {
-        this.status = status;
     }
     
     public SortableIdentifier getTicketIdentifier() {
@@ -121,14 +110,6 @@ public class Message implements Entity, JsonSerializable {
     
     @Override
     @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-            getResourceIdentifier(), getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(),
-            getResourceTitle(), getMessageType());
-    }
-    
-    @Override
-    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -140,7 +121,6 @@ public class Message implements Entity, JsonSerializable {
         return Objects.equals(getIdentifier(), message.getIdentifier())
                && Objects.equals(getOwner(), message.getOwner())
                && Objects.equals(getCustomerId(), message.getCustomerId())
-               && getStatus() == message.getStatus()
                && Objects.equals(getSender(), message.getSender())
                && Objects.equals(getResourceIdentifier(), message.getResourceIdentifier())
                && Objects.equals(getTicketIdentifier(), message.getTicketIdentifier())
@@ -153,16 +133,16 @@ public class Message implements Entity, JsonSerializable {
     
     @Override
     @JacocoGenerated
-    public String toString() {
-        return toJsonString();
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getSender(), getResourceIdentifier(),
+            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(),
+            getMessageType());
     }
     
-    public Message markAsRead(Clock clock) {
-        var copy = this.copy();
-        copy.setStatus(MessageStatus.READ);
-        copy.setModifiedDate(clock.instant());
-        
-        return copy;
+    @Override
+    @JacocoGenerated
+    public String toString() {
+        return toJsonString();
     }
     
     public MessageType getMessageType() {
@@ -230,7 +210,7 @@ public class Message implements Entity, JsonSerializable {
     
     @Override
     public String getStatusString() {
-        return status.toString();
+        return "NO_STATUS";
     }
     
     public void setCustomerId(URI customerId) {
@@ -270,7 +250,6 @@ public class Message implements Entity, JsonSerializable {
                    .withResourceTitle(this.getResourceTitle())
                    .withModifiedDate(this.getModifiedDate())
                    .withTicketIdentifier(this.getTicketIdentifier())
-                   .withStatus(this.getStatus())
                    .build();
     }
     
@@ -317,8 +296,7 @@ public class Message implements Entity, JsonSerializable {
                    .withResourceTitle(extractTitle(publication))
                    .withCreatedDate(now)
                    .withModifiedDate(now)
-                   .withIdentifier(messageIdentifier)
-                   .withStatus(MessageStatus.UNREAD);
+                   .withIdentifier(messageIdentifier);
     }
     
     private static String extractTitle(Publication publication) {
@@ -393,11 +371,6 @@ public class Message implements Entity, JsonSerializable {
     
         public Message build() {
             return message;
-        }
-    
-        public Builder withStatus(MessageStatus status) {
-            message.setStatus(status);
-            return this;
         }
     }
 }

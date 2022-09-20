@@ -673,25 +673,6 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
-  NvaUpdateMessageFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: messages
-      Handler: no.unit.nva.publication.messages.update.UpdateMessageHandler::handleRequest
-      Runtime: java11
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /messages/{messageIdentifier}
-            Method: put
-            RestApiId: !Ref NvaPublicationApi
-
   CreateTicketFunction:
     Type: AWS::Serverless::Function
     Properties:

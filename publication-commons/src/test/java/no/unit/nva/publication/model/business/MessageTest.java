@@ -23,13 +23,6 @@ class MessageTest {
     public static final String MESSAGE_IDENTIFIER_FIELD = "identifier";
     
     @Test
-    void statusStringReturnsStringRepresentationOfStatus() {
-        var messageStatus = MessageStatus.READ;
-        Message message = Message.builder().withStatus(messageStatus).build();
-        assertThat(message.getStatusString(), is(equalTo(messageStatus.toString())));
-    }
-    
-    @Test
     void toPublicationThrowsUnsupportedException() {
         Message message = new Message();
         assertThrows(UnsupportedOperationException.class, () -> message.toPublication(null));

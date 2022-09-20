@@ -13,7 +13,6 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
@@ -39,14 +38,6 @@ public class MessageDao extends Dao
                               .withOwner(owner.getUser())
                               .withCustomerId(owner.getOrganizationUri())
                               .withIdentifier(identifier)
-                              .build();
-        return new MessageDao(message);
-    }
-    
-    public static MessageDao listMessagesForCustomerAndStatus(URI customerId, MessageStatus status) {
-        Message message = Message.builder()
-                              .withCustomerId(customerId)
-                              .withStatus(status)
                               .build();
         return new MessageDao(message);
     }

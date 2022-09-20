@@ -16,7 +16,6 @@ import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -61,14 +60,6 @@ class MessageDaoTest extends ResourcesLocalTest {
         assertThat(retrievedMessage, is(equalTo(message)));
     }
     
-    @Test
-    void listMessagesForCustomerAndStatusReturnsObjectWithCustomerIdAndStatus() {
-        var expectedMessageStatus = MessageStatus.READ;
-        var expectedUri = URI.create("https://example.com");
-        var queryObject = MessageDao.listMessagesForCustomerAndStatus(expectedUri, expectedMessageStatus);
-        assertThat(queryObject.getCustomerId(), is(equalTo(expectedUri)));
-        assertThat(queryObject.getMessage().getStatus(), is(equalTo(expectedMessageStatus)));
-    }
     
     @Test
     void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
