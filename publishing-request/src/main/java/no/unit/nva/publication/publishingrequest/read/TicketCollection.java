@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import no.unit.nva.publication.publishingrequest.TicketDto;
 
-@JsonTypeInfo(use = Id.CLASS, property = "type")
+@JsonTypeInfo(use = Id.NAME, property = "type")
 public class TicketCollection {
     
     public static final String TICKETS_FIELD = "tickets";
