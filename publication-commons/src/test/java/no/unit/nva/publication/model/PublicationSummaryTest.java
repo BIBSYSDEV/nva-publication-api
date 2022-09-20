@@ -10,24 +10,19 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.time.Clock;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class PublicationSummaryTest extends ResourcesLocalTest {
     
-    private ResourceService resourceService;
-    
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
     }
     
     @Test
@@ -49,7 +44,6 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
         assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
-        assertThat(summary.getStatus(), is(equalTo(publication.getStatus())));
         assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
     }
