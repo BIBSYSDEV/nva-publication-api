@@ -43,6 +43,7 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,6 +74,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -146,7 +148,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreatePublishingRequestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var ticket = TestingUtils.createPublishingRequest(publication);
+        var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
         
         var persistedTicket = ticket.persistNewTicket(ticketService);
         
@@ -187,7 +189,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowConflictExceptionWhenRequestingToPublishAlreadyPublishedPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, PUBLISHED);
-        var ticket = TestingUtils.createPublishingRequest(publication);
+        var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
         Executable action = () -> ticket.persistNewTicket(ticketService);
         assertThrows(ConflictException.class, action);
     }
@@ -552,6 +554,42 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(retrievedTickets.size(), is(equalTo(tickets.size())));
     }
     
+    @Test
+    void shouldUpdateDenormalizedPublicationTitleInTicketsWhenPublicationIsUpdated() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var originalTickets = createAllTypesOfTickets(publication);
+        
+        var updatedPublication = updatePublicationTile(publication);
+        var expectedUpdatedTitle = updatedPublication.getEntityDescription().getMainTitle();
+        resourceService.updatePublication(updatedPublication);
+        
+        var updatedTicketTitle = originalTickets
+                                     .stream()
+                                     .map(attempt(ticket -> ticket.fetch(ticketService)))
+                                     .map(Try::orElseThrow)
+                                     .map(TicketEntry::getPublicationTitle)
+                                     .collect(Collectors.toSet())
+                                     .stream()
+                                     .collect(SingletonCollector.collect());
+        
+        assertThat(updatedTicketTitle, is(equalTo(expectedUpdatedTitle)));
+    }
+    
+    private List<TicketEntry> createAllTypesOfTickets(Publication publication) {
+        return ticketTypeProvider()
+                   .map(type -> (Class<? extends TicketEntry>) type)
+                   .map(type -> TicketEntry.requestNewTicket(publication, type))
+                   .map(attempt(ticket -> ticket.persistNewTicket(ticketService)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
+    }
+    
+    private Publication updatePublicationTile(Publication publication) {
+        var copy = publication.copy().build();
+        copy.getEntityDescription().setMainTitle(randomString());
+        return copy;
+    }
+    
     private GeneralSupportRequest persistGeneralSupportRequest(Publication publication) {
         return attempt(() -> createGeneralSupportRequest(publication).persistNewTicket(ticketService))
                    .map(GeneralSupportRequest.class::cast).orElseThrow();
@@ -565,8 +603,7 @@ class TicketServiceTest extends ResourcesLocalTest {
                        .build();
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
-            return PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
-                publication.getIdentifier());
+            return PublishingRequestCase.createOpeningCaseObject(publication);
         }
         throw new UnsupportedOperationException(
             "Legacy access pattern supported for strictly only DoiRequests and " + "PublishingRequests");
@@ -641,7 +678,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase createRandomPublishingRequest(Publication publication) {
-        var publishingRequest = TestingUtils.createPublishingRequest(publication);
+        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
         publishingRequest.setIdentifier(SortableIdentifier.next());
         return publishingRequest;
     }

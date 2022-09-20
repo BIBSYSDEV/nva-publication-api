@@ -107,7 +107,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             .toJsonString();
     }
     
-    private Publication createUnpublishablePublication() throws ApiGatewayException {
+    private Publication createUnpublishablePublication() {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
@@ -118,13 +118,12 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return pendingPublishingRequest;
     }
     
-    private Publication createPublication() throws ApiGatewayException {
+    private Publication createPublication() {
         var publication = randomPublication();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        var userInstance = UserInstance.fromPublication(publication);
-        return PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
+        return PublishingRequestCase.createOpeningCaseObject(publication);
     }
 }

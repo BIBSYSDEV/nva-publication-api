@@ -25,6 +25,7 @@ public final class StorageModelTestUtils {
         sample.setModifiedDate(randomInstant());
         sample.setStatus(TicketStatus.COMPLETED);
         sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
+        sample.setPublicationTitle(publication.getEntityDescription().getMainTitle());
         assertThat(sample, doesNotHaveEmptyValues());
         return sample;
     }

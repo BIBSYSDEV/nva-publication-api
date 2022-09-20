@@ -42,6 +42,10 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     public static final String EMPTY_STRING = "";
     private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
     public static final String TICKETS_INDEXING_TYPE = "Ticket";
+    public static final String ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE =
+        DoiRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
+    public static final String ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE =
+        GeneralSupportRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
     
     protected TicketDao() {
         super();

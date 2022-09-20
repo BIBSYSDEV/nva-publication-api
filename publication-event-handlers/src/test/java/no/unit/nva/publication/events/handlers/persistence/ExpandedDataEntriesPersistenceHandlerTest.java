@@ -149,9 +149,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
-        var userInstance = UserInstance.fromPublication(publication);
         var publishingRequest = PublishingRequestCase
-                                    .createOpeningCaseObject(userInstance, publication.getIdentifier())
+                                    .createOpeningCaseObject(publication)
                                     .persistNewTicket(ticketService);
     
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);

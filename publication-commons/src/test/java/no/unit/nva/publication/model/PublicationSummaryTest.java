@@ -3,6 +3,8 @@ package no.unit.nva.publication.model;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -48,6 +50,15 @@ class PublicationSummaryTest {
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
         var publicationSummary = PublicationSummary.create(doiRequest);
         assertThat(publicationSummary.getPublicationIdentifier(), is(equalTo(doiRequest.getResourceIdentifier())));
+    }
+    
+    @Test
+    void shouldAllowCreationOfMinimumPossibleInformation() {
+        var publicationId = randomUri();
+        var publicationTitle = randomString();
+        var summary = PublicationSummary.create(publicationId, publicationTitle);
+        assertThat(summary.getPublicationId(), is(equalTo(publicationId)));
+        assertThat(summary.getTitle(), is(equalTo(publicationTitle)));
     }
     
     private PublicationSummary publicationSummary() {

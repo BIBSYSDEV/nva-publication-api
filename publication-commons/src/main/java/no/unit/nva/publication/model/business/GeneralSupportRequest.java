@@ -55,6 +55,7 @@ public class GeneralSupportRequest extends TicketEntry {
         ticket.setModifiedDate(Instant.now());
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdentifier(SortableIdentifier.next());
+        ticket.setPublicationTitle(publication.getEntityDescription().getMainTitle());
         ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
         return ticket;
     }

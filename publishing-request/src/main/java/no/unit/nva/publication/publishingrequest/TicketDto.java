@@ -2,7 +2,6 @@ package no.unit.nva.publication.publishingrequest;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -15,9 +14,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -39,6 +38,9 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String STATUS_FIELD = "status";
     public static final String MESSAGES_FIELD = "messages";
     public static final String VIEWED_BY = "viewedBy";
+    public static final String PUBLICATION_SUMMARY_FIELD = "publicationSummary";
+    @JsonProperty(PUBLICATION_SUMMARY_FIELD)
+    private final PublicationSummary publicationSummary;
     @JsonProperty(STATUS_FIELD)
     private final TicketStatus status;
     @JsonProperty(VIEWED_BY)
@@ -46,10 +48,14 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(MESSAGES_FIELD)
     private final List<MessageDto> messages;
     
-    protected TicketDto(TicketStatus status, List<MessageDto> messages, Set<User> viewedBy) {
+    protected TicketDto(TicketStatus status,
+                        List<MessageDto> messages,
+                        Set<User> viewedBy,
+                        PublicationSummary publicationSummary) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
+        this.publicationSummary = publicationSummary;
     }
     
     public static TicketDto fromTicket(TicketEntry ticket) {
@@ -69,19 +75,26 @@ public abstract class TicketDto implements JsonSerializable {
                    .withStatus(ticket.getStatus())
                    .withModifiedDate(ticket.getModifiedDate())
                    .withIdentifier(ticket.getIdentifier())
-                   .withPublicationId(createPublicationId(ticket.getResourceIdentifier()))
                    .withId(createTicketId(ticket))
+                   .withPublicationSummary(createPublicationSummary(ticket))
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
                    .build(ticket.getClass());
     }
     
-    public static TicketDto fromJson(String json) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(json, TicketDto.class)).orElseThrow();
-    }
-    
     public static Builder builder() {
         return new TicketDto.Builder();
+    }
+    
+    public static URI createTicketId(TicketEntry ticket) {
+        return UriWrapper.fromUri(createPublicationId(ticket.getResourceIdentifier()))
+                   .addChild(PublicationServiceConfig.TICKET_PATH)
+                   .addChild(ticket.getIdentifier().toString())
+                   .getUri();
+    }
+    
+    public PublicationSummary getPublicationSummary() {
+        return publicationSummary;
     }
     
     public abstract Class<? extends TicketEntry> ticketType();
@@ -90,11 +103,6 @@ public abstract class TicketDto implements JsonSerializable {
     
     public final TicketStatus getStatus() {
         return status;
-    }
-    
-    @Override
-    public String toString() {
-        return toJsonString();
     }
     
     public final List<MessageDto> getMessages() {
@@ -110,11 +118,9 @@ public abstract class TicketDto implements JsonSerializable {
         return new SortableIdentifier(idString);
     }
     
-    public static URI createTicketId(TicketEntry ticket) {
-        return UriWrapper.fromUri(createPublicationId(ticket.getResourceIdentifier()))
-                   .addChild(PublicationServiceConfig.TICKET_PATH)
-                   .addChild(ticket.getIdentifier().toString())
-                   .getUri();
+    private static PublicationSummary createPublicationSummary(TicketEntry ticket) {
+        return PublicationSummary.create(createPublicationId(ticket.getResourceIdentifier()),
+            ticket.getPublicationTitle());
     }
     
     private static URI createPublicationId(SortableIdentifier publicationIdentifier) {
@@ -130,10 +136,10 @@ public abstract class TicketDto implements JsonSerializable {
         private Instant createdDate;
         private Instant modifiedDate;
         private SortableIdentifier identifier;
-        private URI publicationId;
         private URI id;
         private List<MessageDto> messages;
         private ViewedBy viewedBy;
+        private PublicationSummary publicationSummary;
         
         private Builder() {
         }
@@ -157,24 +163,24 @@ public abstract class TicketDto implements JsonSerializable {
             this.identifier = identifier;
             return this;
         }
-    
-        public Builder withPublicationId(URI publicationId) {
-            this.publicationId = publicationId;
-            return this;
-        }
-    
+        
         public Builder withId(URI id) {
             this.id = id;
             return this;
         }
-    
+        
         public Builder withMessages(List<MessageDto> messages) {
             this.messages = messages;
             return this;
         }
-    
-        public TicketDto build(Class<? extends TicketEntry> ticketType) {
         
+        public Builder withPublicationSummary(PublicationSummary publicationSummary) {
+            this.publicationSummary = publicationSummary;
+            return this;
+        }
+        
+        public TicketDto build(Class<? extends TicketEntry> ticketType) {
+            
             if (DoiRequest.class.equals(ticketType)) {
                 return createDoiRequestDto();
             } else if (PublishingRequestCase.class.equals(ticketType)) {
@@ -184,36 +190,37 @@ public abstract class TicketDto implements JsonSerializable {
                     createdDate,
                     modifiedDate,
                     identifier,
-                    publicationId,
+                    publicationSummary,
                     id,
                     messages,
                     viewedBy);
             }
             throw new RuntimeException("Unsupported type");
         }
-    
+        
         public Builder withViewedBy(Set<User> viewedBy) {
             this.viewedBy = new ViewedBy(viewedBy);
             return this;
         }
-    
+        
         private PublishingRequestDto createPublishingRequestDto() {
             return new PublishingRequestDto(status,
                 createdDate,
                 modifiedDate,
                 identifier,
-                publicationId,
+                publicationSummary,
                 id,
                 messages,
                 viewedBy);
         }
-    
+        
         private DoiRequestDto createDoiRequestDto() {
             return new DoiRequestDto(status,
                 createdDate,
                 modifiedDate,
                 identifier,
-                publicationId,
+                publicationSummary,
+    
                 id,
                 messages,
                 viewedBy);

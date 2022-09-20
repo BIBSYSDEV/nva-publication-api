@@ -66,15 +66,15 @@ public class PublishingRequestCase extends TicketEntry {
         super();
     }
     
-    public static PublishingRequestCase createOpeningCaseObject(UserInstance userInstance,
-                                                                SortableIdentifier publicationIdentifier) {
-    
+    public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
-        openingCaseObject.setResourceIdentifier(publicationIdentifier);
+        openingCaseObject.setResourceIdentifier(publication.getIdentifier());
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
+        openingCaseObject.setPublicationTitle(extractMainTitle(publication));
         return openingCaseObject;
     }
     
@@ -147,6 +147,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setResourceIdentifier(this.getResourceIdentifier());
         copy.setOwner(this.getOwner());
         copy.setViewedBy(this.getViewedBy());
+        copy.setPublicationTitle(this.getPublicationTitle());
         return copy;
     }
     
@@ -181,6 +182,7 @@ public class PublishingRequestCase extends TicketEntry {
                    .withIdentifier(getResourceIdentifier())
                    .withResourceOwner(new ResourceOwner(getOwner().toString(), null))
                    .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
+                   .withEntityDescription(createEntityDescription())
                    .build();
     }
     
@@ -263,11 +265,18 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getCreatedDate(), that.getCreatedDate());
     }
     
+    private static String extractMainTitle(Publication publication) {
+        return Optional.ofNullable(publication)
+                   .map(Publication::getEntityDescription)
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
+    }
+    
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
         UserInstance userInstance,
         SortableIdentifier publicationIdentifier,
         SortableIdentifier publishingRequestIdentifier) {
-    
+        
         var newPublishingRequest = new PublishingRequestCase();
         newPublishingRequest.setOwner(userInstance.getUser());
         newPublishingRequest.setCustomerId(userInstance.getOrganizationUri());
@@ -309,5 +318,9 @@ public class PublishingRequestCase extends TicketEntry {
                    .map(Publication::getEntityDescription)
                    .map(EntityDescription::getMainTitle)
                    .isEmpty();
+    }
+    
+    private EntityDescription createEntityDescription() {
+        return new EntityDescription.Builder().withMainTitle(getPublicationTitle()).build();
     }
 }

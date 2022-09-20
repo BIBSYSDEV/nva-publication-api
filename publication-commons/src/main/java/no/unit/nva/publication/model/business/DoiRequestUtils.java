@@ -26,6 +26,7 @@ public final class DoiRequestUtils {
         copy.setResourceStatus(resource.getStatus());
         copy.setResourceTitle(extractMainTitle(resource));
         copy.setContributors(extractContributors(resource));
+        copy.setPublicationTitle(extractMainTitle(resource));
         return copy;
     }
     

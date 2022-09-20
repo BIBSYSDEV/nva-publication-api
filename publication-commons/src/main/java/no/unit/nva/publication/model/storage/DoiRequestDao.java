@@ -22,7 +22,7 @@ public class DoiRequestDao extends TicketDao
     JoinWithResource,
     JsonSerializable {
     
-    public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
+    public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     public static final String TYPE = "DoiRequest";
     
     @JacocoGenerated
@@ -66,7 +66,7 @@ public class DoiRequestDao extends TicketDao
     }
     
     public String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + getData().getType();
+        return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + getData().getType();
     }
     
     @Override

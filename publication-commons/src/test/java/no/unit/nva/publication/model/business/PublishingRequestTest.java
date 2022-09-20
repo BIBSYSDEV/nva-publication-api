@@ -1,9 +1,7 @@
 package no.unit.nva.publication.model.business;
 
-
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -37,11 +35,10 @@ class PublishingRequestTest {
     
     @Test
     void shouldReturnPublishingRequestWithAdequateInfoForCreatingEntryWhenSuppliedWithUserAndPublicationInfo() {
-        var userInstance = UserInstance.create(randomString(), randomUri());
-        var publicationIdentifier = SortableIdentifier.next();
-        var objectForCreatingNewEntry = PublishingRequestCase.createOpeningCaseObject(userInstance,
-            publicationIdentifier);
-        assertThat(objectForCreatingNewEntry.getResourceIdentifier(), is(equalTo(publicationIdentifier)));
+        var publication = randomPublication();
+        var objectForCreatingNewEntry = PublishingRequestCase.createOpeningCaseObject(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        assertThat(objectForCreatingNewEntry.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(objectForCreatingNewEntry.getOwner(), is(equalTo(userInstance.getUser())));
         assertThat(objectForCreatingNewEntry.getCustomerId(), is(equalTo(userInstance.getOrganizationUri())));
     }

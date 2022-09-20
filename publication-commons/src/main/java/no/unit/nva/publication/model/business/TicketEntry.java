@@ -28,8 +28,11 @@ public abstract class TicketEntry implements Entity {
     public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     
     public static final String VIEWED_BY_FIELD = "viewedBy";
+    public static final String PUBLICATION_TITLE_FIELD = "publicationTitle";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
+    @JsonProperty(PUBLICATION_TITLE_FIELD)
+    private String publicationTitle;
     
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -47,7 +50,7 @@ public abstract class TicketEntry implements Entity {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.fromPublication(publication);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return createOpeningCaseObject(UserInstance.fromPublication(publication), publication.getIdentifier());
+            return createOpeningCaseObject(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.fromPublication(publication);
         }
@@ -172,6 +175,19 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
     
+    public final String getPublicationTitle() {
+        return this.publicationTitle;
+    }
+    
+    public final void setPublicationTitle(String publicationTitle) {
+        this.publicationTitle = publicationTitle;
+    }
+    
+    public TicketEntry update(Resource resource) {
+        this.setPublicationTitle(resource.getEntityDescription().getMainTitle());
+        return this;
+    }
+    
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
         Class<T> ticketType,
@@ -206,8 +222,7 @@ public abstract class TicketEntry implements Entity {
     
     private static TicketEntry createNewPublishingRequestEntry(Publication publication,
                                                                Supplier<SortableIdentifier> identifierProvider) {
-        var userInstance = UserInstance.fromPublication(publication);
-        var entry = createOpeningCaseObject(userInstance, publication.getIdentifier());
+        var entry = createOpeningCaseObject(publication);
         setServiceControlledFields(entry, identifierProvider);
         return entry;
     }

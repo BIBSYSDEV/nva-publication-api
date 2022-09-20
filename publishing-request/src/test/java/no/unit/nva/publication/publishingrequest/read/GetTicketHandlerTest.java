@@ -188,6 +188,22 @@ class GetTicketHandlerTest extends TicketTestLocal {
         assertThatHandlerReturnsDtoMakingVisibleTheFactThatTheOwnerHasNotReadTheMessage(updatedTicket, responseBody);
     }
     
+    @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should return publication title with the ticket")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnPublicationTitleWithTheTicket(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistDraftPublication();
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        var request = createHttpRequest(ticket).build();
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var responseBody = response.getBodyObject(TicketDto.class);
+        assertThat(responseBody.getPublicationSummary().getTitle(),
+            is(equalTo(publication.getEntityDescription().getMainTitle())));
+    }
+    
     private static void assertThatHandlerReturnsDtoMakingVisibleTheFactThatTheOwnerHasNotReadTheMessage(
         TicketEntry updatedTicket, TicketDto responseBody) {
         assertThat(responseBody.getViewedBy(), not(hasItem(updatedTicket.getOwner())));

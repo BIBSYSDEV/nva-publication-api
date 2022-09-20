@@ -19,15 +19,18 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
@@ -87,6 +90,18 @@ public class ResourceDao extends Dao
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
         throw new UnsupportedOperationException("Not implemented yet.Call the appropriate resource service method");
+    }
+    
+    public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
+        QueryRequest queryRequest = new QueryRequest()
+                                        .withTableName(RESOURCES_TABLE_NAME)
+                                        .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                                        .withKeyConditions(joinAllRelatedTicketsForResource());
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
+                   .collect(Collectors.toList());
     }
     
     @Override
