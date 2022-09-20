@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -83,7 +84,7 @@ public class PublishingRequestDto extends TicketDto {
         ticket.setStatus(getStatus());
         ticket.setModifiedDate(getModifiedDate());
         ticket.setIdentifier(getIdentifier());
-        ticket.setResourceIdentifier(extractResourceIdentifier(getPublicationSummary().getPublicationId()));
+        ticket.setPublicationDetails(PublicationDetails.create(getPublicationSummary()));
         ticket.setViewedBy(getViewedBy());
         return ticket;
     }

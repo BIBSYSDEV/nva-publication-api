@@ -21,6 +21,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -136,6 +137,10 @@ public class Resource implements Entity {
     }
     
     @Override
+    public Publication toPublication(ResourceService resourceService) {
+        return toPublication();
+    }
+    
     public Publication toPublication() {
         return new Publication.Builder()
                    .withIdentifier(getIdentifier())

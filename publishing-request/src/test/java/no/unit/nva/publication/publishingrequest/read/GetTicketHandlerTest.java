@@ -59,7 +59,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     void shouldReturnTicketWhenClientIsOwnerOfAssociatedPublicationAndThereforeOfTheTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var ticket = createPersistedTicket(ticketType);
-        var publication = resourceService.getPublicationByIdentifier(ticket.getResourceIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(ticket.extractPublicationIdentifier());
         var request = createHttpRequest(publication, ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
@@ -240,7 +240,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     private HandlerRequestBuilder<TicketDto> createHttpRequest(TicketEntry ticket)
         throws NotFoundException {
-        var publication = resourceService.getPublicationByIdentifier(ticket.getResourceIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(ticket.extractPublicationIdentifier());
         return createHttpRequest(publication, ticket);
     }
     

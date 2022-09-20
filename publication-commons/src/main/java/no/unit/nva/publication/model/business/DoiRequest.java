@@ -1,14 +1,13 @@
 package no.unit.nva.publication.model.business;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOURCE_IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -16,25 +15,19 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Try;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
@@ -43,19 +36,14 @@ public class DoiRequest extends TicketEntry {
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String TYPE = "DoiRequest";
     
-    public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
-    
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
     public static final String WRONG_PUBLICATION_STATUS_ERROR =
         "DoiRequests may only be created for publications with statuses %s";
     public static final Set<PublicationStatus> ACCEPTABLE_PUBLICATION_STATUSES = Set.of(PublicationStatus.PUBLISHED,
         PublicationStatus.DRAFT);
     public static final String DOI_REQUEST_APPROVAL_FAILURE = "Cannot approve DoiRequest for non-published publication";
-    private static final URI UNKNOWN_USER_AFFILIATION = null;
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
-    @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
-    private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
     @JsonProperty(RESOURCE_STATUS_FIELD)
@@ -69,18 +57,6 @@ public class DoiRequest extends TicketEntry {
     private URI customerId;
     @JsonProperty(OWNER_FIELD)
     private User owner;
-    @JsonProperty("resourceTitle")
-    private String resourceTitle;
-    @JsonProperty
-    private Instant resourceModifiedDate;
-    @JsonProperty
-    private PublicationInstance<? extends Pages> resourcePublicationInstance;
-    @JsonProperty
-    private PublicationDate resourcePublicationDate;
-    @JsonProperty
-    private String resourcePublicationYear;
-    @JsonProperty
-    private List<Contributor> contributors;
     
     public DoiRequest() {
         super();
@@ -101,7 +77,6 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setStatus(TicketStatus.PENDING);
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
-        doiRequest.validate();
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
         return doiRequest;
     }
@@ -135,31 +110,12 @@ public class DoiRequest extends TicketEntry {
     }
     
     @Override
-    public Publication toPublication() {
-    
-        Reference reference = new Reference.Builder()
-                                  .withPublicationInstance(getResourcePublicationInstance())
-                                  .build();
-    
-        EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withMainTitle(getResourceTitle())
-                                                  .withDate(getResourcePublicationDate())
-                                                  .withReference(reference)
-                                                  .withContributors(getContributors())
-                                                  .build();
-    
-        Organization customer = new Organization.Builder()
-                                    .withId(getCustomerId())
-                                    .build();
-    
-        return new Publication.Builder()
-                   .withIdentifier(getResourceIdentifier())
-                   .withModifiedDate(getResourceModifiedDate())
-                   .withStatus(getResourceStatus())
-                   .withEntityDescription(entityDescription)
-                   .withPublisher(customer)
-                   .withResourceOwner(new ResourceOwner(getOwner().toString(), UNKNOWN_USER_AFFILIATION))
-                   .build();
+    public Publication toPublication(ResourceService resourceService) {
+        return Optional.ofNullable(getPublicationDetails())
+                   .map(PublicationDetails::getIdentifier)
+                   .map(attempt(resourceService::getPublicationByIdentifier))
+                   .map(Try::orElseThrow)
+                   .orElse(null);
     }
     
     @Override
@@ -216,11 +172,6 @@ public class DoiRequest extends TicketEntry {
     }
     
     @Override
-    public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
-    }
-    
-    @Override
     public void validateCreationRequirements(Publication publication) throws ConflictException {
         if (publicationDoesNotHaveAnExpectedStatus(publication)) {
             throw new ConflictException(String.format(WRONG_PUBLICATION_STATUS_ERROR, ACCEPTABLE_PUBLICATION_STATUSES));
@@ -247,19 +198,13 @@ public class DoiRequest extends TicketEntry {
     public DoiRequest copy() {
         return DoiRequest.builder()
                    .withIdentifier(getIdentifier())
-                   .withResourceIdentifier(getResourceIdentifier())
+                   .withPublicationDetails(getPublicationDetails())
                    .withStatus(getStatus())
                    .withResourceStatus(getResourceStatus())
                    .withModifiedDate(getModifiedDate())
                    .withCreatedDate(getCreatedDate())
                    .withCustomerId(getCustomerId())
                    .withOwner(getOwner())
-                   .withResourceTitle(getResourceTitle())
-                   .withResourceModifiedDate(getResourceModifiedDate())
-                   .withResourcePublicationInstance(getResourcePublicationInstance())
-                   .withResourcePublicationDate(getResourcePublicationDate())
-                   .withResourcePublicationYear(getResourcePublicationYear())
-                   .withContributors(getContributors())
                    .withViewedBy(this.getViewedBy())
                    .build();
     }
@@ -274,65 +219,12 @@ public class DoiRequest extends TicketEntry {
         this.status = status;
     }
     
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
-    }
-    
     public PublicationStatus getResourceStatus() {
         return resourceStatus;
     }
     
     public void setResourceStatus(PublicationStatus resourceStatus) {
         this.resourceStatus = resourceStatus;
-    }
-    
-    public String getResourceTitle() {
-        return resourceTitle;
-    }
-    
-    public void setResourceTitle(String resourceTitle) {
-        this.resourceTitle = resourceTitle;
-    }
-    
-    public Instant getResourceModifiedDate() {
-        return resourceModifiedDate;
-    }
-    
-    public void setResourceModifiedDate(Instant resourceModifiedDate) {
-        this.resourceModifiedDate = resourceModifiedDate;
-    }
-    
-    public PublicationInstance<? extends Pages> getResourcePublicationInstance() {
-        return resourcePublicationInstance;
-    }
-    
-    public void setResourcePublicationInstance(
-        PublicationInstance<? extends Pages> resourcePublicationInstance) {
-        this.resourcePublicationInstance = resourcePublicationInstance;
-    }
-    
-    public PublicationDate getResourcePublicationDate() {
-        return resourcePublicationDate;
-    }
-    
-    public void setResourcePublicationDate(PublicationDate resourcePublicationDate) {
-        this.resourcePublicationDate = resourcePublicationDate;
-    }
-    
-    public String getResourcePublicationYear() {
-        return resourcePublicationYear;
-    }
-    
-    public void setResourcePublicationYear(String resourcePublicationYear) {
-        this.resourcePublicationYear = resourcePublicationYear;
-    }
-    
-    public List<Contributor> getContributors() {
-        return contributors;
-    }
-    
-    public void setContributors(List<Contributor> contributors) {
-        this.contributors = contributors;
     }
     
     @Override
@@ -344,24 +236,13 @@ public class DoiRequest extends TicketEntry {
     }
     
     public void validate() {
-        if (isNull(resourceIdentifier)) {
-            throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
-        }
+        attempt(this::extractPublicationIdentifier)
+            .toOptional()
+            .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
     }
     
     @Override
     @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
-            getModifiedDate(),
-            getCreatedDate(), getCustomerId(), getOwner(), getResourceTitle(),
-            getResourceModifiedDate(),
-            getResourcePublicationInstance(), getResourcePublicationDate(),
-            getResourcePublicationYear(),
-            getContributors());
-    }
-    
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -371,19 +252,21 @@ public class DoiRequest extends TicketEntry {
         }
         DoiRequest that = (DoiRequest) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(this.extractPublicationIdentifier(), that.extractPublicationIdentifier())
                && getStatus() == that.getStatus()
                && getResourceStatus() == that.getResourceStatus()
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getResourceTitle(), that.getResourceTitle())
-               && Objects.equals(getResourceModifiedDate(), that.getResourceModifiedDate())
-               && Objects.equals(getResourcePublicationInstance(), that.getResourcePublicationInstance())
-               && Objects.equals(getResourcePublicationDate(), that.getResourcePublicationDate())
-               && Objects.equals(getResourcePublicationYear(), that.getResourcePublicationYear())
-               && Objects.equals(getContributors(), that.getContributors());
+               && Objects.equals(getOwner(), that.getOwner());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), this.extractPublicationIdentifier(), getStatus(), getResourceStatus(),
+            getModifiedDate(),
+            getCreatedDate(), getCustomerId(), getOwner());
     }
     
     private boolean publicationHasNvaDoi(Publication publication) {
@@ -400,7 +283,7 @@ public class DoiRequest extends TicketEntry {
     }
     
     private boolean updateIsAboutTheSameResource(Resource resource) {
-        return resource.getIdentifier().equals(this.getResourceIdentifier());
+        return resource.getIdentifier().equals(this.extractPublicationIdentifier());
     }
     
     public static final class Builder {
@@ -413,11 +296,6 @@ public class DoiRequest extends TicketEntry {
         
         public Builder withIdentifier(SortableIdentifier identifier) {
             doiRequest.setIdentifier(identifier);
-            return this;
-        }
-        
-        public Builder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
-            doiRequest.setResourceIdentifier(resourceIdentifier);
             return this;
         }
         
@@ -450,38 +328,6 @@ public class DoiRequest extends TicketEntry {
             doiRequest.setOwner(owner);
             return this;
         }
-        
-        public Builder withResourceTitle(String resourceTitle) {
-            doiRequest.setResourceTitle(resourceTitle);
-            doiRequest.setPublicationTitle(resourceTitle);
-            return this;
-        }
-        
-        public Builder withResourceModifiedDate(Instant resourceModifiedDate) {
-            doiRequest.setResourceModifiedDate(resourceModifiedDate);
-            return this;
-        }
-        
-        public Builder withResourcePublicationInstance(
-            PublicationInstance<? extends Pages> resourcePublicationInstance) {
-            doiRequest.setResourcePublicationInstance(resourcePublicationInstance);
-            return this;
-        }
-        
-        public Builder withResourcePublicationDate(PublicationDate resourcePublicationDate) {
-            doiRequest.setResourcePublicationDate(resourcePublicationDate);
-            return this;
-        }
-    
-        public Builder withResourcePublicationYear(String resourcePublicationYear) {
-            doiRequest.setResourcePublicationYear(resourcePublicationYear);
-            return this;
-        }
-    
-        public Builder withContributors(List<Contributor> contributors) {
-            doiRequest.setContributors(contributors);
-            return this;
-        }
     
         public Builder withViewedBy(Set<User> viewedBy) {
             doiRequest.setViewedBy(viewedBy);
@@ -490,6 +336,11 @@ public class DoiRequest extends TicketEntry {
     
         public DoiRequest build() {
             return doiRequest;
+        }
+    
+        public Builder withPublicationDetails(PublicationDetails publicationDetails) {
+            doiRequest.setPublicationDetails(publicationDetails);
+            return this;
         }
     }
 }

@@ -6,7 +6,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTO
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOURCE_IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,13 +19,12 @@ import java.util.Optional;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
@@ -49,8 +47,6 @@ public class PublishingRequestCase extends TicketEntry {
     
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
-    @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
-    private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
     @JsonProperty(CUSTOMER_ID_FIELD)
@@ -71,10 +67,9 @@ public class PublishingRequestCase extends TicketEntry {
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
-        openingCaseObject.setResourceIdentifier(publication.getIdentifier());
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
-        openingCaseObject.setPublicationTitle(extractMainTitle(publication));
+        openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
         return openingCaseObject;
     }
     
@@ -88,15 +83,8 @@ public class PublishingRequestCase extends TicketEntry {
     
     public static PublishingRequestCase createQueryObject(SortableIdentifier resourceIdentifier, URI customerId) {
         var queryObject = new PublishingRequestCase();
-        queryObject.setResourceIdentifier(resourceIdentifier);
+        queryObject.setPublicationDetails(PublicationDetails.create(resourceIdentifier));
         queryObject.setCustomerId(customerId);
-        return queryObject;
-    }
-    
-    public static PublishingRequestCase createQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
-        var queryObject = new PublishingRequestCase();
-        queryObject.setCustomerId(customerId);
-        queryObject.setResourceIdentifier(resourceIdentifier);
         return queryObject;
     }
     
@@ -108,11 +96,6 @@ public class PublishingRequestCase extends TicketEntry {
         } else if (resourceHasNeitherLinkNorFile(resource)) {
             throwErrorWhenPublishingResourceWithoutData(resource);
         }
-    }
-    
-    @Override
-    public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
     }
     
     @Override
@@ -144,10 +127,9 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setModifiedDate(this.getModifiedDate());
         copy.setCreatedDate(this.getCreatedDate());
         copy.setCustomerId(this.getCustomerId());
-        copy.setResourceIdentifier(this.getResourceIdentifier());
         copy.setOwner(this.getOwner());
         copy.setViewedBy(this.getViewedBy());
-        copy.setPublicationTitle(this.getPublicationTitle());
+        copy.setPublicationDetails(this.getPublicationDetails());
         return copy;
     }
     
@@ -161,10 +143,6 @@ public class PublishingRequestCase extends TicketEntry {
         this.status = status;
     }
     
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
-    }
-    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
@@ -176,14 +154,9 @@ public class PublishingRequestCase extends TicketEntry {
     }
     
     @Override
-    public Publication toPublication() {
-    
-        return new Publication.Builder()
-                   .withIdentifier(getResourceIdentifier())
-                   .withResourceOwner(new ResourceOwner(getOwner().toString(), null))
-                   .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
-                   .withEntityDescription(createEntityDescription())
-                   .build();
+    public Publication toPublication(ResourceService resourceService) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(extractPublicationIdentifier()))
+                   .orElseThrow();
     }
     
     @Override
@@ -242,7 +215,7 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
+        return Objects.hash(getIdentifier(), extractPublicationIdentifier(), getStatus(), getCustomerId(), getOwner(),
             getModifiedDate(), getCreatedDate());
     }
     
@@ -257,19 +230,12 @@ public class PublishingRequestCase extends TicketEntry {
         }
         PublishingRequestCase that = (PublishingRequestCase) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(extractPublicationIdentifier(), that.extractPublicationIdentifier())
                && getStatus() == that.getStatus()
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getCreatedDate(), that.getCreatedDate());
-    }
-    
-    private static String extractMainTitle(Publication publication) {
-        return Optional.ofNullable(publication)
-                   .map(Publication::getEntityDescription)
-                   .map(EntityDescription::getMainTitle)
-                   .orElse(null);
     }
     
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
@@ -280,7 +246,7 @@ public class PublishingRequestCase extends TicketEntry {
         var newPublishingRequest = new PublishingRequestCase();
         newPublishingRequest.setOwner(userInstance.getUser());
         newPublishingRequest.setCustomerId(userInstance.getOrganizationUri());
-        newPublishingRequest.setResourceIdentifier(publicationIdentifier);
+        newPublishingRequest.setPublicationDetails(PublicationDetails.create(publicationIdentifier));
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);
         return newPublishingRequest;
     }
@@ -318,9 +284,5 @@ public class PublishingRequestCase extends TicketEntry {
                    .map(Publication::getEntityDescription)
                    .map(EntityDescription::getMainTitle)
                    .isEmpty();
-    }
-    
-    private EntityDescription createEntityDescription() {
-        return new EntityDescription.Builder().withMainTitle(getPublicationTitle()).build();
     }
 }

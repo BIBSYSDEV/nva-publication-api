@@ -10,6 +10,7 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -46,7 +47,7 @@ public class DoiRequestDao extends TicketDao
     
     public static DoiRequestDao queryObject(ResourceDao queryObject) {
         var doiRequest = DoiRequest.builder()
-                             .withResourceIdentifier(queryObject.getResourceIdentifier())
+                             .withPublicationDetails(PublicationDetails.create(queryObject.getResourceIdentifier()))
                              .build();
         return new DoiRequestDao(doiRequest);
     }
@@ -58,7 +59,7 @@ public class DoiRequestDao extends TicketDao
     public static DoiRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                      SortableIdentifier resourceIdentifier) {
         DoiRequest doi = DoiRequest.builder()
-                             .withResourceIdentifier(resourceIdentifier)
+                             .withPublicationDetails(PublicationDetails.create(resourceIdentifier))
                              .withOwner(resourceOwner.getUser())
                              .withCustomerId(resourceOwner.getOrganizationUri())
                              .build();
@@ -101,7 +102,7 @@ public class DoiRequestDao extends TicketDao
     @Override
     @JsonIgnore
     public SortableIdentifier getResourceIdentifier() {
-        return getTicketEntry().getResourceIdentifier();
+        return getTicketEntry().extractPublicationIdentifier();
     }
     
     @Override
@@ -131,7 +132,7 @@ public class DoiRequestDao extends TicketDao
     
     private TransactWriteItem createUniqueDoiRequestEntry() {
         UniqueDoiRequestEntry uniqueDoiRequestEntry = new UniqueDoiRequestEntry(
-            getTicketEntry().getResourceIdentifier().toString());
+            getTicketEntry().extractPublicationIdentifier().toString());
         return newPutTransactionItem(uniqueDoiRequestEntry);
     }
     

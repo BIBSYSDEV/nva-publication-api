@@ -30,7 +30,7 @@ class JoinWithResourceTest extends ResourcesLocalTest {
     void byResourceIdentifierKeyReturnsDoiRequestWithReferencedResource() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao);
-        assertThat(doiRequestDao.getTicketEntry().getResourceIdentifier(),
+        assertThat(doiRequestDao.getTicketEntry().extractPublicationIdentifier(),
             is(equalTo(resourceDao.getData().getIdentifier())));
     
         client.putItem(toPutItemRequest(resourceDao));
@@ -59,7 +59,7 @@ class JoinWithResourceTest extends ResourcesLocalTest {
     void byResourceIdentifierKeyReturnsSingleTypeWhenLeftAndRightTypeAreEqual() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao);
-        assertThat(doiRequestDao.getTicketEntry().getResourceIdentifier(),
+        assertThat(doiRequestDao.getTicketEntry().extractPublicationIdentifier(),
             is(equalTo(resourceDao.getData().getIdentifier())));
     
         client.putItem(toPutItemRequest(resourceDao));

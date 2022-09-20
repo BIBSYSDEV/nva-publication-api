@@ -5,7 +5,7 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTO
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOURCE_IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
@@ -200,7 +200,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                 "#identifier", IDENTIFIER_FIELD,
                 "#modifiedDate", MODIFIED_DATE_FIELD,
                 "#owner", OWNER_FIELD,
-                "#resourceIdentifier", RESOURCE_IDENTIFIER_FIELD,
+                "#publicationDetails", PUBLICATION_DETAILS_FIELD,
                 "#version", VERSION_FIELD
             );
             
@@ -211,7 +211,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                     ":identifier", new AttributeValue(entryUpdate.getIdentifier().toString()),
                     ":modifiedDate", new AttributeValue(dateAsString(entryUpdate.getModifiedDate())),
                     ":owner", new AttributeValue(entryUpdate.getOwner().toString()),
-                    ":resourceIdentifier", new AttributeValue(entryUpdate.getResourceIdentifier().toString()),
+                    ":resourceIdentifier", new AttributeValue(entryUpdate.extractPublicationIdentifier().toString()),
                     ":version", new AttributeValue(dao.getVersion().toString())
                 );
             
@@ -221,7 +221,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                 + "AND #data.#identifier = :identifier "
                 + "AND #data.#modifiedDate <> :modifiedDate "
                 + "AND #data.#owner = :owner "
-                + "AND #data.#resourceIdentifier = :resourceIdentifier "
+                + "AND #data.#publicationDetails.#identifier = :resourceIdentifier "
                 + "AND #version <> :version ";
         }
         

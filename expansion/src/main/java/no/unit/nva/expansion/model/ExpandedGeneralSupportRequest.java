@@ -8,6 +8,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -31,7 +32,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
                                                 TicketService ticketService) throws NotFoundException {
-        var publication = resourceService.getPublicationByIdentifier(dataEntry.getResourceIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(dataEntry.extractPublicationIdentifier());
         var entry = new ExpandedGeneralSupportRequest();
         var publicationSummary = PublicationSummary.create(publication);
         entry.setPublicationSummary(publicationSummary);
@@ -85,7 +86,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         ticketEntry.setCreatedDate(this.getCreatedDate());
         ticketEntry.setCustomerId(this.getCustomerId());
         ticketEntry.setIdentifier(extractIdentifier(this.getId()));
-        ticketEntry.setResourceIdentifier(extractIdentifier(this.getPublicationSummary().getPublicationId()));
+        ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublicationSummary()));
         ticketEntry.setStatus(this.getStatus());
         ticketEntry.setOwner(this.getOwner());
         return ticketEntry;

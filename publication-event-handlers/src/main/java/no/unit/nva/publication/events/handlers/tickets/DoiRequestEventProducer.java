@@ -89,7 +89,7 @@ public class DoiRequestEventProducer
     
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(DoiRequest oldEntry, DoiRequest newEntry) {
         if (isFirstDoiRequest(oldEntry, newEntry)) {
-            return DoiMetadataUpdateEvent.createNewDoiEvent(newEntry);
+            return DoiMetadataUpdateEvent.createNewDoiEvent(newEntry, resourceService);
         } else if (isDoiRequestApproval(oldEntry, newEntry)) {
             return createEventForMakingDoiFindable(newEntry);
         }
@@ -104,7 +104,7 @@ public class DoiRequestEventProducer
     }
     
     private DoiMetadataUpdateEvent createEventForMakingDoiFindable(DoiRequest newEntry) {
-        return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication());
+        return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication(resourceService));
     }
     
     private boolean isDoiRequestApproval(DoiRequest oldEntry, DoiRequest newEntry) {
@@ -151,9 +151,6 @@ public class DoiRequestEventProducer
     private void validateDoiRequest(DataEntryUpdateEvent event) {
         if (event.getNewData() instanceof DoiRequest) {
             var doiRequest = (DoiRequest) event.getNewData();
-            if (hasNoReferenceToPublication(doiRequest)) {
-                throw new IllegalStateException(NO_RESOURCE_IDENTIFIER_ERROR);
-            }
             if (eventCannotBeReferenced(doiRequest)) {
                 throw new IllegalStateException(DOI_REQUEST_HAS_NO_IDENTIFIER);
             }
@@ -168,12 +165,9 @@ public class DoiRequestEventProducer
         return isNull(doiRequest.getIdentifier());
     }
     
-    private boolean hasNoReferenceToPublication(DoiRequest doiRequest) {
-        return isNull(doiRequest.getResourceIdentifier());
-    }
     
     private Publication toPublication(Entity dataEntry) {
-        return dataEntry != null ? dataEntry.toPublication() : null;
+        return dataEntry != null ? dataEntry.toPublication(resourceService) : null;
     }
     
     private boolean isFirstDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {
@@ -190,7 +184,7 @@ public class DoiRequestEventProducer
     }
     
     private boolean publicationDoesNotHaveDoiFromBefore(DoiRequest doiRequest) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(doiRequest.getResourceIdentifier()))
+        return attempt(() -> resourceService.getPublicationByIdentifier(doiRequest.extractPublicationIdentifier()))
                    .map(Publication::getDoi)
                    .map(Objects::isNull)
                    .orElseThrow();

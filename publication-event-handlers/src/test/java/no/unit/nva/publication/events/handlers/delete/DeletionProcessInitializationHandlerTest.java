@@ -1,6 +1,8 @@
 package no.unit.nva.publication.events.handlers.delete;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -9,38 +11,45 @@ import static org.hamcrest.Matchers.nullValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
-import nva.commons.core.ioutils.IoUtils;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.testutils.EventBridgeEventBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class DeletionProcessInitializationHandlerTest {
+class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
     
-    public static final String NEW_PUBLICATION_DRAFT_FOR_DELETION_JSON =
-        "delete/new_publication_draft_for_deletion.json";
-    public static final String NEW_PUBLICATION_DRAFT_JSON = "delete/new_publication_draft.json";
-    public static final String NEW_PUBLICATION_NULL_JSON = "delete/new_publication_null.json";
     private DeletionProcessInitializationHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
     
     @BeforeEach
     public void setUp() {
+        super.init();
         handler = new DeletionProcessInitializationHandler();
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
     }
     
     @Test
-    public void handleRequestReturnsDeletePublicationEventOnDraftForDeletion() throws JsonProcessingException {
-        InputStream inputStream = IoUtils.inputStreamFromResources(NEW_PUBLICATION_DRAFT_FOR_DELETION_JSON);
-    
-        handler.handleRequest(inputStream, outputStream, context);
-    
-        ResourceDraftedForDeletionEvent response = objectMapper.readValue(outputStream.toString(),
+    void handleRequestReturnsDeletePublicationEventOnDraftForDeletion() throws JsonProcessingException {
+        var oldImage = randomPublication().copy()
+                           .withDoi(null)
+                           .withStatus(PublicationStatus.DRAFT).build();
+        var newImage = oldImage.copy()
+                           .withStatus(PublicationStatus.DRAFT_FOR_DELETION)
+                           .build();
+        var eventBody = new DataEntryUpdateEvent(randomString(),
+            Resource.fromPublication(oldImage),
+            Resource.fromPublication(newImage));
+        var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventBody);
+        handler.handleRequest(event, outputStream, context);
+        
+        var response = objectMapper.readValue(outputStream.toString(),
             ResourceDraftedForDeletionEvent.class);
         assertThat(response, notNullValue());
         //TODO: removed assertion for not null DOI. Whole handler functionality should be re-evaluated.
@@ -51,23 +60,29 @@ public class DeletionProcessInitializationHandlerTest {
     }
     
     @Test
-    public void handleRequestReturnsNullOnDraft() throws JsonProcessingException {
-        InputStream inputStream = IoUtils.inputStreamFromResources(NEW_PUBLICATION_DRAFT_JSON);
+    void handleRequestReturnsNullOnDraft() throws JsonProcessingException {
+        var newDraft = randomPublication().copy()
+                           .withDoi(null)
+                           .withStatus(PublicationStatus.DRAFT).build();
+        var eventBody = new DataEntryUpdateEvent(randomString(),
+            null,
+            Resource.fromPublication(newDraft));
+        var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventBody);
+        handler.handleRequest(event, outputStream, context);
         
-        handler.handleRequest(inputStream, outputStream, context);
-        
-        ResourceDraftedForDeletionEvent response =
+        var response =
             objectMapper.readValue(outputStream.toString(), ResourceDraftedForDeletionEvent.class);
         assertThat(response, nullValue());
     }
     
     @Test
-    public void handleRequestReturnsNullOnMissingNewPublication() throws JsonProcessingException {
-        InputStream inputStream = IoUtils.inputStreamFromResources(NEW_PUBLICATION_NULL_JSON);
+    void handleRequestReturnsNullOnMissingNewPublication() throws JsonProcessingException {
+        var eventBody = new DataEntryUpdateEvent(randomString(), Resource.fromPublication(randomPublication()), null);
+        var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventBody);
         
-        handler.handleRequest(inputStream, outputStream, context);
+        handler.handleRequest(event, outputStream, context);
         
-        ResourceDraftedForDeletionEvent response =
+        var response =
             objectMapper.readValue(outputStream.toString(), ResourceDraftedForDeletionEvent.class);
         assertThat(response, nullValue());
     }

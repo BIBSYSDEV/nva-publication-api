@@ -74,6 +74,7 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -681,8 +682,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedDoiRequest = ticketService.fetchTicket(originalDoiRequest);
     
         var expectedDoiRequest = originalDoiRequest.copy();
-        expectedDoiRequest.setResourceTitle(ANOTHER_TITLE);
-        expectedDoiRequest.setResourceModifiedDate(updatedPublication.getModifiedDate());
+        expectedDoiRequest.setPublicationDetails(expectedDoiRequest.getPublicationDetails().updateTitle(ANOTHER_TITLE));
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     
@@ -936,21 +936,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return DoiRequest.builder()
                    .withOwner(new User(initialPublication.getResourceOwner().getOwner()))
                    .withCustomerId(initialPublication.getPublisher().getId())
-                   .withResourceIdentifier(initialPublication.getIdentifier())
                    .withIdentifier(initialDoiRequest.getIdentifier())
                    .withCreatedDate(initialDoiRequest.getCreatedDate())
                    .withModifiedDate(updatedDoiRequest.getModifiedDate())
                    .withStatus(TicketStatus.PENDING)
-                   .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
                    .withResourceStatus(publicationUpdate.getStatus())
-                   .withResourceModifiedDate(publicationUpdate.getModifiedDate())
-                   .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
-                   .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
-                   .withContributors(publicationUpdate.getEntityDescription().getContributors())
-                   .withResourcePublicationInstance(
-                       publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+                   .withPublicationDetails(PublicationDetails.create(publicationUpdate))
                    .withViewedBy(initialDoiRequest.getViewedBy())
-                   .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
                    .build();
     }
     

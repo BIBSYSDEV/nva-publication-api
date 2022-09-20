@@ -11,8 +11,10 @@ import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -43,9 +45,10 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     
     public static ExpandedDoiRequest createEntry(DoiRequest doiRequest,
                                                  ResourceExpansionService expansionService,
+                                                 ResourceService resourceService,
                                                  TicketService ticketService)
         throws NotFoundException {
-        var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
+        var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(doiRequest.fetchMessages(ticketService));
         return expandedDoiRequest;
@@ -138,19 +141,13 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     @Override
     public DoiRequest toTicketEntry() {
         DoiRequest doiRequest = new DoiRequest();
-        doiRequest.setContributors(this.getPublicationSummary().getContributors());
         doiRequest.setCreatedDate(this.getCreatedDate());
         doiRequest.setIdentifier(this.identifyExpandedEntry());
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
         doiRequest.setOwner(this.getOwner());
-        doiRequest.setResourceIdentifier(SortableIdentifier.fromUri(this.getPublicationSummary().getPublicationId()));
-        doiRequest.setResourceModifiedDate(this.getPublicationSummary().getModifiedDate());
-        doiRequest.setResourcePublicationDate(this.getPublicationSummary().getPublicationDate());
-        doiRequest.setResourcePublicationInstance(this.getPublicationSummary().getPublicationInstance());
-        doiRequest.setResourcePublicationYear(this.getPublicationSummary().getPublicationYear());
+        doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublicationSummary()));
         doiRequest.setResourceStatus(this.getPublicationSummary().getStatus());
-        doiRequest.setResourceTitle(this.getPublicationSummary().getTitle());
         doiRequest.setStatus(this.getStatus());
         return doiRequest;
     }
@@ -169,8 +166,8 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     }
     
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
-    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest) {
-        var publicationSummary = PublicationSummary.create(doiRequest);
+    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService) {
+        var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
         ExpandedDoiRequest request = new ExpandedDoiRequest();
         request.setPublicationSummary(publicationSummary);
         request.setCreatedDate(doiRequest.getCreatedDate());

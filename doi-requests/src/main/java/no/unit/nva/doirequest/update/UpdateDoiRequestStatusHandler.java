@@ -9,6 +9,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -88,8 +89,8 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
                                         SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         TicketEntry ticketEntry = DoiRequest.builder()
-            .withCustomerId(userInstance.getOrganizationUri())
-            .withResourceIdentifier(publicationIdentifier)
+                                      .withCustomerId(userInstance.getOrganizationUri())
+                                      .withPublicationDetails(PublicationDetails.create(publicationIdentifier))
             .withStatus(newTicketStatus)
             .build();
         if (TicketStatus.COMPLETED.equals(newTicketStatus)) {

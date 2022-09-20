@@ -12,6 +12,7 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -82,7 +83,7 @@ public class GeneralSupportRequestDto extends TicketDto {
         var request = new GeneralSupportRequest();
         request.setIdentifier(this.getIdentifier());
         request.setStatus(this.getStatus());
-        request.setResourceIdentifier(extractResourceIdentifier(getPublicationSummary().getPublicationId()));
+        request.setPublicationDetails(PublicationDetails.create(this.getPublicationSummary()));
         request.setCreatedDate(this.getCreatedDate());
         request.setModifiedDate(this.getModifiedDate());
         request.setViewedBy(this.getViewedBy());

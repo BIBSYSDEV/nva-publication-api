@@ -10,15 +10,25 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.time.Clock;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class PublicationSummaryTest {
+class PublicationSummaryTest extends ResourcesLocalTest {
+    
+    private ResourceService resourceService;
+    
+    @BeforeEach
+    public void setup() {
+        super.init();
+        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+    }
     
     @Test
     @DisplayName("objectMapper Can Write And Read PublicationSummary")
@@ -36,7 +46,7 @@ class PublicationSummaryTest {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         PublicationSummary summary = PublicationSummary.create(publication);
         assertThat(summary, doesNotHaveEmptyValues());
-        assertThat(summary.getPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
         assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
         assertThat(summary.getStatus(), is(equalTo(publication.getStatus())));
@@ -44,13 +54,6 @@ class PublicationSummaryTest {
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
     }
     
-    @Test
-    void shouldCreatePublicationSummaryFromDoiRequest() {
-        var publication = randomPublication();
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
-        var publicationSummary = PublicationSummary.create(doiRequest);
-        assertThat(publicationSummary.getPublicationIdentifier(), is(equalTo(doiRequest.getResourceIdentifier())));
-    }
     
     @Test
     void shouldAllowCreationOfMinimumPossibleInformation() {

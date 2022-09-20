@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 public class DoiMetadataUpdateEvent {
@@ -32,15 +33,15 @@ public class DoiMetadataUpdateEvent {
     }
     
     public static DoiMetadataUpdateEvent createUpdateDoiEvent(Publication newEntry) {
-        return new DoiMetadataUpdateEvent(UPDATE_DOI_EVENT_TOPIC,newEntry);
+        return new DoiMetadataUpdateEvent(UPDATE_DOI_EVENT_TOPIC, newEntry);
     }
     
-    public static DoiMetadataUpdateEvent createNewDoiEvent(DoiRequest newEntry) {
-        return new DoiMetadataUpdateEvent(REQUEST_DRAFT_DOI_EVENT_TOPIC,newEntry.toPublication());
+    public static DoiMetadataUpdateEvent createNewDoiEvent(DoiRequest newEntry, ResourceService resourceService) {
+        return new DoiMetadataUpdateEvent(REQUEST_DRAFT_DOI_EVENT_TOPIC, newEntry.toPublication(resourceService));
     }
     
     public static DoiMetadataUpdateEvent empty() {
-        return new DoiMetadataUpdateEvent(EMPTY_EVENT_TOPIC,null);
+        return new DoiMetadataUpdateEvent(EMPTY_EVENT_TOPIC, null);
     }
     
     @JacocoGenerated

@@ -20,14 +20,6 @@ class PublishingRequestTest {
     }
     
     @Test
-    void shouldBeConvertableToPublicationObject() {
-        var publication = sampleRequest.toPublication();
-        assertThat(sampleRequest.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(sampleRequest.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
-        assertThat(sampleRequest.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
-    }
-    
-    @Test
     void shouldBePossibleToIndexByStatus() {
         var statusString = sampleRequest.getStatusString();
         assertThat(statusString, is(equalTo(sampleRequest.getStatus().toString())));
@@ -38,7 +30,7 @@ class PublishingRequestTest {
         var publication = randomPublication();
         var objectForCreatingNewEntry = PublishingRequestCase.createOpeningCaseObject(publication);
         var userInstance = UserInstance.fromPublication(publication);
-        assertThat(objectForCreatingNewEntry.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(objectForCreatingNewEntry.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(objectForCreatingNewEntry.getOwner(), is(equalTo(userInstance.getUser())));
         assertThat(objectForCreatingNewEntry.getCustomerId(), is(equalTo(userInstance.getOrganizationUri())));
     }

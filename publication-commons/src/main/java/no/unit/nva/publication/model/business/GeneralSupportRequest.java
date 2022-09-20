@@ -5,8 +5,8 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTO
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.RESOURCE_IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -20,6 +20,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.GeneralSupportRequestDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -37,8 +38,6 @@ public class GeneralSupportRequest extends TicketEntry {
     private User owner;
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
-    @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
-    private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
     
@@ -48,14 +47,14 @@ public class GeneralSupportRequest extends TicketEntry {
     
     public static TicketEntry fromPublication(Publication publication) {
         var ticket = new GeneralSupportRequest();
-        ticket.setResourceIdentifier(publication.getIdentifier());
+        ticket.setPublicationDetails(PublicationDetails.create(publication));
         ticket.setOwner(extractOwner(publication));
         ticket.setCustomerId(extractCustomerId(publication));
         ticket.setCreatedDate(Instant.now());
         ticket.setModifiedDate(Instant.now());
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdentifier(SortableIdentifier.next());
-        ticket.setPublicationTitle(publication.getEntityDescription().getMainTitle());
+        ticket.setPublicationDetails(PublicationDetails.create(publication));
         ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
         return ticket;
     }
@@ -63,7 +62,7 @@ public class GeneralSupportRequest extends TicketEntry {
     public static GeneralSupportRequest createQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
         var ticket = new GeneralSupportRequest();
         ticket.setCustomerId(customerId);
-        ticket.setResourceIdentifier(resourceIdentifier);
+        ticket.setPublicationDetails(PublicationDetails.create(resourceIdentifier));
         return ticket;
     }
     
@@ -79,8 +78,9 @@ public class GeneralSupportRequest extends TicketEntry {
     
     @JacocoGenerated
     @Override
-    public Publication toPublication() {
-        throw new UnsupportedOperationException();
+    public Publication toPublication(ResourceService resourceService) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(getPublicationDetails().getIdentifier()))
+                   .orElseThrow();
     }
     
     @Override
@@ -137,15 +137,6 @@ public class GeneralSupportRequest extends TicketEntry {
     }
     
     @Override
-    public SortableIdentifier getResourceIdentifier() {
-        return this.resourceIdentifier;
-    }
-    
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
-    }
-    
-    @Override
     public void validateCreationRequirements(Publication publication) {
         //NO OP
     }
@@ -165,7 +156,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setCreatedDate(this.getCreatedDate());
         copy.setCustomerId(this.getCustomerId());
         copy.setOwner(this.getOwner());
-        copy.setResourceIdentifier(this.getResourceIdentifier());
+        copy.setPublicationDetails(this.getPublicationDetails());
         copy.setViewedBy(this.getViewedBy());
         return copy;
     }
@@ -195,7 +186,7 @@ public class GeneralSupportRequest extends TicketEntry {
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(extractPublicationIdentifier(), that.extractPublicationIdentifier())
                && getStatus() == that.getStatus();
     }
     
@@ -203,7 +194,7 @@ public class GeneralSupportRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-            getResourceIdentifier(), getStatus());
+            extractPublicationIdentifier(), getStatus());
     }
     
     private static URI extractCustomerId(Publication publication) {

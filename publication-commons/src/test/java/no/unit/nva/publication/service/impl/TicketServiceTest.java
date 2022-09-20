@@ -59,6 +59,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -567,7 +568,7 @@ class TicketServiceTest extends ResourcesLocalTest {
                                      .stream()
                                      .map(attempt(ticket -> ticket.fetch(ticketService)))
                                      .map(Try::orElseThrow)
-                                     .map(TicketEntry::getPublicationTitle)
+                                     .map(TicketEntry::extractPublicationTitle)
                                      .collect(Collectors.toSet())
                                      .stream()
                                      .collect(SingletonCollector.collect());
@@ -599,7 +600,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.builder()
                        .withCustomerId(publication.getPublisher().getId())
-                       .withResourceIdentifier(publication.getIdentifier())
+                       .withPublicationDetails(PublicationDetails.create(publication))
                        .build();
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
@@ -652,14 +653,13 @@ class TicketServiceTest extends ResourcesLocalTest {
                                                              TicketEntry actualDoiRequest) {
         return DoiRequest.builder()
                    .withIdentifier(actualDoiRequest.getIdentifier())
-                   .withResourceIdentifier(emptyPublication.getIdentifier())
+                   .withPublicationDetails(PublicationDetails.create(emptyPublication))
                    .withOwner(new User(emptyPublication.getResourceOwner().getOwner()))
                    .withCustomerId(emptyPublication.getPublisher().getId())
                    .withStatus(TicketStatus.PENDING)
                    .withResourceStatus(DRAFT)
                    .withCreatedDate(actualDoiRequest.getCreatedDate())
                    .withModifiedDate(actualDoiRequest.getModifiedDate())
-                   .withResourceModifiedDate(emptyPublication.getModifiedDate())
                    .build();
     }
     
@@ -700,7 +700,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var request = new PublishingRequestCase();
         request.setIdentifier(SortableIdentifier.next());
         request.setOwner(new User(randomString()));
-        request.setResourceIdentifier(SortableIdentifier.next());
+        request.setPublicationDetails(new PublicationDetails(SortableIdentifier.next(), randomString()));
         request.setStatus(COMPLETED);
         request.setCreatedDate(randomInstant());
         request.setModifiedDate(randomInstant());

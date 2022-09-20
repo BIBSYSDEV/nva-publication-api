@@ -16,6 +16,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -75,7 +76,7 @@ public class Message implements Entity, JsonSerializable {
                    .withText(message)
                    .withSender(sender.getUser())
                    .withResourceTitle("NOT_USED")
-                   .withResourceIdentifier(ticket.getResourceIdentifier())
+                   .withResourceIdentifier(ticket.extractPublicationIdentifier())
                    .withTicketIdentifier(ticket.getIdentifier())
                    .withStatus(MessageStatus.UNREAD)
                    .build();
@@ -183,7 +184,7 @@ public class Message implements Entity, JsonSerializable {
     }
     
     @Override
-    public Publication toPublication() {
+    public Publication toPublication(ResourceService resourceService) {
         throw new UnsupportedOperationException();
     }
     

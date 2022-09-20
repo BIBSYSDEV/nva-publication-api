@@ -63,9 +63,10 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldReturnQueryObjectWithCompletePrimaryKey() {
         var sampleEntryIdentifier = SortableIdentifier.next();
-        var queryObject = PublishingRequestCase.createQueryObject(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER),
-            null,
-            sampleEntryIdentifier);
+        var queryObject =
+            PublishingRequestCase.createQueryObject(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER),
+                SortableIdentifier.next(),
+                sampleEntryIdentifier);
         var queryDao = PublishingRequestDao.queryObject(queryObject);
     
         assertThat(queryDao.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
@@ -85,19 +86,18 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldQueryForPublishingRequestBasedOnCustomerIdAndResourceIdentifier() throws ApiGatewayException {
         var publication = createPublication();
-        var userInstance = UserInstance.fromPublication(publication);
         var query = PublishingRequestDao.queryPublishingRequestByResource(publication.getPublisher().getId(),
             publication.getIdentifier());
-        
+    
         var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
-        var persistedRquest = ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
+        var persistedRequest = ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
         var queryResult = client.query(query);
         var retrievedByPublicationIdentifier = queryResult.getItems().stream()
                                                    .map(item -> parseAttributeValuesMap(item,
                                                        PublishingRequestDao.class))
                                                    .map(PublishingRequestDao::getData)
                                                    .collect(SingletonCollector.collect());
-        assertThat(retrievedByPublicationIdentifier, is(equalTo(persistedRquest)));
+        assertThat(retrievedByPublicationIdentifier, is(equalTo(persistedRequest)));
     }
     
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {

@@ -13,6 +13,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -79,7 +80,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     @Override
     public TicketEntry toTicketEntry() {
         var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setResourceIdentifier(extractIdentifier(this.getPublicationSummary().getPublicationId()));
+        publishingRequest.setPublicationDetails(PublicationDetails.create(getPublicationSummary()));
         publishingRequest.setCustomerId(this.getCustomerId());
         publishingRequest.setIdentifier(extractIdentifier(this.getId()));
         publishingRequest.setOwner(this.getOwner());
@@ -160,6 +161,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
                                                 ResourceService resourceService) {
         return attempt(() -> resourceService.getPublicationByIdentifier(
-            publishingRequestCase.getResourceIdentifier())).orElseThrow();
+            publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
     }
 }

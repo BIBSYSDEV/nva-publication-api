@@ -150,7 +150,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         Publication samplePublication = insertSamplePublication();
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
         var messages = doiRequest.fetchMessages(ticketService);
-        return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, ticketService);
+        return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
     }
     
     private Publication insertSamplePublication() {

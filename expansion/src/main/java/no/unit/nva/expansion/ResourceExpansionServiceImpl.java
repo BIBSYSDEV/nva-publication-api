@@ -34,7 +34,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource) {
-            return ExpandedResource.fromPublication(dataEntry.toPublication());
+            return ExpandedResource.fromPublication(dataEntry.toPublication(resourceService));
         } else if (dataEntry instanceof TicketEntry) {
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
         } else if (dataEntry instanceof Message) {
@@ -49,7 +49,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public Set<URI> getOrganizationIds(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry) {
-            var resourceIdentifier = ((TicketEntry) dataEntry).getResourceIdentifier();
+            var resourceIdentifier = ((TicketEntry) dataEntry).extractPublicationIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
                        .stream()

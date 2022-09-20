@@ -75,7 +75,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     
     private static void validatePathParameters(SortableIdentifier publicationIdentifier, TicketEntry ticket)
         throws NotFoundException {
-        if (!ticket.getResourceIdentifier().equals(publicationIdentifier)) {
+        if (!ticket.extractPublicationIdentifier().equals(publicationIdentifier)) {
             throw new NotFoundException(TICKET_NOT_FOUND);
         }
     }
