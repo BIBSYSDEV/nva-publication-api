@@ -252,7 +252,6 @@ public class DoiRequest extends TicketEntry {
         }
         DoiRequest that = (DoiRequest) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(this.extractPublicationIdentifier(), that.extractPublicationIdentifier())
                && getStatus() == that.getStatus()
                && getResourceStatus() == that.getResourceStatus()
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
@@ -264,9 +263,8 @@ public class DoiRequest extends TicketEntry {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getIdentifier(), this.extractPublicationIdentifier(), getStatus(), getResourceStatus(),
-            getModifiedDate(),
-            getCreatedDate(), getCustomerId(), getOwner());
+        return Objects.hash(getIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(), getCreatedDate(),
+            getCustomerId(), getOwner());
     }
     
     private boolean publicationHasNvaDoi(Publication publication) {
