@@ -3,7 +3,9 @@ package no.unit.nva.publication.publishingrequest.update;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -15,12 +17,14 @@ import java.net.URI;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.publishingrequest.DoiRequestDto;
 import no.unit.nva.publication.publishingrequest.TicketConfig;
 import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.publishingrequest.TicketTestLocal;
@@ -137,6 +141,28 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+    }
+    
+    @Test
+    void shouldReturnNotFoundWhenSupplyingMalformedTicketIdentifier()
+        throws IOException {
+        var request = authorizedUserInputMalformedIdentifier(SortableIdentifier.next().toString(), randomString());
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+    }
+    
+    private InputStream authorizedUserInputMalformedIdentifier(String publicationIdentifier, String ticketIdentifier)
+        throws JsonProcessingException {
+        URI customer = randomUri();
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+                   .withBody(DoiRequestDto.empty())
+                   .withAccessRights(customer, AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withCustomerId(customer)
+                   .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
+                       publicationIdentifier,
+                       TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticketIdentifier))
+                   .build();
     }
     
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
