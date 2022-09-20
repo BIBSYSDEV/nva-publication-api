@@ -159,7 +159,7 @@ public class TicketService extends ServiceWithTransactions {
     }
     
     protected TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
@@ -175,7 +175,7 @@ public class TicketService extends ServiceWithTransactions {
     
     protected TicketEntry closeTicket(TicketEntry pendingTicket) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
-        resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
+        resourceService.getPublicationByIdentifier(pendingTicket.extractPublicationIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
         var closedTicket = persistedTicket.close();
     
@@ -192,7 +192,7 @@ public class TicketService extends ServiceWithTransactions {
     //TODO: should try to fetch ticket only by ticket identifier
     private TicketEntry fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(TicketEntry ticketEntry) {
         return fetchTicketByResourceIdentifier(ticketEntry.getCustomerId(),
-            ticketEntry.getResourceIdentifier(), ticketEntry.getClass()).orElseThrow();
+            ticketEntry.extractPublicationIdentifier(), ticketEntry.getClass()).orElseThrow();
     }
     
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
@@ -201,7 +201,7 @@ public class TicketService extends ServiceWithTransactions {
     
     private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) throws ForbiddenException {
         var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
-        return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
+        return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.extractPublicationIdentifier()))
                    .orElseThrow(fail -> new ForbiddenException());
     }
     

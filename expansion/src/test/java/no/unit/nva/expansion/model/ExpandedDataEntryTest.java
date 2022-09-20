@@ -22,6 +22,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -44,6 +45,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     public static final String TYPE = "type";
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
+    
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private TicketService ticketService;
@@ -87,7 +89,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var publication = createPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         var expandedResource =
-            ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, ticketService);
+            ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
         assertThat(json.get(TYPE).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
     }
@@ -107,14 +109,16 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     private static ExpandedDoiRequest randomDoiRequest(Publication publication,
                                                        ResourceExpansionService resourceExpansionService,
+                                                       ResourceService resourceService,
                                                        MessageService messageService,
                                                        TicketService ticketService)
         throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
         var doiRequest = DoiRequest.fromPublication(publication);
-        var persistedDoiRequest = ticketService.createTicket(doiRequest, doiRequest.getClass());
+        var persistedDoiRequest = (DoiRequest) doiRequest.persistNewTicket(ticketService);
         messageService.createMessage(userInstance, publication, randomString(), MessageType.DOI_REQUEST);
         return attempt(() -> ExpandedDoiRequest.createEntry(persistedDoiRequest, resourceExpansionService,
+            resourceService,
             ticketService))
                    .orElseThrow();
     }
@@ -170,7 +174,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 return createExpandedResource(publication);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(randomDoiRequest(publication,
-                    resourceExpansionService, messageService, ticketService));
+                    resourceExpansionService, resourceService, messageService, ticketService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(createExpandedPublishingRequest(publication,
                     resourceService,
@@ -230,7 +234,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setModifiedDate(Instant.now());
             requestCase.setCreatedDate(Instant.now());
             requestCase.setCustomerId(publication.getPublisher().getId());
-            requestCase.setResourceIdentifier(publication.getIdentifier());
+            requestCase.setPublicationDetails(PublicationDetails.create(publication));
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner()));
             return requestCase;
         }

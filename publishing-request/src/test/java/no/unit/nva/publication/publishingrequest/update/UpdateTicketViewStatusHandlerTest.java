@@ -263,7 +263,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
                    .withBody(requestBody)
                    .withCustomerId(ticket.getCustomerId())
                    .withNvaUsername(ticket.getOwner().toString())
-                   .withPathParameters(createPathParameters(ticket, ticket.getResourceIdentifier()))
+                   .withPathParameters(createPathParameters(ticket, ticket.extractPublicationIdentifier()))
                    .build();
     }
     

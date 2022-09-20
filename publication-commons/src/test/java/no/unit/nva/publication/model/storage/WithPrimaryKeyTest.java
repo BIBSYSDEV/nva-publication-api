@@ -16,12 +16,12 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -59,15 +59,16 @@ public class WithPrimaryKeyTest extends ResourcesLocalTest {
         
         List<ResourceDao> resources = sampleResourcesOfSameOwner();
         return resources.stream()
-            .map(WithPrimaryKeyTest::randomMessage)
-            .map(MessageDao::new)
-            .collect(Collectors.toList());
+                   .map(WithPrimaryKeyTest::randomMessage)
+                   .map(MessageDao::new)
+                   .collect(Collectors.toList());
     }
     
-    private static Message randomMessage(ResourceDao res) {
-        UserInstance sampleSender = createSampleUser(res);
+    private static Message randomMessage(ResourceDao resourceDao) {
+        UserInstance sampleSender = createSampleUser(resourceDao);
+        var resource = (Resource) resourceDao.getData();
         return Message.create(sampleSender,
-            res.getData().toPublication(),
+            resource.toPublication(),
             randomString(),
             SortableIdentifier.next(),
             CLOCK,

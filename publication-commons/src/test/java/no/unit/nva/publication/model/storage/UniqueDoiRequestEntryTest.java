@@ -7,6 +7,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import org.junit.jupiter.api.Test;
 
 public class UniqueDoiRequestEntryTest {
@@ -22,14 +23,14 @@ public class UniqueDoiRequestEntryTest {
         UniqueDoiRequestEntry uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(dao);
         String expectedIdentifierPartitionKey = uniqueDoiRequestEntry.getType()
                                                 + KEY_FIELDS_DELIMITER
-                                                + RESOURCE_IDENTIFIER.toString();
+                                                + RESOURCE_IDENTIFIER;
         assertThat(uniqueDoiRequestEntry.getPrimaryKeyPartitionKey(), is(equalTo(expectedIdentifierPartitionKey)));
     }
     
     private DoiRequestDao sampleDoiRequestDao() {
         DoiRequest doiRequest = DoiRequest.builder()
-            .withIdentifier(SAMPLE_IDENTIFIER)
-            .withResourceIdentifier(RESOURCE_IDENTIFIER)
+                                    .withIdentifier(SAMPLE_IDENTIFIER)
+                                    .withPublicationDetails(PublicationDetails.create(RESOURCE_IDENTIFIER))
             .withCustomerId(SAMPLE_CUSTOMER_ID)
             .build();
         return new DoiRequestDao(doiRequest);

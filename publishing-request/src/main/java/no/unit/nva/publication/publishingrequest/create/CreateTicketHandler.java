@@ -73,7 +73,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     
     private TicketEntry updateAlreadyExistingTicket(TicketEntry newTicket) {
         var customerId = newTicket.getCustomerId();
-        var resourceIdentifier = newTicket.getResourceIdentifier();
+        var resourceIdentifier = newTicket.extractPublicationIdentifier();
         return ticketService.fetchTicketByResourceIdentifier(customerId, resourceIdentifier, newTicket.getClass())
                    .map(this::updateTicket)
                    .orElseThrow();

@@ -27,7 +27,7 @@ class TicketEntryTest {
             UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
         
         assertThat(ticket.getClass(), is(equalTo(ticketType)));
-        assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(ticket.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(actualUserInstance, is(equalTo(expectedUserInstance)));
     }
 }

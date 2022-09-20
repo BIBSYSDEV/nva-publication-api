@@ -76,7 +76,7 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
                                                                                    RequestInfo requestInfo)
         throws ForbiddenException {
         var suppliedPublicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
-        if (!suppliedPublicationIdentifier.equals(ticket.getResourceIdentifier())) {
+        if (!suppliedPublicationIdentifier.equals(ticket.extractPublicationIdentifier())) {
             throw new ForbiddenException();
         }
     }

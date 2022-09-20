@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -9,6 +10,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -28,11 +30,12 @@ public abstract class TicketEntry implements Entity {
     public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     
     public static final String VIEWED_BY_FIELD = "viewedBy";
-    public static final String PUBLICATION_TITLE_FIELD = "publicationTitle";
+    public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR =
+        "Ticket without reference to publication";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
-    @JsonProperty(PUBLICATION_TITLE_FIELD)
-    private String publicationTitle;
+    @JsonProperty(PUBLICATION_DETAILS_FIELD)
+    private PublicationDetails publicationDetails;
     
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -60,11 +63,13 @@ public abstract class TicketEntry implements Entity {
     public static <T extends TicketEntry> T createQueryObject(URI customerId, SortableIdentifier resourceIdentifier,
                                                               Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
-            return ticketType.cast(
-                DoiRequest.builder().withResourceIdentifier(resourceIdentifier).withCustomerId(customerId).build());
+            return ticketType.cast(DoiRequest.builder()
+                                       .withPublicationDetails(PublicationDetails.create(resourceIdentifier))
+                                       .withCustomerId(customerId)
+                                       .build());
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
-            return ticketType.cast(PublishingRequestCase.createQueryObject(customerId, resourceIdentifier));
+            return ticketType.cast(PublishingRequestCase.createQueryObject(resourceIdentifier, customerId));
         }
         if (GeneralSupportRequest.class.equals(ticketType)) {
             return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
@@ -100,7 +105,11 @@ public abstract class TicketEntry implements Entity {
         ticketService.updateTicket(this);
     }
     
-    public abstract SortableIdentifier getResourceIdentifier();
+    public final SortableIdentifier extractPublicationIdentifier() {
+        return Optional.ofNullable(getPublicationDetails())
+                   .map(PublicationDetails::getIdentifier)
+                   .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
+    }
     
     public abstract void validateCreationRequirements(Publication publication) throws ConflictException;
     
@@ -175,16 +184,22 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
     
-    public final String getPublicationTitle() {
-        return this.publicationTitle;
+    public final String extractPublicationTitle() {
+        return Optional.of(this.getPublicationDetails()).map(PublicationDetails::getTitle).orElse(null);
     }
     
-    public final void setPublicationTitle(String publicationTitle) {
-        this.publicationTitle = publicationTitle;
+    public PublicationDetails getPublicationDetails() {
+        return publicationDetails;
+    }
+    
+    public void setPublicationDetails(PublicationDetails publicationDetails) {
+        this.publicationDetails = publicationDetails;
     }
     
     public TicketEntry update(Resource resource) {
-        this.setPublicationTitle(resource.getEntityDescription().getMainTitle());
+        this.getPublicationDetails().updateTitle(resource.getEntityDescription().getMainTitle());
+        this.setPublicationDetails(
+            this.getPublicationDetails().updateTitle(resource.getEntityDescription().getMainTitle()));
         return this;
     }
     
@@ -234,7 +249,7 @@ public abstract class TicketEntry implements Entity {
         public static final String CREATED_DATE_FIELD = "createdDate";
         public static final String OWNER_FIELD = "owner";
         public static final String CUSTOMER_ID_FIELD = "customerId";
-        public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
+        public static final String PUBLICATION_DETAILS_FIELD = "publicationDetails";
         public static final String IDENTIFIER_FIELD = "identifier";
         
         private Constants() {

@@ -10,6 +10,7 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 /**
  * Entities are the basic entities associated with a Resource, ignoring database implementation details. An Entity
@@ -28,7 +29,7 @@ public interface Entity {
     
     void setIdentifier(SortableIdentifier identifier);
     
-    Publication toPublication();
+    Publication toPublication(ResourceService resourceService);
     
     @JsonProperty("type")
     String getType();

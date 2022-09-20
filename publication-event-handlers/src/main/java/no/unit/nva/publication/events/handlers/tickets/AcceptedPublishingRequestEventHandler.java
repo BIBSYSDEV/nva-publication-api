@@ -46,7 +46,7 @@ public class AcceptedPublishingRequestEventHandler
         var latestUpdate = parseInput(eventBlob);
         if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus())) {
             var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
-            attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.getResourceIdentifier()))
+            attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
                 .orElse(fail -> logError(fail.getException()));
         }
         return null;

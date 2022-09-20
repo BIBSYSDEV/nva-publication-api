@@ -50,7 +50,10 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
                                            TicketService ticketService) throws NotFoundException {
         
         if (ticketEntry instanceof DoiRequest) {
-            return ExpandedDoiRequest.createEntry((DoiRequest) ticketEntry, expansionService, ticketService);
+            return ExpandedDoiRequest.createEntry((DoiRequest) ticketEntry,
+                expansionService,
+                resourceService,
+                ticketService);
         }
         if (ticketEntry instanceof PublishingRequestCase) {
             return ExpandedPublishingRequest.createEntry(

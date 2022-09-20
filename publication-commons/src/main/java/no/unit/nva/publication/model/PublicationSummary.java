@@ -16,8 +16,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -29,8 +27,6 @@ public class PublicationSummary {
     
     @JsonProperty("id")
     private URI publicationId;
-    @JsonProperty("identifier")
-    private SortableIdentifier publicationIdentifier;
     @JsonProperty("mainTitle")
     private String title;
     @JsonProperty
@@ -50,26 +46,9 @@ public class PublicationSummary {
     @JsonProperty
     private PublicationStatus status;
     
-    public static PublicationSummary create(DoiRequest doiRequest) {
-        var publicationSummary = new PublicationSummary();
-        publicationSummary.setContributors(doiRequest.getContributors());
-        publicationSummary.setPublicationId(extractPublicationId(doiRequest));
-        publicationSummary.setPublicationIdentifier(doiRequest.getResourceIdentifier());
-        publicationSummary.setCreatedDate(doiRequest.getCreatedDate());
-        publicationSummary.setModifiedDate(doiRequest.getResourceModifiedDate());
-        publicationSummary.setPublicationDate(doiRequest.getResourcePublicationDate());
-        publicationSummary.setPublicationYear(doiRequest.getResourcePublicationYear());
-        publicationSummary.setTitle(doiRequest.getResourceTitle());
-        publicationSummary.setOwner(doiRequest.getOwner());
-        publicationSummary.setPublicationInstance(doiRequest.getResourcePublicationInstance());
-        publicationSummary.setStatus(doiRequest.getResourceStatus());
-        return publicationSummary;
-    }
-    
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
-        publicationSummary.setPublicationIdentifier(publication.getIdentifier());
         publicationSummary.setCreatedDate(publication.getCreatedDate());
         publicationSummary.setModifiedDate(publication.getModifiedDate());
         publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner()));
@@ -112,12 +91,8 @@ public class PublicationSummary {
         this.publicationId = publicationId;
     }
     
-    public SortableIdentifier getPublicationIdentifier() {
-        return publicationIdentifier;
-    }
-    
-    public void setPublicationIdentifier(SortableIdentifier publicationIdentifier) {
-        this.publicationIdentifier = publicationIdentifier;
+    public SortableIdentifier extractPublicationIdentifier() {
+        return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
     }
     
     public String getTitle() {
@@ -169,16 +144,8 @@ public class PublicationSummary {
         this.contributors = contributors;
     }
     
-    @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(getPublicationId(), getPublicationIdentifier(), getTitle(), getModifiedDate(),
-            getPublicationInstance(), getPublicationDate(),
-            getPublicationYear(), getContributors(), getStatus());
-    }
-    
     @JacocoGenerated
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -188,14 +155,22 @@ public class PublicationSummary {
         }
         PublicationSummary that = (PublicationSummary) o;
         return Objects.equals(getPublicationId(), that.getPublicationId())
-               && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(getTitle(), that.getTitle())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublicationDate(), that.getPublicationDate())
                && Objects.equals(getPublicationYear(), that.getPublicationYear())
                && Objects.equals(getContributors(), that.getContributors())
                && getStatus() == that.getStatus();
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getPublicationId(), getTitle(), getOwner(), getCreatedDate(), getModifiedDate(),
+            getPublicationInstance(), getPublicationDate(), getPublicationYear(), getContributors(), getStatus());
     }
     
     public Instant getCreatedDate() {
@@ -212,10 +187,6 @@ public class PublicationSummary {
     
     public void setOwner(User owner) {
         this.owner = owner;
-    }
-    
-    private static URI extractPublicationId(TicketEntry ticketEntry) {
-        return toPublicationId(ticketEntry.getResourceIdentifier());
     }
     
     private static URI toPublicationId(SortableIdentifier identifier) {

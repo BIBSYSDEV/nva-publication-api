@@ -87,7 +87,7 @@ public abstract class TicketDto implements JsonSerializable {
     }
     
     public static URI createTicketId(TicketEntry ticket) {
-        return UriWrapper.fromUri(createPublicationId(ticket.getResourceIdentifier()))
+        return UriWrapper.fromUri(createPublicationId(ticket.extractPublicationIdentifier()))
                    .addChild(PublicationServiceConfig.TICKET_PATH)
                    .addChild(ticket.getIdentifier().toString())
                    .getUri();
@@ -113,14 +113,9 @@ public abstract class TicketDto implements JsonSerializable {
         return viewedBy;
     }
     
-    protected SortableIdentifier extractResourceIdentifier(URI publicationId) {
-        var idString = UriWrapper.fromUri(publicationId).getLastPathElement();
-        return new SortableIdentifier(idString);
-    }
-    
     private static PublicationSummary createPublicationSummary(TicketEntry ticket) {
-        return PublicationSummary.create(createPublicationId(ticket.getResourceIdentifier()),
-            ticket.getPublicationTitle());
+        return PublicationSummary.create(createPublicationId(ticket.extractPublicationIdentifier()),
+            ticket.extractPublicationTitle());
     }
     
     private static URI createPublicationId(SortableIdentifier publicationIdentifier) {

@@ -32,7 +32,7 @@ class MessageTest {
     @Test
     void toPublicationThrowsUnsupportedException() {
         Message message = new Message();
-        assertThrows(UnsupportedOperationException.class, message::toPublication);
+        assertThrows(UnsupportedOperationException.class, () -> message.toPublication(null));
     }
     
     @Test
