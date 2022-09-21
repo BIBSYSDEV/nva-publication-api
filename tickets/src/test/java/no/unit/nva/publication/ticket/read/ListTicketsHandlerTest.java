@@ -1,4 +1,4 @@
-package no.unit.nva.publication.tickets.read;
+package no.unit.nva.publication.ticket.read;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -31,7 +31,7 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
-import no.unit.nva.publication.tickets.TicketDto;
+import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;

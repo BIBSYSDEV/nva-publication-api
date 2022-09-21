@@ -1,4 +1,4 @@
-package no.unit.nva.publication.tickets.update;
+package no.unit.nva.publication.ticket.update;
 
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
@@ -24,10 +24,10 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.tickets.DoiRequestDto;
-import no.unit.nva.publication.tickets.TicketConfig;
-import no.unit.nva.publication.tickets.TicketDto;
-import no.unit.nva.publication.tickets.TicketTestLocal;
+import no.unit.nva.publication.ticket.DoiRequestDto;
+import no.unit.nva.publication.ticket.TicketConfig;
+import no.unit.nva.publication.ticket.TicketDto;
+import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;

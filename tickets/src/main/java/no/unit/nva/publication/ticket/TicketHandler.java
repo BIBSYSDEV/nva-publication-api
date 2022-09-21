@@ -1,7 +1,7 @@
-package no.unit.nva.publication.tickets;
+package no.unit.nva.publication.ticket;
 
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
-import static no.unit.nva.publication.tickets.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
+import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.apigateway.ApiGatewayHandler;

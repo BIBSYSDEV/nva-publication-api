@@ -1,4 +1,4 @@
-package no.unit.nva.publication.tickets.update;
+package no.unit.nva.publication.ticket.update;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

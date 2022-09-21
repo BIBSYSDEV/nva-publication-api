@@ -1,11 +1,11 @@
-package no.unit.nva.publication.tickets.update;
+package no.unit.nva.publication.ticket.update;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.tickets.TicketDto;
-import no.unit.nva.publication.tickets.TicketHandler;
+import no.unit.nva.publication.ticket.TicketDto;
+import no.unit.nva.publication.ticket.TicketHandler;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;

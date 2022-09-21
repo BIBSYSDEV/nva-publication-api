@@ -1,4 +1,4 @@
-package no.unit.nva.publication.tickets;
+package no.unit.nva.publication.ticket;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

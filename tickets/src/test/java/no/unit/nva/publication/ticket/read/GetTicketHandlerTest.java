@@ -1,4 +1,4 @@
-package no.unit.nva.publication.tickets.read;
+package no.unit.nva.publication.ticket.read;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -25,10 +25,10 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.tickets.MessageDto;
-import no.unit.nva.publication.tickets.TicketConfig;
-import no.unit.nva.publication.tickets.TicketDto;
-import no.unit.nva.publication.tickets.TicketTestLocal;
+import no.unit.nva.publication.ticket.MessageDto;
+import no.unit.nva.publication.ticket.TicketConfig;
+import no.unit.nva.publication.ticket.TicketDto;
+import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;

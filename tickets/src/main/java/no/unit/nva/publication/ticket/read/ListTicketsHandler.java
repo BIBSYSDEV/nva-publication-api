@@ -1,4 +1,4 @@
-package no.unit.nva.publication.tickets.read;
+package no.unit.nva.publication.ticket.read;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.tickets.TicketDto;
+import no.unit.nva.publication.ticket.TicketDto;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
