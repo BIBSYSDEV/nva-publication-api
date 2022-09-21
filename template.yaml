@@ -601,8 +601,8 @@ Resources:
   ListTicketsHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.read.ListTicketsHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.ListTicketsHandler::handleRequest
       Runtime: java11
       Environment:
         Variables:
@@ -620,8 +620,8 @@ Resources:
   UpdateTicketViewStatusHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.update.UpdateTicketViewStatusHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketViewStatusHandler::handleRequest
       Runtime: java11
       Environment:
         Variables:
@@ -676,8 +676,8 @@ Resources:
   CreateTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.create.CreateTicketHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.create.CreateTicketHandler::handleRequest
       Runtime: java11
       Timeout: 10
       Environment:
@@ -696,8 +696,8 @@ Resources:
   GetTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.read.GetTicketHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.GetTicketHandler::handleRequest
       Runtime: java11
       Timeout: 10
       Environment:
@@ -715,8 +715,8 @@ Resources:
   UpdateTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.update.UpdateTicketStatusHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketStatusHandler::handleRequest
       Runtime: java11
       Timeout: 10
       Environment:
