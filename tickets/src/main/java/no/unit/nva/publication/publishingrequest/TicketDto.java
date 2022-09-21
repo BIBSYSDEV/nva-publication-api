@@ -215,7 +215,7 @@ public abstract class TicketDto implements JsonSerializable {
                 modifiedDate,
                 identifier,
                 publicationSummary,
-    
+                
                 id,
                 messages,
                 viewedBy);

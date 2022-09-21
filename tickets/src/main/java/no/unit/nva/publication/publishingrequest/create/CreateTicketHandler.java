@@ -49,7 +49,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var createdTicket = persistTicket(newTicket);
         var ticketLocation = createTicketLocation(publicationIdentifier, createdTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
-    
+        
         return null;
     }
     

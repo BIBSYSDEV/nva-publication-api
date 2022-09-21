@@ -17,6 +17,4 @@ public class PublishingRequestTestUtils {
             .thenReturn(PUBLICATION_UPDATE_TIME);
         return mockClock;
     }
-    
-    
 }

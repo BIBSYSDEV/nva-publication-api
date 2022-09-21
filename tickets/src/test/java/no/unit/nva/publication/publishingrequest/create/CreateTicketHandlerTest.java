@@ -70,7 +70,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @MethodSource("ticketEntryProvider")
     void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
         Class<? extends TicketEntry> ticketType) throws IOException, ApiGatewayException {
-    
+        
         var publication = createAndPersistDraftPublication();
         var requestBody = constructDto(ticketType);
         var owner = UserInstance.fromPublication(publication);
@@ -81,7 +81,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_SEE_OTHER)));
         
         var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
-    
+        
         assertThatLocationHeaderHasExpectedFormat(publication, location);
         assertThatLocationHeaderPointsToCreatedTicket(location);
     }
@@ -168,7 +168,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var requestBody = constructDto(PublishingRequestCase.class);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
-    
+        
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
     }
@@ -298,7 +298,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequestDto.empty();
         }
-    
+        
         throw new RuntimeException("Unrecognized ticket type");
     }
     

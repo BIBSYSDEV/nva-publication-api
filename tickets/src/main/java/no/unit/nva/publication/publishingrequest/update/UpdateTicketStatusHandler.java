@@ -31,7 +31,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-    
+        
         if (userIsNotAuthorized(requestInfo, ticket)) {
             throw new ForbiddenException();
         }

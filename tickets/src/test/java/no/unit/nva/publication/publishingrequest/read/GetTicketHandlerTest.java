@@ -79,7 +79,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedTicket(ticketType, otherPublication);
         var request = createHttpRequest(publication, ticket).build();
         handler.handleRequest(request, output, CONTEXT);
-    
+        
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
@@ -147,12 +147,12 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedTicket(ticketType);
         var sender = UserInstance.fromTicket(ticket);
         var expectedMessage = messageService.createMessage(ticket, sender, randomString());
-    
+        
         var request = createHttpRequest(ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
-    
+        
         var responseBody = response.getBodyObject(TicketDto.class);
         var expectedDto = MessageDto.fromMessage(expectedMessage);
         assertThat(expectedDto, is(in(responseBody.getMessages())));
