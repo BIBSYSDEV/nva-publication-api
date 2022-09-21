@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest.read;
+package no.unit.nva.publication.tickets.read;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -26,12 +26,12 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.publication.tickets.TicketDto;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;

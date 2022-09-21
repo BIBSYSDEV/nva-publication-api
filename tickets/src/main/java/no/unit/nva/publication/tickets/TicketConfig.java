@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest;
+package no.unit.nva.publication.tickets;
 
 public final class TicketConfig {
     

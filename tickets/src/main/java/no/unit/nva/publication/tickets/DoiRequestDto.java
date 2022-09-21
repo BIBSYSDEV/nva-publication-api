@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest;
+package no.unit.nva.publication.tickets;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest.read;
+package no.unit.nva.publication.tickets.read;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
@@ -6,9 +6,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.publishingrequest.TicketConfig;
-import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.tickets.TicketConfig;
+import no.unit.nva.publication.tickets.TicketDto;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;

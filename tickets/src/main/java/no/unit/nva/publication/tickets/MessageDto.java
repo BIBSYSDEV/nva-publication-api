@@ -1,5 +1,5 @@
 
-package no.unit.nva.publication.publishingrequest;
+package no.unit.nva.publication.tickets;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest;
+package no.unit.nva.publication.tickets;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.core.attempt.Try.attempt;

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest.update;
+package no.unit.nva.publication.tickets.update;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -7,9 +7,9 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.TICKET_PATH;
-import static no.unit.nva.publication.publishingrequest.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
-import static no.unit.nva.publication.publishingrequest.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.publication.tickets.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
+import static no.unit.nva.publication.tickets.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,8 +27,8 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.publishingrequest.TicketTestLocal;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.publication.tickets.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;

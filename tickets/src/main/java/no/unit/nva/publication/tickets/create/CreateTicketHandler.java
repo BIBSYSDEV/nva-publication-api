@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest.create;
+package no.unit.nva.publication.tickets.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
@@ -12,9 +12,9 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.publishingrequest.TicketDto;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.tickets.TicketDto;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;

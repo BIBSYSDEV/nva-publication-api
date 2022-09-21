@@ -1,8 +1,8 @@
-package no.unit.nva.publication.publishingrequest.update;
+package no.unit.nva.publication.tickets.update;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.publication.publishingrequest.TicketDto.createTicketId;
-import static no.unit.nva.publication.publishingrequest.create.CreateTicketHandler.LOCATION_HEADER;
+import static no.unit.nva.publication.tickets.TicketDto.createTicketId;
+import static no.unit.nva.publication.tickets.create.CreateTicketHandler.LOCATION_HEADER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -10,8 +10,8 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.publishingrequest.TicketHandler;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.tickets.TicketHandler;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;

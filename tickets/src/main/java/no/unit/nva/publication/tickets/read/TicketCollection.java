@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest.read;
+package no.unit.nva.publication.tickets.read;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.util.Collections;
 import java.util.List;
-import no.unit.nva.publication.publishingrequest.TicketDto;
+import no.unit.nva.publication.tickets.TicketDto;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class TicketCollection {
