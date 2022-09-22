@@ -1,7 +1,7 @@
 package no.unit.nva.publication.messages.model;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;
+import static no.unit.nva.publication.PublicationServiceConfig.DEPRECATED_MESSAGE_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -39,7 +39,7 @@ public class MessageDto implements JsonSerializable {
     public static URI constructMessageId(SortableIdentifier messageIdentifier) {
         if (nonNull(messageIdentifier)) {
             return UriWrapper.fromUri(PUBLICATION_HOST_URI)
-                       .addChild(MESSAGE_PATH)
+                       .addChild(DEPRECATED_MESSAGE_PATH)
                        .addChild(messageIdentifier.toString())
                        .getUri();
         }

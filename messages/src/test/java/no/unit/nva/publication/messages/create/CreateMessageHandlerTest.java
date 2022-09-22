@@ -1,7 +1,7 @@
 package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;
+import static no.unit.nva.publication.PublicationServiceConfig.DEPRECATED_MESSAGE_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
@@ -135,7 +135,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     
     private URI constructExpectedMessageUri(Message message) {
         return UriWrapper.fromUri(PUBLICATION_HOST_URI)
-            .addChild(MESSAGE_PATH)
+                   .addChild(DEPRECATED_MESSAGE_PATH)
             .addChild(message.getIdentifier().toString())
             .getUri();
     }

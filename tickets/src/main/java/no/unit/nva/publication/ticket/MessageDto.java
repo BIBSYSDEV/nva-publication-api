@@ -2,25 +2,28 @@
 package no.unit.nva.publication.ticket;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonTypeName(MessageDto.TYPE)
 public class MessageDto implements JsonSerializable {
     
     public static final String TEXT_FIELD = "text";
+    public static final String TYPE = "Message";
     @JsonProperty("id")
     private URI messageId;
     @JsonProperty("identifier")
@@ -44,18 +47,21 @@ public class MessageDto implements JsonSerializable {
         messageDto.setSenderIdentifier(message.getSender());
         messageDto.setText(message.getText());
         messageDto.setDate(message.getCreatedDate());
-        messageDto.setMessageId(constructMessageId(message.getIdentifier()));
+        messageDto.setMessageId(constructMessageId(message));
         messageDto.setMessageIdentifier(message.getIdentifier());
         messageDto.setMessageType(message.getMessageType().toString());
         messageDto.setRecipient(message.getRecipient());
         return messageDto;
     }
     
-    public static URI constructMessageId(SortableIdentifier messageIdentifier) {
-        if (nonNull(messageIdentifier)) {
+    public static URI constructMessageId(Message message) {
+        if (nonNull(message.getIdentifier())) {
             return UriWrapper.fromUri(PUBLICATION_HOST_URI)
-                       .addChild(MESSAGE_PATH)
-                       .addChild(messageIdentifier.toString())
+                       .addChild(message.getResourceIdentifier().toString())
+                       .addChild(PublicationServiceConfig.TICKET_PATH)
+                       .addChild(message.getTicketIdentifier().toString())
+                       .addChild(PublicationServiceConfig.MESSAGE_PATH)
+                       .addChild(message.getIdentifier().toString())
                        .getUri();
         }
         return null;
