@@ -572,8 +572,58 @@ class TicketServiceTest extends ResourcesLocalTest {
                                      .collect(Collectors.toSet())
                                      .stream()
                                      .collect(SingletonCollector.collect());
-        
+    
         assertThat(updatedTicketTitle, is(equalTo(expectedUpdatedTitle)));
+    }
+    
+    @Test
+    void shouldReturnAllTicketsForPublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var originalTickets = createAllTypesOfTickets(publication);
+        var fetchedTickets = Resource.fromPublication(publication)
+                                 .fetchAllTickets(resourceService)
+                                 .collect(Collectors.toList());
+        assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
+    }
+    
+    @Test
+    void shouldReturnAllTicketsForPublicationWhenRequesterIsPublicationOwner() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var originalTickets = createAllTypesOfTickets(publication);
+        var fetchedTickets = resourceService
+                                 .fetchAllTicketsForPublication(owner, publication.getIdentifier())
+                                 .collect(Collectors.toList());
+        
+        assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
+    }
+    
+    @Test
+    void shouldReturnAllTicketsForPublicationWhenRequesterIsElevatedUser() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var originalTickets = createAllTypesOfTickets(publication);
+        var elevatedUser = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var fetchedTickets = resourceService
+                                 .fetchAllTicketsForElevatedUser(elevatedUser, publication.getIdentifier())
+                                 .collect(Collectors.toList());
+        assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
+    }
+    
+    @Test
+    void shouldThrowNotFoundExceptionWhenAlienElevatedUserAttemptsToFetchPublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        createAllTypesOfTickets(publication);
+        var elevatedUser = UserInstance.create(randomString(), randomUri());
+        Executable action =
+            () -> resourceService.fetchAllTicketsForElevatedUser(elevatedUser, publication.getIdentifier());
+        assertThrows(NotFoundException.class, action);
+    }
+    
+    @Test
+    void shouldReturnEmptyTicketListWhenPublicationHasNoTickets() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var fetchedTickets = Resource.fromPublication(publication).fetchAllTickets(resourceService)
+                                 .collect(Collectors.toList());
+        assertThat(fetchedTickets, is(empty()));
     }
     
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {

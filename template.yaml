@@ -732,6 +732,25 @@ Resources:
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
+  ListTicketsForPublicationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.ListTicketsForPublicationHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/tickets
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
 
   #==========================Event Lambda functions====================================================
 
@@ -895,7 +914,7 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-  AcceptedPublishingRequestHander:
+  AcceptedPublishingRequestHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
@@ -920,7 +939,7 @@ Resources:
                 responsePayload:
                   topic: [ "PublicationService.PublishingRequest.Update" ]
 
-  PendingPublishingRequestHander:
+  PendingPublishingRequestHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:

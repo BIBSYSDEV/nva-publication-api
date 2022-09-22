@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
@@ -31,6 +32,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
@@ -100,8 +102,21 @@ public class ResourceDao extends Dao
         return client.query(queryRequest)
                    .getItems()
                    .stream()
-                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
+                   .map(item -> parseAttributeValuesMap(item, TicketDao.class))
                    .collect(Collectors.toList());
+    }
+    
+    public ResourceDao fetchForElevatedUser(AmazonDynamoDB client) throws NotFoundException {
+        QueryRequest queryRequest = new QueryRequest()
+                                        .withTableName(RESOURCES_TABLE_NAME)
+                                        .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                                        .withKeyConditions(byResource(ResourceDao.BY_RESOURCE_INDEX_ORDER_PREFIX));
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(item -> parseAttributeValuesMap(item, ResourceDao.class))
+                   .collect(SingletonCollector.tryCollect())
+                   .orElseThrow(fail -> new NotFoundException("Publication not found"));
     }
     
     @Override

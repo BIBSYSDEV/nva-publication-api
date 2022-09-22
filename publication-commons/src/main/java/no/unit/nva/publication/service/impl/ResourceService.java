@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,11 +41,13 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -209,6 +212,37 @@ public class ResourceService extends ServiceWithTransactions {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
                    : dataEntry;
+    }
+    
+    public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
+        var dao = (ResourceDao) resource.toDao();
+        return dao.fetchAllTickets(client)
+                   .stream()
+                   .map(TicketDao::getData)
+                   .map(TicketEntry.class::cast);
+    }
+    
+    public Stream<TicketEntry> fetchAllTicketsForPublication(
+        UserInstance userInstance,
+        SortableIdentifier publicationIdentifier)
+        throws ApiGatewayException {
+        var resource = readResourceService.getResource(userInstance, publicationIdentifier);
+        return resource.fetchAllTickets(this);
+    }
+    
+    public Stream<TicketEntry> fetchAllTicketsForElevatedUser(UserInstance userInstance,
+                                                              SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var resource = fetchResourceForElevatedUser(userInstance.getOrganizationUri(), publicationIdentifier);
+        return resource.fetchAllTickets(this);
+    }
+    
+    private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var queryDao = (ResourceDao) Resource
+                                         .fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
+                                         .toDao();
+        return (Resource) queryDao.fetchForElevatedUser(client).getData();
     }
     
     @Override
