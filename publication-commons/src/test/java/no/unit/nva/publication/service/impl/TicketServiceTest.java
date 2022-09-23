@@ -609,7 +609,8 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldThrowNotFoundExceptionWhenAlienElevatedUserAttemptsToFetchPublication() throws ApiGatewayException {
+    void shouldThrowNotFoundExceptionWhenAlienElevatedUserAttemptsToFetchPublicationTickets()
+        throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         createAllTypesOfTickets(publication);
         var elevatedUser = UserInstance.create(randomString(), randomUri());

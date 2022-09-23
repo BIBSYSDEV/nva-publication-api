@@ -239,8 +239,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
         throws NotFoundException {
-        var queryDao = (ResourceDao) Resource
-                                         .fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
+        var queryDao = (ResourceDao) Resource.fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
                                          .toDao();
         return (Resource) queryDao.fetchForElevatedUser(client).getData();
     }

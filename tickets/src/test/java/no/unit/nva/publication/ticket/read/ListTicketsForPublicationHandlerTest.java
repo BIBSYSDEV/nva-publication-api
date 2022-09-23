@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.read;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -46,7 +47,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var tickets = createTicketsOfAllTypes(publication);
         var request = ownerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
-        assetThatResponseContainsExpectedTickets(tickets);
+        assertThatResponseContainsExpectedTickets(tickets);
     }
     
     @Test
@@ -64,9 +65,9 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var publication = createAndPersistPublication(PublicationStatus.DRAFT);
         var tickets = createTicketsOfAllTypes(publication);
         var request = elevatedUserRequestsTicketsForPublication(publication);
-        
+    
         handler.handleRequest(request, output, CONTEXT);
-        assetThatResponseContainsExpectedTickets(tickets);
+        assertThatResponseContainsExpectedTickets(tickets);
     }
     
     @Test
@@ -124,7 +125,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
     
-    private void assetThatResponseContainsExpectedTickets(List<TicketEntry> tickets) throws JsonProcessingException {
+    private void assertThatResponseContainsExpectedTickets(List<TicketEntry> tickets) throws JsonProcessingException {
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         var body = response.getBodyObject(TicketCollection.class);
         var actualTicketIdentifiers = body.getTickets()
@@ -133,6 +134,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                                           .map(Entity::getIdentifier)
                                           .collect(Collectors.toList());
         var expectedIdentifiers = tickets.stream().map(TicketEntry::getIdentifier).collect(Collectors.toList());
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualTicketIdentifiers, containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));
     }
     
