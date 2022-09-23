@@ -95,10 +95,10 @@ public class ResourceDao extends Dao
     }
     
     public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
-        QueryRequest queryRequest = new QueryRequest()
-                                        .withTableName(RESOURCES_TABLE_NAME)
-                                        .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                                        .withKeyConditions(joinAllRelatedTicketsForResource());
+        var queryRequest = new QueryRequest()
+                               .withTableName(RESOURCES_TABLE_NAME)
+                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .withKeyConditions(joinAllRelatedTicketsForResource());
         return client.query(queryRequest)
                    .getItems()
                    .stream()
@@ -107,10 +107,10 @@ public class ResourceDao extends Dao
     }
     
     public ResourceDao fetchForElevatedUser(AmazonDynamoDB client) throws NotFoundException {
-        QueryRequest queryRequest = new QueryRequest()
-                                        .withTableName(RESOURCES_TABLE_NAME)
-                                        .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                                        .withKeyConditions(byResource(ResourceDao.BY_RESOURCE_INDEX_ORDER_PREFIX));
+        var queryRequest = new QueryRequest()
+                               .withTableName(RESOURCES_TABLE_NAME)
+                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .withKeyConditions(byResource(ResourceDao.BY_RESOURCE_INDEX_ORDER_PREFIX));
         return client.query(queryRequest)
                    .getItems()
                    .stream()
