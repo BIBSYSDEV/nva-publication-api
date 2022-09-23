@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -72,6 +73,12 @@ public class Resource implements Entity {
         Resource resource = new Resource();
         resource.setIdentifier(resourceIdentifier);
         return resource;
+    }
+    
+    public static Resource fetchForElevatedUserQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
+        return Resource.builder().withIdentifier(resourceIdentifier)
+                   .withPublisher(new Organization.Builder().withId(customerId).build())
+                   .build();
     }
     
     public static Resource emptyResource(User username,
@@ -361,6 +368,10 @@ public class Resource implements Entity {
                && Objects.equals(getHandle(), resource.getHandle())
                && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
                && Objects.equals(getSubjects(), resource.getSubjects());
+    }
+    
+    public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
+        return resourceService.fetchAllTicketsForResource(this);
     }
 }
 
