@@ -21,7 +21,6 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     
     public static final String TYPE = "GeneralSupportRequest";
     
-    private PublicationSummary publicationSummary;
     private Instant modifiedDate;
     private Set<URI> organizationIds;
     private Instant createdDate;
@@ -35,7 +34,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         var publication = resourceService.getPublicationByIdentifier(dataEntry.extractPublicationIdentifier());
         var entry = new ExpandedGeneralSupportRequest();
         var publicationSummary = PublicationSummary.create(publication);
-        entry.setPublicationSummary(publicationSummary);
+        entry.setPublication(publicationSummary);
         entry.setOrganizationIds(resourceExpansionService.getOrganizationIds(dataEntry));
         entry.setStatus(dataEntry.getStatus());
         entry.setOwner(dataEntry.getOwner());
@@ -62,15 +61,6 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     }
     
     @Override
-    public PublicationSummary getPublicationSummary() {
-        return this.publicationSummary;
-    }
-    
-    public void setPublicationSummary(PublicationSummary publicationSummary) {
-        this.publicationSummary = publicationSummary;
-    }
-    
-    @Override
     public Set<URI> getOrganizationIds() {
         return this.organizationIds;
     }
@@ -86,7 +76,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         ticketEntry.setCreatedDate(this.getCreatedDate());
         ticketEntry.setCustomerId(this.getCustomerId());
         ticketEntry.setIdentifier(extractIdentifier(this.getId()));
-        ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublicationSummary()));
+        ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         ticketEntry.setStatus(this.getStatus());
         ticketEntry.setOwner(this.getOwner());
         return ticketEntry;

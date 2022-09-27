@@ -28,8 +28,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     public static final String TYPE = "PublishingRequest";
     public static final String STATUS_FIELD = "status";
     
-    @JsonProperty(PUBLICATION_FIELD)
-    private PublicationSummary publicationSummary;
     
     @JsonProperty("organizationIds")
     private Set<URI> organizationIds;
@@ -68,11 +66,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     }
     
     @Override
-    public PublicationSummary getPublicationSummary() {
-        return this.publicationSummary;
-    }
-    
-    @Override
     public Set<URI> getOrganizationIds() {
         return nonNull(organizationIds) ? organizationIds : Collections.emptySet();
     }
@@ -80,7 +73,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     @Override
     public TicketEntry toTicketEntry() {
         var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setPublicationDetails(PublicationDetails.create(getPublicationSummary()));
+        publishingRequest.setPublicationDetails(PublicationDetails.create(getPublication()));
         publishingRequest.setCustomerId(this.getCustomerId());
         publishingRequest.setIdentifier(extractIdentifier(this.getId()));
         publishingRequest.setOwner(this.getOwner());
@@ -101,10 +94,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
-    }
-    
-    public void setPublicationSummary(PublicationSummary publicationSummary) {
-        this.publicationSummary = publicationSummary;
     }
     
     public Instant getCreatedDate() {
@@ -146,7 +135,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
-        entry.setPublicationSummary(publicationSummary);
+        entry.setPublication(publicationSummary);
         entry.setOrganizationIds(organizationIds);
         entry.setStatus(dataEntry.getStatus());
         entry.setCustomerId(dataEntry.getCustomerId());

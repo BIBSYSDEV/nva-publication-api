@@ -45,7 +45,7 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                 @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                 @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                                @JsonProperty(PUBLICATION_SUMMARY_FIELD) PublicationSummary publicationSummary,
+                                @JsonProperty(PUBLICATION_FIELD) PublicationSummary publicationSummary,
                                 @JsonProperty(ID_FIELD) URI id,
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                 @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
