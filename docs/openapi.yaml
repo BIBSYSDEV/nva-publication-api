@@ -565,6 +565,12 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
   /{publicationIdentifier}/tickets:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
     get:
       description: List tickets for publication
       responses:
