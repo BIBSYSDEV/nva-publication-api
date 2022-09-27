@@ -5,6 +5,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.TestingUtils.createGeneralSupportRequest;
 import static no.unit.nva.publication.TestingUtils.createOrganization;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
@@ -751,7 +752,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var request = new PublishingRequestCase();
         request.setIdentifier(SortableIdentifier.next());
         request.setOwner(new User(randomString()));
-        request.setPublicationDetails(new PublicationDetails(SortableIdentifier.next(), randomString()));
+        request.setPublicationDetails(PublicationDetails.create(randomPublication()));
         request.setStatus(COMPLETED);
         request.setCreatedDate(randomInstant());
         request.setModifiedDate(randomInstant());

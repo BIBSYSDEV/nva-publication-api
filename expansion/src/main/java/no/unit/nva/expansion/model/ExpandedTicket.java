@@ -36,13 +36,15 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public static final String ID_FIELD = "id";
     public static final String VIEWED_BY_FIELD = "viewedBy";
     private static final String MESSAGES_FIELD = "messages";
+    
     @JsonProperty(ID_FIELD)
     private URI id;
-    
     @JsonProperty(MESSAGES_FIELD)
     private List<Message> messages;
     @JsonProperty(VIEWED_BY_FIELD)
     private Set<User> viewedBy;
+    @JsonProperty(PUBLICATION_FIELD)
+    private PublicationSummary publication;
     
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
@@ -82,7 +84,13 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     }
     
     @JsonProperty(PUBLICATION_FIELD)
-    public abstract PublicationSummary getPublicationSummary();
+    public final PublicationSummary getPublication() {
+        return this.publication;
+    }
+    
+    public final void setPublication(PublicationSummary publication) {
+        this.publication = publication;
+    }
     
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     public abstract Set<URI> getOrganizationIds();

@@ -38,8 +38,8 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String STATUS_FIELD = "status";
     public static final String MESSAGES_FIELD = "messages";
     public static final String VIEWED_BY = "viewedBy";
-    public static final String PUBLICATION_SUMMARY_FIELD = "publicationSummary";
-    @JsonProperty(PUBLICATION_SUMMARY_FIELD)
+    public static final String PUBLICATION_FIELD = "publication";
+    @JsonProperty(PUBLICATION_FIELD)
     private final PublicationSummary publicationSummary;
     @JsonProperty(STATUS_FIELD)
     private final TicketStatus status;
@@ -215,7 +215,6 @@ public abstract class TicketDto implements JsonSerializable {
                 modifiedDate,
                 identifier,
                 publicationSummary,
-                
                 id,
                 messages,
                 viewedBy);

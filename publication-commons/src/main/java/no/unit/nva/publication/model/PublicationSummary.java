@@ -17,7 +17,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeName(PublicationSummary.TYPE)
 public class PublicationSummary {
     
-    public static final String TYPE = "PublicationSummary";
+    public static final String TYPE = "Publication";
     
     @JsonProperty("id")
     private URI publicationId;

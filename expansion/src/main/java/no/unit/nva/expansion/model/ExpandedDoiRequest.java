@@ -37,7 +37,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     @JsonProperty
     private User owner;
     
-    private PublicationSummary publicationSummary;
     @JsonProperty("doi")
     private URI doi;
     @JsonProperty(ORGANIZATION_IDS_FIELD)
@@ -105,17 +104,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         this.owner = owner;
     }
     
-    @Override
-    @JacocoGenerated
-    public PublicationSummary getPublicationSummary() {
-        return publicationSummary;
-    }
-    
-    @JacocoGenerated
-    public void setPublicationSummary(PublicationSummary publicationSummary) {
-        this.publicationSummary = publicationSummary;
-    }
-    
     @JacocoGenerated
     public URI getDoi() {
         return doi;
@@ -146,8 +134,8 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
         doiRequest.setOwner(this.getOwner());
-        doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublicationSummary()));
-        doiRequest.setResourceStatus(this.getPublicationSummary().getStatus());
+        doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublication()));
+        doiRequest.setResourceStatus(this.getPublication().getStatus());
         doiRequest.setStatus(this.getStatus());
         return doiRequest;
     }
@@ -169,7 +157,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService) {
         var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
         ExpandedDoiRequest request = new ExpandedDoiRequest();
-        request.setPublicationSummary(publicationSummary);
+        request.setPublication(publicationSummary);
         request.setCreatedDate(doiRequest.getCreatedDate());
         request.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
         request.setCustomerId(doiRequest.getCustomerId());
@@ -177,6 +165,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         request.setOwner(doiRequest.getOwner());
         request.setStatus(doiRequest.getStatus());
         request.setViewedBy(doiRequest.getViewedBy());
+        request.setPublication(publicationSummary);
         return request;
     }
 }

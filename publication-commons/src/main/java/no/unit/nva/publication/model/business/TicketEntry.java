@@ -197,9 +197,9 @@ public abstract class TicketEntry implements Entity {
     }
     
     public TicketEntry update(Resource resource) {
-        this.getPublicationDetails().updateTitle(resource.getEntityDescription().getMainTitle());
+        this.getPublicationDetails().update(resource);
         this.setPublicationDetails(
-            this.getPublicationDetails().updateTitle(resource.getEntityDescription().getMainTitle()));
+            this.getPublicationDetails().update(resource));
         return this;
     }
     

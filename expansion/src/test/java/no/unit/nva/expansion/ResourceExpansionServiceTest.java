@@ -85,7 +85,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(ticket, doesNotHaveEmptyValues());
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
-        assertThat(expandedTicket.getPublicationSummary().getPublicationId(), is(equalTo(expectedPublicationId)));
+        assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
     
     @ParameterizedTest(name = "ticket type:{0}")
@@ -155,7 +155,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         
         var expectedTitle = publication.getEntityDescription().getMainTitle();
-        assertThat(expandedTicket.getPublicationSummary().getTitle(), is(equalTo(expectedTitle)));
+        assertThat(expandedTicket.getPublication().getTitle(), is(equalTo(expectedTitle)));
     }
     
     private static URI constructExpectedPublicationId(Publication publication) {

@@ -671,18 +671,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceUpdatesLinkedDoiRequestUponUpdate()
         throws ApiGatewayException {
-        var resource = createPersistedPublicationWithoutDoi(); // 1st clock tick
+        var resource = createPersistedPublicationWithoutDoi();
         final var expectedDoi = randomDoi();
-        final var originalDoiRequest = createDoiRequest(resource); // 2nd clock tick
+        final var originalDoiRequest = createDoiRequest(resource);
     
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resource.setDoi(expectedDoi);
-        var updatedPublication = resourceService.updatePublication(resource); // 3rd clock tick
+        var updatedPublication = resourceService.updatePublication(resource);
     
         var updatedDoiRequest = ticketService.fetchTicket(originalDoiRequest);
     
         var expectedDoiRequest = originalDoiRequest.copy();
-        expectedDoiRequest.setPublicationDetails(expectedDoiRequest.getPublicationDetails().updateTitle(ANOTHER_TITLE));
+        expectedDoiRequest.setPublicationDetails(
+            expectedDoiRequest.getPublicationDetails().update(Resource.fromPublication(updatedPublication)));
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     
