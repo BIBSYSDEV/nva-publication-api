@@ -21,6 +21,8 @@ public class PublicationSummary {
     
     @JsonProperty("id")
     private URI publicationId;
+    @JsonProperty("identifier")
+    private SortableIdentifier identifier;
     @JsonProperty("mainTitle")
     private String title;
     @JsonProperty
@@ -34,6 +36,7 @@ public class PublicationSummary {
     
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();
+        publicationSummary.setIdentifier(publication.getIdentifier());
         publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
         publicationSummary.setCreatedDate(publication.getCreatedDate());
         publicationSummary.setModifiedDate(publication.getModifiedDate());
@@ -47,9 +50,18 @@ public class PublicationSummary {
     
     public static PublicationSummary create(URI publicationId, String publicationTitle) {
         var publicationSummary = new PublicationSummary();
+        publicationSummary.setIdentifier(extractPublicationIdentifier(publicationId));
         publicationSummary.setPublicationId(publicationId);
         publicationSummary.setTitle(publicationTitle);
         return publicationSummary;
+    }
+    
+    public SortableIdentifier getIdentifier() {
+        return identifier;
+    }
+    
+    public void setIdentifier(SortableIdentifier identifier) {
+        this.identifier = identifier;
     }
     
     public PublicationStatus getStatus() {
@@ -69,6 +81,10 @@ public class PublicationSummary {
     }
     
     public SortableIdentifier extractPublicationIdentifier() {
+        return extractPublicationIdentifier(publicationId);
+    }
+    
+    private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
         return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
     }
     
@@ -104,6 +120,11 @@ public class PublicationSummary {
         this.owner = owner;
     }
     
+    private static URI toPublicationId(SortableIdentifier identifier) {
+        return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
+                   .addChild(identifier.toString()).getUri();
+    }
+    
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -115,6 +136,7 @@ public class PublicationSummary {
         }
         PublicationSummary that = (PublicationSummary) o;
         return Objects.equals(getPublicationId(), that.getPublicationId())
+               && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getTitle(), that.getTitle())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
@@ -125,12 +147,7 @@ public class PublicationSummary {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getPublicationId(), getTitle(), getOwner(), getCreatedDate(), getModifiedDate(),
-            getStatus());
-    }
-    
-    private static URI toPublicationId(SortableIdentifier identifier) {
-        return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
-                   .addChild(identifier.toString()).getUri();
+        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getCreatedDate(),
+            getModifiedDate(), getStatus());
     }
 }

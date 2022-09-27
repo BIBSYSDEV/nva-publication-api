@@ -10,10 +10,13 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,14 +51,17 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
     }
     
-    
     @Test
     void shouldAllowCreationOfMinimumPossibleInformation() {
-        var publicationId = randomUri();
+        var publicationId = randomPublicationId();
         var publicationTitle = randomString();
         var summary = PublicationSummary.create(publicationId, publicationTitle);
         assertThat(summary.getPublicationId(), is(equalTo(publicationId)));
         assertThat(summary.getTitle(), is(equalTo(publicationTitle)));
+    }
+    
+    private URI randomPublicationId() {
+        return UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
     }
     
     private PublicationSummary publicationSummary() {
