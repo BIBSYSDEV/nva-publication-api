@@ -749,7 +749,7 @@ Resources:
           Type: Api
           Properties:
             Path: /{publicationIdentifier}/tickets
-            Method: put
+            Method: get
             RestApiId: !Ref NvaPublicationApi
 
   #==========================Event Lambda functions====================================================
