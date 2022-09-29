@@ -14,6 +14,7 @@ import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.core.paths.UriWrapper;
@@ -43,6 +44,18 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     void fromPublicationReturnsPublicationSummaryWithoutEmptyFields() {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         PublicationSummary summary = PublicationSummary.create(publication);
+        assertThat(summary, doesNotHaveEmptyValues());
+        assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
+        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
+        assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
+        assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
+    }
+    
+    @Test
+    void fromPublicationDetailsReturnsPublicationSummaryWithoutEmptyFields() {
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        PublicationSummary summary = PublicationSummary.create(PublicationDetails.create(publication));
         assertThat(summary, doesNotHaveEmptyValues());
         assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
