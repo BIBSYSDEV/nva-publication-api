@@ -10,6 +10,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -45,6 +46,18 @@ public class PublicationSummary {
         if (nonNull(publication.getEntityDescription())) {
             publicationSummary.setTitle(publication.getEntityDescription().getMainTitle());
         }
+        return publicationSummary;
+    }
+    
+    public static PublicationSummary create(PublicationDetails publicationDetails) {
+        var publicationSummary = new PublicationSummary();
+        publicationSummary.setIdentifier(publicationDetails.getIdentifier());
+        publicationSummary.setPublicationId(toPublicationId(publicationDetails.getIdentifier()));
+        publicationSummary.setCreatedDate(publicationDetails.getCreatedDate());
+        publicationSummary.setModifiedDate(publicationDetails.getModifiedDate());
+        publicationSummary.setOwner(new User(publicationDetails.getOwner().toString()));
+        publicationSummary.setStatus(publicationDetails.getStatus());
+        publicationSummary.setTitle(publicationDetails.getTitle());
         return publicationSummary;
     }
     

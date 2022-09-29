@@ -114,8 +114,7 @@ public abstract class TicketDto implements JsonSerializable {
     }
     
     private static PublicationSummary createPublicationSummary(TicketEntry ticket) {
-        return PublicationSummary.create(createPublicationId(ticket.extractPublicationIdentifier()),
-            ticket.extractPublicationTitle());
+        return PublicationSummary.create(ticket.getPublicationDetails());
     }
     
     private static URI createPublicationId(SortableIdentifier publicationIdentifier) {
