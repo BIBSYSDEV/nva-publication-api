@@ -20,7 +20,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-
+@SuppressWarnings("PMD.GodClass")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
@@ -95,8 +95,11 @@ public abstract class TicketEntry implements Entity {
         return ticket;
     }
     
+    //TODO: Delete resourceIdentifier field ASAP.
     public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
+        return Optional.ofNullable(resourceIdentifier)
+                   .or(() -> Optional.ofNullable(getPublicationDetails()).map(PublicationDetails::getIdentifier))
+                   .orElse(null);
     }
     
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
