@@ -26,16 +26,12 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -58,7 +54,6 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     public static final String HTTP_PATH_SEPARATOR = "/";
     public static final ResourceOwner NOT_THE_RESOURCE_OWNER = new ResourceOwner(randomString(), randomUri());
     public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
-    public static final int SINGLE_MESSAGE = 0;
     public static final String ALLOW_ALL_ORIGINS = "*";
     
     private CreateDoiRequestHandler handler;
@@ -75,7 +70,7 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
         clock = Clock.systemDefaultZone();
         resourceService = new ResourceService(client, clock);
-        ticketService = new TicketService(client, clock);
+        ticketService = new TicketService(client);
         messageService = new MessageService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
@@ -138,23 +133,6 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void createDoiRequestStoresMessageAsDoiRelatedWhenMessageIsIncluded()
-        throws IOException {
-        Publication publication = createPublicationWithoutDoi();
-        String expectedMessageText = randomString();
-        
-        sendRequest(publication, publication.getResourceOwner(), expectedMessageText);
-    
-        Optional<ResourceConversation> resourceMessages = messageService.getMessagesForResource(
-            UserInstance.fromPublication(publication),
-            publication.getIdentifier());
-    
-        var savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
-        assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
-        assertThat(savedMessage.getMessageType(), is(equalTo(MessageType.DOI_REQUEST)));
-    }
-    
-    @Test
     void shouldUpdateDoiRequestIfDoiRequestExistsButPublicationHasNoDoiAndThereIsLowChanceOfCreatingHangingDraftDois()
         throws ApiGatewayException, IOException {
         var publication = createPublicationWithoutDoi();
@@ -183,7 +161,6 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     
     private void setModifiedDateToBeAtLeastOneDayOld(DoiRequest doiRequest) {
         doiRequest.setModifiedDate(doiRequest.getModifiedDate().minus(Duration.ofDays(1)));
-        doiRequest.setVersion(UUID.randomUUID());
         PutItemRequest putItemRequest = doiRequest.toDao().createPutItemRequest();
         
         client.putItem(putItemRequest);

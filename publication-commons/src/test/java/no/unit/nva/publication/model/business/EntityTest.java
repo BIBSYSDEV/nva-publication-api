@@ -1,109 +1,59 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.model.business.Entity.nextVersion;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
 import java.time.Clock;
-import java.time.Instant;
-import java.util.UUID;
 import java.util.stream.Stream;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.testing.TypeProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class EntityTest {
+class EntityTest extends ResourcesLocalTest {
     
-    static Stream<Tuple> resourceProvider() {
-        var publication = PublicationGenerator.randomPublication();
-        final var leftResource = Resource.fromPublication(publication);
-        final var rightResource = leftResource.copy().withRowVersion(nextVersion()).build();
-        
-        final var leftDoiRequest = DoiRequest.newDoiRequestForResource(leftResource, Instant.now());
-        final var rightDoiRequest = leftDoiRequest.copy();
-        rightDoiRequest.setVersion(nextVersion());
-        
-        final var leftMessage = randomMessage(publication);
-        final var rightMessage = leftMessage.copy();
-        rightMessage.setVersion(nextVersion());
-        
-        final var leftPublishingRequestCase = randomPublishingRequest(publication);
-        final var rightPublishingRequestCase = leftPublishingRequestCase.copy();
-        rightPublishingRequestCase.setVersion(UUID.randomUUID());
-        
-        return Stream.of(new Tuple(leftResource, rightResource),
-            new Tuple(leftDoiRequest, rightDoiRequest),
-            new Tuple(leftMessage, rightMessage),
-            new Tuple(leftPublishingRequestCase, rightPublishingRequestCase));
+    public static final ResourceService SHOULD_NOT_USE_RESOURCE_SERVICE = null;
+    private ResourceService resourceService;
+    
+    @BeforeEach
+    public void setup() {
+        super.init();
+        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
     }
     
-    //This test guarantees backwards compatibility and the requirements can change when optimistic concurrency control
-    // is implemented.
-    @ParameterizedTest(name = "should return equals true when two resources differ only in their row version")
-    @MethodSource("resourceProvider")
-    void shouldReturnEqualsTrueWhenTwoResourcesDifferOnlyInTheirRowVersion(Tuple tuple) {
-        assertThat(tuple.left, doesNotHaveEmptyValues());
-        assertThat(tuple.right.getVersion(), is(not(equalTo(tuple.left.getVersion()))));
-        assertThat(tuple.right, is(equalTo(tuple.left)));
+    public static Stream<Arguments> ticketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
     }
     
-    //TODO: reconsider this test and whether we should inlcude all non-user controlled fields or not.
-    //This test guarantees backwards compatibility and the requirements can change when optimistic concurrency control
-    // is implemented.
-    @ParameterizedTest(name = "should return the same hash code when two resources differ only in their row version")
-    @MethodSource("resourceProvider")
-    void shouldReturnTheSameHashCodeWhenTwoResourcesDifferOnlyInTheirRowVersion(Tuple tuple) {
-        assertThat(tuple.left, doesNotHaveEmptyValues());
-        assertThat(tuple.left.getVersion(), is(not(equalTo(tuple.right.getVersion()))));
-        assertThat(tuple.left.hashCode(), is(equalTo(tuple.right.hashCode())));
+    @ParameterizedTest(name = "entity type:{0}")
+    @DisplayName("should return referenced stored publication when entity is referencing a publication ")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnReferencedStoredPublicationWhenEntityIsReferencingAPublication(
+        Class<? extends TicketEntry> ticketType) {
+        var publication = createDraftPublicationWithoutDoi();
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        var storedPublication = ticket.toPublication(resourceService);
+        assertThat(storedPublication, is(equalTo(publication)));
     }
     
     @Test
-    void shouldCreateNewRowVersionWhenRefreshed() {
-        var publication = PublicationGenerator.randomPublication();
+    void shouldReturnEquivalentPublicationWhenEntityIsInternalRepresentationOfPublication() {
+        var publication = createDraftPublicationWithoutDoi();
         var resource = Resource.fromPublication(publication);
-        var oldRowVersion = resource.getVersion();
-        var newRowVersion = resource.refreshVersion().getVersion();
-        assertThat(newRowVersion, is(not(equalTo(oldRowVersion))));
+        var regeneratedPublication = resource.toPublication(SHOULD_NOT_USE_RESOURCE_SERVICE);
+        assertThat(regeneratedPublication, is(equalTo(publication)));
     }
     
-    private static PublishingRequestCase randomPublishingRequest(Publication publication) {
-        var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setIdentifier(SortableIdentifier.next());
-        publishingRequest.setCustomerId(publication.getPublisher().getId());
-        publishingRequest.setResourceIdentifier(publication.getIdentifier());
-        publishingRequest.setVersion(UUID.randomUUID());
-        publishingRequest.setOwner(publication.getResourceOwner().getOwner());
-        publishingRequest.setCreatedDate(randomInstant());
-        publishingRequest.setModifiedDate(randomInstant());
-        publishingRequest.setStatus(randomElement(TicketStatus.values()));
-        return publishingRequest;
-    }
-    
-    private static Message randomMessage(Publication publication) {
-        var user = UserInstance.create(randomString(), randomUri());
-        var clock = Clock.systemDefaultZone();
-        return Message.create(user, publication, randomString(), SortableIdentifier.next(), clock, MessageType.SUPPORT);
-    }
-    
-    private static class Tuple {
-        
-        private final Entity left;
-        private final Entity right;
-        
-        public Tuple(Entity left, Entity right) {
-            
-            this.left = left;
-            this.right = right;
-        }
+    private Publication createDraftPublicationWithoutDoi() {
+        var publication = randomPublication().copy().withDoi(null).withStatus(DRAFT).build();
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
 }

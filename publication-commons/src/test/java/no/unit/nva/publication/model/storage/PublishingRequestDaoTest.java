@@ -41,7 +41,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(super.client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(super.client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(super.client);
     }
     
     @Test
@@ -63,9 +63,10 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldReturnQueryObjectWithCompletePrimaryKey() {
         var sampleEntryIdentifier = SortableIdentifier.next();
-        var queryObject = PublishingRequestCase.createQueryObject(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER),
-            null,
-            sampleEntryIdentifier);
+        var queryObject =
+            PublishingRequestCase.createQueryObject(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER),
+                SortableIdentifier.next(),
+                sampleEntryIdentifier);
         var queryDao = PublishingRequestDao.queryObject(queryObject);
     
         assertThat(queryDao.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
@@ -85,19 +86,18 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldQueryForPublishingRequestBasedOnCustomerIdAndResourceIdentifier() throws ApiGatewayException {
         var publication = createPublication();
-        var userInstance = UserInstance.fromPublication(publication);
         var query = PublishingRequestDao.queryPublishingRequestByResource(publication.getPublisher().getId(),
             publication.getIdentifier());
-        
-        var publishingRequest =
-            PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-        var persistedRquest = ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
+    
+        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        var persistedRequest = ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
         var queryResult = client.query(query);
         var retrievedByPublicationIdentifier = queryResult.getItems().stream()
-            .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
-            .map(PublishingRequestDao::getData)
-            .collect(SingletonCollector.collect());
-        assertThat(retrievedByPublicationIdentifier, is(equalTo(persistedRquest)));
+                                                   .map(item -> parseAttributeValuesMap(item,
+                                                       PublishingRequestDao.class))
+                                                   .map(PublishingRequestDao::getData)
+                                                   .collect(SingletonCollector.collect());
+        assertThat(retrievedByPublicationIdentifier, is(equalTo(persistedRequest)));
     }
     
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
@@ -114,13 +114,13 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     }
     
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
-        return PublishingRequestDao.getContainedType()
+        return TicketDao.TICKETS_INDEXING_TYPE
                + KEY_FIELDS_DELIMITER
                + entryIdentifier.toString();
     }
     
     private String expectedPublicationRequestPrimaryPartitionKey() {
-        return PublishingRequestDao.getContainedType()
+        return TicketDao.TICKETS_INDEXING_TYPE
                + KEY_FIELDS_DELIMITER
                + SAMPLE_CUSTOMER_IDENTIFIER
                + KEY_FIELDS_DELIMITER

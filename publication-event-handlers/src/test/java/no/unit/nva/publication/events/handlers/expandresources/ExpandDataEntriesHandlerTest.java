@@ -40,7 +40,6 @@ import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
@@ -73,13 +72,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
         resourceService = new ResourceService(client, CLOCK);
-        var messageService = new MessageService(client, CLOCK);
-        var ticketService = new TicketService(client, CLOCK);
-        
+        var ticketService = new TicketService(client);
         
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
+            new ResourceExpansionServiceImpl(resourceService, ticketService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
@@ -189,9 +186,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     
     private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
         var publication = PublicationGenerator.randomPublication().copy()
-            .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
-            .withResourceOwner(new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
-            .build();
+                              .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
+                              .withResourceOwner(
+                                  new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
+                              .build();
         return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
     }
     
@@ -214,8 +212,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     
     private DoiRequest doiRequestForDraftResource() {
         Publication publication = PublicationGenerator.randomPublication().copy()
-            .withStatus(DRAFT)
-            .build();
+                                      .withStatus(DRAFT)
+                                      .build();
         Resource resource = Resource.fromPublication(publication);
         return DoiRequest.newDoiRequestForResource(resource);
     }

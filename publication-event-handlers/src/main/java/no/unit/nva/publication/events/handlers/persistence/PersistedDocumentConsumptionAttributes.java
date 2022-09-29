@@ -4,19 +4,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.expansion.model.ExpandedDoiRequest;
-import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedResourceConversation;
+import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
 public class PersistedDocumentConsumptionAttributes {
     
     public static final String RESOURCES_INDEX = "resources";
-    public static final String MESSAGES_INDEX = "messages";
-    public static final String DOI_REQUESTS_INDEX = "doirequests";
-    public static final String PUBLISHING_REQUESTS_INDEX = "publishingrequests";
+    public static final String TICKETS_INDEX = "tickets";
     
     public static final String INDEX_FIELD = "index";
     public static final String DOCUMENT_IDENTIFIER = "documentIdentifier";
@@ -37,17 +33,9 @@ public class PersistedDocumentConsumptionAttributes {
     
     public static PersistedDocumentConsumptionAttributes createAttributes(ExpandedDataEntry expandedEntry) {
         if (expandedEntry instanceof ExpandedResource) {
-            return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX,
-                expandedEntry.identifyExpandedEntry());
-        } else if (expandedEntry instanceof ExpandedDoiRequest) {
-            return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX,
-                expandedEntry.identifyExpandedEntry());
-        } else if (expandedEntry instanceof ExpandedResourceConversation) {
-            return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX,
-                expandedEntry.identifyExpandedEntry());
-        } else if (expandedEntry instanceof ExpandedPublishingRequest) {
-            return new PersistedDocumentConsumptionAttributes(PUBLISHING_REQUESTS_INDEX,
-                expandedEntry.identifyExpandedEntry());
+            return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.identifyExpandedEntry());
+        } else if (expandedEntry instanceof ExpandedTicket) {
+            return new PersistedDocumentConsumptionAttributes(TICKETS_INDEX, expandedEntry.identifyExpandedEntry());
         }
         throw new UnsupportedOperationException(
             UNSUPPORTED_TYPE_ERROR_MESSAGE + expandedEntry.getClass().getSimpleName());

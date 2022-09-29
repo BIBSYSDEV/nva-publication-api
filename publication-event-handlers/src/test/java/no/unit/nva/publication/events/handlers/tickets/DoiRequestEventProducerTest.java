@@ -9,7 +9,6 @@ import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventPro
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.MIN_INTERVAL_FOR_REREQUESTING_A_DOI;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -38,6 +37,7 @@ import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -99,23 +99,22 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
             throws ApiGatewayException, IOException {
         
         var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
-        doiRequestWithoutResourceIdentifier.setResourceIdentifier(null);
+        doiRequestWithoutResourceIdentifier.setPublicationDetails(null);
         var event = createEvent(null, doiRequestWithoutResourceIdentifier);
-        
         Executable action = () -> handler.handleRequest(event, outputStream, context);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getMessage(), is(equalTo(NO_RESOURCE_IDENTIFIER_ERROR)));
+        assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
     }
     
     @Test
     void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
-            throws IOException, ApiGatewayException {
+        throws IOException {
         //Given a publication has a public Doi
         var publication = persistPublicationWithDoi();
         var publicationUpdate = updateTitle(publication);
         assertThat(publication.getDoi(), is(not(nullValue())));
         assertThat(publicationUpdate.getDoi(), is(equalTo(publication.getDoi())));
-
+        
         var event = createEvent(Resource.fromPublication(publication), Resource.fromPublication(publicationUpdate));
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(null, HTTP_NOT_FOUND));
         this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
@@ -153,7 +152,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         handler.handleRequest(event, outputStream, context);
         var actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(UPDATE_DOI_EVENT_TOPIC)));
-        assertThat(actual.getItem(), is(equalTo(approvedRequest.toPublication())));
+        assertThat(actual.getItem(), is(equalTo(approvedRequest.toPublication(resourceService))));
     }
     
     @Test
@@ -167,7 +166,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         handler.handleRequest(event, outputStream, context);
         var actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(REQUEST_DRAFT_DOI_EVENT_TOPIC)));
-        assertThat(actual.getItem(), is(equalTo(draftRequest.toPublication())));
+        assertThat(actual.getItem(), is(equalTo(draftRequest.toPublication(resourceService))));
     }
     
     @Test
@@ -188,7 +187,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws IOException, ApiGatewayException {
+        throws IOException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);

@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,16 +36,18 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -91,8 +94,7 @@ public class ResourceService extends ServiceWithTransactions {
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
     }
     
-    public ResourceService(AmazonDynamoDB client,
-                           Clock clock) {
+    public ResourceService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
     
@@ -212,14 +214,39 @@ public class ResourceService extends ServiceWithTransactions {
                    : dataEntry;
     }
     
-    @Override
-    protected AmazonDynamoDB getClient() {
-        return client;
+    public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
+        var dao = (ResourceDao) resource.toDao();
+        return dao.fetchAllTickets(client)
+                   .stream()
+                   .map(TicketDao::getData)
+                   .map(TicketEntry.class::cast);
+    }
+    
+    public Stream<TicketEntry> fetchAllTicketsForPublication(
+        UserInstance userInstance,
+        SortableIdentifier publicationIdentifier)
+        throws ApiGatewayException {
+        var resource = readResourceService.getResource(userInstance, publicationIdentifier);
+        return resource.fetchAllTickets(this);
+    }
+    
+    public Stream<TicketEntry> fetchAllTicketsForElevatedUser(UserInstance userInstance,
+                                                              SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var resource = fetchResourceForElevatedUser(userInstance.getOrganizationUri(), publicationIdentifier);
+        return resource.fetchAllTickets(this);
+    }
+    
+    private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var queryDao = (ResourceDao) Resource.fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
+                                         .toDao();
+        return (Resource) queryDao.fetchForElevatedUser(client).getData();
     }
     
     @Override
-    protected Clock getClock() {
-        return clockForTimestamps;
+    protected AmazonDynamoDB getClient() {
+        return client;
     }
     
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
@@ -227,7 +254,6 @@ public class ResourceService extends ServiceWithTransactions {
                    .stream()
                    .map(attempt(this::migrate))
                    .map(Try::orElseThrow)
-                   .map(Entity::refreshVersion)
                    .collect(Collectors.toList());
     }
     
@@ -235,9 +261,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new Organization.Builder().withId(userInstance.getOrganizationUri()).build();
     }
     
-    private ResourceOwner createResourceOwner(UserInstance userInstance) {
-        return new ResourceOwner(userInstance.getUserIdentifier(),
-            userInstance.getTopLevelOrgCristinId());
+    private Owner createResourceOwner(UserInstance userInstance) {
+        return new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId());
     }
     
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {
@@ -272,7 +297,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                    .withLimit(pageSize)
                    .withExclusiveStartKey(startMarker)
-                   .withFilterExpression(Dao.scanFilterExpression())
+                   .withFilterExpression(Dao.scanFilterExpressionForDataEntries())
                    .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
                    .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
     }
@@ -406,7 +431,7 @@ public class ResourceService extends ServiceWithTransactions {
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
-        
+    
         UpdateItemRequest request = new UpdateItemRequest()
                                         .withTableName(tableName)
                                         .withKey(dao.primaryKey())

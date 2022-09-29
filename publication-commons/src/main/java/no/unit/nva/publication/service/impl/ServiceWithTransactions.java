@@ -2,6 +2,8 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
+import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.DOI_REQUEST_INDEX_IN_QUERY_RESULT;
+import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
@@ -14,7 +16,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import java.time.Clock;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,23 +35,19 @@ public abstract class ServiceWithTransactions {
     
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
-    public static final String RAWTYPES = "rawtypes";
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
     public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
-    public static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
-    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
-    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
-        
+    
         Put put = new Put()
-            .withItem(data.toDynamoFormat())
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+                      .withItem(data.toDynamoFormat())
+                      .withTableName(RESOURCES_TABLE_NAME)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
     }
     
@@ -76,28 +74,27 @@ public abstract class ServiceWithTransactions {
     
     protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
         return new TransactWriteItem()
-            .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
+                   .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
     }
     
     protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS));
+            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT));
         }
         return Optional.empty();
     }
     
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
         } else if (onlyResourceExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
     
     protected String nowAsString() {
-        String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(getClock().instant()))
-            .orElseThrow();
+        String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(Instant.now())).orElseThrow();
         return jsonString.replace(DOUBLE_QUOTES, EMPTY_STRING);
     }
     
@@ -106,7 +103,6 @@ public abstract class ServiceWithTransactions {
             .orElseThrow(this::handleTransactionFailure);
     }
     
-    protected abstract Clock getClock();
     
     private Void waitBeforeFetching() throws InterruptedException {
         Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);

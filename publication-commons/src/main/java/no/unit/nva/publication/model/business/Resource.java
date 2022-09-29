@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
+import java.util.stream.Stream;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -20,10 +20,9 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import nva.commons.core.JacocoGenerated;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -37,7 +36,7 @@ public class Resource implements Entity {
     @JsonProperty
     private PublicationStatus status;
     @JsonProperty
-    private ResourceOwner resourceOwner;
+    private Owner resourceOwner;
     @JsonProperty
     private Organization publisher;
     @JsonProperty
@@ -64,11 +63,9 @@ public class Resource implements Entity {
     private Set<AdditionalIdentifier> additionalIdentifiers;
     @JsonProperty
     private List<URI> subjects;
-    @JsonProperty(VERSION)
-    private UUID version;
     
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
-        return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
+        return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
             resourceIdentifier);
     }
     
@@ -78,53 +75,53 @@ public class Resource implements Entity {
         return resource;
     }
     
-    public static Resource emptyResource(String username,
+    public static Resource fetchForElevatedUserQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
+        return Resource.builder().withIdentifier(resourceIdentifier)
+                   .withPublisher(new Organization.Builder().withId(customerId).build())
+                   .build();
+    }
+    
+    public static Resource emptyResource(User username,
                                          URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
         resource.setPublisher(new Organization.Builder().withId(organizationId).build());
-        resource.setResourceOwner(new ResourceOwner(username, NOT_IMPORTANT));
+        resource.setResourceOwner(new Owner(username, NOT_IMPORTANT));
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
     
     public static Resource fromPublication(Publication publication) {
         return Resource.builder()
-            .withIdentifier(publication.getIdentifier())
-            .withResourceOwner(publication.getResourceOwner())
-            .withCreatedDate(publication.getCreatedDate())
-            .withModifiedDate(publication.getModifiedDate())
-            .withIndexedDate(publication.getIndexedDate())
-            .withPublishedDate(publication.getPublishedDate())
-            .withStatus(publication.getStatus())
-            .withPublishedDate(publication.getPublishedDate())
-            .withFileSet(publication.getFileSet())
-            .withPublisher(publication.getPublisher())
-            .withLink(publication.getLink())
-            .withProjects(publication.getProjects())
-            .withEntityDescription(publication.getEntityDescription())
-            .withDoi(publication.getDoi())
-            .withHandle(publication.getHandle())
-            .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
-            .withSubjects(publication.getSubjects())
-            .withRowVersion(Entity.nextVersion())
-            .build();
-    }
-    
-    @Override
-    public String getType() {
-        return TYPE;
+                   .withIdentifier(publication.getIdentifier())
+                   .withResourceOwner(Owner.fromResourceOwner(publication.getResourceOwner()))
+                   .withCreatedDate(publication.getCreatedDate())
+                   .withModifiedDate(publication.getModifiedDate())
+                   .withIndexedDate(publication.getIndexedDate())
+                   .withPublishedDate(publication.getPublishedDate())
+                   .withStatus(publication.getStatus())
+                   .withPublishedDate(publication.getPublishedDate())
+                   .withFileSet(publication.getFileSet())
+                   .withPublisher(publication.getPublisher())
+                   .withLink(publication.getLink())
+                   .withProjects(publication.getProjects())
+                   .withEntityDescription(publication.getEntityDescription())
+                   .withDoi(publication.getDoi())
+                   .withHandle(publication.getHandle())
+                   .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
+                   .withSubjects(publication.getSubjects())
+                   .build();
     }
     
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
     }
     
-    public ResourceOwner getResourceOwner() {
+    public Owner getResourceOwner() {
         return resourceOwner;
     }
     
-    public void setResourceOwner(ResourceOwner resourceOwner) {
+    public void setResourceOwner(Owner resourceOwner) {
         this.resourceOwner = resourceOwner;
     }
     
@@ -146,20 +143,35 @@ public class Resource implements Entity {
         this.identifier = identifier;
     }
     
-    public PublicationStatus getStatus() {
-        return status;
+    @Override
+    public Publication toPublication(ResourceService resourceService) {
+        return toPublication();
     }
     
-    public void setStatus(PublicationStatus status) {
-        this.status = status;
+    public Publication toPublication() {
+        return new Publication.Builder()
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(getResourceOwner().toResourceOwner())
+                   .withStatus(getStatus())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withPublisher(getPublisher())
+                   .withPublishedDate(getPublishedDate())
+                   .withLink(getLink())
+                   .withFileSet(getFileSet())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withSubjects(getSubjects())
+                   .build();
     }
     
-    public Organization getPublisher() {
-        return publisher;
-    }
-    
-    public void setPublisher(Organization publisher) {
-        this.publisher = publisher;
+    @Override
+    public String getType() {
+        return TYPE;
     }
     
     @Override
@@ -180,6 +192,44 @@ public class Resource implements Entity {
     @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
+    }
+    
+    @JsonIgnore
+    @Override
+    public User getOwner() {
+        return getResourceOwner().getUser();
+    }
+    
+    @Override
+    @JsonIgnore
+    public URI getCustomerId() {
+        return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
+    }
+    
+    @Override
+    public Dao toDao() {
+        return new ResourceDao(this);
+    }
+    
+    @Override
+    public String getStatusString() {
+        return nonNull(getStatus()) ? getStatus().toString() : null;
+    }
+    
+    public PublicationStatus getStatus() {
+        return status;
+    }
+    
+    public void setStatus(PublicationStatus status) {
+        this.status = status;
+    }
+    
+    public Organization getPublisher() {
+        return publisher;
+    }
+    
+    public void setPublisher(Organization publisher) {
+        this.publisher = publisher;
     }
     
     public Instant getPublishedDate() {
@@ -246,82 +296,24 @@ public class Resource implements Entity {
         this.handle = handle;
     }
     
-    @Override
-    public String getStatusString() {
-        return nonNull(getStatus()) ? getStatus().toString() : null;
-    }
-    
     public ResourceBuilder copy() {
         return Resource.builder()
-            .withIdentifier(getIdentifier())
-            .withStatus(getStatus())
-            .withResourceOwner(getResourceOwner())
-            .withResourceOwner(getResourceOwner())
-            .withPublisher(getPublisher())
-            .withCreatedDate(getCreatedDate())
-            .withModifiedDate(getModifiedDate())
-            .withPublishedDate(getPublishedDate())
-            .withIndexedDate(getIndexedDate())
-            .withLink(getLink())
-            .withFileSet(getFileSet())
-            .withProjects(getProjects())
-            .withEntityDescription(getEntityDescription())
-            .withDoi(getDoi())
-            .withHandle(getHandle())
-            .withAdditionalIdentifiers(getAdditionalIdentifiers())
-            .withSubjects(getSubjects())
-            .withRowVersion(getVersion());
-    }
-    
-    @Override
-    public Publication toPublication() {
-        return new Publication.Builder()
-            .withIdentifier(getIdentifier())
-            .withResourceOwner(getResourceOwner())
-            .withStatus(getStatus())
-            .withCreatedDate(getCreatedDate())
-            .withModifiedDate(getModifiedDate())
-            .withIndexedDate(getIndexedDate())
-            .withPublisher(getPublisher())
-            .withPublishedDate(getPublishedDate())
-            .withLink(getLink())
-            .withFileSet(getFileSet())
-            .withProjects(getProjects())
-            .withEntityDescription(getEntityDescription())
-            .withDoi(getDoi())
-            .withHandle(getHandle())
-            .withAdditionalIdentifiers(getAdditionalIdentifiers())
-            .withSubjects(getSubjects())
-            .build();
-    }
-    
-    @Override
-    @JacocoGenerated
-    public UUID getVersion() {
-        return version;
-    }
-    
-    @Override
-    @JacocoGenerated
-    public void setVersion(UUID version) {
-        this.version = version;
-    }
-    
-    @Override
-    public Dao toDao() {
-        return new ResourceDao(this);
-    }
-    
-    @Override
-    @JsonIgnore
-    public URI getCustomerId() {
-        return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
-    }
-    
-    @JsonIgnore
-    @Override
-    public String getOwner() {
-        return getResourceOwner().getOwner();
+                   .withIdentifier(getIdentifier())
+                   .withStatus(getStatus())
+                   .withResourceOwner(Owner.fromResourceOwner(getResourceOwner().toResourceOwner()))
+                   .withPublisher(getPublisher())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withPublishedDate(getPublishedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withLink(getLink())
+                   .withFileSet(getFileSet())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withSubjects(getSubjects());
     }
     
     public List<URI> getSubjects() {
@@ -376,6 +368,10 @@ public class Resource implements Entity {
                && Objects.equals(getHandle(), resource.getHandle())
                && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
                && Objects.equals(getSubjects(), resource.getSubjects());
+    }
+    
+    public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
+        return resourceService.fetchAllTicketsForResource(this);
     }
 }
 

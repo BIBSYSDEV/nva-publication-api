@@ -2,10 +2,8 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.PUBLISHING_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -27,18 +25,18 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
@@ -62,7 +60,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
     private TicketService ticketService;
-    private MessageService messageService;
     private ResourceExpansionService resourceExpansionService;
     
     @BeforeEach
@@ -70,9 +67,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         super.init();
         Clock clock = Clock.systemDefaultZone();
         resourceService = new ResourceService(client, clock);
-        messageService = new MessageService(client, clock);
-        ticketService = new TicketService(client, clock);
-        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
+        ticketService = new TicketService(client);
+        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
     
     @BeforeEach
@@ -135,51 +131,46 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         if (ExpandedResource.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX);
         } else if (ExpandedDoiRequest.class.equals(expandedEntryType)) {
-            return new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX);
-        } else if (ExpandedResourceConversation.class.equals(expandedEntryType)) {
-            return new PersistedEntryWithExpectedType(randomResourceConversation(), MESSAGES_INDEX);
+            return new PersistedEntryWithExpectedType(randomDoiRequest(), TICKETS_INDEX);
         } else if (ExpandedPublishingRequest.class.equals(expandedEntryType)) {
-            return new PersistedEntryWithExpectedType(randomPublishingRequest(), PUBLISHING_REQUESTS_INDEX);
+            return new PersistedEntryWithExpectedType(randomPublishingRequest(), TICKETS_INDEX);
+        } else if (ExpandedGeneralSupportRequest.class.equals(expandedEntryType)) {
+            return new PersistedEntryWithExpectedType(randomGeneralSupportRequest(), TICKETS_INDEX);
         }
         throw new RuntimeException();
     }
     
-    private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWitoutDoi();
-        var userInstance = UserInstance.fromPublication(publication);
+    private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
         var openingCaseObject =
-            PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
-        var publishingRequest =
-            ticketService.createTicket(openingCaseObject, PublishingRequestCase.class);
+            TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class).persistNewTicket(ticketService);
+        return resourceExpansionService.expandEntry(openingCaseObject);
+    }
+    
+    private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
+        var publishingRequest = PublishingRequestCase
+                                    .createOpeningCaseObject(publication)
+                                    .persistNewTicket(ticketService);
+    
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
     
     private ExpandedResource randomResource() throws JsonProcessingException, ApiGatewayException {
-        var resource = Resource.fromPublication(createPublicationWitoutDoi());
+        var resource = Resource.fromPublication(createPublicationWithoutDoi());
         return (ExpandedResource) resourceExpansionService.expandEntry(resource);
     }
     
-    private Publication createPublicationWitoutDoi() throws ApiGatewayException {
+    private Publication createPublicationWithoutDoi() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
         var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
     
     private ExpandedDoiRequest randomDoiRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWitoutDoi();
-        var doiRequest =
-            ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
+        var publication = createPublicationWithoutDoi();
+        var doiRequest = DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
         return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest);
-    }
-    
-    private ExpandedResourceConversation randomResourceConversation()
-        throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWitoutDoi();
-        var userInstance = UserInstance.fromPublication(publication);
-        var messageIdentifier = messageService.createMessage(userInstance, publication, randomString(),
-            MessageType.SUPPORT);
-        var message = messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
-        return (ExpandedResourceConversation) resourceExpansionService.expandEntry(message);
     }
     
     private EventReference sendEvent() throws JsonProcessingException {

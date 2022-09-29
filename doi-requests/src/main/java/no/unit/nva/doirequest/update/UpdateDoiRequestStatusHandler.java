@@ -1,7 +1,7 @@
 package no.unit.nva.doirequest.update;
 
 import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Collections;
@@ -9,6 +9,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -88,12 +89,12 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
                                         SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         TicketEntry ticketEntry = DoiRequest.builder()
-            .withCustomerId(userInstance.getOrganizationUri())
-            .withResourceIdentifier(publicationIdentifier)
+                                      .withCustomerId(userInstance.getOrganizationUri())
+                                      .withPublicationDetails(PublicationDetails.create(publicationIdentifier))
             .withStatus(newTicketStatus)
             .build();
         if (TicketStatus.COMPLETED.equals(newTicketStatus)) {
-            ticketService.completeTicket(ticketEntry);
+            ticketService.updateTicketStatus(ticketEntry, TicketStatus.COMPLETED);
         } else {
             //TODO: implement rejection in the service
             throw new NotImplementedException();
@@ -110,7 +111,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
     
     private SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
-        String publicationIdentifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER);
+        String publicationIdentifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))
             .orElseThrow(
                 fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));

@@ -1,7 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -14,7 +12,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Set;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -37,14 +34,14 @@ class DoiRequestTest {
     
     @Test
     void doiRequestHasReferenceToResource() {
-        assertThat(sampleDoiRequest.getResourceIdentifier(), is(notNullValue()));
+        assertThat(sampleDoiRequest.extractPublicationIdentifier(), is(notNullValue()));
     }
     
     @Test
     void doiRequestCannotBeCreatedWithoutReferenceToResource() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        var exception = assertThrows(IllegalStateException.class,
             this::doiRequestWithoutResourceReference);
-        assertThat(exception.getMessage(), is(equalTo(DoiRequest.MISSING_RESOURCE_REFERENCE_ERROR)));
+        assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
     }
     
     @Test
@@ -52,26 +49,8 @@ class DoiRequestTest {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         Resource resource = Resource.fromPublication(publication);
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource, fixedClock().instant());
-        assertThat(doiRequest.getResourceTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
-    }
-    
-    @Test
-    void toPublicationPreservesPublicationRelatedFields() {
-        
-        var originalDoiRequest = DoiRequest.fromPublication(PublicationGenerator.randomPublication());
-        
-        assertThat(originalDoiRequest, doesNotHaveEmptyValues());
-        var generatedPublication = originalDoiRequest.toPublication();
-        
-        var regeneratedDoiRequest = DoiRequest.fromPublication(generatedPublication);
-        regeneratedDoiRequest.setIdentifier(originalDoiRequest.getIdentifier());
-        regeneratedDoiRequest.setVersion(originalDoiRequest.getVersion());
-        regeneratedDoiRequest.setCreatedDate(originalDoiRequest.getCreatedDate());
-        regeneratedDoiRequest.setModifiedDate(originalDoiRequest.getModifiedDate());
-        // when transformed to Publication we do not have control over the rowVersion anymore because
-        // nva-datamodel-java is an external library.
-        assertThat(regeneratedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("version")));
-        assertThat(regeneratedDoiRequest, is(equalTo(originalDoiRequest)));
+        assertThat(doiRequest.extractPublicationTitle(),
+            is(equalTo(publication.getEntityDescription().getMainTitle())));
     }
     
     @Test
@@ -83,7 +62,7 @@ class DoiRequestTest {
         Resource updatedResource = updateResource(resource, newTitle);
         
         DoiRequest updatedDoiRequest = doiRequest.update(updatedResource);
-        assertThat(updatedDoiRequest.getResourceTitle(), is(equalTo(newTitle)));
+        assertThat(updatedDoiRequest.getPublicationDetails().getTitle(), is(equalTo(newTitle)));
     }
     
     @Test

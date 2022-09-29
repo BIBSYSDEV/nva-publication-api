@@ -560,11 +560,11 @@ Resources:
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
-  NvaCreateMessageFunction:
+  NvaLegacyCreateMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: messages
-      Handler: no.unit.nva.publication.messages.CreateMessageHandler::handleRequest
+      Handler: no.unit.nva.publication.messages.create.CreateMessageHandler::handleRequest
       Runtime: java11
       Environment:
         Variables:
@@ -576,6 +576,63 @@ Resources:
           Type: Api
           Properties:
             Path: /messages
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  NvaNewCreateMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler: no.unit.nva.publication.messages.create.NewCreateMessageHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/message
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  ListTicketsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.ListTicketsHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /tickets
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  UpdateTicketViewStatusHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketViewStatusHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -616,29 +673,11 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
-  NvaUpdateMessageFunction:
+  CreateTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: messages
-      Handler: no.unit.nva.publication.messages.update.UpdateMessageHandler::handleRequest
-      Runtime: java11
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /messages/{messageIdentifier}
-            Method: put
-            RestApiId: !Ref NvaPublicationApi
-  CreatePublishingRequestFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.create.CreatePublishingRequestHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.create.CreateTicketHandler::handleRequest
       Runtime: java11
       Timeout: 10
       Environment:
@@ -650,15 +689,15 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/support-case
+            Path: /{publicationIdentifier}/ticket
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-  UpdatePublishingRequestFunction:
+  GetTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.update.UpdatePublishingRequestHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.GetTicketHandler::handleRequest
       Runtime: java11
       Timeout: 10
       Environment:
@@ -670,15 +709,34 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/support-case/{supportCaseIdentifier}
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+  UpdateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketStatusHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
-  GetPublishingRequestFunction:
+  ListTicketsForPublicationHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.read.GetPublishingRequestHandler::handleRequest
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.ListTicketsForPublicationHandler::handleRequest
       Runtime: java11
       Timeout: 10
       Environment:
@@ -690,10 +748,9 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/support-case/{supportCaseIdentifier}
+            Path: /{publicationIdentifier}/tickets
             Method: get
             RestApiId: !Ref NvaPublicationApi
-
 
   #==========================Event Lambda functions====================================================
 
@@ -781,7 +838,12 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update", "PublicationService.PublishingRequest.Update" ]
+                  topic:
+                    - "PublicationService.Resource.Update"
+                    - "PublicationService.Message.Update"
+                    - "PublicationService.DoiRequest.Update"
+                    - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.GeneralSupportRequest.Update"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -852,7 +914,7 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-  AcceptedPublishingRequestHander:
+  AcceptedPublishingRequestHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
@@ -877,7 +939,7 @@ Resources:
                 responsePayload:
                   topic: [ "PublicationService.PublishingRequest.Update" ]
 
-  PendingPublishingRequestHander:
+  PendingPublishingRequestHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:

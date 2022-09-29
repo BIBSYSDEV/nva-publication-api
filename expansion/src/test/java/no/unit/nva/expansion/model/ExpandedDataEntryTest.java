@@ -2,7 +2,7 @@ package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.IDENTIFIER_JSON_PTR;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -14,17 +14,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -34,6 +35,7 @@ import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -43,10 +45,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     public static final String TYPE = "type";
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
-    private MessageService messageService = new FakeMessageService();
+    
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private TicketService ticketService;
+    private MessageService messageService;
     
     public static Stream<Class<?>> entryTypes() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
@@ -58,9 +61,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
         this.messageService = new MessageService(client, clock);
-        this.ticketService = new TicketService(client, clock);
+        this.ticketService = new TicketService(client);
         this.resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, messageService, ticketService);
+            new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
     
     @Test
@@ -72,15 +75,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldReturnExpandedDoiRequestWithoutLossOfInformation() throws ApiGatewayException {
-        var publication = createPublicationWithoutDoi();
-        var doiRequest = createDoiRequest(publication);
-        ExpandedDoiRequest expandedDoiRequest =
-            ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
-        assertThat(expandedDoiRequest.toDoiRequest(), is(equalTo(doiRequest)));
-    }
-    
-    @Test
     void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized()
         throws JsonProcessingException {
         var publication = randomPublication();
@@ -89,12 +83,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
     
+    //TODO: parametrize test
     @Test
     void expandedDoiRequestShouldHaveTypeDoiRequest() throws ApiGatewayException {
         var publication = createPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         var expandedResource =
-            ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
+            ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
         assertThat(json.get(TYPE).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
     }
@@ -114,22 +109,22 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     private static ExpandedDoiRequest randomDoiRequest(Publication publication,
                                                        ResourceExpansionService resourceExpansionService,
+                                                       ResourceService resourceService,
                                                        MessageService messageService,
                                                        TicketService ticketService)
         throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
         var doiRequest = DoiRequest.fromPublication(publication);
-        var persistedDoiRequest = ticketService.createTicket(doiRequest,doiRequest.getClass());
+        var persistedDoiRequest = (DoiRequest) doiRequest.persistNewTicket(ticketService);
         messageService.createMessage(userInstance, publication, randomString(), MessageType.DOI_REQUEST);
-        return attempt(() -> ExpandedDoiRequest.create(persistedDoiRequest, resourceExpansionService, messageService))
-            .orElseThrow();
+        return attempt(() -> ExpandedDoiRequest.createEntry(persistedDoiRequest, resourceExpansionService,
+            resourceService,
+            ticketService))
+                   .orElseThrow();
     }
     
-    private static ExpandedResourceConversation randomResourceConversation(Publication publication) {
-        var expandedResourceConversation = new ExpandedResourceConversation();
-        expandedResourceConversation.setPublicationSummary(PublicationSummary.create(publication));
-        expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
-        return expandedResourceConversation;
+    private static Publication randomPublicationWithoutDoi() {
+        return randomPublication().copy().withDoi(null).build();
     }
     
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
@@ -141,43 +136,30 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
-    private static Publication randomPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).build();
-    }
-    
     private SortableIdentifier extractExpectedIdentifier(ExpandedDataEntryWithAssociatedPublication generatedData) {
-        if (entryIsAnAggregationOfOtherEntriesAndDoesNotHaveOwnIdentifiers(generatedData)) {
-            return generatedData.getPublication().getIdentifier();
-        } else {
-            ExpandedDataEntry expandedDataEntry = generatedData.getExpandedDataEntry();
-            String identifier = extractIdFromSerializedObject(expandedDataEntry);
-            return new SortableIdentifier(identifier);
-        }
-    }
     
-    private boolean entryIsAnAggregationOfOtherEntriesAndDoesNotHaveOwnIdentifiers(
-        ExpandedDataEntryWithAssociatedPublication entry) {
-        return entry.getExpandedDataEntry() instanceof ExpandedResourceConversation;
+        ExpandedDataEntry expandedDataEntry = generatedData.getExpandedDataEntry();
+        String identifier = extractIdFromSerializedObject(expandedDataEntry);
+        return new SortableIdentifier(identifier);
     }
     
     private String extractIdFromSerializedObject(ExpandedDataEntry entry) {
         return Try.of(entry)
-            .map(ExpandedDataEntry::toJsonString)
-            .map(objectMapper::readTree)
-            .map(json -> (ObjectNode) json)
-            .map(json -> json.at(IDENTIFIER_JSON_PTR))
-            .map(JsonNode::textValue)
-            .orElseThrow();
+                   .map(ExpandedDataEntry::toJsonString)
+                   .map(objectMapper::readTree)
+                   .map(json -> (ObjectNode) json)
+                   .map(json -> json.at(ID_JSON_PTR))
+                   .map(JsonNode::textValue)
+                   .map(UriWrapper::fromUri)
+                   .map(UriWrapper::getLastPathElement)
+                   .orElseThrow();
     }
     
     private static class ExpandedDataEntryWithAssociatedPublication {
         
-        private final Publication publication;
         private final ExpandedDataEntry expandedDataEntry;
-        
-        public ExpandedDataEntryWithAssociatedPublication(Publication publication,
-                                                          ExpandedDataEntry data) {
-            this.publication = publication;
+    
+        public ExpandedDataEntryWithAssociatedPublication(ExpandedDataEntry data) {
             this.expandedDataEntry = data;
         }
         
@@ -191,24 +173,35 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication,
-                    resourceExpansionService, messageService,ticketService));
+                return new ExpandedDataEntryWithAssociatedPublication(randomDoiRequest(publication,
+                    resourceExpansionService, resourceService, messageService, ticketService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(publication,
-                    createExpandedPublishingRequest(publication, resourceService, messageService,
-                        resourceExpansionService));
+                return new ExpandedDataEntryWithAssociatedPublication(createExpandedPublishingRequest(publication,
+                    resourceService,
+                    resourceExpansionService,
+                    ticketService));
+            } else if (expandedDataEntryClass.equals(ExpandedGeneralSupportRequest.class)) {
+                return new ExpandedDataEntryWithAssociatedPublication(createExpandedGeneralSupportRequest(publication,
+                    resourceService,
+                    resourceExpansionService,
+                    ticketService));
             } else {
-                return new ExpandedDataEntryWithAssociatedPublication(publication,
-                    randomResourceConversation(publication));
+                throw new UnsupportedOperationException();
             }
-        }
-    
-        public Publication getPublication() {
-            return publication;
         }
     
         public ExpandedDataEntry getExpandedDataEntry() {
             return expandedDataEntry;
+        }
+    
+        private static ExpandedDataEntry createExpandedGeneralSupportRequest(
+            Publication publication,
+            ResourceService resourceService,
+            ResourceExpansionService resourceExpansionService,
+            TicketService ticketService) throws NotFoundException {
+            var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
+            return
+                ExpandedGeneralSupportRequest.create(request, resourceService, resourceExpansionService, ticketService);
         }
     
         private static Publication createPublication(ResourceService resourceService) {
@@ -219,29 +212,30 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
         private static ExpandedDataEntryWithAssociatedPublication createExpandedResource(Publication publication) {
             ExpandedResource expandedResource = attempt(() -> fromPublication(publication)).orElseThrow();
-            return new ExpandedDataEntryWithAssociatedPublication(publication, expandedResource);
+            return new ExpandedDataEntryWithAssociatedPublication(expandedResource);
         }
     
         private static ExpandedDataEntry createExpandedPublishingRequest(
             Publication publication,
             ResourceService resourceService,
-            MessageService messageService,
-            ResourceExpansionService resourceExpansionService) throws NotFoundException {
-            PublishingRequestCase requestCase = createRequestCase(publication);
-            return ExpandedPublishingRequest.create(requestCase, resourceService, messageService,
-                resourceExpansionService);
+            ResourceExpansionService resourceExpansionService,
+            TicketService ticketService) throws NotFoundException {
+            PublishingRequestCase requestCase = createPublishingRequestCase(publication);
+            return ExpandedPublishingRequest.create(requestCase,
+                resourceService,
+                resourceExpansionService,
+                ticketService);
         }
-        
-        private static PublishingRequestCase createRequestCase(Publication publication) {
+    
+        private static PublishingRequestCase createPublishingRequestCase(Publication publication) {
             var requestCase = new PublishingRequestCase();
             requestCase.setIdentifier(SortableIdentifier.next());
             requestCase.setStatus(TicketStatus.PENDING);
             requestCase.setModifiedDate(Instant.now());
             requestCase.setCreatedDate(Instant.now());
-            requestCase.setVersion(UUID.randomUUID());
             requestCase.setCustomerId(publication.getPublisher().getId());
-            requestCase.setResourceIdentifier(publication.getIdentifier());
-            requestCase.setOwner(publication.getResourceOwner().getOwner());
+            requestCase.setPublicationDetails(PublicationDetails.create(publication));
+            requestCase.setOwner(new User(publication.getResourceOwner().getOwner()));
             return requestCase;
         }
     }

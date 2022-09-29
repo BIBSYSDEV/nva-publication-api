@@ -4,7 +4,6 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static org.hamcrest.MatcherAssert.assertThat;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 
@@ -18,14 +17,14 @@ public final class StorageModelTestUtils {
         
         var userInstance = UserInstance.fromPublication(publication);
         var sample = new PublishingRequestCase();
-        sample.setOwner(userInstance.getUserIdentifier());
+        sample.setOwner(userInstance.getUser());
         sample.setCustomerId(userInstance.getOrganizationUri());
-        sample.setResourceIdentifier(publication.getIdentifier());
         sample.setIdentifier(SortableIdentifier.next());
-        sample.setVersion(UUID.randomUUID());
         sample.setCreatedDate(randomInstant());
         sample.setModifiedDate(randomInstant());
         sample.setStatus(TicketStatus.COMPLETED);
+        sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
+        sample.setPublicationDetails(PublicationDetails.create(publication));
         assertThat(sample, doesNotHaveEmptyValues());
         return sample;
     }

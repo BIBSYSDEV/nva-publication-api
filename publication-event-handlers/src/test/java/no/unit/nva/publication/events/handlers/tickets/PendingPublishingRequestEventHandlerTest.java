@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -22,6 +23,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -59,7 +61,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(client);
         
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
@@ -70,10 +72,10 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         var publishingRequest = pendingPublishingRequest();
         var event = createEvent(publishingRequest);
-        var customerAllowingPublishing = IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
-            "customer_allowing_publishing.json"));
+        var customerAllowingPublishing =
+            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval();
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
-        
+    
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
@@ -85,10 +87,11 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         var publishingRequest = pendingPublishingRequest();
         var event = createEvent(publishingRequest);
-        var customerAllowingPublishing = IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
-            "customer_forbidding_publishing.json"));
+    
+        var customerAllowingPublishing =
+            mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests();
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
-        
+    
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
@@ -101,14 +104,49 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publishingRequest = pendingPublishingRequest();
         var event = createEvent(publishingRequest);
         final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var response = FakeHttpResponse.create(randomString(), HTTP_OK);
-        this.httpClient = new FakeHttpClient<>(response);
         
+        var identityServiceResponse = unresolvableCustomer();
+        this.httpClient = new FakeHttpClient<>(identityServiceResponse);
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
+        
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
-        assertThat(logger.getMessages(), containsString(response.body()));
+        assertThat(logger.getMessages(), containsString(identityServiceResponse.body()));
+    }
+    
+    @Test
+    void shouldNotCompleteAlreadyCompletedTicketsAndEnterInfiniteLoop() throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        var completedTicket = TicketEntry.requestNewTicket(publication, PublishingRequestCase.class)
+                                  .persistNewTicket(ticketService)
+                                  .complete(publication);
+        completedTicket = ticketService.updateTicketStatus(completedTicket, TicketStatus.COMPLETED);
+        
+        var versionBeforeEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
+        var event = createEvent((PublishingRequestCase) completedTicket);
+        var customerAllowingPublishing =
+            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval();
+        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
+        this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
+        handler.handleRequest(event, output, context);
+    
+        var versionAfterEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
+        assertThat(versionAfterEvent, is(equalTo(versionBeforeEvent)));
+    }
+    
+    private static String mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests() {
+        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
+            "customer_forbidding_publishing.json"));
+    }
+    
+    private static FakeHttpResponse<String> unresolvableCustomer() {
+        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
+    }
+    
+    private static String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval() {
+        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
+            "customer_allowing_publishing.json"));
     }
     
     private InputStream createEvent(PublishingRequestCase publishingRequest) throws IOException {
@@ -133,10 +171,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase createPendingPublishingRequest(Publication publication) throws ApiGatewayException {
-        var publishingRequest =
-            PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
-                publication.getIdentifier());
-        return ticketService.createTicket(publishingRequest, PublishingRequestCase.class);
+        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
     
     private Publication createPublication() {

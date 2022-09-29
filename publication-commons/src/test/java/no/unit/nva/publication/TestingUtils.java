@@ -8,7 +8,8 @@ import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 
 public final class TestingUtils {
@@ -36,7 +37,7 @@ public final class TestingUtils {
     public static Publication createUnpersistedPublication(UserInstance userInstance) {
         return randomPublicationWithoutDoi()
                    .copy()
-                   .withResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), randomOrgUnitId()))
+                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
                    .withPublisher(createOrganization(userInstance.getOrganizationUri()))
                    .build();
     }
@@ -45,8 +46,7 @@ public final class TestingUtils {
         return new Organization.Builder().withId(orgUri).build();
     }
     
-    public static PublishingRequestCase createPublishingRequest(Publication publication) {
-        return PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
-            publication.getIdentifier());
+    public static GeneralSupportRequest createGeneralSupportRequest(Publication publication) {
+        return (GeneralSupportRequest) TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
     }
 }

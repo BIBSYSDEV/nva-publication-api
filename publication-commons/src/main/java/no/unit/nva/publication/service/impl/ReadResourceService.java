@@ -68,10 +68,10 @@ public class ReadResourceService {
     }
     
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        
+    
         var queryObject = new ResourceDao(resourceQueryObject(identifier));
-        var queryResult = queryObject.fetchByIdentifier(client, ResourceDao.class);
-        return queryResult.getData();
+        var queryResult = queryObject.fetchByIdentifier(client);
+        return (Resource) queryResult.getData();
     }
     
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
@@ -82,7 +82,7 @@ public class ReadResourceService {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
         ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
-        return fetchedDao.getData();
+        return (Resource) fetchedDao.getData();
     }
     
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
@@ -104,7 +104,7 @@ public class ReadResourceService {
     
     private String constructPrimaryPartitionKey(UserInstance userInstance) {
         return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
-            userInstance.getUserIdentifier());
+            userInstance.getUsername());
     }
     
     private List<Publication> queryResultToListOfPublications(QueryResult result) {
@@ -143,8 +143,8 @@ public class ReadResourceService {
         var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
         Map<String, Condition> keyConditions = queryObject
             .byResource(
-                doiRequestQueryObject.joinByResourceContainedOrderedType(),
-                queryObject.joinByResourceContainedOrderedType()
+                queryObject.joinByResourceContainedOrderedType(),
+                doiRequestQueryObject.joinByResourceContainedOrderedType()
             );
         return new QueryRequest()
             .withTableName(tableName)

@@ -17,21 +17,20 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class MessageDaoTest extends ResourcesLocalTest {
+class MessageDaoTest extends ResourcesLocalTest {
     
     public static final URI SAMPLE_ORG = URI.create("https://example.org/123");
     public static final String SAMPLE_SENDER_USERNAME = "some@sender";
     public static final UserInstance SAMPLE_SENDER = UserInstance.create(SAMPLE_SENDER_USERNAME, SAMPLE_ORG);
     public static final String SAMPLE_OWNER_USERNAME = "some@owner";
     public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
-    public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SAMPLE_OWNER.getUserIdentifier(),
+    public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SAMPLE_OWNER.getUsername(),
         SAMPLE_OWNER.getOrganizationUri());
     public static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     public static final String SAMPLE_TEXT = "some text";
@@ -61,27 +60,19 @@ public class MessageDaoTest extends ResourcesLocalTest {
         assertThat(retrievedMessage, is(equalTo(message)));
     }
     
-    @Test
-    void listMessagesForCustomerAndStatusReturnsObjectWithCustomerIdAndStatus() {
-        var expectedMessageStatus = TicketStatus.READ;
-        var expectedUri = URI.create("https://example.com");
-        var queryObject = MessageDao.listMessagesForCustomerAndStatus(expectedUri, expectedMessageStatus);
-        assertThat(queryObject.getCustomerId(), is(equalTo(expectedUri)));
-        assertThat(queryObject.getData().getStatus(), is(equalTo(expectedMessageStatus)));
-    }
     
     @Test
     void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
         var actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
-        assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUserIdentifier())));
+        assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUser())));
         assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getOrganizationUri())));
     }
     
     private Message fetchMessageFromDatabase(MessageDao queryObject) {
         return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
-            .map(GetItemResult::getItem)
-            .map(item -> parseAttributeValuesMap(item, MessageDao.class))
-            .map(MessageDao::getData)
+                   .map(GetItemResult::getItem)
+                   .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+                   .map(MessageDao::getMessage)
             .orElseThrow();
     }
     

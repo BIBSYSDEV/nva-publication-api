@@ -294,7 +294,7 @@ paths:
           description: "Created"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateMessageFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaLegacyCreateMessageFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
@@ -357,175 +357,247 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-    put:
+
+  /{publicationIdentifier}/ticket:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+    post:
+      description: Create a new ticket
       requestBody:
-        description: 'Mark message as read'
         content:
-          'application/json':
+          application/json:
             schema:
-              $ref: '#/components/schemas/UpdateMessageRequest'
-            examples:
-              request:
-                value: { "type": "MarkMessageAsRead" }
+              $ref: "#/components/schemas/NewTicketRequest"
       responses:
-        '404':
-          description: Not Found
+        201:
+          description: ACCEPTED
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '401':
-          description: Unauthorized
+                $ref: "/components/schemas/Ticket"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateTicketFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+  /{publicationIdentifier}/ticket/{ticketIdentifier}:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    get:
+      description: Get an existing ticket
+      responses:
+        200:
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '403':
+                $ref: "/components/schemas/Ticket"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+    put:
+      description: Update the status of an existing ticket
+      requestBody:
+        description: A Ticket Object containing the new ticket status
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+      responses:
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Ticket"
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        403:
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Message'
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      x-amazon-apigateway-integration:
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdateMessageFunction.Arn}/invocations
-        responses: { }
-        httpMethod: POST
-        type: AWS_PROXY
-  /{publicationIdentifier}/support-case:
-    parameters:
-      - in: path
-        name: publicationIdentifier
-        schema:
-          type: string
-        required: true
-        description: Identifier of the publication related to the publishing request
-    post:
-      summary: Create an publishing request for publication
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      requestBody:
-        description: 'Request to publish a draft Publication. Only type is required.'
-        content:
-          'application/json':
-            schema:
-              $ref: '#/components/schemas/PublishingRequestCase'
-            examples:
-              request:
-                value: { "type": "PublishingRequestCase" }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublishingRequestCase'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-      x-amazon-apigateway-integration:
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreatePublishingRequestFunction.Arn}/invocations
-        responses: { }
-        httpMethod: POST
-        type: AWS_PROXY
-  /{publicationIdentifier}/support-case/{supportCaseIdentifier}:
-    parameters:
-      - in: path
-        name: publicationIdentifier
-        schema:
-          type: string
-        required: true
-      - in: path
-        name: supportCaseIdentifier
-        schema:
-          type: string
-        required: true
-        description: Identifier of the publication related to the publishing request
-    get:
-      summary: Get the support case for a publication
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublishingRequestCase'
-        '404':
+                $ref: "/components/schemas/Problem"
+        404:
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal Server Error
+                $ref: "/components/schemas/Problem"
+        409:
+          description: Conflict
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "/components/schemas/Problem"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPublishingRequestFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-    put:
-      summary: Update status for a support case for a publication
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      requestBody:
+  /{publicationIdentifier}/ticket/{ticketIdentifier}/message:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
         required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    post:
+      description: Add message to ticket
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PublishingRequestCase'
+              $ref: '#/components/schemas/CreateDoiRequest'
       responses:
-        '200':
+        '201':
+          description: "Created"
+          headers:
+            "Location":
+              description: The URI of the created message
+              schema:
+                type: string
+        '403':
+          description: "Forbidden"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaNewCreateMessageFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+  /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    post:
+      description: Update Ticket viewed status.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateViewStatusRequest'
+      responses:
+        '303':
+          description: "See other"
+          headers:
+            "Location":
+              description: The URI of the updated ticket
+              schema:
+                type: string
+        '403':
+          description: "Forbidden"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketViewStatusHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+  /tickets:
+    get:
+      description: List tickets for user
+      responses:
+        200:
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishingRequestCase'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/TicketCollection"
+
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdatePublishingRequestFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListTicketsHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+  /{publicationIdentifier}/tickets:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+    get:
+      description: List tickets for publication
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketCollection"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListTicketsForPublicationHandler.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
@@ -617,19 +689,55 @@ components:
           type: string
           enum:
             - MarkMessageAsReadRequest
-    PublishingRequestCase:
+    NewTicketRequest:
       type: object
       properties:
         type:
           type: string
-        id:
+          enum:
+            - DoiRequest
+            - PublishingRequest
+    Ticket:
+      type: object
+      properties:
+        type:
           type: string
-          format: uri
+          enum:
+            - DoiRequest
+            - PublishingRequest
+            - GeneralSupportRequest
+        viewedBy:
+          type: array
+          items:
+            type: string
         status:
           type: string
           enum:
-            - PENDING
-            - APPROVED
+            - Pending
+            - Completed
+            - Closed
+    UpdateViewStatusRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - UpdateViewStatusRequest
+        viewedStatus:
+          type: string
+          enum:
+            - Read
+            - Unread
+    TicketCollection:
+      type: object
+      properties:
+        type:
+          type: string
+        tickets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ticket"
+
   securitySchemes:
     CognitoUserPool:
       type: apiKey

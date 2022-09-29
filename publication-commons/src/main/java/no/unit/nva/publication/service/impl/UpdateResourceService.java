@@ -1,10 +1,11 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -19,21 +20,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import no.unit.nva.file.model.FileSet;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -76,12 +77,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
         publication.setCreatedDate(persistedPublication.getCreatedDate());
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);
-        
+    
         TransactWriteItem updateResourceTransactionItem = updateResource(resource);
-        Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(resource);
+        List<TransactWriteItem> updateDoiRequestTransactionItem = updateTickets(resource);
         ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(updateResourceTransactionItem);
-        updateDoiRequestTransactionItem.ifPresent(transactionItems::add);
+        updateDoiRequestTransactionItem.forEach(transactionItems::add);
         
         TransactWriteItemsRequest request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
@@ -104,29 +105,24 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return client;
     }
     
-    @Override
-    protected Clock getClock() {
-        return clockForTimestamps;
-    }
-    
     PublishPublicationStatusResponse publishResource(UserInstance userInstance,
                                                      SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = readResourceService
-            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         var dao = extractResourceDao(daos);
-        var resource = dao.getData();
+        var resource = (Resource) dao.getData();
         if (resourceIsPublished(resource)) {
             return publishCompletedStatus();
         }
-        validateForPublishing(resource);
+        assertThatPublicationHasMinimumMandatoryFields(resource.toPublication());
         setResourceStatusToPublished(daos, dao);
         return publishingInProgressStatus();
     }
     
     private Publication fetchExistingPublication(Publication publication) {
         return attempt(() -> readResourceService.getPublication(publication))
-            .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
+                   .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
     
     private boolean resourceIsPublished(Entity resource) {
@@ -135,25 +131,26 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource
-            .copy()
-            .withPublisher(userOrganization(newOwner))
-            .withResourceOwner(new ResourceOwner(newOwner.getUserIdentifier(), AFFILIATION_UPDATE_NOT_UPDATE_YET))
-            .withModifiedDate(clockForTimestamps.instant())
-            .build();
+                   .copy()
+                   .withPublisher(userOrganization(newOwner))
+                   .withResourceOwner(Owner.fromResourceOwner(
+                       new ResourceOwner(newOwner.getUsername(), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
+                   .withModifiedDate(clockForTimestamps.instant())
+                   .build();
     }
     
-    private Optional<TransactWriteItem> updateDoiRequest(Resource resource) {
-        var queryObject = DoiRequest.createQueryObject(resource);
-        var queryDao = queryObject.toDao();
-        var existingDoiRequest = queryDao.fetchByResourceIdentifier(client)
-            .map(Dao::getData)
-            .map(DoiRequest.class::cast);
-        
-        return existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
-            .map(DoiRequestDao::new)
-            .map(DoiRequestDao::toDynamoFormat)
-            .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
-            .map(put -> new TransactWriteItem().withPut(put));
+    private List<TransactWriteItem> updateTickets(Resource resource) {
+        var dao = new ResourceDao(resource);
+        var ticketDaos = dao.fetchAllTickets(client);
+        return ticketDaos.stream()
+                   .map(Dao::getData)
+                   .map(TicketEntry.class::cast)
+                   .map(ticket -> ticket.update(resource))
+                   .map(Entity::toDao)
+                   .map(DynamoEntry::toDynamoFormat)
+                   .map(dynamoEntry -> new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dynamoEntry))
+                   .map(put -> new TransactWriteItem().withPut(put))
+                   .collect(Collectors.toList());
     }
     
     private TransactWriteItem updateResource(Resource resourceUpdate) {
@@ -164,11 +161,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
             primaryKeyEqualityConditionAttributeValues(resourceDao);
         
         Put put = new Put()
-            .withItem(resourceDao.toDynamoFormat())
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
-            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
+                      .withItem(resourceDao.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+                      .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
         
         return new TransactWriteItem().withPut(put);
     }
@@ -190,8 +187,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
     
     private TransactWriteItem publishUpdateRequest(ResourceDao dao, String nowString) {
-        
-        var resource = dao.getData();
+    
+        var resource = (Resource) dao.getData();
         resource.setStatus(PublicationStatus.PUBLISHED);
         final String updateExpression = "SET"
                                         + " #data.#status = :newStatus, "
@@ -217,14 +214,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
             ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
             ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()));
-        
+    
         Update update = new Update()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionNamesMap)
-            .withExpressionAttributeValues(expressionValuesMap);
+                            .withTableName(tableName)
+                            .withKey(dao.primaryKey())
+                            .withUpdateExpression(updateExpression)
+                            .withConditionExpression(conditionExpression)
+                            .withExpressionAttributeNames(expressionNamesMap)
+                            .withExpressionAttributeValues(expressionValuesMap);
         return new TransactWriteItem().withUpdate(update);
     }
     
@@ -242,12 +239,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
             ":modifiedDate", new AttributeValue(nowString)
         );
-        
+    
         Update update = new Update().withTableName(tableName)
-            .withKey(doiRequestDao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(attributeValueMap);
+                            .withKey(doiRequestDao.primaryKey())
+                            .withUpdateExpression(updateExpression)
+                            .withExpressionAttributeNames(expressionAttributeNames)
+                            .withExpressionAttributeValues(attributeValueMap);
         
         return new TransactWriteItem().withUpdate(update);
     }
@@ -258,48 +255,5 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private PublishPublicationStatusResponse publishCompletedStatus() {
         return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
-    }
-    
-    private void validateForPublishing(Resource resource) throws InvalidPublicationException {
-        
-        if (resourceHasNoTitle(resource)) {
-            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
-        } else if (resourceHasNeitherLinkNorFile(resource)) {
-            throwErrorWhenPublishingResourceWithoutData(resource);
-        }
-    }
-    
-    private boolean resourceHasNeitherLinkNorFile(Resource resource) {
-        return isNull(resource.getLink()) && emptyResourceFiles(resource);
-    }
-    
-    private boolean resourceHasNoTitle(Resource resource) {
-        return Optional.of(resource)
-            .map(Resource::getEntityDescription)
-            .map(EntityDescription::getMainTitle)
-            .isEmpty();
-    }
-    
-    private void throwErrorWhenPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {
-        String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-        String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
-        throw new InvalidPublicationException(List.of(files, linkField));
-    }
-    
-    private void throwErrorWhenPublishingResourceWithoutMainTitle(Resource resource)
-        throws InvalidPublicationException {
-        throw new
-                  InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
-    }
-    
-    private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
-        return resource.getClass().getDeclaredField(resourceField).getName();
-    }
-    
-    private boolean emptyResourceFiles(Resource resource) {
-        return Optional.ofNullable(resource.getFileSet())
-            .map(FileSet::getFiles)
-            .map(List::isEmpty)
-            .orElse(true);
     }
 }

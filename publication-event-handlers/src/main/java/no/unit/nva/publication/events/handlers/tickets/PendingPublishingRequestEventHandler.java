@@ -11,7 +11,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -23,6 +22,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -59,17 +59,20 @@ public class PendingPublishingRequestEventHandler
                                        Context context) {
         var updateEvent = parseInput(input);
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
-        if (customerAllowsPublishing(publishingRequest)) {
-            attempt(() -> ticketService.completeTicket(publishingRequest)).orElseThrow();
+        if (customerAllowsPublishing(publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
+            attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED)).orElseThrow();
         }
-        
         return null;
+    }
+    
+    private static boolean ticketHasNotBeenCompleted(PublishingRequestCase publishingRequest) {
+        return !TicketStatus.COMPLETED.equals(publishingRequest.getStatus());
     }
     
     @JacocoGenerated
     private static TicketService defaultPublishingRequestService() {
         return
-            new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+            new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT);
     }
     
     private boolean customerAllowsPublishing(PublishingRequestCase publishingRequest) {
