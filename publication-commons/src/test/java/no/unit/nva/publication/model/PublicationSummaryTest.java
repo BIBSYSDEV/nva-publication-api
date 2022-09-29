@@ -53,9 +53,9 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     }
     
     @Test
-    void fromPublicationDetailsReturnsPublicationSummaryWithoutEmptyFields() {
-        Publication publication = PublicationGenerator.publicationWithIdentifier();
-        PublicationSummary summary = PublicationSummary.create(PublicationDetails.create(publication));
+    void shouldReturnPublicationSummaryWithoutEmptyFieldsfromPublicationDetails() {
+        var publication = PublicationGenerator.publicationWithIdentifier();
+        var summary = PublicationSummary.create(PublicationDetails.create(publication));
         assertThat(summary, doesNotHaveEmptyValues());
         assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));

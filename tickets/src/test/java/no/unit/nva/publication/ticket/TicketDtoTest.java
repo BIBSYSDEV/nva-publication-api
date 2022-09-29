@@ -43,8 +43,8 @@ class TicketDtoTest extends ResourcesLocalTest {
         var publication = draftPublicationWithoutDoi();
         var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
         var dto = TicketDto.fromTicket(ticket);
-        var publicationSummery = dto.getPublicationSummary();
-        assertThat(publicationSummery, doesNotHaveEmptyValues());
+        var publicationSummary = dto.getPublicationSummary();
+        assertThat(publicationSummary, doesNotHaveEmptyValues());
     }
     
     private Publication draftPublicationWithoutDoi() {
