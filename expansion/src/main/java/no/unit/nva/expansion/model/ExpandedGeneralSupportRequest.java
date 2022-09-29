@@ -19,7 +19,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
 public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     
-    public static final String TYPE = "GeneralSupportRequest";
+    public static final String TYPE = "GeneralSupportCase";
     
     private Instant modifiedDate;
     private Set<URI> organizationIds;
