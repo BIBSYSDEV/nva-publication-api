@@ -40,6 +40,7 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
+import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -172,7 +173,7 @@ public class ResourceService extends ServiceWithTransactions {
     public void refreshResources(List<Entity> dataEntries) {
         final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
-        writeToS3InBatches(writeRequests);
+        writeToDynamoInBatches(writeRequests);
     }
     
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -211,7 +212,18 @@ public class ResourceService extends ServiceWithTransactions {
     public Entity migrate(Entity dataEntry) {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
-                   : dataEntry;
+                   : migrateOther(dataEntry);
+    }
+    
+    private Entity migrateOther(Entity dataEntry) {
+        if (dataEntry instanceof TicketEntry) {
+            var ticket = (TicketEntry) dataEntry;
+            var resourceIdentifier = ticket.extractPublicationIdentifier();
+            var resource = attempt(() -> getResourceByIdentifier(resourceIdentifier)).orElseThrow();
+            ticket.setPublicationDetails(PublicationDetails.create(resource));
+            return ticket;
+        }
+        return dataEntry;
     }
     
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -274,7 +286,7 @@ public class ResourceService extends ServiceWithTransactions {
         return dataEntry;
     }
     
-    private void writeToS3InBatches(List<WriteRequest> writeRequests) {
+    private void writeToDynamoInBatches(List<WriteRequest> writeRequests) {
         Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
             .stream()
             .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))

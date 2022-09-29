@@ -20,7 +20,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-
+@SuppressWarnings("PMD.GodClass")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
@@ -36,6 +36,8 @@ public abstract class TicketEntry implements Entity {
     private ViewedBy viewedBy;
     @JsonProperty(PUBLICATION_DETAILS_FIELD)
     private PublicationDetails publicationDetails;
+    @JsonProperty("resourceIdentifier")
+    private SortableIdentifier resourceIdentifier;
     
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -93,6 +95,17 @@ public abstract class TicketEntry implements Entity {
         return ticket;
     }
     
+    //TODO: Delete resourceIdentifier field ASAP.
+    public SortableIdentifier getResourceIdentifier() {
+        return Optional.ofNullable(resourceIdentifier)
+                   .or(() -> Optional.ofNullable(getPublicationDetails()).map(PublicationDetails::getIdentifier))
+                   .orElse(null);
+    }
+    
+    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
+        this.resourceIdentifier = resourceIdentifier;
+    }
+    
     public Set<User> getViewedBy() {
         return nonNull(viewedBy) ? viewedBy : Collections.emptySet();
     }
@@ -108,6 +121,7 @@ public abstract class TicketEntry implements Entity {
     public final SortableIdentifier extractPublicationIdentifier() {
         return Optional.ofNullable(getPublicationDetails())
                    .map(PublicationDetails::getIdentifier)
+                   .or(() -> Optional.ofNullable(getResourceIdentifier()))
                    .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
     }
     
