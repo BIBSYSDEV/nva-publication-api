@@ -1328,7 +1328,7 @@ Resources:
       CatalogId: !Ref AWS::AccountId
       DatabaseName: nva
       TableInput:
-        Description: Table containin the expanded publication metadata
+        Description: Table containing the expanded publication metadata
         Name: nva-publications
 
 
