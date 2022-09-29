@@ -1319,7 +1319,7 @@ Resources:
     Properties:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
-        Description: Read-only database mirroring the publication metadata lying in the S3 bucket containing the expanded resources
+        Description: Read-only database mirroring the data in S3 bucket for expanded resources
         Name: nva
 
   PublicationsTable:
