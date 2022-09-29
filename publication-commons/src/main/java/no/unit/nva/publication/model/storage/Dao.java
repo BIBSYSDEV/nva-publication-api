@@ -84,6 +84,7 @@ public abstract class Dao
     public static String scanFilterExpressionForDataEntries() {
         return "begins_with (#PK, :Resource) or "
                + "begins_with(#PK, :Ticket) or "
+               + "begins_with(#PK, :DoiRequest) or "
                + "begins_with(#PK, :Message)";
     }
     
@@ -96,7 +97,8 @@ public abstract class Dao
     public static Map<String, AttributeValue> scanFilterExpressionAttributeValues() {
         return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
             ":Ticket", new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER),
-            ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER)
+            ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER),
+            ":DoiRequest", new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER)
         );
     }
     

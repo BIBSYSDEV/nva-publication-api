@@ -36,6 +36,8 @@ public abstract class TicketEntry implements Entity {
     private ViewedBy viewedBy;
     @JsonProperty(PUBLICATION_DETAILS_FIELD)
     private PublicationDetails publicationDetails;
+    @JsonProperty("resourceIdentifier")
+    private SortableIdentifier resourceIdentifier;
     
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -93,6 +95,14 @@ public abstract class TicketEntry implements Entity {
         return ticket;
     }
     
+    public SortableIdentifier getResourceIdentifier() {
+        return resourceIdentifier;
+    }
+    
+    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
+        this.resourceIdentifier = resourceIdentifier;
+    }
+    
     public Set<User> getViewedBy() {
         return nonNull(viewedBy) ? viewedBy : Collections.emptySet();
     }
@@ -108,6 +118,7 @@ public abstract class TicketEntry implements Entity {
     public final SortableIdentifier extractPublicationIdentifier() {
         return Optional.ofNullable(getPublicationDetails())
                    .map(PublicationDetails::getIdentifier)
+                   .or(() -> Optional.ofNullable(getResourceIdentifier()))
                    .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
     }
     

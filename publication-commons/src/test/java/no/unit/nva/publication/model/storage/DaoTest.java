@@ -271,7 +271,7 @@ class DaoTest extends ResourcesLocalTest {
         return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next);
     }
     
-    private static Publication draftPublicationWithoutDoi() {
+    public static Publication draftPublicationWithoutDoi() {
         return randomPublication()
                    .copy()
                    .withStatus(PublicationStatus.DRAFT)

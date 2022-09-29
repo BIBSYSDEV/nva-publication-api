@@ -1,0 +1,66 @@
+{
+  "PK0": "DoiRequest:bb3d0c0c-5065-4623-9b98-5810983c2478:1136263@20754.0.0.0",
+  "SK0": "DoiRequest:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "data": {
+    "contributors": [
+      {
+        "affiliations": [
+          {
+            "id": "https://api.sandbox.nva.aws.unit.no/cristin/organization/1615.0.0.0",
+            "type": "Organization"
+          },
+          {
+            "id": "https://api.sandbox.nva.aws.unit.no/cristin/organization/20754.0.0.0",
+            "type": "Organization"
+          }
+        ],
+        "correspondingAuthor": false,
+        "identity": {
+          "id": "https://api.sandbox.nva.aws.unit.no/cristin/person/1136263",
+          "name": "Orestis Gkorgkas",
+          "type": "Identity"
+        },
+        "role": "Creator",
+        "sequence": 1,
+        "type": "Contributor"
+      }
+    ],
+    "createdDate": "2022-09-29T12:17:34.306717Z",
+    "customerId": "https://api.dev.nva.aws.unit.no/customer/bb3d0c0c-5065-4623-9b98-5810983c2478",
+    "doi": "https://handle.stage.datacite.org/10.16903/56n5-fx78",
+    "identifier": "0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+    "modifiedDate": "2022-09-29T12:21:02.208558Z",
+    "owner": "1136263@20754.0.0.0",
+    "resourceIdentifier": "0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438",
+    "resourceModifiedDate": "2022-09-29T12:17:56.736009Z",
+    "resourcePublicationDate": {
+      "day": "16",
+      "month": "9",
+      "type": "PublicationDate",
+      "year": "2022"
+    },
+    "resourcePublicationInstance": {
+      "articleNumber": "1`",
+      "contentType": "AcademicArticle",
+      "originalResearch": false,
+      "pages": {
+        "type": "Range"
+      },
+      "peerReviewed": true,
+      "type": "JournalArticle"
+    },
+    "resourcePublicationYear": "2022",
+    "resourceStatus": "PUBLISHED",
+    "resourceTitle": "Orestis publication",
+    "status": "Pending",
+    "type": "DoiRequest",
+    "version": "d8c7d9c1-5aff-4e36-b5d5-fd3dc8ae61be"
+  },
+  "PK1": "DoiRequest:Customer:bb3d0c0c-5065-4623-9b98-5810983c2478:Status:Pending",
+  "PK2": "Customer:bb3d0c0c-5065-4623-9b98-5810983c2478:Resource:0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438",
+  "PK3": "DoiRequest:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "SK1": "DoiRequest:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "SK2": "a:DoiRequest:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "SK3": "DoiRequest:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "type": "DoiRequest"
+}
