@@ -1,6 +1,7 @@
 # Ignored fields:
 doi
 fileSet
+associatedArtifacts
 handle
 identifier
 indexedDate

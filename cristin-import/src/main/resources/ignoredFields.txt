@@ -1,5 +1,6 @@
 doi
 fileSet
+associatedArtifacts
 handle
 identifier
 indexedDate
