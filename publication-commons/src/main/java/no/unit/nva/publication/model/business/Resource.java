@@ -7,11 +7,15 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import no.unit.nva.file.model.File;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -20,6 +24,8 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedFile;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -51,6 +57,10 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private FileSet fileSet;
+
+    @JsonProperty
+    private List<AssociatedArtifact> associatedArtifacts;
+
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -262,8 +272,34 @@ public class Resource implements Entity {
     
     public void setFileSet(FileSet fileSet) {
         this.fileSet = fileSet;
+        var files = nonNull(fileSet) && nonNull(fileSet.getFiles())
+                ? fileSet.getFiles()
+                : new ArrayList<File>();
+        List<AssociatedArtifact> associatedArtifacts1 = toAssociatedArtifacts(files);
+        setAssociatedArtifacts(associatedArtifacts1);
     }
-    
+
+    private static List<AssociatedArtifact> toAssociatedArtifacts(List<File> files) {
+        return files.stream()
+                .map(Resource::toAssociatedFile)
+                .map(AssociatedArtifact.class::cast)
+                .collect(Collectors.toList());
+    }
+
+    private static AssociatedFile toAssociatedFile(File file) {
+        return new AssociatedFile(file.getType(), file.getIdentifier(), file.getName(), file.getMimeType(),
+                file.getSize(), file.getLicense(), file.isAdministrativeAgreement(), file.isPublisherAuthority(),
+                file.getEmbargoDate().orElse(null));
+    }
+
+    public List<AssociatedArtifact> getAssociatedArtifacts() {
+        return associatedArtifacts;
+    }
+
+    private void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+        this.associatedArtifacts = associatedArtifacts;
+    }
+
     public List<ResearchProject> getProjects() {
         return nonNull(projects) ? projects : Collections.emptyList();
     }
@@ -333,8 +369,8 @@ public class Resource implements Entity {
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
-            getProjects(),
-            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects());
+            getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects(),
+            getAssociatedArtifacts());
     }
     
     /**
@@ -367,6 +403,7 @@ public class Resource implements Entity {
                && Objects.equals(getDoi(), resource.getDoi())
                && Objects.equals(getHandle(), resource.getHandle())
                && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
+               && Objects.equals(getAssociatedArtifacts(), resource.getAssociatedArtifacts())
                && Objects.equals(getSubjects(), resource.getSubjects());
     }
     
