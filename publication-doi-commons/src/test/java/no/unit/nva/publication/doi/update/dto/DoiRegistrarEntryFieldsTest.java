@@ -62,20 +62,20 @@ public class DoiRegistrarEntryFieldsTest {
         EntityDescription.Builder entityDescriptionCopy = copyEntityDescription(publication);
         EntityDescription alteredEntityDescription = entityDescriptionCopy.withMainTitle(SOME_OTHER_TITLE).build();
         return publication
-            .copy()
-            .withEntityDescription(alteredEntityDescription)
-            .build();
+                   .copy()
+                   .withEntityDescription(alteredEntityDescription)
+                   .build();
     }
     
     private EntityDescription.Builder copyEntityDescription(Publication publication) {
         EntityDescription entityDescription = publication.getEntityDescription();
         Reference reference = new Reference.Builder()
-            .withPublicationInstance(entityDescription.getReference().getPublicationInstance())
-            .build();
+                                  .withPublicationInstance(entityDescription.getReference().getPublicationInstance())
+                                  .build();
         return new EntityDescription.Builder()
-            .withMainTitle(entityDescription.getMainTitle())
-            .withContributors(entityDescription.getContributors())
-            .withReference(reference)
-            .withDate(entityDescription.getDate());
+                   .withMainTitle(entityDescription.getMainTitle())
+                   .withContributors(entityDescription.getContributors())
+                   .withReference(reference)
+                   .withDate(entityDescription.getDate());
     }
 }

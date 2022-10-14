@@ -15,8 +15,11 @@ class CristinSecondaryCategoryTest {
     public void toJournalArticleContentTypeThrowsExceptionWhenSecCatShouldNotBeMappedToJournalArticleContentType() {
         List<CristinSecondaryCategory> secondaryCategoriesNotMappingToJournalArticle = Stream.of(
                 CristinSecondaryCategory.values())
-            .filter(cat -> !CristinSecondaryCategory.mapToJournalContentType.containsKey(cat))
-            .collect(Collectors.toList());
+                                                                                           .filter(
+                                                                                               cat -> !CristinSecondaryCategory.mapToJournalContentType.containsKey(
+                                                                                                   cat))
+                                                                                           .collect(
+                                                                                               Collectors.toList());
         for (CristinSecondaryCategory secondaryCategory : secondaryCategoriesNotMappingToJournalArticle) {
             Executable action = () -> secondaryCategory.toJournalArticleContentType();
             IllegalStateException exception = assertThrows(IllegalStateException.class, action);

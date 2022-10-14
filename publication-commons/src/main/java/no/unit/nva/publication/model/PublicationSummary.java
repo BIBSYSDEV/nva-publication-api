@@ -97,10 +97,6 @@ public class PublicationSummary {
         return extractPublicationIdentifier(publicationId);
     }
     
-    private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
-        return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
-    }
-    
     public String getTitle() {
         return title;
     }
@@ -133,9 +129,11 @@ public class PublicationSummary {
         this.owner = owner;
     }
     
-    private static URI toPublicationId(SortableIdentifier identifier) {
-        return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
-                   .addChild(identifier.toString()).getUri();
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getCreatedDate(),
+            getModifiedDate(), getStatus());
     }
     
     @Override
@@ -157,10 +155,12 @@ public class PublicationSummary {
                && getStatus() == that.getStatus();
     }
     
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getCreatedDate(),
-            getModifiedDate(), getStatus());
+    private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
+        return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
+    }
+    
+    private static URI toPublicationId(SortableIdentifier identifier) {
+        return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
+                   .addChild(identifier.toString()).getUri();
     }
 }

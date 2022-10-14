@@ -21,10 +21,10 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     
     public BookSeries createBookSeries() {
         return Optional.of(cristinObject)
-            .map(CristinObject::getBookOrReportMetadata)
-            .map(CristinBookOrReportMetadata::getBookSeries)
-            .map(this::toNvaBookSeries)
-            .orElse(null);
+                   .map(CristinObject::getBookOrReportMetadata)
+                   .map(CristinBookOrReportMetadata::getBookSeries)
+                   .map(this::toNvaBookSeries)
+                   .orElse(null);
     }
     
     private BookSeries toNvaBookSeries(CristinJournalPublicationJournal bookSeries) {
@@ -38,7 +38,7 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     private BookSeries createUnconfirmedBookSeries(CristinJournalPublicationJournal bookSeries) {
         return attempt(
             () -> new UnconfirmedSeries(bookSeries.getJournalTitle(), bookSeries.getIssn(), bookSeries.getIssnOnline()))
-            .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
+                   .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
     }
     
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {

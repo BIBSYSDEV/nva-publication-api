@@ -16,7 +16,7 @@ public final class PublicationEventsConfig {
     public static final Environment ENVIRONMENT = new Environment();
     public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
-    public static final S3Client  DEFAULT_S3_CLIENT = S3Driver.defaultS3Client().build();
+    public static final S3Client DEFAULT_S3_CLIENT = S3Driver.defaultS3Client().build();
     
     private PublicationEventsConfig() {
     
@@ -25,8 +25,8 @@ public final class PublicationEventsConfig {
     @JacocoGenerated
     public static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
-            .region(Region.of(AWS_REGION))
-            .httpClientBuilder(UrlConnectionHttpClient.builder())
-            .build();
+                   .region(Region.of(AWS_REGION))
+                   .httpClientBuilder(UrlConnectionHttpClient.builder())
+                   .build();
     }
 }

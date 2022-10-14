@@ -49,6 +49,12 @@ public class Owner {
     
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getUser(), getOwnerAffiliation());
+    }
+    
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -59,11 +65,5 @@ public class Owner {
         Owner owner = (Owner) o;
         return Objects.equals(getUser(), owner.getUser()) && Objects.equals(getOwnerAffiliation(),
             owner.getOwnerAffiliation());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getUser(), getOwnerAffiliation());
     }
 }

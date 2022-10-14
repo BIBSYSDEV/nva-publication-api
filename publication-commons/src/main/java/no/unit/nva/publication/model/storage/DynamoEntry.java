@@ -20,9 +20,6 @@ import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 })
 public interface DynamoEntry {
     
-    @JsonIgnore
-    SortableIdentifier getIdentifier();
-    
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
         if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
             Item item = ItemUtils.toItem(valuesMap);
@@ -31,6 +28,9 @@ public interface DynamoEntry {
             throw new EmptyValueMapException();
         }
     }
+    
+    @JsonIgnore
+    SortableIdentifier getIdentifier();
     
     default Map<String, AttributeValue> toDynamoFormat() {
         Item item = attempt(() -> Item.fromJSON(dynamoDbObjectMapper.writeValueAsString(this))).orElseThrow();

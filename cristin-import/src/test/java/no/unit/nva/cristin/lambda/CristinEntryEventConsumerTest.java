@@ -47,10 +47,10 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryExc
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -335,11 +335,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
         runWithoutThrowingException(action);
-        
+    
         S3Driver s3Driver = new S3Driver(s3Client, IGNORED_VALUE);
         UnixPath errorReportFile = s3Driver.listAllFiles(LIST_ALL_FILES)
-            .stream()
-            .collect(SingletonCollector.collect());
+                                       .stream()
+                                       .collect(SingletonCollector.collect());
         String errorReport = s3Driver.getFile(errorReportFile);
         
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
@@ -404,31 +404,31 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
     
     private static JavaType constructImportResultJavaType() {
-        
+    
         JavaType fileContentsType = eventHandlerObjectMapper.getTypeFactory()
-            .constructParametricType(FileContentsEvent.class, JsonNode.class);
+                                        .constructParametricType(FileContentsEvent.class, JsonNode.class);
         JavaType eventType = eventHandlerObjectMapper.getTypeFactory()
-            .constructParametricType(AwsEventBridgeEvent.class, fileContentsType);
+                                 .constructParametricType(AwsEventBridgeEvent.class, fileContentsType);
         return eventHandlerObjectMapper.getTypeFactory()
-            .constructParametricType(ImportResult.class, eventType);
+                   .constructParametricType(ImportResult.class, eventType);
     }
     
     private UnixPath constructExpectedFilePathForEntryWithUnkownFields(
         AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event,
         RuntimeException exception) {
         return UnixPath.of(ERRORS_FOLDER)
-            .addChild(timestampToString(event.getDetail().getTimestamp()))
-            .addChild(exception.getClass().getSimpleName())
-            .addChild(event.getDetail().getFileUri().getPath())
-            .addChild(event.getDetail().getContents().getId() + JSON);
+                   .addChild(timestampToString(event.getDetail().getTimestamp()))
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(event.getDetail().getFileUri().getPath())
+                   .addChild(event.getDetail().getContents().getId() + JSON);
     }
     
     private AwsEventBridgeEvent<FileContentsEvent<Identifiable>> parseEventAsIdentifieableObject(String input)
         throws JsonProcessingException {
         JavaType fileContentsType = eventHandlerObjectMapper.getTypeFactory()
-            .constructParametricType(FileContentsEvent.class, Identifiable.class);
+                                        .constructParametricType(FileContentsEvent.class, Identifiable.class);
         JavaType eventType = eventHandlerObjectMapper.getTypeFactory()
-            .constructParametricType(AwsEventBridgeEvent.class, fileContentsType);
+                                 .constructParametricType(AwsEventBridgeEvent.class, fileContentsType);
         return eventHandlerObjectMapper.readValue(input, eventType);
     }
     
@@ -445,8 +445,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     
     private Publication fetchPublicationDirectlyFromDatabase(UserInstance userInstance) {
         return resourceService.getPublicationsByOwner(userInstance)
-            .stream()
-            .collect(SingletonCollector.collect());
+                   .stream()
+                   .collect(SingletonCollector.collect());
     }
     
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
@@ -458,10 +458,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Instant timestamp = awsEvent.getDetail().getTimestamp();
         UriWrapper bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
-            .addChild(timestampToString(timestamp))
-            .addChild(exception.getClass().getSimpleName())
-            .addChild(inputFile.getPath())
-            .addChild(errorReportFilename);
+                   .addChild(timestampToString(timestamp))
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(inputFile.getPath())
+                   .addChild(errorReportFilename);
     }
     
     private void runWithoutThrowingException(Executable action) {

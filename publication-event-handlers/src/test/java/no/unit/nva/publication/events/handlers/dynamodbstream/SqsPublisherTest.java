@@ -41,9 +41,9 @@ public class SqsPublisherTest {
         
         String expectedBody = EVENT_BODY;
         SendMessageRequest expected = SendMessageRequest.builder()
-            .queueUrl(QUEUE_URL)
-            .messageBody(expectedBody)
-            .build();
+                                          .queueUrl(QUEUE_URL)
+                                          .messageBody(expectedBody)
+                                          .build();
         verify(sqs).sendMessage(expected);
     }
 }

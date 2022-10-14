@@ -91,6 +91,10 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
             .orElseThrow();
     }
     
+    private static Publication randomPublicationWithoutDoi() {
+        return PublicationGenerator.randomPublication().copy().withDoi(null).build();
+    }
+    
     private void markForDeletion(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         attempt(() -> resourceService.markPublicationForDeletion(userInstance, publication.getIdentifier()))
@@ -104,9 +108,5 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         var storedResult = resourceService.createPublication(userInstance, publication);
         action.accept(storedResult);
         return resourceService.getPublication(storedResult);
-    }
-    
-    private static Publication randomPublicationWithoutDoi() {
-        return PublicationGenerator.randomPublication().copy().withDoi(null).build();
     }
 }

@@ -60,7 +60,7 @@ public class FileContentsEvent<T> {
     public static <T> FileContentsEvent<T> fromJson(String jsonString, Class<T> contentsClass) {
         JavaType javaType = constructJavaType(contentsClass);
         return attempt(() -> s3ImportsMapper
-            .<FileContentsEvent<T>>readValue(jsonString, javaType)).orElseThrow();
+                                 .<FileContentsEvent<T>>readValue(jsonString, javaType)).orElseThrow();
     }
     
     @JacocoGenerated

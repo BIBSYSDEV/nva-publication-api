@@ -31,6 +31,11 @@ public class GetMessageHandler extends ApiGatewayHandler<Void, Void> {
         return null;
     }
     
+    @Override
+    protected Integer getSuccessStatusCode(Void input, Void output) {
+        return HTTP_SEE_OTHER;
+    }
+    
     private URI constructAssociatedTicketUri(RequestInfo requestInfo) {
         var resourceIdentifier = extractIdentifier(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
         var ticketIdentifier = extractIdentifier(requestInfo, TICKET_IDENTIFIER_PATH_PARAMETER);
@@ -40,11 +45,6 @@ public class GetMessageHandler extends ApiGatewayHandler<Void, Void> {
                    .addChild(TICKET_PATH)
                    .addChild(ticketIdentifier.toString())
                    .getUri();
-    }
-    
-    @Override
-    protected Integer getSuccessStatusCode(Void input, Void output) {
-        return HTTP_SEE_OTHER;
     }
     
     private SortableIdentifier extractIdentifier(RequestInfo requestInfo, String pathParameter) {

@@ -19,8 +19,8 @@ public class QuerySpliterator implements Spliterator<Map<String, AttributeValue>
     private final QueryRequest queryRequest;
     private final int pageSize;
     private final AmazonDynamoDB client;
-    private Map<String, AttributeValue> exclusiveStartKey;
     private final Queue<Map<String, AttributeValue>> currentPage;
+    private Map<String, AttributeValue> exclusiveStartKey;
     private boolean firstIteration = true;
     
     public QuerySpliterator(AmazonDynamoDB client, QueryRequest queryRequest, int pageSize) {
@@ -33,12 +33,6 @@ public class QuerySpliterator implements Spliterator<Map<String, AttributeValue>
     @Override
     public boolean tryAdvance(Consumer<? super Map<String, AttributeValue>> action) {
         return fetchNextEntry().map(entry -> applyAction(action, entry)).orElse(false);
-    }
-    
-    private boolean applyAction(Consumer<? super Map<String, AttributeValue>> action,
-                                Map<String, AttributeValue> entry) {
-        action.accept(entry);
-        return true;
     }
     
     @JacocoGenerated
@@ -56,6 +50,12 @@ public class QuerySpliterator implements Spliterator<Map<String, AttributeValue>
     @Override
     public int characteristics() {
         return IMMUTABLE;
+    }
+    
+    private boolean applyAction(Consumer<? super Map<String, AttributeValue>> action,
+                                Map<String, AttributeValue> entry) {
+        action.accept(entry);
+        return true;
     }
     
     private Optional<Map<String, AttributeValue>> fetchNextEntry() {

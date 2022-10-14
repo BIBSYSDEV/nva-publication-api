@@ -21,11 +21,6 @@ public class UpdateViewStatusRequest {
         this.viewStatus = parseStatus(viewStatus);
     }
     
-    private ViewStatus parseStatus(ViewStatus viewStatus) throws BadRequestException {
-        return Optional.ofNullable(viewStatus)
-                   .orElseThrow(() -> new BadRequestException("viewStatus must be " + ViewStatus.legalValues()));
-    }
-    
     @Override
     @JacocoGenerated
     public int hashCode() {
@@ -47,5 +42,10 @@ public class UpdateViewStatusRequest {
     
     public ViewStatus getViewStatus() {
         return viewStatus;
+    }
+    
+    private ViewStatus parseStatus(ViewStatus viewStatus) throws BadRequestException {
+        return Optional.ofNullable(viewStatus)
+                   .orElseThrow(() -> new BadRequestException("viewStatus must be " + ViewStatus.legalValues()));
     }
 }

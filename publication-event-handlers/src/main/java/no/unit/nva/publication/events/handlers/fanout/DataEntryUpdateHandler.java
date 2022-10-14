@@ -56,10 +56,10 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
         var dynamoDbRecord = parseDynamoDbRecord(s3Content);
         var blob = convertToDataEntryUpdateEvent(dynamoDbRecord);
         return attempt(() -> saveBlobToS3(blob))
-            .toOptional()
-            .map(blobUri -> new EventReference(blob.getTopic(), blobUri))
-            .map(this::logEvent)
-            .orElse(DO_NOT_EMIT_EVENT);
+                   .toOptional()
+                   .map(blobUri -> new EventReference(blob.getTopic(), blobUri))
+                   .map(this::logEvent)
+                   .orElse(DO_NOT_EMIT_EVENT);
     }
     
     private EventReference logEvent(EventReference event) {

@@ -97,24 +97,24 @@ public final class CristinDataGenerator {
     
     public static CristinContributor randomContributor(Integer contributorIndex) {
         return CristinContributor.builder()
-            .withContributorOrder(contributorIndex)
-            .withIdentifier(contributorIndex)
-            .withGivenName(randomString())
-            .withFamilyName(randomString())
-            .withAffiliations(randomAffiliations())
-            .build();
+                   .withContributorOrder(contributorIndex)
+                   .withIdentifier(contributorIndex)
+                   .withGivenName(randomString())
+                   .withFamilyName(randomString())
+                   .withAffiliations(randomAffiliations())
+                   .build();
     }
     
     public static CristinPresentationalWork randomPresentationalWork() {
         return CristinPresentationalWork.builder()
-            .withPresentationType(randomWord())
-            .withIdentifier(smallRandomNumber()).build();
+                   .withPresentationType(randomWord())
+                   .withIdentifier(smallRandomNumber()).build();
     }
     
     public static List<CristinContributorsAffiliation> randomAffiliations() {
         return smallSample()
-            .map(ignored -> randomAffiliation())
-            .collect(Collectors.toList());
+                   .map(ignored -> randomAffiliation())
+                   .collect(Collectors.toList());
     }
     
     public static String randomString() {
@@ -241,13 +241,13 @@ public final class CristinDataGenerator {
     
     public static String randomDataAsString() {
         return randomObjects()
-            .map(CristinDataGenerator::toJsonString)
-            .collect(Collectors.joining(System.lineSeparator()));
+                   .map(CristinDataGenerator::toJsonString)
+                   .collect(Collectors.joining(System.lineSeparator()));
     }
     
     public static Stream<CristinObject> randomObjects() {
         return IntStream.range(0, 100).boxed()
-            .map(CristinDataGenerator::newCristinObject);
+                   .map(CristinDataGenerator::newCristinObject);
     }
     
     public static JsonNode objectWithoutId() throws JsonProcessingException {
@@ -317,16 +317,16 @@ public final class CristinDataGenerator {
     
     public static CristinBookOrReportMetadata randomBookOrReportMetadata() {
         return CristinBookOrReportMetadata
-            .builder()
-            .withIsbn(randomIsbn13())
-            .withPublisherName(randomString())
-            .withNumberOfPages(randomString())
-            .withSubjectField(randomSubjectField())
-            .withBookSeries(randomBookSeries())
-            .withIssue(randomString())
-            .withVolume(randomString())
-            .withCristinPublisher(randomPublisher())
-            .build();
+                   .builder()
+                   .withIsbn(randomIsbn13())
+                   .withPublisherName(randomString())
+                   .withNumberOfPages(randomString())
+                   .withSubjectField(randomSubjectField())
+                   .withBookSeries(randomBookSeries())
+                   .withIssue(randomString())
+                   .withVolume(randomString())
+                   .withCristinPublisher(randomPublisher())
+                   .build();
     }
     
     private static CristinObject randomEvent(CristinSecondaryCategory secondaryCategory) {
@@ -335,9 +335,9 @@ public final class CristinDataGenerator {
     
     private static CristinPublisher randomPublisher() {
         return CristinPublisher.builder()
-            .withPublisherName(randomString())
-            .withNsdCode(largeRandomNumber())
-            .build();
+                   .withPublisherName(randomString())
+                   .withNsdCode(largeRandomNumber())
+                   .build();
     }
     
     private static CristinObject randomChapterArticle(CristinSecondaryCategory secondaryCategory) {
@@ -411,26 +411,26 @@ public final class CristinDataGenerator {
     private static CristinContributorsAffiliation creatCristinContributorsAffiliation(
         CristinContributorRoleCode roleCode) {
         return CristinContributorsAffiliation.builder()
-            .withInstitutionIdentifier(threeDigitPositiveNumber())
-            .withDepartmentIdentifier(threeDigitPositiveNumber())
-            .withGroupNumber(threeDigitPositiveNumber())
-            .withSubdepartmentIdentifier(threeDigitPositiveNumber())
-            .withDepartmentIdentifier(largeRandomNumber())
-            .withRoles(List.of(createRole(roleCode)))
-            .build();
+                   .withInstitutionIdentifier(threeDigitPositiveNumber())
+                   .withDepartmentIdentifier(threeDigitPositiveNumber())
+                   .withGroupNumber(threeDigitPositiveNumber())
+                   .withSubdepartmentIdentifier(threeDigitPositiveNumber())
+                   .withDepartmentIdentifier(largeRandomNumber())
+                   .withRoles(List.of(createRole(roleCode)))
+                   .build();
     }
     
     private static CristinContributorRole createRole(CristinContributorRoleCode roleCode) {
         return CristinContributorRole
-            .builder()
-            .withRoleCode(roleCode)
-            .build();
+                   .builder()
+                   .withRoleCode(roleCode)
+                   .build();
     }
     
     private static List<CristinContributor> randomContributors() {
         return smallSample()
-            .map(CristinDataGenerator::randomContributor)
-            .collect(Collectors.toList());
+                   .map(CristinDataGenerator::randomContributor)
+                   .collect(Collectors.toList());
     }
     
     private static Stream<Integer> smallSample() {
@@ -453,86 +453,86 @@ public final class CristinDataGenerator {
     
     private static CristinJournalPublicationJournal randomBookSeries() {
         return CristinJournalPublicationJournal.builder()
-            .withJournalTitle(randomString())
-            .withNsdCode(largeRandomNumber())
-            .withIssn(randomIssn())
-            .withIssnOnline(randomIssn())
-            
-            .build();
+                   .withJournalTitle(randomString())
+                   .withNsdCode(largeRandomNumber())
+                   .withIssn(randomIssn())
+                   .withIssnOnline(randomIssn())
+        
+                   .build();
     }
     
     private static CristinObject createRandomBookWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
-            .withYearReported(2001)
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withMainCategory(CristinMainCategory.BOOK)
-            .withSecondaryCategory(secondaryCategory)
-            .withId(largeRandomNumber())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .withBookOrReportMetadata(randomBookOrReportMetadata())
-            .build();
+                   .withYearReported(2001)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.BOOK)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withBookOrReportMetadata(randomBookOrReportMetadata())
+                   .build();
     }
     
     private static CristinObject createRandomJournalWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject
-            .builder()
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withMainCategory(CristinMainCategory.JOURNAL)
-            .withSecondaryCategory(secondaryCategory)
-            .withId(largeRandomNumber())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .withJournalPublication(randomJournalPublictaion())
-            .build();
+                   .builder()
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.JOURNAL)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withJournalPublication(randomJournalPublictaion())
+                   .build();
     }
     
     private static CristinObject createRandomBookWithBookReportValues() {
         return CristinObject.builder()
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withMainCategory(CristinMainCategory.BOOK)
-            .withSecondaryCategory(MONOGRAPH)
-            .withId(largeRandomNumber())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .withBookOrReportMetadata(randomBookOrReportMetadata())
-            .build();
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.BOOK)
+                   .withSecondaryCategory(MONOGRAPH)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withBookOrReportMetadata(randomBookOrReportMetadata())
+                   .build();
     }
     
     private static CristinObject createRandomChapterWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withMainCategory(CristinMainCategory.CHAPTER)
-            .withSecondaryCategory(secondaryCategory)
-            .withId(largeRandomNumber())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .build();
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.CHAPTER)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .build();
     }
     
     private static CristinObject createRandomEventWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withMainCategory(CristinMainCategory.EVENT)
-            .withSecondaryCategory(secondaryCategory)
-            .withId(largeRandomNumber())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .build();
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.EVENT)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .build();
     }
     
     private static CristinObject newCristinObject(Integer index) {
@@ -542,57 +542,57 @@ public final class CristinDataGenerator {
     private static CristinObject createRandomReportWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withMainCategory(CristinMainCategory.REPORT)
-            .withSecondaryCategory(secondaryCategory)
-            .withId(largeRandomNumber())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .withBookOrReportMetadata(randomBookOrReportMetadata())
-            .build();
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.REPORT)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withBookOrReportMetadata(randomBookOrReportMetadata())
+                   .build();
     }
     
     private static CristinObject createObjectWithCristinContributorRoleCode(Integer cristinId,
                                                                             List<CristinContributor> contributors) {
         return CristinObject.builder()
-            .withMainCategory(randomMainCategory())
-            .withSecondaryCategory(randomSecondaryCategory())
-            .withCristinTitles(randomTitles())
-            .withId(cristinId)
-            .withEntryCreationDate(LocalDate.now())
-            .withPublicationYear(randomYear())
-            .withYearReported(randomYear())
-            .withContributors(contributors)
-            .withBookOrReportMetadata(randomBookOrReportMetadata())
-            .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
-            .build();
+                   .withMainCategory(randomMainCategory())
+                   .withSecondaryCategory(randomSecondaryCategory())
+                   .withCristinTitles(randomTitles())
+                   .withId(cristinId)
+                   .withEntryCreationDate(LocalDate.now())
+                   .withPublicationYear(randomYear())
+                   .withYearReported(randomYear())
+                   .withContributors(contributors)
+                   .withBookOrReportMetadata(randomBookOrReportMetadata())
+                   .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
+                   .build();
     }
     
     private static CristinSubjectField randomSubjectField() {
         return CristinSubjectField.builder()
-            .withSubjectFieldCode(smallRandomNumber())
-            .build();
+                   .withSubjectFieldCode(smallRandomNumber())
+                   .build();
     }
     
     private static CristinJournalPublication randomJournalPublictaion() {
         int pagesBegin = smallRandomNumber();
         return CristinJournalPublication.builder()
-            .withJournal(randomCristinJournalPublicationJournal())
-            .withPagesBegin(String.valueOf(pagesBegin))
-            .withPagesEnd(String.valueOf(pagesBegin + smallRandomNumber()))
-            .withVolume(String.valueOf(smallRandomNumber()))
-            .withDoi(randomDoiString())
-            .build();
+                   .withJournal(randomCristinJournalPublicationJournal())
+                   .withPagesBegin(String.valueOf(pagesBegin))
+                   .withPagesEnd(String.valueOf(pagesBegin + smallRandomNumber()))
+                   .withVolume(String.valueOf(smallRandomNumber()))
+                   .withDoi(randomDoiString())
+                   .build();
     }
     
     private static CristinJournalPublicationJournal randomCristinJournalPublicationJournal() {
         return CristinJournalPublicationJournal.builder()
-            .withIssn(randomIssn())
-            .withIssnOnline(randomIssn())
-            .withJournalTitle(randomString())
-            .build();
+                   .withIssn(randomIssn())
+                   .withIssnOnline(randomIssn())
+                   .withJournalTitle(randomString())
+                   .build();
     }
     
     private static String toJsonString(CristinObject cristinObject) {
@@ -654,8 +654,8 @@ public final class CristinDataGenerator {
     
     private static List<CristinContributor> createContributors(CristinContributorRoleCode roleCode) {
         return smallSample()
-            .map(contributorIndex -> creatContributor(contributorIndex, roleCode))
-            .collect(Collectors.toList());
+                   .map(contributorIndex -> creatContributor(contributorIndex, roleCode))
+                   .collect(Collectors.toList());
     }
     
     private static String randomLanguageCode() {
@@ -664,18 +664,18 @@ public final class CristinDataGenerator {
     
     private static List<CristinTitle> randomTitles() {
         return smallSample()
-            .map(CristinDataGenerator::randomCristinTitle)
-            .collect(Collectors.toList());
+                   .map(CristinDataGenerator::randomCristinTitle)
+                   .collect(Collectors.toList());
     }
     
     private static CristinContributor creatContributor(Integer contributorIndex, CristinContributorRoleCode roleCode) {
         return CristinContributor.builder()
-            .withContributorOrder(contributorIndex)
-            .withIdentifier(contributorIndex)
-            .withGivenName(randomString())
-            .withFamilyName(randomString())
-            .withAffiliations(List.of(createAffiliation(roleCode)))
-            .build();
+                   .withContributorOrder(contributorIndex)
+                   .withIdentifier(contributorIndex)
+                   .withGivenName(randomString())
+                   .withFamilyName(randomString())
+                   .withAffiliations(List.of(createAffiliation(roleCode)))
+                   .build();
     }
     
     private static URI randomUri() {
@@ -697,8 +697,8 @@ public final class CristinDataGenerator {
     
     private static String randomDoiSuffix() {
         return IntStream.range(1, MIN_SUFFIX_PARTS_NUMBER + RANDOM.nextInt(4)).boxed()
-            .map(ignored -> RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
-                MAX_DOI_PREFIX_SUBPART_LENGTH))
-            .collect(Collectors.joining(DOI_SUBPART_DELIMITER));
+                   .map(ignored -> RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
+                       MAX_DOI_PREFIX_SUBPART_LENGTH))
+                   .collect(Collectors.joining(DOI_SUBPART_DELIMITER));
     }
 }

@@ -16,10 +16,10 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
     public PublicationInstance<? extends Pages> build() {
         if (isChapterArticle(getCristinObject())) {
             return new ChapterArticle.Builder()
-                .withContentType(getCristinObject().getSecondaryCategory().toChapterArticleContentType())
-                .withPages(createChapterPages())
-                .withPeerReviewed(getCristinObject().isPeerReviewed())
-                .build();
+                       .withContentType(getCristinObject().getSecondaryCategory().toChapterArticleContentType())
+                       .withPages(createChapterPages())
+                       .withPeerReviewed(getCristinObject().isPeerReviewed())
+                       .build();
         } else {
             throw unknownSecondaryCategory();
         }

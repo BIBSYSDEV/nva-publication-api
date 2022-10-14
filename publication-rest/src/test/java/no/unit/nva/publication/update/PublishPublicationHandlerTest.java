@@ -25,8 +25,8 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -89,12 +89,12 @@ public class PublishPublicationHandlerTest {
     private PublishPublicationHandler callPublishPublicationHandler(SortableIdentifier identifier) throws IOException {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
-            .withHeaders(getRequestHeaders())
-            .withNvaUsername(randomString())
-            .withCustomerId(randomUri())
-            .withPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, identifier.toString()))
-            .withQueryParameters(Collections.emptyMap())
-            .build();
+                                .withHeaders(getRequestHeaders())
+                                .withNvaUsername(randomString())
+                                .withCustomerId(randomUri())
+                                .withPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, identifier.toString()))
+                                .withQueryParameters(Collections.emptyMap())
+                                .build();
         handler.handleRequest(input, output, context);
         return handler;
     }

@@ -81,17 +81,6 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
     
-    private InputStream elevatedUserOfAlienOrgRequestsTicketsForPublication(Publication publication)
-        throws JsonProcessingException {
-        var customerId = randomUri();
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(constructPathParameters(publication))
-                   .withCustomerId(customerId)
-                   .withNvaUsername(randomString())
-                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
-                   .build();
-    }
-    
     private static InputStream ownerRequestsTicketsForPublication(Publication publication)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
@@ -113,6 +102,17 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     private static Map<String, String> constructPathParameters(Publication publication) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
             publication.getIdentifier().toString());
+    }
+    
+    private InputStream elevatedUserOfAlienOrgRequestsTicketsForPublication(Publication publication)
+        throws JsonProcessingException {
+        var customerId = randomUri();
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withPathParameters(constructPathParameters(publication))
+                   .withCustomerId(customerId)
+                   .withNvaUsername(randomString())
+                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .build();
     }
     
     private InputStream elevatedUserRequestsTicketsForPublication(Publication publication)

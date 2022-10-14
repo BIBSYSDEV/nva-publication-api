@@ -40,12 +40,12 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     
     public static final String DOUBLE_QUOTES = "\"";
     public static final String EMPTY_STRING = "";
-    private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
     public static final String TICKETS_INDEXING_TYPE = "Ticket";
     public static final String ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE =
         DoiRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
     public static final String ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE =
         GeneralSupportRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
+    private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
     
     protected TicketDao() {
         super();
@@ -108,6 +108,11 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     }
     
     @Override
+    public final String indexingType() {
+        return TICKETS_INDEXING_TYPE;
+    }
+    
+    @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
         this.getData().setModifiedDate(Instant.now());
         var putItem = this.createPutItemRequest();
@@ -121,11 +126,6 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                       .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
-    }
-    
-    @Override
-    public final String indexingType() {
-        return TICKETS_INDEXING_TYPE;
     }
     
     protected TicketEntry getTicketEntry() {

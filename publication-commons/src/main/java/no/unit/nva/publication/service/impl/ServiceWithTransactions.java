@@ -103,7 +103,6 @@ public abstract class ServiceWithTransactions {
             .orElseThrow(this::handleTransactionFailure);
     }
     
-    
     private Void waitBeforeFetching() throws InterruptedException {
         Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
         return null;

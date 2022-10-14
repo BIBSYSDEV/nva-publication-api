@@ -42,16 +42,6 @@ class MessageTest {
         assertThat(message, doesNotHaveEmptyValuesIgnoringFields(Set.of(MESSAGE_IDENTIFIER_FIELD)));
     }
     
-    private Message createSampleMessage() throws ConflictException {
-        var publication = randomPublicationEligibleForDoiRequest();
-        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
-        return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
-    }
-    
-    private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
-    }
-    
     @Test
     void shouldReturnCopyWithoutLossOfInformation() throws ConflictException {
         Publication publication = randomPublicationEligibleForDoiRequest();
@@ -60,5 +50,15 @@ class MessageTest {
         var copy = message.copy();
         assertThat(message, doesNotHaveEmptyValues());
         assertThat(copy, is(equalTo(message)));
+    }
+    
+    private static Publication randomPublicationEligibleForDoiRequest() {
+        return randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
+    }
+    
+    private Message createSampleMessage() throws ConflictException {
+        var publication = randomPublicationEligibleForDoiRequest();
+        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
+        return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
     }
 }

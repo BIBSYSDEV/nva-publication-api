@@ -57,8 +57,8 @@ public class FakeEventBridgeClient implements EventBridgeClient {
     
     public List<URI> listEmittedFilenames() {
         return extractEmittedImportRequests()
-            .map(ImportRequest::getS3Location)
-            .collect(Collectors.toList());
+                   .map(ImportRequest::getS3Location)
+                   .collect(Collectors.toList());
     }
     
     public List<ImportRequest> listEmittedImportRequests() {
@@ -71,16 +71,16 @@ public class FakeEventBridgeClient implements EventBridgeClient {
     
     private Stream<ImportRequest> extractEmittedImportRequests() {
         return evenRequests.stream()
-            .flatMap(events -> events.entries().stream())
-            .map(PutEventsRequestEntry::detail)
-            .map(ImportRequest::fromJson);
+                   .flatMap(events -> events.entries().stream())
+                   .map(PutEventsRequestEntry::detail)
+                   .map(ImportRequest::fromJson);
     }
     
     private List<PutEventsResultEntry> createResultEntries(PutEventsRequest putEventsRequest) {
         return putEventsRequest.entries()
-            .stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(this::toResponse)
+                   .collect(Collectors.toList());
     }
     
     private PutEventsResultEntry toResponse(PutEventsRequestEntry request) {

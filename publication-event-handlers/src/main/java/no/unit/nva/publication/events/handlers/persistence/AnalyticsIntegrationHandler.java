@@ -57,18 +57,18 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     
     private EventReference processInputEvent(URI inputFileLocation) {
         return readPublicationAndRemoveJsonLdContext(inputFileLocation)
-            .map(fileContents -> storePublicationInAnalyticsFolder(fileContents, inputFileLocation))
-            .map(this::createEventWithOutputFileUri)
-            .orElse(EMPTY_EVENT);
+                   .map(fileContents -> storePublicationInAnalyticsFolder(fileContents, inputFileLocation))
+                   .map(this::createEventWithOutputFileUri)
+                   .orElse(EMPTY_EVENT);
     }
     
     private Optional<String> readPublicationAndRemoveJsonLdContext(URI inputFileLocation) {
         return Optional.ofNullable(readFileContents(inputFileLocation))
-            .map(this::parseAsJson)
-            .filter(this::expandedResourceIsPublication)
-            .map(this::removeJsonLdContext)
-            .map(this::writeJsonInAthenaFriendlyWay)
-            .orElseGet(this::ignoreNotInterestingEntries);
+                   .map(this::parseAsJson)
+                   .filter(this::expandedResourceIsPublication)
+                   .map(this::removeJsonLdContext)
+                   .map(this::writeJsonInAthenaFriendlyWay)
+                   .orElseGet(this::ignoreNotInterestingEntries);
     }
     
     private Optional<String> writeJsonInAthenaFriendlyWay(ObjectNode json) {
@@ -84,8 +84,8 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     private URI storePublicationInAnalyticsFolder(String publication, URI inputFileLocation) {
         var writeS3Driver = new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET);
         return attempt(() -> constructOutputPath(inputFileLocation))
-            .map(outputFilePath -> writeS3Driver.insertFile(outputFilePath, publication))
-            .orElseThrow();
+                   .map(outputFilePath -> writeS3Driver.insertFile(outputFilePath, publication))
+                   .orElseThrow();
     }
     
     private UnixPath constructOutputPath(URI inputFileLocation) {

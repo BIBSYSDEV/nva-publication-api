@@ -62,7 +62,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private FakeHttpClient<String> httpClient;
     private FakeS3Client s3Client;
-
+    
     public static Stream<Function<Publication, Entity>> entityProvider() {
         return Stream.of(Resource::fromPublication, DoiRequest::fromPublication);
     }
@@ -84,7 +84,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateThatCannotBeReferenced()
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
         
         var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutIdentifier.setIdentifier(null);
@@ -96,7 +96,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutReferenceToResource()
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
         
         var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutResourceIdentifier.setPublicationDetails(null);
@@ -126,11 +126,11 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void handlerCreatesUpdateDoiEventWhenPublicationHasAFindableDoi()
-            throws IOException {
+        throws IOException {
         var publication = randomPublication();
         var updatedPublication = updateTitle(publication);
         var event = createEvent(Resource.fromPublication(publication),
-                Resource.fromPublication(updatedPublication));
+            Resource.fromPublication(updatedPublication));
         this.httpClient = new FakeHttpClient<>(findableDoiResponse());
         this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
         
@@ -142,8 +142,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void shouldCreateUpdateEventWhenPublicationHasNoDoiAndADraftDoiRequestGetsApproved()
-            throws IOException,
-            ApiGatewayException {
+        throws IOException,
+               ApiGatewayException {
         var publication = persistPublicationWithoutDoi(PublicationStatus.PUBLISHED);
         var draftRequest = DoiRequest.fromPublication(publication);
         var approvedRequest = draftRequest.complete(publication);
@@ -157,8 +157,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     
     @Test
     void shouldCreateNewDoiEventWhenPublicationHasNoDoiAndADraftDoiHasBeenRequested()
-            throws IOException,
-            ApiGatewayException {
+        throws IOException,
+               ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
         var draftRequest = DoiRequest.fromPublication(publication);
         var event = createEvent(null, draftRequest);
@@ -235,7 +235,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var eventReference = new EventReference(randomString(), eventBlobUri);
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
     }
-
+    
     private DataEntryUpdateEvent createDataEntry(Entity draftRequest, Entity approvedRequest) {
         return new DataEntryUpdateEvent(randomString(), draftRequest, approvedRequest);
     }

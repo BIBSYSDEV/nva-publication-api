@@ -89,9 +89,9 @@ public class PendingPublishingRequestEventHandler
     
     private PublishingRequestCase extractPublishingRequestCaseUpdate(DataEntryUpdateEvent updateEvent) {
         return Optional.ofNullable(updateEvent)
-            .map(DataEntryUpdateEvent::getNewData)
-            .map(PublishingRequestCase.class::cast)
-            .orElseThrow();
+                   .map(DataEntryUpdateEvent::getNewData)
+                   .map(PublishingRequestCase.class::cast)
+                   .orElseThrow();
     }
     
     private DataEntryUpdateEvent parseInput(EventReference input) {
@@ -113,7 +113,7 @@ public class PendingPublishingRequestEventHandler
         
         public boolean isKnownThatCustomerAllowsPublishing() {
             return customer.map(CustomerDto::customerAllowsRegistratorsToPublishDataAndMetadata)
-                .orElse(fail -> returnFalseAndLogUnsuccessfulResponse(httpResponse, customerId));
+                       .orElse(fail -> returnFalseAndLogUnsuccessfulResponse(httpResponse, customerId));
         }
         
         private boolean returnFalseAndLogUnsuccessfulResponse(HttpResponse<String> response, URI customerId) {

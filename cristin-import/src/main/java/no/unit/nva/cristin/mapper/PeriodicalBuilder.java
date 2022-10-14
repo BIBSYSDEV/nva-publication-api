@@ -20,16 +20,16 @@ public class PeriodicalBuilder extends CristinMappingModule {
     
     public Periodical buildPeriodicalForPublicationContext() {
         return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getJournalPublication)
-            .map(CristinJournalPublication::getJournal)
-            .map(CristinJournalPublicationJournal::getNsdCode)
-            .map(nsdCodeExists -> createJournal())
-            .orElseGet(this::createUnconfirmedJournal);
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getJournal)
+                   .map(CristinJournalPublicationJournal::getNsdCode)
+                   .map(nsdCodeExists -> createJournal())
+                   .orElseGet(this::createUnconfirmedJournal);
     }
     
     private Periodical createUnconfirmedJournal() {
         return attempt(() -> new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline()))
-            .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
+                   .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
     }
     
     private Periodical createJournal() {

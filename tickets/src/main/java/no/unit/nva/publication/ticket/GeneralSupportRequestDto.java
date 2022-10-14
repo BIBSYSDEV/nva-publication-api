@@ -92,6 +92,13 @@ public class GeneralSupportRequestDto extends TicketDto {
     
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getId(), getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
+            getPublicationSummary().getPublicationId(), getMessages());
+    }
+    
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -108,12 +115,5 @@ public class GeneralSupportRequestDto extends TicketDto {
                && Objects.equals(getPublicationSummary().getPublicationId(),
             that.getPublicationSummary().getPublicationId())
                && Objects.equals(getMessages(), that.getMessages());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getId(), getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationSummary().getPublicationId(), getMessages());
     }
 }

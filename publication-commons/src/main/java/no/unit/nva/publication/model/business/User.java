@@ -23,6 +23,10 @@ public class User {
                    .orElse(null);
     }
     
+    public static User fromPublication(Publication publication) {
+        return new User(publication.getResourceOwner().getOwner());
+    }
+    
     @Override
     @JacocoGenerated
     public int hashCode() {
@@ -40,10 +44,6 @@ public class User {
         }
         User user = (User) o;
         return Objects.equals(userName, user.userName);
-    }
-    
-    public static User fromPublication(Publication publication) {
-        return new User(publication.getResourceOwner().getOwner());
     }
     
     @JsonValue

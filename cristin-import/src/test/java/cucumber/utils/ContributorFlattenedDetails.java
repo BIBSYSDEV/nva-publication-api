@@ -39,8 +39,8 @@ public class ContributorFlattenedDetails implements JsonSerializable {
         int sequence = Integer.parseInt(mapEntry.get(CristinContributorTransformer.CONTRIBUTOR_ORDINAL_NUMBER));
         URI uri = Optional.ofNullable(mapEntry.get(
                 CristinContributorTransformer.TABLE_FIELD_FOR_EXPECTED_AFFILIATION_URI))
-            .map(URI::create)
-            .orElse(null);
+                      .map(URI::create)
+                      .orElse(null);
         return new ContributorFlattenedDetails(name, sequence, uri);
     }
     

@@ -1,4 +1,3 @@
-
 package no.unit.nva.publication.ticket;
 
 import static java.util.Objects.nonNull;

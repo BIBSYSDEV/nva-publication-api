@@ -18,7 +18,7 @@ public final class CristinImportConfig {
     
     private static ObjectMapper objectMapperFailingOnUnknown() {
         return JsonUtils.dtoObjectMapper
-            .copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+                   .copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+                   .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
     }
 }

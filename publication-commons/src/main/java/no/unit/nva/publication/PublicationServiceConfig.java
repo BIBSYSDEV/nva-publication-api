@@ -16,7 +16,6 @@ public final class PublicationServiceConfig {
     public static final String API_HOST = ENVIRONMENT.readEnv("API_HOST");
     public static final String PUBLICATION_PATH = "/publication";
     public static final URI PUBLICATION_HOST_URI = UriWrapper.fromHost(API_HOST).addChild(PUBLICATION_PATH).getUri();
-    
     @Deprecated
     public static final String DEPRECATED_MESSAGE_PATH = "/messages";
     public static final String MESSAGE_PATH = "message";

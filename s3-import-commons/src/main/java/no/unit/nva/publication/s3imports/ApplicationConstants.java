@@ -27,17 +27,17 @@ public final class ApplicationConstants {
     @JacocoGenerated
     public static S3Client defaultS3Client() {
         return S3Client.builder()
-            .region(ApplicationConstants.AWS_REGION)
-            .httpClient(UrlConnectionHttpClient.create())
-            .build();
+                   .region(ApplicationConstants.AWS_REGION)
+                   .httpClient(UrlConnectionHttpClient.create())
+                   .build();
     }
     
     @JacocoGenerated
     public static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
-            .region(ApplicationConstants.AWS_REGION)
-            .httpClient(UrlConnectionHttpClient.create())
-            .build();
+                   .region(ApplicationConstants.AWS_REGION)
+                   .httpClient(UrlConnectionHttpClient.create())
+                   .build();
     }
     
     @JacocoGenerated
@@ -47,8 +47,8 @@ public final class ApplicationConstants {
     
     private static Integer setupMaxSleepTime() {
         return ENVIRONMENT.readEnvOpt("MAX_SLEEP_TIME")
-            .map(Integer::parseInt)
-            .orElse(DEFAULT_MAX_SLEEP_TIME);
+                   .map(Integer::parseInt)
+                   .orElse(DEFAULT_MAX_SLEEP_TIME);
     }
     
     @JacocoGenerated

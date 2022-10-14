@@ -44,11 +44,11 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
         var input = readEventBodyFromS3(eventDetail);
         
         return attempt(() -> parseInput(input))
-            .map(CreatePublicationRequest::toPublication)
-            .map(this::addOwnerAndPublisher)
-            .map(this::storeAsPublishedPublication)
-            .map(PublicationResponse::fromPublication)
-            .orElseThrow();
+                   .map(CreatePublicationRequest::toPublication)
+                   .map(this::addOwnerAndPublisher)
+                   .map(this::storeAsPublishedPublication)
+                   .map(PublicationResponse::fromPublication)
+                   .orElseThrow();
     }
     
     private Publication addOwnerAndPublisher(Publication publication) {

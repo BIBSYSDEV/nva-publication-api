@@ -20,10 +20,10 @@ public enum TicketStatus {
     public static final String ERROR_MESSAGE_NOT_ALLOWED_TO_CHANGE_STATUS_FROM_S_TO_S =
         "Not allowed to change status from %s to %s";
     public static final String INVALID_DOI_REQUEST_STATUS_ERROR = "Invalid DoiRequest status. Valid values:  ";
+    public static final String SEPARATOR = ",";
     static final Set<TicketStatus> validStatusChangeForRejected = Set.of(COMPLETED);
     static final Set<TicketStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED);
     static final Set<TicketStatus> validDefaultStatusChanges = emptySet();
-    public static final String SEPARATOR = ",";
     private final String value;
     private final String legacyValue;
     
@@ -35,9 +35,9 @@ public enum TicketStatus {
     @JsonCreator
     public static TicketStatus parse(String candidate) {
         return Arrays.stream(TicketStatus.values())
-            .filter(enumValue -> enumValue.filterByNameOrValue(candidate))
-            .collect(SingletonCollector.tryCollect())
-            .orElseThrow(fail -> handleParsingError());
+                   .filter(enumValue -> enumValue.filterByNameOrValue(candidate))
+                   .collect(SingletonCollector.tryCollect())
+                   .orElseThrow(fail -> handleParsingError());
     }
     
     @JsonValue
@@ -75,8 +75,8 @@ public enum TicketStatus {
     
     private static String validValues() {
         return Arrays.stream(TicketStatus.values())
-            .map(TicketStatus::toString)
-            .collect(Collectors.joining(SEPARATOR));
+                   .map(TicketStatus::toString)
+                   .collect(Collectors.joining(SEPARATOR));
     }
     
     private boolean filterByNameOrValue(String candidate) {

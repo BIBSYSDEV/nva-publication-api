@@ -21,9 +21,9 @@ public class CristinHrcsCategoriesAndActivitiesTransformer {
         String category = entry.get(CATEGORY);
         String activity = entry.get(ACTIVITY);
         return CristinHrcsCategoriesAndActivities
-            .builder()
-            .withCategory(category)
-            .withActivity(activity)
-            .build();
+                   .builder()
+                   .withCategory(category)
+                   .withActivity(activity)
+                   .build();
     }
 }

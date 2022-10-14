@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import no.unit.nva.file.model.File;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -57,10 +56,10 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private FileSet fileSet;
-
+    
     @JsonProperty
     private List<AssociatedArtifact> associatedArtifacts;
-
+    
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -158,27 +157,6 @@ public class Resource implements Entity {
         return toPublication();
     }
     
-    public Publication toPublication() {
-        return new Publication.Builder()
-                   .withIdentifier(getIdentifier())
-                   .withResourceOwner(getResourceOwner().toResourceOwner())
-                   .withStatus(getStatus())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withIndexedDate(getIndexedDate())
-                   .withPublisher(getPublisher())
-                   .withPublishedDate(getPublishedDate())
-                   .withLink(getLink())
-                   .withFileSet(getFileSet())
-                   .withProjects(getProjects())
-                   .withEntityDescription(getEntityDescription())
-                   .withDoi(getDoi())
-                   .withHandle(getHandle())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withSubjects(getSubjects())
-                   .build();
-    }
-    
     @Override
     public String getType() {
         return TYPE;
@@ -224,6 +202,27 @@ public class Resource implements Entity {
     @Override
     public String getStatusString() {
         return nonNull(getStatus()) ? getStatus().toString() : null;
+    }
+    
+    public Publication toPublication() {
+        return new Publication.Builder()
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(getResourceOwner().toResourceOwner())
+                   .withStatus(getStatus())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withPublisher(getPublisher())
+                   .withPublishedDate(getPublishedDate())
+                   .withLink(getLink())
+                   .withFileSet(getFileSet())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withSubjects(getSubjects())
+                   .build();
     }
     
     public PublicationStatus getStatus() {
@@ -273,33 +272,20 @@ public class Resource implements Entity {
     public void setFileSet(FileSet fileSet) {
         this.fileSet = fileSet;
         var files = nonNull(fileSet) && nonNull(fileSet.getFiles())
-                ? fileSet.getFiles()
-                : new ArrayList<File>();
+                        ? fileSet.getFiles()
+                        : new ArrayList<File>();
         List<AssociatedArtifact> associatedArtifacts1 = toAssociatedArtifacts(files);
         setAssociatedArtifacts(associatedArtifacts1);
     }
-
-    private static List<AssociatedArtifact> toAssociatedArtifacts(List<File> files) {
-        return files.stream()
-                .map(Resource::toAssociatedFile)
-                .map(AssociatedArtifact.class::cast)
-                .collect(Collectors.toList());
-    }
-
-    private static AssociatedFile toAssociatedFile(File file) {
-        return new AssociatedFile(file.getType(), file.getIdentifier(), file.getName(), file.getMimeType(),
-                file.getSize(), file.getLicense(), file.isAdministrativeAgreement(), file.isPublisherAuthority(),
-                file.getEmbargoDate().orElse(null));
-    }
-
+    
     public List<AssociatedArtifact> getAssociatedArtifacts() {
         return associatedArtifacts;
     }
-
+    
     private void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
     }
-
+    
     public List<ResearchProject> getProjects() {
         return nonNull(projects) ? projects : Collections.emptyList();
     }
@@ -409,6 +395,19 @@ public class Resource implements Entity {
     
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
         return resourceService.fetchAllTicketsForResource(this);
+    }
+    
+    private static List<AssociatedArtifact> toAssociatedArtifacts(List<File> files) {
+        return files.stream()
+                   .map(Resource::toAssociatedFile)
+                   .map(AssociatedArtifact.class::cast)
+                   .collect(Collectors.toList());
+    }
+    
+    private static AssociatedFile toAssociatedFile(File file) {
+        return new AssociatedFile(file.getType(), file.getIdentifier(), file.getName(), file.getMimeType(),
+            file.getSize(), file.getLicense(), file.isAdministrativeAgreement(), file.isPublisherAuthority(),
+            file.getEmbargoDate().orElse(null));
     }
 }
 

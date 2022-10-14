@@ -22,22 +22,22 @@ public enum PublicationWorkflow {
         this.value = value;
     }
     
+    @JsonCreator
+    public static PublicationWorkflow lookUp(String value) {
+        return stream(values())
+                   .filter(nameType -> nameType.getValue().equalsIgnoreCase(value))
+                   .collect(SingletonCollector.tryCollect())
+                   .orElseThrow(failure -> throwException(value));
+    }
+    
     @JsonValue
     public String getValue() {
         return value;
     }
     
-    @JsonCreator
-    public static PublicationWorkflow lookUp(String value) {
-        return stream(values())
-            .filter(nameType -> nameType.getValue().equalsIgnoreCase(value))
-            .collect(SingletonCollector.tryCollect())
-            .orElseThrow(failure -> throwException(value));
-    }
-    
     private static RuntimeException throwException(String value) {
         return new IllegalArgumentException(
             format(ERROR_MESSAGE_TEMPLATE, value, stream(PublicationWorkflow.values())
-                .map(PublicationWorkflow::toString).collect(joining(DELIMITER))));
+                                                      .map(PublicationWorkflow::toString).collect(joining(DELIMITER))));
     }
 }

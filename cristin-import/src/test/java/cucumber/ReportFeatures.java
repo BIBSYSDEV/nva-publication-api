@@ -22,9 +22,9 @@ public class ReportFeatures {
     @Then("the NVA Resource Report has a PublicationContext with a publisher with name equal to {string}")
     public void theNvaResourceReportHasAPublicationContextWithPublisherWithNameEqualTo(String expectedPublisherName) {
         PublicationContext context = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationContext();
         Report reportContext = (Report) context;
         PublishingHouse actualPublisher = reportContext.getPublisher();
         PublishingHouse expectedPublisher = new UnconfirmedPublisher(expectedPublisherName);
@@ -39,9 +39,9 @@ public class ReportFeatures {
     @Then("the NVA Resource Report has a Publisher that cannot be verified through a URI")
     public void theNvaResourceReportHasAPublisherThatCannotBeVerifiedThroughAUri() {
         PublicationContext context = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationContext();
         Report reportContext = (Report) context;
         PublishingHouse publisher = reportContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));

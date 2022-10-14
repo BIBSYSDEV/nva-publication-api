@@ -40,15 +40,15 @@ public class StubS3Driver extends S3Driver {
     
     public List<String> getAllIonItems() {
         return listAllFiles(null)
-            .stream()
-            .map(this::fileContent)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(this::fileContent)
+                   .flatMap(Collection::stream)
+                   .collect(Collectors.toList());
     }
     
     private List<String> fileContent(UnixPath filename) {
         try (InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename.toString()))
-            .orElseThrow(fail -> fileNotFoundException());
+                                           .orElseThrow(fail -> fileNotFoundException());
             GZIPInputStream gzipInputStream = attempt(() -> new GZIPInputStream(inputStream)).orElseThrow();
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8))) {

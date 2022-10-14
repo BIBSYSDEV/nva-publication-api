@@ -58,14 +58,14 @@ public class ScanDatabaseRequest implements JsonSerializable {
         String invokedFunctionArn
     ) {
         return PutEventsRequestEntry
-            .builder()
-            .eventBusName(eventBusName)
-            .detail(this.toJsonString())
-            .detailType(detailType)
-            .resources(invokedFunctionArn)
-            .time(Instant.now())
-            .source(invokedFunctionArn)
-            .build();
+                   .builder()
+                   .eventBusName(eventBusName)
+                   .detail(this.toJsonString())
+                   .detailType(detailType)
+                   .resources(invokedFunctionArn)
+                   .time(Instant.now())
+                   .source(invokedFunctionArn)
+                   .build();
     }
     
     private boolean pageSizeWithinLimits(int pageSize) {

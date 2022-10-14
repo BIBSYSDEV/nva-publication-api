@@ -55,18 +55,19 @@ public class CristinMapper extends CristinMappingModule {
     
     public Publication generatePublication() {
         Publication publication = new Builder()
-            .withAdditionalIdentifiers(Set.of(extractIdentifier()))
-            .withEntityDescription(generateEntityDescription())
-            .withCreatedDate(extractEntryCreationDate())
-            .withModifiedDate(extractEntryLastModifiedDate())
-            .withPublishedDate(extractEntryCreationDate())
-            .withPublisher(extractOrganization())
-            .withResourceOwner(new ResourceOwner(cristinObject.getPublicationOwner(), HARDCODED_OWNER_AFFILIATION))
-            .withStatus(PublicationStatus.PUBLISHED)
-            .withLink(HARDCODED_SAMPLE_DOI)
-            .withProjects(extractProjects())
-            .withSubjects(generateNvaHrcsCategoriesAndActivities())
-            .build();
+                                      .withAdditionalIdentifiers(Set.of(extractIdentifier()))
+                                      .withEntityDescription(generateEntityDescription())
+                                      .withCreatedDate(extractEntryCreationDate())
+                                      .withModifiedDate(extractEntryLastModifiedDate())
+                                      .withPublishedDate(extractEntryCreationDate())
+                                      .withPublisher(extractOrganization())
+                                      .withResourceOwner(new ResourceOwner(cristinObject.getPublicationOwner(),
+                                          HARDCODED_OWNER_AFFILIATION))
+                                      .withStatus(PublicationStatus.PUBLISHED)
+                                      .withLink(HARDCODED_SAMPLE_DOI)
+                                      .withProjects(extractProjects())
+                                      .withSubjects(generateNvaHrcsCategoriesAndActivities())
+                                      .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
     }
@@ -86,10 +87,10 @@ public class CristinMapper extends CristinMappingModule {
             return null;
         }
         return cristinObject.getPresentationalWork()
-            .stream()
-            .filter(CristinPresentationalWork::isProject)
-            .map(CristinPresentationalWork::toNvaResearchProject)
-            .collect(Collectors.toList());
+                   .stream()
+                   .filter(CristinPresentationalWork::isProject)
+                   .map(CristinPresentationalWork::toNvaResearchProject)
+                   .collect(Collectors.toList());
     }
     
     private Organization extractOrganization() {
@@ -99,14 +100,14 @@ public class CristinMapper extends CristinMappingModule {
     
     private Instant extractEntryCreationDate() {
         return Optional.ofNullable(cristinObject.getEntryCreationDate())
-            .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
-            .orElse(null);
+                   .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
+                   .orElse(null);
     }
     
     private Instant extractEntryLastModifiedDate() {
         return Optional.ofNullable(cristinObject.getEntryLastModifiedDate())
-            .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
-            .orElseGet(this::extractEntryCreationDate);
+                   .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
+                   .orElseGet(this::extractEntryCreationDate);
     }
     
     private ZoneOffset zoneOffset() {
@@ -115,15 +116,15 @@ public class CristinMapper extends CristinMappingModule {
     
     private EntityDescription generateEntityDescription() {
         return new EntityDescription.Builder()
-            .withLanguage(extractLanguage())
-            .withMainTitle(extractMainTitle())
-            .withDate(extractPublicationDate())
-            .withReference(new ReferenceBuilder(cristinObject).buildReference())
-            .withContributors(extractContributors())
-            .withNpiSubjectHeading(extractNpiSubjectHeading())
-            .withAbstract(extractAbstract())
-            .withTags(extractTags())
-            .build();
+                   .withLanguage(extractLanguage())
+                   .withMainTitle(extractMainTitle())
+                   .withDate(extractPublicationDate())
+                   .withReference(new ReferenceBuilder(cristinObject).buildReference())
+                   .withContributors(extractContributors())
+                   .withNpiSubjectHeading(extractNpiSubjectHeading())
+                   .withAbstract(extractAbstract())
+                   .withTags(extractTags())
+                   .build();
     }
     
     private List<Contributor> extractContributors() {
@@ -131,10 +132,10 @@ public class CristinMapper extends CristinMappingModule {
             throw new MissingContributorsException();
         }
         return cristinObject.getContributors()
-            .stream()
-            .map(attempt(CristinContributor::toNvaContributor))
-            .map(Try::orElseThrow)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(attempt(CristinContributor::toNvaContributor))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
     }
     
     private List<URI> generateNvaHrcsCategoriesAndActivities() {
@@ -153,22 +154,22 @@ public class CristinMapper extends CristinMappingModule {
     
     private List<URI> extractHrcsCategories() {
         return extractCristinHrcsCategoriesAndActivities()
-            .stream()
-            .map(CristinHrcsCategoriesAndActivities::getCategory)
-            .filter(CristinHrcsCategoriesAndActivities::validateCategory)
-            .map(categoryId -> HRCS_CATEGORY_URI + HRCS_CATEGORIES_MAP.get(categoryId).toLowerCase(Locale.ROOT))
-            .map(URI::create)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(CristinHrcsCategoriesAndActivities::getCategory)
+                   .filter(CristinHrcsCategoriesAndActivities::validateCategory)
+                   .map(categoryId -> HRCS_CATEGORY_URI + HRCS_CATEGORIES_MAP.get(categoryId).toLowerCase(Locale.ROOT))
+                   .map(URI::create)
+                   .collect(Collectors.toList());
     }
     
     private Collection<URI> extractHrcsActivities() {
         return extractCristinHrcsCategoriesAndActivities()
-            .stream()
-            .map(CristinHrcsCategoriesAndActivities::getActivity)
-            .filter(CristinHrcsCategoriesAndActivities::validateActivity)
-            .map(activityId -> HRCS_ACTIVITY_URI + HRCS_ACTIVITIES_MAP.get(activityId).toLowerCase(Locale.ROOT))
-            .map(URI::create)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(CristinHrcsCategoriesAndActivities::getActivity)
+                   .filter(CristinHrcsCategoriesAndActivities::validateActivity)
+                   .map(activityId -> HRCS_ACTIVITY_URI + HRCS_ACTIVITIES_MAP.get(activityId).toLowerCase(Locale.ROOT))
+                   .map(URI::create)
+                   .collect(Collectors.toList());
     }
     
     private PublicationDate extractPublicationDate() {
@@ -177,26 +178,26 @@ public class CristinMapper extends CristinMappingModule {
     
     private String extractMainTitle() {
         return extractCristinTitles()
-            .filter(CristinTitle::isMainTitle)
-            .findFirst()
-            .map(CristinTitle::getTitle)
-            .orElseThrow();
+                   .filter(CristinTitle::isMainTitle)
+                   .findFirst()
+                   .map(CristinTitle::getTitle)
+                   .orElseThrow();
     }
     
     private Stream<CristinTitle> extractCristinTitles() {
         return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getCristinTitles)
-            .stream()
-            .flatMap(Collection::stream);
+                   .map(CristinObject::getCristinTitles)
+                   .stream()
+                   .flatMap(Collection::stream);
     }
     
     private URI extractLanguage() {
         return extractCristinTitles()
-            .filter(CristinTitle::isMainTitle)
-            .findFirst()
-            .map(CristinTitle::getLanguagecode)
-            .map(LanguageMapper::toUri)
-            .orElse(LanguageMapper.LEXVO_URI_UNDEFINED);
+                   .filter(CristinTitle::isMainTitle)
+                   .findFirst()
+                   .map(CristinTitle::getLanguagecode)
+                   .map(LanguageMapper::toUri)
+                   .orElse(LanguageMapper.LEXVO_URI_UNDEFINED);
     }
     
     private AdditionalIdentifier extractIdentifier() {
@@ -214,8 +215,8 @@ public class CristinMapper extends CristinMappingModule {
     
     private String extractSubjectFieldCode(CristinSubjectField subjectField) {
         return Optional.ofNullable(subjectField.getSubjectFieldCode())
-            .map(String::valueOf)
-            .orElseThrow(() -> new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE));
+                   .map(String::valueOf)
+                   .orElseThrow(() -> new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE));
     }
     
     private boolean resourceTypeIsNotExpectedToHaveAnNpiSubjectHeading() {
@@ -231,16 +232,16 @@ public class CristinMapper extends CristinMappingModule {
     
     private List<CristinTags> extractCristinTags() {
         return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getTags)
-            .orElse(null);
+                   .map(CristinObject::getTags)
+                   .orElse(null);
     }
     
     private String extractAbstract() {
         return extractCristinTitles()
-            .filter(CristinTitle::isMainTitle)
-            .findFirst()
-            .map(CristinTitle::getAbstractText)
-            .orElse(null);
+                   .filter(CristinTitle::isMainTitle)
+                   .findFirst()
+                   .map(CristinTitle::getAbstractText)
+                   .orElse(null);
     }
     
     private List<String> extractTags() {

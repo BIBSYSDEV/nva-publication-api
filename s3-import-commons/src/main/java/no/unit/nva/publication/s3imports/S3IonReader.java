@@ -31,11 +31,11 @@ public final class S3IonReader {
     
     public static Stream<JsonNode> extractJsonNodesFromIonContent(String content) {
         return Try.of(content)
-            .map(S3IonReader::toJsonObjectsString)
-            .map(S3IonReader::transformMultipleJsonObjectsToJsonArrayWithObjects)
-            .map(S3IonReader::toArrayNode)
-            .map(S3IonReader::convertToJsonNodeStream)
-            .orElseThrow();
+                   .map(S3IonReader::toJsonObjectsString)
+                   .map(S3IonReader::transformMultipleJsonObjectsToJsonArrayWithObjects)
+                   .map(S3IonReader::toArrayNode)
+                   .map(S3IonReader::convertToJsonNodeStream)
+                   .orElseThrow();
     }
     
     private static String toJsonObjectsString(String ion) throws IOException {
@@ -81,6 +81,6 @@ public final class S3IonReader {
     
     private static Stream<JsonNode> convertToJsonNodeStream(ArrayNode arrayNode) {
         return StreamSupport
-            .stream(Spliterators.spliteratorUnknownSize(arrayNode.iterator(), Spliterator.ORDERED), SEQUENTIAL);
+                   .stream(Spliterators.spliteratorUnknownSize(arrayNode.iterator(), Spliterator.ORDERED), SEQUENTIAL);
     }
 }

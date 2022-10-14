@@ -52,8 +52,8 @@ public class BatchScanStartHandler implements RequestStreamHandler {
     @JacocoGenerated
     private static EventBridgeClient defaultClient() {
         return EventBridgeClient.builder()
-            .httpClientBuilder(UrlConnectionHttpClient.builder())
-            .build();
+                   .httpClientBuilder(UrlConnectionHttpClient.builder())
+                   .build();
     }
     
     private PutEventsResponse sendEvent(PutEventsRequestEntry event) {

@@ -31,8 +31,8 @@ public class UniqueDoiRequestEntryTest {
         DoiRequest doiRequest = DoiRequest.builder()
                                     .withIdentifier(SAMPLE_IDENTIFIER)
                                     .withPublicationDetails(PublicationDetails.create(RESOURCE_IDENTIFIER))
-            .withCustomerId(SAMPLE_CUSTOMER_ID)
-            .build();
+                                    .withCustomerId(SAMPLE_CUSTOMER_ID)
+                                    .build();
         return new DoiRequestDao(doiRequest);
     }
 }

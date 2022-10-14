@@ -59,6 +59,8 @@ public interface DynamoEntryByIdentifier {
         return DynamoEntry.parseAttributeValuesMap(result, Dao.class);
     }
     
+    String indexingType();
+    
     private static NotFoundException handleGetResourceByIdentifierError(SortableIdentifier identifier) {
         return new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier);
     }
@@ -68,6 +70,4 @@ public interface DynamoEntryByIdentifier {
                + DatabaseConstants.KEY_FIELDS_DELIMITER
                + getIdentifier().toString();
     }
-    
-    String indexingType();
 }

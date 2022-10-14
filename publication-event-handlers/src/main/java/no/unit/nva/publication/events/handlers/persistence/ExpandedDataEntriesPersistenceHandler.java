@@ -58,12 +58,12 @@ public class ExpandedDataEntriesPersistenceHandler
     private ExpandedDataEntry readEvent(EventReference input) {
         String data = s3Reader.readEvent(input.getUri());
         return attempt(() -> PublicationEventsConfig.objectMapper.readValue(data, ExpandedDataEntry.class))
-            .orElseThrow();
+                   .orElseThrow();
     }
     
     private UnixPath createFilePath(PersistedDocument indexDocument) {
         return UnixPath.of(createPathBasedOnIndexName(indexDocument))
-            .addChild(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString() + GZIP_ENDING);
+                   .addChild(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString() + GZIP_ENDING);
     }
     
     private String createPathBasedOnIndexName(PersistedDocument indexDocument) {

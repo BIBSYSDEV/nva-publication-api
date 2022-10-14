@@ -39,9 +39,9 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.AccessRight;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -232,10 +232,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withPathParameters(pathParameters)
-            .withCustomerId(randomUri())
-            .withBody(publicationUpdate)
-            .build();
+                   .withPathParameters(pathParameters)
+                   .withCustomerId(randomUri())
+                   .withBody(publicationUpdate)
+                   .build();
     }
     
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
@@ -243,12 +243,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         URI customerId = randomUri();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withPathParameters(pathParameters)
-            .withCustomerId(customerId)
-            .withBody(publicationUpdate)
-            .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
-            .withNvaUsername(SOME_CURATOR)
-            .build();
+                   .withPathParameters(pathParameters)
+                   .withCustomerId(customerId)
+                   .withBody(publicationUpdate)
+                   .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                   .withNvaUsername(SOME_CURATOR)
+                   .build();
     }
     
     private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
@@ -256,12 +256,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withNvaUsername(SOME_CURATOR)
-            .withPathParameters(pathParameters)
-            .withCustomerId(customerId)
-            .withBody(publicationUpdate)
-            .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
-            .build();
+                   .withNvaUsername(SOME_CURATOR)
+                   .withPathParameters(pathParameters)
+                   .withCustomerId(customerId)
+                   .withBody(publicationUpdate)
+                   .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                   .build();
     }
     
     private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
@@ -271,11 +271,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         
         var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withNvaUsername(publicationUpdate.getResourceOwner().getOwner())
-            .withCustomerId(customerId)
-            .withBody(publicationUpdate)
-            .withPathParameters(pathParameters)
-            .build();
+                   .withNvaUsername(publicationUpdate.getResourceOwner().getOwner())
+                   .withCustomerId(customerId)
+                   .withBody(publicationUpdate)
+                   .withPathParameters(pathParameters)
+                   .build();
     }
     
     private Publication updateTitle(Publication savedPublication) {
@@ -299,8 +299,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     
     private HandlerRequestBuilder<Publication> generateInputStreamMissingPathParameters() throws IOException {
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withBody(createPublication())
-            .withHeaders(generateHeaders());
+                   .withBody(createPublication())
+                   .withHeaders(generateHeaders());
     }
     
     private Map<String, String> generateHeaders() {

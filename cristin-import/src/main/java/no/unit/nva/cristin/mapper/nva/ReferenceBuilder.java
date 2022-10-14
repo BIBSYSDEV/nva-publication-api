@@ -48,12 +48,13 @@ public class ReferenceBuilder extends CristinMappingModule {
         PublicationInstance<? extends Pages> publicationInstance
             = publicationInstanceBuilderImpl.build();
         PublicationContext publicationContext = attempt(this::buildPublicationContext)
-            .orElseThrow(failure -> castToCorrectRuntimeException(failure.getException()));
+                                                    .orElseThrow(failure -> castToCorrectRuntimeException(
+                                                        failure.getException()));
         return new Reference.Builder()
-            .withPublicationInstance(publicationInstance)
-            .withPublishingContext(publicationContext)
-            .withDoi(extractDoi())
-            .build();
+                   .withPublicationInstance(publicationInstance)
+                   .withPublishingContext(publicationContext)
+                   .withDoi(extractDoi())
+                   .build();
     }
     
     private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
@@ -107,9 +108,9 @@ public class ReferenceBuilder extends CristinMappingModule {
     private URI extractDoi() {
         if (isJournal(cristinObject)) {
             return Optional.of(extractCristinJournalPublication())
-                .map(CristinJournalPublication::getDoi)
-                .map(doiConverter::toUri)
-                .orElse(null);
+                       .map(CristinJournalPublication::getDoi)
+                       .map(doiConverter::toUri)
+                       .orElse(null);
         }
         return null;
     }

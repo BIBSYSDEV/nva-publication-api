@@ -193,6 +193,6 @@ public class DataEntryUpdateHandlerTest {
     
     private EventReference parseResponse() {
         return attempt(() -> objectMapper.readValue(outputStream.toString(), EventReference.class))
-            .orElseThrow();
+                   .orElseThrow();
     }
 }

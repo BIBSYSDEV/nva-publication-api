@@ -19,7 +19,7 @@ public class CristinSubjectFieldTransformer {
         }
         int fieldCode = Integer.parseInt(entry.get(FIELD_CODE));
         return CristinSubjectField.builder()
-            .withSubjectFieldCode(fieldCode)
-            .build();
+                   .withSubjectFieldCode(fieldCode)
+                   .build();
     }
 }

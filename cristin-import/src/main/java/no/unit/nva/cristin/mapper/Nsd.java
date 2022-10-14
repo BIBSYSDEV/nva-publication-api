@@ -27,10 +27,10 @@ public class Nsd {
     
     private URI getNsdProxyUri(String nsdProxyPathPublisher) {
         return nvaProxyUri()
-            .addChild(nsdProxyPathPublisher)
-            .addChild(Integer.toString(nsdCode))
-            .addChild(Integer.toString(year))
-            .getUri();
+                   .addChild(nsdProxyPathPublisher)
+                   .addChild(Integer.toString(nsdCode))
+                   .addChild(Integer.toString(year))
+                   .getUri();
     }
     
     private UriWrapper nvaProxyUri() {

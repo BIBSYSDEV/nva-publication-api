@@ -60,17 +60,17 @@ public class CristinContributor {
         
         String fullName = constructFullName();
         Identity identity = new Identity.Builder()
-            .withName(fullName)
-            .withId(constructId())
-            .build();
-        
+                                .withName(fullName)
+                                .withId(constructId())
+                                .build();
+    
         return new Contributor.Builder()
-            .withIdentity(identity)
-            .withCorrespondingAuthor(false)
-            .withAffiliations(extractAffiliations())
-            .withRole(extractRoles())
-            .withSequence(contributorOrder)
-            .build();
+                   .withIdentity(identity)
+                   .withCorrespondingAuthor(false)
+                   .withAffiliations(extractAffiliations())
+                   .withRole(extractRoles())
+                   .withSequence(contributorOrder)
+                   .build();
     }
     
     private String constructFullName() {
@@ -101,8 +101,8 @@ public class CristinContributor {
             throw new ContributorWithoutAffiliationException();
         }
         return affiliations.stream()
-            .map(CristinContributorsAffiliation::toNvaOrganization)
-            .collect(Collectors.toList());
+                   .map(CristinContributorsAffiliation::toNvaOrganization)
+                   .collect(Collectors.toList());
     }
     
     private URI constructId() {

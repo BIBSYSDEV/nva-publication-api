@@ -83,11 +83,11 @@ public class WithPrimaryKeyTest extends ResourcesLocalTest {
         ResourceOwner commonOwner = new ResourceOwner(randomString(), null);
         Organization commonPublisher = new Organization.Builder().withId(randomUri()).build();
         return Stream.of(randomPublication(), randomPublication())
-            .map(publication -> publication.copy().withResourceOwner(commonOwner).build())
-            .map(publication -> publication.copy().withPublisher(commonPublisher).build())
-            .map(Resource::fromPublication)
-            .map(ResourceDao::new)
-            .collect(Collectors.toList());
+                   .map(publication -> publication.copy().withResourceOwner(commonOwner).build())
+                   .map(publication -> publication.copy().withPublisher(commonPublisher).build())
+                   .map(Resource::fromPublication)
+                   .map(ResourceDao::new)
+                   .collect(Collectors.toList());
     }
     
     private static List<DoiRequestDao> sampleDoiRequests() {
@@ -97,11 +97,11 @@ public class WithPrimaryKeyTest extends ResourcesLocalTest {
     
     private static List<DoiRequestDao> sampleDoiRequests(List<ResourceDao> publications) {
         return publications.stream()
-            .map(ResourceDao::getData)
-            .map(Resource.class::cast)
-            .map(DoiRequest::newDoiRequestForResource)
-            .map(DoiRequestDao::new)
-            .collect(Collectors.toList());
+                   .map(ResourceDao::getData)
+                   .map(Resource.class::cast)
+                   .map(DoiRequest::newDoiRequestForResource)
+                   .map(DoiRequestDao::new)
+                   .collect(Collectors.toList());
     }
     
     private static Publication randomPublication() {
@@ -115,23 +115,23 @@ public class WithPrimaryKeyTest extends ResourcesLocalTest {
     
     private List<? extends WithPrimaryKey> sendQueryAndParseResponse(WithPrimaryKey queryObject, QueryRequest query) {
         return client.query(query)
-            .getItems()
-            .stream()
-            .map(item -> DynamoEntry.parseAttributeValuesMap(item, queryObject.getClass()))
-            .collect(Collectors.toList());
+                   .getItems()
+                   .stream()
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, queryObject.getClass()))
+                   .collect(Collectors.toList());
     }
     
     private QueryRequest createQuery(WithPrimaryKey queryObject) {
         return new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
     }
     
     private void insertToDb(Object dao) {
         DynamoEntry dynamoEntry = (DynamoEntry) dao;
         PutItemRequest putItemRequest = new PutItemRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withItem(dynamoEntry.toDynamoFormat());
+                                            .withTableName(RESOURCES_TABLE_NAME)
+                                            .withItem(dynamoEntry.toDynamoFormat());
         client.putItem(putItemRequest);
     }
 }

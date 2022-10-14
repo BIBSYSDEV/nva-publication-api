@@ -94,6 +94,30 @@ public class ResourceDao extends Dao
         throw new UnsupportedOperationException("Not implemented yet.Call the appropriate resource service method");
     }
     
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getData());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ResourceDao)) {
+            return false;
+        }
+        ResourceDao that = (ResourceDao) o;
+        return Objects.equals(getData(), that.getData());
+    }
+    
+    @Override
+    protected User getOwner() {
+        return getData().getOwner();
+    }
+    
     public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
         var queryRequest = new QueryRequest()
                                .withTableName(RESOURCES_TABLE_NAME)
@@ -117,11 +141,6 @@ public class ResourceDao extends Dao
                    .map(item -> parseAttributeValuesMap(item, ResourceDao.class))
                    .collect(SingletonCollector.tryCollect())
                    .orElseThrow(fail -> new NotFoundException("Publication not found"));
-    }
-    
-    @Override
-    protected User getOwner() {
-        return getData().getOwner();
     }
     
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
@@ -174,25 +193,6 @@ public class ResourceDao extends Dao
     @JsonIgnore
     public SortableIdentifier getResourceIdentifier() {
         return this.getIdentifier();
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getData());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ResourceDao)) {
-            return false;
-        }
-        ResourceDao that = (ResourceDao) o;
-        return Objects.equals(getData(), that.getData());
     }
     
     private boolean keyEqualsCristin(AdditionalIdentifier identifier) {

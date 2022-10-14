@@ -23,9 +23,9 @@ public class CristinTagsTransformer {
         String english = entry.get(ENGLISH);
         String nynrosk = entry.get(NYNORSK);
         return CristinTags.builder()
-            .withBokmal(bokmal)
-            .withEnglish(english)
-            .withNynorsk(nynrosk)
-            .build();
+                   .withBokmal(bokmal)
+                   .withEnglish(english)
+                   .withNynorsk(nynrosk)
+                   .build();
     }
 }

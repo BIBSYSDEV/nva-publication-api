@@ -83,14 +83,15 @@ class DynamodbStreamToEventBridgeHandlerTest {
         var event = randomEventWithMultipleDynamoRecords();
         handler.handleRequest(event, context);
         var emittedFilePaths = eventBridgeClient.getRequestEntries()
-            .stream()
-            .map(PutEventsRequestEntry::detail)
-            .map(attempt(json -> JsonUtils.dtoObjectMapper.readValue(json, EventReference.class)))
-            .map(Try::orElseThrow)
-            .map(EventReference::getUri)
-            .map(UriWrapper::fromUri)
-            .map(UriWrapper::toS3bucketPath)
-            .collect(Collectors.toSet());
+                                   .stream()
+                                   .map(PutEventsRequestEntry::detail)
+                                   .map(
+                                       attempt(json -> JsonUtils.dtoObjectMapper.readValue(json, EventReference.class)))
+                                   .map(Try::orElseThrow)
+                                   .map(EventReference::getUri)
+                                   .map(UriWrapper::fromUri)
+                                   .map(UriWrapper::toS3bucketPath)
+                                   .collect(Collectors.toSet());
         var expectedFilePaths = new HashSet<>(new S3Driver(s3Client, EVENTS_BUCKET).listAllFiles(UnixPath.ROOT_PATH));
         assertThat(emittedFilePaths, is(equalTo(expectedFilePaths)));
     }
@@ -105,18 +106,18 @@ class DynamodbStreamToEventBridgeHandlerTest {
     private Set<String> extractIdentifierFromActualStoredEntry() {
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         return s3Driver.getFiles(UnixPath.ROOT_PATH)
-            .stream()
-            .map(attempt(json -> JsonUtils.dtoObjectMapper.readValue(json, DynamodbStreamRecord.class)))
-            .map(Try::orElseThrow)
-            .map(Record::getEventID)
-            .collect(Collectors.toSet());
+                   .stream()
+                   .map(attempt(json -> JsonUtils.dtoObjectMapper.readValue(json, DynamodbStreamRecord.class)))
+                   .map(Try::orElseThrow)
+                   .map(Record::getEventID)
+                   .collect(Collectors.toSet());
     }
     
     private Set<String> extractIdentifiersForExpectedStoredEntry(DynamodbEvent event) {
         return event.getRecords()
-            .stream()
-            .map(Record::getEventID)
-            .collect(Collectors.toSet());
+                   .stream()
+                   .map(Record::getEventID)
+                   .collect(Collectors.toSet());
     }
     
     private DynamodbEvent.DynamodbStreamRecord randomDynamoRecord() {

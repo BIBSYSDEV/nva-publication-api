@@ -29,12 +29,6 @@ public class ViewedBy implements Set<User> {
     
     @JacocoGenerated
     @Override
-    public boolean addAll(Collection<? extends User> c) {
-        return views.addAll(c);
-    }
-    
-    @JacocoGenerated
-    @Override
     public int size() {
         return views.size();
     }
@@ -89,6 +83,12 @@ public class ViewedBy implements Set<User> {
     
     @JacocoGenerated
     @Override
+    public boolean addAll(Collection<? extends User> c) {
+        return views.addAll(c);
+    }
+    
+    @JacocoGenerated
+    @Override
     public boolean retainAll(Collection<?> c) {
         return views.retainAll(c);
     }
@@ -107,6 +107,12 @@ public class ViewedBy implements Set<User> {
     
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(views);
+    }
+    
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -116,12 +122,6 @@ public class ViewedBy implements Set<User> {
         }
         ViewedBy users = (ViewedBy) o;
         return Objects.equals(views, users.views);
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(views);
     }
     
     @JacocoGenerated

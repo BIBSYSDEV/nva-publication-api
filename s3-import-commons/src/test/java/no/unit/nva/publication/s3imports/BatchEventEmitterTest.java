@@ -124,20 +124,20 @@ public class BatchEventEmitterTest {
     private ListEventBusesResponse mockListEventBusesResponse() {
         EventBus eventBus = EventBus.builder().name(ApplicationConstants.EVENT_BUS_NAME).build();
         return ListEventBusesResponse.builder()
-            .eventBuses(eventBus)
-            .build();
+                   .eventBuses(eventBus)
+                   .build();
     }
     
     private List<String> generateInputBiggerThanEventEmittersRequestSize() {
         return IntStream.range(0, NUMBER_OF_EVENTS_SENT_PER_REQUEST * 100)
-            .boxed().map(i -> randomString())
-            .collect(Collectors.toList());
+                   .boxed().map(i -> randomString())
+                   .collect(Collectors.toList());
     }
     
     private List<String> generateEventsOfSpecificSize(int requestSize) {
         return IntStream.range(0, NUMBER_OF_EVENTS_SENT_PER_REQUEST)
-            .boxed()
-            .map(ignored -> FAKER.characters(requestSize))
-            .collect(Collectors.toList());
+                   .boxed()
+                   .map(ignored -> FAKER.characters(requestSize))
+                   .collect(Collectors.toList());
     }
 }
