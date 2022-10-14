@@ -85,7 +85,7 @@ class UpdateDoiStatusHandlerTest {
     @Test
     void handleRequestThrowsIllegalArgumentExceptionWherePayloadNotMatchingDoiRequestHolderPojo() {
         var eventInputStream = IoUtils
-            .inputStreamFromResources(BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO);
+                                   .inputStreamFromResources(BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO);
         
         IllegalArgumentException actualException = assertThrows(IllegalArgumentException.class,
             () -> handler.handleRequest(eventInputStream,
@@ -113,8 +113,8 @@ class UpdateDoiStatusHandlerTest {
         throws ApiGatewayException {
         final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
         Publication publication = new Builder()
-            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
-            .build();
+                                      .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
+                                      .build();
         when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
         
         String expectedMessage = "someMessage";
@@ -131,14 +131,14 @@ class UpdateDoiStatusHandlerTest {
     @Test
     void handleRequestSuccessfullyWhenPayloadContainsDoiUpdateHolderWithValidFields() throws ApiGatewayException {
         var publication = new Builder()
-            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
-            .build();
-        
+                              .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
+                              .build();
+    
         var expectedPublicationUpdate = new Builder()
-            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
-            .withDoi(EXAMPLE_DOI)
-            .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
-            .build();
+                                            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
+                                            .withDoi(EXAMPLE_DOI)
+                                            .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
+                                            .build();
         
         stubSuccessfulDoiStatusUpdate(publication, expectedPublicationUpdate);
         
@@ -151,14 +151,14 @@ class UpdateDoiStatusHandlerTest {
     void handleRequestSuccessfullyThenLogsInformationMessage()
         throws ApiGatewayException {
         var publication = new Builder()
-            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
-            .build();
-        
+                              .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
+                              .build();
+    
         var expectedPublicationUpdate = new Builder()
-            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
-            .withDoi(EXAMPLE_DOI)
-            .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
-            .build();
+                                            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
+                                            .withDoi(EXAMPLE_DOI)
+                                            .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
+                                            .build();
         
         stubSuccessfulDoiStatusUpdate(publication, expectedPublicationUpdate);
         

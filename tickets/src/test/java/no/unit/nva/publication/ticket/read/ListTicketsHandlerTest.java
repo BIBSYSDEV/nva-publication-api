@@ -88,6 +88,13 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         return UserInstance.create(randomString(), randomUri());
     }
     
+    private static InputStream buildHttpRequest(UserInstance user) throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withNvaUsername(user.getUsername())
+                   .withCustomerId(user.getOrganizationUri())
+                   .build();
+    }
+    
     private Stream<TicketEntry> generateTickets(UserInstance owner) {
         return IntStream.range(0, SMALL_PUBLICATIONS_NUMBER)
                    .boxed()
@@ -99,13 +106,6 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         return ticketTypes()
                    .map(attempt(ticketType -> constructTicketWithMessages(ticketType, publication)))
                    .map(Try::orElseThrow);
-    }
-    
-    private static InputStream buildHttpRequest(UserInstance user) throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withNvaUsername(user.getUsername())
-                   .withCustomerId(user.getOrganizationUri())
-                   .build();
     }
     
     private Publication persistDraftPublicationWithoutDoi(UserInstance owner) {

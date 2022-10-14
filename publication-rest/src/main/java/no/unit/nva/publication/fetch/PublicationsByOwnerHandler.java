@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -56,9 +56,9 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         
         List<PublicationSummary> publicationsByOwner;
         publicationsByOwner = resourceService.getPublicationsByOwner(userInstance)
-            .stream()
-            .map(PublicationSummary::create)
-            .collect(Collectors.toList());
+                                  .stream()
+                                  .map(PublicationSummary::create)
+                                  .collect(Collectors.toList());
         
         return new PublicationsByOwnerResponse(publicationsByOwner);
     }

@@ -23,9 +23,9 @@ public class DegreeFeatures {
     @Then("the NVA Resource has a PublicationContext of type Degree")
     public void theNvaResourceHasAPublicationContextOfTypeDegree() {
         PublicationContext context = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationContext();
         assertThat(context, is(instanceOf(Degree.class)));
     }
     
@@ -39,9 +39,9 @@ public class DegreeFeatures {
     @Then("the NVA DegreePhd has a PublicationContext with number of pages equal to {string}")
     public void theNvaDegreePhdHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
         PublicationInstance<?> instance = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                              .getEntityDescription()
+                                              .getReference()
+                                              .getPublicationInstance();
         DegreePhd degree = (DegreePhd) instance;
         assertThat(degree.getPages().getPages(), is(equalTo(expectedNumberOfPages)));
     }
@@ -49,9 +49,9 @@ public class DegreeFeatures {
     @Then("the NVA DegreeMaster has a PublicationContext with number of pages equal to {string}")
     public void theNvaDegreeMasterHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
         PublicationInstance<?> instance = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                              .getEntityDescription()
+                                              .getReference()
+                                              .getPublicationInstance();
         DegreeMaster degree = (DegreeMaster) instance;
         assertThat(degree.getPages().getPages(), is(equalTo(expectedNumberOfPages)));
     }

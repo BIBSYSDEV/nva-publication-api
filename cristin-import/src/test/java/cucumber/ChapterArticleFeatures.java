@@ -27,9 +27,9 @@ public class ChapterArticleFeatures {
     public void theNvaResourceHasAPublicationInstanceWithPagesStartingAtAndEndingAt(
         String expectedStart, String expectedEnd) {
         PublicationInstance<?> instance = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                              .getEntityDescription()
+                                              .getReference()
+                                              .getPublicationInstance();
         ChapterArticle chapterArticle = (ChapterArticle) instance;
         String actuallStart = chapterArticle.getPages().getBegin();
         String actuallEnd = chapterArticle.getPages().getEnd();
@@ -47,9 +47,9 @@ public class ChapterArticleFeatures {
     @Then("the Chapter Article has a \"isPeerReviewed\" equal to True")
     public void theChapterArticleHasAIsPeerReviewedEqualToTrue() {
         PublicationInstance<?> context = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                             .getEntityDescription()
+                                             .getReference()
+                                             .getPublicationInstance();
         ChapterArticle chapterArticle = (ChapterArticle) context;
         assertThat(chapterArticle.isPeerReviewed(), is(true));
     }

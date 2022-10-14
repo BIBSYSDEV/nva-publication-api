@@ -57,8 +57,8 @@ public class EventBridgeRetryClient {
     private PutEventsRequest createEventWithFailedEntries(List<PutEventsRequestEntry> failedEntries) {
         PutEventsRequest requestCopy;
         requestCopy = PutEventsRequest.builder()
-            .entries(failedEntries)
-            .build();
+                          .entries(failedEntries)
+                          .build();
         return requestCopy;
     }
     
@@ -67,10 +67,10 @@ public class EventBridgeRetryClient {
         List<PutEventsRequestEntry> requestEntries = request.entries();
         List<PutEventsResultEntry> resultEntries = response.entries();
         return IntStream
-            .range(0, resultEntries.size())
-            .filter(containsFailingResult(resultEntries))
-            .mapToObj(requestEntries::get)
-            .collect(Collectors.toList());
+                   .range(0, resultEntries.size())
+                   .filter(containsFailingResult(resultEntries))
+                   .mapToObj(requestEntries::get)
+                   .collect(Collectors.toList());
     }
     
     private IntPredicate containsFailingResult(List<PutEventsResultEntry> resultEntries) {

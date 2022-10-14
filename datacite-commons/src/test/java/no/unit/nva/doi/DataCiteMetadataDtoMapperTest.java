@@ -30,7 +30,7 @@ public class DataCiteMetadataDtoMapperTest {
     public static final String SOME_DAY = "52";
     public static final int NOT_THE_CREATOR = 2;
     public static final Organization SOME_PUBLISHER = new Builder().withId(URI.create("https://some-org.example.org"))
-        .build();
+                                                          .build();
     public static final String SOME_ARP_ID = "someArpId";
     public static final int THE_CREATOR = 1;
     public static final String SOME_OTHER_ARP_ID = "someOtherArpId";
@@ -56,59 +56,59 @@ public class DataCiteMetadataDtoMapperTest {
     
     private Publication samplePublication() {
         return new Publication.Builder()
-            .withIdentifier(SortableIdentifier.next())
-            .withPublisher(SOME_PUBLISHER)
-            .withEntityDescription(createEntityDescriptionWithExpectedAndUnexpectedContributors())
-            .build();
+                   .withIdentifier(SortableIdentifier.next())
+                   .withPublisher(SOME_PUBLISHER)
+                   .withEntityDescription(createEntityDescriptionWithExpectedAndUnexpectedContributors())
+                   .build();
     }
     
     private EntityDescription createEntityDescriptionWithExpectedAndUnexpectedContributors() {
         return new EntityDescription.Builder()
-            .withReference(createReference())
-            .withMainTitle(MAIN_TITLE)
-            .withDate(createPublicationDate())
-            .withContributors(List.of(createUnexpectedContributor(), createExpectedContributor()))
-            .build();
+                   .withReference(createReference())
+                   .withMainTitle(MAIN_TITLE)
+                   .withDate(createPublicationDate())
+                   .withContributors(List.of(createUnexpectedContributor(), createExpectedContributor()))
+                   .build();
     }
     
     private Contributor createExpectedContributor() {
         return new Contributor.Builder()
-            .withSequence(THE_CREATOR)
-            .withAffiliations(List.of(SOME_PUBLISHER))
-            .withIdentity(new Identity.Builder()
-                .withName(THE_CREATOR_NAME)
-                .build())
-            .build();
+                   .withSequence(THE_CREATOR)
+                   .withAffiliations(List.of(SOME_PUBLISHER))
+                   .withIdentity(new Identity.Builder()
+                                     .withName(THE_CREATOR_NAME)
+                                     .build())
+                   .build();
     }
     
     private Contributor createUnexpectedContributor() {
         return new Contributor.Builder()
-            .withSequence(NOT_THE_CREATOR)
-            .withAffiliations(List.of(SOME_PUBLISHER))
-            .withIdentity(new Identity.Builder()
-                .withName(NOT_THE_CREATOR_NAME)
-                .build())
-            .build();
+                   .withSequence(NOT_THE_CREATOR)
+                   .withAffiliations(List.of(SOME_PUBLISHER))
+                   .withIdentity(new Identity.Builder()
+                                     .withName(NOT_THE_CREATOR_NAME)
+                                     .build())
+                   .build();
     }
     
     private PublicationDate createPublicationDate() {
         return new PublicationDate.Builder()
-            .withYear(SOME_YEAR)
-            .withMonth(SOME_MONTH)
-            .withDay(SOME_DAY)
-            .build();
+                   .withYear(SOME_YEAR)
+                   .withMonth(SOME_MONTH)
+                   .withDay(SOME_DAY)
+                   .build();
     }
     
     private Reference createReference() {
         return new Reference.Builder()
-            .withPublicationInstance(createJournalReview()).build();
+                   .withPublicationInstance(createJournalReview()).build();
     }
     
     private JournalReview createJournalReview() {
         return new JournalReview.Builder()
-            .withIssue(SOME_ISSUE)
-            .withArticleNumber(SOME_ARTICLE_NUMBER)
-            .withVolume(SOME_VOLUME)
-            .build();
+                   .withIssue(SOME_ISSUE)
+                   .withArticleNumber(SOME_ARTICLE_NUMBER)
+                   .withVolume(SOME_VOLUME)
+                   .build();
     }
 }

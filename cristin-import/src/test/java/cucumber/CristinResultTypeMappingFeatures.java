@@ -31,19 +31,19 @@ public class CristinResultTypeMappingFeatures {
     @Then("the NVA Resource has a Publication Instance of type {string}")
     public void theNvaResourceIsAnInstanceOf(String type) {
         String publicationType = this.scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance()
-            .getInstanceType();
+                                     .getEntityDescription()
+                                     .getReference()
+                                     .getPublicationInstance()
+                                     .getInstanceType();
         assertThat(publicationType, is(equalTo(type)));
     }
     
     @Then("the NVA JournalArticle Resource has a Content type of type {string}")
     public void theNvaJournalArticleResourceHasAContentTypeOfType(String expectedType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                                            .getEntityDescription()
+                                                            .getReference()
+                                                            .getPublicationInstance();
         JournalArticle journalArticle = (JournalArticle) instance;
         JournalArticleContentType contentType = journalArticle.getContentType();
         String actuallType = contentType.getValue();
@@ -53,9 +53,9 @@ public class CristinResultTypeMappingFeatures {
     @Then("the NVA BookMonograph Resource has a Content type of type {string}")
     public void theNvaBookMonographResourceHasAContentTypeOfType(String expectedType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                                            .getEntityDescription()
+                                                            .getReference()
+                                                            .getPublicationInstance();
         BookMonograph bookMonograph = (BookMonograph) instance;
         BookMonographContentType contentType = bookMonograph.getContentType();
         String actuallType = contentType.getValue();
@@ -65,9 +65,9 @@ public class CristinResultTypeMappingFeatures {
     @Then("the NVA ChapterArticle Resource has a Content type of type {string}")
     public void theNvaChapterArticleResourceHasAContentTypeOfType(String expectedContentType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                                            .getEntityDescription()
+                                                            .getReference()
+                                                            .getPublicationInstance();
         ChapterArticle chapterArticle = (ChapterArticle) instance;
         ChapterArticleContentType contentType = chapterArticle.getContentType();
         String actualType = contentType.getValue();

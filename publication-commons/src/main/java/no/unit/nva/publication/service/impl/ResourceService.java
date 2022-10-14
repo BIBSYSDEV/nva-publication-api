@@ -215,17 +215,6 @@ public class ResourceService extends ServiceWithTransactions {
                    : migrateOther(dataEntry);
     }
     
-    private Entity migrateOther(Entity dataEntry) {
-        if (dataEntry instanceof TicketEntry) {
-            var ticket = (TicketEntry) dataEntry;
-            var resourceIdentifier = ticket.extractPublicationIdentifier();
-            var resource = attempt(() -> getResourceByIdentifier(resourceIdentifier)).orElseThrow();
-            ticket.setPublicationDetails(PublicationDetails.create(resource));
-            return ticket;
-        }
-        return dataEntry;
-    }
-    
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
         var dao = (ResourceDao) resource.toDao();
         return dao.fetchAllTickets(client)
@@ -249,16 +238,27 @@ public class ResourceService extends ServiceWithTransactions {
         return resource.fetchAllTickets(this);
     }
     
+    @Override
+    protected AmazonDynamoDB getClient() {
+        return client;
+    }
+    
+    private Entity migrateOther(Entity dataEntry) {
+        if (dataEntry instanceof TicketEntry) {
+            var ticket = (TicketEntry) dataEntry;
+            var resourceIdentifier = ticket.extractPublicationIdentifier();
+            var resource = attempt(() -> getResourceByIdentifier(resourceIdentifier)).orElseThrow();
+            ticket.setPublicationDetails(PublicationDetails.create(resource));
+            return ticket;
+        }
+        return dataEntry;
+    }
+    
     private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
         throws NotFoundException {
         var queryDao = (ResourceDao) Resource.fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
                                          .toDao();
         return (Resource) queryDao.fetchForElevatedUser(client).getData();
-    }
-    
-    @Override
-    protected AmazonDynamoDB getClient() {
-        return client;
     }
     
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {

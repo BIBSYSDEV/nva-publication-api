@@ -52,9 +52,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = restApiMapper.getTypeFactory()
-        .constructParametricType(
-            GatewayResponse.class,
-            PublicationResponse.class);
+                                                                           .constructParametricType(
+                                                                               GatewayResponse.class,
+                                                                               PublicationResponse.class);
     public static final String DATACITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite"
                                                                + ".org/schema/kernel-4\">";
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
@@ -127,10 +127,10 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         InputStream inputStream = new HandlerRequestBuilder<InputStream>(restApiMapper)
-            .withBody(null)
-            .withHeaders(null)
-            .withPathParameters(null)
-            .build();
+                                      .withBody(null)
+                                      .withHeaders(null)
+                                      .withPathParameters(null)
+                                      .build();
         fetchPublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
         String actualDetail = gatewayResponse.getBodyObject(Problem.class).getDetail();
@@ -176,9 +176,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier);
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
-            .withHeaders(headers)
-            .withPathParameters(pathParameters)
-            .build();
+                   .withHeaders(headers)
+                   .withPathParameters(pathParameters)
+                   .build();
     }
     
     private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
@@ -188,8 +188,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
-            .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
-            .build();
+                   .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
+                   .build();
     }
     
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
@@ -198,7 +198,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     
     private GatewayResponse<Problem> parseFailureResponse() throws JsonProcessingException {
         JavaType responseWithProblemType = restApiMapper.getTypeFactory()
-            .constructParametricType(GatewayResponse.class, Problem.class);
+                                               .constructParametricType(GatewayResponse.class, Problem.class);
         return restApiMapper.readValue(output.toString(), responseWithProblemType);
     }
     

@@ -36,10 +36,9 @@ import nva.commons.core.attempt.Failure;
 public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest, Void> {
     
     public static final String USER_IS_NOT_OWNER_ERROR = "User does not own the specific publication";
-    
-    private static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String PUBLICATION_HAS_DOI_ALREADY = "Publication has already been assigned a DOI";
     public static final String RECENT_DOI_REQUEST_ERROR = "A new DoiRequest was created recently";
+    private static final Clock CLOCK = Clock.systemDefaultZone();
     private final TicketService ticketService;
     private final MessageService messageService;
     private final ResourceService resourceService;
@@ -82,6 +81,12 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     @Override
     protected Integer getSuccessStatusCode(CreateDoiRequest input, Void output) {
         return HttpURLConnection.HTTP_CREATED;
+    }
+    
+    private static boolean doiRequestSatisfiesBasicRuleProtectingUsFromCreatingLargeAmountsOfHangingDraftDoiRequests(
+        DoiRequest ticket) {
+        //TODO replace with Duration.ofDays(1)
+        return ticket.getModifiedDate().isBefore(Instant.now().minus(Duration.ofMinutes(1)));
     }
     
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
@@ -144,12 +149,6 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
             return ticketService.refreshTicket(ticket);
         }
         throw new BadRequestException(RECENT_DOI_REQUEST_ERROR);
-    }
-    
-    private static boolean doiRequestSatisfiesBasicRuleProtectingUsFromCreatingLargeAmountsOfHangingDraftDoiRequests(
-        DoiRequest ticket) {
-        //TODO replace with Duration.ofDays(1)
-        return ticket.getModifiedDate().isBefore(Instant.now().minus(Duration.ofMinutes(1)));
     }
     
     private Map<String, String> additionalHeaders(SortableIdentifier doiRequestIdentifier) {

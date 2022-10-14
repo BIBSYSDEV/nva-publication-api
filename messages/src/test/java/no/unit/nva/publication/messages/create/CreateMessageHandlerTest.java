@@ -136,8 +136,8 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     private URI constructExpectedMessageUri(Message message) {
         return UriWrapper.fromUri(PUBLICATION_HOST_URI)
                    .addChild(DEPRECATED_MESSAGE_PATH)
-            .addChild(message.getIdentifier().toString())
-            .getUri();
+                   .addChild(message.getIdentifier().toString())
+                   .getUri();
     }
     
     private Environment setupEnvironment() {
@@ -166,10 +166,10 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     private InputStream createInput(CreateMessageRequest requestBody)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(messageTestsObjectMapper)
-            .withBody(requestBody)
-            .withNvaUsername(SOME_CURATOR)
-            .withCustomerId(samplePublication.getPublisher().getId())
-            .build();
+                   .withBody(requestBody)
+                   .withNvaUsername(SOME_CURATOR)
+                   .withCustomerId(samplePublication.getPublisher().getId())
+                   .build();
     }
     
     private CreateMessageRequest createSampleMessage(Publication savedPublication, String message) {

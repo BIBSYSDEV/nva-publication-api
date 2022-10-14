@@ -173,6 +173,13 @@ public class GeneralSupportRequest extends TicketEntry {
     
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
+            extractPublicationIdentifier(), getStatus());
+    }
+    
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -188,13 +195,6 @@ public class GeneralSupportRequest extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(extractPublicationIdentifier(), that.extractPublicationIdentifier())
                && getStatus() == that.getStatus();
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-            extractPublicationIdentifier(), getStatus());
     }
     
     private static URI extractCustomerId(Publication publication) {

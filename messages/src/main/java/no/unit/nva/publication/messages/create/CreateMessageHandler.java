@@ -61,12 +61,6 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return createDto(messageId);
     }
     
-    private MessageDto createDto(URI messageId) {
-        var messageDto = new MessageDto();
-        messageDto.setMessageId(messageId);
-        return messageDto;
-    }
-    
     @Override
     protected Integer getSuccessStatusCode(CreateMessageRequest input, MessageDto output) {
         return HttpURLConnection.HTTP_CREATED;
@@ -83,6 +77,12 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     
     private static MessageService defaultMessageService(AmazonDynamoDB client) {
         return new MessageService(client, Clock.systemDefaultZone());
+    }
+    
+    private MessageDto createDto(URI messageId) {
+        var messageDto = new MessageDto();
+        messageDto.setMessageId(messageId);
+        return messageDto;
     }
     
     private Publication fetchExistingPublication(CreateMessageRequest input) throws BadRequestException {

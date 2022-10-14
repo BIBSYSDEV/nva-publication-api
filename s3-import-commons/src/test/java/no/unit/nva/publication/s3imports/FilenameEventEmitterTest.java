@@ -165,9 +165,9 @@ public class FilenameEventEmitterTest {
         
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
         UnixPath errorReportFile = ERRORS_FOLDER
-            .addChild(timestampToString(clock.instant()))
-            .addChild(importRequest.extractPathFromS3Location())
-            .addChild(ERROR_REPORT_FILENAME);
+                                       .addChild(timestampToString(clock.instant()))
+                                       .addChild(importRequest.extractPathFromS3Location())
+                                       .addChild(ERROR_REPORT_FILENAME);
         String content = s3Driver.getFile(errorReportFile);
         for (URI filename : injectedFiles) {
             assertThat(content, containsString(filename.toString()));
@@ -237,10 +237,10 @@ public class FilenameEventEmitterTest {
     
     private void assertThatBucketContainsOnlyInjectedInputFilesAndNotAnyGeneratedReportFiles(List<UnixPath> allFiles) {
         var expectedFilenamesInS3Bucket = injectedFiles
-            .stream()
-            .map(UriWrapper::fromUri)
-            .map(UriWrapper::toS3bucketPath)
-            .collect(Collectors.toList());
+                                              .stream()
+                                              .map(UriWrapper::fromUri)
+                                              .map(UriWrapper::toS3bucketPath)
+                                              .collect(Collectors.toList());
         
         assertThat(allFiles, containsInAnyOrder(expectedFilenamesInS3Bucket.toArray(UnixPath[]::new)));
     }
@@ -269,8 +269,8 @@ public class FilenameEventEmitterTest {
     
     private <T> InputStream toJsonStream(T importRequest) {
         return attempt(() -> s3ImportsMapper.writeValueAsString(importRequest))
-            .map(IoUtils::stringToStream)
-            .orElseThrow();
+                   .map(IoUtils::stringToStream)
+                   .orElseThrow();
     }
     
     private String invalidBody() throws JsonProcessingException {

@@ -212,6 +212,31 @@ public class PublishingRequestCase extends TicketEntry {
         this.owner = owner;
     }
     
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
+            getCreatedDate());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof PublishingRequestCase)) {
+            return false;
+        }
+        PublishingRequestCase that = (PublishingRequestCase) o;
+        return Objects.equals(getIdentifier(), that.getIdentifier())
+               && getStatus() == that.getStatus()
+               && Objects.equals(getCustomerId(), that.getCustomerId())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate());
+    }
+    
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
         UserInstance userInstance,
         SortableIdentifier publicationIdentifier,
@@ -258,30 +283,5 @@ public class PublishingRequestCase extends TicketEntry {
                    .map(Publication::getEntityDescription)
                    .map(EntityDescription::getMainTitle)
                    .isEmpty();
-    }
-    
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof PublishingRequestCase)) {
-            return false;
-        }
-        PublishingRequestCase that = (PublishingRequestCase) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
-               && getStatus() == that.getStatus()
-               && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
-            getCreatedDate());
     }
 }

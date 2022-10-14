@@ -47,9 +47,9 @@ public class CristinContributorsAffiliation {
     
     public Organization toNvaOrganization() {
         return new Organization.Builder()
-            .withId(buildId())
-            .withLabels(Collections.emptyMap())
-            .build();
+                   .withId(buildId())
+                   .withLabels(Collections.emptyMap())
+                   .build();
     }
     
     public CristinContributorsAffiliationBuilder copy() {
@@ -63,7 +63,7 @@ public class CristinContributorsAffiliation {
             subdepartmentIdentifier.toString(),
             groupNumber.toString());
         return UriWrapper.fromUri(MappingConstants.CRISTIN_ORG_URI)
-            .addChild(affiliationCristinCode)
-            .getUri();
+                   .addChild(affiliationCristinCode)
+                   .getUri();
     }
 }

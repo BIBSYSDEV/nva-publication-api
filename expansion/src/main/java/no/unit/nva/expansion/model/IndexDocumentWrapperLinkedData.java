@@ -43,9 +43,9 @@ public class IndexDocumentWrapperLinkedData {
         List<Optional<String>> uriContent =
             publicationContextUris.stream().map(this::fetch).collect(Collectors.toList());
         return uriContent.stream()
-            .flatMap(Optional::stream)
-            .map(IoUtils::stringToStream)
-            .collect(Collectors.toList());
+                   .flatMap(Optional::stream)
+                   .map(IoUtils::stringToStream)
+                   .collect(Collectors.toList());
     }
     
     private Optional<String> fetch(URI externalReference) {

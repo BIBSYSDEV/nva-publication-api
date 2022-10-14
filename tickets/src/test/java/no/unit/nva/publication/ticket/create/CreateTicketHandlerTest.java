@@ -239,23 +239,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
     }
     
-    private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
-        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
-                                                          .getLastPathElement());
-        return ticketService.fetchTicketByIdentifier(ticketIdentifier);
-    }
-    
-    private Publication createUnpublishablePublication() {
-        var publication = randomPublication().copy().withEntityDescription(null).build();
-        publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-        return publication;
-    }
-    
-    private Publication createPersistedPublicationWithDoi() {
-        var publication = randomPublication();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-    }
-    
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
         return new SortableIdentifier(UriWrapper.fromUri(location).getLastPathElement());
     }
@@ -274,6 +257,23 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .map(UriWrapper::getLastPathElement)
                    .map(SortableIdentifier::new)
                    .orElseThrow();
+    }
+    
+    private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
+        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
+                                                          .getLastPathElement());
+        return ticketService.fetchTicketByIdentifier(ticketIdentifier);
+    }
+    
+    private Publication createUnpublishablePublication() {
+        var publication = randomPublication().copy().withEntityDescription(null).build();
+        publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return publication;
+    }
+    
+    private Publication createPersistedPublicationWithDoi() {
+        var publication = randomPublication();
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
     private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)

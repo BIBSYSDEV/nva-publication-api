@@ -111,19 +111,19 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         UriWrapper inputFolderUri = UriWrapper.fromUri(request.getS3Location());
         UriWrapper bucketUri = inputFolderUri.getHost();
         return bucketUri
-            .addChild(ERRORS_FOLDER)
-            .addChild(timestampToString(timestamp))
-            .addChild(inputFolderUri.getPath())
-            .addChild(ERROR_REPORT_FILENAME);
+                   .addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(timestamp))
+                   .addChild(inputFolderUri.getPath())
+                   .addChild(ERROR_REPORT_FILENAME);
     }
     
     private URI createUri(URI s3Location, UnixPath filename) {
         return Try.of(s3Location)
-            .map(UriWrapper::fromUri)
-            .map(UriWrapper::getHost)
-            .map(uri -> uri.addChild(filename))
-            .map(UriWrapper::getUri)
-            .orElseThrow();
+                   .map(UriWrapper::fromUri)
+                   .map(UriWrapper::getHost)
+                   .map(uri -> uri.addChild(filename))
+                   .map(UriWrapper::getUri)
+                   .orElseThrow();
     }
     
     private List<URI> listFiles(ImportRequest importRequest) {
@@ -132,29 +132,29 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         List<UnixPath> filenames = s3Driver.listAllFiles(importRequest.extractPathFromS3Location());
         logger.info(attempt(() -> s3ImportsMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream()
-            .map(filename -> createUri(importRequest.getS3Location(), filename))
-            .collect(Collectors.toList());
+                   .map(filename -> createUri(importRequest.getS3Location(), filename))
+                   .collect(Collectors.toList());
     }
     
     private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
         if (!failedRequests.isEmpty()) {
             String failedRequestsString = failedRequests
-                .stream()
-                .map(PutEventsResult::toString)
-                .collect(Collectors.joining(LINE_SEPARATOR));
+                                              .stream()
+                                              .map(PutEventsResult::toString)
+                                              .collect(Collectors.joining(LINE_SEPARATOR));
             logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX + failedRequestsString);
         }
     }
     
     private List<URI> collectNotEmittedFilenames(List<PutEventsResult> failedRequests) {
         return failedRequests.stream()
-            .map(PutEventsResult::getRequest)
-            .map(PutEventsRequest::entries)
-            .flatMap(Collection::stream)
-            .map(PutEventsRequestEntry::detail)
-            .map(ImportRequest::fromJson)
-            .map(ImportRequest::getS3Location)
-            .collect(Collectors.toList());
+                   .map(PutEventsResult::getRequest)
+                   .map(PutEventsRequest::entries)
+                   .flatMap(Collection::stream)
+                   .map(PutEventsRequestEntry::detail)
+                   .map(ImportRequest::fromJson)
+                   .map(ImportRequest::getS3Location)
+                   .collect(Collectors.toList());
     }
     
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
@@ -163,10 +163,10 @@ public class FilenameEventEmitter implements RequestStreamHandler {
             new BatchEventEmitter<>(RUNNING_CLASS_NAME,
                 context.getInvokedFunctionArn(),
                 eventBridgeClient);
-        
+    
         List<ImportRequest> filenameEvents = files.stream()
-            .map(this::newImportRequestForSingleFile)
-            .collect(Collectors.toList());
+                                                 .map(this::newImportRequestForSingleFile)
+                                                 .collect(Collectors.toList());
         batchEventEmitter.addEvents(filenameEvents);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
     }
@@ -188,7 +188,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private ImportRequest parseInput(InputStream input) {
         String inputString = IoUtils.streamToString(input);
         return attempt(() -> ImportRequest.fromJson(inputString))
-            .orElseThrow(fail -> new IllegalArgumentException(EXPECTED_BODY_MESSAGE + inputString));
+                   .orElseThrow(fail -> new IllegalArgumentException(EXPECTED_BODY_MESSAGE + inputString));
     }
     
     private <T> void writeOutput(OutputStream output, List<T> results) throws IOException {

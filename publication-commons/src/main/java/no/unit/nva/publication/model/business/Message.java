@@ -110,6 +110,14 @@ public class Message implements Entity, JsonSerializable {
     
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getSender(), getResourceIdentifier(),
+            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(),
+            getMessageType());
+    }
+    
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -129,14 +137,6 @@ public class Message implements Entity, JsonSerializable {
                && Objects.equals(getModifiedDate(), message.getModifiedDate())
                && Objects.equals(getResourceTitle(), message.getResourceTitle())
                && getMessageType() == message.getMessageType();
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getSender(), getResourceIdentifier(),
-            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(),
-            getMessageType());
     }
     
     @Override

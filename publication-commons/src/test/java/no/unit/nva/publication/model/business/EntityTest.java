@@ -23,14 +23,14 @@ class EntityTest extends ResourcesLocalTest {
     public static final ResourceService SHOULD_NOT_USE_RESOURCE_SERVICE = null;
     private ResourceService resourceService;
     
+    public static Stream<Arguments> ticketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
+    }
+    
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-    }
-    
-    public static Stream<Arguments> ticketTypeProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
     }
     
     @ParameterizedTest(name = "entity type:{0}")

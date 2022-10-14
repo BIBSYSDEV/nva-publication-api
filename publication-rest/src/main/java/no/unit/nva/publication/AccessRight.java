@@ -49,6 +49,6 @@ public enum AccessRight {
     
     private static Map<String, AccessRight> createIndex() {
         return Arrays.stream(AccessRight.values())
-            .collect(Collectors.toMap(AccessRight::toString, v -> v));
+                   .collect(Collectors.toMap(AccessRight::toString, v -> v));
     }
 }

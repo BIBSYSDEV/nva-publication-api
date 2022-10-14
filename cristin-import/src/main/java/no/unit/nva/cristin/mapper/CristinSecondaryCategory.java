@@ -62,8 +62,8 @@ public enum CristinSecondaryCategory {
     @JsonCreator
     public static CristinSecondaryCategory fromString(String category) {
         return Arrays.stream(values())
-            .filter(enumValue -> enumValue.aliases.contains(category))
-            .collect(SingletonCollector.collectOrElse(UNMAPPED));
+                   .filter(enumValue -> enumValue.aliases.contains(category))
+                   .collect(SingletonCollector.collectOrElse(UNMAPPED));
     }
     
     public static boolean isAnthology(CristinObject cristinObject) {

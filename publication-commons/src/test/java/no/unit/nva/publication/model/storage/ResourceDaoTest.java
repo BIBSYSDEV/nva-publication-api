@@ -34,6 +34,14 @@ class ResourceDaoTest extends ResourcesLocalTest {
         super.init();
     }
     
+    protected static ResourceDao createResourceDaoWithoutCristinIdentifier() {
+        return new ResourceDao(sampleResourceDao()
+                                   .getResource()
+                                   .copy()
+                                   .withAdditionalIdentifiers(null)
+                                   .build());
+    }
+    
     @Test
     void queryObjectReturnsObjectWithNonNullPrimaryPartitionKey() {
         ResourceDao queryObject = ResourceDao.queryObject(SAMPLE_USER_INSTANCE, SAMPLE_IDENTIFIER);
@@ -69,8 +77,6 @@ class ResourceDaoTest extends ResourcesLocalTest {
             is(equalTo(null)));
     }
     
-
-    
     @Test
     void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId() {
         var dao = sampleResourceDao();
@@ -90,14 +96,6 @@ class ResourceDaoTest extends ResourcesLocalTest {
                 .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
                 .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME));
         assertThat(result.getCount(), Matchers.is(Matchers.equalTo(1)));
-    }
-    
-    protected static ResourceDao createResourceDaoWithoutCristinIdentifier() {
-        return new ResourceDao(sampleResourceDao()
-                                   .getResource()
-                                   .copy()
-                                   .withAdditionalIdentifiers(null)
-                                   .build());
     }
     
     private ResourceDao queryDbFindByCristinIdentifier(ResourceDao dao) {

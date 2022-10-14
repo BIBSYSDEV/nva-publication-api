@@ -94,7 +94,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
         var publicationResponse = PublicationMapper
-            .convertValue(publication, PublicationResponse.class);
+                                      .convertValue(publication, PublicationResponse.class);
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
     

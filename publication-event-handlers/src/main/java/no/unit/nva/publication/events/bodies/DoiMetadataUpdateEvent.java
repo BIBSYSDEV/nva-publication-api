@@ -12,12 +12,9 @@ public class DoiMetadataUpdateEvent {
     
     public static final String REQUEST_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.CreationRequest";
     public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
-    protected static final String EMPTY_EVENT_TOPIC = "empty";
-    
-    
     public static final String TOPIC = "topic";
     public static final String ITEM = "item";
-    
+    protected static final String EMPTY_EVENT_TOPIC = "empty";
     @JsonProperty(TOPIC)
     private final String topic;
     @JsonProperty(ITEM)

@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 public class SqsEventPublisher implements EventPublisher {
     
     private static final ObjectMapper objectMapper = new ObjectMapper()
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+                                                         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     
     private static final Logger logger = LoggerFactory.getLogger(SqsEventPublisher.class);
     
@@ -37,8 +37,8 @@ public class SqsEventPublisher implements EventPublisher {
     
     private SendMessageRequest createSendMessageRequest(DynamodbEvent event) throws JsonProcessingException {
         return SendMessageRequest.builder()
-            .queueUrl(queueUrl)
-            .messageBody(objectMapper.writeValueAsString(event))
-            .build();
+                   .queueUrl(queueUrl)
+                   .messageBody(objectMapper.writeValueAsString(event))
+                   .build();
     }
 }

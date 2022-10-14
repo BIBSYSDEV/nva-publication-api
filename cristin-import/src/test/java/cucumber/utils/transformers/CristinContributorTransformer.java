@@ -18,16 +18,16 @@ public class CristinContributorTransformer {
     
     public static CristinContributorBuilder toContributor(Map<String, String> nameMap) {
         return CristinContributorTransformer
-            .toContributor(nameMap.get(GIVEN_NAME), nameMap.get(FAMILY_NAME));
+                   .toContributor(nameMap.get(GIVEN_NAME), nameMap.get(FAMILY_NAME));
     }
     
     public static CristinContributorBuilder toContributor(String givenName, String familyName) {
         return CristinContributor.builder()
-            .withContributorOrder(nextContributorOrder.incrementAndGet())
-            .withAffiliations(List.of(CristinDataGenerator.randomAffiliation()))
-            .withIdentifier(CristinDataGenerator.largeRandomNumber())
-            .withFamilyName(familyName)
-            .withGivenName(givenName);
+                   .withContributorOrder(nextContributorOrder.incrementAndGet())
+                   .withAffiliations(List.of(CristinDataGenerator.randomAffiliation()))
+                   .withIdentifier(CristinDataGenerator.largeRandomNumber())
+                   .withFamilyName(familyName)
+                   .withGivenName(givenName);
     }
     
     public static CristinContributorBuilder toContributorWithOrdinalNumber(

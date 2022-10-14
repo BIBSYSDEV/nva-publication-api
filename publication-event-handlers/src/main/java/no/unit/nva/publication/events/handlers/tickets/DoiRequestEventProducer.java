@@ -47,7 +47,7 @@ public class DoiRequestEventProducer
     private final ResourceService resourceService;
     private final HttpClient httpClient;
     private final S3Client s3Client;
-
+    
     @JacocoGenerated
     public DoiRequestEventProducer() {
         this(ResourceService.defaultService(), HttpClient.newHttpClient(), S3Driver.defaultS3Client().build());
@@ -59,7 +59,7 @@ public class DoiRequestEventProducer
         this.httpClient = httpClient;
         this.s3Client = s3Client;
     }
-
+    
     @Override
     protected DoiMetadataUpdateEvent processInputPayload(
         EventReference inputEvent,
@@ -69,12 +69,12 @@ public class DoiRequestEventProducer
         var eventString = s3Driver.readEvent(inputEvent.getUri());
         var eventBody = DataEntryUpdateEvent.fromJson(eventString);
         validate(eventBody);
-
+        
         return isEffectiveChange(eventBody)
                    ? propagateEvent(eventBody)
                    : EMPTY_EVENT;
     }
-
+    
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
         var newEntry = input.getNewData();
         
@@ -164,7 +164,6 @@ public class DoiRequestEventProducer
     private boolean eventCannotBeReferenced(DoiRequest doiRequest) {
         return isNull(doiRequest.getIdentifier());
     }
-    
     
     private Publication toPublication(Entity dataEntry) {
         return dataEntry != null ? dataEntry.toPublication(resourceService) : null;

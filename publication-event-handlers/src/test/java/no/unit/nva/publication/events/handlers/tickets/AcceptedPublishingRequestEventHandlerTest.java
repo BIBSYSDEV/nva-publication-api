@@ -48,7 +48,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         s3Driver = new S3Driver(s3Client, randomString());
         handler = new AcceptedPublishingRequestEventHandler(resourceService, s3Client);
         outputStream = new ByteArrayOutputStream();
-        
     }
     
     @Test
@@ -79,7 +78,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
-        var event = createEvent(pendingPublishingRequest,approvedPublishingRequest);
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         var logger = LogUtils.getTestingAppenderForRootLogger();
         
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -104,7 +103,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private String eventBody(TicketEntry pendingPublishingRequest,
                              TicketEntry approvedPublishingRequest) {
         return new DataEntryUpdateEvent(randomString(), pendingPublishingRequest, approvedPublishingRequest)
-            .toJsonString();
+                   .toJsonString();
     }
     
     private Publication createUnpublishablePublication() {

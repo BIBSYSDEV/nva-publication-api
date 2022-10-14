@@ -19,8 +19,8 @@ public class UriRetriever {
     public Optional<String> getRawContent(URI uri, String mediaType) {
         return attempt(() -> HTTP_CLIENT.send(createHttpRequest(uri, mediaType),
             BodyHandlers.ofString(StandardCharsets.UTF_8)))
-            .map(HttpResponse::body)
-            .toOptional();
+                   .map(HttpResponse::body)
+                   .toOptional();
     }
     
     private static HttpClient newHttpClient() {
@@ -29,9 +29,9 @@ public class UriRetriever {
     
     private HttpRequest createHttpRequest(URI uri, String mediaType) {
         return HttpRequest.newBuilder()
-            .uri(uri)
-            .headers(ACCEPT, mediaType)
-            .GET()
-            .build();
+                   .uri(uri)
+                   .headers(ACCEPT, mediaType)
+                   .GET()
+                   .build();
     }
 }

@@ -69,8 +69,8 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         var savedPublication = extractSavedPublicationFromDatabase();
         
         var expectedPublication = copyFieldsCreatedByHandler(samplePublication.copy(), savedPublication)
-            .withStatus(PublicationStatus.PUBLISHED)
-            .build();
+                                      .withStatus(PublicationStatus.PUBLISHED)
+                                      .build();
         
         assertThat(savedPublication, is(equalTo(expectedPublication)));
     }
@@ -95,23 +95,23 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
     private Publication deleteFieldsThatAreExpectedToBeNullWhenCreatingAPublishedPublicationFromScopus(
         Publication publication) {
         return publication.copy()
-            .withDoi(null)
-            .withHandle(null)
-            .withPublishedDate(null)
-            .withLink(null)
-            .withIndexedDate(null)
-            .withPublisher(null)
-            .withResourceOwner(null)
-            .build();
+                   .withDoi(null)
+                   .withHandle(null)
+                   .withPublishedDate(null)
+                   .withLink(null)
+                   .withIndexedDate(null)
+                   .withPublisher(null)
+                   .withResourceOwner(null)
+                   .build();
     }
     
     private Publication.Builder copyFieldsCreatedByHandler(Publication.Builder publicationBuilder,
                                                            Publication savedPublication) {
         return publicationBuilder.withResourceOwner(savedPublication.getResourceOwner())
-            .withPublisher(savedPublication.getPublisher())
-            .withCreatedDate(savedPublication.getCreatedDate())
-            .withModifiedDate(savedPublication.getModifiedDate())
-            .withIdentifier(savedPublication.getIdentifier());
+                   .withPublisher(savedPublication.getPublisher())
+                   .withCreatedDate(savedPublication.getCreatedDate())
+                   .withModifiedDate(savedPublication.getModifiedDate())
+                   .withIdentifier(savedPublication.getIdentifier());
     }
     
     private PublicationResponse sendMessageToEventHandler(URI s3FileUri) throws JsonProcessingException {

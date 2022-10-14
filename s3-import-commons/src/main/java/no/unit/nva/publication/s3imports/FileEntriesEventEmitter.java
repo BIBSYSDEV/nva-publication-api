@@ -110,9 +110,9 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     
     private Try<List<PutEventsResult>> attemptToEmitEvents(ImportRequest input, Context context, S3Driver s3Driver) {
         return attempt(() -> fetchFileFromS3(input, s3Driver))
-            .map(this::parseContents)
-            .map(jsonNodes -> generateEventBodies(input, jsonNodes))
-            .map(eventBodies -> emitEvents(context, eventBodies));
+                   .map(this::parseContents)
+                   .map(jsonNodes -> generateEventBodies(input, jsonNodes))
+                   .map(eventBodies -> emitEvents(context, eventBodies));
     }
     
     private String returnNothingOrThrowExceptionWhenEmissionFailedCompletely(
@@ -140,11 +140,11 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
                                ? PARTIAL_FAILURE
                                : failedEntries.getException().getClass().getSimpleName();
         return bucket
-            .addChild(ERRORS_FOLDER)
-            .addChild(timestampToString(input.getTimestamp()))
-            .addChild(errorType)
-            .addChild(inputUri.getParent().map(UriWrapper::getPath).orElse(UnixPath.EMPTY_PATH))
-            .addChild(makeFileExtensionError(inputUri.getLastPathElement()));
+                   .addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(input.getTimestamp()))
+                   .addChild(errorType)
+                   .addChild(inputUri.getParent().map(UriWrapper::getPath).orElse(UnixPath.EMPTY_PATH))
+                   .addChild(makeFileExtensionError(inputUri.getLastPathElement()));
     }
     
     private String makeFileExtensionError(String filename) {
@@ -155,11 +155,11 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         URI fileUri = input.getS3Location();
         Instant timestamp = input.getTimestamp();
         return contents.stream()
-            .map(json -> new FileContentsEvent<>(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
-                input.getSubtopic(),
-                fileUri,
-                timestamp,
-                json));
+                   .map(json -> new FileContentsEvent<>(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+                       input.getSubtopic(),
+                       fileUri,
+                       timestamp,
+                       json));
     }
     
     private List<PutEventsResult> emitEvents(Context context,
@@ -208,9 +208,9 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     
     private void logWarningForNotEmittedEntries(Try<List<PutEventsResult>> failedRequests) {
         String failedRequestsString = failedRequests
-            .stream()
-            .map(PutEventsResult::toString)
-            .collect(Collectors.joining(LINE_SEPARATOR));
+                                          .stream()
+                                          .map(PutEventsResult::toString)
+                                          .collect(Collectors.joining(LINE_SEPARATOR));
         if (StringUtils.isNotBlank(failedRequestsString)) {
             logger.warn(NON_EMITTED_ENTRIES_WARNING_PREFIX + failedRequestsString);
         }
@@ -232,17 +232,17 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
     
     private List<JsonNode> parseContentAsListOfJsonObjects(String content) {
-        
+    
         return attempt(() -> content.replaceAll(CONSECUTIVE_JSON_OBJECTS, NODES_IN_ARRAY))
-            .map(jsonObjectStrings -> BEGINNING_OF_ARRAY + jsonObjectStrings + END_OF_ARRAY)
-            .map(jsonArrayString -> (ArrayNode) s3ImportsMapper.readTree(jsonArrayString))
-            .map(array -> toStream(array).collect(Collectors.toList()))
-            .orElseThrow();
+                   .map(jsonObjectStrings -> BEGINNING_OF_ARRAY + jsonObjectStrings + END_OF_ARRAY)
+                   .map(jsonArrayString -> (ArrayNode) s3ImportsMapper.readTree(jsonArrayString))
+                   .map(array -> toStream(array).collect(Collectors.toList()))
+                   .orElseThrow();
     }
     
     private Stream<JsonNode> toStream(ArrayNode root) {
         return StreamSupport
-            .stream(Spliterators.spliteratorUnknownSize(root.elements(), Spliterator.ORDERED), SEQUENTIAL);
+                   .stream(Spliterators.spliteratorUnknownSize(root.elements(), Spliterator.ORDERED), SEQUENTIAL);
     }
     
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {

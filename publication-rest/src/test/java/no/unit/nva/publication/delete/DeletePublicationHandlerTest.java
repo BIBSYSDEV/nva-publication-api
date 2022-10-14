@@ -19,9 +19,9 @@ import java.time.Clock;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
@@ -58,13 +58,14 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, ApiGatewayException {
         
         Publication publication = createPublication();
-        
+    
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(publication.getPublisher().getId())
-            .build();
+                                      .withHeaders(TestHeaders.getRequestHeaders())
+                                      .withPathParameters(
+                                          singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                                      .withNvaUsername(publication.getResourceOwner().getOwner())
+                                      .withCustomerId(publication.getPublisher().getId())
+                                      .build();
         
         handler.handleRequest(inputStream, outputStream, context);
         
@@ -77,13 +78,14 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         Publication publication = createPublication();
         
         publicationService.publishPublication(createUserInstance(publication), publication.getIdentifier());
-        
+    
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(publication.getPublisher().getId())
-            .build();
+                                      .withHeaders(TestHeaders.getRequestHeaders())
+                                      .withPathParameters(
+                                          singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                                      .withNvaUsername(publication.getResourceOwner().getOwner())
+                                      .withCustomerId(publication.getPublisher().getId())
+                                      .build();
         
         handler.handleRequest(inputStream, outputStream, context);
         
@@ -94,13 +96,13 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsErrorWhenNonExistingPublication() throws IOException {
         UUID identifier = UUID.randomUUID();
-        
+    
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, identifier.toString()))
-            .withCustomerId(SOME_CUSTOMER)
-            .withNvaUsername(SOME_USER)
-            .build();
+                                      .withHeaders(TestHeaders.getRequestHeaders())
+                                      .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, identifier.toString()))
+                                      .withCustomerId(SOME_CUSTOMER)
+                                      .withNvaUsername(SOME_USER)
+                                      .build();
         
         handler.handleRequest(inputStream, outputStream, context);
         
@@ -111,13 +113,14 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication() throws IOException, ApiGatewayException {
         Publication createdPublication = createPublication();
-        
+    
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, createdPublication.getIdentifier().toString()))
-            .withNvaUsername(SOME_USER)
-            .withCustomerId(createdPublication.getPublisher().getId())
-            .build();
+                                      .withHeaders(TestHeaders.getRequestHeaders())
+                                      .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
+                                          createdPublication.getIdentifier().toString()))
+                                      .withNvaUsername(SOME_USER)
+                                      .withCustomerId(createdPublication.getPublisher().getId())
+                                      .build();
         
         handler.handleRequest(inputStream, outputStream, context);
         
@@ -132,13 +135,14 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         markForDeletion(publication);
-        
+    
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(publication.getPublisher().getId())
-            .build();
+                                      .withHeaders(TestHeaders.getRequestHeaders())
+                                      .withPathParameters(
+                                          singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                                      .withNvaUsername(publication.getResourceOwner().getOwner())
+                                      .withCustomerId(publication.getPublisher().getId())
+                                      .build();
         
         handler.handleRequest(inputStream, outputStream, context);
         

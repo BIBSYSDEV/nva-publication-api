@@ -51,19 +51,19 @@ public final class UntypedTicketQueryObject extends TicketDao {
         throw new UnsupportedOperationException();
     }
     
+    @Override
+    protected User getOwner() {
+        return new User(owner.getUsername());
+    }
+    
     public Stream<TicketEntry> fetchTicketsForUser(AmazonDynamoDB client) {
         var queryRequest = new QueryRequest()
                                .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
                                .withKeyConditions(this.primaryKeyPartitionKeyCondition());
-    
+        
         return fetchAllQueryResults(client, queryRequest)
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast);
-    }
-    
-    @Override
-    protected User getOwner() {
-        return new User(owner.getUsername());
     }
     
     @JacocoGenerated

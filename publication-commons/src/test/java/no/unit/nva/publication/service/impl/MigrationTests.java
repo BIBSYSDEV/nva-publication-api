@@ -75,6 +75,14 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(doiRequest, hasSize(1));
     }
     
+    private static Publication draftPublicationWithoutDoi() {
+        return randomPublication()
+                   .copy()
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withDoi(null)
+                   .build();
+    }
+    
     private void saveOlDoiRequestDirectlyInDatabase() {
         var jsonString = IoUtils.stringFromResources(Path.of("migration", "old_doi_request.json"));
         var item = Item.fromJSON(jsonString);
@@ -93,13 +101,5 @@ class MigrationTests extends ResourcesLocalTest {
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING);
         resourceService.refreshResources(scanResources.getDatabaseEntries());
-    }
-    
-    private static Publication draftPublicationWithoutDoi() {
-        return randomPublication()
-                   .copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
     }
 }

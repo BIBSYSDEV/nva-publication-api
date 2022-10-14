@@ -169,13 +169,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return PublicationInstanceBuilder.listPublicationInstanceTypes();
     }
     
+    @SuppressWarnings("unchecked")
+    private static Class<? extends TicketEntry> someOtherTicketType(Class<? extends TicketEntry> ticketType) {
+        return (Class<? extends TicketEntry>) ticketTypeProvider().filter(type -> !ticketType.equals(type))
+                                                  .findAny().orElseThrow();
+    }
+    
     @SuppressWarnings("SameParameterValue")
     //Currently only GeneralSupportCase supports multiple simultaneous entries.
     // This may change in the future, so the warning is suppressed.
     private List<Message> messagesOfDifferentTickets(Publication publication, UserInstance owner,
                                                      Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-
+        
         var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
                                           .persistNewTicket(ticketService);
         var firstUnexpectedMessage = messageService.createMessage(differentTicketSameType, owner, randomString());
@@ -184,12 +190,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             TicketEntry.requestNewTicket(publication, differentTicketType).persistNewTicket(ticketService);
         var secondUnexpectedMessage = messageService.createMessage(differentTicketDifferentType, owner, randomString());
         return new ArrayList<>(List.of(firstUnexpectedMessage, secondUnexpectedMessage));
-    }
-    
-    @SuppressWarnings("unchecked")
-    private static Class<? extends TicketEntry> someOtherTicketType(Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>) ticketTypeProvider().filter(type -> !ticketType.equals(type))
-                                                  .findAny().orElseThrow();
     }
     
     private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)

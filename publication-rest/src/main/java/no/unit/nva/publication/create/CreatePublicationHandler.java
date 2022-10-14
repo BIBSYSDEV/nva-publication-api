@@ -65,8 +65,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         
         UserInstance userInstance = createUserInstanceFromLoginInformation(requestInfo);
         var newPublication = Optional.ofNullable(input)
-            .map(CreatePublicationRequest::toPublication)
-            .orElseGet(Publication::new);
+                                 .map(CreatePublicationRequest::toPublication)
+                                 .orElseGet(Publication::new);
         var createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
     
@@ -90,8 +90,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     
     private ResourceOwner createResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(() -> requestInfo.getTopLevelOrgCristinId().orElseThrow())
-            .map(topLevelOrgCristinId -> new ResourceOwner(requestInfo.getNvaUsername(), topLevelOrgCristinId))
-            .orElseThrow(fail -> new UnauthorizedException());
+                   .map(topLevelOrgCristinId -> new ResourceOwner(requestInfo.getNvaUsername(), topLevelOrgCristinId))
+                   .orElseThrow(fail -> new UnauthorizedException());
     }
     
     private void setLocationHeader(SortableIdentifier identifier) {

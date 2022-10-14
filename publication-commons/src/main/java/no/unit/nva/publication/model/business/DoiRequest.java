@@ -219,14 +219,6 @@ public class DoiRequest extends TicketEntry {
         this.status = status;
     }
     
-    public PublicationStatus getResourceStatus() {
-        return resourceStatus;
-    }
-    
-    public void setResourceStatus(PublicationStatus resourceStatus) {
-        this.resourceStatus = resourceStatus;
-    }
-    
     @Override
     public DoiRequest update(Resource resource) {
         if (updateIsAboutTheSameResource(resource)) {
@@ -235,10 +227,25 @@ public class DoiRequest extends TicketEntry {
         throw new IllegalDoiRequestUpdate(RESOURCE_IDENTIFIER_MISMATCH_ERROR);
     }
     
+    public PublicationStatus getResourceStatus() {
+        return resourceStatus;
+    }
+    
+    public void setResourceStatus(PublicationStatus resourceStatus) {
+        this.resourceStatus = resourceStatus;
+    }
+    
     public void validate() {
         attempt(this::extractPublicationIdentifier)
             .toOptional()
             .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(), getCreatedDate(),
+            getCustomerId(), getOwner());
     }
     
     @Override
@@ -258,13 +265,6 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner());
-    }
-    
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(), getCreatedDate(),
-            getCustomerId(), getOwner());
     }
     
     private boolean publicationHasNvaDoi(Publication publication) {

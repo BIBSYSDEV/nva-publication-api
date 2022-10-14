@@ -149,7 +149,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
                 publication.getPublisher().getId(),
                 publication.getIdentifier(),
                 DoiRequest.class)
-            .orElseThrow();
+                   .orElseThrow();
     }
     
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
@@ -166,12 +166,12 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var pathParameters = createPathParameters(identifier);
         var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
-            .withCustomerId(customerId)
-            .withNvaUsername(SOME_CURATOR)
-            .withAccessRights(customerId, APPROVE_DOI_REQUEST.toString())
-            .withPathParameters(pathParameters)
-            .withBody(body)
-            .build();
+                   .withCustomerId(customerId)
+                   .withNvaUsername(SOME_CURATOR)
+                   .withAccessRights(customerId, APPROVE_DOI_REQUEST.toString())
+                   .withPathParameters(pathParameters)
+                   .withBody(body)
+                   .build();
     }
     
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
@@ -179,11 +179,11 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var pathParameters = createPathParameters(publication.getIdentifier().toString());
         var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
-            .withCustomerId(customerId)
-            .withNvaUsername(SOME_CURATOR)
-            .withPathParameters(pathParameters)
-            .withBody(body)
-            .build();
+                   .withCustomerId(customerId)
+                   .withNvaUsername(SOME_CURATOR)
+                   .withPathParameters(pathParameters)
+                   .withBody(body)
+                   .build();
     }
     
     private Map<String, String> createPathParameters(String identifier) {

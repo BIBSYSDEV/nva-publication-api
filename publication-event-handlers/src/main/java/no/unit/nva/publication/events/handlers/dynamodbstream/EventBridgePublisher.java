@@ -23,7 +23,7 @@ public class EventBridgePublisher implements EventPublisher {
     public static final String EVENT_SOURCE = "aws-dynamodb-stream-eventbridge-fanout";
     public static final int ENTRIES_PER_REQUEST = 7;
     private static final ObjectMapper objectMapper = new ObjectMapper()
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+                                                         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     private static final Logger logger = LoggerFactory.getLogger(EventBridgePublisher.class);
     private final EventBridgeRetryClient eventBridge;
     private final EventPublisher failedEventPublisher;
@@ -69,35 +69,35 @@ public class EventBridgePublisher implements EventPublisher {
     private List<PutEventsRequestEntry> putEventsToEventBus(List<PutEventsRequestEntry> requestEntries) {
         List<List<PutEventsRequestEntry>> groupedRequestEntries = Lists.partition(requestEntries, ENTRIES_PER_REQUEST);
         return groupedRequestEntries.stream()
-            .map(this::createPutEventsRequest)
-            .map(eventBridge::putEvents)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+                   .map(this::createPutEventsRequest)
+                   .map(eventBridge::putEvents)
+                   .flatMap(Collection::stream)
+                   .collect(Collectors.toList());
     }
     
     private PutEventsRequest createPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
         return PutEventsRequest.builder()
-            .entries(requestEntries)
-            .build();
+                   .entries(requestEntries)
+                   .build();
     }
     
     private List<PutEventsRequestEntry> createPutEventsRequestEntries(DynamodbEvent event) {
         return event.getRecords()
-            .stream()
-            .map(this::createPutEventRequestEntry)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(this::createPutEventRequestEntry)
+                   .collect(Collectors.toList());
     }
     
     private PutEventsRequestEntry createPutEventRequestEntry(DynamodbStreamRecord record) {
         Instant time = Instant.now(clock);
         return PutEventsRequestEntry.builder()
-            .eventBusName(eventBusName)
-            .time(time)
-            .source(EVENT_SOURCE)
-            .detailType(eventDetailType)
-            .detail(toString(record))
-            .resources(record.getEventSourceARN())
-            .build();
+                   .eventBusName(eventBusName)
+                   .time(time)
+                   .source(EVENT_SOURCE)
+                   .detailType(eventDetailType)
+                   .detail(toString(record))
+                   .resources(record.getEventSourceARN())
+                   .build();
     }
     
     private void publishFailedEvent(PutEventsRequestEntry entry) {

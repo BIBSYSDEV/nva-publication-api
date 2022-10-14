@@ -51,8 +51,8 @@ public class CristinPresentationalWork {
         
         UriWrapper idUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PROJECT, identifier.toString());
         return new ResearchProject.Builder()
-            .withId(idUri.getUri())
-            .withName(HARDCODED_RESEARCH_PROJECT_NAME)
-            .build();
+                   .withId(idUri.getUri())
+                   .withName(HARDCODED_RESEARCH_PROJECT_NAME)
+                   .build();
     }
 }

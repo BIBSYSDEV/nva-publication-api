@@ -89,23 +89,6 @@ public class DoiRequestDao extends TicketDao
     }
     
     @Override
-    protected User getOwner() {
-        return getData().getOwner();
-    }
-    
-    @Override
-    @JsonIgnore
-    public String joinByResourceOrderedType() {
-        return joinByResourceContainedOrderedType();
-    }
-    
-    @Override
-    @JsonIgnore
-    public SortableIdentifier getResourceIdentifier() {
-        return getTicketEntry().extractPublicationIdentifier();
-    }
-    
-    @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getData());
@@ -122,6 +105,23 @@ public class DoiRequestDao extends TicketDao
         }
         DoiRequestDao that = (DoiRequestDao) o;
         return Objects.equals(getData(), that.getData());
+    }
+    
+    @Override
+    protected User getOwner() {
+        return getData().getOwner();
+    }
+    
+    @Override
+    @JsonIgnore
+    public String joinByResourceOrderedType() {
+        return joinByResourceContainedOrderedType();
+    }
+    
+    @Override
+    @JsonIgnore
+    public SortableIdentifier getResourceIdentifier() {
+        return getTicketEntry().extractPublicationIdentifier();
     }
     
     @Override
