@@ -35,6 +35,9 @@ Parameters:
   ExpandedEntriesPersistenceBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/PersistedEntriesBucketName'
+  AthenaQueriesBucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/AthenaQueriesBucketName'
 
   MaxConcurrency:
     Type: Number
@@ -1348,6 +1351,18 @@ Resources:
       Targets:
         S3Targets:
           - Path: !Sub 's3://${ExpandedEntriesPersistenceBucketName}/analytics/publications'
+
+  AthenaWorkgroup:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Description: A workgroup for any service/user that queries NVA data through Athena
+      Name: NvaAthenaWorkgroup
+      RecursiveDeleteOption: true
+      State: ENABLED
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: true
+        ResultConfiguration:
+          OutputLocation: !Sub "s3://${AthenaQueriesBucketName}/results"
 
   CrawlerRole:
     Type: AWS::IAM::Role
