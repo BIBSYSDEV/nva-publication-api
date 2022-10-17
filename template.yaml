@@ -1341,7 +1341,7 @@ Resources:
         RecrawlBehavior: CRAWL_EVERYTHING
       Role: !GetAtt CrawlerRole.Arn
       Schedule:
-        ScheduleExpression: "cron(0 0 8-17 ? * MON-FRI *)"
+        ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
       SchemaChangePolicy:
         DeleteBehavior: DELETE_FROM_DATABASE
         UpdateBehavior: UPDATE_IN_DATABASE
