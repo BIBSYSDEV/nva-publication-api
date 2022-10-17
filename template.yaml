@@ -1331,6 +1331,49 @@ Resources:
         Description: Table containing the expanded publication metadata
         Name: nva-publications
 
+  PublicationsCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      #      Configuration: "{\"Version\":1.0,\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
+      DatabaseName: !Ref  AnalyticsExportDatabase
+      Description: Crawler that crawls the s3 bucket of persited publication metadata
+      Name: PublicationsCrawler
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !GetAtt CrawlerRole.Arn
+      Schedule:
+        ScheduleExpression: "cron(0/5 8-17 ? * MON-FRI *)"
+      SchemaChangePolicy:
+        DeleteBehavior: DELETE_FROM_DATABASE
+        UpdateBehavior: UPDATE_IN_DATABASE
+      Targets:
+        S3Targets:
+          - Path: !Ref ExpandedEntriesPersistenceBucketName
+
+  CrawlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - glue.amazonaws.com
+            Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
+      Policies:
+        - PolicyName: S3AthenaQueryResultsBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: "*"
 
   #===========================BasePathMappings========================================================
 
