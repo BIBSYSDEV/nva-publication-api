@@ -37,7 +37,7 @@ Parameters:
     Default: '/NVA/Events/PersistedEntriesBucketName'
   AthenaQueriesBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/AthenaQueriesBucketName'
+    Default: '/NVA/Athena/QueriesBucketName'
 
   MaxConcurrency:
     Type: Number
