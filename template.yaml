@@ -1364,6 +1364,20 @@ Resources:
         ResultConfiguration:
           OutputLocation: !Sub "s3://${AthenaQueriesBucketName}/results"
 
+  BiQuery:
+    Type: AWS::Athena::NamedQuery
+    Properties:
+      Database: !Ref  AnalyticsExportDatabase
+      Description: Currently nothing special. To be the view used by BI
+      Name: BI Query
+      QueryString: >
+        CREATE OR REPLACE VIEW demo_view_nested_fields AS
+        SELECT entitydescription.maintitle, contributor.identity.name
+        FROM "nva"."publications"
+        CROSS JOIN unnest(entitydescription.contributors) as t(contributor)
+        limit 20
+      WorkGroup: !Ref AthenaWorkgroup
+
   CrawlerRole:
     Type: AWS::IAM::Role
     Properties:
