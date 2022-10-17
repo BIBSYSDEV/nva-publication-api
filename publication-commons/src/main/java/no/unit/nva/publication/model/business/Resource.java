@@ -274,16 +274,19 @@ public class Resource implements Entity {
         var files = nonNull(fileSet) && nonNull(fileSet.getFiles())
                         ? fileSet.getFiles()
                         : new ArrayList<File>();
-        List<AssociatedArtifact> associatedArtifacts1 = toAssociatedArtifacts(files);
-        setAssociatedArtifacts(associatedArtifacts1);
+        temporarySetterForAssociatedArtifactsUntilFileSetIsRemoved(files);
+    }
+    
+    private void temporarySetterForAssociatedArtifactsUntilFileSetIsRemoved(List<File> files) {
+        this.associatedArtifacts = toAssociatedArtifacts(files);
     }
     
     public List<AssociatedArtifact> getAssociatedArtifacts() {
         return associatedArtifacts;
     }
     
-    private void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
-        this.associatedArtifacts = associatedArtifacts;
+    public void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+        // NO-OP
     }
     
     public List<ResearchProject> getProjects() {
