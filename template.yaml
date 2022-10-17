@@ -1313,6 +1313,25 @@ Resources:
     Properties:
       Name: !Join [ '',[ 'resource-service-internal-bus',!Ref Suffix ] ]
 
+  #==========================BI=============================================================================
+  AnalyticsExportDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Description: Read-only database mirroring the data in S3 bucket for expanded resources
+        Name: nva
+
+  PublicationsTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: nva
+      TableInput:
+        Description: Table containing the expanded publication metadata
+        Name: nva-publications
+
+
   #===========================BasePathMappings========================================================
 
   NvaPublicationBasePathMapping:
