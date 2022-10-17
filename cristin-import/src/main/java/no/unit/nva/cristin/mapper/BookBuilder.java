@@ -31,17 +31,17 @@ public class BookBuilder extends AbstractBookReportBuilder {
     
     private BookAnthology createBookAnthology() {
         return new BookAnthology.Builder()
-            .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
-            .withPages(createMonographPages())
-            .build();
+                   .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
+                   .withPages(createMonographPages())
+                   .build();
     }
     
     private BookMonograph createBookMonograph() {
         return new BookMonograph.Builder()
-            .withContentType(getCristinObject().getSecondaryCategory().toBookMonographContentType())
-            .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
-            .withPages(createMonographPages())
-            .withPeerReviewed(getCristinObject().isPeerReviewed())
-            .build();
+                   .withContentType(getCristinObject().getSecondaryCategory().toBookMonographContentType())
+                   .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
+                   .withPages(createMonographPages())
+                   .withPeerReviewed(getCristinObject().isPeerReviewed())
+                   .build();
     }
 }

@@ -10,8 +10,8 @@ public abstract class AbstractBookReportBuilder extends AbstractPublicationInsta
     
     protected MonographPages createMonographPages() {
         return new MonographPages.Builder()
-            .withPages(extractNumberOfPages())
-            .build();
+                   .withPages(extractNumberOfPages())
+                   .build();
     }
     
     private String extractNumberOfPages() {

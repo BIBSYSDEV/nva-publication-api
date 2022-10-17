@@ -83,8 +83,8 @@ public class BatchEventEmitter<T> {
      */
     public void addEvents(Stream<T> eventDetails) {
         List<PutEventsRequestEntry> eventRequestEntries = eventDetails
-            .map(this::createPutEventRequestEntry)
-            .collect(Collectors.toList());
+                                                              .map(this::createPutEventRequestEntry)
+                                                              .collect(Collectors.toList());
         putEventsRequests = createPutEventsRequests(eventRequestEntries);
     }
     
@@ -115,22 +115,22 @@ public class BatchEventEmitter<T> {
     private List<String> listAllBusNames() {
         return client.listEventBuses(
                 ListEventBusesRequest.builder().namePrefix(ApplicationConstants.EVENT_BUS_NAME).build())
-            .eventBuses()
-            .stream()
-            .map(EventBus::name)
-            .collect(Collectors.toList());
+                   .eventBuses()
+                   .stream()
+                   .map(EventBus::name)
+                   .collect(Collectors.toList());
     }
     
     private PutEventsRequestEntry createPutEventRequestEntry(T eventDetail) {
-        
+    
         return PutEventsRequestEntry.builder()
-            .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
-            .resources(invokingFunctionArn)
-            .detailType("BatchImport")
-            .time(Instant.now())
-            .detail(toJson(eventDetail))
-            .source(eventSource)
-            .build();
+                   .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
+                   .resources(invokingFunctionArn)
+                   .detailType("BatchImport")
+                   .time(Instant.now())
+                   .detail(toJson(eventDetail))
+                   .source(eventSource)
+                   .build();
     }
     
     private String toJson(T eventDetail) {
@@ -158,10 +158,10 @@ public class BatchEventEmitter<T> {
     
     private List<PutEventsRequest> createPutEventsRequests(List<PutEventsRequestEntry> entries) {
         return ListUtils.partition(entries, NUMBER_OF_EVENTS_SENT_PER_REQUEST)
-            .stream()
-            .map(batch -> PutEventsRequest.builder().entries(batch).build())
-            .flatMap(this::splitBigEventRequests)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(batch -> PutEventsRequest.builder().entries(batch).build())
+                   .flatMap(this::splitBigEventRequests)
+                   .collect(Collectors.toList());
     }
     
     private Stream<PutEventsRequest> splitBigEventRequests(PutEventsRequest eventRequest) {
@@ -175,10 +175,10 @@ public class BatchEventEmitter<T> {
     
     private Integer calculateTotalRequestSize(PutEventsRequest eventsRequest) {
         return eventsRequest.entries()
-            .stream()
-            .map(this::requestEntrySize)
-            .reduce(Integer::sum)
-            .orElse(0);
+                   .stream()
+                   .map(this::requestEntrySize)
+                   .reduce(Integer::sum)
+                   .orElse(0);
     }
     
     private Stream<PutEventsRequest> splitRequestRecursively(PutEventsRequest putEventsRequest) {
@@ -190,7 +190,7 @@ public class BatchEventEmitter<T> {
         PutEventsRequest rightPartitionRequest = PutEventsRequest.builder().entries(rightPartition).build();
         return Stream.of(splitBigEventRequests(leftPartitionRequest),
                 splitBigEventRequests(rightPartitionRequest))
-            .flatMap(stream -> stream);
+                   .flatMap(stream -> stream);
     }
     
     private List<PutEventsResult> emitEventsAndCollectFailures(List<PutEventsRequest> eventRequests,
@@ -213,11 +213,11 @@ public class BatchEventEmitter<T> {
     }
     
     private List<PutEventsResult> emitBatch(List<PutEventsRequest> batch) {
-        
+    
         return batch.stream()
-            .map(this::emitEvent)
-            .filter(PutEventsResult::hasFailures)
-            .collect(Collectors.toList());
+                   .map(this::emitEvent)
+                   .filter(PutEventsResult::hasFailures)
+                   .collect(Collectors.toList());
     }
     
     private List<List<PutEventsRequest>> createRequestBatches(List<PutEventsRequest> eventRequests,
@@ -249,7 +249,7 @@ public class BatchEventEmitter<T> {
     
     private PutEventsResult emitEvent(PutEventsRequest request) {
         PutEventsResponse result = attempt(() -> client.putEvents(request))
-            .orElseThrow(fail -> logEmissionFailureDetails(fail, request));
+                                       .orElseThrow(fail -> logEmissionFailureDetails(fail, request));
         return new PutEventsResult(request, result);
     }
     

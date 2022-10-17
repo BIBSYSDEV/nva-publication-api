@@ -15,9 +15,9 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class TicketStatusTest {
-
+    
     public static final String UNKNOWN_VALUE = "ObviouslyUnknownValue";
-
+    
     @ParameterizedTest(name = "should accept textual value {0} for enum")
     @ValueSource(strings = {"REQUESTED", "Pending", "APPROVED", "Completed", "REJECTED", "Closed"})
     void shouldAcceptTextualValueForEnum(String textualValue) throws JsonProcessingException {
@@ -25,13 +25,13 @@ class TicketStatusTest {
         var actualValue = JsonUtils.dtoObjectMapper.readValue(jsonString, TicketStatus.class);
         assertThat(actualValue, is(in(TicketStatus.values())));
     }
-
+    
     @Test
     void shouldThrowExceptionWhenInputIsUnknownValue() {
         Executable executable = () -> TicketStatus.parse(UNKNOWN_VALUE);
         assertThrows(IllegalArgumentException.class, executable);
     }
-
+    
     @ParameterizedTest
     // ExistingState , RequestedChange, ExpectedState
     @CsvSource({

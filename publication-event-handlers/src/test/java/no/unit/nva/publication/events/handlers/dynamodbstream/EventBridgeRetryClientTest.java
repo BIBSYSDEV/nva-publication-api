@@ -42,7 +42,7 @@ public class EventBridgeRetryClientTest {
         prepareMocksWithSuccessfulResponse();
         
         PutEventsRequest request = PutEventsRequest.builder()
-            .build();
+                                       .build();
         List<PutEventsRequestEntry> result = client.putEvents(request);
         
         assertEquals(0, result.size());
@@ -146,15 +146,15 @@ public class EventBridgeRetryClientTest {
     
     private void prepareMocksWithSuccessfulResponse() {
         PutEventsResponse response = PutEventsResponse.builder()
-            .failedEntryCount(0)
-            .build();
+                                         .failedEntryCount(0)
+                                         .build();
         when(eventBridge.putEvents(any(PutEventsRequest.class))).thenReturn(response);
     }
     
     private PutEventsRequest createPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
         return PutEventsRequest.builder()
-            .entries(requestEntries)
-            .build();
+                   .entries(requestEntries)
+                   .build();
     }
     
     private void prepareMocksWithConsecutiveResponses(PutEventsResponse firstResponse,
@@ -175,9 +175,9 @@ public class EventBridgeRetryClientTest {
     
     private PutEventsResponse createPutEventsResponse(int failedEntryCount, List<PutEventsResultEntry> resultEntries) {
         return PutEventsResponse.builder()
-            .failedEntryCount(failedEntryCount)
-            .entries(resultEntries)
-            .build();
+                   .failedEntryCount(failedEntryCount)
+                   .entries(resultEntries)
+                   .build();
     }
     
     private PutEventsResultEntry createPutEventsResultEntry() {
@@ -186,13 +186,13 @@ public class EventBridgeRetryClientTest {
     
     private PutEventsRequestEntry createPutEventsRequestEntry(String s) {
         return PutEventsRequestEntry.builder()
-            .detail(s)
-            .build();
+                   .detail(s)
+                   .build();
     }
     
     private PutEventsResultEntry createFailedPutEventsResultEntry() {
         PutEventsResultEntry failedResponseEntry = PutEventsResultEntry.builder()
-            .errorCode("failed").build();
+                                                       .errorCode("failed").build();
         return failedResponseEntry;
     }
 }

@@ -28,8 +28,8 @@ public class AbstractCristinImportTest extends ResourcesLocalTest {
     
     /**
      * Class returning cristinObjects parsed from the field {@link AbstractCristinImportTest#testingData}. The method
-     * expects that the class that extends {@link AbstractCristinImportTest} has set the {@link
-     * AbstractCristinImportTest#testingData} field before.
+     * expects that the class that extends {@link AbstractCristinImportTest} has set the
+     * {@link AbstractCristinImportTest#testingData} field before.
      *
      * @return a stream of CristinObject instances.
      */
@@ -53,13 +53,13 @@ public class AbstractCristinImportTest extends ResourcesLocalTest {
     private List<CristinObject> parseCristinObjectsArray(String jsonString) {
         return attempt(() -> eventHandlerObjectMapper.<List<CristinObject>>readValue(jsonString,
             CRISTIN_OBJECTS_LIST_JAVATYPE))
-            .orElseThrow();
+                   .orElseThrow();
     }
     
     private Stream<CristinObject> readSeriesOfJsonObjects() {
         return newContentReader().lines()
-            .map(attempt(line -> eventHandlerObjectMapper.readValue(line, CristinObject.class)))
-            .map(attempt -> attempt.orElseThrow(this::handleError));
+                   .map(attempt(line -> eventHandlerObjectMapper.readValue(line, CristinObject.class)))
+                   .map(attempt -> attempt.orElseThrow(this::handleError));
     }
     
     private RuntimeException handleError(Failure<CristinObject> fail) {
@@ -68,6 +68,6 @@ public class AbstractCristinImportTest extends ResourcesLocalTest {
     
     private BufferedReader newContentReader() {
         return attempt(() -> new BufferedReader(new InputStreamReader(IoUtils.stringToStream(testingData))))
-            .orElseThrow();
+                   .orElseThrow();
     }
 }

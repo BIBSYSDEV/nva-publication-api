@@ -27,9 +27,9 @@ public enum CristinContributorRoleCode {
     @JsonCreator
     public static CristinContributorRoleCode fromString(String roleCode) {
         return Arrays.stream(CristinContributorRoleCode.values())
-            .filter(role -> role.getStringValue().equalsIgnoreCase(roleCode))
-            .findAny()
-            .orElseThrow(() -> new UnsupportedRoleException(UNKNOWN_ROLE_ERROR + roleCode));
+                   .filter(role -> role.getStringValue().equalsIgnoreCase(roleCode))
+                   .findAny()
+                   .orElseThrow(() -> new UnsupportedRoleException(UNKNOWN_ROLE_ERROR + roleCode));
     }
     
     @JsonValue

@@ -32,13 +32,6 @@ public final class DaoUtils {
         return Resource.fromPublication(publication);
     }
     
-    private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication().copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
-    }
-    
     public static ResourceDao sampleResourceDao() {
         return Try.of(sampleResource(randomPublication()))
                    .map(ResourceDao::new)
@@ -65,9 +58,21 @@ public final class DaoUtils {
         return new DoiRequestDao(doiRequest);
     }
     
+    @SuppressWarnings("unchecked")
+    public static Class<? extends TicketEntry> randomTicketType() {
+        return randomElement(DoiRequest.class, PublishingRequestCase.class);
+    }
+    
     static PutItemRequest toPutItemRequest(Dao resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
                    .withItem(resource.toDynamoFormat());
+    }
+    
+    private static Publication randomPublicationEligibleForDoiRequest() {
+        return randomPublication().copy()
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withDoi(null)
+                   .build();
     }
     
     private static PublishingRequestDao sampleApprovePublishingRequestDao() {
@@ -86,10 +91,5 @@ public final class DaoUtils {
     private static TicketEntry randomTicket(Publication publication) {
         return attempt(() -> TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next))
                    .orElseThrow();
-    }
-    
-    @SuppressWarnings("unchecked")
-    public static Class<? extends TicketEntry> randomTicketType() {
-        return randomElement(DoiRequest.class, PublishingRequestCase.class);
     }
 }

@@ -53,17 +53,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return expandedDoiRequest;
     }
     
-    @Override
-    @JacocoGenerated
-    public TicketStatus getStatus() {
-        return status;
-    }
-    
-    @JacocoGenerated
-    public void setStatus(TicketStatus status) {
-        this.status = status;
-    }
-    
     @JacocoGenerated
     public Instant getModifiedDate() {
         return modifiedDate;
@@ -141,11 +130,20 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     }
     
     @Override
+    @JacocoGenerated
+    public TicketStatus getStatus() {
+        return status;
+    }
+    
+    @JacocoGenerated
+    public void setStatus(TicketStatus status) {
+        this.status = status;
+    }
+    
+    @Override
     public SortableIdentifier identifyExpandedEntry() {
         return extractIdentifier(getId());
     }
-    
-    
     
     private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
                                                                 ResourceExpansionService resourceExpansionService)

@@ -80,16 +80,6 @@ public class MessageDao extends Dao
         throw new UnsupportedOperationException("Not supported yet. Not sure if a message can be updated");
     }
     
-    @JsonIgnore
-    public Message getMessage() {
-        return (Message) getData();
-    }
-    
-    @Override
-    protected User getOwner() {
-        return getData().getOwner();
-    }
-    
     @JacocoGenerated
     @Override
     public int hashCode() {
@@ -107,6 +97,16 @@ public class MessageDao extends Dao
         }
         MessageDao that = (MessageDao) o;
         return Objects.equals(getData(), that.getData());
+    }
+    
+    @Override
+    protected User getOwner() {
+        return getData().getOwner();
+    }
+    
+    @JsonIgnore
+    public Message getMessage() {
+        return (Message) getData();
     }
     
     @Override

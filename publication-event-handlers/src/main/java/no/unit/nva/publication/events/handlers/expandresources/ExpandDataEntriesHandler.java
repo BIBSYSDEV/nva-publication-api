@@ -64,12 +64,12 @@ public class ExpandDataEntriesHandler
         
         var blobObject = readBlobFromS3(input);
         return Optional.ofNullable(blobObject.getNewData())
-            .filter(this::shouldBeEnriched)
-            .flatMap(this::enrich)
-            .map(this::insertEventBodyToS3)
-            .stream()
-            .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
-            .collect(SingletonCollector.collectOrElse(emptyEvent()));
+                   .filter(this::shouldBeEnriched)
+                   .flatMap(this::enrich)
+                   .map(this::insertEventBodyToS3)
+                   .stream()
+                   .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
+                   .collect(SingletonCollector.collectOrElse(emptyEvent()));
     }
     
     @JacocoGenerated
@@ -113,7 +113,7 @@ public class ExpandDataEntriesHandler
     
     private Optional<String> enrich(Entity newData) {
         return attempt(() -> createExpandedResourceUpdate(newData))
-            .toOptional(fail -> logError(fail, newData));
+                   .toOptional(fail -> logError(fail, newData));
     }
     
     private String createExpandedResourceUpdate(Entity input) throws JsonProcessingException, NotFoundException {

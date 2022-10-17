@@ -13,9 +13,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.UserInstance;
 import org.junit.jupiter.api.Test;
 
 public class MessageTypeTest {

@@ -5,7 +5,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import no.unit.nva.identifiers.SortableIdentifier;
-
 import org.junit.jupiter.api.Test;
 
 public class IdentifierEntryTest {
@@ -27,5 +26,4 @@ public class IdentifierEntryTest {
                                                 + SAMPLE_IDENTIFIER.toString();
         assertThat(identifierEntry.getPrimaryKeyPartitionKey(), is(equalTo(expectedIdentifierPartitionKey)));
     }
-    
 }

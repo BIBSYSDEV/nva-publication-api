@@ -49,8 +49,23 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var createdTicket = persistTicket(newTicket);
         var ticketLocation = createTicketLocation(publicationIdentifier, createdTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
-        
+    
         return null;
+    }
+    
+    @Override
+    protected Integer getSuccessStatusCode(TicketDto input, Void output) {
+        return HttpURLConnection.HTTP_SEE_OTHER;
+    }
+    
+    private static String createTicketLocation(SortableIdentifier publicationIdentifier, TicketEntry createdTicket) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(PUBLICATION_PATH)
+                   .addChild(publicationIdentifier.toString())
+                   .addChild(PublicationServiceConfig.TICKET_PATH)
+                   .addChild(createdTicket.getIdentifier().toString())
+                   .getUri()
+                   .toString();
     }
     
     private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
@@ -88,20 +103,5 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         throws ForbiddenException {
         return attempt(() -> resourceService.getPublication(user, publicationIdentifier))
                    .orElseThrow(fail -> new ForbiddenException());
-    }
-    
-    private static String createTicketLocation(SortableIdentifier publicationIdentifier, TicketEntry createdTicket) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION_PATH)
-                   .addChild(publicationIdentifier.toString())
-                   .addChild(PublicationServiceConfig.TICKET_PATH)
-                   .addChild(createdTicket.getIdentifier().toString())
-                   .getUri()
-                   .toString();
-    }
-    
-    @Override
-    protected Integer getSuccessStatusCode(TicketDto input, Void output) {
-        return HttpURLConnection.HTTP_SEE_OTHER;
     }
 }

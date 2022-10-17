@@ -82,18 +82,18 @@ public class EventBridgePublisherTest {
     
     private static Builder putEventRequestBuilder() {
         return PutEventsRequestEntry.builder()
-            .eventBusName(EVENT_BUS)
-            .time(NOW)
-            .source(EventBridgePublisher.EVENT_SOURCE)
-            .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
-            .resources(EVENT_SOURCE_ARN);
+                   .eventBusName(EVENT_BUS)
+                   .time(NOW)
+                   .source(EventBridgePublisher.EVENT_SOURCE)
+                   .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
+                   .resources(EVENT_SOURCE_ARN);
     }
     
     private PutEventsRequest createFailingPutEventsRequest() {
         String failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME, EVENT_SOURCE_ARN);
         return PutEventsRequest.builder()
-            .entries(PUT_EVENT_REQUEST_BUILDER.detail(failedRecordString).build())
-            .build();
+                   .entries(PUT_EVENT_REQUEST_BUILDER.detail(failedRecordString).build())
+                   .build();
     }
     
     private List<PutEventsRequestEntry> createFailedEntries() {
@@ -115,15 +115,15 @@ public class EventBridgePublisherTest {
     private PutEventsRequest createPutEventsRequest() {
         String expectedDetail = String.format(EXPECTED_DETAIL_TEMPLATE, EVENT_SOURCE_ARN);
         return PutEventsRequest.builder()
-            .entries(PutEventsRequestEntry.builder()
-                .eventBusName(EVENT_BUS)
-                .time(NOW)
-                .source(EventBridgePublisher.EVENT_SOURCE)
-                .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
-                .detail(expectedDetail)
-                .resources(EventBridgePublisherTest.EVENT_SOURCE_ARN)
-                .build())
-            .build();
+                   .entries(PutEventsRequestEntry.builder()
+                                .eventBusName(EVENT_BUS)
+                                .time(NOW)
+                                .source(EventBridgePublisher.EVENT_SOURCE)
+                                .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
+                                .detail(expectedDetail)
+                                .resources(EventBridgePublisherTest.EVENT_SOURCE_ARN)
+                                .build())
+                   .build();
     }
     
     private DynamodbEvent createDynamodbEvent() {

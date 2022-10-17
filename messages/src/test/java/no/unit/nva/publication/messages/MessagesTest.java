@@ -27,11 +27,9 @@ public class MessagesTest extends ResourcesLocalTest {
         this.context = new FakeContext();
     }
     
-    
     protected Map<String, String> messagePathParameter(String messageIdentifier) {
         return Map.of(MessageApiConfig.MESSAGE_IDENTIFIER_PATH_PARAMETER, messageIdentifier);
     }
-    
     
     protected Publication createPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();

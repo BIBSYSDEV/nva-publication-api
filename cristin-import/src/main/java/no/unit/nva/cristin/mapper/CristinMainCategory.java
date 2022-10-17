@@ -23,8 +23,8 @@ public enum CristinMainCategory {
     @JsonCreator
     public static CristinMainCategory fromString(String category) {
         return Arrays.stream(values())
-            .filter(item -> item.aliases.contains(category))
-            .collect(SingletonCollector.collectOrElse(UNMAPPED));
+                   .filter(item -> item.aliases.contains(category))
+                   .collect(SingletonCollector.collectOrElse(UNMAPPED));
     }
     
     public static boolean isBook(CristinObject cristinObject) {

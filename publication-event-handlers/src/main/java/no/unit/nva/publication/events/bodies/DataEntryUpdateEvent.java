@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -21,14 +21,13 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     public static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
-    private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
     public static final String PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.PublishingRequest.Update";
     public static final String GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC =
         "PublicationService.GeneralSupportRequest.Update";
+    private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
-    
     
     private static final Map<Class<?>, String> ENTRY_TYPE_TO_TOPIC_MAP = Map.of(
         Resource.class, RESOURCE_UPDATE_EVENT_TOPIC,

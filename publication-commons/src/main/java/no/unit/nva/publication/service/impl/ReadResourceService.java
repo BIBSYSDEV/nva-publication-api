@@ -95,11 +95,11 @@ public class ReadResourceService {
     
     private static List<Resource> queryResultToResourceList(QueryResult result) {
         return result.getItems()
-            .stream()
-            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-            .map(ResourceDao::getData)
-            .map(Resource.class::cast)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
+                   .map(ResourceDao::getData)
+                   .map(Resource.class::cast)
+                   .collect(Collectors.toList());
     }
     
     private String constructPrimaryPartitionKey(UserInstance userInstance) {
@@ -109,9 +109,9 @@ public class ReadResourceService {
     
     private List<Publication> queryResultToListOfPublications(QueryResult result) {
         return queryResultToResourceList(result)
-            .stream()
-            .map(Resource::toPublication)
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(Resource::toPublication)
+                   .collect(Collectors.toList());
     }
     
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
@@ -126,13 +126,13 @@ public class ReadResourceService {
     
     private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
         return new ExpressionSpecBuilder()
-            .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
+                   .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
     }
     
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
         GetItemResult result = client.getItem(new GetItemRequest()
-            .withTableName(tableName)
-            .withKey(primaryKey));
+                                                  .withTableName(tableName)
+                                                  .withKey(primaryKey));
         if (isNull(result.getItem())) {
             throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
         }
@@ -142,20 +142,20 @@ public class ReadResourceService {
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
         var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
         Map<String, Condition> keyConditions = queryObject
-            .byResource(
-                queryObject.joinByResourceContainedOrderedType(),
-                doiRequestQueryObject.joinByResourceContainedOrderedType()
-            );
+                                                   .byResource(
+                                                       queryObject.joinByResourceContainedOrderedType(),
+                                                       doiRequestQueryObject.joinByResourceContainedOrderedType()
+                                                   );
         return new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(keyConditions);
+                   .withTableName(tableName)
+                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                   .withKeyConditions(keyConditions);
     }
     
     private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
         return queryResult.getItems()
-            .stream()
-            .map(values -> parseAttributeValuesMap(values, Dao.class))
-            .collect(Collectors.toList());
+                   .stream()
+                   .map(values -> parseAttributeValuesMap(values, Dao.class))
+                   .collect(Collectors.toList());
     }
 }

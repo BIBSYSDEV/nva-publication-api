@@ -65,8 +65,8 @@ public interface WithPrimaryKey {
     @JsonIgnore
     default Map<String, Condition> primaryKeyPartitionKeyCondition() {
         Condition condition = new Condition()
-            .withComparisonOperator(ComparisonOperator.EQ)
-            .withAttributeValueList(new AttributeValue(getPrimaryKeyPartitionKey()));
+                                  .withComparisonOperator(ComparisonOperator.EQ)
+                                  .withAttributeValueList(new AttributeValue(getPrimaryKeyPartitionKey()));
         return Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, condition);
     }
 }

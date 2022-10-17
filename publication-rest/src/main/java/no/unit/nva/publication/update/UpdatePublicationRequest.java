@@ -34,11 +34,11 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
                 WRONG_PUBLICATION_UDPATE_ERROR + existingPublication.getIdentifier());
         }
         return existingPublication.copy()
-            .withEntityDescription(this.entityDescription)
-            .withFileSet(this.fileSet)
-            .withProjects(this.projects)
-            .withSubjects(this.subjects)
-            .build();
+                   .withEntityDescription(this.entityDescription)
+                   .withFileSet(this.fileSet)
+                   .withProjects(this.projects)
+                   .withSubjects(this.subjects)
+                   .build();
     }
     
     @JacocoGenerated

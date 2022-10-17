@@ -16,9 +16,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 //TODO: test from handler
 class PublishingRequestStatusTest {
-
+    
     private static final String UNKNOWN_VALUE = "ObviouslyUnknownValue";
-
+    
     @ParameterizedTest
     @ValueSource(strings = {PENDING_STATUS, COMPLETED_STATUS, CLOSED_STATUS})
     void shouldAcceptTextualValueForEnum(String textualValue) throws JsonProcessingException {
@@ -26,7 +26,7 @@ class PublishingRequestStatusTest {
         var actualValue = JsonUtils.dtoObjectMapper.readValue(jsonString, TicketStatus.class);
         assertThat(actualValue, is(in(TicketStatus.values())));
     }
-
+    
     @Test
     void shouldThrowExceptionWhenInputIsUnknownValue() {
         Executable executable = () -> TicketStatus.parse(UNKNOWN_VALUE);

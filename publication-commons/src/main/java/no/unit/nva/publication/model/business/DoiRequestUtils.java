@@ -17,5 +17,4 @@ public final class DoiRequestUtils {
     static DoiRequest extractDataFromResource(Resource resource) {
         return extractDataFromResource(new DoiRequest(), resource);
     }
-    
 }

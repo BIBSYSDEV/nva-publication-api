@@ -60,7 +60,6 @@ class MessageDaoTest extends ResourcesLocalTest {
         assertThat(retrievedMessage, is(equalTo(message)));
     }
     
-    
     @Test
     void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
         var actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
@@ -73,16 +72,16 @@ class MessageDaoTest extends ResourcesLocalTest {
                    .map(GetItemResult::getItem)
                    .map(item -> parseAttributeValuesMap(item, MessageDao.class))
                    .map(MessageDao::getMessage)
-            .orElseThrow();
+                   .orElseThrow();
     }
     
     private Message insertSampleMessageInDatabase() {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
         Publication publication = new Publication.Builder()
-            .withResourceOwner(RANDOM_RESOURCE_OWNER)
-            .withIdentifier(SAMPLE_RESOURCE_IDENTIFIER)
-            .withPublisher(publisher)
-            .build();
+                                      .withResourceOwner(RANDOM_RESOURCE_OWNER)
+                                      .withIdentifier(SAMPLE_RESOURCE_IDENTIFIER)
+                                      .withPublisher(publisher)
+                                      .build();
         Message message =
             Message.create(SAMPLE_SENDER,
                 publication,

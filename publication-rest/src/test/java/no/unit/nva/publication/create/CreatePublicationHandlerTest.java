@@ -153,32 +153,33 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         return attempt(() -> removeAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication))
-            .map(publication ->
-                     setAllFieldsThatAreAutomaticallySetByResourceService(publication, actualPublicationResponse))
-            .orElseThrow();
+                   .map(publication ->
+                            setAllFieldsThatAreAutomaticallySetByResourceService(publication,
+                                actualPublicationResponse))
+                   .orElseThrow();
     }
     
     private Publication setAllFieldsThatAreAutomaticallySetByResourceService(
         Publication samplePublication,
         PublicationResponse actualPublicationResponse) {
         return samplePublication.copy()
-            .withIdentifier(actualPublicationResponse.getIdentifier())
-            .withCreatedDate(actualPublicationResponse.getCreatedDate())
-            .withModifiedDate(actualPublicationResponse.getModifiedDate())
-            .withIndexedDate(actualPublicationResponse.getIndexedDate())
-            .withStatus(PublicationStatus.DRAFT)
-            .build();
+                   .withIdentifier(actualPublicationResponse.getIdentifier())
+                   .withCreatedDate(actualPublicationResponse.getCreatedDate())
+                   .withModifiedDate(actualPublicationResponse.getModifiedDate())
+                   .withIndexedDate(actualPublicationResponse.getIndexedDate())
+                   .withStatus(PublicationStatus.DRAFT)
+                   .build();
     }
     
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
         return samplePublication.copy()
-            .withDoi(null)
-            .withHandle(null)
-            .withLink(null)
-            .withPublishedDate(null)
-            .withPublisher(new Organization.Builder().withLabels(null).withId(testOrgId).build())
-            //            .withResourceOwner(null)
-            .build();
+                   .withDoi(null)
+                   .withHandle(null)
+                   .withLink(null)
+                   .withPublishedDate(null)
+                   .withPublisher(new Organization.Builder().withLabels(null).withId(testOrgId).build())
+                   //            .withResourceOwner(null)
+                   .build();
     }
     
     private void assertExistenceOfMinimumRequiredFields(PublicationResponse publicationResponse) {
@@ -191,20 +192,20 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
-        
+    
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withNvaUsername(testUserName)
-            .withCustomerId(testOrgId)
-            .withTopLevelCristinOrgId(topLevelCristinOrgId)
-            .withBody(request)
-            .build();
+                   .withNvaUsername(testUserName)
+                   .withCustomerId(testOrgId)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withBody(request)
+                   .build();
     }
     
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
-        
+    
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withCustomerId(testOrgId)
-            .withBody(request)
-            .build();
+                   .withCustomerId(testOrgId)
+                   .withBody(request)
+                   .build();
     }
 }

@@ -49,57 +49,57 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     private PublicationInstance<? extends Pages> createFeatureArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new FeatureArticle.Builder()
-            .withPages(numberOfPages)
-            .withVolume(extractVolume())
-            .withIssue(extractIssue())
-            .build();
+                   .withPages(numberOfPages)
+                   .withVolume(extractVolume())
+                   .withIssue(extractIssue())
+                   .build();
     }
     
     private PublicationInstance<? extends Pages> createJournalLetter() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLetter.Builder()
-            .withPages(numberOfPages)
-            .withIssue(extractIssue())
-            .withVolume(extractVolume())
-            .build();
+                   .withPages(numberOfPages)
+                   .withIssue(extractIssue())
+                   .withVolume(extractVolume())
+                   .build();
     }
     
     private PublicationInstance<? extends Pages> createJournalReview() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalReview.Builder()
-            .withPages(numberOfPages)
-            .withIssue(extractIssue())
-            .withVolume(extractVolume())
-            .build();
+                   .withPages(numberOfPages)
+                   .withIssue(extractIssue())
+                   .withVolume(extractVolume())
+                   .build();
     }
     
     private PublicationInstance<? extends Pages> createJournalLeader() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLeader.Builder()
-            .withPages(numberOfPages)
-            .withIssue(extractIssue())
-            .withVolume(extractVolume())
-            .build();
+                   .withPages(numberOfPages)
+                   .withIssue(extractIssue())
+                   .withVolume(extractVolume())
+                   .build();
     }
     
     private PublicationInstance<? extends Pages> createJournalCorrigendum() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalCorrigendum.Builder()
-            .withPages(numberOfPages)
-            .withIssue(extractIssue())
-            .withVolume(extractVolume())
-            .build();
+                   .withPages(numberOfPages)
+                   .withIssue(extractIssue())
+                   .withVolume(extractVolume())
+                   .build();
     }
     
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-            .withContent(getCristinObject().getSecondaryCategory().toJournalArticleContentType())
-            .withPages(numberOfPages)
-            .withIssue(extractIssue())
-            .withPeerReviewed(getCristinObject().isPeerReviewed())
-            .withVolume(extractVolume())
-            .build();
+                   .withContent(getCristinObject().getSecondaryCategory().toJournalArticleContentType())
+                   .withPages(numberOfPages)
+                   .withIssue(extractIssue())
+                   .withPeerReviewed(getCristinObject().isPeerReviewed())
+                   .withVolume(extractVolume())
+                   .build();
     }
     
     private String extractPagesBegin() {

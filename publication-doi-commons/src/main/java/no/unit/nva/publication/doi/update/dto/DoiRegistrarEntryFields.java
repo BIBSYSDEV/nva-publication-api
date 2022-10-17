@@ -102,34 +102,34 @@ public class DoiRegistrarEntryFields {
     
     private static PublicationInstance<?> extractPublicationInstance(Publication publication) {
         return extractEntityDescription(publication)
-            .map(EntityDescription::getReference)
-            .map(Reference::getPublicationInstance)
-            .orElse(null);
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationInstance)
+                   .orElse(null);
     }
     
     private static String extractTitle(Publication publication) {
         return extractEntityDescription(publication)
-            .map(EntityDescription::getMainTitle)
-            .orElse(null);
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
     }
     
     private static URI extractPublisherId(Publication publication) {
         return Optional.of(publication)
-            .map(Publication::getPublisher)
-            .map(Organization::getId)
-            .orElse(null);
+                   .map(Publication::getPublisher)
+                   .map(Organization::getId)
+                   .orElse(null);
     }
     
     private static PublicationDate extractPublicationDate(Publication publication) {
         return extractEntityDescription(publication)
-            .map(EntityDescription::getDate)
-            .orElse(null);
+                   .map(EntityDescription::getDate)
+                   .orElse(null);
     }
     
     private static List<Contributor> extractContributors(Publication publication) {
         return extractEntityDescription(publication)
-            .map(EntityDescription::getContributors)
-            .orElse(Collections.emptyList());
+                   .map(EntityDescription::getContributors)
+                   .orElse(Collections.emptyList());
     }
     
     private static Optional<EntityDescription> extractEntityDescription(Publication publication) {

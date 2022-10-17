@@ -22,9 +22,9 @@ public class NvaBookLikeBuilderTest {
         CristinObject randomBook = CristinDataGenerator.randomBook();
         randomBook.getBookOrReportMetadata().setIssue(issueNumber);
         PublicationContext context = randomBook.toPublication()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationContext();
         Book book = (Book) context;
         assertThat(book.getSeriesNumber(), matchesPattern(ONLY_VOLUME_EXPECTED));
     }
@@ -37,9 +37,9 @@ public class NvaBookLikeBuilderTest {
         CristinObject randomBook = CristinDataGenerator.randomBook();
         randomBook.getBookOrReportMetadata().setVolume(volumeNumber);
         PublicationContext context = randomBook.toPublication()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationContext();
         Book book = (Book) context;
         assertThat(book.getSeriesNumber(), matchesPattern(ONLY_ISSUE_EXPECTED));
     }

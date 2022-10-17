@@ -39,61 +39,61 @@ public final class DataCiteMetadataDtoMapper {
      */
     public static DataCiteMetadataDto fromPublication(Publication publication) {
         return new DataCiteMetadataDto.Builder()
-            .withCreator(toCreatorDtoList(extractContributors(publication)))
-            .withIdentifier(toIdentifierDto(publication))
-            .withPublicationYear(extractPublicationYear(publication))
-            .withPublisher(extractPublisher(publication))
-            .withTitle(extractTitle(publication))
-            .withResourceType(toResourceTypeDto(publication))
-            .build();
+                   .withCreator(toCreatorDtoList(extractContributors(publication)))
+                   .withIdentifier(toIdentifierDto(publication))
+                   .withPublicationYear(extractPublicationYear(publication))
+                   .withPublisher(extractPublisher(publication))
+                   .withTitle(extractTitle(publication))
+                   .withResourceType(toResourceTypeDto(publication))
+                   .build();
     }
     
     private static List<Contributor> extractContributors(Publication publication) {
         return getEntityDescription(publication)
-            .map(EntityDescription::getContributors)
-            .orElse(null);
+                   .map(EntityDescription::getContributors)
+                   .orElse(null);
     }
     
     private static String extractPublicationYear(Publication publication) {
         return getEntityDescription(publication)
-            .map(EntityDescription::getDate)
-            .map(PublicationDate::getYear)
-            .orElse(null);
+                   .map(EntityDescription::getDate)
+                   .map(PublicationDate::getYear)
+                   .orElse(null);
     }
     
     private static ResourceTypeDto toResourceTypeDto(Publication publication) {
         return getEntityDescription(publication)
-            .map(EntityDescription::getReference)
-            .map(Reference::getPublicationInstance)
-            .map(PublicationInstance::getInstanceType)
-            .map(DataCiteMetadataDtoMapper::newResourceTypeDto)
-            .orElse(null);
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationInstance)
+                   .map(PublicationInstance::getInstanceType)
+                   .map(DataCiteMetadataDtoMapper::newResourceTypeDto)
+                   .orElse(null);
     }
     
     private static ResourceTypeDto newResourceTypeDto(String resourceType) {
         return new ResourceTypeDto.Builder()
-            .withValue(resourceType)
-            .build();
+                   .withValue(resourceType)
+                   .build();
     }
     
     private static TitleDto extractTitle(Publication publication) {
         return getEntityDescription(publication)
-            .map(EntityDescription::getMainTitle)
-            .map(title -> new TitleDto.Builder().withValue(title).build())
-            .orElse(null);
+                   .map(EntityDescription::getMainTitle)
+                   .map(title -> new TitleDto.Builder().withValue(title).build())
+                   .orElse(null);
     }
     
     private static Optional<EntityDescription> getEntityDescription(Publication publication) {
         return Optional.of(publication)
-            .map(Publication::getEntityDescription);
+                   .map(Publication::getEntityDescription);
     }
     
     private static PublisherDto extractPublisher(Publication publication) {
         return Optional.of(publication)
-            .map(Publication::getPublisher)
-            .map(Organization::getId)
-            .map(DataCiteMetadataDtoMapper::newPublisherDto)
-            .orElse(null);
+                   .map(Publication::getPublisher)
+                   .map(Organization::getId)
+                   .map(DataCiteMetadataDtoMapper::newPublisherDto)
+                   .orElse(null);
     }
     
     private static PublisherDto newPublisherDto(URI uri) {
@@ -102,12 +102,12 @@ public final class DataCiteMetadataDtoMapper {
     
     private static IdentifierDto toIdentifierDto(Publication publication) {
         return Optional.of(publication)
-            .map(Publication::getIdentifier)
-            .map(SortableIdentifier::toString)
-            .map(LANDING_PAGE_UTIL::constructResourceUri)
-            .map(URI::toString)
-            .map(uriString -> new IdentifierDto.Builder().withValue(uriString).build())
-            .orElse(null);
+                   .map(Publication::getIdentifier)
+                   .map(SortableIdentifier::toString)
+                   .map(LANDING_PAGE_UTIL::constructResourceUri)
+                   .map(URI::toString)
+                   .map(uriString -> new IdentifierDto.Builder().withValue(uriString).build())
+                   .orElse(null);
     }
     
     private static List<CreatorDto> toCreatorDtoList(List<Contributor> contributors) {
@@ -115,13 +115,13 @@ public final class DataCiteMetadataDtoMapper {
             return null;
         }
         return contributors.stream()
-            .map(DataCiteMetadataDtoMapper::toCreatorDto)
-            .collect(Collectors.toList());
+                   .map(DataCiteMetadataDtoMapper::toCreatorDto)
+                   .collect(Collectors.toList());
     }
     
     private static CreatorDto toCreatorDto(Contributor contributor) {
         return new CreatorDto.Builder()
-            .withCreatorName(contributor.getIdentity().getName())
-            .build();
+                   .withCreatorName(contributor.getIdentity().getName())
+                   .build();
     }
 }

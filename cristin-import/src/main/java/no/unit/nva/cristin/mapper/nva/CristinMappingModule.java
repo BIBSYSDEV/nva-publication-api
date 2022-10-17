@@ -22,8 +22,8 @@ public class CristinMappingModule {
     
     protected CristinJournalPublication extractCristinJournalPublication() {
         return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getJournalPublication)
-            .orElse(null);
+                   .map(CristinObject::getJournalPublication)
+                   .orElse(null);
     }
     
     protected Optional<String> extractIsbn() {
@@ -32,8 +32,8 @@ public class CristinMappingModule {
     
     protected CristinBookOrReportMetadata extractCristinBookReport() {
         return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getBookOrReportMetadata)
-            .orElse(null);
+                   .map(CristinObject::getBookOrReportMetadata)
+                   .orElse(null);
     }
     
     protected Integer extractYearReportedInNvi() {

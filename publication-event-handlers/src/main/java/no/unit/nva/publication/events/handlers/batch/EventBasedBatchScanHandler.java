@@ -51,23 +51,24 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     @JacocoGenerated
     private static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
-            .httpClientBuilder(UrlConnectionHttpClient.builder())
-            .build();
+                   .httpClientBuilder(UrlConnectionHttpClient.builder())
+                   .build();
     }
     
     private void sendEventToInvokeNewRefreshRowVersionExecution(ScanDatabaseRequest input,
                                                                 Context context,
                                                                 ListingResult<Entity> result) {
         PutEventsRequestEntry newEvent = input
-            .newScanDatabaseRequest(result.getStartMarker())
-            .createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE, context.getInvokedFunctionArn());
+                                             .newScanDatabaseRequest(result.getStartMarker())
+                                             .createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE,
+                                                 context.getInvokedFunctionArn());
         sendEvent(newEvent);
     }
     
     private void sendEvent(PutEventsRequestEntry putEventRequestEntry) {
         PutEventsRequest putEventRequest = PutEventsRequest.builder()
-            .entries(putEventRequestEntry)
-            .build();
+                                               .entries(putEventRequestEntry)
+                                               .build();
         eventBridgeClient.putEvents(putEventRequest);
     }
 }

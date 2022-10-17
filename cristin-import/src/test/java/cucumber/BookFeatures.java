@@ -76,9 +76,9 @@ public class BookFeatures {
         scenarioContext.getCristinEntry()
             .getBookOrReportMetadata()
             .setSubjectField(CristinSubjectField
-                .builder()
-                .withSubjectFieldCode(subjectFieldCode)
-                .build()
+                                 .builder()
+                                 .withSubjectFieldCode(subjectFieldCode)
+                                 .build()
             );
     }
     
@@ -167,9 +167,9 @@ public class BookFeatures {
     @Then("the NVA Resource has a PublicationContext with number of pages equal to {string}")
     public void theNvaResourceHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
         PublicationInstance<?> context = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                             .getEntityDescription()
+                                             .getReference()
+                                             .getPublicationInstance();
         PeerReviewedMonograph book = (PeerReviewedMonograph) context;
         assertThat(book.getPages().getPages(), is(equalTo(expectedNumberOfPages)));
     }
@@ -177,8 +177,8 @@ public class BookFeatures {
     @Then("the NVA Resource has a npiSubjectHeading with value equal to {int}")
     public void theNvaResourceHasANpiSubjectHeadingWithValueEqualTo(int expectedSubjectFieldCode) {
         String actualSubjectFieldCode = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getNpiSubjectHeading();
+                                            .getEntityDescription()
+                                            .getNpiSubjectHeading();
         assertThat(actualSubjectFieldCode, is(equalTo(String.valueOf(expectedSubjectFieldCode))));
     }
     
@@ -221,9 +221,9 @@ public class BookFeatures {
     @Then("the NVA Resource has a PublicationContext of type {string}")
     public void theNvaResourceHasAPublicationContextOfType(String publicationContextType) {
         PublicationContext context = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationContext();
         assertThat(context.getClass().getSimpleName(), is(equalTo(publicationContextType)));
     }
     
@@ -258,9 +258,9 @@ public class BookFeatures {
     @Then("the Book Report has a \"isPeerReviewed\" equal to True")
     public void theBookReportHasAIsPeerReviewedEqualToTrue() {
         PublicationInstance<?> context = scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance();
+                                             .getEntityDescription()
+                                             .getReference()
+                                             .getPublicationInstance();
         PeerReviewedMonograph book = (PeerReviewedMonograph) context;
         assertThat(book.isPeerReviewed(), is(true));
     }
@@ -272,9 +272,9 @@ public class BookFeatures {
     
     private Book extractNvaBook() {
         PublicationContext context = this.scenarioContext.getNvaEntry()
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationContext();
         return (Book) context;
     }
     
@@ -287,11 +287,11 @@ public class BookFeatures {
     private URI extractSeriesId() {
         Series bookSeries = Optional.of(
                 this.scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationContext())
-            .map(context -> (Book) context)
-            .map(Book::getSeries)
-            .filter(BookSeries::isConfirmed)
-            .map(series -> (Series) series)
-            .orElseThrow(() -> new IllegalStateException("BookSeries is not confirmed"));
+                                .map(context -> (Book) context)
+                                .map(Book::getSeries)
+                                .filter(BookSeries::isConfirmed)
+                                .map(series -> (Series) series)
+                                .orElseThrow(() -> new IllegalStateException("BookSeries is not confirmed"));
         return bookSeries.getId();
     }
 }

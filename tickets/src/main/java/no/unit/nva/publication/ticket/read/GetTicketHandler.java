@@ -42,28 +42,13 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
         return TicketDto.fromTicket(ticket, messages);
     }
     
-    private TicketEntry fetchTicket(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
-        throws NotFoundException, UnauthorizedException {
-        return isElevatedUser(requestInfo)
-                   ? fetchForElevatedUser(ticketIdentifier, requestInfo)
-                   : fetchForPublicationOwner(ticketIdentifier, requestInfo);
+    @Override
+    protected Integer getSuccessStatusCode(Void input, TicketDto output) {
+        return HTTP_OK;
     }
     
     private static boolean isElevatedUser(RequestInfo requestInfo) {
         return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
-    }
-    
-    private TicketEntry fetchForPublicationOwner(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
-        throws UnauthorizedException, NotFoundException {
-        var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        return ticketService.fetchTicket(userInstance, ticketIdentifier);
-    }
-    
-    private TicketEntry fetchForElevatedUser(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
-        throws NotFoundException, UnauthorizedException {
-        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        validateThatUserWorksForInstitution(requestInfo, ticket);
-        return ticket;
     }
     
     private static void validateThatUserWorksForInstitution(RequestInfo requestInfo, TicketEntry ticket)
@@ -80,17 +65,32 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
         }
     }
     
-    private SortableIdentifier extractPublicationIdentifierFromPath(RequestInfo requestInfo) {
-        var identifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
-        return new SortableIdentifier(identifierString);
-    }
-    
     private static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo) {
         return new SortableIdentifier(requestInfo.getPathParameter(TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME));
     }
     
-    @Override
-    protected Integer getSuccessStatusCode(Void input, TicketDto output) {
-        return HTTP_OK;
+    private TicketEntry fetchTicket(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        return isElevatedUser(requestInfo)
+                   ? fetchForElevatedUser(ticketIdentifier, requestInfo)
+                   : fetchForPublicationOwner(ticketIdentifier, requestInfo);
+    }
+    
+    private TicketEntry fetchForPublicationOwner(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
+        throws UnauthorizedException, NotFoundException {
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
+        return ticketService.fetchTicket(userInstance, ticketIdentifier);
+    }
+    
+    private TicketEntry fetchForElevatedUser(SortableIdentifier ticketIdentifier, RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
+        validateThatUserWorksForInstitution(requestInfo, ticket);
+        return ticket;
+    }
+    
+    private SortableIdentifier extractPublicationIdentifierFromPath(RequestInfo requestInfo) {
+        var identifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
+        return new SortableIdentifier(identifierString);
     }
 }

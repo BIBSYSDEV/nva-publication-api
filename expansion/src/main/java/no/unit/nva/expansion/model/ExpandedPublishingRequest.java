@@ -28,7 +28,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     public static final String TYPE = "PublishingRequest";
     public static final String STATUS_FIELD = "status";
     
-    
     @JsonProperty("organizationIds")
     private Set<URI> organizationIds;
     @JsonProperty(STATUS_FIELD)

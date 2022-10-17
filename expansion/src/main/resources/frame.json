@@ -30,6 +30,9 @@
     "files": {
       "@container": "@set"
     },
+    "associatedArtifacts": {
+      "@container": "@set"
+    },
     "grants": {
       "@container": "@set"
     },

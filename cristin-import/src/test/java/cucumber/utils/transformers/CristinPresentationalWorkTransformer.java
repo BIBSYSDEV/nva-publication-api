@@ -23,8 +23,8 @@ public class CristinPresentationalWorkTransformer {
         int id = Integer.parseInt(entry.get(ID));
         
         return CristinPresentationalWork.builder()
-            .withIdentifier(id)
-            .withPresentationType(type)
-            .build();
+                   .withIdentifier(id)
+                   .withPresentationType(type)
+                   .build();
     }
 }

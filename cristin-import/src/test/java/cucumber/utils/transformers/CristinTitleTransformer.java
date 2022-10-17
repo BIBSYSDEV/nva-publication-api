@@ -25,10 +25,10 @@ public class CristinTitleTransformer {
         String statusOriginal = entry.get(STATUS_ORIGINAL);
         String languageCode = entry.get(LANGUAGE_CODE);
         return CristinTitle.builder()
-            .withTitle(titleText)
-            .withAbstractText(abstractText)
-            .withStatusOriginal(statusOriginal)
-            .withLanguagecode(languageCode)
-            .build();
+                   .withTitle(titleText)
+                   .withAbstractText(abstractText)
+                   .withStatusOriginal(statusOriginal)
+                   .withLanguagecode(languageCode)
+                   .build();
     }
 }

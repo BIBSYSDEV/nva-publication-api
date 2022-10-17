@@ -474,16 +474,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(actualResource, is(equalTo(expectedResource)));
     }
     
-    private Publication createPersistedPublicationWithoutDoi() {
-        var publication = randomPublication().copy().withDoi(null).build();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-    }
-    
-    private Publication createPersistedPublicationWithoutDoi(Publication publication) {
-        var withoutDoi = publication.copy().withDoi(null).build();
-        return resourceService.createPublication(UserInstance.fromPublication(withoutDoi), withoutDoi);
-    }
-    
     @Test
     void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
@@ -841,6 +831,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var exception = assertThrows(InvalidPublicationException.class,
             () -> resourceService.publishPublication(userInstance, samplePublication.getIdentifier()));
         assertThat(exception.getMessage(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+    }
+    
+    private Publication createPersistedPublicationWithoutDoi() {
+        var publication = randomPublication().copy().withDoi(null).build();
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    }
+    
+    private Publication createPersistedPublicationWithoutDoi(Publication publication) {
+        var withoutDoi = publication.copy().withDoi(null).build();
+        return resourceService.createPublication(UserInstance.fromPublication(withoutDoi), withoutDoi);
     }
     
     private Publication createPersistedPublicationWithDoi(ResourceService resourceService, Publication sampleResource) {

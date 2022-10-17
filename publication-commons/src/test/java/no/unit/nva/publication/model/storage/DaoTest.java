@@ -63,6 +63,14 @@ class DaoTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(Entity.class);
     }
     
+    public static Publication draftPublicationWithoutDoi() {
+        return randomPublication()
+                   .copy()
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withDoi(null)
+                   .build();
+    }
+    
     @BeforeEach
     public void init() {
         super.init();
@@ -248,6 +256,14 @@ class DaoTest extends ResourcesLocalTest {
         );
     }
     
+    private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
+        return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next);
+    }
+    
+    private static Stream<Dao> instanceProvider() {
+        return DaoUtils.instanceProvider();
+    }
+    
     @SuppressWarnings("unchecked")
     private Object generateEntity(Class<?> entityType)
         throws ConflictException {
@@ -265,22 +281,6 @@ class DaoTest extends ResourcesLocalTest {
             return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         }
         throw new UnsupportedOperationException();
-    }
-    
-    private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
-        return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next);
-    }
-    
-    private static Publication draftPublicationWithoutDoi() {
-        return randomPublication()
-                   .copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
-    }
-    
-    private static Stream<Dao> instanceProvider() {
-        return DaoUtils.instanceProvider();
     }
     
     private QueryRequest queryByTypeCustomerStatusIndex(Dao originalResource) {

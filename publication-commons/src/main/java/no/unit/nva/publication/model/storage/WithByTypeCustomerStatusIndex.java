@@ -76,7 +76,7 @@ public interface WithByTypeCustomerStatusIndex {
     
     private static Condition equalityIndexKeyCondition(String keyValue) {
         return new Condition()
-            .withAttributeValueList(new AttributeValue(keyValue))
-            .withComparisonOperator(ComparisonOperator.EQ);
+                   .withAttributeValueList(new AttributeValue(keyValue))
+                   .withComparisonOperator(ComparisonOperator.EQ);
     }
 }

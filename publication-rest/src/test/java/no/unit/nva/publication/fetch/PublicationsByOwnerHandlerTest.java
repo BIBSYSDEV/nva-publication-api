@@ -20,8 +20,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.List;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -56,11 +56,11 @@ public class PublicationsByOwnerHandlerTest {
     void handlerReturnsOkResponseOnValidInput() throws IOException {
         when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
             .thenReturn(publicationSummaries());
-        
+    
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
-            .withNvaUsername(randomString())
-            .withCustomerId(randomUri())
-            .build();
+                                .withNvaUsername(randomString())
+                                .withCustomerId(randomUri())
+                                .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
         
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationsByOwnerResponse.class);

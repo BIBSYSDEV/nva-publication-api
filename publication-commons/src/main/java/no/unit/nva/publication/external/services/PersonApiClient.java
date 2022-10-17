@@ -60,31 +60,31 @@ public class PersonApiClient {
     
     private Problem generateErrorReport(HttpResponse<String> response) {
         return Problem.builder()
-            .withStatus(Status.valueOf(response.statusCode()))
-            .withDetail(response.body())
-            .build();
+                   .withStatus(Status.valueOf(response.statusCode()))
+                   .withDetail(response.body())
+                   .build();
     }
     
     private HttpResponse<String> sendQuery(URI queryUri) throws IOException, InterruptedException {
         var httpRequest = HttpRequest.newBuilder(queryUri)
-            .header(ACCEPT, MediaType.JSON_UTF_8.toString())
-            .GET()
-            .build();
+                              .header(ACCEPT, MediaType.JSON_UTF_8.toString())
+                              .GET()
+                              .build();
         return httpClient.send(httpRequest, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
     
     private URI createPersonServiceQuery(String feideId) {
         return new UriWrapper("https", API_HOST)
-            .addChild(PATH_TO_PERSON_SERVICE_PROXY)
-            .addQueryParameter("feideid", feideId)
-            .getUri();
+                   .addChild(PATH_TO_PERSON_SERVICE_PROXY)
+                   .addQueryParameter("feideid", feideId)
+                   .getUri();
     }
     
     private List<URI> extractUserAffiliations(HttpResponse<String> response) throws JsonProcessingException {
         return extractUserInformation(response)
-            .map(details -> (ArrayNode) details.at(USER_AFFILIATIONS_FIELD))
-            .map(this::toUriList)
-            .orElse(Collections.emptyList());
+                   .map(details -> (ArrayNode) details.at(USER_AFFILIATIONS_FIELD))
+                   .map(this::toUriList)
+                   .orElse(Collections.emptyList());
     }
     
     private Optional<ObjectNode> extractUserInformation(HttpResponse<String> response) throws JsonProcessingException {

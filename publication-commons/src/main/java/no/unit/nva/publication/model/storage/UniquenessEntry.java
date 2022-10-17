@@ -37,7 +37,6 @@ public abstract class UniquenessEntry implements DynamoEntry, WithPrimaryKey {
         throw new UnsupportedOperationException(DESERIALIZATION_ERROR_MESSAGE);
     }
     
-    
     @JacocoGenerated
     @Override
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)

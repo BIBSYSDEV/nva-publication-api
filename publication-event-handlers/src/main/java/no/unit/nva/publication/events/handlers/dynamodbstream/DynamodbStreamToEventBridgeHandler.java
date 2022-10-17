@@ -52,13 +52,13 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     @Override
     public Set<PutEventsResponse> handleRequest(DynamodbEvent inputEvent, Context context) {
         return inputEvent.getRecords()
-            .stream()
-            .map(attempt(JsonUtils.dtoObjectMapper::writeValueAsString))
-            .map(attempt -> attempt.map(this::storeFileInS3Bucket))
-            .map(attempt -> attempt.map(this::createEvent))
-            .map(attempt -> attempt.map(eventReference -> sendEvent(eventReference, context)))
-            .map(Try::orElseThrow)
-            .collect(Collectors.toSet());
+                   .stream()
+                   .map(attempt(JsonUtils.dtoObjectMapper::writeValueAsString))
+                   .map(attempt -> attempt.map(this::storeFileInS3Bucket))
+                   .map(attempt -> attempt.map(this::createEvent))
+                   .map(attempt -> attempt.map(eventReference -> sendEvent(eventReference, context)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toSet());
     }
     
     @JacocoGenerated
@@ -82,15 +82,15 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     
     private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
         var entry = PutEventsRequestEntry.builder()
-            .eventBusName(EVENT_BUS_NAME)
-            .time(Instant.now())
-            .source(DYNAMO_DB_STREAM_SOURCE)
-            .detailType(DETAIL_TYPE_NOT_IMPORTANT)
-            .resources(context.getInvokedFunctionArn())
-            .detail(eventReference.toJsonString())
-            .build();
+                        .eventBusName(EVENT_BUS_NAME)
+                        .time(Instant.now())
+                        .source(DYNAMO_DB_STREAM_SOURCE)
+                        .detailType(DETAIL_TYPE_NOT_IMPORTANT)
+                        .resources(context.getInvokedFunctionArn())
+                        .detail(eventReference.toJsonString())
+                        .build();
         return PutEventsRequest.builder()
-            .entries(entry)
-            .build();
+                   .entries(entry)
+                   .build();
     }
 }

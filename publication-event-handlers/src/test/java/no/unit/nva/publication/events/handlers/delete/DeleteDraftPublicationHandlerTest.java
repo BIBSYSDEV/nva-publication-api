@@ -94,8 +94,8 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     
     private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
         Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier().copy()
-            .withDoi(null)
-            .build();
+                                              .withDoi(null)
+                                              .build();
         publicationToCreate.setStatus(status);
         return resourceService.createPublication(fromPublication(publicationToCreate), publicationToCreate);
     }

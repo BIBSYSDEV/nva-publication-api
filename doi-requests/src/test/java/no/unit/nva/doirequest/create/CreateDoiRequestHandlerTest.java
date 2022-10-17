@@ -79,6 +79,11 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         handler = new CreateDoiRequestHandler(resourceService, ticketService, messageService, environment);
     }
     
+    public void sendRequest(Publication publication, ResourceOwner owner, String message) throws IOException {
+        InputStream inputStream = createRequest(publication, owner, message);
+        handler.handleRequest(inputStream, outputStream, context);
+    }
+    
     @Test
     void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException, IOException {
@@ -164,11 +169,6 @@ class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         PutItemRequest putItemRequest = doiRequest.toDao().createPutItemRequest();
         
         client.putItem(putItemRequest);
-    }
-    
-    public void sendRequest(Publication publication, ResourceOwner owner, String message) throws IOException {
-        InputStream inputStream = createRequest(publication, owner, message);
-        handler.handleRequest(inputStream, outputStream, context);
     }
     
     private void sendRequest(Publication publication, ResourceOwner owner) throws IOException {

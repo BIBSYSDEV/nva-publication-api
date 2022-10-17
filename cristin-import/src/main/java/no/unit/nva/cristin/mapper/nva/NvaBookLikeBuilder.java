@@ -28,18 +28,18 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     
     protected String constructSeriesNumber() {
         String volume = extractBookOrReportMetadata()
-            .map(CristinBookOrReportMetadata::getVolume)
-            .filter(StringUtils::isNotBlank)
-            .map(volumeNumber -> String.format("Volume:%s", volumeNumber))
-            .orElse(EMPTY_STRING);
+                            .map(CristinBookOrReportMetadata::getVolume)
+                            .filter(StringUtils::isNotBlank)
+                            .map(volumeNumber -> String.format("Volume:%s", volumeNumber))
+                            .orElse(EMPTY_STRING);
         String issue = extractBookOrReportMetadata()
-            .map(CristinBookOrReportMetadata::getIssue)
-            .filter(StringUtils::isNotBlank)
-            .map(issueNumber -> String.format("Issue:%s", issueNumber))
-            .orElse(null);
-        
+                           .map(CristinBookOrReportMetadata::getIssue)
+                           .filter(StringUtils::isNotBlank)
+                           .map(issueNumber -> String.format("Issue:%s", issueNumber))
+                           .orElse(null);
+    
         return Stream.of(volume, issue).filter(Objects::nonNull)
-            .collect(Collectors.joining(CUSTOM_VOLUME_SERIES_DELIMITER));
+                   .collect(Collectors.joining(CUSTOM_VOLUME_SERIES_DELIMITER));
     }
     
     protected BookSeries buildSeries() {
@@ -52,25 +52,25 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     
     protected PublishingHouse buildPublisher() {
         return createConfirmedPublisherIfPublisherReferenceHasNsdCode()
-            .orElseGet(this::createUnconfirmedPublisher);
+                   .orElseGet(this::createUnconfirmedPublisher);
     }
     
     private Optional<CristinBookOrReportMetadata> extractBookOrReportMetadata() {
         return Optional.of(cristinObject)
-            .map(CristinObject::getBookOrReportMetadata);
+                   .map(CristinObject::getBookOrReportMetadata);
     }
     
     private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
         return extractPublishersNsdCode()
-            .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi()))
-            .map(Nsd::getPublisherUri)
-            .map(this::createConfirmedPublisher);
+                   .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi()))
+                   .map(Nsd::getPublisherUri)
+                   .map(this::createConfirmedPublisher);
     }
     
     private Optional<Integer> extractPublishersNsdCode() {
         return extractBookOrReportMetadata()
-            .map(CristinBookOrReportMetadata::getCristinPublisher)
-            .map(CristinPublisher::getNsdCode);
+                   .map(CristinBookOrReportMetadata::getCristinPublisher)
+                   .map(CristinPublisher::getNsdCode);
     }
     
     private PublishingHouse createUnconfirmedPublisher() {
@@ -83,9 +83,9 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     
     private String extractUnconfirmedPublisherName() {
         String publisherName = extractPublisherNameFromPrimaryField()
-            .orElseGet(this::lookForPublisherNameInAlternativeField);
+                                   .orElseGet(this::lookForPublisherNameInAlternativeField);
         return Optional.ofNullable(publisherName)
-            .orElseThrow(this::publicationWithoutPublisherIsNotAllowed);
+                   .orElseThrow(this::publicationWithoutPublisherIsNotAllowed);
     }
     
     private NoPublisherException publicationWithoutPublisherIsNotAllowed() {
@@ -94,13 +94,13 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     
     private Optional<String> extractPublisherNameFromPrimaryField() {
         return extractBookOrReportMetadata()
-            .map(CristinBookOrReportMetadata::getCristinPublisher)
-            .map(CristinPublisher::getPublisherName);
+                   .map(CristinBookOrReportMetadata::getCristinPublisher)
+                   .map(CristinPublisher::getPublisherName);
     }
     
     private String lookForPublisherNameInAlternativeField() {
         return extractBookOrReportMetadata()
-            .map(CristinBookOrReportMetadata::getPublisherName)
-            .orElse(null);
+                   .map(CristinBookOrReportMetadata::getPublisherName)
+                   .orElse(null);
     }
 }

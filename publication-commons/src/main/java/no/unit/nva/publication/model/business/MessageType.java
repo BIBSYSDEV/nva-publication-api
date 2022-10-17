@@ -30,8 +30,8 @@ public enum MessageType {
     
     public static String allowedValuesString() {
         return Arrays.stream(MessageType.values())
-            .map(MessageType::toString)
-            .collect(Collectors.joining(DELIMITER));
+                   .map(MessageType::toString)
+                   .collect(Collectors.joining(DELIMITER));
     }
     
     @JsonValue

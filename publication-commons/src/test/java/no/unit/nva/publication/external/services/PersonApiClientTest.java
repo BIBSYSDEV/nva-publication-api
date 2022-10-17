@@ -81,9 +81,9 @@ class PersonApiClientTest {
     
     private int randomNonSuccessfulStatusCode() {
         var notSuccessfulValues = Arrays.stream(Status.values())
-            .filter(status -> !Status.OK.equals(status))
-            .map(Status::getStatusCode)
-            .collect(Collectors.toList());
+                                      .filter(status -> !Status.OK.equals(status))
+                                      .map(Status::getStatusCode)
+                                      .collect(Collectors.toList());
         
         return randomElement(notSuccessfulValues);
     }

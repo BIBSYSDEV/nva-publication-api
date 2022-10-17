@@ -39,14 +39,14 @@ public class ReportBuilder extends AbstractBookReportBuilder {
     
     private PublicationInstance<? extends Pages> createDegreePhd() {
         return new DegreePhd.Builder()
-            .withPages(createMonographPages())
-            .build();
+                   .withPages(createMonographPages())
+                   .build();
     }
     
     private PublicationInstance<? extends Pages> createDegreeMaster() {
         return new DegreeMaster.Builder()
-            .withPages(createMonographPages())
-            .build();
+                   .withPages(createMonographPages())
+                   .build();
     }
 }
 

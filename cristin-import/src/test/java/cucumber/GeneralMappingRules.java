@@ -159,10 +159,10 @@ public class GeneralMappingRules {
     @Given("that the Cristin Result has Contributors with names:")
     public void thatCristinResultsHasTheContributors(DataTable nameTable) {
         List<CristinContributor> contributors = nameTable.asMaps()
-            .stream()
-            .map(CristinContributorTransformer::toContributor)
-            .map(CristinContributorBuilder::build)
-            .collect(Collectors.toList());
+                                                    .stream()
+                                                    .map(CristinContributorTransformer::toContributor)
+                                                    .map(CristinContributorBuilder::build)
+                                                    .collect(Collectors.toList());
         
         scenarioContext.getCristinEntry().setContributors(contributors);
     }
@@ -170,9 +170,9 @@ public class GeneralMappingRules {
     @Given("that the Cristin Result has the Contributor(s) with name(s) and sequence:")
     public void thatTheCristinResultHasTheContributorsWithNamesAndSequence(DataTable dataTable) {
         List<CristinContributor> contributors = dataTable.asMaps().stream()
-            .map(CristinContributorTransformer::toContributorWithOrdinalNumber)
-            .map(CristinContributorBuilder::build)
-            .collect(Collectors.toList());
+                                                    .map(CristinContributorTransformer::toContributorWithOrdinalNumber)
+                                                    .map(CristinContributorBuilder::build)
+                                                    .collect(Collectors.toList());
         scenarioContext.getCristinEntry().setContributors(contributors);
     }
     
@@ -204,27 +204,27 @@ public class GeneralMappingRules {
     public void thatTheCristinResultHasAContributorWithRole(String roleCodeString) {
         CristinContributorRoleCode roleCode = CristinContributorRoleCode.fromString(roleCodeString);
         CristinContributorRole desiredRole = CristinContributorRole.builder().withRoleCode(roleCode).build();
-        
+    
         CristinContributorsAffiliation affiliation = CristinDataGenerator.randomAffiliation()
-            .copy()
-            .withRoles(List.of(desiredRole))
-            .build();
-        
+                                                         .copy()
+                                                         .withRoles(List.of(desiredRole))
+                                                         .build();
+    
         CristinContributor newContributor = CristinDataGenerator.randomContributor(FIRST_AUTHOR).copy()
-            .withAffiliations(List.of(affiliation))
-            .build();
+                                                .withAffiliations(List.of(affiliation))
+                                                .build();
         this.scenarioContext.getCristinEntry().setContributors(List.of(newContributor));
     }
     
     @Given("that the Cristin Result has a Contributor with no role")
     public void thatTheCristinResultHasAContributorWithNoRole() {
         CristinContributorsAffiliation affiliation = CristinDataGenerator.randomAffiliation()
-            .copy()
-            .withRoles(Collections.emptyList())
-            .build();
+                                                         .copy()
+                                                         .withRoles(Collections.emptyList())
+                                                         .build();
         CristinContributor newContributor = CristinDataGenerator.randomContributor(FIRST_AUTHOR).copy()
-            .withAffiliations(List.of(affiliation))
-            .build();
+                                                .withAffiliations(List.of(affiliation))
+                                                .build();
         this.scenarioContext.getCristinEntry().setContributors(List.of(newContributor));
     }
     
@@ -232,10 +232,10 @@ public class GeneralMappingRules {
     public void theNvaResourceHasAListOfNvaContributors(DataTable expectedContributors) {
         List<String> expectedContributorNames = expectedContributors.rows(SKIP_HEADERS).asList();
         List<String> actualContributorNames = scenarioContext.getNvaEntry().getEntityDescription().getContributors()
-            .stream()
-            .map(Contributor::getIdentity)
-            .map(Identity::getName)
-            .collect(Collectors.toList());
+                                                  .stream()
+                                                  .map(Contributor::getIdentity)
+                                                  .map(Identity::getName)
+                                                  .collect(Collectors.toList());
         
         assertThat(actualContributorNames, contains(expectedContributorNames.toArray(String[]::new)));
     }
@@ -281,12 +281,12 @@ public class GeneralMappingRules {
     @Then("the NVA Contributor has the role {string}")
     public void theNvaContributorHasTheRole(String expectedNvaRole) {
         List<Contributor> contributors = this.scenarioContext.getNvaEntry().getEntityDescription()
-            .getContributors();
+                                             .getContributors();
         assertThat(contributors.size(), is(equalTo(this.scenarioContext.getCristinEntry().getContributors().size())));
         String actualRole = contributors.stream()
-            .map(Contributor::getRole)
-            .map(Enum::toString)
-            .collect(SingletonCollector.collect());
+                                .map(Contributor::getRole)
+                                .map(Enum::toString)
+                                .collect(SingletonCollector.collect());
         assertThat(actualRole, is(equalTo(expectedNvaRole)));
     }
     
@@ -298,9 +298,9 @@ public class GeneralMappingRules {
     @Given("that the Cristin Result has a Contributor with no family and no given name")
     public void thatTheCristinResultHasAContributorWithNoFamilyAndNoGivenName() {
         CristinContributor contributorWithNoName = CristinDataGenerator.randomContributor(FIRST_AUTHOR).copy()
-            .withFamilyName(null)
-            .withGivenName(null)
-            .build();
+                                                       .withFamilyName(null)
+                                                       .withGivenName(null)
+                                                       .build();
         this.scenarioContext.getCristinEntry().setContributors(List.of(contributorWithNoName));
     }
     
@@ -319,18 +319,18 @@ public class GeneralMappingRules {
     @Then("the NVA Resource has the following abstract {string}")
     public void theNvaResourceHasTheFollowingAbstract(String expectedAbstract) {
         String actuallAbstract = scenarioContext
-            .getNvaEntry()
-            .getEntityDescription()
-            .getAbstract();
+                                     .getNvaEntry()
+                                     .getEntityDescription()
+                                     .getAbstract();
         assertThat(actuallAbstract, is(equalTo(expectedAbstract)));
     }
     
     @Then("the NVA Resource has no abstract")
     public void theNvaResourceHasNoAbstract() {
         String actuallAbstract = scenarioContext
-            .getNvaEntry()
-            .getEntityDescription()
-            .getAbstract();
+                                     .getNvaEntry()
+                                     .getEntityDescription()
+                                     .getAbstract();
         assertThat(actuallAbstract, is(equalTo(null)));
     }
     
@@ -373,10 +373,10 @@ public class GeneralMappingRules {
     public void theNvaResourceHasResearchProjectsWithTheIdValues(List<String> stringUriList) {
         List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
         List<URI> actualUriList = scenarioContext.getNvaEntry()
-            .getProjects()
-            .stream()
-            .map(Project::getId)
-            .collect(Collectors.toList());
+                                      .getProjects()
+                                      .stream()
+                                      .map(Project::getId)
+                                      .collect(Collectors.toList());
         assertThat(actualUriList, is(equalTo(expectedUriList)));
     }
     
@@ -410,18 +410,18 @@ public class GeneralMappingRules {
     @When("the Cristin Result has the HRCS values {string} and {string}")
     public void theCristinResultHasTheHrcsValuesAnd(String category, String activity) {
         CristinHrcsCategoriesAndActivities hrcsCategoriesAndActivities = CristinHrcsCategoriesAndActivities.builder()
-            .withCategory(category)
-            .withActivity(activity)
-            .build();
+                                                                             .withCategory(category)
+                                                                             .withActivity(activity)
+                                                                             .build();
         this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActivities(List.of(hrcsCategoriesAndActivities));
     }
     
     @Then("the NVA Resource Publishers id is {string}")
     public void theNvaResourcePublishersIdIs(String expectedPublisherId) {
         URI actuallPublisherId = this.scenarioContext
-            .getNvaEntry()
-            .getPublisher()
-            .getId();
+                                     .getNvaEntry()
+                                     .getPublisher()
+                                     .getId();
         assertThat(actuallPublisherId.toString(), is(equalTo(expectedPublisherId)));
     }
     

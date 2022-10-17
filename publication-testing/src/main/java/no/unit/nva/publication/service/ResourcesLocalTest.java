@@ -3,6 +3,9 @@ package no.unit.nva.publication.service;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
@@ -10,9 +13,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -55,11 +55,11 @@ public class ResourcesLocalTest {
     
     private CreateTableRequest createTableRequest() {
         return new CreateTableRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withAttributeDefinitions(attributeDefinitions())
-            .withKeySchema(primaryKeySchema())
-            .withGlobalSecondaryIndexes(globalSecondaryIndexes())
-            .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withAttributeDefinitions(attributeDefinitions())
+                   .withKeySchema(primaryKeySchema())
+                   .withGlobalSecondaryIndexes(globalSecondaryIndexes())
+                   .withBillingMode(BillingMode.PAY_PER_REQUEST);
     }
     
     private Collection<GlobalSecondaryIndex> globalSecondaryIndexes() {
@@ -90,9 +90,9 @@ public class ResourcesLocalTest {
     
     private GlobalSecondaryIndex newGsi(String indexName, String partitionKeyName, String sortKeyName) {
         return new GlobalSecondaryIndex()
-            .withIndexName(indexName)
-            .withKeySchema(keySchema(partitionKeyName, sortKeyName))
-            .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+                   .withIndexName(indexName)
+                   .withKeySchema(keySchema(partitionKeyName, sortKeyName))
+                   .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
     }
     
     private Collection<KeySchemaElement> primaryKeySchema() {
@@ -129,7 +129,7 @@ public class ResourcesLocalTest {
     
     private AttributeDefinition newAttribute(String keyName) {
         return new AttributeDefinition()
-            .withAttributeName(keyName)
-            .withAttributeType(STRING_TYPE);
+                   .withAttributeName(keyName)
+                   .withAttributeType(STRING_TYPE);
     }
 }

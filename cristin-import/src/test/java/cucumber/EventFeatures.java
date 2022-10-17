@@ -14,8 +14,8 @@ public class EventFeatures {
     @Given("the Cristin Result has a non empty LectureOrPoster.")
     public void theCristinResultHasANonEmptyLectureOrPoster() {
         CristinLectureOrPosterMetaData cristinLectureOrPosterMetaData = CristinLectureOrPosterMetaData
-            .builder()
-            .build();
+                                                                            .builder()
+                                                                            .build();
         scenarioContext.getCristinEntry().setLectureOrPosterMetaData(cristinLectureOrPosterMetaData);
     }
 }

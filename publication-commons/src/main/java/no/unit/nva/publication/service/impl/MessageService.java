@@ -82,39 +82,12 @@ public class MessageService extends ServiceWithTransactions {
         return fetchEventualConsistentDataEntry(newMessage, this::getMessageByIdentifier).orElseThrow();
     }
     
-    private void markTicketReadForSenderAndUnreadForRecipient(TicketEntry ticketEntry, UserInstance sender) {
-        if (isOwner(sender, ticketEntry)) {
-            ticketEntry.markReadByOwner().markUnreadForCurators().persistUpdate(ticketService);
-        } else {
-            ticketEntry.markUnreadByOwner().markReadForCurators().persistUpdate(ticketService);
-        }
-    }
-    
-    private boolean isOwner(UserInstance sender, TicketEntry ticketEntry) {
-        return sender.getUser().equals(ticketEntry.getOwner());
-    }
-    
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
         return attempt(() -> queryObject.fetchByIdentifier(client))
                    .map(Dao::getData)
                    .map(Message.class::cast)
                    .toOptional();
-    }
-    
-    private Message getMessageByIdentifier(Message message) {
-        return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
-    }
-    
-    private SortableIdentifier writeMessageToDb(Message message) {
-        TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
-        
-        IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
-        TransactWriteItem identifierWriteItem = newPutTransactionItem(identifierEntry);
-        
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
-        sendTransactionWriteRequest(request);
-        return message.getIdentifier();
     }
     
     public Message getMessage(UserInstance owner, SortableIdentifier identifier) throws NotFoundException {
@@ -131,6 +104,33 @@ public class MessageService extends ServiceWithTransactions {
     
     private static Supplier<SortableIdentifier> defaultIdentifierSupplier() {
         return SortableIdentifier::next;
+    }
+    
+    private void markTicketReadForSenderAndUnreadForRecipient(TicketEntry ticketEntry, UserInstance sender) {
+        if (isOwner(sender, ticketEntry)) {
+            ticketEntry.markReadByOwner().markUnreadForCurators().persistUpdate(ticketService);
+        } else {
+            ticketEntry.markUnreadByOwner().markReadForCurators().persistUpdate(ticketService);
+        }
+    }
+    
+    private boolean isOwner(UserInstance sender, TicketEntry ticketEntry) {
+        return sender.getUser().equals(ticketEntry.getOwner());
+    }
+    
+    private Message getMessageByIdentifier(Message message) {
+        return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
+    }
+    
+    private SortableIdentifier writeMessageToDb(Message message) {
+        TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
+        
+        IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
+        TransactWriteItem identifierWriteItem = newPutTransactionItem(identifierEntry);
+        
+        TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
+        sendTransactionWriteRequest(request);
+        return message.getIdentifier();
     }
     
     private Map<String, AttributeValue> fetchMessage(MessageDao queryObject) throws NotFoundException {

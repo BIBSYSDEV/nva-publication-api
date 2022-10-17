@@ -13,10 +13,10 @@ public class NvaDegreeBuilder extends NvaBookLikeBuilder {
     
     public Degree buildDegree() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new Degree.Builder()
-            .withPublisher(buildPublisher())
-            .withIsbnList(createIsbnList())
-            .withSeries(buildSeries())
-            .withSeriesNumber(constructSeriesNumber())
-            .build();
+                   .withPublisher(buildPublisher())
+                   .withIsbnList(createIsbnList())
+                   .withSeries(buildSeries())
+                   .withSeriesNumber(constructSeriesNumber())
+                   .build();
     }
 }

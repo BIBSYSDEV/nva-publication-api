@@ -51,14 +51,14 @@ public final class ResourceServiceUtils {
                                                                                 Class<T> valueClass) {
         if (String.class.equals(valueClass)) {
             return valuesMap
-                .entrySet()
-                .stream()
-                .collect(
-                    Collectors.toMap(
-                        Entry::getKey,
-                        mapEntry -> new AttributeValue((String) mapEntry.getValue())
-                    )
-                );
+                       .entrySet()
+                       .stream()
+                       .collect(
+                           Collectors.toMap(
+                               Entry::getKey,
+                               mapEntry -> new AttributeValue((String) mapEntry.getValue())
+                           )
+                       );
         } else {
             throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
         }

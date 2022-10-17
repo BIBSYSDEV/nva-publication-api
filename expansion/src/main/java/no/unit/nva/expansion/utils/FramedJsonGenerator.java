@@ -27,9 +27,9 @@ public class FramedJsonGenerator {
     
     public FramedJsonGenerator(List<InputStream> streams, InputStream frame) {
         framedJson = attempt(() -> objectMapper.readValue(frame, Map.class))
-            .toOptional(fail -> logFramingFailure(fail.getException()))
-            .map(map -> createFramedJson(streams, map))
-            .orElseThrow();
+                         .toOptional(fail -> logFramingFailure(fail.getException()))
+                         .map(map -> createFramedJson(streams, map))
+                         .orElseThrow();
     }
     
     public String getFramedJson() throws IOException {

@@ -111,18 +111,10 @@ public class PublicationDetails {
         return PublicationDetails.create(resource);
     }
     
-    private static String extractMainTitle(Resource resource) {
-        return Optional.of(resource)
-                   .map(Resource::getEntityDescription)
-                   .map(EntityDescription::getMainTitle)
-                   .orElse(null);
-    }
-    
-    private static String extractMainTitle(Publication publication) {
-        return Optional.of(publication)
-                   .map(Publication::getEntityDescription)
-                   .map(EntityDescription::getMainTitle)
-                   .orElse(null);
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getTitle(), getOwner(), getCreatedDate(), getModifiedDate(), getStatus());
     }
     
     @Override
@@ -143,9 +135,17 @@ public class PublicationDetails {
                && getStatus() == that.getStatus();
     }
     
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getTitle(), getOwner(), getCreatedDate(), getModifiedDate(), getStatus());
+    private static String extractMainTitle(Resource resource) {
+        return Optional.of(resource)
+                   .map(Resource::getEntityDescription)
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
+    }
+    
+    private static String extractMainTitle(Publication publication) {
+        return Optional.of(publication)
+                   .map(Publication::getEntityDescription)
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
     }
 }

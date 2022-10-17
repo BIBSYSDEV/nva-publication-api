@@ -50,7 +50,7 @@ public class ImportRequest implements JsonSerializable {
     
     public static ImportRequest fromJson(String jsonString) {
         return attempt(() -> s3ImportsMapper.readValue(jsonString, ImportRequest.class))
-            .orElseThrow(fail -> handleNotParsableInputError(fail, jsonString));
+                   .orElseThrow(fail -> handleNotParsableInputError(fail, jsonString));
     }
     
     public String getSubtopic() {
@@ -76,10 +76,10 @@ public class ImportRequest implements JsonSerializable {
     
     public UnixPath extractPathFromS3Location() {
         return Optional.ofNullable(s3Location)
-            .map(URI::getPath)
-            .map(UnixPath::fromString)
-            .map(UnixPath::removeRoot)
-            .orElse(UnixPath.EMPTY_PATH);
+                   .map(URI::getPath)
+                   .map(UnixPath::fromString)
+                   .map(UnixPath::removeRoot)
+                   .orElse(UnixPath.EMPTY_PATH);
     }
     
     @JacocoGenerated

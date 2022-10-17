@@ -91,8 +91,8 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
         TicketEntry ticketEntry = DoiRequest.builder()
                                       .withCustomerId(userInstance.getOrganizationUri())
                                       .withPublicationDetails(PublicationDetails.create(publicationIdentifier))
-            .withStatus(newTicketStatus)
-            .build();
+                                      .withStatus(newTicketStatus)
+                                      .build();
         if (TicketStatus.COMPLETED.equals(newTicketStatus)) {
             ticketService.updateTicketStatus(ticketEntry, TicketStatus.COMPLETED);
         } else {
@@ -113,7 +113,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     private SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
         String publicationIdentifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))
-            .orElseThrow(
-                fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));
+                   .orElseThrow(
+                       fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));
     }
 }

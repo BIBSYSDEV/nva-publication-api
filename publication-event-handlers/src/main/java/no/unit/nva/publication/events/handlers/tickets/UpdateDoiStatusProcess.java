@@ -59,7 +59,7 @@ public class UpdateDoiStatusProcess {
     private Publication fetchPublication(ResourceService resourceService,
                                          SortableIdentifier requestedPublicationId) {
         return attempt(() -> resourceService.getPublicationByIdentifier(requestedPublicationId))
-            .orElseThrow(this::handleNotFoundException);
+                   .orElseThrow(this::handleNotFoundException);
     }
     
     private DependencyRemoteNvaApiException handleNotFoundException(Failure<Publication> fail) {
