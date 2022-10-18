@@ -1329,7 +1329,7 @@ Resources:
     Type: AWS::Glue::Table
     Properties:
       CatalogId: !Ref AWS::AccountId
-      DatabaseName: nva
+      DatabaseName: !Ref AnalyticsExportDatabase
       TableInput:
         Description: Table containing the expanded publication metadata
         Name: nva-publications
