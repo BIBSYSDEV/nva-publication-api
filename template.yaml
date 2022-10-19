@@ -380,26 +380,6 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-  NvaCreateDoiRequestFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: doi-requests
-      Handler: no.unit.nva.doirequest.create.CreateDoiRequestHandler::handleRequest
-      Runtime: java11
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /doirequest
-            Method: post
-            RestApiId: !Ref NvaPublicationApi
-
-
   NvaFetchPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
