@@ -502,87 +502,7 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
-  ListDoiRequestsHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: doi-requests
-      Handler: no.unit.nva.doirequest.list.ListDoiRequestsHandler::handleRequest
-      Timeout: 600
-      Runtime: java11
-      Tracing: Active
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /doirequest
-            Method: get
-            RestApiId: !Ref NvaPublicationApi
-
-  UpdateDoiRequestHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: doi-requests
-      Handler: no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler::handleRequest
-      Timeout: 600
-      Runtime: java11
-      Tracing: Active
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /update-doi-request/{publicationIdentifier}
-            Method: post
-            RestApiId: !Ref NvaPublicationApi
-
-  NvaPublishPublicationFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: publication-rest
-      Handler: no.unit.nva.publication.update.PublishPublicationHandler::handleRequest
-      Runtime: java11
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /{publicationIdentifier}/publish
-            Method: put
-            RestApiId: !Ref NvaPublicationApi
-
-  NvaLegacyCreateMessageFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: messages
-      Handler: no.unit.nva.publication.messages.create.CreateMessageHandler::handleRequest
-      Runtime: java11
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /messages
-            Method: post
-            RestApiId: !Ref NvaPublicationApi
-
-  NvaNewCreateMessageFunction:
+  NvaCreateMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: messages
@@ -637,43 +557,6 @@ Resources:
           Properties:
             Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
             Method: post
-            RestApiId: !Ref NvaPublicationApi
-
-  NvaListMessagesFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: messages
-      Handler: no.unit.nva.publication.messages.ListMessagesHandler::handleRequest
-      Runtime: java11
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /messages
-            Method: get
-            RestApiId: !Ref NvaPublicationApi
-  NvaGetMessageFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: messages
-      Handler: no.unit.nva.publication.messages.read.GetMessageHandler::handleRequest
-      Runtime: java11
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /messages/{messageIdentifier}
-            Method: get
             RestApiId: !Ref NvaPublicationApi
 
   CreateTicketFunction:
