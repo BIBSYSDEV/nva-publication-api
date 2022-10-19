@@ -168,6 +168,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withModifiedDate(actualPublicationResponse.getModifiedDate())
                    .withIndexedDate(actualPublicationResponse.getIndexedDate())
                    .withStatus(PublicationStatus.DRAFT)
+                   .withResourceOwner(actualPublicationResponse.getResourceOwner())
                    .build();
     }
     
@@ -178,7 +179,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withLink(null)
                    .withPublishedDate(null)
                    .withPublisher(new Organization.Builder().withLabels(null).withId(testOrgId).build())
-                   //            .withResourceOwner(null)
+                   .withResourceOwner(null)
                    .build();
     }
     
