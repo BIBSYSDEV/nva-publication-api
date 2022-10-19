@@ -116,7 +116,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         Clock clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
         this.ticketService = new TicketService(client);
-        this.messageService = new MessageService(client, clock);
+        this.messageService = new MessageService(client);
     }
     
     @ParameterizedTest(name = "Publication status: {0}")

@@ -12,16 +12,13 @@ import org.junit.jupiter.api.function.Executable;
 class CristinSecondaryCategoryTest {
     
     @Test
-    public void toJournalArticleContentTypeThrowsExceptionWhenSecCatShouldNotBeMappedToJournalArticleContentType() {
-        List<CristinSecondaryCategory> secondaryCategoriesNotMappingToJournalArticle = Stream.of(
-                CristinSecondaryCategory.values())
-                                                                                           .filter(
-                                                                                               cat -> !CristinSecondaryCategory.mapToJournalContentType.containsKey(
-                                                                                                   cat))
-                                                                                           .collect(
-                                                                                               Collectors.toList());
+    void toJournalArticleContentTypeThrowsExceptionWhenSecCatShouldNotBeMappedToJournalArticleContentType() {
+        List<CristinSecondaryCategory> secondaryCategoriesNotMappingToJournalArticle =
+            Stream.of(CristinSecondaryCategory.values())
+                .filter(category -> !CristinSecondaryCategory.mapToJournalContentType.containsKey(category))
+                .collect(Collectors.toList());
         for (CristinSecondaryCategory secondaryCategory : secondaryCategoriesNotMappingToJournalArticle) {
-            Executable action = () -> secondaryCategory.toJournalArticleContentType();
+            Executable action = secondaryCategory::toJournalArticleContentType;
             IllegalStateException exception = assertThrows(IllegalStateException.class, action);
             assertThat(exception.getMessage(), containsString(secondaryCategory.toString()));
         }

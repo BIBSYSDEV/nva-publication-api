@@ -76,7 +76,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 20;
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     private final String tableName;
-    private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
@@ -85,9 +84,8 @@ public class ResourceService extends ServiceWithTransactions {
     public ResourceService(AmazonDynamoDB client,
                            Clock clock,
                            Supplier<SortableIdentifier> identifierSupplier) {
-        super();
+        super(client);
         tableName = RESOURCES_TABLE_NAME;
-        this.client = client;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
@@ -164,7 +162,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
-        var scanResult = client.scan(scanRequest);
+        var scanResult = getClient().scan(scanRequest);
         var values = extractDatabaseEntries(scanResult);
         var isTruncated = thereAreMorePagesToScan(scanResult);
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
@@ -217,7 +215,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
         var dao = (ResourceDao) resource.toDao();
-        return dao.fetchAllTickets(client)
+        return dao.fetchAllTickets(getClient())
                    .stream()
                    .map(TicketDao::getData)
                    .map(TicketEntry.class::cast);
@@ -238,11 +236,6 @@ public class ResourceService extends ServiceWithTransactions {
         return resource.fetchAllTickets(this);
     }
     
-    @Override
-    protected AmazonDynamoDB getClient() {
-        return client;
-    }
-    
     private Entity migrateOther(Entity dataEntry) {
         if (dataEntry instanceof TicketEntry) {
             var ticket = (TicketEntry) dataEntry;
@@ -258,7 +251,7 @@ public class ResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var queryDao = (ResourceDao) Resource.fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
                                          .toDao();
-        return (Resource) queryDao.fetchForElevatedUser(client).getData();
+        return (Resource) queryDao.fetchForElevatedUser(getClient()).getData();
     }
     
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
@@ -290,7 +283,7 @@ public class ResourceService extends ServiceWithTransactions {
         Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
             .stream()
             .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
-            .forEach(client::batchWriteItem);
+            .forEach(getClient()::batchWriteItem);
     }
     
     private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
@@ -457,7 +450,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
     
     private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
-        UpdateItemResult requestResult = client.updateItem(updateRequest);
+        UpdateItemResult requestResult = getClient().updateItem(updateRequest);
         return Try.of(requestResult)
                    .map(UpdateItemResult::getAttributes)
                    .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))

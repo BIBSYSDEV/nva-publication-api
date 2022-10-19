@@ -55,7 +55,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
-        this.messageService = new MessageService(client, Clock.systemDefaultZone());
+        this.messageService = new MessageService(client);
         this.handler = new ListTicketsHandler(ticketService);
         this.outputStream = new ByteArrayOutputStream();
     }
@@ -123,11 +123,10 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         return TicketDto.fromTicket(ticketEntry, messages);
     }
     
-    @SuppressWarnings("unchecked")
     private TicketEntry constructTicketWithMessages(Class<?> ticketType, Publication publication)
         throws ApiGatewayException {
-        var ticketEntry = TicketEntry.requestNewTicket(publication, (Class<? extends TicketEntry>) ticketType);
-        var ticket = ticketService.createTicket(ticketEntry, ticketEntry.getClass());
+        var ticket = TicketEntry.requestNewTicket(publication, (Class<? extends TicketEntry>) ticketType)
+                         .persistNewTicket(ticketService);
         var someCurator = UserInstance.create(randomString(), ticket.getCustomerId());
         ownerSendsMessage(ticket);
         curatorSendsMessage(ticket, someCurator);

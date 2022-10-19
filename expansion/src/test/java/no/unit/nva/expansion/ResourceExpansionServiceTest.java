@@ -199,7 +199,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private void initializeServices() {
         resourceService = new ResourceService(client, CLOCK);
-        messageService = new MessageService(client, CLOCK);
+        messageService = new MessageService(client);
         ticketService = new TicketService(client);
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }

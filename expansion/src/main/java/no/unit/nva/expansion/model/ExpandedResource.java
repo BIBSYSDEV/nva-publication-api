@@ -55,7 +55,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return attempt(() -> objectMapper.readValue(enrichedJson, ExpandedResource.class)).orElseThrow();
     }
     
-    public static List<URI> getPublicationContextUris(JsonNode indexDocument) {
+    public static List<URI> extractPublicationContextUris(JsonNode indexDocument) {
         List<URI> uris = new java.util.ArrayList<>();
         if (isJournal(indexDocument) && isPublicationChannelId(getJournalIdStr(indexDocument))) {
             uris.add(getJournalURI(indexDocument));
@@ -71,7 +71,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     
     public List<URI> getPublicationContextUris() {
         ObjectNode docAsObjectNode = objectMapper.convertValue(this.allFields, ObjectNode.class);
-        return getPublicationContextUris(docAsObjectNode);
+        return extractPublicationContextUris(docAsObjectNode);
     }
     
     @JacocoGenerated

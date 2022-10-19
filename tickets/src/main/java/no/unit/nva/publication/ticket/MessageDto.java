@@ -48,7 +48,6 @@ public class MessageDto implements JsonSerializable {
         messageDto.setDate(message.getCreatedDate());
         messageDto.setMessageId(constructMessageId(message));
         messageDto.setMessageIdentifier(message.getIdentifier());
-        messageDto.setMessageType(message.getMessageType().toString());
         messageDto.setRecipient(message.getRecipient());
         return messageDto;
     }
