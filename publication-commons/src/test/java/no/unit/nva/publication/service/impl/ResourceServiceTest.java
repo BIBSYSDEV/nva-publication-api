@@ -73,9 +73,9 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -133,7 +133,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         now = clock.instant();
         resourceService = new ResourceService(client, clock);
         ticketService = new TicketService(client);
-        messageService = new MessageService(client, clock, SortableIdentifier::next);
+        messageService = new MessageService(client);
     }
     
     public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
@@ -797,13 +797,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws ApiGatewayException {
         var samplePublication = createPersistedPublicationWithoutDoi();
-        var sampleDoiRequestIdentifier =
-            ticketService.createTicket(DoiRequest.fromPublication(samplePublication), DoiRequest.class).getIdentifier();
+        var sampleTicket =
+            TicketEntry.requestNewTicket(samplePublication, DoiRequest.class).persistNewTicket(ticketService);
+    
         var userInstance = UserInstance.fromPublication(samplePublication);
-        
-        var sampleMessageIdentifier = messageService.createMessage(userInstance, samplePublication, randomString(),
-            MessageType.SUPPORT);
-        
+    
+        var sampleMessage = messageService.createMessage(sampleTicket, userInstance, randomString());
+    
         var firstListingResult = fetchFirstDataEntry();
         var identifierInFirstScan = extractIdentifierFromFirstScanResult(firstListingResult);
     
@@ -815,8 +815,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         var expectedIdentifiers =
             new ArrayList<>(List.of(samplePublication.getIdentifier(),
-                sampleDoiRequestIdentifier,
-                sampleMessageIdentifier)
+                sampleTicket.getIdentifier(),
+                sampleMessage.getIdentifier())
             );
         expectedIdentifiers.remove(identifierInFirstScan);
         assertThat(identifiersFromSecondScan,

@@ -14,7 +14,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -49,7 +48,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     public void setup() {
         super.init();
         this.handler = new GetTicketHandler(ticketService);
-        this.messageService = new MessageService(client, Clock.systemDefaultZone());
+        this.messageService = new MessageService(client);
     }
     
     @ParameterizedTest(name = " ticket type: {0}")

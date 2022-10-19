@@ -6,13 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -49,8 +46,6 @@ public class Message implements Entity, JsonSerializable {
     private Instant modifiedDate;
     @JsonProperty("resourceTitle")
     private String resourceTitle;
-    @JsonProperty("messageType")
-    private MessageType messageType;
     
     @JacocoGenerated
     public Message() {
@@ -69,7 +64,6 @@ public class Message implements Entity, JsonSerializable {
                    .withModifiedDate(now)
                    .withCustomerId(ticket.getCustomerId())
                    .withOwner(ticket.getOwner())
-                   .withMessageType(calculateMessageType(ticket))
                    .withIdentifier(SortableIdentifier.next())
                    .withText(message)
                    .withSender(sender.getUser())
@@ -79,17 +73,6 @@ public class Message implements Entity, JsonSerializable {
                    .build();
     }
     
-    //TODO: remove when ticket service is in place and doirequest and publishing-request services are deleted
-    public static Message create(UserInstance sender,
-                                 Publication publication,
-                                 String messageText,
-                                 SortableIdentifier messageIdentifier,
-                                 Clock clock,
-                                 MessageType messageType) {
-        return buildMessage(sender, publication, messageText, messageIdentifier, clock)
-                   .withMessageType(messageType)
-                   .build();
-    }
     
     public SortableIdentifier getTicketIdentifier() {
         return ticketIdentifier;
@@ -112,8 +95,7 @@ public class Message implements Entity, JsonSerializable {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getSender(), getResourceIdentifier(),
-            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(),
-            getMessageType());
+            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle());
     }
     
     @Override
@@ -135,22 +117,13 @@ public class Message implements Entity, JsonSerializable {
                && Objects.equals(getText(), message.getText())
                && Objects.equals(getCreatedDate(), message.getCreatedDate())
                && Objects.equals(getModifiedDate(), message.getModifiedDate())
-               && Objects.equals(getResourceTitle(), message.getResourceTitle())
-               && getMessageType() == message.getMessageType();
+               && Objects.equals(getResourceTitle(), message.getResourceTitle());
     }
     
     @Override
     @JacocoGenerated
     public String toString() {
         return toJsonString();
-    }
-    
-    public MessageType getMessageType() {
-        return messageType;
-    }
-    
-    public void setMessageType(MessageType messageType) {
-        this.messageType = messageType;
     }
     
     @Override
@@ -242,7 +215,6 @@ public class Message implements Entity, JsonSerializable {
                    .withCreatedDate(this.getCreatedDate())
                    .withCustomerId(this.getCustomerId())
                    .withIdentifier(this.getIdentifier())
-                   .withMessageType(this.getMessageType())
                    .withResourceIdentifier(getResourceIdentifier())
                    .withOwner(this.getOwner())
                    .withSender(this.getSender())
@@ -267,43 +239,6 @@ public class Message implements Entity, JsonSerializable {
     
     public void setResourceTitle(String resourceTitle) {
         this.resourceTitle = resourceTitle;
-    }
-    
-    private static MessageType calculateMessageType(TicketEntry ticketEntry) {
-        if (ticketEntry instanceof DoiRequest) {
-            return MessageType.DOI_REQUEST;
-        }
-        if (ticketEntry instanceof PublishingRequestCase) {
-            return MessageType.PUBLISHING_REQUEST;
-        }
-        if (ticketEntry instanceof GeneralSupportRequest) {
-            return MessageType.SUPPORT;
-        }
-        throw new UnsupportedOperationException("Unknown ticket type");
-    }
-    
-    private static Builder buildMessage(UserInstance sender, Publication publication,
-                                        String messageText, SortableIdentifier messageIdentifier,
-                                        Clock clock) {
-        
-        var now = clock.instant();
-        return Message.builder()
-                   .withResourceIdentifier(publication.getIdentifier())
-                   .withCustomerId(sender.getOrganizationUri())
-                   .withText(messageText)
-                   .withSender(sender.getUser())
-                   .withOwner(new User(publication.getResourceOwner().getOwner()))
-                   .withResourceTitle(extractTitle(publication))
-                   .withCreatedDate(now)
-                   .withModifiedDate(now)
-                   .withIdentifier(messageIdentifier);
-    }
-    
-    private static String extractTitle(Publication publication) {
-        return Optional.of(publication)
-                   .map(Publication::getEntityDescription)
-                   .map(EntityDescription::getMainTitle)
-                   .orElse(null);
     }
     
     public static final class Builder {
@@ -361,11 +296,6 @@ public class Message implements Entity, JsonSerializable {
     
         public Builder withResourceTitle(String resourceTitle) {
             message.setResourceTitle(resourceTitle);
-            return this;
-        }
-    
-        public Builder withMessageType(MessageType messageType) {
-            message.setMessageType(messageType);
             return this;
         }
     

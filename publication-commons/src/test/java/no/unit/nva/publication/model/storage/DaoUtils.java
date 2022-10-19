@@ -11,6 +11,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -18,10 +19,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.core.attempt.Try;
 
 public final class DaoUtils {
@@ -60,7 +61,8 @@ public final class DaoUtils {
     
     @SuppressWarnings("unchecked")
     public static Class<? extends TicketEntry> randomTicketType() {
-        return randomElement(DoiRequest.class, PublishingRequestCase.class);
+        return (Class<? extends TicketEntry>)
+                   randomElement(TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList()));
     }
     
     static PutItemRequest toPutItemRequest(Dao resource) {

@@ -6,9 +6,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.time.Clock;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -38,9 +36,8 @@ class UserInstanceTest {
     @Test
     void shouldReturnUserInstanceFromMessage() {
         Publication publication = PublicationGenerator.randomPublication();
-        
-        var message = Message.create(UserInstance.fromPublication(publication), publication, randomString(),
-            SortableIdentifier.next(), Clock.systemDefaultZone(), MessageType.SUPPORT);
+        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+        var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         var userInstance = UserInstance.fromMessage(message);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));

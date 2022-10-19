@@ -33,7 +33,6 @@ public class TicketService extends ServiceWithTransactions {
     
     public static final String TICKET_NOT_FOUND = "Ticket not found";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
-    private final AmazonDynamoDB client;
     
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
@@ -44,8 +43,7 @@ public class TicketService extends ServiceWithTransactions {
     
     protected TicketService(AmazonDynamoDB client,
                             Supplier<SortableIdentifier> identifierProvider) {
-        super();
-        this.client = client;
+        super(client);
         this.identifierProvider = identifierProvider;
         resourceService = new ResourceService(client, Clock.systemDefaultZone(), identifierProvider);
     }
@@ -78,7 +76,7 @@ public class TicketService extends ServiceWithTransactions {
         throws NotFoundException {
         var queryObject = TicketEntry.createQueryObject(userInstance, ticketIdentifier);
         return queryObject
-                   .fetchTicket(client)
+                   .fetchTicket(getClient())
                    .map(TicketDao::getData)
                    .map(TicketEntry.class::cast)
                    .orElseThrow(TicketService::notFoundException);
@@ -108,12 +106,12 @@ public class TicketService extends ServiceWithTransactions {
                                                                                Class<T> ticketType) {
         
         TicketDao dao = (TicketDao) TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
-        return dao.fetchByResourceIdentifier(client).map(Dao::getData).map(ticketType::cast);
+        return dao.fetchByResourceIdentifier(getClient()).map(Dao::getData).map(ticketType::cast);
     }
     
     public List<Message> fetchTicketMessages(TicketEntry ticketEntry) {
         var dao = (TicketDao) ticketEntry.toDao();
-        return dao.fetchTicketMessages(client)
+        return dao.fetchTicketMessages(getClient())
                    .map(MessageDao::getData)
                    .map(Message.class::cast)
                    .collect(Collectors.toList());
@@ -122,14 +120,14 @@ public class TicketService extends ServiceWithTransactions {
     public TicketEntry refreshTicket(TicketEntry ticket) {
         var refreshedTicket = ticket.refresh();
         var dao = (TicketDao) refreshedTicket.toDao();
-        client.putItem(dao.createPutItemRequest());
+        getClient().putItem(dao.createPutItemRequest());
         return refreshedTicket;
     }
     
     public TicketEntry fetchTicketForElevatedUser(UserInstance user, SortableIdentifier ticketIdentifier)
         throws NotFoundException {
         var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
-        return attempt(() -> queryObject.fetchByIdentifier(client))
+        return attempt(() -> queryObject.fetchByIdentifier(getClient()))
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast)
                    .toOptional()
@@ -139,23 +137,18 @@ public class TicketService extends ServiceWithTransactions {
     
     public Stream<TicketEntry> fetchTicketsForUser(UserInstance userInstance) {
         var queryObject = UntypedTicketQueryObject.create(userInstance);
-        return queryObject.fetchTicketsForUser(client);
+        return queryObject.fetchTicketsForUser(getClient());
     }
     
     public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)
         throws NotFoundException {
         var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
-        var queryResult = queryObject.fetchByIdentifier(client);
+        var queryResult = queryObject.fetchByIdentifier(getClient());
         return (TicketEntry) queryResult.getData();
     }
     
     public void updateTicket(TicketEntry ticketEntry) {
-        ticketEntry.toDao().updateExistingEntry(client);
-    }
-    
-    @Override
-    protected AmazonDynamoDB getClient() {
-        return client;
+        ticketEntry.toDao().updateExistingEntry(getClient());
     }
     
     protected TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
@@ -169,7 +162,7 @@ public class TicketService extends ServiceWithTransactions {
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
         
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
-        client.putItem(putItemRequest);
+        getClient().putItem(putItemRequest);
         return completed;
     }
     
@@ -181,7 +174,7 @@ public class TicketService extends ServiceWithTransactions {
     
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
-        client.putItem(putItemRequest);
+        getClient().putItem(putItemRequest);
         return closedTicket;
     }
     
@@ -205,7 +198,6 @@ public class TicketService extends ServiceWithTransactions {
                    .orElseThrow(fail -> new ForbiddenException());
     }
     
-    @SuppressWarnings("unchecked")
     private <T extends TicketEntry> T createTicketForPublication(Publication publication, Class<T> ticketType)
         throws ConflictException {
     

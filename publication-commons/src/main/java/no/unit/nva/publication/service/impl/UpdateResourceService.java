@@ -56,7 +56,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
     
     private final String tableName;
-    private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
     
@@ -64,9 +63,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
                                  String tableName,
                                  Clock clockForTimestamps,
                                  ReadResourceService readResourceService) {
-        super();
+        super(client);
         this.tableName = tableName;
-        this.client = client;
         this.clockForTimestamps = clockForTimestamps;
         this.readResourceService = readResourceService;
     }
@@ -79,10 +77,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var resource = Resource.fromPublication(publication);
     
         TransactWriteItem updateResourceTransactionItem = updateResource(resource);
-        List<TransactWriteItem> updateDoiRequestTransactionItem = updateTickets(resource);
+        List<TransactWriteItem> updateTicketsTransactionItems = updateTickets(resource);
         ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(updateResourceTransactionItem);
-        updateDoiRequestTransactionItem.forEach(transactionItems::add);
+        transactionItems.addAll(updateTicketsTransactionItems);
         
         TransactWriteItemsRequest request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
@@ -98,11 +96,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource));
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         sendTransactionWriteRequest(request);
-    }
-    
-    @Override
-    protected AmazonDynamoDB getClient() {
-        return client;
     }
     
     PublishPublicationStatusResponse publishResource(UserInstance userInstance,
@@ -141,7 +134,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private List<TransactWriteItem> updateTickets(Resource resource) {
         var dao = new ResourceDao(resource);
-        var ticketDaos = dao.fetchAllTickets(client);
+        var ticketDaos = dao.fetchAllTickets(getClient());
         return ticketDaos.stream()
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast)

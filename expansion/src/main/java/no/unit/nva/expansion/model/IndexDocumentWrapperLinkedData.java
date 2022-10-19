@@ -1,6 +1,6 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.model.ExpandedResource.getPublicationContextUris;
+import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
@@ -35,7 +35,7 @@ public class IndexDocumentWrapperLinkedData {
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
-        inputStreams.addAll(fetchAll(getPublicationContextUris(indexDocument)));
+        inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
         return inputStreams;
     }
     

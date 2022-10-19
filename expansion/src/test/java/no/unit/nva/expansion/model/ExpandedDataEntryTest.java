@@ -21,9 +21,9 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -60,7 +60,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         super.init();
         var clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
-        this.messageService = new MessageService(client, clock);
+        this.messageService = new MessageService(client);
         this.ticketService = new TicketService(client);
         this.resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, ticketService);
@@ -114,10 +114,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                        TicketService ticketService)
         throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
-        var doiRequest = DoiRequest.fromPublication(publication);
-        var persistedDoiRequest = (DoiRequest) doiRequest.persistNewTicket(ticketService);
-        messageService.createMessage(userInstance, publication, randomString(), MessageType.DOI_REQUEST);
-        return attempt(() -> ExpandedDoiRequest.createEntry(persistedDoiRequest, resourceExpansionService,
+        var doiRequest = (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class)
+                                          .persistNewTicket(ticketService);
+        messageService.createMessage(doiRequest, userInstance, randomString());
+        return attempt(() -> ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService,
             resourceService,
             ticketService))
                    .orElseThrow();
@@ -128,7 +128,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
     
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
-        return ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
+        return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
     }
     
     private Publication createPublicationWithoutDoi() {

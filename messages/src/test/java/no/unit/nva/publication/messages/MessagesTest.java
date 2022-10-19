@@ -22,7 +22,7 @@ public class MessagesTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.messageService = new MessageService(client, Clock.systemDefaultZone());
+        this.messageService = new MessageService(client);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }

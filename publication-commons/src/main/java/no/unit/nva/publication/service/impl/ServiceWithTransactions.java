@@ -31,7 +31,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.FunctionWithException;
 
-public abstract class ServiceWithTransactions {
+public class ServiceWithTransactions {
     
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
@@ -41,8 +41,14 @@ public abstract class ServiceWithTransactions {
     public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
     
-    protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
+    private final AmazonDynamoDB client;
     
+    protected ServiceWithTransactions(AmazonDynamoDB client) {
+        this.client = client;
+    }
+    
+    protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
+        
         Put put = new Put()
                       .withItem(data.toDynamoFormat())
                       .withTableName(RESOURCES_TABLE_NAME)
@@ -70,7 +76,9 @@ public abstract class ServiceWithTransactions {
         return Optional.ofNullable(savedEntry);
     }
     
-    protected abstract AmazonDynamoDB getClient();
+    protected final AmazonDynamoDB getClient() {
+        return client;
+    }
     
     protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
         return new TransactWriteItem()
@@ -85,9 +93,7 @@ public abstract class ServiceWithTransactions {
     }
     
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
-        if (doiRequestExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
-        } else if (onlyResourceExists(daos)) {
+        if (doiRequestExists(daos) || onlyResourceExists(daos)) {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
