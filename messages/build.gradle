@@ -18,7 +18,6 @@ dependencies {
     testImplementation libs.jackson.core
 
     testImplementation project(":publication-testing")
-    testImplementation project(":doi-requests")
     testImplementation libs.nva.datamodel.testutils
 
 
