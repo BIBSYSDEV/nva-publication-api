@@ -1,7 +1,7 @@
 [versions]
 
 nva = { strictly = '1.24.18' }
-nvaDatamodel = { strictly = '0.19.1' }
+nvaDatamodel = { strictly = '0.19.2' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
 jackson = { strictly = '2.13.3' }
 awsSdk = { strictly = '1.12.220' }
