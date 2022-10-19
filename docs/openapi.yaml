@@ -389,13 +389,6 @@ components:
   schemas:
     Publication:
       type: object
-    PublicationPublishStatus:
-      type: object
-      properties:
-        message:
-          type: string
-        statusCode:
-          type: integer
     Problem:
       type: object
       properties:
@@ -405,28 +398,6 @@ components:
           type: integer
         detail:
           type: string
-    CreateDoiRequest:
-      type: object
-      properties:
-        identifier:
-          type: string
-          description: The resource identifier
-        message:
-          type: string
-          description: Optional message to Curator
-    UpdateDoiRequest:
-      type: object
-      properties:
-        doiRequestStatus:
-          $ref: '#/components/schemas/DoiRequestStatus'
-      description: Initiate a Update DOI request process
-    DoiRequestStatus:
-      description: Enum values for valid doiRequestStatus
-      type: string
-      enum:
-        - REQUESTED
-        - APPROVED
-        - REJECTED
     Message:
       description: Message
       type: object
@@ -437,41 +408,6 @@ components:
           type: string
         date:
           type: string
-        messageType:
-          type: string
-          enum:
-            - DoiRequest
-            - Support
-    ResourceMessages:
-      description: Message list for a Publication
-      type: object
-      properties:
-        publication:
-          $ref: '#/components/schemas/Publication'
-        messages:
-          type: array
-          items:
-            $ref: '#/components/schemas/Message'
-    CreateMessageRequest:
-      type: object
-      properties:
-        publicationIdentifier:
-          type: string
-        message:
-          type: string
-        messageType:
-          type: string
-          enum:
-            - DoiRequest
-            - Support
-            - PublishingRequest
-    UpdateMessageRequest:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - MarkMessageAsReadRequest
     NewTicketRequest:
       type: object
       properties:
@@ -480,6 +416,7 @@ components:
           enum:
             - DoiRequest
             - PublishingRequest
+            - GeneralSupportCase
     Ticket:
       type: object
       properties:
@@ -488,7 +425,7 @@ components:
           enum:
             - DoiRequest
             - PublishingRequest
-            - GeneralSupportRequest
+            - GeneralSupportCase
         viewedBy:
           type: array
           items:
