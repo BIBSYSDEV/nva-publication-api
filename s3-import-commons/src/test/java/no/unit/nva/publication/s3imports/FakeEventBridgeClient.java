@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.events.models.EventReference;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -57,11 +58,11 @@ public class FakeEventBridgeClient implements EventBridgeClient {
     
     public List<URI> listEmittedFilenames() {
         return extractEmittedImportRequests()
-                   .map(ImportRequest::getS3Location)
+                   .map(EventReference::getUri)
                    .collect(Collectors.toList());
     }
     
-    public List<ImportRequest> listEmittedImportRequests() {
+    public List<EventReference> listEmittedImportRequests() {
         return extractEmittedImportRequests().collect(Collectors.toList());
     }
     
@@ -69,11 +70,11 @@ public class FakeEventBridgeClient implements EventBridgeClient {
         return 0;
     }
     
-    private Stream<ImportRequest> extractEmittedImportRequests() {
+    private Stream<EventReference> extractEmittedImportRequests() {
         return evenRequests.stream()
                    .flatMap(events -> events.entries().stream())
                    .map(PutEventsRequestEntry::detail)
-                   .map(ImportRequest::fromJson);
+                   .map(EventReference::fromJson);
     }
     
     private List<PutEventsResultEntry> createResultEntries(PutEventsRequest putEventsRequest) {
