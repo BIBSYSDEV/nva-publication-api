@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -79,8 +80,8 @@ public class FileEntriesEventEmitterTest {
     private static final String SOME_BUCKETNAME = "someBucketname";
     private static final String ALL_FILES = ".";
     private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
-    private static ImportRequest importRequestForExistingFile;
-    private static ImportRequest importRequestForNonExistingFile;
+    private static EventReference importRequestForExistingFile;
+    private static EventReference importRequestForNonExistingFile;
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
     private FileEntriesEventEmitter handler;
@@ -90,11 +91,11 @@ public class FileEntriesEventEmitterTest {
     @BeforeEach
     public void init() {
         timestamp = Instant.now();
-        importRequestForExistingFile = new ImportRequest(TOPIC_EMITTED_BY_FILENAME_EMITTER,
+        importRequestForExistingFile = new EventReference(TOPIC_EMITTED_BY_FILENAME_EMITTER,
             FILENAME_EMISSION_EVENT_SUBTOPIC,
             INPUT_URI,
             timestamp);
-        importRequestForNonExistingFile = new ImportRequest(TOPIC_EMITTED_BY_FILENAME_EMITTER,
+        importRequestForNonExistingFile = new EventReference(TOPIC_EMITTED_BY_FILENAME_EMITTER,
             FILENAME_EMISSION_EVENT_SUBTOPIC,
             NON_EXISTING_FILE_URI,
             timestamp);
@@ -134,17 +135,24 @@ public class FileEntriesEventEmitterTest {
         InputStream validEvent = createRequestEventForFile(importRequestForExistingFile);
         assertThat(importRequestForExistingFile.getTopic(), is(equalTo(FILENAME_EMISSION_EVENT_TOPIC)));
         assertDoesNotThrow(() -> handler.handleRequest(validEvent, outputStream, CONTEXT));
-        
-        ImportRequest invalidRequest = importRequestForExistingFile.withTopic(randomString());
+    
+        EventReference invalidRequest = changeTopic(importRequestForExistingFile, randomString());
         InputStream invalidEvent = createRequestEventForFile(invalidRequest);
         assertThat(invalidRequest.getTopic(), is(not(equalTo(FILENAME_EMISSION_EVENT_TOPIC))));
         assertThrows(IllegalArgumentException.class, () -> handler.handleRequest(invalidEvent, outputStream, CONTEXT));
     }
     
+    private EventReference changeTopic(EventReference eventReference, String newTopic) {
+        return new EventReference(newTopic,
+            eventReference.getSubtopic(),
+            eventReference.getUri(),
+            eventReference.getTimestamp());
+    }
+    
     @Test
     public void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedTopic() {
-        AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        ImportRequest invalidRequest = importRequestForExistingFile.withTopic(UNEXPECTED_TOPIC);
+        AwsEventBridgeEvent<EventReference> request = new AwsEventBridgeEvent<>();
+        EventReference invalidRequest = changeTopic(importRequestForExistingFile, UNEXPECTED_TOPIC);
         request.setDetail(invalidRequest);
         InputStream input = toInputStream(request);
         
@@ -209,7 +217,7 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(importRequestForNonExistingFile);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(importRequestForNonExistingFile.getS3Location().toString()));
+        assertThat(exception.getMessage(), containsString(importRequestForNonExistingFile.getUri().toString()));
     }
     
     @Test
@@ -316,7 +324,7 @@ public class FileEntriesEventEmitterTest {
         handler.handleRequest(input, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.of(ALL_FILES));
-        UnixPath expectedFile = importRequestForExistingFile.extractPathFromS3Location();
+        UnixPath expectedFile = UriWrapper.fromUri(importRequestForExistingFile.getUri()).toS3bucketPath();
         
         assertThat(allFiles, containsInAnyOrder(expectedFile));
     }
@@ -324,7 +332,7 @@ public class FileEntriesEventEmitterTest {
     @Test
     public void handlerEmitsEventsWithSubtopicEqualToInputsImportRequestSubtopic() {
         String inputImportEventSubtopic = randomString();
-        ImportRequest inputImportEvent =
+        EventReference inputImportEvent =
             importRequestWithCustomSubtopic(inputImportEventSubtopic);
         InputStream input = createRequestEventForFile(inputImportEvent);
         handler.handleRequest(input, outputStream, CONTEXT);
@@ -350,10 +358,10 @@ public class FileEntriesEventEmitterTest {
         assertThat(emittedObjects, containsInAnyOrder(sampleObjects.toArray(SampleObject[]::new)));
     }
     
-    private static ImportRequest importRequestWithCustomSubtopic(String subtopic) {
-        return new ImportRequest(FILENAME_EMISSION_EVENT_TOPIC,
+    private static EventReference importRequestWithCustomSubtopic(String subtopic) {
+        return new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
             subtopic,
-            importRequestForExistingFile.getS3Location(),
+            importRequestForExistingFile.getUri(),
             Instant.now());
     }
     
@@ -367,12 +375,16 @@ public class FileEntriesEventEmitterTest {
     }
     
     private static FileContent fileWithContentsAsJsonObjectsLists() {
-        return new FileContent(importRequestForExistingFile.extractPathFromS3Location(),
+        return new FileContent(extractPathFromS3Location(importRequestForExistingFile),
             contentsAsJsonObjectsList());
     }
     
+    private static UnixPath extractPathFromS3Location(EventReference eventReference) {
+        return UriWrapper.fromUri(eventReference.getUri()).toS3bucketPath();
+    }
+    
     private static FileContent fileWithContentsAsJsonArray() {
-        return new FileContent(importRequestForExistingFile.extractPathFromS3Location(), contentsAsJsonArray());
+        return new FileContent(extractPathFromS3Location(importRequestForExistingFile), contentsAsJsonArray());
     }
     
     private static FileContent fileWithContentAsIonObjectsList(Collection<SampleObject> sampleObjects) {
@@ -380,13 +392,13 @@ public class FileEntriesEventEmitterTest {
         //verify that this is not a list of json objects.
         
         assertThrows(Exception.class, () -> s3ImportsMapper.readTree(ionObjectsList));
-        return new FileContent(importRequestForExistingFile.extractPathFromS3Location(),
+        return new FileContent(extractPathFromS3Location(importRequestForExistingFile),
             IoUtils.stringToStream(ionObjectsList));
     }
     
     private static FileContent fileWithContentAsIonArray(Collection<SampleObject> sampleObjects) {
         String ionArray = attempt(() -> createNewIonArray(sampleObjects)).orElseThrow();
-        return new FileContent(importRequestForExistingFile.extractPathFromS3Location(),
+        return new FileContent(extractPathFromS3Location(importRequestForExistingFile),
             IoUtils.stringToStream(ionArray));
     }
     
@@ -472,8 +484,8 @@ public class FileEntriesEventEmitterTest {
         return new FileEntriesEventEmitter(s3Client, eventBridgeClient);
     }
     
-    private InputStream createRequestEventForFile(ImportRequest detail) {
-        AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
+    private InputStream createRequestEventForFile(EventReference detail) {
+        var request = new AwsEventBridgeEvent<EventReference>();
         request.setDetail(detail);
         return toInputStream(request);
     }
@@ -499,7 +511,7 @@ public class FileEntriesEventEmitterTest {
                    .collect(Collectors.toList());
     }
     
-    private InputStream toInputStream(AwsEventBridgeEvent<ImportRequest> request) {
+    private InputStream toInputStream(AwsEventBridgeEvent<EventReference> request) {
         return attempt(() -> s3ImportsMapper.writeValueAsString(request))
                    .map(IoUtils::stringToStream)
                    .orElseThrow();

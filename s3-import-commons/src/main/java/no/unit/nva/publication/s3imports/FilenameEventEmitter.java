@@ -1,6 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
@@ -23,6 +24,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -39,11 +41,11 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
 /**
- * {@link FilenameEventEmitter} accepts an {@link ImportRequest}, it lists all the files in the S3 location defined in
- * the {@link ImportRequest} and it emits on event per filename.
+ * {@link FilenameEventEmitter} accepts an {@link EventReference}, it lists all the files in the S3 location defined in
+ * the {@link EventReference} and it emits on event per filename.
  *
  * <p>Each event has as event detail-type the value {@link FilenameEventEmitter#FILENAME_EMISSION_EVENT_TOPIC} and
- * detail (event-body) an {@link ImportRequest} where s3Location is the URI of the respective file and the rest of the
+ * detail (event-body) an {@link EventReference} where s3Location is the URI of the respective file and the rest of the
  * fields are copied from the input.
  */
 public class FilenameEventEmitter implements RequestStreamHandler {
@@ -60,7 +62,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         + EXPECTED_BODY_MESSAGE;
     
     public static final String LINE_SEPARATOR = System.lineSeparator();
-    public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
+    public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:{}";
     public static final String RUNNING_CLASS_NAME = FilenameEventEmitter.class.getCanonicalName();
     public static final String ERROR_REPORT_FILENAME = Instant.now().toString() + "emitFilenamesReport.error.";
     
@@ -71,7 +73,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
     private final Clock clock;
-    private Instant timestamp;
+    private Instant commonTimestampForAllEmittedEventsIndicatingTheBeginningOfTheImport;
     
     @JacocoGenerated
     public FilenameEventEmitter() {
@@ -86,33 +88,33 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        timestamp = clock.instant();
-        ImportRequest importRequest = parseInput(input);
-        List<URI> files = listFiles(importRequest);
+        commonTimestampForAllEmittedEventsIndicatingTheBeginningOfTheImport = clock.instant();
+        var importRequest = parseInput(input);
+        var files = listFiles(importRequest);
         validateImportRequest(importRequest, files);
-        List<PutEventsResult> failedRequests = emitEvents(context, files);
+        var failedRequests = emitEvents(context, files);
         logWarningForNotEmittedFilenames(failedRequests);
         List<URI> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
         writeFailedEmitActionsInS3(failedRequests, importRequest);
         writeOutput(output, notEmittedFilenames);
     }
     
-    private void writeFailedEmitActionsInS3(List<PutEventsResult> failedRequests, ImportRequest request)
+    private void writeFailedEmitActionsInS3(List<PutEventsResult> failedRequests, EventReference request)
         throws IOException {
         UriWrapper errorReportUri = createErrorReportUri(request);
-        S3Driver s3Driver = new S3Driver(s3Client, request.extractBucketFromS3Location());
+        S3Driver s3Driver = new S3Driver(s3Client, request.extractBucketName());
         String errorReportContent = PutEventsResult.toString(failedRequests);
         if (!failedRequests.isEmpty()) {
             s3Driver.insertFile(errorReportUri.toS3bucketPath(), errorReportContent);
         }
     }
     
-    private UriWrapper createErrorReportUri(ImportRequest request) {
-        UriWrapper inputFolderUri = UriWrapper.fromUri(request.getS3Location());
+    private UriWrapper createErrorReportUri(EventReference request) {
+        UriWrapper inputFolderUri = UriWrapper.fromUri(request.getUri());
         UriWrapper bucketUri = inputFolderUri.getHost();
         return bucketUri
                    .addChild(ERRORS_FOLDER)
-                   .addChild(timestampToString(timestamp))
+                   .addChild(timestampToString(commonTimestampForAllEmittedEventsIndicatingTheBeginningOfTheImport))
                    .addChild(inputFolderUri.getPath())
                    .addChild(ERROR_REPORT_FILENAME);
     }
@@ -126,13 +128,14 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .orElseThrow();
     }
     
-    private List<URI> listFiles(ImportRequest importRequest) {
+    private List<URI> listFiles(EventReference importRequest) {
         
-        S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
-        List<UnixPath> filenames = s3Driver.listAllFiles(importRequest.extractPathFromS3Location());
+        S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketName());
+        
+        List<UnixPath> filenames = s3Driver.listAllFiles(importRequest.getUri());
         logger.info(attempt(() -> s3ImportsMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream()
-                   .map(filename -> createUri(importRequest.getS3Location(), filename))
+                   .map(filename -> createUri(importRequest.getUri(), filename))
                    .collect(Collectors.toList());
     }
     
@@ -142,7 +145,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                                               .stream()
                                               .map(PutEventsResult::toString)
                                               .collect(Collectors.joining(LINE_SEPARATOR));
-            logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX + failedRequestsString);
+            logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX, failedRequestsString);
         }
     }
     
@@ -152,32 +155,38 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .map(PutEventsRequest::entries)
                    .flatMap(Collection::stream)
                    .map(PutEventsRequestEntry::detail)
-                   .map(ImportRequest::fromJson)
-                   .map(ImportRequest::getS3Location)
+                   .map(EventReference::fromJson)
+                   .map(EventReference::getUri)
                    .collect(Collectors.toList());
     }
     
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
         
-        BatchEventEmitter<ImportRequest> batchEventEmitter =
-            new BatchEventEmitter<>(RUNNING_CLASS_NAME,
+        var filenameEvents = files.stream()
+                                 .map(this::newImportRequestForSingleFile)
+                                 .collect(Collectors.toList());
+        
+        return returnEmitAllEvents(context, filenameEvents);
+    }
+    
+    private List<PutEventsResult> returnEmitAllEvents(Context context, List<EventReference> filenameEvents) {
+        var batchEventEmitter =
+            new BatchEventEmitter<EventReference>(RUNNING_CLASS_NAME,
                 context.getInvokedFunctionArn(),
                 eventBridgeClient);
-    
-        List<ImportRequest> filenameEvents = files.stream()
-                                                 .map(this::newImportRequestForSingleFile)
-                                                 .collect(Collectors.toList());
+        
         batchEventEmitter.addEvents(filenameEvents);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
     }
     
-    private ImportRequest newImportRequestForSingleFile(URI uri) {
-        return new ImportRequest(FILENAME_EMISSION_EVENT_TOPIC, FILENAME_EMISSION_EVENT_SUBTOPIC, uri, timestamp);
+    private EventReference newImportRequestForSingleFile(URI uri) {
+        return new EventReference(FILENAME_EMISSION_EVENT_TOPIC, FILENAME_EMISSION_EVENT_SUBTOPIC, uri,
+            commonTimestampForAllEmittedEventsIndicatingTheBeginningOfTheImport);
     }
     
-    private void validateImportRequest(ImportRequest importRequest, List<URI> files) {
+    private void validateImportRequest(EventReference importRequest, List<URI> files) {
         if (isNull(files) || files.isEmpty()) {
-            throw new IllegalArgumentException(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getS3Location());
+            throw new IllegalArgumentException(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getUri());
         }
         if (StringUtils.isNotBlank(importRequest.getSubtopic())) {
             throw new IllegalArgumentException(
@@ -185,10 +194,12 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         }
     }
     
-    private ImportRequest parseInput(InputStream input) {
+    private EventReference parseInput(InputStream input) {
         String inputString = IoUtils.streamToString(input);
-        return attempt(() -> ImportRequest.fromJson(inputString))
-                   .orElseThrow(fail -> new IllegalArgumentException(EXPECTED_BODY_MESSAGE + inputString));
+        return attempt(() -> EventReference.fromJson(inputString))
+                   .toOptional()
+                   .filter(event -> nonNull(event.getUri()))
+                   .orElseThrow(() -> new IllegalArgumentException(EXPECTED_BODY_MESSAGE + inputString));
     }
     
     private <T> void writeOutput(OutputStream output, List<T> results) throws IOException {

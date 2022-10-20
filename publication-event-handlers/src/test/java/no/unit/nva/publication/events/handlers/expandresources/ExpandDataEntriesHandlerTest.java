@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
@@ -99,7 +100,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, DELETED_RESOURCE);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
-        assertThat(response, is(equalTo(emptyEvent())));
+        assertThat(response, is(equalTo(emptyEvent(response.getTimestamp()))));
     }
     
     @Test
@@ -125,7 +126,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var eventReference = parseHandlerResponse();
-        assertThat(eventReference, is(equalTo(emptyEvent())));
+        assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
     }
     
     @Test
@@ -134,7 +135,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
         var eventReference = parseHandlerResponse();
-        assertThat(eventReference, is(equalTo(emptyEvent())));
+        assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
     }
     
     @Test
@@ -190,8 +191,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
     }
     
-    private EventReference emptyEvent() {
-        return new EventReference(EMPTY_EVENT_TOPIC, null);
+    private EventReference emptyEvent(Instant timestamp) {
+        return new EventReference(EMPTY_EVENT_TOPIC, null, null, timestamp);
     }
     
     private Message sampleMessage() {

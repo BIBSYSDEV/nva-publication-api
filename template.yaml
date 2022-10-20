@@ -1016,7 +1016,7 @@ Resources:
       Runtime: java11
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 64
+      ReservedConcurrentExecutions: 5
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1096,6 +1096,7 @@ Resources:
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
       Runtime: java11
       Timeout: 900 # 15 min timeout
+      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
