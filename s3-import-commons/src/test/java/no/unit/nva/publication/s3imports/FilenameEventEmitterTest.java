@@ -1,7 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENT_BUS_NAME;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -46,7 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
 class FilenameEventEmitterTest {
@@ -54,10 +55,8 @@ class FilenameEventEmitterTest {
     public static final String EMPTY_SUBTOPIC = null;
     private static final String SOME_BUCKET = "someBucket";
     private static final URI SOME_S3_LOCATION = URI.create("s3://" + SOME_BUCKET + "/");
-    private static final String SOME_OTHER_BUS = "someOtherBus";
     private static final Context CONTEXT = mock(Context.class);
     private static final String LIST_ALL_FILES = ".";
-    private static final String PATH_SEPARATOR = "/";
     private static final Instant NOW = Instant.now();
     private static final Integer NON_ZERO_NUMBER_OF_FAILURES = 2;
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -72,7 +71,7 @@ class FilenameEventEmitterTest {
     @BeforeEach
     public void init() throws IOException {
         outputStream = new ByteArrayOutputStream();
-        eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
+        eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
         clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, SOME_BUCKET);
@@ -84,7 +83,7 @@ class FilenameEventEmitterTest {
     void shouldThrowExceptionWhenInputDoesNotContainS3Location() throws IOException {
         String json = invalidBody();
         Executable action = () -> handler.handleRequest(IoUtils.stringToStream(json), outputStream, CONTEXT);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
+        var exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(), containsString(json));
     }
     
@@ -96,8 +95,8 @@ class FilenameEventEmitterTest {
     }
     
     @ParameterizedTest(
-        name = "handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location")
-    @ValueSource(strings = {EMPTY_STRING, PATH_SEPARATOR})
+        name = "shouldEmitEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location")
+    @ValueSource(strings = {"", "/"})
     void shouldEmitEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
         String pathSeparator)
         throws IOException {
@@ -107,7 +106,10 @@ class FilenameEventEmitterTest {
         var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC, EMPTY_SUBTOPIC, s3Location, NOW);
         var inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
-        var fileList = eventBridgeClient.listEmittedFilenames();
+        var fileList = fetchEmittedEventReferences()
+                           .stream()
+                           .map(EventReference::getUri)
+                           .collect(Collectors.toList());
         
         assertThat(fileList, containsInAnyOrder(injectedFiles.toArray(URI[]::new)));
     }
@@ -194,43 +196,45 @@ class FilenameEventEmitterTest {
     
     @Test
     void handlerThrowsExceptionWhenEventBusCannotBeFound() {
-        eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
+        eventBridgeClient = new FakeEventBridgeClient();
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient, defaultClock());
         EventReference importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getMessage(), containsString(ApplicationConstants.EVENT_BUS_NAME));
+        assertThat(exception.getMessage(), containsString(EVENT_BUS_NAME));
     }
     
     @Test
     void shouldEmmitEventWithEventTriggerTimestamp() throws IOException {
         Instant expectedTimestamp = clock.instant();
         EventReference importRequest = newImportRequest();
-        
+    
         handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        List<EventReference> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
+        List<EventReference> emittedImportRequests = fetchEmittedEventReferences();
         for (EventReference emittedImportRequest : emittedImportRequests) {
             assertThat(emittedImportRequest.getTimestamp(), is(equalTo(expectedTimestamp)));
         }
+    }
+    
+    private List<EventReference> fetchEmittedEventReferences() {
+        return eventBridgeClient.getRequestEntries()
+                   .stream()
+                   .map(PutEventsRequestEntry::detail)
+                   .map(EventReference::fromJson)
+                   .collect(Collectors.toList());
     }
     
     @Test
     void shouldEmitEventWithTopicFilenameEmissionEvent() throws IOException {
         EventReference importRequest = newImportRequest();
         handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        var expectedEvents =
-            eventBridgeClient.getEvenRequests()
-                .stream()
-                .flatMap(requests -> requests.entries().stream())
-                .collect(Collectors.toList());
+        var actualEmittedEvents = fetchEmittedEventReferences();
         
-        for (var emittedEvent : expectedEvents) {
-            String detail = emittedEvent.detail();
-            var emittedEventDetail = EventReference.fromJson(detail);
-            assertThat(emittedEventDetail.getTopic(),
+        for (var emittedEvent : actualEmittedEvents) {
+            assertThat(emittedEvent.getTopic(),
                 is(equalTo(FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC)));
-            assertThat(emittedEventDetail.getSubtopic(),
+            assertThat(emittedEvent.getSubtopic(),
                 is(equalTo(FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC)));
         }
     }
@@ -258,11 +262,7 @@ class FilenameEventEmitterTest {
     }
     
     private FilenameEventEmitter handlerThatFailsToEmitMessages() {
-        EventBridgeClient eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
-            @Override
-            protected Integer numberOfFailures() {
-                return NON_ZERO_NUMBER_OF_FAILURES;
-            }
+        var eventBridgeClient = new FakeEventBridgeClient(NON_ZERO_NUMBER_OF_FAILURES, EVENT_BUS_NAME) {
         };
         return new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
     }

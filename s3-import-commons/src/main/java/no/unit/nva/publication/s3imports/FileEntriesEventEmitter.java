@@ -47,6 +47,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  * is specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic
  * format such as a {@link Map} annotated with "@JsonAnySetter".
  */
+@JacocoGenerated
 public class FileEntriesEventEmitter extends EventHandler<EventReference, String> {
     
     public static final String WRONG_TOPIC_ERROR = "event does not contain the correct topic:";

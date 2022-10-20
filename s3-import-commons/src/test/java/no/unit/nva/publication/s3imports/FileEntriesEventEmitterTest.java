@@ -1,6 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENT_BUS_NAME;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_CONTENTS_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXTENSION_ERROR;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
@@ -40,6 +41,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
@@ -100,7 +102,7 @@ public class FileEntriesEventEmitterTest {
             NON_EXISTING_FILE_URI,
             timestamp);
         s3Client = new FakeS3Client(fileWithContentsAsJsonArray().toMap());
-        eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
+        eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
         handler = newHandler();
         outputStream = new ByteArrayOutputStream();
     }
@@ -190,7 +192,7 @@ public class FileEntriesEventEmitterTest {
         
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        String eventBusNameUsedByHandler = ApplicationConstants.EVENT_BUS_NAME;
+        String eventBusNameUsedByHandler = EVENT_BUS_NAME;
         assertThat(exception.getMessage(), containsString(eventBusNameUsedByHandler));
     }
     
@@ -456,17 +458,12 @@ public class FileEntriesEventEmitterTest {
     }
     
     private FakeEventBridgeClient eventBridgeClientThatFailsToEmitMessages() {
-        return new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
-            @Override
-            public Integer numberOfFailures() {
-                return NON_ZER0_NUMBER_OF_FAILURES;
-            }
-        };
+        return new FakeEventBridgeClient(NON_ZER0_NUMBER_OF_FAILURES, EVENT_BUS_NAME);
     }
     
     private FakeEventBridgeClient eventBridgeClientThatFailsToEmitAllMessages() {
-        return new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
-            
+        return new FakeEventBridgeClient(EVENT_BUS_NAME) {
+        
             @Override
             public PutEventsResponse putEvents(PutEventsRequest putEventsRequest) {
                 throw new UnsupportedOperationException();
@@ -498,9 +495,8 @@ public class FileEntriesEventEmitterTest {
     
     private Stream<FileContentsEvent<SampleObject>> emitedEvents(
         FakeEventBridgeClient eventBridgeClient) {
-        return eventBridgeClient.getEvenRequests()
+        return eventBridgeClient.getRequestEntries()
                    .stream()
-                   .flatMap(e -> e.entries().stream())
                    .map(PutEventsRequestEntry::detail)
                    .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class));
     }
