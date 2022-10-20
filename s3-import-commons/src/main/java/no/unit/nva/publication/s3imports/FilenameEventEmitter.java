@@ -170,11 +170,9 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
     
     private List<PutEventsResult> returnEmitAllEvents(Context context, List<EventReference> filenameEvents) {
-        var batchEventEmitter =
-            new BatchEventEmitter<EventReference>(RUNNING_CLASS_NAME,
-                context.getInvokedFunctionArn(),
-                eventBridgeClient);
-        
+        var batchEventEmitter = new BatchEventEmitter(RUNNING_CLASS_NAME,
+            context.getInvokedFunctionArn(), eventBridgeClient);
+    
         batchEventEmitter.addEvents(filenameEvents);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
     }

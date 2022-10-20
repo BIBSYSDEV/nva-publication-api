@@ -6,10 +6,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JavaType;
+import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.events.models.EventReference;
+import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UnixPath;
 
 /**
  * Event containing the contents of a file and additional information that are necessary for processing the file
@@ -86,6 +91,12 @@ public class FileContentsEvent<T> {
     @JacocoGenerated
     public T getContents() {
         return contents;
+    }
+    
+    public EventReference toEventReference(S3Driver s3Driver) throws IOException {
+        var json = JsonUtils.dtoObjectMapper.writeValueAsString(contents);
+        var uri = s3Driver.insertEvent(UnixPath.of("cristinEntries"), json);
+        return new EventReference(getTopic(), getSubtopic(), uri, timestamp);
     }
     
     private static <T> JavaType constructJavaType(Class<T> contentsClass) {

@@ -2,6 +2,7 @@ package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENTS_BUCKET;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -87,8 +88,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
     @Override
     protected String processInput(EventReference input, AwsEventBridgeEvent<EventReference> event, Context context) {
         validateEvent(event);
-        var s3Driver = new S3Driver(s3Client, input.extractBucketName());
-        Try<List<PutEventsResult>> failedEntries = attemptToEmitEvents(input, context, s3Driver);
+        Try<List<PutEventsResult>> failedEntries = attemptToEmitEvents(input, context);
         if (thereAreFailures(failedEntries)) {
             storeErrorReportsInS3(failedEntries, input);
             logWarningForNotEmittedEntries(failedEntries);
@@ -109,7 +109,8 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
         return failedEntries.isFailure();
     }
     
-    private Try<List<PutEventsResult>> attemptToEmitEvents(EventReference input, Context context, S3Driver s3Driver) {
+    private Try<List<PutEventsResult>> attemptToEmitEvents(EventReference input, Context context) {
+        var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         return attempt(() -> fetchFileFromS3(input, s3Driver))
                    .map(this::parseContents)
                    .map(jsonNodes -> generateEventBodies(input, jsonNodes))
@@ -165,12 +166,26 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
     
     private List<PutEventsResult> emitEvents(Context context,
                                              Stream<FileContentsEvent<JsonNode>> eventBodies) {
-        BatchEventEmitter<FileContentsEvent<JsonNode>> batchEventEmitter =
-            new BatchEventEmitter<>(CANONICAL_NAME,
+        List<EventReference> eventReferences = createEventReferences(eventBodies);
+        return emitEventReferences(context, eventReferences);
+    }
+    
+    private List<PutEventsResult> emitEventReferences(Context context, List<EventReference> eventReferences) {
+        var batchEventEmitter =
+            new BatchEventEmitter<EventReference>(CANONICAL_NAME,
                 context.getInvokedFunctionArn(),
                 eventBridgeClient);
-        batchEventEmitter.addEvents(eventBodies);
+        batchEventEmitter.addEvents(eventReferences);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
+    }
+    
+    private List<EventReference> createEventReferences(Stream<FileContentsEvent<JsonNode>> eventBodies) {
+        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        var eventReferences = eventBodies
+                                  .map(attempt(fileContents -> fileContents.toEventReference(s3Driver)))
+                                  .map(Try::orElseThrow)
+                                  .collect(Collectors.toList());
+        return eventReferences;
     }
     
     private List<PutEventsResult> generateReportIndicatingTotalEmissionFailure(
@@ -220,7 +235,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
     private List<JsonNode> parseContents(String content) {
         Try<List<JsonNode>> result = attempt(() -> parseContentAsJsonArray(content));
         if (result.isFailure()) {
-            result = attempt(() -> parseContentAsListOfJsonObjects(content));
+            result = attempt(() -> parseContentsAsIndepedentConsecutiveJsonObjects(content));
         }
         if (result.isFailure()) {
             result = attempt(() -> parseContentsAsIonFormat(content));
@@ -232,8 +247,8 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
         return S3IonReader.extractJsonNodesFromIonContent(content).collect(Collectors.toList());
     }
     
-    private List<JsonNode> parseContentAsListOfJsonObjects(String content) {
-    
+    private List<JsonNode> parseContentsAsIndepedentConsecutiveJsonObjects(String content) {
+        
         return attempt(() -> content.replaceAll(CONSECUTIVE_JSON_OBJECTS, NODES_IN_ARRAY))
                    .map(jsonObjectStrings -> BEGINNING_OF_ARRAY + jsonObjectStrings + END_OF_ARRAY)
                    .map(jsonArrayString -> (ArrayNode) s3ImportsMapper.readTree(jsonArrayString))
