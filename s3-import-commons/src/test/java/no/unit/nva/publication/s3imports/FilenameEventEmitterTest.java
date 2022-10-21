@@ -56,7 +56,6 @@ class FilenameEventEmitterTest {
     private static final String SOME_BUCKET = "someBucket";
     private static final URI SOME_S3_LOCATION = URI.create("s3://" + SOME_BUCKET + "/");
     private static final Context CONTEXT = mock(Context.class);
-    private static final String LIST_ALL_FILES = ".";
     private static final Instant NOW = Instant.now();
     private static final Integer NON_ZERO_NUMBER_OF_FAILURES = 2;
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -190,7 +189,7 @@ class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
         
-        List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.of(LIST_ALL_FILES));
+        List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.ROOT_PATH);
         assertThatBucketContainsOnlyInjectedInputFilesAndNotAnyGeneratedReportFiles(allFiles);
     }
     

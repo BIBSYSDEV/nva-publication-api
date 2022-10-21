@@ -36,6 +36,7 @@ public class FileContentsEvent<T> {
     public static final String SUBTOPIC = "subtopic";
     @JsonIgnore
     protected static final String CONTENTS_FIELD = "contents";
+    public static final String CRISTIN_ENTRIES_EVENT_FOLDER = "cristinEntries";
     @JsonProperty(FILE_URI)
     private final URI fileUri;
     @JsonProperty(TIMESTAMP)
@@ -94,8 +95,8 @@ public class FileContentsEvent<T> {
     }
     
     public EventReference toEventReference(S3Driver s3Driver) throws IOException {
-        var json = JsonUtils.dtoObjectMapper.writeValueAsString(contents);
-        var uri = s3Driver.insertEvent(UnixPath.of("cristinEntries"), json);
+        var json = JsonUtils.dtoObjectMapper.writeValueAsString(this);
+        var uri = s3Driver.insertEvent(UnixPath.of(CRISTIN_ENTRIES_EVENT_FOLDER), json);
         return new EventReference(getTopic(), getSubtopic(), uri, timestamp);
     }
     

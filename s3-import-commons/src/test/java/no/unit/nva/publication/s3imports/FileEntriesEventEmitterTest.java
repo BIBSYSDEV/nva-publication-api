@@ -81,7 +81,7 @@ class FileEntriesEventEmitterTest {
     @Test
     void handlerSavesErrorReportOutsideInputFolderSoThatErrorReportWillNotBecomeInputInSubsequentImport()
         throws IOException {
-        eventBridgeClient = new FakeEventBridgeClient(NON_ZER0_NUMBER_OF_FAILURES);
+        eventBridgeClient = new FakeEventBridgeClient(NON_ZER0_NUMBER_OF_FAILURES, EVENT_BUS_NAME);
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         var fileUri = s3Driver.insertFile(randomPath(), SampleObject.random().toJsonString());
         var inputEvent = toInputStream(createInputEventForFile(fileUri));
@@ -101,8 +101,26 @@ class FileEntriesEventEmitterTest {
         var handler = newHandler();
         handler.handleRequest(input, outputStream, CONTEXT);
         List<SampleObject> eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
-        
+    
         assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(sampleObject));
+    }
+    
+    @Test
+    void shouldGenerateEventsWithBodyContainingAnEntryOfTheInputFileAndReferenceToTheInputFile() throws IOException {
+        var fileContents = SampleObject.random();
+        var fileToBeRead = s3Driver.insertFile(randomPath(), fileContents.toJsonString());
+        var input = toInputStream(createInputEventForFile(fileToBeRead));
+        var handler = newHandler();
+        handler.handleRequest(input, outputStream, CONTEXT);
+        var bodyOfEmittedEvent = eventBridgeClient.getRequestEntries()
+                                     .stream()
+                                     .map(PutEventsRequestEntry::detail)
+                                     .map(EventReference::fromJson)
+                                     .map(EventReference::getUri)
+                                     .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
+                                     .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
+                                     .collect(SingletonCollector.collect());
+        assertThat(bodyOfEmittedEvent.getFileUri(), is(equalTo(fileToBeRead)));
     }
     
     @Test
@@ -282,8 +300,9 @@ class FileEntriesEventEmitterTest {
     }
     
     @Test
-    void handlerSavesErrorReportImitatingInputFilePathWhenEventsFailToBeEmitted() throws IOException {
-        eventBridgeClient = new FakeEventBridgeClient(NON_ZER0_NUMBER_OF_FAILURES);
+    void shouldSaveErrorReportContainingTheEventReferenceThatFailedToBeEmitted()
+        throws IOException {
+        eventBridgeClient = new FakeEventBridgeClient(NON_ZER0_NUMBER_OF_FAILURES, EVENT_BUS_NAME);
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         var contents = SampleObject.random();
         var filePath = randomPath();
@@ -299,8 +318,16 @@ class FileEntriesEventEmitterTest {
                                             .toString();
         
         var actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
+        var oneOfManyFailedAttemptsToEmitTheContentsEvent =
+            eventBridgeClient.getRequestEntries()
+                .stream()
+                .map(PutEventsRequestEntry::detail)
+                .map(EventReference::fromJson)
+                .findFirst()
+                .orElseThrow();
+        var eventBodyUri = oneOfManyFailedAttemptsToEmitTheContentsEvent.getUri();
         
-        assertThat(actualErrorFile, containsString(Integer.toString(contents.getId())));
+        assertThat(actualErrorFile, containsString(eventBodyUri.toString()));
     }
     
     @Test
@@ -308,7 +335,7 @@ class FileEntriesEventEmitterTest {
         eventBridgeClient = eventBridgeClientThatFailsToEmitAllMessages();
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         var filPath = randomPath();
-        var fileUri = s3Driver.insertEvent(filPath, SampleObject.random().toJsonString());
+        var fileUri = s3Driver.insertFile(filPath, SampleObject.random().toJsonString());
         
         var inputEvent = createInputEventForFile(fileUri);
         Executable action = () -> handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
@@ -327,7 +354,7 @@ class FileEntriesEventEmitterTest {
     
     @Test
     void shouldOrganizeErrorReportsByTheTimeImportStarted() throws IOException {
-        eventBridgeClient = new FakeEventBridgeClient(NON_ZER0_NUMBER_OF_FAILURES);
+        eventBridgeClient = new FakeEventBridgeClient(NON_ZER0_NUMBER_OF_FAILURES, EVENT_BUS_NAME);
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         var contents = SampleObject.random();
         var filePath = randomPath();
@@ -339,19 +366,6 @@ class FileEntriesEventEmitterTest {
                                           .addChild(timestampToString(inputEvent.getDetail().getTimestamp()));
         var errorReports = s3Driver.listAllFiles(expectedFolderStructure);
         assertThat(errorReports, is(not(empty())));
-    }
-    
-    private static String createNewIonObjectsList(SampleObject... sampleObjects) {
-        return Arrays.stream(sampleObjects)
-                   .map(attempt(s3ImportsMapper::writeValueAsString))
-                   .map(attempt -> attempt.map(FileEntriesEventEmitterTest::jsonToIon))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.joining(System.lineSeparator()));
-    }
-    
-    private static String createNewIonArray(SampleObject... sampleObjects) throws IOException {
-        String jsonString = s3ImportsMapper.writeValueAsString(sampleObjects);
-        return jsonToIon(jsonString);
     }
     
     @Test
@@ -376,8 +390,21 @@ class FileEntriesEventEmitterTest {
                                  .map(EventReference::fromJson)
                                  .map(EventReference::getSubtopic)
                                  .collect(SingletonCollector.collect());
-        
+    
         assertThat(actualSubtopic, is(equalTo(inputEvent.getDetail().getSubtopic())));
+    }
+    
+    private static String createNewIonObjectsList(SampleObject... sampleObjects) {
+        return Arrays.stream(sampleObjects)
+                   .map(attempt(s3ImportsMapper::writeValueAsString))
+                   .map(attempt -> attempt.map(FileEntriesEventEmitterTest::jsonToIon))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.joining(System.lineSeparator()));
+    }
+    
+    private static String createNewIonArray(SampleObject... sampleObjects) throws IOException {
+        String jsonString = s3ImportsMapper.writeValueAsString(sampleObjects);
+        return jsonToIon(jsonString);
     }
     
     private static String jsonToIon(String jsonString) throws IOException {
@@ -400,7 +427,8 @@ class FileEntriesEventEmitterTest {
                    .map(EventReference::fromJson)
                    .map(EventReference::getUri)
                    .map(s3Driver::readEvent)
-                   .map(SampleObject::fromJson)
+                   .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
+                   .map(FileContentsEvent::getContents)
                    .collect(Collectors.toList());
     }
     
