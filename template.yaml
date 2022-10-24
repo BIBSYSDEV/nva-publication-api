@@ -993,7 +993,7 @@ Resources:
       Runtime: java11
       Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 64
+      ReservedConcurrentExecutions: 6
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -1108,6 +1108,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
 
+
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
   # https://stackoverflow.com/questions/41423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
@@ -1180,6 +1181,74 @@ Resources:
     Type: AWS::Events::EventBus
     Properties:
       Name: !Join [ '',[ 'resource-service-internal-bus',!Ref Suffix ] ]
+
+ #=========================Cristin-Athena===================================================================
+#  CREATE TABLE "cristin"."2022_10_18_lowercased"
+#  with (
+#  external_location ='s3://cristin-import-884807050265/test',
+#  bucket_count = 2000,
+#  bucketed_by =ARRAY['id'],
+#  format = 'JSON',
+#  write_compression='GZIP')
+#  as
+#  SELECT * FROM "cristin"."2022_10_18"
+#  limit 50000
+
+  CristinImportDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Description: Read-only database mirroring the data in S3 bucket for expanded resources
+        Name: cristin
+
+  CristinCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      DatabaseName: !Ref    CristinImportDatabase
+      Description: Crawler that crawls the s3 bucket of the cristin data
+      Name: PublicationsCrawler
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !GetAtt CrawlerRole.Arn
+      Schedule:
+        ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
+      SchemaChangePolicy:
+        DeleteBehavior: DELETE_FROM_DATABASE
+        UpdateBehavior: UPDATE_IN_DATABASE
+      Targets:
+        S3Targets:
+          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/'
+
+  CristinWorkgroup:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Description: A workgroup for quering Cristin data and import errors
+      Name: NvaAthenaWorkgroup
+      RecursiveDeleteOption: true
+      State: ENABLED
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: false
+        ResultConfiguration:
+          OutputLocation: !Sub "s3://${AthenaQueriesBucketName}/results"
+
+  ImportQuery:
+    Type: AWS::Athena::NamedQuery
+    Properties:
+      Database: !Ref  AnalyticsExportDatabase
+      Description: Currently nothing special. To be the view used by BI
+      Name: BI Query
+      QueryString: >
+        CREATE TABLE "cristin"."2022_05_18_lowercased"
+        with (
+        external_location ='s3://cristin-import-884807050265/2022_05_18_lowercased',
+        bucket_count = 2000,
+        bucketed_by = ARRAY['id'],
+        format = 'JSON',
+        write_compression='GZIP')
+        as
+        SELECT * FROM "cristin"."2022_10_18"
+      WorkGroup: !Ref CristinWorkgroup
 
   #==========================BI=============================================================================
   AnalyticsExportDatabase:
