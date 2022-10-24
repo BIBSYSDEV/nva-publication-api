@@ -6,10 +6,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JavaType;
+import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
+import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.events.models.EventReference;
+import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UnixPath;
 
 /**
  * Event containing the contents of a file and additional information that are necessary for processing the file
@@ -21,7 +27,7 @@ import nva.commons.core.JacocoGenerated;
  *
  * @param <T> the class modeling the data structure of the file content.
  */
-public class FileContentsEvent<T> {
+public class FileContentsEvent<T> implements JsonSerializable {
     
     @JsonIgnore
     public static final String FILE_URI = "fileUri";
@@ -31,6 +37,7 @@ public class FileContentsEvent<T> {
     public static final String SUBTOPIC = "subtopic";
     @JsonIgnore
     protected static final String CONTENTS_FIELD = "contents";
+    public static final String CRISTIN_ENTRIES_EVENT_FOLDER = "cristinEntries";
     @JsonProperty(FILE_URI)
     private final URI fileUri;
     @JsonProperty(TIMESTAMP)
@@ -86,6 +93,12 @@ public class FileContentsEvent<T> {
     @JacocoGenerated
     public T getContents() {
         return contents;
+    }
+    
+    public EventReference toEventReference(S3Driver s3Driver) throws IOException {
+        var json = JsonUtils.dtoObjectMapper.writeValueAsString(this);
+        var uri = s3Driver.insertEvent(UnixPath.of(CRISTIN_ENTRIES_EVENT_FOLDER), json);
+        return new EventReference(getTopic(), getSubtopic(), uri, timestamp);
     }
     
     private static <T> JavaType constructJavaType(Class<T> contentsClass) {

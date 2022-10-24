@@ -2,7 +2,6 @@ package no.unit.nva.cristin;
 
 import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.CristinImportConfig.singleLineObjectMapper;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.EVENT_SUBTOPIC;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
@@ -14,6 +13,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -31,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinContributor;
@@ -46,8 +46,6 @@ import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTitle;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.publication.s3imports.FileContentsEvent;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public final class CristinDataGenerator {
@@ -86,6 +84,7 @@ public final class CristinDataGenerator {
         ENCYCLOPEDIA,
         POPULAR_BOOK,
         REFERENCE_MATERIAL};
+    public static final String YEAR_REPORTED = "yearReported";
     
     private CristinDataGenerator() {
     
@@ -115,10 +114,6 @@ public final class CristinDataGenerator {
         return smallSample()
                    .map(ignored -> randomAffiliation())
                    .collect(Collectors.toList());
-    }
-    
-    public static String randomString() {
-        return FAKER.lorem().sentence(smallRandomNumber());
     }
     
     public static String randomWord() {
@@ -197,21 +192,6 @@ public final class CristinDataGenerator {
             String.format("The secondary category %s is not covered", secondaryCategory));
     }
     
-    public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
-        return toAwsEvent(inputData, EVENT_SUBTOPIC);
-    }
-    
-    public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData, String subtopic) {
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
-        JsonNode cristinData = convertToJsonNode(inputData);
-        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomString(),
-            subtopic,
-            randomUri(),
-            Instant.now(),
-            cristinData);
-        event.setDetail(eventDetail);
-        return event;
-    }
     
     public static CristinObject randomBookAnthology() {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY);
@@ -273,7 +253,7 @@ public final class CristinDataGenerator {
         CristinObject cristinObject = randomJournalArticle(JOURNAL_ARTICLE);
         cristinObject.getJournalPublication().getJournal().setIssn("123-123-123-132-123");
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
-        return eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
+        return cristinObjectAsObjectNode(cristinObject);
     }
     
     public static JsonNode objectWithoutContributors() throws JsonProcessingException {
@@ -327,6 +307,13 @@ public final class CristinDataGenerator {
                    .withVolume(randomString())
                    .withCristinPublisher(randomPublisher())
                    .build();
+    }
+    
+    public static JsonNode objectWithUnknownProperty(String propertyName) {
+        var object = randomObject();
+        var json = JsonUtils.dtoObjectMapper.convertValue(object, ObjectNode.class);
+        json.put(propertyName, randomString());
+        return json;
     }
     
     private static CristinObject randomEvent(CristinSecondaryCategory secondaryCategory) {
@@ -604,7 +591,7 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                 CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                 BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
-                LECTURE_OR_POSTER_METADATA)));
+                LECTURE_OR_POSTER_METADATA, YEAR_REPORTED)));
         
         return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }

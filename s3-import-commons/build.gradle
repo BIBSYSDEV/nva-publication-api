@@ -56,6 +56,7 @@ test {
     environment "FILENAME_EMISSION_EVENT_SUBTOPIC", "FILENAME_EMISSION_EVENT_SUBTOPIC"
     environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
     environment "EVENT_BUS_NAME", "eventBusName"
+    environment "EVENTS_BUCKET", "theEventsBucket"
 
 }
 

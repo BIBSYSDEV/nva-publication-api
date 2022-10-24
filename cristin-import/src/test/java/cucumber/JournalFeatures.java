@@ -1,7 +1,5 @@
 package cucumber;
 
-import static no.unit.nva.cristin.CristinDataGenerator.randomIssn;
-import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NSD_PROXY_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -14,7 +12,6 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
-import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -493,11 +490,4 @@ public class JournalFeatures {
         return (Journal) publicationContext;
     }
     
-    private CristinJournalPublicationJournal createCristinJournalPublicationJournal() {
-        return CristinJournalPublicationJournal.builder()
-                   .withIssn(randomIssn())
-                   .withIssnOnline(randomIssn())
-                   .withJournalTitle(randomString())
-                   .build();
-    }
 }

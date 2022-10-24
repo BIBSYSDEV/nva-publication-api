@@ -13,12 +13,16 @@ public final class ApplicationConstants {
     
     public static final String EMPTY_STRING = "";
     public static final Environment ENVIRONMENT = new Environment();
-    public static final String DEFAULT_EVENT_BUS = "default";
     public static final String EVENT_BUS_NAME = setupEventBus();
     public static final Region AWS_REGION = setupRegion();
     public static final UnixPath ERRORS_FOLDER = UnixPath.of("errors");
     private static final Integer DEFAULT_MAX_SLEEP_TIME = 100;
     public static final Integer MAX_SLEEP_TIME = setupMaxSleepTime();
+    public static final String EVENTS_BUCKET = setupEventsBucket();
+    
+    private static String setupEventsBucket() {
+        return ENVIRONMENT.readEnv("EVENTS_BUCKET");
+    }
     
     private ApplicationConstants() {
     

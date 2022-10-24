@@ -54,7 +54,7 @@ public final class ExceptionHandling {
             return new InvalidIsbnRuntimeException(exception);
         }
         if (exception instanceof RuntimeException) {
-            return new RuntimeException(exception);
+            return (RuntimeException) exception;
         }
         return new RuntimeException();
     }
