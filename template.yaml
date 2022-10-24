@@ -1210,7 +1210,7 @@ Resources:
       Name: PublicationsCrawler
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
-      Role: !GetAtt CrawlerRole.Arn
+      Role: !GetAtt   CristinCrawlerRole.Arn
       Schedule:
         ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
       SchemaChangePolicy:
@@ -1249,6 +1249,32 @@ Resources:
         as
         SELECT * FROM "cristin"."2022_10_18"
       WorkGroup: !Ref CristinWorkgroup
+
+  CristinCrawlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - glue.amazonaws.com
+            Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
+      Policies:
+        - PolicyName: CrawlerReadsPersistedMetadataPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/"
+
 
   #==========================BI=============================================================================
   AnalyticsExportDatabase:
