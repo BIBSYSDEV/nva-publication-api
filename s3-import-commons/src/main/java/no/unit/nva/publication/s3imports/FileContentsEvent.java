@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.s3.S3Driver;
@@ -26,7 +27,7 @@ import nva.commons.core.paths.UnixPath;
  *
  * @param <T> the class modeling the data structure of the file content.
  */
-public class FileContentsEvent<T> {
+public class FileContentsEvent<T> implements JsonSerializable {
     
     @JsonIgnore
     public static final String FILE_URI = "fileUri";
