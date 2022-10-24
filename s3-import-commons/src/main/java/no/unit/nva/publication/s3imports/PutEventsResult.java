@@ -5,11 +5,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.stream.Collectors;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
-public class PutEventsResult {
+public class PutEventsResult implements JsonSerializable {
     
     public static final String TO_STRING_TEMPLATE = "Request:%s\nResponse:%s";
     public static final String EMPTY_STRING = "";
@@ -26,7 +27,9 @@ public class PutEventsResult {
     }
     
     public static String toString(List<PutEventsResult> events) {
-        return events.stream().map(Object::toString).collect(Collectors.joining(System.lineSeparator()));
+        return events.stream()
+                   .map(Object::toString)
+                   .collect(Collectors.joining(System.lineSeparator()));
     }
     
     /**

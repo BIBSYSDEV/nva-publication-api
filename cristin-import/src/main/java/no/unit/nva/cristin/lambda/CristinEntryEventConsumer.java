@@ -11,16 +11,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
-import no.unit.nva.cristin.lambda.dtos.CristinObjectEvent;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -31,6 +30,7 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +42,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  * {@link FileEntriesEventEmitter#FILE_CONTENTS_EMISSION_EVENT_TOPIC} and subtopic equal to
  * {@link CristinEntryEventConsumer#EVENT_SUBTOPIC}.
  */
-public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<JsonNode>, Publication> {
+public class CristinEntryEventConsumer extends EventHandler<EventReference, Publication> {
     
     public static final String WRONG_SUBTOPIC_ERROR_TEMPLATE =
         "Unexpected subtopic: %s. Expected subtopic is: %s.";
@@ -53,7 +53,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String JSON = ".json";
     public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
-    public static final String ERRORS_FOLDER = "errors";
+    public static final UnixPath ERRORS_FOLDER = UnixPath.of("errors");
     
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final Clock CLOCK = Clock.systemDefaultZone();
@@ -73,20 +73,28 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
     
     protected CristinEntryEventConsumer(ResourceService resourceService, S3Client s3Client) {
-        super(CristinObjectEvent.class);
+        super(EventReference.class);
         this.resourceService = resourceService;
         this.s3Client = s3Client;
     }
     
     @Override
-    protected Publication processInput(FileContentsEvent<JsonNode> input,
-                                       AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
+    protected Publication processInput(EventReference input,
+                                       AwsEventBridgeEvent<EventReference> event,
                                        Context context) {
+        
         validateEvent(event);
-        return attempt(() -> parseCristinObject(event))
+        var eventBody = readEventBody(input);
+        return attempt(() -> parseCristinObject(eventBody))
                    .map(CristinObject::toPublication)
                    .flatMap(this::persistInDatabase)
-                   .orElseThrow(fail -> handleSavingError(fail, event));
+                   .orElseThrow(fail -> handleSavingError(fail, eventBody));
+    }
+    
+    private FileContentsEvent<JsonNode> readEventBody(EventReference input) {
+        var s3Driver = new S3Driver(s3Client, input.extractBucketName());
+        var json = s3Driver.readEvent(input.getUri());
+        return FileContentsEvent.fromJson(json, JsonNode.class);
     }
     
     @JacocoGenerated
@@ -104,25 +112,25 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                    .build();
     }
     
-    private CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        CristinObject cristinObject = jsonNodeToCristinObject(event);
+    private CristinObject parseCristinObject(FileContentsEvent<JsonNode> eventBody) {
+        CristinObject cristinObject = jsonNodeToCristinObject(eventBody);
         cristinObject.hardcodePublicationOwner(HARDCODED_PUBLICATIONS_OWNER);
         return cristinObject;
     }
     
-    private Identifiable parseIdentifiableObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return attempt(() -> event.getDetail().getContents())
+    private Identifiable parseIdentifiableObject(FileContentsEvent<JsonNode> event) {
+        return attempt(event::getContents)
                    .map(jsonNode -> eventHandlerObjectMapper.convertValue(jsonNode, Identifiable.class))
                    .orElseThrow();
     }
     
-    private CristinObject jsonNodeToCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return attempt(() -> event.getDetail().getContents())
+    private CristinObject jsonNodeToCristinObject(FileContentsEvent<JsonNode> event) {
+        return attempt(event::getContents)
                    .map(CristinObject::fromJson)
                    .orElseThrow();
     }
     
-    private void validateEvent(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private void validateEvent(AwsEventBridgeEvent<EventReference> event) {
         if (!EVENT_SUBTOPIC.equalsIgnoreCase(event.getDetail().getSubtopic())) {
             String errorMessage = messageIndicatingTheCorrectEventType(event);
             logger.info(event.toJsonString());
@@ -130,7 +138,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         }
     }
     
-    private String messageIndicatingTheCorrectEventType(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private String messageIndicatingTheCorrectEventType(AwsEventBridgeEvent<EventReference> event) {
         return String.format(WRONG_SUBTOPIC_ERROR_TEMPLATE, event.getDetail().getSubtopic(), EVENT_SUBTOPIC);
     }
     
@@ -172,30 +180,29 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
     
     private RuntimeException handleSavingError(Failure<Publication> fail,
-                                               AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        String cristinObjectId = extractCristinObjectId(event).orElse(DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE);
+                                               FileContentsEvent<JsonNode> eventBody) {
+        String cristinObjectId = extractCristinObjectId(eventBody).orElse(DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE);
         String errorMessage = ERROR_SAVING_CRISTIN_RESULT + cristinObjectId;
         logger.error(errorMessage, fail.getException());
         
-        saveReportToS3(fail, event);
+        saveReportToS3(fail, eventBody);
         
         return castToCorrectRuntimeException(fail.getException());
     }
     
     private void saveReportToS3(Failure<Publication> fail,
-                                AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        UriWrapper errorFileUri = constructErrorFileUri(event, fail.getException());
-        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
-        ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> reportContent =
-            ImportResult.reportFailure(event, fail.getException());
+                                FileContentsEvent<JsonNode> event) {
+        var errorFileUri = constructErrorFileUri(event, fail.getException());
+        var s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
+        var reportContent = ImportResult.reportFailure(event, fail.getException());
         attempt(() -> s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
     }
     
-    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
+    private UriWrapper constructErrorFileUri(FileContentsEvent<JsonNode> event,
                                              Exception exception) {
-        UriWrapper fileUri = UriWrapper.fromUri(event.getDetail().getFileUri());
-        Instant timestamp = event.getDetail().getTimestamp();
-        UriWrapper bucket = fileUri.getHost();
+        var fileUri = UriWrapper.fromUri(event.getFileUri());
+        var timestamp = event.getTimestamp();
+        var bucket = fileUri.getHost();
         return bucket
                    .addChild(ERRORS_FOLDER)
                    .addChild(timestampToString(timestamp))
@@ -204,13 +211,13 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                    .addChild(createErrorReportFilename(event));
     }
     
-    private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return extractCristinObjectId(event)
+    private String createErrorReportFilename(FileContentsEvent<JsonNode> eventBody) {
+        return extractCristinObjectId(eventBody)
                    .map(idString -> idString + JSON)
                    .orElseGet(this::unknownCristinIdReportFilename);
     }
     
-    private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private Optional<String> extractCristinObjectId(FileContentsEvent<JsonNode> event) {
         return attempt(() -> parseIdentifiableObject(event))
                    .map(Identifiable::getId)
                    .toOptional()
