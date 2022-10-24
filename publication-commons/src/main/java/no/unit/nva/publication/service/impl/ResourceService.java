@@ -139,9 +139,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication markPublicationForDeletion(UserInstance userInstance,
                                                   SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-
-        var resource = markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier));
-        return attempt(() -> resource.toPublication()).orElseThrow();
+        return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier)).toPublication();
     }
     
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
@@ -193,8 +191,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     // TODO rename to getPublicationForUsageWithElevatedRights
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        var resource = getResourceByIdentifier(identifier);
-        return attempt(() -> resource.toPublication()).orElseThrow();
+        return getResourceByIdentifier(identifier).toPublication();
     }
     
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -328,8 +325,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     private Publication fetchSavedResource(Resource newResource) {
         return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
-                   .map(attempt(Resource::toPublication))
-                   .map(Try::orElseThrow)
+                   .map(Resource::toPublication)
                    .orElse(null);
     }
     

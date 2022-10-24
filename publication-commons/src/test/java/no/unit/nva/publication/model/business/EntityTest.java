@@ -40,7 +40,7 @@ class EntityTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType) {
         var publication = createDraftPublicationWithoutDoi();
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        var storedPublication = attempt(() -> ticket.toPublication(resourceService)).orElseThrow();
+        var storedPublication = ticket.toPublication(resourceService);
         assertThat(storedPublication, is(equalTo(publication)));
     }
     
@@ -48,8 +48,7 @@ class EntityTest extends ResourcesLocalTest {
     void shouldReturnEquivalentPublicationWhenEntityIsInternalRepresentationOfPublication() {
         var publication = createDraftPublicationWithoutDoi();
         var resource = Resource.fromPublication(publication);
-        var regeneratedPublication = attempt(() -> resource.toPublication(SHOULD_NOT_USE_RESOURCE_SERVICE))
-                .orElseThrow();
+        var regeneratedPublication = resource.toPublication(SHOULD_NOT_USE_RESOURCE_SERVICE);
         assertThat(regeneratedPublication, is(equalTo(publication)));
     }
     

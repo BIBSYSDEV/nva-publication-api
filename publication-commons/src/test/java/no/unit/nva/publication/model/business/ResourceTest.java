@@ -54,7 +54,7 @@ class ResourceTest {
     void toDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
         assertThat(resource, doesNotHaveEmptyValues());
-        Publication publication = attempt(() -> resource.toPublication()).orElseThrow();
+        Publication publication = resource.toPublication();
         Resource fromPublication = Resource.fromPublication(publication);
         Diff diff = javers.compare(resource, fromPublication);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
@@ -66,7 +66,7 @@ class ResourceTest {
         var expected = PublicationGenerator.randomPublication(publicationInstanceType);
         assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
         
-        var transformed = attempt(() -> Resource.fromPublication(expected).toPublication()).orElseThrow();
+        var transformed = Resource.fromPublication(expected).toPublication();
         
         var diff = javers.compare(expected, transformed);
         

@@ -52,7 +52,7 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
     
         var migratedResource = resourceService.getResourceByIdentifier(savedPublication.getIdentifier());
-        var migratedPublication = attempt(() -> migratedResource.toPublication()).orElseThrow();
+        var migratedPublication = migratedResource.toPublication();
         assertThat(migratedPublication, is(equalTo(publication)));
     }
     

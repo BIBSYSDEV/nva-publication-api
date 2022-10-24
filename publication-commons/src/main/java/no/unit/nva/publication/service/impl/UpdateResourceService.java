@@ -108,8 +108,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         if (resourceIsPublished(resource)) {
             return publishCompletedStatus();
         }
-        var publication = attempt(() -> resource.toPublication()).orElseThrow();
-        assertThatPublicationHasMinimumMandatoryFields(publication);
+        assertThatPublicationHasMinimumMandatoryFields(resource.toPublication());
         setResourceStatusToPublished(daos, dao);
         return publishingInProgressStatus();
     }

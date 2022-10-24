@@ -124,7 +124,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(versionAfterEvent, is(equalTo(versionBeforeEvent)));
     }
 
-    private void callApiOfCustomerAllowingAutomaticPublishing(PublishingRequestCase completedTicket) throws IOException {
+    private void callApiOfCustomerAllowingAutomaticPublishing(PublishingRequestCase completedTicket)
+            throws IOException {
         var customerAllowingPublishing =
                 mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval();
 

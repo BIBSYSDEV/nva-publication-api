@@ -19,8 +19,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-import static nva.commons.core.attempt.Try.attempt;
-
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     
     public static final String UNSUPPORTED_TYPE = "Expansion is not supported for type:";
@@ -36,8 +34,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource) {
-            var publication = attempt(() -> dataEntry.toPublication(resourceService)).orElseThrow();
-            return ExpandedResource.fromPublication(publication);
+            return ExpandedResource.fromPublication(dataEntry.toPublication(resourceService));
         } else if (dataEntry instanceof TicketEntry) {
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
         } else if (dataEntry instanceof Message) {

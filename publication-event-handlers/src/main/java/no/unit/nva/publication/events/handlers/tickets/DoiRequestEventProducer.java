@@ -97,7 +97,7 @@ public class DoiRequestEventProducer
     
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(Resource newEntry) {
         if (resourceWithFindableDoiHasBeenUpdated(newEntry)) {
-            var publication = attempt(() -> newEntry.toPublication()).orElseThrow();
+            var publication = newEntry.toPublication();
             return DoiMetadataUpdateEvent.createUpdateDoiEvent(publication);
         }
         return EMPTY_EVENT;

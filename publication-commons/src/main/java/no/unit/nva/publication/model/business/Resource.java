@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -20,7 +22,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.InvalidAssociatedArtifactsException;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -146,8 +147,7 @@ public class Resource implements Entity {
     }
     
     @Override
-    public Publication toPublication(ResourceService resourceService) throws InvalidAssociatedArtifactsException {
-
+    public Publication toPublication(ResourceService resourceService) {
         return toPublication();
     }
     
@@ -198,8 +198,8 @@ public class Resource implements Entity {
         return nonNull(getStatus()) ? getStatus().toString() : null;
     }
     
-    public Publication toPublication() throws InvalidAssociatedArtifactsException {
-        return new Publication.Builder()
+    public Publication toPublication() {
+        var publication = new Publication.Builder()
                    .withIdentifier(getIdentifier())
                    .withResourceOwner(getResourceOwner().toResourceOwner())
                    .withStatus(getStatus())
@@ -209,14 +209,15 @@ public class Resource implements Entity {
                    .withPublisher(getPublisher())
                    .withPublishedDate(getPublishedDate())
                    .withLink(getLink())
-                   .withAssociatedArtifacts(getAssociatedArtifacts())
                    .withProjects(getProjects())
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())
                    .withHandle(getHandle())
                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withSubjects(getSubjects())
-                   .build();
+                   .withSubjects(getSubjects());
+
+        attempt(() -> publication.withAssociatedArtifacts(getAssociatedArtifacts())).orElseThrow();
+        return publication.build();
     }
     
     public PublicationStatus getStatus() {
