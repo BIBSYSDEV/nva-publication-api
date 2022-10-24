@@ -303,16 +303,15 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
     
     @Test
-    void
-    handlerThrowContributorWithoutAffiliationExceptionWhenTheCristinObjectHasContributorWithoutAffiliation()
+    void handlerThrowContributorWithoutAffiliationExceptionWhenTheCristinObjectHasContributorWithoutAffiliation()
         throws IOException {
         var cristinObjectWithoutAffiliations =
             CristinDataGenerator.objectWithContributorsWithoutAffiliation();
         var eventBody = createEventBody(cristinObjectWithoutAffiliations);
         var eventReference = createEventReference(eventBody);
-        
+    
         Executable action = () -> handler.handleRequest(eventReference, outputStream, CONTEXT);
-        
+    
         assertThrows(ContributorWithoutAffiliationException.class, action);
     }
     
@@ -351,8 +350,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
     
     @Test
-    void
-    shouldSaveFileInInputFolderAsErrorTimestampExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo()
+    void shouldSaveFileInInputFolderAsErrorTimestampExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo()
         throws Throwable {
         var cristinObjectWithCustomSecondaryCategory =
             CristinDataGenerator.objectWithCustomSecondaryCategory(randomString());
