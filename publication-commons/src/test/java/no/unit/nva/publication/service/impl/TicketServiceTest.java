@@ -638,7 +638,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private Publication updatePublicationTile(Publication publication) {
-        var copy = publication.copy().build();
+        var copy = attempt(() -> publication.copy().build()).orElseThrow();
         copy.getEntityDescription().setMainTitle(randomString());
         return copy;
     }
@@ -742,7 +742,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private Map<String, AttributeValue> mockedPublicationResponse() {
-        var publication = randomPublicationWithoutDoi().copy().withStatus(DRAFT).build();
+        var publication = attempt(() -> randomPublicationWithoutDoi().copy().withStatus(DRAFT).build()).orElseThrow();
         var resource = Resource.fromPublication(publication);
         var dao = new ResourceDao(resource);
         return dao.toDynamoFormat();

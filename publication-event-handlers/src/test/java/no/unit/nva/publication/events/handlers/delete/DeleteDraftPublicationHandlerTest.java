@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.delete;
 
 import static no.unit.nva.publication.model.business.UserInstance.fromPublication;
+import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -92,10 +93,10 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         return new ByteArrayInputStream(event.getBytes());
     }
     
-    private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
-        Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier().copy()
+    private Publication insertPublicationWithStatus(PublicationStatus status) {
+        Publication publicationToCreate = attempt(() -> publicationWithoutIdentifier().copy()
                                               .withDoi(null)
-                                              .build();
+                                              .build()).orElseThrow();
         publicationToCreate.setStatus(status);
         return resourceService.createPublication(fromPublication(publicationToCreate), publicationToCreate);
     }

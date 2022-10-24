@@ -2,7 +2,6 @@ package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.randomTicketType;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -15,10 +14,11 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.TestDataSource;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.Test;
 
-class MessageTest {
+class MessageTest extends TestDataSource {
     
     public static final String MESSAGE_IDENTIFIER_FIELD = "identifier";
     
@@ -53,7 +53,7 @@ class MessageTest {
     }
     
     private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
+        return randomPreFilledPublicationBuilder().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
     }
     
     private Message createSampleMessage() throws ConflictException {

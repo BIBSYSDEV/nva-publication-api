@@ -31,6 +31,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.attempt.Try;
 
 public class ReadResourceService {
     
@@ -50,11 +51,13 @@ public class ReadResourceService {
         if (isNull(resourceIdentifier)) {
             throw new BadRequestException(EMPTY_RESOURCE_IDENTIFIER_ERROR);
         }
-        return getResource(userInstance, resourceIdentifier).toPublication();
+        var resource =  getResource(userInstance, resourceIdentifier);
+        return attempt(() -> resource.toPublication()).orElseThrow();
     }
     
     public Publication getPublication(Publication publication) throws NotFoundException {
-        return getResource(Resource.fromPublication(publication)).toPublication();
+        var resource = getResource(Resource.fromPublication(publication));
+        return attempt(() -> resource.toPublication()).orElseThrow();
     }
     
     public List<Publication> getResourcesByOwner(UserInstance userInstance) {
@@ -110,7 +113,8 @@ public class ReadResourceService {
     private List<Publication> queryResultToListOfPublications(QueryResult result) {
         return queryResultToResourceList(result)
                    .stream()
-                   .map(Resource::toPublication)
+                   .map(attempt(Resource::toPublication))
+                   .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
     

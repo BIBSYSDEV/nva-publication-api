@@ -17,7 +17,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -74,15 +73,17 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
         ResourceOwner commonOwner = new ResourceOwner(randomString(), null);
         Organization commonPublisher = new Organization.Builder().withId(randomUri()).build();
         return Stream.of(draftPublicationWithoutDoi(), draftPublicationWithoutDoi())
-            
-                   .map(publication -> publication.copy().withResourceOwner(commonOwner).build())
-                   .map(publication -> publication.copy().withPublisher(commonPublisher).build())
+                   .map(attempt(Publication::copy))
+                   .map(Try::orElseThrow)
+                   .map(publication -> publication.withResourceOwner(commonOwner))
+                   .map(publication -> publication.withPublisher(commonPublisher))
+                   .map(Publication.Builder::build)
                    .map(Resource::fromPublication)
                    .collect(Collectors.toList());
     }
     
     private static Publication draftPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
+        return randomPreFilledPublicationBuilder().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
     }
     
     private static List<TicketEntry> sampleTickets() {
@@ -107,11 +108,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
-    
-    private static Publication randomPublication() {
-        return PublicationGenerator.randomPublication();
-    }
-    
+
     private List<? extends WithPrimaryKey> performQuery(WithPrimaryKey queryObject) {
         QueryRequest query = createQuery(queryObject);
         return sendQueryAndParseResponse(query);

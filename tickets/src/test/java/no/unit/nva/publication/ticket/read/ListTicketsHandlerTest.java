@@ -1,6 +1,5 @@
 package no.unit.nva.publication.ticket.read;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -109,7 +108,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication persistDraftPublicationWithoutDoi(UserInstance owner) {
-        var publication = randomPublication().copy()
+        var publication = randomPreFilledPublicationBuilder()
                               .withStatus(PublicationStatus.DRAFT)
                               .withPublisher(new Organization.Builder().withId(owner.getOrganizationUri()).build())
                               .withResourceOwner(new ResourceOwner(owner.getUsername(), null))

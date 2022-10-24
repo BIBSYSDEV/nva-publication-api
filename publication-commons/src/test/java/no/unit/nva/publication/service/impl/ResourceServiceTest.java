@@ -5,14 +5,12 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
-import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
+import static no.unit.nva.publication.service.impl.ResourceService.ASSOCIATED_ARIFACTS_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
@@ -57,15 +55,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -145,7 +142,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldKeepImportedDataCreationDates()
         throws NotFoundException {
         var randomInstant = RandomDataGenerator.randomInstant();
-        var inputPublication = randomPublication().copy().withCreatedDate(randomInstant).build();
+        var inputPublication = randomPreFilledPublicationBuilder().withCreatedDate(randomInstant).build();
         
         var savedPublicationIdentifier =
             resourceService.createPublicationWithPredefinedCreationDate(inputPublication).getIdentifier();
@@ -163,8 +160,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws NotFoundException {
         var createdDate = randomInstant();
         var modifiedDate = randomInstant();
-        var inputPublication = generatePublication()
-                                   .copy()
+        var inputPublication = randomPreFilledPublicationBuilder()
                                    .withCreatedDate(createdDate)
                                    .withModifiedDate(modifiedDate)
                                    .withStatus(PUBLISHED)
@@ -192,7 +188,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(input);
         var savedResource = resourceService.createPublication(userInstance, input);
         var readResource = resourceService.getPublication(savedResource);
-        var expectedResource = input.copy()
+        var copy = attempt(input::copy).orElseThrow();
+        var expectedResource = copy
                                    .withIdentifier(savedResource.getIdentifier())
                                    .withStatus(DRAFT)
                                    .withCreatedDate(readResource.getCreatedDate())
@@ -209,7 +206,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists() {
         final Publication sampleResource = randomPublication();
-        final Publication collidingResource = sampleResource.copy()
+        var copy = attempt(sampleResource::copy).orElseThrow();
+        final Publication collidingResource = copy
                                                   .withPublisher(anotherPublisher())
                                                   .withResourceOwner(new ResourceOwner(SOME_OTHER_USER, null))
                                                   .build();
@@ -464,8 +462,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(resource);
         resourceService.publishPublication(userInstance, resource.getIdentifier());
         var actualResource = resourceService.getPublication(resource);
-        
-        var expectedResource = resource.copy()
+
+        var copy = attempt(resource::copy).orElseThrow();
+        var expectedResource = copy
                                    .withStatus(PUBLISHED)
                                    .withModifiedDate(actualResource.getModifiedDate())
                                    .withPublishedDate(actualResource.getPublishedDate())
@@ -539,7 +538,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws NoSuchFieldException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(null);
-        sampleResource.setFileSet(emptyFileSet());
+        sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
         Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
         
         Executable action =
@@ -551,15 +550,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(actualMessage, containsString(sampleResource.getClass()
                                                      .getDeclaredField(RESOURCE_LINK_FIELD).getName()));
         assertThat(actualMessage, containsString(sampleResource.getClass()
-                                                     .getDeclaredField(RESOURCE_FILE_SET_FIELD).getName()));
+                                                     .getDeclaredField(ASSOCIATED_ARIFACTS_FIELD).getName()));
     }
-    
+
+    private static AssociatedArtifactList createEmptyArtifactList() {
+        return attempt(() -> new AssociatedArtifactList(emptyList())).orElseThrow();
+    }
+
     @Test
     void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles() throws ApiGatewayException {
         
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(SOME_LINK);
-        sampleResource.setFileSet(emptyFileSet());
+        sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
         Publication savedResource = createPersistedPublicationWithoutDoi();
         Publication updatedResource =
             publishResource(savedResource);
@@ -717,15 +720,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void deleteDraftPublicationDeletesDraftResourceWithoutDoi()
-        throws ApiGatewayException {
+    void deleteDraftPublicationDeletesDraftResourceWithoutDoi() throws ApiGatewayException {
         var publication = createPersistedPublicationWithoutDoi();
         assertThatIdentifierEntryHasBeenCreated();
         
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
         assertDoesNotThrow(fetchResourceAction);
         
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
         assertThrows(NotFoundException.class, fetchResourceAction);
         
@@ -834,12 +836,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication createPersistedPublicationWithoutDoi() {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPreFilledPublicationBuilder().withDoi(null).build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
     private Publication createPersistedPublicationWithoutDoi(Publication publication) {
-        var withoutDoi = publication.copy().withDoi(null).build();
+        var copy = attempt(publication::copy).orElseThrow();
+        var withoutDoi = copy.withDoi(null).build();
         return resourceService.createPublication(UserInstance.fromPublication(withoutDoi), withoutDoi);
     }
     
@@ -860,24 +863,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication generatePublication() {
         return PublicationGenerator.publicationWithoutIdentifier();
     }
-    
-    private Entity findMatchingSecondUpdate(List<Entity> secondUpdates, Entity firstUpdate) {
-        return secondUpdates.stream()
-                   .filter(resource -> resource.getIdentifier().equals(firstUpdate.getIdentifier()))
-                   .collect(SingletonCollector.collect());
-    }
-    
-    private List<Entity> createManySampleResources(int numberOfResources) {
-        return IntStream.range(0, numberOfResources)
-                   .boxed()
-                   .map(ignored -> PublicationGenerator.randomPublication())
-                   .map(attempt(p -> createPersistedPublicationWithoutDoi()))
-                   .map(Try::orElseThrow)
-                   .map(Resource::fromPublication)
-                   .map(resource -> (Entity) resource)
-                   .collect(Collectors.toList());
-    }
-    
+
     private ListingResult<Entity> fetchRestOfDatabaseEntries(ListingResult<Entity> listingResult) {
         return resourceService.scanResources(BIG_PAGE, listingResult.getStartMarker());
     }
@@ -948,8 +934,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(Publication existingPublication) {
-        return PublicationGenerator.randomPublication()
-                   .copy()
+        return randomPreFilledPublicationBuilder()
                    .withIdentifier(existingPublication.getIdentifier())
                    .withPublisher(existingPublication.getPublisher())
                    .withResourceOwner(existingPublication.getResourceOwner())
@@ -1014,11 +999,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Supplier<SortableIdentifier> duplicateIdSupplier = () -> identifier;
         return new ResourceService(client, clock, duplicateIdSupplier);
     }
-    
-    private FileSet emptyFileSet() {
-        return new FileSet(emptyList());
-    }
-    
+
     private void assertThatJsonProcessingErrorIsPropagatedUp(Class<JsonProcessingException> expectedExceptionClass,
                                                              Executable action) {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
@@ -1035,8 +1016,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
-        return publication.copy()
-                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
+        var copy = attempt(publication::copy).orElseThrow();
+        return copy.withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
                    .build();
     }
@@ -1044,8 +1025,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication expectedUpdatedResource(Publication originalResource,
                                                 Publication updatedResource,
                                                 UserInstance expectedOwner) {
-        return originalResource.copy()
-                   .withResourceOwner(new ResourceOwner(expectedOwner.getUsername(), AFFILIATION_NOT_IMPORTANT))
+        var copy = attempt(originalResource::copy).orElseThrow();
+        return copy.withResourceOwner(new ResourceOwner(expectedOwner.getUsername(), AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(userOrganization(expectedOwner))
                    .withCreatedDate(originalResource.getCreatedDate())
                    .withModifiedDate(updatedResource.getModifiedDate())
@@ -1062,7 +1043,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
             new EntityDescription.Builder().withMainTitle(UPDATED_TITLE).build();
         
         assertThatNewEntityDescriptionDiffersOnlyInTitle(resource.getEntityDescription(), newEntityDescription);
-        return resource.copy().withEntityDescription(newEntityDescription).build();
+        var copy = attempt(resource::copy).orElseThrow();
+        return copy.withEntityDescription(newEntityDescription).build();
     }
     
     private void assertThatNewEntityDescriptionDiffersOnlyInTitle(EntityDescription oldEntityDescription,

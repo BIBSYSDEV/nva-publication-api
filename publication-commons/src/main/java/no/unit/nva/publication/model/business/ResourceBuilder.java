@@ -4,13 +4,13 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 
 public final class ResourceBuilder {
     
@@ -65,8 +65,8 @@ public final class ResourceBuilder {
         return this;
     }
     
-    public ResourceBuilder withFileSet(FileSet fileSet) {
-        resource.setFileSet(fileSet);
+    public ResourceBuilder withAssociatedArtifactsList(AssociatedArtifactList associatedArtifacts) {
+        resource.setAssociatedArtifacts(associatedArtifacts);
         return this;
     }
     

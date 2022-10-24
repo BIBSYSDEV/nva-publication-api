@@ -206,7 +206,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private Publication persistDraftPublicationWithoutDoi() {
         var publication =
-            PublicationGenerator.randomPublication().copy()
+            randomPreFilledPublicationBuilder()
                 .withDoi(null)
                 .withStatus(DRAFT)
                 .build();

@@ -13,6 +13,8 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
+import static nva.commons.core.attempt.Try.attempt;
+
 public class DeletionProcessInitializationHandler
     extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, ResourceDraftedForDeletionEvent> {
     
@@ -48,7 +50,7 @@ public class DeletionProcessInitializationHandler
     private Publication toPublication(Entity dataEntry) {
         Publication publication = null;
         if (dataEntry instanceof Resource) {
-            publication = dataEntry.toPublication(resourceService);
+            publication = attempt(() -> dataEntry.toPublication(resourceService)).orElseThrow();
         }
         return publication;
     }

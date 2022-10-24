@@ -9,6 +9,7 @@ import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.InvalidAssociatedArtifactsException;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.service.impl.ResourceService;
 
@@ -29,7 +30,7 @@ public interface Entity {
     
     void setIdentifier(SortableIdentifier identifier);
     
-    Publication toPublication(ResourceService resourceService);
+    Publication toPublication(ResourceService resourceService) throws InvalidAssociatedArtifactsException;
     
     @JsonProperty("type")
     String getType();

@@ -29,7 +29,6 @@ import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -162,7 +161,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication().copy().withDoi(null).build();
+        var publication = randomPreFilledPublicationBuilder().withDoi(null).build();
         var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }

@@ -7,6 +7,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -136,7 +137,8 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
         var ticket = createPersistedTicket(publication, ticketType);
-        resourceService.updatePublication(publication.copy().withStatus(publicationStatus).build());
+        var updatedPublication = attempt(() -> publication.copy().withStatus(publicationStatus).build()).orElseThrow();
+        resourceService.updatePublication(updatedPublication);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);

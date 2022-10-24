@@ -120,7 +120,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     
     @Test
     void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
-        var oldImage = createPublishedPublication().copy().withStatus(DRAFT).build();
+        var oldImage = attempt(() -> createPublishedPublication().copy().withStatus(DRAFT).build()).orElseThrow();
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         
@@ -140,13 +140,14 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     
     @Test
     @Disabled
-        //TODO: implement this test as a test or a set of tests
+    //TODO: implement this test as a test or a set of tests
     void shouldAlwaysEmitEventsForAllTypesOfDataEntries() {
     
     }
     
     private Publication createUpdatedVersionOfPublication(Publication oldImage) {
-        return oldImage.copy().withModifiedDate(randomInstant(oldImage.getModifiedDate())).build();
+        return attempt(() -> oldImage.copy().withModifiedDate(randomInstant(oldImage.getModifiedDate())).build())
+                .orElseThrow();
     }
     
     private InputStream emulateEventEmittedByDataEntryUpdateHandler(Object oldImage, Object newImage)
@@ -157,7 +158,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication createPublishedPublication() {
-        return PublicationGenerator.randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build();
+        return randomPreFilledPublicationBuilder().withStatus(PublicationStatus.PUBLISHED).build();
     }
     
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
@@ -183,7 +184,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
-        var publication = PublicationGenerator.randomPublication().copy()
+        var publication = randomPreFilledPublicationBuilder()
                               .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
                               .withResourceOwner(
                                   new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
@@ -203,7 +204,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
     
     private DoiRequest doiRequestForDraftResource() {
-        Publication publication = PublicationGenerator.randomPublication().copy()
+        Publication publication = randomPreFilledPublicationBuilder()
                                       .withStatus(DRAFT)
                                       .build();
         Resource resource = Resource.fromPublication(publication);

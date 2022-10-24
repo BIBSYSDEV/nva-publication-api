@@ -6,20 +6,21 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
-import no.unit.nva.WithFile;
 import no.unit.nva.WithMetadata;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.JacocoGenerated;
 
-public class CreatePublicationRequest implements WithMetadata, WithFile, WithContext {
+public class CreatePublicationRequest implements WithMetadata, WithAssociatedArtifact, WithContext {
     
     private EntityDescription entityDescription;
-    private FileSet fileSet;
+    private AssociatedArtifactList associatedArtifacts;
     @JsonProperty("@context")
     private JsonNode context;
     private List<ResearchProject> projects;
@@ -29,7 +30,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setEntityDescription(publication.getEntityDescription());
-        createPublicationRequest.setFileSet(publication.getFileSet());
+        createPublicationRequest.setAssociatedArtifacts(publication.getAssociatedArtifacts());
         createPublicationRequest.setProjects(publication.getProjects());
         createPublicationRequest.setSubjects(publication.getSubjects());
         createPublicationRequest.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
@@ -47,7 +48,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     public Publication toPublication() {
         Publication publication = new Publication();
         publication.setEntityDescription(getEntityDescription());
-        publication.setFileSet(getFileSet());
+        publication.setAssociatedArtifacts(getAssociatedArtifacts());
         publication.setProjects(getProjects());
         publication.setSubjects(getSubjects());
         publication.setAdditionalIdentifiers(getAdditionalIdentifiers());
@@ -92,14 +93,14 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     
     @Override
     @JacocoGenerated
-    public FileSet getFileSet() {
-        return fileSet;
+    public AssociatedArtifactList getAssociatedArtifacts() {
+        return associatedArtifacts;
     }
-    
+
     @Override
     @JacocoGenerated
-    public void setFileSet(FileSet fileSet) {
-        this.fileSet = fileSet;
+    public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+        this.associatedArtifacts = associatedArtifacts;
     }
     
     @Override
@@ -117,7 +118,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(), getSubjects(),
+        return Objects.hash(getEntityDescription(), getAssociatedArtifacts(), getContext(), getProjects(), getSubjects(),
             getAdditionalIdentifiers());
     }
     
@@ -132,7 +133,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
         }
         CreatePublicationRequest that = (CreatePublicationRequest) o;
         return Objects.equals(getEntityDescription(), that.getEntityDescription())
-               && Objects.equals(getFileSet(), that.getFileSet())
+               && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
                && Objects.equals(getSubjects(), that.getSubjects())

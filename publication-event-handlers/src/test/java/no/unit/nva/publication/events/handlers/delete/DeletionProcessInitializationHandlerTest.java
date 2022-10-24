@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.delete;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -37,12 +38,12 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestReturnsDeletePublicationEventOnDraftForDeletion() throws JsonProcessingException {
-        var oldImage = randomPublication().copy()
+        var oldImage = randomPreFilledPublicationBuilder()
                            .withDoi(null)
                            .withStatus(PublicationStatus.DRAFT).build();
-        var newImage = oldImage.copy()
+        var newImage = attempt(() -> oldImage.copy()
                            .withStatus(PublicationStatus.DRAFT_FOR_DELETION)
-                           .build();
+                           .build()).orElseThrow();
         var eventBody = new DataEntryUpdateEvent(randomString(),
             Resource.fromPublication(oldImage),
             Resource.fromPublication(newImage));
@@ -61,7 +62,7 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestReturnsNullOnDraft() throws JsonProcessingException {
-        var newDraft = randomPublication().copy()
+        var newDraft = randomPreFilledPublicationBuilder()
                            .withDoi(null)
                            .withStatus(PublicationStatus.DRAFT).build();
         var eventBody = new DataEntryUpdateEvent(randomString(),

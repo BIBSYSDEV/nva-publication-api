@@ -3,6 +3,7 @@ package no.unit.nva.publication.model.business;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -53,7 +54,7 @@ class ResourceTest {
     void toDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
         assertThat(resource, doesNotHaveEmptyValues());
-        Publication publication = resource.toPublication();
+        Publication publication = attempt(() -> resource.toPublication()).orElseThrow();
         Resource fromPublication = Resource.fromPublication(publication);
         Diff diff = javers.compare(resource, fromPublication);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
@@ -65,7 +66,7 @@ class ResourceTest {
         var expected = PublicationGenerator.randomPublication(publicationInstanceType);
         assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
         
-        var transformed = Resource.fromPublication(expected).toPublication();
+        var transformed = attempt(() -> Resource.fromPublication(expected).toPublication()).orElseThrow();
         
         var diff = javers.compare(expected, transformed);
         

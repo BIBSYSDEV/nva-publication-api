@@ -17,6 +17,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -25,7 +26,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.core.attempt.Try;
 
-public final class DaoUtils {
+public final class DaoUtils extends TestDataSource {
     
     public static Resource sampleResource(Publication publication) {
         var additionalIdentifier = Set.of(new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
@@ -71,7 +72,7 @@ public final class DaoUtils {
     }
     
     private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication().copy()
+        return randomPreFilledPublicationBuilder()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();

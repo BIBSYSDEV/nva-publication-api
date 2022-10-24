@@ -11,6 +11,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -223,7 +224,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
     
-    private Publication createSamplePublication() throws ApiGatewayException {
+    private Publication createSamplePublication() {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return publicationService.createPublication(userInstance, publication);
     }
@@ -279,7 +280,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication updateTitle(Publication savedPublication) {
-        Publication update = savedPublication.copy().build();
+        Publication update = attempt(() -> savedPublication.copy().build()).orElseThrow();
         update.getEntityDescription().setMainTitle(randomString());
         return update;
     }

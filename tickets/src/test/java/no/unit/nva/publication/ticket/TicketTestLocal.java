@@ -8,7 +8,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -70,12 +69,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         return ticketService.createTicket(ticket, ticketType);
     }
-    
-    protected Publication createAndPersistPublicationAndMarkForDeletion()
-        throws ApiGatewayException {
-        return createAndPersistPublicationAndThenActOnIt(this::markForDeletion);
-    }
-    
+
     protected TicketEntry persistTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
@@ -92,13 +86,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     }
     
     private static Publication randomPublicationWithoutDoi() {
-        return PublicationGenerator.randomPublication().copy().withDoi(null).build();
-    }
-    
-    private void markForDeletion(Publication publication) {
-        var userInstance = UserInstance.fromPublication(publication);
-        attempt(() -> resourceService.markPublicationForDeletion(userInstance, publication.getIdentifier()))
-            .orElseThrow();
+        return randomPreFilledPublicationBuilder().withDoi(null).build();
     }
     
     private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)

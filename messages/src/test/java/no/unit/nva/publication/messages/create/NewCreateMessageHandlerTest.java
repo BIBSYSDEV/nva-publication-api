@@ -1,7 +1,6 @@
 package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
@@ -219,7 +218,10 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication draftPublicationWithoutDoi() {
-        var publication = randomPublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
+        var publication = randomPreFilledPublicationBuilder()
+                .withDoi(null)
+                .withStatus(PublicationStatus.DRAFT)
+                .build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     

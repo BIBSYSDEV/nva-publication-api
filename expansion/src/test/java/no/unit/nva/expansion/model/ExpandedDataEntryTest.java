@@ -124,7 +124,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
     
     private static Publication randomPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).build();
+        return randomPreFilledPublicationBuilder().withDoi(null).build();
     }
     
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {

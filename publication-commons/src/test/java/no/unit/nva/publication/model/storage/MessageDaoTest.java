@@ -12,7 +12,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.net.URI;
 import java.time.Clock;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.ResourceOwner;
@@ -34,7 +33,6 @@ class MessageDaoTest extends ResourcesLocalTest {
     public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
     public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SAMPLE_OWNER.getUsername(),
         SAMPLE_OWNER.getOrganizationUri());
-    public static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     private MessageService messageService;
     private TicketService ticketService;
     private ResourceService resourceService;
@@ -80,8 +78,8 @@ class MessageDaoTest extends ResourcesLocalTest {
     
     private Message insertSampleMessageInDatabase() throws ApiGatewayException {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        var sample = draftPublicationWithoutDoi()
-                         .copy()
+        var draftBuilder = attempt(() -> draftPublicationWithoutDoi().copy()).orElseThrow();
+        var sample = draftBuilder
                          .withResourceOwner(RANDOM_RESOURCE_OWNER)
                          .withPublisher(publisher)
                          .build();

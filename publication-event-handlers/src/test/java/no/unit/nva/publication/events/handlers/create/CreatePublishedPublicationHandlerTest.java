@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.create;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -67,8 +68,9 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         var s3FileUri = createPublicationRequestAndStoreInS3(samplePublication);
         sendMessageToEventHandler(s3FileUri);
         var savedPublication = extractSavedPublicationFromDatabase();
-    
-        var expectedPublication = copyFieldsCreatedByHandler(samplePublication.copy(), savedPublication)
+
+        var copy = attempt(samplePublication::copy).orElseThrow();
+        var expectedPublication = copyFieldsCreatedByHandler(copy, savedPublication)
                                       .withStatus(PublicationStatus.PUBLISHED)
                                       .build();
         
@@ -94,7 +96,8 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
     
     private Publication deleteFieldsThatAreExpectedToBeNullWhenCreatingAPublishedPublicationFromScopus(
         Publication publication) {
-        return publication.copy()
+        var copy = attempt(publication::copy).orElseThrow();
+        return copy
                    .withDoi(null)
                    .withHandle(null)
                    .withPublishedDate(null)

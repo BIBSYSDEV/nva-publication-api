@@ -38,7 +38,7 @@ public class ServiceWithTransactions {
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
-    public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
+    public static final String ASSOCIATED_ARIFACTS_FIELD = "associatedArtifacts";
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
     
     private final AmazonDynamoDB client;

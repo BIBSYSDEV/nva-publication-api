@@ -12,6 +12,7 @@ import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventPro
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -172,7 +173,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @Test
     void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
-        var publicationUpdate = publication.copy().withModifiedDate(randomInstant()).build();
+        var publicationUpdate = attempt(() -> publication.copy().withModifiedDate(randomInstant()).build())
+                .orElseThrow();
         assertThat(publication.getModifiedDate(), is(not(equalTo(publicationUpdate.getModifiedDate()))));
         
         var updateEvent = createEvent(
@@ -261,7 +263,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
     
     private Publication updateTitle(Publication publication) {
-        var publicationUpdate = publication.copy().build();
+        var publicationUpdate = attempt(() -> publication.copy().build()).orElseThrow();
         publicationUpdate.setEntityDescription(randomPublication().getEntityDescription());
         return publicationUpdate;
     }

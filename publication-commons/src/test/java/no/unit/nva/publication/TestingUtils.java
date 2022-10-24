@@ -1,9 +1,10 @@
 package no.unit.nva.publication;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
+
 import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -12,7 +13,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 
-public final class TestingUtils {
+public final class TestingUtils extends TestDataSource {
     
     private TestingUtils() {
     
@@ -31,13 +32,12 @@ public final class TestingUtils {
     }
     
     public static Publication randomPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).build();
+        return randomPreFilledPublicationBuilder().withDoi(null).build();
     }
     
     public static Publication createUnpersistedPublication(UserInstance userInstance) {
-        return randomPublicationWithoutDoi()
-                   .copy()
-                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
+        var copy = attempt(() -> randomPublicationWithoutDoi().copy()).orElseThrow();
+        return copy.withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
                    .withPublisher(createOrganization(userInstance.getOrganizationUri()))
                    .build();
     }
