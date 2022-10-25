@@ -1281,11 +1281,14 @@ Resources:
     Type: AWS::Glue::Crawler
     Properties:
       DatabaseName: !Ref  AnalyticsExportDatabase
+      # Minimum table level configuration is currently 3 because the crawler looks at the path
+      # /bucketName/analytics/publications which is level 3.
+      # More info here: https://docs.aws.amazon.com/glue/latest/dg/crawler-configuration.html
       Configuration: >
         {
             "Version":1.0,
             "Grouping":{
-              "TableLevelConfiguration":1
+              "TableLevelConfiguration":3
             }
         }
       Description: Crawler that crawls the s3 bucket of persited publication metadata
