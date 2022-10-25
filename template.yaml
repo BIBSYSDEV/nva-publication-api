@@ -1231,7 +1231,7 @@ Resources:
       QueryString: >
         CREATE TABLE "cristin"."2022_05_18_lowercased"
         with (
-        external_location ='s3://cristin-import-884807050265/2022_05_18_lowercased',
+        external_location ='s3://cristin-import-AccountId/2022_05_18_lowercased',
         bucket_count = 2000,
         bucketed_by = ARRAY['id'],
         format = 'JSON',
