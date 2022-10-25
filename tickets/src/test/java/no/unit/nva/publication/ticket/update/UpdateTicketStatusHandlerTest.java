@@ -18,12 +18,14 @@ import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.TicketConfig;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -136,12 +138,23 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
         var ticket = createPersistedTicket(publication, ticketType);
-        var updatedPublication = publication.copy().withStatus(publicationStatus).build();
-        resourceService.updatePublication(updatedPublication);
+        updatePublicationStatus(publication, publicationStatus);
+    
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+    }
+    
+    private Publication updatePublicationStatus(Publication publication, PublicationStatus newPublicationStatus)
+        throws ApiGatewayException {
+        if (PublicationStatus.PUBLISHED.equals(newPublicationStatus)) {
+            resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        } else if (PublicationStatus.DRAFT_FOR_DELETION.equals(newPublicationStatus)) {
+            resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
+                publication.getIdentifier());
+        }
+        return resourceService.getPublication(publication);
     }
     
     @Test

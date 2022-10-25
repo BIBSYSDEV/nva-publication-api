@@ -84,11 +84,6 @@ public interface JoinWithResource {
         );
     }
     
-    default Map<String, Condition> joinAllRelatedTicketsForResource() {
-        return byResource(TicketDao.ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE,
-            TicketDao.ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE);
-    }
-    
     /**
      * Retrieve all entries that are connected to a Resource with type equal to the input type.
      *
@@ -108,20 +103,25 @@ public interface JoinWithResource {
      */
     //TODO: type should be an enum
     default Map<String, Condition> byResource(String selectedType) {
-    
+        
         Condition partitionKeyCondition = new Condition()
                                               .withAttributeValueList(
                                                   new AttributeValue(getByCustomerAndResourcePartitionKey()))
                                               .withComparisonOperator(ComparisonOperator.EQ);
-    
+        
         Condition sortKeyCondition = new Condition()
                                          .withAttributeValueList(new AttributeValue(selectedType))
                                          .withComparisonOperator(ComparisonOperator.BEGINS_WITH);
-    
+        
         return Map.of(
             BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
             BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME, sortKeyCondition
         );
+    }
+    
+    default Map<String, Condition> joinAllRelatedTicketsForResource() {
+        return byResource(TicketDao.ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE,
+            TicketDao.ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE);
     }
     
     SortableIdentifier getIdentifier();

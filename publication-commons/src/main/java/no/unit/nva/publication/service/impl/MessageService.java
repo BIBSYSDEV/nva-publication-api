@@ -49,6 +49,13 @@ public class MessageService extends ServiceWithTransactions {
         return fetchEventualConsistentDataEntry(newMessage, this::getMessageByIdentifier).orElseThrow();
     }
     
+    public Message getMessage(UserInstance owner, SortableIdentifier identifier) throws NotFoundException {
+        MessageDao queryObject = MessageDao.queryObject(owner, identifier);
+        Map<String, AttributeValue> item = fetchMessage(queryObject);
+        MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
+        return (Message) result.getData();
+    }
+    
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
         return attempt(() -> queryObject.fetchByIdentifier(getClient()))
@@ -57,13 +64,9 @@ public class MessageService extends ServiceWithTransactions {
                    .toOptional();
     }
     
-    public Message getMessage(UserInstance owner, SortableIdentifier identifier) throws NotFoundException {
-        MessageDao queryObject = MessageDao.queryObject(owner, identifier);
-        Map<String, AttributeValue> item = fetchMessage(queryObject);
-        MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
-        return (Message) result.getData();
+    private Message getMessageByIdentifier(Message message) {
+        return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
     }
-    
     
     private void markTicketReadForSenderAndUnreadForRecipient(TicketEntry ticketEntry, UserInstance sender) {
         if (isOwner(sender, ticketEntry)) {
@@ -77,11 +80,6 @@ public class MessageService extends ServiceWithTransactions {
         return sender.getUser().equals(ticketEntry.getOwner());
     }
     
-    private Message getMessageByIdentifier(Message message) {
-        return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
-    }
-    
-    
     private Map<String, AttributeValue> fetchMessage(MessageDao queryObject) throws NotFoundException {
     
         GetItemRequest getMessageRequest = getMessageByPrimaryKey(queryObject);
@@ -93,7 +91,6 @@ public class MessageService extends ServiceWithTransactions {
         }
         return item;
     }
-    
     
     private GetItemRequest getMessageByPrimaryKey(MessageDao queryObject) {
         return new GetItemRequest()
