@@ -1183,16 +1183,6 @@ Resources:
       Name: !Join [ '',[ 'resource-service-internal-bus',!Ref Suffix ] ]
 
  #=========================Cristin-Athena===================================================================
-#  CREATE TABLE "cristin"."2022_10_18_lowercased"
-#  with (
-#  external_location ='s3://cristin-import-884807050265/test',
-#  bucket_count = 2000,
-#  bucketed_by =ARRAY['id'],
-#  format = 'JSON',
-#  write_compression='GZIP')
-#  as
-#  SELECT * FROM "cristin"."2022_10_18"
-#  limit 50000
 
   CristinImportDatabase:
     Type: AWS::Glue::Database
@@ -1224,7 +1214,7 @@ Resources:
     Type: AWS::Athena::WorkGroup
     Properties:
       Description: A workgroup for quering Cristin data and import errors
-      Name: NvaAthenaWorkgroup
+      Name: CristinAthenaWorkgroup
       RecursiveDeleteOption: true
       State: ENABLED
       WorkGroupConfiguration:
