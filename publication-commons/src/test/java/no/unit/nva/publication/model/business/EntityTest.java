@@ -2,7 +2,6 @@ package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
