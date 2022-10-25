@@ -1201,7 +1201,7 @@ Resources:
       Name: CristinCrawler
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
-      Role: !GetAtt   CristinCrawlerRole.Arn
+      Role: !GetAtt CristinCrawlerRole.Arn
       Schedule:
         ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
       SchemaChangePolicy:
@@ -1264,7 +1264,8 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:ListBucket
-                Resource: !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/"
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
 
 
   #==========================BI=============================================================================
@@ -1276,24 +1277,22 @@ Resources:
         Description: Read-only database mirroring the data in S3 bucket for expanded resources
         Name: nva
 
-  PublicationsTable:
-    Type: AWS::Glue::Table
-    Properties:
-      CatalogId: !Ref AWS::AccountId
-      DatabaseName: !Ref AnalyticsExportDatabase
-      TableInput:
-        Description: Table containing the expanded publication metadata
-        Name: nva-publications
-
   PublicationsCrawler:
     Type: AWS::Glue::Crawler
     Properties:
       DatabaseName: !Ref  AnalyticsExportDatabase
+      Configuration: >
+        {
+            "Version":1.0,
+            "Grouping":{
+              "TableLevelConfiguration":1
+            }
+        }
       Description: Crawler that crawls the s3 bucket of persited publication metadata
       Name: PublicationsCrawler
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
-      Role: !GetAtt CrawlerRole.Arn
+      Role: !GetAtt PublicationsCrawlerRole.Arn
       Schedule:
         ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
       SchemaChangePolicy:
@@ -1329,7 +1328,7 @@ Resources:
         limit 20
       WorkGroup: !Ref AthenaWorkgroup
 
-  CrawlerRole:
+  PublicationsCrawlerRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
