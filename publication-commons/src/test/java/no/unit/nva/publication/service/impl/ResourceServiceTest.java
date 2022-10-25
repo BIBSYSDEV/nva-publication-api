@@ -188,8 +188,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(input);
         var savedResource = resourceService.createPublication(userInstance, input);
         var readResource = resourceService.getPublication(savedResource);
-        var copy = attempt(input::copy).orElseThrow();
-        var expectedResource = copy
+        var expectedResource = input.copy()
                                    .withIdentifier(savedResource.getIdentifier())
                                    .withStatus(DRAFT)
                                    .withCreatedDate(readResource.getCreatedDate())
@@ -206,8 +205,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists() {
         final Publication sampleResource = randomPublication();
-        var copy = attempt(sampleResource::copy).orElseThrow();
-        final Publication collidingResource = copy
+        final Publication collidingResource = sampleResource.copy()
                                                   .withPublisher(anotherPublisher())
                                                   .withResourceOwner(new ResourceOwner(SOME_OTHER_USER, null))
                                                   .build();
@@ -463,8 +461,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.publishPublication(userInstance, resource.getIdentifier());
         var actualResource = resourceService.getPublication(resource);
 
-        var copy = attempt(resource::copy).orElseThrow();
-        var expectedResource = copy
+        var expectedResource = resource.copy()
                                    .withStatus(PUBLISHED)
                                    .withModifiedDate(actualResource.getModifiedDate())
                                    .withPublishedDate(actualResource.getPublishedDate())
@@ -554,7 +551,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
-        return attempt(() -> new AssociatedArtifactList(emptyList())).orElseThrow();
+        return new AssociatedArtifactList(emptyList());
     }
 
     @Test
@@ -841,8 +838,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication createPersistedPublicationWithoutDoi(Publication publication) {
-        var copy = attempt(publication::copy).orElseThrow();
-        var withoutDoi = copy.withDoi(null).build();
+        var withoutDoi = publication.copy().withDoi(null).build();
         return resourceService.createPublication(UserInstance.fromPublication(withoutDoi), withoutDoi);
     }
     
@@ -1016,8 +1012,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
-        var copy = attempt(publication::copy).orElseThrow();
-        return copy.withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
+        return publication.copy().withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
                    .build();
     }
@@ -1025,8 +1020,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication expectedUpdatedResource(Publication originalResource,
                                                 Publication updatedResource,
                                                 UserInstance expectedOwner) {
-        var copy = attempt(originalResource::copy).orElseThrow();
-        return copy.withResourceOwner(new ResourceOwner(expectedOwner.getUsername(), AFFILIATION_NOT_IMPORTANT))
+        return originalResource.copy().withResourceOwner(new ResourceOwner(expectedOwner.getUsername(),
+                        AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(userOrganization(expectedOwner))
                    .withCreatedDate(originalResource.getCreatedDate())
                    .withModifiedDate(updatedResource.getModifiedDate())
@@ -1043,8 +1038,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             new EntityDescription.Builder().withMainTitle(UPDATED_TITLE).build();
         
         assertThatNewEntityDescriptionDiffersOnlyInTitle(resource.getEntityDescription(), newEntityDescription);
-        var copy = attempt(resource::copy).orElseThrow();
-        return copy.withEntityDescription(newEntityDescription).build();
+        return resource.copy().withEntityDescription(newEntityDescription).build();
     }
     
     private void assertThatNewEntityDescriptionDiffersOnlyInTitle(EntityDescription oldEntityDescription,

@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.create;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -96,8 +95,7 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
     
     private Publication deleteFieldsThatAreExpectedToBeNullWhenCreatingAPublishedPublicationFromScopus(
         Publication publication) {
-        var copy = attempt(publication::copy).orElseThrow();
-        return copy
+        return publication.copy()
                    .withDoi(null)
                    .withHandle(null)
                    .withPublishedDate(null)
