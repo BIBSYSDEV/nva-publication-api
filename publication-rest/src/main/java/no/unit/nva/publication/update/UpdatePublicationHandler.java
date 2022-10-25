@@ -59,8 +59,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
-        return attempt(() -> PublicationResponse.fromPublication(updatedPublication))
-                .orElseThrow();
+        return PublicationResponse.fromPublication(updatedPublication);
     }
     
     @Override

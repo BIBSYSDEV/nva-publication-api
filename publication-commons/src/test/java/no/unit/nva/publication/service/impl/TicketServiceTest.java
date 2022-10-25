@@ -638,7 +638,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private Publication updatePublicationTile(Publication publication) {
-        var copy = attempt(() -> publication.copy().build()).orElseThrow();
+        var copy = publication.copy().build();
         copy.getEntityDescription().setMainTitle(randomString());
         return copy;
     }

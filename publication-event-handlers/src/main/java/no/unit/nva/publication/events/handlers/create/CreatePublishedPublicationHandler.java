@@ -54,8 +54,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     private Publication addOwnerAndPublisher(Publication publication) {
         Organization customer = new Organization.Builder().withId(UNIT_CUSTOMER_ID).build();
         ResourceOwner resourceOwner = new ResourceOwner(randomUnitUser(), HARDCODED_OWNER_AFFILIATION);
-        return attempt(() -> publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build())
-                .orElseThrow();
+        return publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
     }
     
     private String randomUnitUser() {

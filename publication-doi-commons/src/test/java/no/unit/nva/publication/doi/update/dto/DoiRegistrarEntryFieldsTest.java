@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi.update.dto;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -62,10 +61,10 @@ public class DoiRegistrarEntryFieldsTest {
     private Publication alterPublication(Publication publication) {
         EntityDescription.Builder entityDescriptionCopy = copyEntityDescription(publication);
         EntityDescription alteredEntityDescription = entityDescriptionCopy.withMainTitle(SOME_OTHER_TITLE).build();
-        return attempt(() -> publication
+        return publication
                    .copy()
                    .withEntityDescription(alteredEntityDescription)
-                   .build()).orElseThrow();
+                   .build();
     }
     
     private EntityDescription.Builder copyEntityDescription(Publication publication) {

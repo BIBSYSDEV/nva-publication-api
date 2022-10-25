@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
 import static no.unit.nva.publication.model.business.UserInstance.fromPublication;
-import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,7 +14,6 @@ import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -94,9 +92,9 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication insertPublicationWithStatus(PublicationStatus status) {
-        Publication publicationToCreate = attempt(() -> publicationWithoutIdentifier().copy()
+        Publication publicationToCreate = publicationWithoutIdentifier().copy()
                                               .withDoi(null)
-                                              .build()).orElseThrow();
+                                              .build();
         publicationToCreate.setStatus(status);
         return resourceService.createPublication(fromPublication(publicationToCreate), publicationToCreate);
     }

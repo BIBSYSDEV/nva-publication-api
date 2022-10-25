@@ -1,9 +1,7 @@
 package no.unit.nva.publication;
 
-import no.unit.nva.model.Publication;
-
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static nva.commons.core.attempt.Try.attempt;
+import no.unit.nva.model.Publication;
 
 public class TestDataSource {
 
@@ -18,6 +16,6 @@ public class TestDataSource {
     }
 
     public static Publication.Builder randomPreFilledPublicationBuilder() {
-        return attempt(() -> randomPublication().copy()).orElseThrow();
+        return randomPublication().copy();
     }
 }

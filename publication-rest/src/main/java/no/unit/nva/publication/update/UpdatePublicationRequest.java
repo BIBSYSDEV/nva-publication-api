@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
-
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
@@ -15,10 +14,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
-
-import static nva.commons.core.attempt.Try.attempt;
 
 public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
     
@@ -32,17 +28,17 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     private List<ResearchProject> projects;
     private List<URI> subjects;
     
-    public Publication generatePublicationUpdate(Publication existingPublication) throws ApiGatewayException {
+    public Publication generatePublicationUpdate(Publication existingPublication) {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
             throw new IllegalArgumentException(
                 WRONG_PUBLICATION_UDPATE_ERROR + existingPublication.getIdentifier());
         }
-        return attempt(() -> existingPublication.copy()
+        return existingPublication.copy()
                    .withEntityDescription(this.entityDescription)
                    .withAssociatedArtifacts(this.associatedArtifacts)
                    .withProjects(this.projects)
                    .withSubjects(this.subjects)
-                   .build()).orElseThrow();
+                   .build();
     }
     
     @JacocoGenerated
