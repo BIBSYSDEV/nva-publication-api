@@ -73,8 +73,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
         ResourceOwner commonOwner = new ResourceOwner(randomString(), null);
         Organization commonPublisher = new Organization.Builder().withId(randomUri()).build();
         return Stream.of(draftPublicationWithoutDoi(), draftPublicationWithoutDoi())
-                   .map(attempt(Publication::copy))
-                   .map(Try::orElseThrow)
+                   .map(Publication::copy)
                    .map(publication -> publication.withResourceOwner(commonOwner))
                    .map(publication -> publication.withPublisher(commonPublisher))
                    .map(Publication.Builder::build)

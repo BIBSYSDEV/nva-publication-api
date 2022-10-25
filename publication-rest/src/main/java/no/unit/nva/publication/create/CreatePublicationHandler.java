@@ -70,7 +70,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         var createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
     
-        return attempt(() -> PublicationResponse.fromPublication(createdPublication)).orElseThrow();
+        return PublicationResponse.fromPublication(createdPublication);
     }
 
     @Override

@@ -11,7 +11,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -280,7 +279,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication updateTitle(Publication savedPublication) {
-        Publication update = attempt(() -> savedPublication.copy().build()).orElseThrow();
+        Publication update = savedPublication.copy().build();
         update.getEntityDescription().setMainTitle(randomString());
         return update;
     }

@@ -120,7 +120,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     
     @Test
     void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
-        var oldImage = attempt(() -> createPublishedPublication().copy().withStatus(DRAFT).build()).orElseThrow();
+        var oldImage = createPublishedPublication().copy().withStatus(DRAFT).build();
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         

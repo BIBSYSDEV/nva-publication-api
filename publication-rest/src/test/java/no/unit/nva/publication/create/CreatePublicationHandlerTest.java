@@ -16,16 +16,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
@@ -185,7 +184,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         var expectedPublication = setAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication,
             actualPublicationResponse);
-        return attempt(() -> PublicationResponse.fromPublication(expectedPublication)).orElseThrow();
+        return PublicationResponse.fromPublication(expectedPublication);
     }
     
     private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(
@@ -200,8 +199,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private Publication setAllFieldsThatAreAutomaticallySetByResourceService(
         Publication samplePublication,
         PublicationResponse actualPublicationResponse) {
-        var copy = attempt(samplePublication::copy).orElseThrow();
-        return copy.withIdentifier(actualPublicationResponse.getIdentifier())
+        return samplePublication.copy()
+                   .withIdentifier(actualPublicationResponse.getIdentifier())
                    .withCreatedDate(actualPublicationResponse.getCreatedDate())
                    .withModifiedDate(actualPublicationResponse.getModifiedDate())
                    .withIndexedDate(actualPublicationResponse.getIndexedDate())
@@ -211,8 +210,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
-        var copy = attempt(samplePublication::copy).orElseThrow();
-        return copy
+        return samplePublication.copy()
                    .withDoi(null)
                    .withHandle(null)
                    .withLink(null)

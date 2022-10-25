@@ -1,8 +1,6 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -204,19 +202,19 @@ public class Resource implements Entity {
                    .withResourceOwner(getResourceOwner().toResourceOwner())
                    .withStatus(getStatus())
                    .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withIndexedDate(getIndexedDate())
-                   .withPublisher(getPublisher())
-                   .withPublishedDate(getPublishedDate())
-                   .withLink(getLink())
-                   .withProjects(getProjects())
-                   .withEntityDescription(getEntityDescription())
-                   .withDoi(getDoi())
-                   .withHandle(getHandle())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                              .withModifiedDate(getModifiedDate())
+                              .withIndexedDate(getIndexedDate())
+                              .withPublisher(getPublisher())
+                              .withPublishedDate(getPublishedDate())
+                              .withLink(getLink())
+                              .withProjects(getProjects())
+                              .withEntityDescription(getEntityDescription())
+                              .withDoi(getDoi())
+                              .withHandle(getHandle())
+                              .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                              .withAssociatedArtifacts(getAssociatedArtifacts())
                    .withSubjects(getSubjects());
-
-        attempt(() -> publication.withAssociatedArtifacts(getAssociatedArtifacts())).orElseThrow();
+    
         return publication.build();
     }
     

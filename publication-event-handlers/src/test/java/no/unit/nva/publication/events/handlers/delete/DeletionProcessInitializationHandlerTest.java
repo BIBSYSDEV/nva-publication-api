@@ -3,7 +3,6 @@ package no.unit.nva.publication.events.handlers.delete;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -41,9 +40,9 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
         var oldImage = randomPreFilledPublicationBuilder()
                            .withDoi(null)
                            .withStatus(PublicationStatus.DRAFT).build();
-        var newImage = attempt(() -> oldImage.copy()
+        var newImage = oldImage.copy()
                            .withStatus(PublicationStatus.DRAFT_FOR_DELETION)
-                           .build()).orElseThrow();
+                           .build();
         var eventBody = new DataEntryUpdateEvent(randomString(),
             Resource.fromPublication(oldImage),
             Resource.fromPublication(newImage));

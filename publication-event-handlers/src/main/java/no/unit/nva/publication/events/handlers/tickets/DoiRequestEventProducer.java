@@ -167,8 +167,8 @@ public class DoiRequestEventProducer
     
     private Publication toPublication(Entity dataEntry) {
         return nonNull(dataEntry)
-            ? attempt(() -> dataEntry.toPublication(resourceService)).orElseThrow()
-            : null;
+                   ? dataEntry.toPublication(resourceService)
+                   : null;
     }
     
     private boolean isFirstDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {

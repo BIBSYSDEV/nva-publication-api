@@ -3,8 +3,6 @@ package no.unit.nva.publication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.attempt.Try.attempt;
-
 import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -36,8 +34,8 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static Publication createUnpersistedPublication(UserInstance userInstance) {
-        var copy = attempt(() -> randomPublicationWithoutDoi().copy()).orElseThrow();
-        return copy.withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
+        return randomPublicationWithoutDoi().copy()
+                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
                    .withPublisher(createOrganization(userInstance.getOrganizationUri()))
                    .build();
     }

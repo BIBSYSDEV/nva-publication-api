@@ -78,8 +78,8 @@ class MessageDaoTest extends ResourcesLocalTest {
     
     private Message insertSampleMessageInDatabase() throws ApiGatewayException {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        var draftBuilder = attempt(() -> draftPublicationWithoutDoi().copy()).orElseThrow();
-        var sample = draftBuilder
+        var sample = draftPublicationWithoutDoi()
+                         .copy()
                          .withResourceOwner(RANDOM_RESOURCE_OWNER)
                          .withPublisher(publisher)
                          .build();
