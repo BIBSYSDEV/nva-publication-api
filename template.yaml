@@ -1197,7 +1197,7 @@ Resources:
     Properties:
       DatabaseName: !Ref    CristinImportDatabase
       Description: Crawler that crawls the s3 bucket of the cristin data
-      Name: PublicationsCrawler
+      Name: CristinCrawler
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
       Role: !GetAtt   CristinCrawlerRole.Arn
