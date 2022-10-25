@@ -437,6 +437,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
@@ -1351,7 +1352,11 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:ListBucket
-                Resource: !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}/"
+                  - s3:PutObject
+                Resource:
+                  - !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}/"
+                  - !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}/*"
+
 
   #===========================BasePathMappings========================================================
 
