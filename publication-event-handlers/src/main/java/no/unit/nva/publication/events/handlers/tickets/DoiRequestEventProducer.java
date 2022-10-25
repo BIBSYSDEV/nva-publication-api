@@ -38,7 +38,6 @@ public class DoiRequestEventProducer
     extends DestinationsEventBridgeEventHandler<EventReference, DoiMetadataUpdateEvent> {
     
     public static final Duration MIN_INTERVAL_FOR_REREQUESTING_A_DOI = Duration.ofSeconds(10);
-    public static final String NO_RESOURCE_IDENTIFIER_ERROR = "DoiRequest does not reference any Resource";
     public static final String DOI_REQUEST_HAS_NO_IDENTIFIER = "DoiRequest has no identifier";
     public static final String HEAD = "HEAD";
     public static final DoiMetadataUpdateEvent EMPTY_EVENT = DoiMetadataUpdateEvent.empty();
@@ -98,7 +97,8 @@ public class DoiRequestEventProducer
     
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(Resource newEntry) {
         if (resourceWithFindableDoiHasBeenUpdated(newEntry)) {
-            return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication());
+            var publication = newEntry.toPublication();
+            return DoiMetadataUpdateEvent.createUpdateDoiEvent(publication);
         }
         return EMPTY_EVENT;
     }
@@ -166,7 +166,9 @@ public class DoiRequestEventProducer
     }
     
     private Publication toPublication(Entity dataEntry) {
-        return dataEntry != null ? dataEntry.toPublication(resourceService) : null;
+        return nonNull(dataEntry)
+                   ? dataEntry.toPublication(resourceService)
+                   : null;
     }
     
     private boolean isFirstDoiRequest(DoiRequest oldEntry, DoiRequest newEntry) {

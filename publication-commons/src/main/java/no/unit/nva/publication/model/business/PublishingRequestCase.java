@@ -16,11 +16,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -43,7 +43,7 @@ public class PublishingRequestCase extends TicketEntry {
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
     public static final String RESOURCE_LINK_FIELD = "link";
-    public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
+    public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -257,7 +257,7 @@ public class PublishingRequestCase extends TicketEntry {
     private static void throwErrorWhenPublishingResourceWithoutData(Publication resource)
         throws InvalidPublicationException {
         var linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-        var files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
+        var files = attempt(() -> findFieldNameOrThrowError(resource, ASSOCIATED_ARTIFACTS_FIELD)).orElseThrow();
         throw new InvalidPublicationException(List.of(files, linkField));
     }
     
@@ -267,10 +267,9 @@ public class PublishingRequestCase extends TicketEntry {
     }
     
     private static boolean emptyResourceFiles(Publication resource) {
-        return Optional.ofNullable(resource.getFileSet())
-                   .map(FileSet::getFiles)
-                   .map(List::isEmpty)
-                   .orElse(true);
+        return Optional.ofNullable(resource.getAssociatedArtifacts())
+                .map(AssociatedArtifactList::isEmpty)
+                .orElse(true);
     }
     
     private static void throwErrorWhenPublishingResourceWithoutMainTitle(Publication resource)

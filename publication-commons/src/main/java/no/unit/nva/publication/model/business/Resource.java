@@ -7,15 +7,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.file.model.File;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -23,8 +19,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedFile;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -55,10 +50,7 @@ public class Resource implements Entity {
     @JsonProperty
     private URI link;
     @JsonProperty
-    private FileSet fileSet;
-    
-    @JsonProperty
-    private List<AssociatedArtifact> associatedArtifacts;
+    private AssociatedArtifactList associatedArtifacts;
     
     @JsonProperty
     private List<ResearchProject> projects;
@@ -110,7 +102,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withPublishedDate(publication.getPublishedDate())
-                   .withFileSet(publication.getFileSet())
+                   .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -206,23 +198,23 @@ public class Resource implements Entity {
     
     public Publication toPublication() {
         return new Publication.Builder()
-                   .withIdentifier(getIdentifier())
-                   .withResourceOwner(getResourceOwner().toResourceOwner())
-                   .withStatus(getStatus())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withIndexedDate(getIndexedDate())
-                   .withPublisher(getPublisher())
-                   .withPublishedDate(getPublishedDate())
-                   .withLink(getLink())
-                   .withFileSet(getFileSet())
-                   .withProjects(getProjects())
-                   .withEntityDescription(getEntityDescription())
-                   .withDoi(getDoi())
-                   .withHandle(getHandle())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withSubjects(getSubjects())
-                   .build();
+                              .withIdentifier(getIdentifier())
+                              .withResourceOwner(getResourceOwner().toResourceOwner())
+                              .withStatus(getStatus())
+                              .withCreatedDate(getCreatedDate())
+                              .withModifiedDate(getModifiedDate())
+                              .withIndexedDate(getIndexedDate())
+                              .withPublisher(getPublisher())
+                              .withPublishedDate(getPublishedDate())
+                              .withLink(getLink())
+                              .withProjects(getProjects())
+                              .withEntityDescription(getEntityDescription())
+                              .withDoi(getDoi())
+                              .withHandle(getHandle())
+                              .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                              .withAssociatedArtifacts(getAssociatedArtifacts())
+                              .withSubjects(getSubjects())
+                              .build();
     }
     
     public PublicationStatus getStatus() {
@@ -264,29 +256,13 @@ public class Resource implements Entity {
     public void setLink(URI link) {
         this.link = link;
     }
-    
-    public FileSet getFileSet() {
-        return fileSet;
-    }
-    
-    public void setFileSet(FileSet fileSet) {
-        this.fileSet = fileSet;
-        var files = nonNull(fileSet) && nonNull(fileSet.getFiles())
-                        ? fileSet.getFiles()
-                        : new ArrayList<File>();
-        temporarySetterForAssociatedArtifactsUntilFileSetIsRemoved(files);
-    }
-    
-    private void temporarySetterForAssociatedArtifactsUntilFileSetIsRemoved(List<File> files) {
-        this.associatedArtifacts = toAssociatedArtifacts(files);
-    }
-    
-    public List<AssociatedArtifact> getAssociatedArtifacts() {
+
+    public AssociatedArtifactList getAssociatedArtifacts() {
         return associatedArtifacts;
     }
     
-    public void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
-        // NO-OP
+    public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+        this.associatedArtifacts = associatedArtifacts;
     }
     
     public List<ResearchProject> getProjects() {
@@ -332,7 +308,7 @@ public class Resource implements Entity {
                    .withPublishedDate(getPublishedDate())
                    .withIndexedDate(getIndexedDate())
                    .withLink(getLink())
-                   .withFileSet(getFileSet())
+                   .withAssociatedArtifactsList(getAssociatedArtifacts())
                    .withProjects(getProjects())
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())
@@ -357,7 +333,7 @@ public class Resource implements Entity {
     @Override
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
-            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
+            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
             getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects(),
             getAssociatedArtifacts());
     }
@@ -386,7 +362,6 @@ public class Resource implements Entity {
                && Objects.equals(getPublishedDate(), resource.getPublishedDate())
                && Objects.equals(getIndexedDate(), resource.getIndexedDate())
                && Objects.equals(getLink(), resource.getLink())
-               && Objects.equals(getFileSet(), resource.getFileSet())
                && Objects.equals(getProjects(), resource.getProjects())
                && Objects.equals(getEntityDescription(), resource.getEntityDescription())
                && Objects.equals(getDoi(), resource.getDoi())
@@ -398,19 +373,6 @@ public class Resource implements Entity {
     
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
         return resourceService.fetchAllTicketsForResource(this);
-    }
-    
-    private static List<AssociatedArtifact> toAssociatedArtifacts(List<File> files) {
-        return files.stream()
-                   .map(Resource::toAssociatedFile)
-                   .map(AssociatedArtifact.class::cast)
-                   .collect(Collectors.toList());
-    }
-    
-    private static AssociatedFile toAssociatedFile(File file) {
-        return new AssociatedFile(file.getType(), file.getIdentifier(), file.getName(), file.getMimeType(),
-            file.getSize(), file.getLicense(), file.isAdministrativeAgreement(), file.isPublisherAuthority(),
-            file.getEmbargoDate().orElse(null));
     }
 }
 

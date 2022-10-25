@@ -5,24 +5,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
-import no.unit.nva.WithFile;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.JacocoGenerated;
 
-public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, WithFile, WithContext {
+public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
     
     public static final String WRONG_PUBLICATION_UDPATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";
     private SortableIdentifier identifier;
     private EntityDescription entityDescription;
-    private FileSet fileSet;
+    private AssociatedArtifactList associatedArtifacts;
     @JsonProperty("@context")
     private JsonNode context;
     private List<ResearchProject> projects;
@@ -35,7 +35,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
         }
         return existingPublication.copy()
                    .withEntityDescription(this.entityDescription)
-                   .withFileSet(this.fileSet)
+                   .withAssociatedArtifacts(this.associatedArtifacts)
                    .withProjects(this.projects)
                    .withSubjects(this.subjects)
                    .build();
@@ -91,14 +91,14 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     
     @Override
     @JacocoGenerated
-    public FileSet getFileSet() {
-        return fileSet;
+    public AssociatedArtifactList getAssociatedArtifacts() {
+        return associatedArtifacts;
     }
-    
+
     @Override
     @JacocoGenerated
-    public void setFileSet(FileSet fileSet) {
-        this.fileSet = fileSet;
+    public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+        this.associatedArtifacts = associatedArtifacts;
     }
     
     @Override
@@ -116,7 +116,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(identifier, entityDescription, fileSet, subjects, context);
+        return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context);
     }
     
     @Override
@@ -131,7 +131,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
         UpdatePublicationRequest that = (UpdatePublicationRequest) o;
         return Objects.equals(identifier, that.identifier)
                && Objects.equals(entityDescription, that.entityDescription)
-               && Objects.equals(fileSet, that.fileSet)
+               && Objects.equals(associatedArtifacts, that.associatedArtifacts)
                && Objects.equals(subjects, that.subjects)
                && Objects.equals(context, that.context);
     }

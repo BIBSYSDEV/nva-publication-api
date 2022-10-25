@@ -14,7 +14,6 @@ import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -92,8 +91,8 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         return new ByteArrayInputStream(event.getBytes());
     }
     
-    private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
-        Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier().copy()
+    private Publication insertPublicationWithStatus(PublicationStatus status) {
+        Publication publicationToCreate = publicationWithoutIdentifier().copy()
                                               .withDoi(null)
                                               .build();
         publicationToCreate.setStatus(status);

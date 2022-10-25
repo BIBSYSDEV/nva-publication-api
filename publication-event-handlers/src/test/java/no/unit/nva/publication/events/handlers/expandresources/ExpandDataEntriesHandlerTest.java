@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
@@ -140,7 +141,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     
     @Test
     @Disabled
-        //TODO: implement this test as a test or a set of tests
+    //TODO: implement this test as a test or a set of tests
     void shouldAlwaysEmitEventsForAllTypesOfDataEntries() {
     
     }
@@ -157,7 +158,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication createPublishedPublication() {
-        return PublicationGenerator.randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build();
+        return randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build();
     }
     
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
@@ -183,7 +184,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
-        var publication = PublicationGenerator.randomPublication().copy()
+        var publication = randomPublication().copy()
                               .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
                               .withResourceOwner(
                                   new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
@@ -203,7 +204,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
     
     private DoiRequest doiRequestForDraftResource() {
-        Publication publication = PublicationGenerator.randomPublication().copy()
+        Publication publication = randomPublication().copy()
                                       .withStatus(DRAFT)
                                       .build();
         Resource resource = Resource.fromPublication(publication);
