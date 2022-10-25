@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -19,7 +20,9 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -102,7 +105,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withPublishedDate(publication.getPublishedDate())
-                   .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
+                   .withAssociatedArtifactsList(calculateArtifacts(publication))
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -112,6 +115,34 @@ public class Resource implements Entity {
                    .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
                    .withSubjects(publication.getSubjects())
                    .build();
+    }
+    
+    private static AssociatedArtifactList calculateArtifacts(Publication publication) {
+        var associatedArtifacts = publication.getAssociatedArtifacts();
+        var artifactsList =
+            associatedArtifacts.stream().map(art -> convertArtifact(art, publication)).collect(Collectors.toList());
+        throw new RuntimeException("Why is it called when we publish a publication?");
+        //return new AssociatedArtifactList(artifactsList);
+    }
+    
+    private static AssociatedArtifact convertArtifact(AssociatedArtifact artifact, Publication publication) {
+        if (artifactIsFileNotPublishedYet(artifact, publication)) {
+            var file = (File) artifact;
+            return file.toUnpublishedFile();
+        } else if (artifactIsPublishedFile(artifact, publication)) {
+            var file = (File) artifact;
+            return file.toPublishedFile();
+        } else {
+            return artifact;
+        }
+    }
+    
+    private static boolean artifactIsPublishedFile(AssociatedArtifact artifact, Publication publication) {
+        return PublicationStatus.PUBLISHED.equals(publication.getStatus()) && artifact instanceof File;
+    }
+    
+    private static boolean artifactIsFileNotPublishedYet(AssociatedArtifact artifact, Publication publication) {
+        return artifact instanceof File && PublicationStatus.DRAFT.equals(publication.getStatus());
     }
     
     public static ResourceBuilder builder() {
@@ -198,23 +229,23 @@ public class Resource implements Entity {
     
     public Publication toPublication() {
         return new Publication.Builder()
-                              .withIdentifier(getIdentifier())
-                              .withResourceOwner(getResourceOwner().toResourceOwner())
-                              .withStatus(getStatus())
-                              .withCreatedDate(getCreatedDate())
-                              .withModifiedDate(getModifiedDate())
-                              .withIndexedDate(getIndexedDate())
-                              .withPublisher(getPublisher())
-                              .withPublishedDate(getPublishedDate())
-                              .withLink(getLink())
-                              .withProjects(getProjects())
-                              .withEntityDescription(getEntityDescription())
-                              .withDoi(getDoi())
-                              .withHandle(getHandle())
-                              .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                              .withAssociatedArtifacts(getAssociatedArtifacts())
-                              .withSubjects(getSubjects())
-                              .build();
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(getResourceOwner().toResourceOwner())
+                   .withStatus(getStatus())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withPublisher(getPublisher())
+                   .withPublishedDate(getPublishedDate())
+                   .withLink(getLink())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withAssociatedArtifacts(getAssociatedArtifacts())
+                   .withSubjects(getSubjects())
+                   .build();
     }
     
     public PublicationStatus getStatus() {
@@ -256,7 +287,7 @@ public class Resource implements Entity {
     public void setLink(URI link) {
         this.link = link;
     }
-
+    
     public AssociatedArtifactList getAssociatedArtifacts() {
         return associatedArtifacts;
     }
