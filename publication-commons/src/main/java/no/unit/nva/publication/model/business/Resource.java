@@ -197,11 +197,11 @@ public class Resource implements Entity {
     }
     
     public Publication toPublication() {
-        var publication = new Publication.Builder()
-                   .withIdentifier(getIdentifier())
-                   .withResourceOwner(getResourceOwner().toResourceOwner())
-                   .withStatus(getStatus())
-                   .withCreatedDate(getCreatedDate())
+        return new Publication.Builder()
+                              .withIdentifier(getIdentifier())
+                              .withResourceOwner(getResourceOwner().toResourceOwner())
+                              .withStatus(getStatus())
+                              .withCreatedDate(getCreatedDate())
                               .withModifiedDate(getModifiedDate())
                               .withIndexedDate(getIndexedDate())
                               .withPublisher(getPublisher())
@@ -213,9 +213,8 @@ public class Resource implements Entity {
                               .withHandle(getHandle())
                               .withAdditionalIdentifiers(getAdditionalIdentifiers())
                               .withAssociatedArtifacts(getAssociatedArtifacts())
-                   .withSubjects(getSubjects());
-    
-        return publication.build();
+                              .withSubjects(getSubjects())
+                              .build();
     }
     
     public PublicationStatus getStatus() {
