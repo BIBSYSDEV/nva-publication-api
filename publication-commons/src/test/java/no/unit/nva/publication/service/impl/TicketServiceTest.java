@@ -742,7 +742,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private Map<String, AttributeValue> mockedPublicationResponse() {
-        var publication = attempt(() -> randomPublicationWithoutDoi().copy().withStatus(DRAFT).build()).orElseThrow();
+        var publication = randomPublicationWithoutDoi().copy().withStatus(DRAFT).build();
         var resource = Resource.fromPublication(publication);
         var dao = new ResourceDao(resource);
         return dao.toDynamoFormat();
