@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.nullValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
+
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
@@ -37,7 +38,7 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestReturnsDeletePublicationEventOnDraftForDeletion() throws JsonProcessingException {
-        var oldImage = randomPreFilledPublicationBuilder()
+        var oldImage = randomPublication().copy()
                            .withDoi(null)
                            .withStatus(PublicationStatus.DRAFT).build();
         var newImage = oldImage.copy()
@@ -61,7 +62,7 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestReturnsNullOnDraft() throws JsonProcessingException {
-        var newDraft = randomPreFilledPublicationBuilder()
+        var newDraft = randomPublication().copy()
                            .withDoi(null)
                            .withStatus(PublicationStatus.DRAFT).build();
         var eventBody = new DataEntryUpdateEvent(randomString(),

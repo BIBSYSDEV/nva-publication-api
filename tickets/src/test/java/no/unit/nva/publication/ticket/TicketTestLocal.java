@@ -86,7 +86,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     }
     
     private static Publication randomPublicationWithoutDoi() {
-        return randomPreFilledPublicationBuilder().withDoi(null).build();
+        return randomPublication().copy().withDoi(null).build();
     }
     
     private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)

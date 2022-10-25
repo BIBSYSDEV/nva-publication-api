@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.randomTicketType;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -53,7 +54,7 @@ class MessageTest extends TestDataSource {
     }
     
     private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPreFilledPublicationBuilder().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
+        return randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
     }
     
     private Message createSampleMessage() throws ConflictException {

@@ -64,7 +64,7 @@ class DaoTest extends ResourcesLocalTest {
     }
     
     public static Publication draftPublicationWithoutDoi() {
-        return randomPreFilledPublicationBuilder()
+        return randomPublication().copy()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();

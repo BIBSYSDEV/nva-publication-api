@@ -14,8 +14,4 @@ public class TestDataSource {
         publication.setIdentifier(null);
         return publication;
     }
-
-    public static Publication.Builder randomPreFilledPublicationBuilder() {
-        return randomPublication().copy();
-    }
 }

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -82,7 +83,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     }
     
     private static Publication draftPublicationWithoutDoi() {
-        return randomPreFilledPublicationBuilder().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
+        return randomPublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
     }
     
     private static List<TicketEntry> sampleTickets() {

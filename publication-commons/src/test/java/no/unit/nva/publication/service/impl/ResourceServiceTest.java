@@ -142,7 +142,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldKeepImportedDataCreationDates()
         throws NotFoundException {
         var randomInstant = RandomDataGenerator.randomInstant();
-        var inputPublication = randomPreFilledPublicationBuilder().withCreatedDate(randomInstant).build();
+        var inputPublication = randomPublication().copy().withCreatedDate(randomInstant).build();
         
         var savedPublicationIdentifier =
             resourceService.createPublicationWithPredefinedCreationDate(inputPublication).getIdentifier();
@@ -160,7 +160,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws NotFoundException {
         var createdDate = randomInstant();
         var modifiedDate = randomInstant();
-        var inputPublication = randomPreFilledPublicationBuilder()
+        var inputPublication = randomPublication().copy()
                                    .withCreatedDate(createdDate)
                                    .withModifiedDate(modifiedDate)
                                    .withStatus(PUBLISHED)
@@ -833,7 +833,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication createPersistedPublicationWithoutDoi() {
-        var publication = randomPreFilledPublicationBuilder().withDoi(null).build();
+        var publication = randomPublication().copy().withDoi(null).build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
@@ -930,7 +930,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(Publication existingPublication) {
-        return randomPreFilledPublicationBuilder()
+        return randomPublication().copy()
                    .withIdentifier(existingPublication.getIdentifier())
                    .withPublisher(existingPublication.getPublisher())
                    .withResourceOwner(existingPublication.getResourceOwner())

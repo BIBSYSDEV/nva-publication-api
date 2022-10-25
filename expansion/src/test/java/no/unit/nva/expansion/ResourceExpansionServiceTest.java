@@ -2,6 +2,7 @@ package no.unit.nva.expansion;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -206,7 +207,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private Publication persistDraftPublicationWithoutDoi() {
         var publication =
-            randomPreFilledPublicationBuilder()
+            randomPublication().copy()
                 .withDoi(null)
                 .withStatus(DRAFT)
                 .build();

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
@@ -161,7 +162,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
-        var publication = randomPreFilledPublicationBuilder().withDoi(null).build();
+        var publication = randomPublication().copy().withDoi(null).build();
         var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }

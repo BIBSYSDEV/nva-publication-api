@@ -266,7 +266,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
     
     private Publication createUnpublishablePublication() {
-        var publication = randomPreFilledPublicationBuilder().withEntityDescription(null).build();
+        var publication = randomPublication().copy().withEntityDescription(null).build();
         publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         return publication;
     }

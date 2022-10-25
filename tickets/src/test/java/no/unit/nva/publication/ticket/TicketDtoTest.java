@@ -2,6 +2,7 @@ package no.unit.nva.publication.ticket;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.time.Clock;
 import java.util.stream.Stream;
@@ -47,7 +48,7 @@ class TicketDtoTest extends ResourcesLocalTest {
     }
     
     private Publication draftPublicationWithoutDoi() {
-        var publication = randomPreFilledPublicationBuilder().withDoi(null).withStatus(DRAFT).build();
+        var publication = randomPublication().copy().withDoi(null).withStatus(DRAFT).build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
 }

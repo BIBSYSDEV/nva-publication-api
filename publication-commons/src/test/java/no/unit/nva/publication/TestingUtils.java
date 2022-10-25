@@ -1,5 +1,6 @@
 package no.unit.nva.publication;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -30,7 +31,7 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static Publication randomPublicationWithoutDoi() {
-        return randomPreFilledPublicationBuilder().withDoi(null).build();
+        return randomPublication().copy().withDoi(null).build();
     }
     
     public static Publication createUnpersistedPublication(UserInstance userInstance) {

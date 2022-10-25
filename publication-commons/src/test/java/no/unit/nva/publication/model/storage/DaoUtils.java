@@ -72,7 +72,7 @@ public final class DaoUtils extends TestDataSource {
     }
     
     private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPreFilledPublicationBuilder()
+        return randomPublication().copy()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();
