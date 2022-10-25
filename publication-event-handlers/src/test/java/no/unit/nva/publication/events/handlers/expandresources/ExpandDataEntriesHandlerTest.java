@@ -147,8 +147,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication createUpdatedVersionOfPublication(Publication oldImage) {
-        return attempt(() -> oldImage.copy().withModifiedDate(randomInstant(oldImage.getModifiedDate())).build())
-                .orElseThrow();
+        return oldImage.copy().withModifiedDate(randomInstant(oldImage.getModifiedDate())).build();
     }
     
     private InputStream emulateEventEmittedByDataEntryUpdateHandler(Object oldImage, Object newImage)
