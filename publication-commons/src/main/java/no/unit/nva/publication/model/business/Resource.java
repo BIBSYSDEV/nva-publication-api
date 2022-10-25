@@ -374,5 +374,9 @@ public class Resource implements Entity {
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
         return resourceService.fetchAllTicketsForResource(this);
     }
+    
+    public Resource persistNewPublication(UserInstance userInstance,ResourceService resourceService){
+       return resourceService.createResource(userInstance,this.toPublication());
+    }
 }
 

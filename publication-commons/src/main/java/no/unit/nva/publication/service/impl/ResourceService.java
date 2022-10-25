@@ -103,6 +103,14 @@ public class ResourceService extends ServiceWithTransactions {
     }
     
     public Publication createPublication(UserInstance userInstance, Publication inputData) {
+        return Optional.ofNullable(inputData)
+                   .map(publication -> Resource.fromPublication(inputData))
+                   .map(resource -> resource.persistNewPublication(userInstance, this))
+                   .map(Resource::toPublication)
+                   .orElse(null);
+    }
+    
+    public Resource createResource(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -315,7 +323,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
     
-    private Publication insertResource(Resource newResource) {
+    private Resource insertResource(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
@@ -323,9 +331,14 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedResource(newResource);
     }
     
-    private Publication fetchSavedResource(Resource newResource) {
-        return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
+    private Publication fetchSavedPublication(Resource newResource) {
+        return Optional.ofNullable(fetchSavedResource(newResource))
                    .map(Resource::toPublication)
+                   .orElse(null);
+    }
+    
+    private Resource fetchSavedResource(Resource newResource) {
+        return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
                    .orElse(null);
     }
     
@@ -434,7 +447,7 @@ public class ResourceService extends ServiceWithTransactions {
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
-    
+        
         UpdateItemRequest request = new UpdateItemRequest()
                                         .withTableName(tableName)
                                         .withKey(dao.primaryKey())
