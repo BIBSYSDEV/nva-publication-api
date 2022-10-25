@@ -12,6 +12,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -150,6 +151,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        var body = response.getBodyObject(Problem.class);
+        assertThat(body.getDetail(), containsString("AssociatedArtifact"));
     }
 
     private InputStream createPublicationRequestEventWithInvalidAssociatedArtifacts() throws JsonProcessingException {
