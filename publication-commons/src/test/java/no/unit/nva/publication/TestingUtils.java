@@ -12,7 +12,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 
-public final class TestingUtils {
+public final class TestingUtils extends TestDataSource {
     
     private TestingUtils() {
     
@@ -35,8 +35,7 @@ public final class TestingUtils {
     }
     
     public static Publication createUnpersistedPublication(UserInstance userInstance) {
-        return randomPublicationWithoutDoi()
-                   .copy()
+        return randomPublicationWithoutDoi().copy()
                    .withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
                    .withPublisher(createOrganization(userInstance.getOrganizationUri()))
                    .build();

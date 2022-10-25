@@ -1,5 +1,6 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
@@ -11,10 +12,14 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +31,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -44,6 +49,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final Clock CLOCK = Clock.systemDefaultZone();
+    public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     private String testUserName;
     private URI testOrgId;
     private CreatePublicationHandler handler;
@@ -65,7 +71,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         handler = new CreatePublicationHandler(resourceService, environmentMock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
-        samplePublication = PublicationGenerator.randomPublication();
+        samplePublication = randomPublication();
         testUserName = samplePublication.getResourceOwner().getOwner();
         testOrgId = samplePublication.getPublisher().getId();
         topLevelCristinOrgId = randomUri();
@@ -97,9 +103,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     
     @Test
     void requestToHandlerReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
-        var filesetInCreationRequest = PublicationGenerator.randomPublication().getFileSet();
+        var associatedArtifactsInPublication = randomPublication().getAssociatedArtifacts();
         var request = createEmptyPublicationRequest();
-        request.setFileSet(filesetInCreationRequest);
+        request.setAssociatedArtifacts(associatedArtifactsInPublication);
         
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
@@ -107,7 +113,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
-        assertThat(publicationResponse.getFileSet(), is(equalTo(filesetInCreationRequest)));
+        assertThat(publicationResponse.getAssociatedArtifacts(), is(equalTo(associatedArtifactsInPublication)));
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
     
@@ -138,7 +144,41 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
-    
+
+    @Test
+    void shouldThrowBadRequestExceptionWhenAssociatedArtifactsIsBad() throws IOException {
+        var event = createPublicationRequestEventWithInvalidAssociatedArtifacts();
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        var body = response.getBodyObject(Problem.class);
+        assertThat(body.getDetail(), containsString("AssociatedArtifact"));
+    }
+
+    private InputStream createPublicationRequestEventWithInvalidAssociatedArtifacts() throws JsonProcessingException {
+        var publicationRequestJsonObject = createCreatePublicationRequestAsJsonObject();
+        updateCreatePublicationRequestWithInvalidAssociatedArtifact(publicationRequestJsonObject);
+        return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
+    }
+
+    private static void
+        updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
+            throws JsonProcessingException {
+        var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
+        associatedArtifacts.add(createNullAssociatedArtifact());
+    }
+
+    private ObjectNode createCreatePublicationRequestAsJsonObject() throws JsonProcessingException {
+        var publicationRequest =
+                dtoObjectMapper.writeValueAsString(CreatePublicationRequest.fromPublication(samplePublication));
+        return (ObjectNode) dtoObjectMapper.readTree(publicationRequest);
+    }
+
+    private static JsonNode createNullAssociatedArtifact() throws JsonProcessingException {
+        var nullObject = dtoObjectMapper.writeValueAsString(new NullAssociatedArtifact());
+        return dtoObjectMapper.readTree(nullObject);
+    }
+
     private CreatePublicationRequest createEmptyPublicationRequest() {
         return new CreatePublicationRequest();
     }
@@ -201,7 +241,17 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(request)
                    .build();
     }
-    
+
+    private InputStream createPublicationRequestFromString(String request) throws JsonProcessingException {
+
+        return new HandlerRequestBuilder<String>(dtoObjectMapper)
+                .withNvaUsername(testUserName)
+                .withCustomerId(testOrgId)
+                .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                .withBody(request)
+                .build();
+    }
+
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
     
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)

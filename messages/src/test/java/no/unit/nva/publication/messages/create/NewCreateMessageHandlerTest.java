@@ -219,7 +219,10 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     private Publication draftPublicationWithoutDoi() {
-        var publication = randomPublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
+        var publication = randomPublication().copy()
+                .withDoi(null)
+                .withStatus(PublicationStatus.DRAFT)
+                .build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     

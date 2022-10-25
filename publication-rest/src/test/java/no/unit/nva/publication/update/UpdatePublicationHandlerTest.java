@@ -223,7 +223,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
     
-    private Publication createSamplePublication() throws ApiGatewayException {
+    private Publication createSamplePublication() {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return publicationService.createPublication(userInstance, publication);
     }

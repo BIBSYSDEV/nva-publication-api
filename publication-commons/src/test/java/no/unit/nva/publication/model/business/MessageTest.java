@@ -15,10 +15,11 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.TestDataSource;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.Test;
 
-class MessageTest {
+class MessageTest extends TestDataSource {
     
     public static final String MESSAGE_IDENTIFIER_FIELD = "identifier";
     

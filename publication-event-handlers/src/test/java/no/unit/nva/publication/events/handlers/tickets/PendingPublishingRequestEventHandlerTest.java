@@ -117,24 +117,34 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     
     @Test
     void shouldNotCompleteAlreadyCompletedTicketsAndEnterInfiniteLoop() throws ApiGatewayException, IOException {
+        var completedTicket = createCompletedTicketEntry();
+        var versionBeforeEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
+        callApiOfCustomerAllowingAutomaticPublishing((PublishingRequestCase) completedTicket);
+        var versionAfterEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
+        assertThat(versionAfterEvent, is(equalTo(versionBeforeEvent)));
+    }
+
+    private void callApiOfCustomerAllowingAutomaticPublishing(PublishingRequestCase completedTicket)
+            throws IOException {
+        var customerAllowingPublishing =
+                mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval();
+
+        var event = createEvent(completedTicket);
+
+        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
+        this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
+        handler.handleRequest(event, output, context);
+    }
+
+    private TicketEntry createCompletedTicketEntry() throws ApiGatewayException {
         var publication = createPublication();
         var completedTicket = TicketEntry.requestNewTicket(publication, PublishingRequestCase.class)
                                   .persistNewTicket(ticketService)
                                   .complete(publication);
         completedTicket = ticketService.updateTicketStatus(completedTicket, TicketStatus.COMPLETED);
-        
-        var versionBeforeEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
-        var event = createEvent((PublishingRequestCase) completedTicket);
-        var customerAllowingPublishing =
-            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval();
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
-        this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
-        handler.handleRequest(event, output, context);
-    
-        var versionAfterEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
-        assertThat(versionAfterEvent, is(equalTo(versionBeforeEvent)));
+        return completedTicket;
     }
-    
+
     private static String mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests() {
         return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
             "customer_forbidding_publishing.json"));

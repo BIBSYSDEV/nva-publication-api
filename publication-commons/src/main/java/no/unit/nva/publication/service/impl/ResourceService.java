@@ -139,9 +139,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication markPublicationForDeletion(UserInstance userInstance,
                                                   SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        
-        return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier))
-                   .toPublication();
+        return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier)).toPublication();
     }
     
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,

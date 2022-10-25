@@ -136,7 +136,8 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
         var ticket = createPersistedTicket(publication, ticketType);
-        resourceService.updatePublication(publication.copy().withStatus(publicationStatus).build());
+        var updatedPublication = publication.copy().withStatus(publicationStatus).build();
+        resourceService.updatePublication(updatedPublication);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);

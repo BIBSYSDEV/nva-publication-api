@@ -29,17 +29,19 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import no.unit.nva.publication.TestDataSource;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
 
 @JacocoGenerated
-public class ResourcesLocalTest {
+public class ResourcesLocalTest extends TestDataSource {
     
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
     protected AmazonDynamoDB client;
     
     public ResourcesLocalTest() {
-    
+        super();
     }
     
     public void init() {

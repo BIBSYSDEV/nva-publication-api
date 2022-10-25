@@ -72,7 +72,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     
         return PublicationResponse.fromPublication(createdPublication);
     }
-    
+
     @Override
     protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
         return HttpStatus.SC_CREATED;

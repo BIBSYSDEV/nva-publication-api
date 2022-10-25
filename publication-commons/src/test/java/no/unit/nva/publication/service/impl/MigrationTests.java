@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
@@ -17,8 +18,6 @@ import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -26,7 +25,6 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +57,7 @@ class MigrationTests extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldMigrateDoiRequestsToTickets() throws ApiGatewayException {
+    void shouldMigrateDoiRequestsToTickets() {
         var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
         createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
         saveOlDoiRequestDirectlyInDatabase();
@@ -74,15 +72,7 @@ class MigrationTests extends ResourcesLocalTest {
                              .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(1));
     }
-    
-    private static Publication draftPublicationWithoutDoi() {
-        return randomPublication()
-                   .copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
-    }
-    
+
     private void saveOlDoiRequestDirectlyInDatabase() {
         var jsonString = IoUtils.stringFromResources(Path.of("migration", "old_doi_request.json"));
         var item = Item.fromJSON(jsonString);

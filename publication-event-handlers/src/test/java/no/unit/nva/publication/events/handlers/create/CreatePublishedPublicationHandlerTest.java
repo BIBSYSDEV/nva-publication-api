@@ -67,8 +67,9 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         var s3FileUri = createPublicationRequestAndStoreInS3(samplePublication);
         sendMessageToEventHandler(s3FileUri);
         var savedPublication = extractSavedPublicationFromDatabase();
-    
-        var expectedPublication = copyFieldsCreatedByHandler(samplePublication.copy(), savedPublication)
+
+        var copy = samplePublication.copy();
+        var expectedPublication = copyFieldsCreatedByHandler(copy, savedPublication)
                                       .withStatus(PublicationStatus.PUBLISHED)
                                       .build();
         
