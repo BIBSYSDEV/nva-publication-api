@@ -865,6 +865,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
+
     void shouldSaveAlreadyPublishedPublicationWithAssociatedFilesAsPublished() throws NotFoundException {
         var legacyFile = randomFile().buildLegacyFile();
         var publishedFile = randomFile().buildPublishedFile();
@@ -896,6 +897,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var persistedPublished = resourceService.getPublication(persistedDraft);
         assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
         assertThatAllAssosicatedArtifactsArePublished(persistedPublished);
+
     }
     
     private File.Builder randomFile() {
