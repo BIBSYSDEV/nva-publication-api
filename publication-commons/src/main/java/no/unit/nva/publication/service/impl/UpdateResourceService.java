@@ -120,6 +120,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         assertThatPublicationHasMinimumMandatoryFields(publication);
         publication.setStatus(PublicationStatus.PUBLISHED);
         publication.setPublishedDate(clockForTimestamps.instant());
+        //TODO: the associated artifacts are updated when the Publication is converted to a Resource.
+        // make this fact a bit more clear.
         updatePublicationIncludingStatus(publication);
     }
     
