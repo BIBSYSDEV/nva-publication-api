@@ -102,7 +102,7 @@ public class ResourceService extends ServiceWithTransactions {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
-    public Publication createPublication(UserInstance userInstance, Publication inputData) {
+    public Publication resourceCallsCreatePublication(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -111,6 +111,11 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
         newResource.setStatus(PublicationStatus.DRAFT);
+        return insertResource(newResource);
+    }
+    
+    public Publication createPublication(UserInstance userInstance, Publication inputData) {
+        
         return insertResource(newResource);
     }
     
