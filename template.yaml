@@ -1018,7 +1018,7 @@ Resources:
       Runtime: java11
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 5
+      ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
