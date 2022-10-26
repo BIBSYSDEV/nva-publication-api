@@ -1033,7 +1033,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         ResourceDao resourceDaoWithStatusPublished = queryObjectForPublishedResource(resourceWithStatusDraft);
     
         Optional<ResourceDao> publishedResource = searchForResource(resourceDaoWithStatusPublished);
-        assertThat(publishedResource.isPresent(), is(ADMINISTRATIVE_AGREEMENT));
+        assertThat(publishedResource.isPresent(), is(true));
     
         var actualResourceDao = publishedResource.orElseThrow();
         var resource = (Resource) actualResourceDao.getData();
@@ -1042,12 +1042,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private void verifyThatTheResourceWasMovedFromtheDrafts(ResourceDao resourceDaoWithStatusDraft) {
         Optional<ResourceDao> expectedEmptyResult = searchForResource(resourceDaoWithStatusDraft);
-        assertThat(expectedEmptyResult.isEmpty(), is(ADMINISTRATIVE_AGREEMENT));
+        assertThat(expectedEmptyResult.isEmpty(), is(true));
     }
     
     private void assertThatResourceCanBeFoundInDraftResources(ResourceDao resourceDaoWithStatusDraft) {
         Optional<ResourceDao> savedResource = searchForResource(resourceDaoWithStatusDraft);
-        assertThat(savedResource.isPresent(), is(ADMINISTRATIVE_AGREEMENT));
+        assertThat(savedResource.isPresent(), is(true));
     }
     
     private ResourceDao queryObjectForPublishedResource(Publication resourceWithStatusDraft) {
