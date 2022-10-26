@@ -93,10 +93,6 @@ public class PublicationSummary {
         this.publicationId = publicationId;
     }
     
-    public SortableIdentifier extractPublicationIdentifier() {
-        return extractPublicationIdentifier(publicationId);
-    }
-    
     public String getTitle() {
         return title;
     }
@@ -153,6 +149,10 @@ public class PublicationSummary {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && getStatus() == that.getStatus();
+    }
+    
+    public SortableIdentifier extractPublicationIdentifier() {
+        return extractPublicationIdentifier(publicationId);
     }
     
     private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {

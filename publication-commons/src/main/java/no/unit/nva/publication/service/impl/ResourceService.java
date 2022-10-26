@@ -145,7 +145,7 @@ public class ResourceService extends ServiceWithTransactions {
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                                SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        return updateResourceService.publishResource(userInstance, resourceIdentifier);
+        return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
     
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -200,7 +200,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
     
     public Publication updatePublication(Publication resourceUpdate) {
-        return updateResourceService.updatePublication(resourceUpdate);
+        return updateResourceService.updatePublicationButDoNotChangeStatus(resourceUpdate);
     }
     
     // update this method according to current needs.
