@@ -13,3 +13,5 @@ include 'publication-event-handlers'
 include 'cristin-import'
 include 'resource-enricher'
 include 'tickets'
+include 'resource-schema-org'
+
