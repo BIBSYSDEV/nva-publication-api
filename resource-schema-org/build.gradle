@@ -1,4 +1,7 @@
 dependencies {
     implementation project(":expansion")
     implementation libs.nva.core
+    implementation libs.nva.json
+
+    implementation libs.jackson.databind
 }

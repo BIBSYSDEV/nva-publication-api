@@ -21,4 +21,12 @@ class SchemaOrgDocumentTest {
         var actual = SchemaOrgDocument.fromExpandedResource(expandedResource);
         assertThat(actual.getType(), is(equalTo(SchemaOrgType.SCHOLARLY_ARTICLE)));
     }
+
+    @Test
+    void shouldRoundTripSchemaOrgDocumentFromJson() throws JsonProcessingException {
+        var original = SchemaOrgDocument.fromExpandedResource(new ExpandedResource());
+        var serialized = MAPPER.writeValueAsString(original);
+        var deserialized = MAPPER.readValue(serialized, SchemaOrgDocument.class);
+        assertThat(deserialized, is(equalTo(original)));
+    }
 }
