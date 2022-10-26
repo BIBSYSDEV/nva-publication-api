@@ -474,7 +474,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(resource);
         resourceService.publishPublication(userInstance, resource.getIdentifier());
         var actualResource = resourceService.getPublication(resource);
-        
         var expectedResource = resource.copy()
                                    .withStatus(PUBLISHED)
                                    .withModifiedDate(actualResource.getModifiedDate())
@@ -834,11 +833,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publishedFile = randomFile().buildPublishedFile();
         var unpublishedFile = randomFile().buildUnpublishedFile();
         var publication = randomPublication().copy()
+
                               .withStatus(PUBLISHED)
                               .withAssociatedArtifacts(List.of(legacyFile, publishedFile, unpublishedFile))
                               .build();
         var persisted = resourceService.createPublicationFromImportedEntry(publication);
-        
         assertThat(persisted.getAssociatedArtifacts(), everyItem(is(instanceOf(PublishedFile.class))));
     }
     
@@ -871,6 +870,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldMaintainAssociatedArtifactsThatOtherThanFile() throws ApiGatewayException {
         var publication = draftPublicationWithoutDoiAndAssociatedLink();
         var persistedDraft = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+
         resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
             persistedDraft.getIdentifier());
         var persistedPublished = resourceService.getPublication(persistedDraft);
