@@ -405,16 +405,21 @@ public class Resource implements Entity {
                                                       PublicationStatus publicationStatus) {
         if (artifactIsAFile(artifact)) {
             var file = (File) artifact;
-            if (isPublishableFile(file) && shouldNotYetGetPublished(publicationStatus)) {
-                return file.toUnpublishedFile();
-            } else if (isPublishableFile(file) && shouldBePublished(publicationStatus)) {
-                return file.toPublishedFile();
-            } else if (file.isAdministrativeAgreement()) {
-                return file.toUnpublishableFile();
-            }
-            throw new IllegalStateException("Missing conversion rule for file");
+            return convertFile(file, publicationStatus);
         } else {
             return artifact;
+        }
+    }
+    
+    private static AssociatedArtifact convertFile(File file, PublicationStatus publicationStatus) {
+        if (isPublishableFile(file) && shouldNotYetGetPublished(publicationStatus)) {
+            return file.toUnpublishedFile();
+        } else if (isPublishableFile(file) && shouldBePublished(publicationStatus)) {
+            return file.toPublishedFile();
+        } else if (file.isAdministrativeAgreement()) {
+            return file.toUnpublishableFile();
+        } else {
+            throw new IllegalStateException("Missing conversion rule for file");
         }
     }
     
