@@ -897,7 +897,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var persistedPublished = resourceService.getPublication(persistedDraft);
         assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
         assertThatAllAssosicatedArtifactsArePublished(persistedPublished);
-
     }
     
     private File.Builder randomFile() {
