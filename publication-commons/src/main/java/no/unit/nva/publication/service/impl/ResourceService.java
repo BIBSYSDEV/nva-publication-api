@@ -103,14 +103,6 @@ public class ResourceService extends ServiceWithTransactions {
     }
     
     public Publication createPublication(UserInstance userInstance, Publication inputData) {
-        return Optional.ofNullable(inputData)
-                   .map(publication -> Resource.fromPublication(inputData))
-                   .map(resource -> resource.persistNewPublication(userInstance, this))
-                   .map(Resource::toPublication)
-                   .orElse(null);
-    }
-    
-    public Resource createResource(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -153,7 +145,7 @@ public class ResourceService extends ServiceWithTransactions {
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                                SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        return updateResourceService.publishResource(userInstance, resourceIdentifier);
+        return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
     
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -208,7 +200,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
     
     public Publication updatePublication(Publication resourceUpdate) {
-        return updateResourceService.updatePublication(resourceUpdate);
+        return updateResourceService.updatePublicationButDoNotChangeStatus(resourceUpdate);
     }
     
     // update this method according to current needs.
@@ -323,12 +315,12 @@ public class ResourceService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
     
-    private Resource insertResource(Resource newResource) {
+    private Publication insertResource(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
         
-        return fetchSavedResource(newResource);
+        return fetchSavedPublication(newResource);
     }
     
     private Publication fetchSavedPublication(Resource newResource) {

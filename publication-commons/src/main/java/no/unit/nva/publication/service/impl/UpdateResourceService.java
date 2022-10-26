@@ -12,19 +12,18 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.Update;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
@@ -33,25 +32,19 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class UpdateResourceService extends ServiceWithTransactions {
     
-    public static final String DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO = "data";
-    public static final String RESOURCE_STATUS_FIELD_IN_DOI_REQUEST = "resourceStatus";
-    public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
     
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
     public static final String RESOURCE_LINK_FIELD = "link";
     
-    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     //TODO: fix affiliation update when updating owner
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
     
@@ -69,23 +62,30 @@ public class UpdateResourceService extends ServiceWithTransactions {
         this.readResourceService = readResourceService;
     }
     
-    //TODO: here we allow all fields to be overwritten by the user.
-    public Publication updatePublication(Publication publication) {
-        var persistedPublication = fetchExistingPublication(publication);
-        publication.setCreatedDate(persistedPublication.getCreatedDate());
-        publication.setModifiedDate(clockForTimestamps.instant());
-        var resource = Resource.fromPublication(publication);
+    public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
+        var originalPublication = fetchExistingPublication(publication);
+        if (originalPublication.getStatus().equals(publication.getStatus())) {
+            return updatePublicationIncludingStatus(publication);
+        }
+        throw new IllegalStateException("Attempting to update publication status when it is not allowed");
+    }
     
-        TransactWriteItem updateResourceTransactionItem = updateResource(resource);
-        List<TransactWriteItem> updateTicketsTransactionItems = updateTickets(resource);
-        ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
+    public Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
+        var persistedPublication = fetchExistingPublication(publicationUpdate);
+        publicationUpdate.setCreatedDate(persistedPublication.getCreatedDate());
+        publicationUpdate.setModifiedDate(clockForTimestamps.instant());
+        var resource = Resource.fromPublication(publicationUpdate);
+        
+        var updateResourceTransactionItem = updateResource(resource);
+        var updateTicketsTransactionItems = updateTickets(resource);
+        var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResourceTransactionItem);
         transactionItems.addAll(updateTicketsTransactionItems);
         
-        TransactWriteItemsRequest request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
         
-        return publication;
+        return publicationUpdate;
     }
     
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -98,28 +98,40 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
     
-    PublishPublicationStatusResponse publishResource(UserInstance userInstance,
-                                                     SortableIdentifier resourceIdentifier)
+    PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        List<Dao> daos = readResourceService
-                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
-        var dao = extractResourceDao(daos);
-        var resource = (Resource) dao.getData();
-        if (resourceIsPublished(resource)) {
+        var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
+        if (publicationIsPublished(publication)) {
             return publishCompletedStatus();
+        } else if (publicationIsDraft(publication)) {
+            publishPublication(publication);
+            return publishingInProgressStatus();
+        } else {
+            throw new UnsupportedOperationException("Functionality not specified");
         }
-        assertThatPublicationHasMinimumMandatoryFields(resource.toPublication());
-        setResourceStatusToPublished(daos, dao);
-        return publishingInProgressStatus();
+    }
+    
+    private static boolean publicationIsPublished(Publication publication) {
+        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+    }
+    
+    private void publishPublication(Publication publication) throws InvalidPublicationException {
+        assertThatPublicationHasMinimumMandatoryFields(publication);
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        publication.setPublishedDate(clockForTimestamps.instant());
+        //TODO: the associated artifacts are updated when the Publication is converted to a Resource.
+        // make this fact a bit more clear.
+        updatePublicationIncludingStatus(publication);
+    }
+    
+    private boolean publicationIsDraft(Publication publication) {
+        return PublicationStatus.DRAFT.equals(publication.getStatus());
     }
     
     private Publication fetchExistingPublication(Publication publication) {
         return attempt(() -> readResourceService.getPublication(publication))
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
-    }
-    
-    private boolean resourceIsPublished(Entity resource) {
-        return PublicationStatus.PUBLISHED.equals(((Resource) resource).getStatus());
     }
     
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
@@ -161,85 +173,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
                       .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
         
         return new TransactWriteItem().withPut(put);
-    }
-    
-    private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
-        List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
-        
-        TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(transactWriteItemsRequest);
-    }
-    
-    private List<TransactWriteItem> createUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
-        String nowString = nowAsString();
-        List<TransactWriteItem> transactionItems = new ArrayList<>();
-        transactionItems.add(publishUpdateRequest(resourceDao, nowString));
-        Optional<DoiRequestDao> doiRequestDao = extractDoiRequest(daos);
-        doiRequestDao.ifPresent(dao -> transactionItems.add(updateDoiRequestResourceStatus(dao, nowString)));
-        return transactionItems;
-    }
-    
-    private TransactWriteItem publishUpdateRequest(ResourceDao dao, String nowString) {
-    
-        var resource = (Resource) dao.getData();
-        resource.setStatus(PublicationStatus.PUBLISHED);
-        final String updateExpression = "SET"
-                                        + " #data.#status = :newStatus, "
-                                        + "#data.#modifiedDate = :modifiedDate, "
-                                        + "#data.#publishedDate = :modifiedDate, "
-                                        + "#PK1 = :PK1, "
-                                        + "#SK1 = :SK1 ";
-        
-        final String conditionExpression = "#data.#status <> :publishedStatus";
-        
-        Map<String, String> expressionNamesMap = Map.of(
-            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
-            "#status", STATUS_FIELD_IN_RESOURCE,
-            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
-            "#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE,
-            "#PK1", DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
-            "#SK1", DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME
-        );
-        
-        Map<String, AttributeValue> expressionValuesMap = Map.of(
-            ":newStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
-            ":modifiedDate", new AttributeValue(nowString),
-            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
-            ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
-            ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()));
-    
-        Update update = new Update()
-                            .withTableName(tableName)
-                            .withKey(dao.primaryKey())
-                            .withUpdateExpression(updateExpression)
-                            .withConditionExpression(conditionExpression)
-                            .withExpressionAttributeNames(expressionNamesMap)
-                            .withExpressionAttributeValues(expressionValuesMap);
-        return new TransactWriteItem().withUpdate(update);
-    }
-    
-    private TransactWriteItem updateDoiRequestResourceStatus(DoiRequestDao doiRequestDao, String nowString) {
-        
-        String updateExpression = "SET "
-                                  + "#data.#resourceStatus = :publishedStatus,"
-                                  + "#data.#modifiedDate = :modifiedDate ";
-        Map<String, String> expressionAttributeNames = Map.of(
-            "#data", DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO,
-            "#resourceStatus", RESOURCE_STATUS_FIELD_IN_DOI_REQUEST,
-            "#modifiedDate", MODIFIED_DATE_FIELD_IN_DOI_REQUEST
-        );
-        Map<String, AttributeValue> attributeValueMap = Map.of(
-            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
-            ":modifiedDate", new AttributeValue(nowString)
-        );
-    
-        Update update = new Update().withTableName(tableName)
-                            .withKey(doiRequestDao.primaryKey())
-                            .withUpdateExpression(updateExpression)
-                            .withExpressionAttributeNames(expressionAttributeNames)
-                            .withExpressionAttributeValues(attributeValueMap);
-        
-        return new TransactWriteItem().withUpdate(update);
     }
     
     private PublishPublicationStatusResponse publishingInProgressStatus() {

@@ -9,12 +9,14 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.ASSOCIATED_ARIFACTS_FIELD;
+import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,8 +53,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,9 +64,14 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.License;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -116,6 +125,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
+    private static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
     private ResourceService resourceService;
     
     private TicketService ticketService;
@@ -460,7 +470,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(resource);
         resourceService.publishPublication(userInstance, resource.getIdentifier());
         var actualResource = resourceService.getPublication(resource);
-
+    
         var expectedResource = resource.copy()
                                    .withStatus(PUBLISHED)
                                    .withModifiedDate(actualResource.getModifiedDate())
@@ -549,11 +559,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(actualMessage, containsString(sampleResource.getClass()
                                                      .getDeclaredField(ASSOCIATED_ARIFACTS_FIELD).getName()));
     }
-
+    
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }
-
+    
     @Test
     void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles() throws ApiGatewayException {
         
@@ -685,7 +695,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var initialPublication = createPersistedPublicationWithoutDoi();
         var initialDoiRequest = createDoiRequest(initialPublication);
-        var publicationUpdate = updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(initialPublication);
+        var publicationUpdate = updateAllPublicationFieldsExpectIdentifierStatusAndOwnerInfo(initialPublication);
         resourceService.updatePublication(publicationUpdate);
     
         var updatedDoiRequest = (DoiRequest) ticketService.fetchTicket(initialDoiRequest);
@@ -832,6 +842,88 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(exception.getMessage(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
     }
     
+    @Test
+    void shouldSaveDraftPublicationWithAssociatedFilesAsUnpublished() {
+        var publication = draftPublicationWithoutDoiAndAllTypesOfFiles();
+        var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        assertThatAllFilesAreUnpublished(persisted);
+    }
+    
+    private static void assertThatAllFilesAreUnpublished(Publication persisted) {
+        for (var artifact : persisted.getAssociatedArtifacts()) {
+            assertThat(artifact, is(instanceOf(UnpublishedFile.class)));
+        }
+    }
+    
+    private Publication draftPublicationWithoutDoiAndAllTypesOfFiles() {
+        var legacyFile = randomFile().buildLegacyFile();
+        var publishedFile = randomFile().buildPublishedFile();
+        var unpublishedFile = randomFile().buildUnpublishedFile();
+        return draftPublicationWithoutDoi()
+                   .withAssociatedArtifacts(List.of(legacyFile, publishedFile, unpublishedFile))
+                   .build();
+    }
+    
+    @Test
+
+    void shouldSaveAlreadyPublishedPublicationWithAssociatedFilesAsPublished() throws NotFoundException {
+        var legacyFile = randomFile().buildLegacyFile();
+        var publishedFile = randomFile().buildPublishedFile();
+        var unpublishedFile = randomFile().buildUnpublishedFile();
+        var publication = randomPublication()
+                              .copy()
+                              .withStatus(PUBLISHED)
+                              .withAssociatedArtifacts(List.of(legacyFile, publishedFile, unpublishedFile))
+                              .build();
+        var persisted = resourceService.createPublicationFromImportedEntry(publication);
+        
+        assertThatAllAssosicatedArtifactsArePublished(persisted);
+    }
+    
+    private void assertThatAllAssosicatedArtifactsArePublished(Publication publication) throws NotFoundException {
+        var fetched = resourceService.getPublication(publication);
+        for (var artifact : fetched.getAssociatedArtifacts()) {
+            assertThat(artifact, is(instanceOf(PublishedFile.class)));
+        }
+    }
+    
+    @Test
+    void shouldConvertUnPublishedArtifactsToPublishedWhenPublicationIsPublished() throws ApiGatewayException {
+        var publication = draftPublicationWithoutDoiAndAllTypesOfFiles();
+        var persistedDraft = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        assertThatAllFilesAreUnpublished(persistedDraft);
+        resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
+            persistedDraft.getIdentifier());
+        var persistedPublished = resourceService.getPublication(persistedDraft);
+        assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
+        assertThatAllAssosicatedArtifactsArePublished(persistedPublished);
+    }
+    
+    private File.Builder randomFile() {
+        return File.builder()
+                   .withName(randomString())
+                   .withAdministrativeAgreement(NOT_ADMINISTRATIVE_AGREEMENT)
+                   .withMimeType(randomString())
+                   .withSize(randomInteger().longValue())
+                   .withEmbargoDate(randomInstant())
+                   .withLicense(getCcByLicense())
+                   .withIdentifier(UUID.randomUUID())
+                   .withPublisherAuthority(randomBoolean());
+    }
+    
+    public static License getCcByLicense() {
+        var ccByUri = URI.create("https://creativecommons.org/licenses/by/4.0/");
+        return new License.Builder()
+                   .withIdentifier("CC_BY")
+                   .withLabels(Map.of("en", "CC-BY 4.0"))
+                   .withLink(ccByUri)
+                   .build();
+    }
+    
+    private Builder draftPublicationWithoutDoi() {
+        return randomPublication().copy().withStatus(DRAFT);
+    }
+    
     private Publication createPersistedPublicationWithoutDoi() {
         var publication = randomPublication().copy().withDoi(null).build();
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
@@ -859,7 +951,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication generatePublication() {
         return PublicationGenerator.publicationWithoutIdentifier();
     }
-
+    
     private ListingResult<Entity> fetchRestOfDatabaseEntries(ListingResult<Entity> listingResult) {
         return resourceService.scanResources(BIG_PAGE, listingResult.getStartMarker());
     }
@@ -929,11 +1021,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .build();
     }
     
-    private Publication updateAllPublicationFieldsExpectIdentifierAndOwnerInfo(Publication existingPublication) {
+    private Publication updateAllPublicationFieldsExpectIdentifierStatusAndOwnerInfo(Publication existingPublication) {
         return randomPublication().copy()
                    .withIdentifier(existingPublication.getIdentifier())
                    .withPublisher(existingPublication.getPublisher())
                    .withResourceOwner(existingPublication.getResourceOwner())
+                   .withStatus(existingPublication.getStatus())
                    .build();
     }
     
@@ -995,7 +1088,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Supplier<SortableIdentifier> duplicateIdSupplier = () -> identifier;
         return new ResourceService(client, clock, duplicateIdSupplier);
     }
-
+    
     private void assertThatJsonProcessingErrorIsPropagatedUp(Class<JsonProcessingException> expectedExceptionClass,
                                                              Executable action) {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
@@ -1012,7 +1105,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
-        return publication.copy().withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
+        return publication.copy()
+                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
                    .build();
     }
@@ -1021,7 +1115,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                 Publication updatedResource,
                                                 UserInstance expectedOwner) {
         return originalResource.copy().withResourceOwner(new ResourceOwner(expectedOwner.getUsername(),
-                        AFFILIATION_NOT_IMPORTANT))
+                AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(userOrganization(expectedOwner))
                    .withCreatedDate(originalResource.getCreatedDate())
                    .withModifiedDate(updatedResource.getModifiedDate())

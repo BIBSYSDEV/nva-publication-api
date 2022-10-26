@@ -10,7 +10,9 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -19,7 +21,9 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -102,7 +106,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withPublishedDate(publication.getPublishedDate())
-                   .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
+                   .withAssociatedArtifactsList(calculateArtifacts(publication))
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -147,6 +151,27 @@ public class Resource implements Entity {
     @Override
     public Publication toPublication(ResourceService resourceService) {
         return toPublication();
+    }
+    
+    public Publication toPublication() {
+        return new Publication.Builder()
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(getResourceOwner().toResourceOwner())
+                   .withStatus(getStatus())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withPublisher(getPublisher())
+                   .withPublishedDate(getPublishedDate())
+                   .withLink(getLink())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withAssociatedArtifacts(calculateArtifacts(this))
+                   .withSubjects(getSubjects())
+                   .build();
     }
     
     @Override
@@ -196,33 +221,13 @@ public class Resource implements Entity {
         return nonNull(getStatus()) ? getStatus().toString() : null;
     }
     
-    public Publication toPublication() {
-        return new Publication.Builder()
-                              .withIdentifier(getIdentifier())
-                              .withResourceOwner(getResourceOwner().toResourceOwner())
-                              .withStatus(getStatus())
-                              .withCreatedDate(getCreatedDate())
-                              .withModifiedDate(getModifiedDate())
-                              .withIndexedDate(getIndexedDate())
-                              .withPublisher(getPublisher())
-                              .withPublishedDate(getPublishedDate())
-                              .withLink(getLink())
-                              .withProjects(getProjects())
-                              .withEntityDescription(getEntityDescription())
-                              .withDoi(getDoi())
-                              .withHandle(getHandle())
-                              .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                              .withAssociatedArtifacts(getAssociatedArtifacts())
-                              .withSubjects(getSubjects())
-                              .build();
-    }
-    
     public PublicationStatus getStatus() {
         return status;
     }
     
     public void setStatus(PublicationStatus status) {
         this.status = status;
+        this.associatedArtifacts = calculateArtifacts(this);
     }
     
     public Organization getPublisher() {
@@ -256,7 +261,7 @@ public class Resource implements Entity {
     public void setLink(URI link) {
         this.link = link;
     }
-
+    
     public AssociatedArtifactList getAssociatedArtifacts() {
         return associatedArtifacts;
     }
@@ -375,8 +380,47 @@ public class Resource implements Entity {
         return resourceService.fetchAllTicketsForResource(this);
     }
     
-    public Resource persistNewPublication(UserInstance userInstance,ResourceService resourceService){
-       return resourceService.createResource(userInstance,this.toPublication());
+    private static AssociatedArtifactList calculateArtifacts(Publication publication) {
+        var artifactsList = Optional.ofNullable(publication.getAssociatedArtifacts())
+                                .stream()
+                                .flatMap(artifacts -> calculateArtifacts(artifacts, publication.getStatus()))
+                                .collect(Collectors.toList());
+        return new AssociatedArtifactList(artifactsList);
+    }
+    
+    private static AssociatedArtifactList calculateArtifacts(Resource resource) {
+        var artifactsList = Optional.ofNullable(resource.getAssociatedArtifacts())
+                                .stream()
+                                .flatMap(artifacts -> calculateArtifacts(artifacts, resource.getStatus()))
+                                .collect(Collectors.toList());
+        return new AssociatedArtifactList(artifactsList);
+    }
+    
+    private static Stream<AssociatedArtifact> calculateArtifacts(AssociatedArtifactList arts,
+                                                                 PublicationStatus publicationStatus) {
+        return arts.stream().map(artifact -> convertArtifact(artifact, publicationStatus));
+    }
+    
+    private static AssociatedArtifact convertArtifact(AssociatedArtifact artifact,
+                                                      PublicationStatus publicationStatus) {
+        if (artifactIsFileNotPublishedYet(artifact, publicationStatus)) {
+            var file = (File) artifact;
+            return file.toUnpublishedFile();
+        } else if (artifactIsPublishedFile(artifact, publicationStatus)) {
+            var file = (File) artifact;
+            return file.toPublishedFile();
+        } else {
+            return artifact;
+        }
+    }
+    
+    private static boolean artifactIsPublishedFile(AssociatedArtifact artifact, PublicationStatus publicationStatus) {
+        return PublicationStatus.PUBLISHED.equals(publicationStatus) && artifact instanceof File;
+    }
+    
+    private static boolean artifactIsFileNotPublishedYet(AssociatedArtifact artifact,
+                                                         PublicationStatus publicationStatus) {
+        return artifact instanceof File && PublicationStatus.DRAFT.equals(publicationStatus);
     }
 }
 
