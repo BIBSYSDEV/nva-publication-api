@@ -3,12 +3,13 @@ package no.unit.nva.schemaorg;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.ExpandedResource;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 
 
 class SchemaOrgDocumentTest {
@@ -16,17 +17,12 @@ class SchemaOrgDocumentTest {
     public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
 
     @Test
-    void shouldReturnSchemaOrgDocumentWithTypeWhenInputIsExpandedResource() {
-        var expandedResource = new ExpandedResource();
+    void shouldReturnSchemaOrgDocumentWithTypeWhenInputIsExpandedJournalArticleResource() throws JsonProcessingException {
+        var expandedResource = ExpandedResourceGenerator.generateJournalArticle();
         var actual = SchemaOrgDocument.fromExpandedResource(expandedResource);
-        assertThat(actual.getType(), is(equalTo(SchemaOrgType.SCHOLARLY_ARTICLE)));
-    }
-
-    @Test
-    void shouldRoundTripSchemaOrgDocumentFromJson() throws JsonProcessingException {
-        var original = SchemaOrgDocument.fromExpandedResource(new ExpandedResource());
-        var serialized = MAPPER.writeValueAsString(original);
-        var deserialized = MAPPER.readValue(serialized, SchemaOrgDocument.class);
-        assertThat(deserialized, is(equalTo(original)));
+        var jsonNode = MAPPER.readTree(actual);
+        assertThat(jsonNode.get("@id").textValue(), is(equalTo(expandedResource.getAllFields().get("id"))));
+        assertThat(jsonNode.get("@type").textValue(), is(equalTo("ScholarlyArticle")));
+        assertThat(jsonNode.get("name").textValue(), is(not(nullValue())));
     }
 }

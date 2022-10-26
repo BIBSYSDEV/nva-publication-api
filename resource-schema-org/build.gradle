@@ -3,5 +3,6 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
 
-    implementation libs.jackson.databind
+    implementation libs.jena.core
+    implementation libs.jena.arq
 }

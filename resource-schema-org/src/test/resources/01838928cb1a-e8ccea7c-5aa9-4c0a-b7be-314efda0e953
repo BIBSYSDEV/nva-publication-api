@@ -1,0 +1,194 @@
+{
+  "body" : {
+    "type" : "Publication",
+    "publicationContextUris" : [ "https://api.dev.nva.aws.unit.no/publication-channels/journal/443514/2016" ],
+    "@context" : {
+      "@vocab" : "https://bibsysdev.github.io/src/nva/ontology.ttl#",
+      "id" : "@id",
+      "type" : "@type",
+      "contributors" : {
+        "@container" : "@set"
+      },
+      "additionalIdentifiers" : {
+        "@container" : "@set"
+      },
+      "affiliations" : {
+        "@container" : "@set"
+      },
+      "subjects" : {
+        "@container" : "@set"
+      },
+      "projects" : {
+        "@container" : "@set"
+      },
+      "tags" : {
+        "@container" : "@set"
+      },
+      "isbnList" : {
+        "@container" : "@set"
+      },
+      "venues" : {
+        "@container" : "@set"
+      },
+      "files" : {
+        "@container" : "@set"
+      },
+      "associatedArtifacts" : {
+        "@container" : "@set"
+      },
+      "grants" : {
+        "@container" : "@set"
+      },
+      "approvals" : {
+        "@container" : "@set"
+      },
+      "messages" : {
+        "@container" : "@set"
+      }
+    },
+    "id" : "https://api.dev.nva.aws.unit.no/publication/01838928cb1a-e8ccea7c-5aa9-4c0a-b7be-314efda0e953",
+    "associatedArtifacts" : [ {
+      "type" : "PublishedFile",
+      "administrativeAgreement" : false,
+      "embargoDate" : "2022-10-14T22:00:00Z",
+      "identifier" : "a048d6a1-c8cf-4627-87cb-9cdf2400d2be",
+      "license" : {
+        "type" : "License",
+        "identifier" : "CC BY-SA",
+        "labels" : {
+          "nb" : "CC BY-SA"
+        }
+      },
+      "mimeType" : "image/jpeg",
+      "name" : "osteloff.jpg",
+      "publisherAuthority" : true,
+      "size" : 4656
+    } ],
+    "createdDate" : "2022-09-29T12:11:35.574546Z",
+    "doi" : "https://handle.stage.datacite.org/10.16903/959t-8903",
+    "entityDescription" : {
+      "type" : "EntityDescription",
+      "alternativeTitles" : { },
+      "contributors" : [ {
+        "type" : "Contributor",
+        "correspondingAuthor" : false,
+        "identity" : {
+          "type" : "Identity",
+          "name" : "Heiner Schümann"
+        },
+        "role" : "Creator",
+        "sequence" : 1
+      }, {
+        "type" : "Contributor",
+        "correspondingAuthor" : false,
+        "identity" : {
+          "type" : "Identity",
+          "name" : "Murat Tutkun"
+        },
+        "role" : "Creator",
+        "sequence" : 2
+      }, {
+        "type" : "Contributor",
+        "correspondingAuthor" : false,
+        "identity" : {
+          "type" : "Identity",
+          "name" : "Zhilin Yang"
+        },
+        "role" : "Creator",
+        "sequence" : 3
+      }, {
+        "type" : "Contributor",
+        "correspondingAuthor" : false,
+        "identity" : {
+          "type" : "Identity",
+          "name" : "Ole Jørgen Nydal"
+        },
+        "role" : "Creator",
+        "sequence" : 4
+      } ],
+      "date" : {
+        "type" : "PublicationDate",
+        "day" : "1",
+        "month" : "9",
+        "year" : "2016"
+      },
+      "language" : "http://lexvo.org/id/iso639-3/eng",
+      "mainTitle" : "Experimental study of dispersed oil-water flow in a horizontal pipe with enhanced inlet mixing, Part 1: Flow patterns, phase distributions and pressure gradients",
+      "metadataSource" : "https://www.crossref.org/",
+      "reference" : {
+        "type" : "Reference",
+        "doi" : "https://doi.org/10.1016/j.petrol.2016.06.005",
+        "publicationContext" : {
+          "id" : "https://api.dev.nva.aws.unit.no/publication-channels/journal/443514/2016",
+          "type" : "Journal",
+          "active" : true,
+          "identifier" : "443514",
+          "language" : {
+            "id" : "http://lexvo.org/id/iso639-3/eng"
+          },
+          "level" : "2",
+          "name" : "Journal of Petroleum Science and Engineering",
+          "npiDomain" : "Geovitenskap",
+          "onlineIssn" : "1873-4715",
+          "printIssn" : "0920-4105",
+          "publisherId" : "https://api.dev.nva.aws.unit.no/publication-channels/publisher/18173/2016",
+          "website" : {
+            "id" : "https://www.sciencedirect.com/journal/journal-of-petroleum-science-and-engineering"
+          }
+        },
+        "publicationInstance" : {
+          "type" : "JournalArticle",
+          "contentType" : "PopularScienceArticle",
+          "originalResearch" : false,
+          "pages" : {
+            "type" : "Range",
+            "begin" : "742",
+            "end" : "752"
+          },
+          "peerReviewed" : false,
+          "volume" : "145"
+        }
+      },
+      "tags" : [ "Geotechnical Engineering and Engineering Geology", "Fuel Technology" ]
+    },
+    "fileSet" : {
+      "type" : "FileSet",
+      "files" : [ {
+        "type" : "PublishedFile",
+        "administrativeAgreement" : false,
+        "embargoDate" : "2022-10-14T22:00:00Z",
+        "identifier" : "a048d6a1-c8cf-4627-87cb-9cdf2400d2be",
+        "license" : {
+          "type" : "License",
+          "identifier" : "CC BY-SA",
+          "labels" : {
+            "nb" : "CC BY-SA"
+          }
+        },
+        "mimeType" : "image/jpeg",
+        "name" : "osteloff.jpg",
+        "publisherAuthority" : true,
+        "size" : 4656
+      } ]
+    },
+    "identifier" : "01838928cb1a-e8ccea7c-5aa9-4c0a-b7be-314efda0e953",
+    "modelVersion" : "0.18.8",
+    "modifiedDate" : "2022-10-13T09:24:23.006532Z",
+    "owner" : "1136254@20754.0.0.0",
+    "publishedDate" : "2022-09-30T08:22:29.055542Z",
+    "publisher" : {
+      "id" : "https://api.dev.nva.aws.unit.no/customer/bb3d0c0c-5065-4623-9b98-5810983c2478",
+      "type" : "Organization",
+      "labels" : { }
+    },
+    "resourceOwner" : {
+      "owner" : "1136254@20754.0.0.0",
+      "ownerAffiliation" : "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"
+    },
+    "status" : "PUBLISHED"
+  },
+  "consumptionAttributes" : {
+    "index" : "resources",
+    "documentIdentifier" : "01838928cb1a-e8ccea7c-5aa9-4c0a-b7be-314efda0e953"
+  }
+}

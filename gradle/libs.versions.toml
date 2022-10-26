@@ -23,7 +23,7 @@ cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.8.2' }
 mockito = { strictly = '3.12.4' }
 configTypesafe = { strictly = '1.4.1' }
-jsonld = { strictly = '0.13.3' }
+jsonld = { strictly = '0.13.4' }
 nva-language = { strictly = '1.0' }
 guava = { strictly = '31.1-jre' }
 javers = { strictly = '6.2.4' }
@@ -33,8 +33,7 @@ jakarta = { strictly = '2.3.2' }
 karate-core = { strictly = '1.1.0' }
 karate-apache = { strictly = '0.9.6' }
 karate-junit5 = { strictly = '1.1.0' }
-
-
+jena = { strictly = '4.6.1'}
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -96,6 +95,10 @@ guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
 jaxb-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'jaxb' }
 jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.ref = 'jaxb' }
 jakarta-xml-bind-api = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version.ref = 'jakarta' }
+
+jena-core = { group = 'org.apache.jena', name = 'jena-core', version.ref = 'jena' }
+jena-arq = { group = 'org.apache.jena', name = 'jena-arq', version.ref = 'jena' }
+
 
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }

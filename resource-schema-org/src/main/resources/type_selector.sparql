@@ -1,0 +1,6 @@
+PREFIX schema: <https://schema.org/>
+
+SELECT ?type WHERE {
+  ?uri a ?type ;
+    schema:provider [] .
+} LIMIT 1
