@@ -33,6 +33,7 @@ public final class SchemaOrgDocument {
     public static final String JSON_LD_FRAME_TEMPLATE = stringFromResources(Path.of("json_ld_frame.json"));
     public static final Query CONSTRUCT_SCHEMA_VIEW_QUERY =
             QueryFactory.create(stringFromResources(Path.of("type_selector.sparql")));
+    public static final String EMPTY_JSON_OBJECT = "{}";
 
     private SchemaOrgDocument() {
         // NO-OP
@@ -40,7 +41,7 @@ public final class SchemaOrgDocument {
 
     public static String fromExpandedResource(ExpandedResource resource) {
         var input = extractSchemaView(resource);
-        return getJsonLdStringOfModel(input);
+        return !input.isEmpty() ? getJsonLdStringOfModel(input) : EMPTY_JSON_OBJECT;
     }
 
     private static Model extractSchemaView(ExpandedResource resource) {

@@ -1,0 +1,169 @@
+{
+  "body" : {
+    "type" : "Publication",
+    "publicationContextUris" : [ ],
+    "@context" : {
+      "@vocab" : "https://bibsysdev.github.io/src/nva/ontology.ttl#",
+      "id" : "@id",
+      "type" : "@type",
+      "contributors" : {
+        "@container" : "@set"
+      },
+      "additionalIdentifiers" : {
+        "@container" : "@set"
+      },
+      "affiliations" : {
+        "@container" : "@set"
+      },
+      "subjects" : {
+        "@container" : "@set"
+      },
+      "projects" : {
+        "@container" : "@set"
+      },
+      "tags" : {
+        "@container" : "@set"
+      },
+      "isbnList" : {
+        "@container" : "@set"
+      },
+      "venues" : {
+        "@container" : "@set"
+      },
+      "files" : {
+        "@container" : "@set"
+      },
+      "associatedArtifacts" : {
+        "@container" : "@set"
+      },
+      "grants" : {
+        "@container" : "@set"
+      },
+      "approvals" : {
+        "@container" : "@set"
+      },
+      "messages" : {
+        "@container" : "@set"
+      }
+    },
+    "id" : "https://api.dev.nva.aws.unit.no/publication/0183c63ba065-eb063976-8d4b-4fcf-87ba-ecbed1721eba",
+    "associatedArtifacts" : [ {
+      "type" : "PublishedFile",
+      "administrativeAgreement" : false,
+      "identifier" : "8fffe9d0-cae4-433b-b0ea-891f90165ffa",
+      "license" : {
+        "type" : "License",
+        "identifier" : "CC0",
+        "labels" : {
+          "nb" : "CC0"
+        }
+      },
+      "mimeType" : "image/jpeg",
+      "name" : "62E249A7-392E-47CF-BFE4-25DE9CB586E2.jpeg",
+      "publisherAuthority" : true,
+      "size" : 4656352
+    } ],
+    "createdDate" : "2022-10-11T08:49:00.005396Z",
+    "entityDescription" : {
+      "type" : "EntityDescription",
+      "abstract" : "tester",
+      "alternativeTitles" : { },
+      "contributors" : [ {
+        "type" : "Contributor",
+        "affiliations" : [ {
+          "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0",
+          "type" : "Organization",
+          "labels" : { }
+        }, {
+          "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/20754.2.0.0",
+          "type" : "Organization",
+          "labels" : { }
+        } ],
+        "correspondingAuthor" : false,
+        "identity" : {
+          "id" : "https://api.dev.nva.aws.unit.no/cristin/person/41902",
+          "type" : "Identity",
+          "name" : "Frode Arntsen",
+          "orcId" : "https://sandbox.orcid.org/0000-0002-7060-8121"
+        },
+        "role" : "RightsHolder",
+        "sequence" : 1
+      } ],
+      "date" : {
+        "type" : "PublicationDate",
+        "day" : "11",
+        "month" : "10",
+        "year" : "2022"
+      },
+      "description" : "Et interessant bilde",
+      "language" : "http://lexvo.org/id/iso639-3/nob",
+      "mainTitle" : "Veien Trollstigen",
+      "reference" : {
+        "type" : "Reference",
+        "publicationContext" : {
+          "type" : "ResearchData",
+          "publisher" : {
+            "type" : "Publisher"
+          }
+        },
+        "publicationInstance" : {
+          "type" : "DataSet",
+          "compliesWith" : "https://api.dev.nva.aws.unit.no/publication/01838dfc66d8-b3e85188-db6a-4115-b8fe-2d1436ef6573",
+          "geographicalCoverage" : {
+            "type" : "GeographicalDescription",
+            "description" : "Møre og Romsdal"
+          },
+          "pages" : {
+            "type" : "NullPages"
+          },
+          "peerReviewed" : false,
+          "userAgreesToTermsAndConditions" : true
+        }
+      },
+      "tags" : [ "Trollstigen" ]
+    },
+    "fileSet" : {
+      "type" : "FileSet",
+      "files" : [ {
+        "type" : "PublishedFile",
+        "administrativeAgreement" : false,
+        "identifier" : "8fffe9d0-cae4-433b-b0ea-891f90165ffa",
+        "license" : {
+          "type" : "License",
+          "identifier" : "CC0",
+          "labels" : {
+            "nb" : "CC0"
+          }
+        },
+        "mimeType" : "image/jpeg",
+        "name" : "62E249A7-392E-47CF-BFE4-25DE9CB586E2.jpeg",
+        "publisherAuthority" : true,
+        "size" : 4656352
+      } ]
+    },
+    "identifier" : "0183c63ba065-eb063976-8d4b-4fcf-87ba-ecbed1721eba",
+    "modelVersion" : "0.18.8",
+    "modifiedDate" : "2022-10-11T08:57:46.793291Z",
+    "owner" : "41902@20754.0.0.0",
+    "projects" : [ {
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/project/405704",
+      "type" : "ResearchProject",
+      "name" : "Kommunikasjon og trafikksikkerhet - et samarbeidsprosjekt mellom      Trygg\r\nTrafikk og Sandnes kommune"
+    } ],
+    "publishedDate" : "2022-10-11T08:57:46.793291Z",
+    "publisher" : {
+      "id" : "https://api.dev.nva.aws.unit.no/customer/bb3d0c0c-5065-4623-9b98-5810983c2478",
+      "type" : "Organization",
+      "labels" : { }
+    },
+    "resourceOwner" : {
+      "owner" : "41902@20754.0.0.0",
+      "ownerAffiliation" : "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"
+    },
+    "status" : "PUBLISHED"
+  },
+  "consumptionAttributes" : {
+    "index" : "resources",
+    "documentIdentifier" : "0183c63ba065-eb063976-8d4b-4fcf-87ba-ecbed1721eba"
+  }
+}
