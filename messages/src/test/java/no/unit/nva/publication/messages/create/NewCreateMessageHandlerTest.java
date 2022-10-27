@@ -29,6 +29,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -220,10 +221,11 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     
     private Publication draftPublicationWithoutDoi() {
         var publication = randomPublication().copy()
-                .withDoi(null)
-                .withStatus(PublicationStatus.DRAFT)
-                .build();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+                              .withDoi(null)
+                              .withStatus(PublicationStatus.DRAFT)
+                              .build();
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private InputStream createNewMessageRequestForNonElevatedUser(Publication publication,

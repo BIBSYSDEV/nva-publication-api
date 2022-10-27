@@ -24,6 +24,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -115,7 +116,8 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
                               .withResourceOwner(new ResourceOwner(owner.getUsername(), null))
                               .withDoi(null)
                               .build();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private TicketDto constructDto(TicketEntry ticketEntry) {

@@ -29,6 +29,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.testing.TypeProvider;
@@ -267,13 +268,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     
     private Publication createUnpublishablePublication() {
         var publication = randomPublication().copy().withEntityDescription(null).build();
-        publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        publication = Resource.fromPublication(publication)
+                          .persistNew(resourceService, UserInstance.fromPublication(publication));
         return publication;
     }
     
     private Publication createPersistedPublicationWithDoi() {
         var publication = randomPublication();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)
@@ -305,7 +308,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     private Publication createPersistedDraftPublication() throws ApiGatewayException {
         var publication = randomPublication();
         publication.setDoi(null); // for creating DoiRequests
-        publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        publication = Resource.fromPublication(publication)
+                          .persistNew(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublication(publication);
     }
     

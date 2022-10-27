@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -104,7 +105,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     
     private Publication createDraftPublication(UserInstance owner) {
         var publication = createUnpersistedPublication(owner);
-        return resourceService.createPublication(owner, publication);
+        return Resource.fromPublication(publication).persistNew(resourceService, owner);
     }
     
     private Clock mockClock() {

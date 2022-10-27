@@ -16,6 +16,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -83,7 +84,8 @@ class MessageDaoTest extends ResourcesLocalTest {
                          .withResourceOwner(RANDOM_RESOURCE_OWNER)
                          .withPublisher(publisher)
                          .build();
-        var publication = resourceService.createPublication(UserInstance.fromPublication(sample), sample);
+        var publication = Resource.fromPublication(sample)
+                              .persistNew(resourceService, UserInstance.fromPublication(sample));
         var ticket = TicketEntry.requestNewTicket(publication, randomTicketType())
                          .persistNewTicket(ticketService);
         return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());

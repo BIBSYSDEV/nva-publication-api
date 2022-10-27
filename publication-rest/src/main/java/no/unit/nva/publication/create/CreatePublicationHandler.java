@@ -13,6 +13,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -67,7 +68,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         var newPublication = Optional.ofNullable(input)
                                  .map(CreatePublicationRequest::toPublication)
                                  .orElseGet(Publication::new);
-        var createdPublication = publicationService.createPublication(userInstance, newPublication);
+        var createdPublication = Resource.fromPublication(newPublication).persistNew(publicationService, userInstance);
         setLocationHeader(createdPublication.getIdentifier());
     
         return PublicationResponse.fromPublication(createdPublication);

@@ -115,12 +115,6 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
     
-    //TODO: to be inlined and deleted
-    @Deprecated(since = "Resource#persistNew")
-    public Publication createPublication(UserInstance userInstance, Publication inputData) {
-        return Resource.fromPublication(inputData).persistNew(this, userInstance);
-    }
-    
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());

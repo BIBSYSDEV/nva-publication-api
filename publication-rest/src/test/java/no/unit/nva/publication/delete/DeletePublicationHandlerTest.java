@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -159,7 +160,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.randomPublication();
         var userInstance =
             UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
-        return publicationService.createPublication(userInstance, publication);
+        return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
     
     private UserInstance createUserInstance(Publication publication) {

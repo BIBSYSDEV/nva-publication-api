@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -93,7 +94,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = randomPublicationWithoutDoi();
         var userInstance = UserInstance.fromPublication(publication);
-        var storedResult = resourceService.createPublication(userInstance, publication);
+        var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         action.accept(storedResult);
         return resourceService.getPublication(storedResult);
     }

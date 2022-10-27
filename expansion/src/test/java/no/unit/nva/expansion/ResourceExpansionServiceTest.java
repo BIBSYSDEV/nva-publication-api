@@ -211,6 +211,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                 .withDoi(null)
                 .withStatus(DRAFT)
                 .build();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
 }

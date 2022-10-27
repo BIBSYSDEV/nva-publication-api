@@ -276,7 +276,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
     
     private Publication persistPublication(Publication publication) {
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private DoiMetadataUpdateEvent outputToPublicationHolder(ByteArrayOutputStream outputStream)

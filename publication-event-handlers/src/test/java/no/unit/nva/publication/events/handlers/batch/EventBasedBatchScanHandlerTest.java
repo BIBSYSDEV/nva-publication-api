@@ -154,7 +154,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     
     private Publication createPublication(Publication publication) throws ApiGatewayException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
-        return resourceService.createPublication(userInstance, publication);
+        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
     
     private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {

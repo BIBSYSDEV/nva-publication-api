@@ -698,7 +698,7 @@ class TicketServiceTest extends ResourcesLocalTest {
                               .withStatus(DRAFT)
                               .build();
     
-        return resourceService.createPublication(owner, publication);
+        return Resource.fromPublication(publication).persistNew(resourceService, owner);
     }
     
     private DoiRequest expectedDoiRequestForEmptyPublication(Publication emptyPublication,
