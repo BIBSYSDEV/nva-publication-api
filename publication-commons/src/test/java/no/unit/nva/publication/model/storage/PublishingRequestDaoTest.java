@@ -16,6 +16,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -110,7 +111,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     private Publication createPublication() {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
-        return resourceService.createPublication(userInstance, publication);
+        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
     
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {

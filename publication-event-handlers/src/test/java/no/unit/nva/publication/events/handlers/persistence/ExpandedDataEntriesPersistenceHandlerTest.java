@@ -163,7 +163,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
         var publication = randomPublication().copy().withDoi(null).build();
-        var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var persisted = Resource.fromPublication(publication)
+                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
     

@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -33,6 +34,7 @@ public class MessagesTest extends ResourcesLocalTest {
     
     protected Publication createPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
 }

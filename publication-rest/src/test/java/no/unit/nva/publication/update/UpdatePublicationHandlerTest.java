@@ -39,6 +39,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.AccessRight;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -225,7 +226,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     
     private Publication createSamplePublication() {
         UserInstance userInstance = UserInstance.fromPublication(publication);
-        return publicationService.createPublication(userInstance, publication);
+        return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
     
     private InputStream requestWithoutUsername(Publication publicationUpdate)

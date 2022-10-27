@@ -23,6 +23,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -133,7 +134,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     private Publication createPublicationWithoutDoi() {
         var publication = randomPublicationWithoutDoi();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private SortableIdentifier extractExpectedIdentifier(ExpandedDataEntryWithAssociatedPublication generatedData) {
@@ -206,7 +208,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     
         private static Publication createPublication(ResourceService resourceService) {
             var publication = randomPublicationWithoutDoi();
-            publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+            publication = Resource.fromPublication(publication)
+                              .persistNew(resourceService, UserInstance.fromPublication(publication));
             return publication;
         }
     

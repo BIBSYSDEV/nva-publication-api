@@ -156,7 +156,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private Publication insertSamplePublication() {
         var samplePublication = PublicationGenerator.randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
-        samplePublication = resourceService.createPublication(userInstance, samplePublication);
+        samplePublication = Resource.fromPublication(samplePublication).persistNew(resourceService, userInstance);
         return samplePublication;
     }
     

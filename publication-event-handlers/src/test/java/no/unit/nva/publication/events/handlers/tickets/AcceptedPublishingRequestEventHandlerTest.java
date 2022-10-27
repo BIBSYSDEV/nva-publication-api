@@ -18,6 +18,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -109,7 +110,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private Publication createUnpublishablePublication() {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private PublishingRequestCase modifyPublishingRequest(PublishingRequestCase pendingPublishingRequest) {
@@ -119,7 +121,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     
     private Publication createPublication() {
         var publication = randomPublication();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {

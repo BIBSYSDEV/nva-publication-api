@@ -23,6 +23,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -189,7 +190,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = randomPublication();
         publication.setStatus(PublicationStatus.DRAFT);
         publication.setPublisher(new Organization.Builder().withId(CUSTOMER_ID).build());
-        publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        publication = Resource.fromPublication(publication)
+                          .persistNew(resourceService, UserInstance.fromPublication(publication));
         return publication;
     }
 }

@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.time.Clock;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -49,6 +50,7 @@ class TicketDtoTest extends ResourcesLocalTest {
     
     private Publication draftPublicationWithoutDoi() {
         var publication = randomPublication().copy().withDoi(null).withStatus(DRAFT).build();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
 }

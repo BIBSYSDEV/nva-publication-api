@@ -207,7 +207,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         input.setModifiedDate(notExpectedModifiedDate);
     
         var userInstance = UserInstance.fromPublication(input);
-        var savedResource = resourceService.createPublication(userInstance, input);
+        var savedResource = Resource.fromPublication(input).persistNew(resourceService, userInstance);
         var readResource = resourceService.getPublication(savedResource);
         var expectedResource = input.copy()
                                    .withIdentifier(savedResource.getIdentifier())
@@ -823,7 +823,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldSaveDraftPublicationWithAssociatedFilesAsUnpublished() {
         var publication = draftPublicationWithoutDoiAndAllTypesOfFiles();
-        var persisted = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var persisted = Resource.fromPublication(publication)
+                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         assertThat(persisted.getAssociatedArtifacts(), everyItem(is(instanceOf(UnpublishedFile.class))));
     }
     
@@ -844,7 +845,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldConvertUnPublishedArtifactsToPublishedWhenPublicationIsPublished() throws ApiGatewayException {
         var publication = draftPublicationWithoutDoiAndAllTypesOfFiles();
-        var persistedDraft = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var persistedDraft = Resource.fromPublication(publication)
+                                 .persistNew(resourceService, UserInstance.fromPublication(publication));
         assertThat(persistedDraft.getAssociatedArtifacts(), everyItem(is(instanceOf(UnpublishedFile.class))));
         resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
             persistedDraft.getIdentifier());
@@ -856,7 +858,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldNotConvertUnpublishableArtifactsToPublishableWhenPublicationIsPublished() throws ApiGatewayException {
         var publication = draftPublicationWithAdministrativeAgreements();
-        var persistedDraft = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var persistedDraft = Resource.fromPublication(publication)
+                                 .persistNew(resourceService, UserInstance.fromPublication(publication));
         assertThat(persistedDraft.getAssociatedArtifacts(), everyItem(is(instanceOf(AdministrativeAgreement.class))));
         resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
             persistedDraft.getIdentifier());
@@ -869,8 +872,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldMaintainAssociatedArtifactsThatOtherThanFile() throws ApiGatewayException {
         var publication = draftPublicationWithoutDoiAndAssociatedLink();
-        var persistedDraft = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-
+        var persistedDraft = Resource.fromPublication(publication)
+                                 .persistNew(resourceService, UserInstance.fromPublication(publication));
+    
         resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
             persistedDraft.getIdentifier());
         var persistedPublished = resourceService.getPublication(persistedDraft);
@@ -926,16 +930,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
     
     private Publication createPersistedPublicationWithoutDoi() {
         var publication = randomPublication().copy().withDoi(null).build();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private Publication createPersistedPublicationWithoutDoi(Publication publication) {
         var withoutDoi = publication.copy().withDoi(null).build();
-        return resourceService.createPublication(UserInstance.fromPublication(withoutDoi), withoutDoi);
+        return Resource.fromPublication(withoutDoi).persistNew(resourceService,
+            UserInstance.fromPublication(withoutDoi));
     }
     
     private Publication createPersistedPublicationWithDoi(ResourceService resourceService, Publication sampleResource) {
-        return resourceService.createPublication(UserInstance.fromPublication(sampleResource), sampleResource);
+        return Resource.fromPublication(sampleResource).persistNew(resourceService,
+            UserInstance.fromPublication(sampleResource));
     }
     
     private Publication createPersistedPublicationWithDoi() {
@@ -945,7 +952,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication createUnpublishablePublication() {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+            UserInstance.fromPublication(publication));
     }
     
     private Publication generatePublication() {

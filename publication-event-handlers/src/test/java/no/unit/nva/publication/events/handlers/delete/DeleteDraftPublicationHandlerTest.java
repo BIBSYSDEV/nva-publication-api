@@ -14,6 +14,7 @@ import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -96,6 +97,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
                                               .withDoi(null)
                                               .build();
         publicationToCreate.setStatus(status);
-        return resourceService.createPublication(fromPublication(publicationToCreate), publicationToCreate);
+        return Resource.fromPublication(publicationToCreate).persistNew(resourceService,
+            fromPublication(publicationToCreate));
     }
 }
