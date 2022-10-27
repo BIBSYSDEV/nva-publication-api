@@ -102,6 +102,7 @@ public class ResourceService extends ServiceWithTransactions {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
+    //to be renamed to "createPublication"
     public Publication resourceCallsCreatePublication(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
@@ -114,9 +115,10 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
     
+    //TODO: to be inlined and deleted
+    @Deprecated(since = "Resource#persistNew")
     public Publication createPublication(UserInstance userInstance, Publication inputData) {
-        
-        return insertResource(newResource);
+        return Resource.fromPublication(inputData).persistNew(this, userInstance);
     }
     
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {

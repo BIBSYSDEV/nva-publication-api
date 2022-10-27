@@ -21,6 +21,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -97,6 +98,10 @@ public class Resource implements Entity {
     }
     
     public static Resource fromPublication(Publication publication) {
+        return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
+    }
+    
+    private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
                    .withResourceOwner(Owner.fromResourceOwner(publication.getResourceOwner()))
@@ -160,7 +165,7 @@ public class Resource implements Entity {
     public Publication toPublication() {
         return new Publication.Builder()
                    .withIdentifier(getIdentifier())
-                   .withResourceOwner(getResourceOwner().toResourceOwner())
+                   .withResourceOwner(extractResourceOwner())
                    .withStatus(getStatus())
                    .withCreatedDate(getCreatedDate())
                    .withModifiedDate(getModifiedDate())
@@ -176,6 +181,10 @@ public class Resource implements Entity {
                    .withAssociatedArtifacts(calculateArtifacts(this))
                    .withSubjects(getSubjects())
                    .build();
+    }
+    
+    private ResourceOwner extractResourceOwner() {
+        return Optional.ofNullable(getResourceOwner()).map(Owner::toResourceOwner).orElse(null);
     }
     
     @Override
@@ -310,7 +319,7 @@ public class Resource implements Entity {
         return Resource.builder()
                    .withIdentifier(getIdentifier())
                    .withStatus(getStatus())
-                   .withResourceOwner(Owner.fromResourceOwner(getResourceOwner().toResourceOwner()))
+                   .withResourceOwner(Owner.fromResourceOwner(extractResourceOwner()))
                    .withPublisher(getPublisher())
                    .withCreatedDate(getCreatedDate())
                    .withModifiedDate(getModifiedDate())
