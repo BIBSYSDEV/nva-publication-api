@@ -102,7 +102,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
-    public Publication createPublication(UserInstance userInstance, Publication inputData) {
+    //to be renamed to "createPublication"
+    public Publication resourceCallsCreatePublication(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -112,6 +113,12 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(currentTime);
         newResource.setStatus(PublicationStatus.DRAFT);
         return insertResource(newResource);
+    }
+    
+    //TODO: to be inlined and deleted
+    @Deprecated(since = "Resource#persistNew")
+    public Publication createPublication(UserInstance userInstance, Publication inputData) {
+        return Resource.fromPublication(inputData).persistNew(this, userInstance);
     }
     
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
@@ -320,12 +327,17 @@ public class ResourceService extends ServiceWithTransactions {
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
         
-        return fetchSavedResource(newResource);
+        return fetchSavedPublication(newResource);
     }
     
-    private Publication fetchSavedResource(Resource newResource) {
-        return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
+    private Publication fetchSavedPublication(Resource newResource) {
+        return Optional.ofNullable(fetchSavedResource(newResource))
                    .map(Resource::toPublication)
+                   .orElse(null);
+    }
+    
+    private Resource fetchSavedResource(Resource newResource) {
+        return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
                    .orElse(null);
     }
     
@@ -434,7 +446,7 @@ public class ResourceService extends ServiceWithTransactions {
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
-    
+        
         UpdateItemRequest request = new UpdateItemRequest()
                                         .withTableName(tableName)
                                         .withKey(dao.primaryKey())
