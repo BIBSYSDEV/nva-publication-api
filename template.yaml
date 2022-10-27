@@ -1091,9 +1091,10 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
 
-  CristinDataBulkImportFromS3:
+  StartCristinImportButton:
     Type: AWS::Serverless::Function
     Properties:
+      Description: 'Starts Cristin Import. Accepts Json object with "uri" field'
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
       Runtime: java11
