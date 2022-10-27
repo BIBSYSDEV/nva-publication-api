@@ -416,24 +416,40 @@ public class Resource implements Entity {
     
     private static AssociatedArtifact convertArtifact(AssociatedArtifact artifact,
                                                       PublicationStatus publicationStatus) {
-        if (artifactIsFileNotPublishedYet(artifact, publicationStatus)) {
+        if (artifactIsAFile(artifact)) {
             var file = (File) artifact;
-            return file.toUnpublishedFile();
-        } else if (artifactIsPublishedFile(artifact, publicationStatus)) {
-            var file = (File) artifact;
-            return file.toPublishedFile();
+            return convertFile(file, publicationStatus);
         } else {
             return artifact;
         }
     }
     
-    private static boolean artifactIsPublishedFile(AssociatedArtifact artifact, PublicationStatus publicationStatus) {
-        return PublicationStatus.PUBLISHED.equals(publicationStatus) && artifact instanceof File;
+    private static AssociatedArtifact convertFile(File file, PublicationStatus publicationStatus) {
+        if (isPublishableFile(file) && shouldNotYetGetPublished(publicationStatus)) {
+            return file.toUnpublishedFile();
+        } else if (isPublishableFile(file) && shouldBePublished(publicationStatus)) {
+            return file.toPublishedFile();
+        } else if (file.isAdministrativeAgreement()) {
+            return file.toUnpublishableFile();
+        } else {
+            throw new IllegalStateException("Missing conversion rule for file");
+        }
     }
     
-    private static boolean artifactIsFileNotPublishedYet(AssociatedArtifact artifact,
-                                                         PublicationStatus publicationStatus) {
-        return artifact instanceof File && PublicationStatus.DRAFT.equals(publicationStatus);
+    private static boolean artifactIsAFile(AssociatedArtifact artifact) {
+        return artifact instanceof File;
+    }
+    
+    private static boolean shouldBePublished(PublicationStatus publicationStatus) {
+        return PublicationStatus.PUBLISHED.equals(publicationStatus);
+    }
+    
+    private static boolean shouldNotYetGetPublished(PublicationStatus publicationStatus) {
+        return !PublicationStatus.PUBLISHED.equals(publicationStatus);
+    }
+    
+    private static boolean isPublishableFile(File artifact) {
+        return !artifact.isAdministrativeAgreement();
     }
 }
 

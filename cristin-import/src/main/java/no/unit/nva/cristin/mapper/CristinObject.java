@@ -24,12 +24,14 @@ import no.unit.nva.model.Publication;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
+// This list should be emptied by either mapping the field to an NVA field or asking the Cristin people (Daniel)
+// to remove it from the exports
 @JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet", "peerReviewed",
     "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "type_produkt",
     "kildepostid", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst"})
+    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst", "h_dbh_forskres_publikasjon"})
 
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
@@ -73,6 +75,7 @@ public class CristinObject implements JsonSerializable {
     private CristinJournalPublication journalPublication;
     @JsonProperty("type_foredrag_poster")
     private CristinLectureOrPosterMetaData lectureOrPosterMetaData;
+    
     private String publicationOwner;
     
     public CristinObject() {
