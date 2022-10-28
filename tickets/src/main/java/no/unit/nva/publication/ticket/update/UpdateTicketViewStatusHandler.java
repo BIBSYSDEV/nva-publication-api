@@ -97,12 +97,6 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
         return ticket;
     }
     
-    private TicketEntry fetchTicketForUser(SortableIdentifier ticketIdentifier, UserInstance userInstance)
-        throws ForbiddenException {
-        return attempt(() -> ticketService.fetchTicket(userInstance, ticketIdentifier)).orElseThrow(
-            fail -> new ForbiddenException());
-    }
-    
     private void markTicketForOwner(UpdateViewStatusRequest input, TicketEntry ticket) {
         if (ViewStatus.READ.equals(input.getViewStatus())) {
             ticket.markReadByOwner().persistUpdate(ticketService);
@@ -111,6 +105,12 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
         } else {
             throw new UnsupportedOperationException("Unknown ViewedStatus");
         }
+    }
+    
+    private TicketEntry fetchTicketForUser(SortableIdentifier ticketIdentifier, UserInstance userInstance)
+        throws ForbiddenException {
+        return attempt(() -> ticketService.fetchTicket(userInstance, ticketIdentifier)).orElseThrow(
+            fail -> new ForbiddenException());
     }
     
     private void markTicketForElevatedUser(UpdateViewStatusRequest input, TicketEntry ticket) {
