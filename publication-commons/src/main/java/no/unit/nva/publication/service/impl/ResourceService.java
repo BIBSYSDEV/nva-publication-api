@@ -114,7 +114,8 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
     
-    public Publication createPublicationFromImportedEntry(Publication inputData) {
+    //TODO rename  to createPublicationfromImportedEntry
+    public Publication resourceCallsCreatePublicationFromImportedEntry(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
@@ -122,6 +123,11 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(inputData.getModifiedDate());
         newResource.setStatus(PublicationStatus.PUBLISHED);
         return insertResource(newResource);
+    }
+    
+    @Deprecated
+    public Publication createPublicationFromImportedEntry(Publication inputData) {
+        return Resource.fromPublication(inputData).persistImportedEntry(this);
     }
     
     public Publication insertPreexistingPublication(Publication publication) {

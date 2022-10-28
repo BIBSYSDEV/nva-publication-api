@@ -131,6 +131,10 @@ public class Resource implements Entity {
         return resourceService.createPublication(userInstance, this.toPublication());
     }
     
+    public Publication persistImportedEntry(ResourceService resourceService) {
+        return resourceService.resourceCallsCreatePublicationFromImportedEntry(this.toPublication());
+    }
+    
     public Owner getResourceOwner() {
         return resourceOwner;
     }
