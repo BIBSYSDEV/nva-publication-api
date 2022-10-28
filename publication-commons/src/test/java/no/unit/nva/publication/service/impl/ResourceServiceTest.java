@@ -165,14 +165,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldKeepImportedDataCreationDates() throws NotFoundException {
         var randomInstant = RandomDataGenerator.randomInstant();
         var inputPublication = randomPublication().copy().withCreatedDate(randomInstant).build();
-        
-        var savedPublicationIdentifier = resourceService.createPublicationWithPredefinedCreationDate(inputPublication)
-                                             .getIdentifier();
+    
+        var savedPublicationIdentifier = resourceService
+                                             .createPublicationFromImportedEntry(inputPublication).getIdentifier();
         var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
-        
+    
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
-        
+    
         var possiblyErrorDiff = JAVERS.compare(inputPublication, savedPublication);
         assertThat(possiblyErrorDiff.prettyPrint(), savedPublication, is(equalTo(inputPublication)));
     }

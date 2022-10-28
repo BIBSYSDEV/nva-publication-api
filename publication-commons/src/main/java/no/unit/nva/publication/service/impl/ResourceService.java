@@ -114,13 +114,6 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
     
-    public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
-        Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setCreatedDate(inputData.getCreatedDate());
-        return insertResource(newResource);
-    }
-    
     public Publication createPublicationFromImportedEntry(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
