@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.model.contexttypes.Journal;
@@ -35,8 +34,8 @@ public class PeriodicalBuilder extends CristinMappingModule {
     private Periodical createJournal() {
         Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
         int publicationYear = extractYearReportedInNvi();
-        URI journalUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
-        return new Journal(journalUri.toString());
+        var journalUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
+        return new Journal(journalUri);
     }
     
     private String extractIssn() {
