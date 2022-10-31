@@ -1217,32 +1217,9 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/2022_10_18_lowercased'
+          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/2022-10-18'
 
-  CristinErrorsCrawler:
-    Type: AWS::Glue::Crawler
-    Properties:
-      Configuration: >
-        {
-            "Version":1.0,
-            "Grouping":{
-              "TableLevelConfiguration":2
-            }
-        }
-      DatabaseName: !Ref    CristinImportDatabase
-      Description: Crawler that crawls the s3 bucket of the cristin data
-      Name: CristinImportErrorCrawler
-      RecrawlPolicy:
-        RecrawlBehavior: CRAWL_EVERYTHING
-      Role: !GetAtt CristinCrawlerRole.Arn
-      Schedule:
-        ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
-      SchemaChangePolicy:
-        DeleteBehavior: DELETE_FROM_DATABASE
-        UpdateBehavior: UPDATE_IN_DATABASE
-      Targets:
-        S3Targets:
-          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors/'
+
 
   CristinWorkgroup:
     Type: AWS::Athena::WorkGroup
@@ -1262,16 +1239,17 @@ Resources:
       Database: !Ref  AnalyticsExportDatabase
       Description: Currently nothing special. To be the view used by BI
       Name: BI Query
+      # external_location is the output folder
       QueryString: >
-        CREATE TABLE "cristin"."2022_05_18_lowercased"
+        CREATE TABLE "cristin"."lower_cased_dataset"
         with (
-        external_location ='s3://cristin-import-AccountId/2022_05_18_lowercased',
+        external_location ='s3://cristin-import-AccountId/lower-cased-dataset-folder',
         bucket_count = 2000,
         bucketed_by = ARRAY['id'],
         format = 'JSON',
         write_compression='GZIP')
         as
-        SELECT * FROM "cristin"."2022_10_18"
+        SELECT * FROM "cristin"."not_lowercased_dataset"
       WorkGroup: !Ref CristinWorkgroup
 
   CristinCrawlerRole:
