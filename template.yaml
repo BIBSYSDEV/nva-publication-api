@@ -1237,8 +1237,11 @@ Resources:
     Type: AWS::Athena::NamedQuery
     Properties:
       Database: !Ref  AnalyticsExportDatabase
-      Description: Currently nothing special. To be the view used by BI
-      Name: BI Query
+      Description: >
+        Lowercase all field names so that the CristinEntryEventConsumer importer will work.
+        Athena lowercases all field names and we cannot change this for now. So if we want
+        to test the import with small datasets we have to do this.
+      Name: Lowercase-field-names
       # external_location is the output folder
       QueryString: >
         CREATE TABLE "cristin"."lower_cased_dataset"
