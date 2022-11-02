@@ -3,6 +3,7 @@ package no.unit.nva.publication.fetch;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -56,7 +57,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return List.of(
             JSON_UTF_8,
             APPLICATION_JSON_LD,
-            APPLICATION_DATACITE_XML
+            APPLICATION_DATACITE_XML,
+            SCHEMA_ORG
         );
     }
     
@@ -84,14 +86,18 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
                                   Publication publication) throws UnsupportedAcceptHeaderException {
         String response;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
-        if (contentType.equals(APPLICATION_DATACITE_XML)) {
+        if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
+        } else if (SCHEMA_ORG.equals(contentType)) {
+            response = createSchemaOrgRepresentation(publication)
         } else {
             response = createPublicationResponse(requestInfo, publication);
         }
         return response;
     }
-    
+
+
+
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
         var publicationResponse = PublicationMapper
                                       .convertValue(publication, PublicationResponse.class);
@@ -101,5 +107,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private String createDataCiteMetadata(Publication publication) {
         var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
+    }
+
+    private String createSchemaOrgRepresentation(Publication publication) {
+//        return new SchemaOrgDocument.fromPublication(publication);
+        return null;
     }
 }
