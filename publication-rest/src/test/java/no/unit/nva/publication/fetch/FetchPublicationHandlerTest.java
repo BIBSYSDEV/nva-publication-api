@@ -35,6 +35,8 @@ import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -113,17 +115,18 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertTrue(gatewayResponse.getBody().contains(DATACITE_XML_RESOURCE_ELEMENT));
     }
 
+    // TODO: Extend beyond JournalArticle
     @Test
     void shouldReturnSchemaOrgProfileWhenSchemaOrgMediaTypeIsRequested() throws IOException,
             ApiGatewayException {
-        var publication = createPublication();
+        var publication = createPublication(JournalArticle.class);
         var identifier = publication.getIdentifier().toString();
         var headers = Map.of(ACCEPT, MediaTypes.SCHEMA_ORG.toString());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers), output, context);
         var gatewayResponse = parseHandlerResponse();
         var contentType = gatewayResponse.getHeaders().get(CONTENT_TYPE);
         assertThat(contentType, is(equalTo(MediaTypes.SCHEMA_ORG.toString())));
-        assertThat(gatewayResponse.getBody(), containsString("\"@vocab\": \"https://schema.org/\""));
+        assertThat(gatewayResponse.getBody(), containsString("\"@vocab\" : \"https://schema.org/\""));
     }
     
     @Test
@@ -226,6 +229,14 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createPublication(Class<? extends PublicationInstance<?>> instance) throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication(instance);
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        SortableIdentifier publicationIdentifier =
+                Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 }

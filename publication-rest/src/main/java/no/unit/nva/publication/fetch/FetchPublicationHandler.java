@@ -18,6 +18,7 @@ import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -89,7 +90,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
         } else if (SCHEMA_ORG.equals(contentType)) {
-            response = createSchemaOrgRepresentation(publication)
+            response = createSchemaOrgRepresentation(publication);
         } else {
             response = createPublicationResponse(requestInfo, publication);
         }
@@ -110,7 +111,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createSchemaOrgRepresentation(Publication publication) {
-//        return new SchemaOrgDocument.fromPublication(publication);
-        return null;
+        return SchemaOrgDocument.fromPublication(publication);
     }
 }
