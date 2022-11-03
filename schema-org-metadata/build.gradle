@@ -1,0 +1,14 @@
+dependencies {
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation libs.nva.datamodel.core
+
+    implementation libs.bundles.jena
+    testImplementation libs.bundles.testing
+    testImplementation libs.nva.identifiers
+
+}
+
+test {
+    environment "ID_NAMESPACE", "https://www.example.org/publication"
+}

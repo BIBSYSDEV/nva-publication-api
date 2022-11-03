@@ -1,0 +1,5 @@
+@prefix nva: <https://nva.sikt.no/ontology/publication#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <https://schema.org/> .
+
+nva:JournalArticle rdfs:subClassOf schema:ScholarlyArticle .
