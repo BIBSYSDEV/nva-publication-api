@@ -1,6 +1,5 @@
 package no.unit.nva.schemaorg;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jsonldjava.core.JsonLdOptions;
 import no.unit.nva.PublicationMapper;
@@ -62,10 +61,6 @@ public final class SchemaOrgDocument {
                 .orElseThrow();
     }
 
-    private static JsonNode extractContext(Publication publication) {
-        return attempt(() -> MAPPER.readTree(publication.getJsonLdContext())).orElseThrow();
-    }
-
     private static String getJsonLdStringOfModel(Model result) {
         return RDFWriter.create()
                 .format(RDFFormat.JSONLD10_FRAME_PRETTY)
@@ -99,12 +94,8 @@ public final class SchemaOrgDocument {
     }
 
     public static String fromPublication(Publication publication) {
-        var publicationResponse = PublicationMapper.convertValue(publication, getJsonLdContext(publication), PublicationResponse.class);
+        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
         var input = extractSchemaView(publicationResponse);
         return !input.isEmpty() ? getJsonLdStringOfModel(input) : EMPTY_JSON_OBJECT;
-    }
-
-    private static JsonNode getJsonLdContext(Publication publication) {
-        return extractContext(publication);
     }
 }
