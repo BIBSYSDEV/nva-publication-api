@@ -7,7 +7,6 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import nva.commons.core.SingletonCollector;
-import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
@@ -32,8 +31,7 @@ public final class SchemaOrgDocument {
                     .getBytes(StandardCharsets.UTF_8));
     public static final String QUERY = stringFromResources(Path.of("schema_org_conversion.sparql"));
     public static final String JSON_LD_FRAME_TEMPLATE = stringFromResources(Path.of("json_ld_frame.json"));
-    public static final Query CONSTRUCT_SCHEMA_VIEW_QUERY =
-            QueryFactory.create(stringFromResources(Path.of("type_selector.sparql")));
+    public static final String CONSTRUCT_SCHEMA_VIEW_QUERY = stringFromResources(Path.of("type_selector.sparql"));
     public static final String EMPTY_JSON_OBJECT = "{}";
     private final PublicationResponse publication;
 
@@ -87,7 +85,8 @@ public final class SchemaOrgDocument {
     }
 
     private String extractTypeForFrame(Model model) {
-        try (var queryExecution = QueryExecutionFactory.create(CONSTRUCT_SCHEMA_VIEW_QUERY, model)) {
+        var query = QueryFactory.create(CONSTRUCT_SCHEMA_VIEW_QUERY);
+        try (var queryExecution = QueryExecutionFactory.create(query, model)) {
             var results = queryExecution.execSelect();
             var queryParameter = results.getResultVars().stream().collect(SingletonCollector.collect());
             return results.next().get(queryParameter).asResource().getLocalName();
