@@ -17,6 +17,8 @@ import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFWriter;
 import org.apache.jena.sys.JenaSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +28,8 @@ import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 
 public final class SchemaOrgDocument {
+
+    public static final Logger logger = LoggerFactory.getLogger(SchemaOrgDocument.class);
     public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
     public static final ByteArrayInputStream ONTOLOGY_MAPPINGS =
             new ByteArrayInputStream(stringFromResources(Path.of("subtype_mappings.ttl"))
@@ -35,6 +39,7 @@ public final class SchemaOrgDocument {
     public static final String CONSTRUCT_SCHEMA_VIEW_QUERY = stringFromResources(Path.of("type_selector.sparql"));
     public static final String EMPTY_JSON_OBJECT = "{}";
     private final PublicationResponse publication;
+
 
     public SchemaOrgDocument(Publication publication) {
         JenaSystem.init();
@@ -50,6 +55,8 @@ public final class SchemaOrgDocument {
 
     private Model getModelWithMappings() {
         var model = ModelFactory.createDefaultModel();
+        logger.info("Using publication: {}", attempt(() -> MAPPER.writeValueAsString(publication.toString()))
+                .orElseThrow());
         RDFDataMgr.read(model, toInputStream(publication), Lang.JSONLD);
         RDFDataMgr.read(model, ONTOLOGY_MAPPINGS, Lang.TURTLE);
         return model;
