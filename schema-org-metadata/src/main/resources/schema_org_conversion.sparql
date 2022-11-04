@@ -21,7 +21,7 @@ CONSTRUCT {
   ?nvaType rdfs:subClassOf ?schemaOrgType .
 
   OPTIONAL {
-      ?entityDescription nva:contributors ?contributors .
+      ?entityDescription nva:contributor ?contributors .
       ?contributors nva:identity ?identity .
       ?identity nva:name ?contributorName .
   }

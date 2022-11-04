@@ -30,8 +30,7 @@ public final class SchemaOrgDocument {
     public static final ByteArrayInputStream ONTOLOGY_MAPPINGS =
             new ByteArrayInputStream(stringFromResources(Path.of("subtype_mappings.ttl"))
                     .getBytes(StandardCharsets.UTF_8));
-    public static final Query QUERY =
-            QueryFactory.create(stringFromResources(Path.of("schema_org_conversion.sparql")));
+    public static final String QUERY = stringFromResources(Path.of("schema_org_conversion.sparql"));
     public static final String JSON_LD_FRAME_TEMPLATE = stringFromResources(Path.of("json_ld_frame.json"));
     public static final Query CONSTRUCT_SCHEMA_VIEW_QUERY =
             QueryFactory.create(stringFromResources(Path.of("type_selector.sparql")));
@@ -42,7 +41,8 @@ public final class SchemaOrgDocument {
     }
 
     private static Model extractSchemaView(PublicationResponse publicationResponse) {
-        try (var queryExecution = QueryExecutionFactory.create(QUERY, getModelWithMappings(publicationResponse))) {
+        var query = QueryFactory.create(QUERY);
+        try (var queryExecution = QueryExecutionFactory.create(query, getModelWithMappings(publicationResponse))) {
             return queryExecution.execConstruct();
         }
     }
