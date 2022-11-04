@@ -16,6 +16,7 @@ import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFWriter;
+import org.apache.jena.sys.JenaSystem;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +37,7 @@ public final class SchemaOrgDocument {
     private final PublicationResponse publication;
 
     public SchemaOrgDocument(Publication publication) {
+        JenaSystem.init();
         this.publication = PublicationMapper.convertValue(publication, PublicationResponse.class);
     }
 
@@ -95,6 +97,8 @@ public final class SchemaOrgDocument {
 
     public String getRepresentation() {
         var input = extractSchemaView();
-        return !input.isEmpty() ? getJsonLdStringOfModel(input) : EMPTY_JSON_OBJECT;
+        var value = !input.isEmpty() ? getJsonLdStringOfModel(input) : EMPTY_JSON_OBJECT;
+        JenaSystem.shutdown();
+        return value;
     }
 }
