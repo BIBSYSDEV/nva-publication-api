@@ -1,7 +1,6 @@
 package no.unit.nva.cristin;
 
 import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
-import static no.unit.nva.cristin.CristinImportConfig.singleLineObjectMapper;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
@@ -13,14 +12,13 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
-import java.net.URI;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -46,7 +44,6 @@ import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTitle;
-import org.apache.commons.lang3.RandomStringUtils;
 
 public final class CristinDataGenerator {
     
@@ -57,13 +54,6 @@ public final class CristinDataGenerator {
     public static final int USE_WHOLE_ARRAY = -1;
     public static final int NUMBER_OF_KNOWN_SECONDARY_CATEGORIES = 1;
     public static final String ID_FIELD = "id";
-    public static final String NULL_KEY = "null";
-    public static final int MIN_DOI_PREFIX_SUBPART_LENGTH = 3;
-    public static final int MAX_DOI_PREFIX_SUBPART_LENGTH = 10;
-    public static final String DOI_SUBPART_DELIMITER = ".";
-    public static final String DOI_PREFIX_SUFFIX_SEPARATOR = "/";
-    public static final String DOI_PREFIX_FIRST_SUBPART = "10";
-    public static final int MIN_SUFFIX_PARTS_NUMBER = 2;
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
     private static final int MIDDLE_INDEX_OF_ISSN_STRING = 4;
@@ -205,11 +195,7 @@ public final class CristinDataGenerator {
     public static CristinObject randomBook(CristinSecondaryCategory secondaryCategory) {
         return createRandomBookWithSpecifiedSecondaryCategory(secondaryCategory);
     }
-    
-    public static String singleRandomObjectAsString() {
-        return newCristinObject(0).toJsonString();
-    }
-    
+
     public static JsonNode objectWithCustomMainCategory(String customMainCategory) throws JsonProcessingException {
         return cristinObjectWithUnexpectedValue(randomObject(), customMainCategory, MAIN_CATEGORY_FIELD);
     }
@@ -217,17 +203,6 @@ public final class CristinDataGenerator {
     public static JsonNode objectWithCustomSecondaryCategory(String customSecondaryCategory)
         throws JsonProcessingException {
         return cristinObjectWithUnexpectedValue(randomObject(), customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
-    }
-    
-    public static String randomDataAsString() {
-        return randomObjects()
-                   .map(CristinDataGenerator::toJsonString)
-                   .collect(Collectors.joining(System.lineSeparator()));
-    }
-    
-    public static Stream<CristinObject> randomObjects() {
-        return IntStream.range(0, 100).boxed()
-                   .map(CristinDataGenerator::newCristinObject);
     }
     
     public static JsonNode objectWithoutId() throws JsonProcessingException {
@@ -278,12 +253,6 @@ public final class CristinDataGenerator {
     
     public static CristinObject newCristinObjectWithRoleCode(CristinContributorRoleCode roleCode) {
         return createObjectWithCristinContributorRoleCode(0, createContributors(roleCode));
-    }
-    
-    public static JsonNode injectCustomSecondaryCategoryIntoCristinObject(CristinObject cristinObject,
-                                                                          String customSecondaryCategory)
-        throws JsonProcessingException {
-        return cristinObjectWithUnexpectedValue(cristinObject, customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
     }
     
     public static String randomIsbn13() {
@@ -351,8 +320,7 @@ public final class CristinDataGenerator {
     private static String createIssnWithCheckSum(String issnMissingChecksum, int totalSum) {
         int mod11 = totalSum % 11;
         int checksum = mod11 == 0 ? 0 : 11 - mod11;
-        String issnWithChecksum = checksum == 10 ? issnMissingChecksum + "X" : issnMissingChecksum + checksum;
-        return issnWithChecksum;
+        return checksum == 10 ? issnMissingChecksum + "X" : issnMissingChecksum + checksum;
     }
     
     private static CristinObject randomFeatureArticle() {
@@ -479,21 +447,7 @@ public final class CristinDataGenerator {
                    .withJournalPublication(randomJournalPublictaion())
                    .build();
     }
-    
-    private static CristinObject createRandomBookWithBookReportValues() {
-        return CristinObject.builder()
-                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-                   .withEntryCreationDate(LocalDate.now())
-                   .withMainCategory(CristinMainCategory.BOOK)
-                   .withSecondaryCategory(MONOGRAPH)
-                   .withId(largeRandomNumber())
-                   .withPublicationYear(randomYear())
-                   .withPublicationOwner(randomString())
-                   .withContributors(randomContributors())
-                   .withBookOrReportMetadata(randomBookOrReportMetadata())
-                   .build();
-    }
-    
+
     private static CristinObject createRandomChapterWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
@@ -581,11 +535,7 @@ public final class CristinDataGenerator {
                    .withJournalTitle(randomString())
                    .build();
     }
-    
-    private static String toJsonString(CristinObject cristinObject) {
-        return attempt(() -> singleLineObjectMapper.writeValueAsString(cristinObject)).orElseThrow();
-    }
-    
+
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
@@ -595,13 +545,7 @@ public final class CristinDataGenerator {
         
         return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }
-    
-    private static <T> JsonNode convertToJsonNode(T inputData) {
-        return inputData instanceof JsonNode
-                   ? (JsonNode) inputData
-                   : eventHandlerObjectMapper.convertValue(inputData, JsonNode.class);
-    }
-    
+
     private static CristinSecondaryCategory randomSecondaryCategory() {
         return randomArrayElement(CristinSecondaryCategory.values(), NUMBER_OF_KNOWN_SECONDARY_CATEGORIES);
     }
@@ -664,28 +608,8 @@ public final class CristinDataGenerator {
                    .withAffiliations(List.of(createAffiliation(roleCode)))
                    .build();
     }
-    
-    private static URI randomUri() {
-        String prefix = "https://www.example.org/";
-        String suffix = FAKER.lorem().word() + FAKER.lorem().word();
-        return URI.create(prefix + suffix);
-    }
-    
+
     private static String randomDoiString() {
-        String prefixSecondPart = RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
-            MAX_DOI_PREFIX_SUBPART_LENGTH);
-        String suffix = randomDoiSuffix();
-        return DOI_PREFIX_FIRST_SUBPART
-               + DOI_SUBPART_DELIMITER
-               + prefixSecondPart
-               + DOI_PREFIX_SUFFIX_SEPARATOR
-               + suffix;
-    }
-    
-    private static String randomDoiSuffix() {
-        return IntStream.range(1, MIN_SUFFIX_PARTS_NUMBER + RANDOM.nextInt(4)).boxed()
-                   .map(ignored -> RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
-                       MAX_DOI_PREFIX_SUBPART_LENGTH))
-                   .collect(Collectors.joining(DOI_SUBPART_DELIMITER));
+        return randomDoi().toString().replace("https://doi.org/", "");
     }
 }
