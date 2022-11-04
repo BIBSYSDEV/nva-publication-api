@@ -111,6 +111,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createSchemaOrgRepresentation(Publication publication) {
-        return SchemaOrgDocument.fromPublication(publication);
+        return new SchemaOrgDocument(publication).getRepresentation();
     }
 }

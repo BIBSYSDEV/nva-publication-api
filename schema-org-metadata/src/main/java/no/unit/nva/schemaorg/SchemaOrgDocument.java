@@ -35,33 +35,34 @@ public final class SchemaOrgDocument {
     public static final Query CONSTRUCT_SCHEMA_VIEW_QUERY =
             QueryFactory.create(stringFromResources(Path.of("type_selector.sparql")));
     public static final String EMPTY_JSON_OBJECT = "{}";
+    private final PublicationResponse publication;
 
-    private SchemaOrgDocument() {
-        // NO-OP
+    public SchemaOrgDocument(Publication publication) {
+        this.publication = PublicationMapper.convertValue(publication, PublicationResponse.class);
     }
 
-    private static Model extractSchemaView(PublicationResponse publicationResponse) {
+    private Model extractSchemaView() {
         var query = QueryFactory.create(QUERY);
-        try (var queryExecution = QueryExecutionFactory.create(query, getModelWithMappings(publicationResponse))) {
+        try (var queryExecution = QueryExecutionFactory.create(query, getModelWithMappings())) {
             return queryExecution.execConstruct();
         }
     }
 
-    private static Model getModelWithMappings(PublicationResponse publicationResponse) {
+    private Model getModelWithMappings() {
         var model = ModelFactory.createDefaultModel();
-        RDFDataMgr.read(model, toInputStream(publicationResponse), Lang.JSONLD);
+        RDFDataMgr.read(model, toInputStream(publication), Lang.JSONLD);
         RDFDataMgr.read(model, ONTOLOGY_MAPPINGS, Lang.TURTLE);
         return model;
     }
 
-    private static ByteArrayInputStream toInputStream(PublicationResponse publication) {
+    private ByteArrayInputStream toInputStream(PublicationResponse publication) {
         var x = attempt(() -> MAPPER.writeValueAsString(publication));
         return x.map(String::getBytes)
                 .map(ByteArrayInputStream::new)
                 .orElseThrow();
     }
 
-    private static String getJsonLdStringOfModel(Model result) {
+    private String getJsonLdStringOfModel(Model result) {
         return RDFWriter.create()
                 .format(RDFFormat.JSONLD10_FRAME_PRETTY)
                 .context(getJsonLdWriteContext(extractTypeForFrame(result)))
@@ -70,7 +71,7 @@ public final class SchemaOrgDocument {
                 .asString();
     }
 
-    private static JsonLDWriteContext getJsonLdWriteContext(String type) {
+    private JsonLDWriteContext getJsonLdWriteContext(String type) {
         var context = new JsonLDWriteContext();
         context.setOptions(getJsonLdOptions());
         var frame = String.format(JSON_LD_FRAME_TEMPLATE, type);
@@ -78,14 +79,14 @@ public final class SchemaOrgDocument {
         return context;
     }
 
-    private static JsonLdOptions getJsonLdOptions() {
+    private JsonLdOptions getJsonLdOptions() {
         var jsonLdOptions = new JsonLdOptions();
         jsonLdOptions.setOmitGraph(true);
         jsonLdOptions.setPruneBlankNodeIdentifiers(true);
         return jsonLdOptions;
     }
 
-    private static String extractTypeForFrame(Model model) {
+    private String extractTypeForFrame(Model model) {
         try (var queryExecution = QueryExecutionFactory.create(CONSTRUCT_SCHEMA_VIEW_QUERY, model)) {
             var results = queryExecution.execSelect();
             var queryParameter = results.getResultVars().stream().collect(SingletonCollector.collect());
@@ -93,9 +94,8 @@ public final class SchemaOrgDocument {
         }
     }
 
-    public static String fromPublication(Publication publication) {
-        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
-        var input = extractSchemaView(publicationResponse);
+    public String getRepresentation() {
+        var input = extractSchemaView();
         return !input.isEmpty() ? getJsonLdStringOfModel(input) : EMPTY_JSON_OBJECT;
     }
 }
