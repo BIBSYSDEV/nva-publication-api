@@ -6,5 +6,6 @@ dependencies {
     implementation libs.bundles.jena
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
+    testImplementation project(':publication-testing')
 
 }

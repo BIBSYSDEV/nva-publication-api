@@ -3,3 +3,47 @@
 @prefix schema: <https://schema.org/> .
 
 nva:JournalArticle rdfs:subClassOf schema:ScholarlyArticle .
+nva:ArtisticDesign rdfs:subClassOf schema:CreativeWork .
+nva:JournalIssue rdfs:subClassOf schema:PublicationIssue . # needs partOf relation
+nva:ConferenceAbstract rdfs:subClassOf schema:PresentationDigitalDocument .
+nva:ChapterInReport rdfs:subClassOf schema:Chapter . # Probably needs data about the container in "schema:partOf"
+nva:DataSet rdfs:subClassOf schema:Dataset .
+nva:JournalCorrigendum rdfs:subClassOf schema:ScholarlyArticle . # needs genre?
+nva:ReportBookOfAbstract rdfs:subClassOf schema:Report .
+nva:MediaPodcast rdfs:subClassOf schema:PodcastEpisode .
+nva:BookMonograph rdfs:subClassOf schema:Book .
+nva:MovingPicture rdfs:subClassOf schema:Movie .
+nva:JournalInterview rdfs:subClassOf schema:ScholarlyArticle .
+nva:FeatureArticle rdfs:subClassOf schema:ScholarlyArticle .
+nva:ReportWorkingPaper rdfs:subClassOf schema:Report .
+nva:ReportPolicy rdfs:subClassOf schema:Report .
+nva:DegreePhd rdfs:subClassOf schema:Thesis .
+nva:DegreeBachelor rdfs:subClassOf schema:Thesis .
+nva:JournalLeader rdfs:subClassOf schema:ScholarlyArticle .
+nva:MediaInterview rdfs:subClassOf schema:NewsArticle .
+nva:ConferencePoster rdfs:subClassOf schema:PresentationDigitalDocument .
+nva:ChapterArticle rdfs:subClassOf schema:Chapter, schema:ScholarlyArticle .
+nva:Lecture rdfs:subClassOf schema:PresentationDigitalDocument .
+nva:VisualArts rdfs:subClassOf schema:VisualArtwork .
+nva:ReportResearch rdfs:subClassOf schema:Report .
+nva:ChapterConferenceAbstract rdfs:subClassOf schema:PresentationDigitalDocument .
+nva:BookAbstracts rdfs:subClassOf schema:Book .
+nva:MediaParticipationInRadioOrTv rdfs:subClassOf schema:BroadcastEvent .
+nva:JournalLetter rdfs:subClassOf schema:ScholarlyArticle .
+nva:PerformingArts rdfs:subClassOf schema:Play .
+nva:DegreeLicentiate rdfs:subClassOf schema:Thesis .
+nva:MediaBlogPost rdfs:subClassOf schema:BlogPosting .
+nva:ConferenceLecture rdfs:subClassOf schema:PresentationDigitalDocument .
+nva:MusicPerformance rdfs:subClassOf schema:MusicEvent .
+nva:DataManagementPlan rdfs:subClassOf schema:CreativeWork . # difficult to know
+nva:DegreeMaster rdfs:subClassOf schema:Thesis .
+nva:LiteraryArts rdfs:subClassOf schema:CreativeWork .
+nva:MediaReaderOpinion rdfs:subClassOf schema:OpinionNewsArticle .
+nva:BookAnthology rdfs:subClassOf schema:Book .
+nva:Map rdfs:subClassOf schema:Map .
+nva:ReportBasic rdfs:subClassOf schema:Report .
+nva:OtherStudentWork rdfs:subClassOf schema:CreativeWork .
+nva:OtherPresentation rdfs:subClassOf schema:PresentationDigitalDocument .
+nva:JournalReview rdfs:subClassOf schema:ScholarlyArticle .
+nva:MediaFeatureArticle rdfs:subClassOf schema:NewsArticle .
+nva:Architecture rdfs:subClassOf schema:CreativeWork .
