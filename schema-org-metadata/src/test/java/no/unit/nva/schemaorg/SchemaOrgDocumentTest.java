@@ -24,7 +24,7 @@ class SchemaOrgDocumentTest {
     @Test
     void shouldReturnSchemaOrgDocumentWithTypeWhenInputIsExpandedJournalArticleResource() {
         var publication = randomPublication(JournalArticle.class);
-        var actual = new SchemaOrgDocument(publication).getRepresentation();
+        var actual = SchemaOrgDocument.fromPublication(publication);
         var jsonNode = attempt(() -> MAPPER.readTree(actual)).orElseThrow();
         assertThatBasicDataIsInPlace(publication, jsonNode);
     }
@@ -33,7 +33,7 @@ class SchemaOrgDocumentTest {
     @Test
     void shouldReturnEmptyJsonObjectWhenTypeIsNotJournalArticle() {
         var publication = randomPublication(BookMonograph.class);
-        var actual = new SchemaOrgDocument(publication).getRepresentation();
+        var actual = SchemaOrgDocument.fromPublication(publication);
         var jsonNode = attempt(() -> MAPPER.readTree(actual)).orElseThrow();
         assertThat(jsonNode.isObject(), is(true));
         assertThat(jsonNode.isEmpty(), is(true));
