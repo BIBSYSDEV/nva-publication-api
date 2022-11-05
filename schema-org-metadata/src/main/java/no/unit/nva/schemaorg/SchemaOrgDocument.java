@@ -32,9 +32,6 @@ public final class SchemaOrgDocument {
 
     public static final Logger logger = LoggerFactory.getLogger(SchemaOrgDocument.class);
     public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
-    public static final ByteArrayInputStream ONTOLOGY_MAPPINGS =
-            new ByteArrayInputStream(stringFromResources(Path.of("subtype_mappings.ttl"))
-                    .getBytes(StandardCharsets.UTF_8));
     public static final String QUERY = stringFromResources(Path.of("schema_org_conversion.sparql"));
     public static final String JSON_LD_FRAME_TEMPLATE = stringFromResources(Path.of("json_ld_frame.json"));
     public static final String CONSTRUCT_SCHEMA_VIEW_QUERY = stringFromResources(Path.of("type_selector.sparql"));
@@ -57,10 +54,13 @@ public final class SchemaOrgDocument {
     private Model getModelWithMappings() {
         var model = ModelFactory.createDefaultModel();
         RDFDataMgr.read(model, toInputStream(publication), Lang.JSONLD);
-        RDFDataMgr.read(model, ONTOLOGY_MAPPINGS, Lang.TURTLE);
+        ByteArrayInputStream ontologyMappings = new ByteArrayInputStream(stringFromResources(Path.of("subtype_mappings.ttl"))
+                .getBytes(StandardCharsets.UTF_8));
+        RDFDataMgr.read(model, ontologyMappings, Lang.TURTLE);
         var stringWriter = new StringWriter();
         RDFDataMgr.write(stringWriter, model,  Lang.TURTLE);
         logger.info("Model: {}", stringWriter);
+
         return model;
     }
 
