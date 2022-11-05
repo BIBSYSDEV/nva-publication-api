@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
@@ -34,35 +35,38 @@ public final class SchemaOrgDocument {
     public static final String JSON_LD_FRAME_TEMPLATE = stringFromResources(Path.of("json_ld_frame.json"));
     public static final String CONSTRUCT_SCHEMA_VIEW_QUERY = stringFromResources(Path.of("type_selector.sparql"));
     public static final String EMPTY_JSON_OBJECT = "{}";
+    public static final String MAPPINGS = stringFromResources(Path.of("subtype_mappings.ttl"));
 
     private SchemaOrgDocument() {
         // NO-OP
     }
 
-    private static Model extractSchemaView(PublicationResponse publication) {
+    public static String fromPublication(Publication publication) {
+        var generatedRepresentation = extractSchemaRepresentation(publication);
+        return !generatedRepresentation.isEmpty() ? getJsonLdStringOfModel(generatedRepresentation) : EMPTY_JSON_OBJECT;
+    }
+
+    private static Model extractSchemaRepresentation(Publication publication) {
         var query = QueryFactory.create(QUERY);
         try (var queryExecution = QueryExecutionFactory.create(query, getModelWithMappings(publication))) {
             return queryExecution.execConstruct();
         }
     }
 
-    private static Model getModelWithMappings(PublicationResponse publication) {
+    private static Model getModelWithMappings(Publication publication) {
+        var publicationResponse = toPublicationResponse(publication);
         var model = ModelFactory.createDefaultModel();
-        RDFDataMgr.read(model, toInputStream(publication), Lang.JSONLD);
+        RDFDataMgr.read(model, toInputStream(publicationResponse), Lang.JSONLD);
         RDFDataMgr.read(model, loadMappings(), Lang.TURTLE);
         return model;
     }
 
-    private static ByteArrayInputStream loadMappings() {
-        return new ByteArrayInputStream(stringFromResources(Path.of("subtype_mappings.ttl"))
-                .getBytes(StandardCharsets.UTF_8));
+    private static InputStream loadMappings() {
+        return new ByteArrayInputStream(MAPPINGS.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static ByteArrayInputStream toInputStream(PublicationResponse publication) {
-        var x = attempt(() -> MAPPER.writeValueAsString(publication));
-        return x.map(String::getBytes)
-                .map(ByteArrayInputStream::new)
-                .orElseThrow();
+    private static InputStream toInputStream(PublicationResponse publication) {
+        return attempt(() -> MAPPER.writeValueAsBytes(publication)).map(ByteArrayInputStream::new).orElseThrow();
     }
 
     private static String getJsonLdStringOfModel(Model result) {
@@ -77,9 +81,12 @@ public final class SchemaOrgDocument {
     private static JsonLDWriteContext getJsonLdWriteContext(String type) {
         var context = new JsonLDWriteContext();
         context.setOptions(getJsonLdOptions());
-        var frame = String.format(JSON_LD_FRAME_TEMPLATE, type);
-        context.setFrame(frame);
+        context.setFrame(createFrame(type));
         return context;
+    }
+
+    private static String createFrame(String type) {
+        return String.format(JSON_LD_FRAME_TEMPLATE, type);
     }
 
     private static JsonLdOptions getJsonLdOptions() {
@@ -100,10 +107,5 @@ public final class SchemaOrgDocument {
 
     private static PublicationResponse toPublicationResponse(Publication publication) {
         return PublicationMapper.convertValue(publication, PublicationResponse.class);
-    }
-
-    public static String fromPublication(Publication publication) {
-        var input = extractSchemaView(toPublicationResponse(publication));
-        return !input.isEmpty() ? getJsonLdStringOfModel(input) : EMPTY_JSON_OBJECT;
     }
 }
