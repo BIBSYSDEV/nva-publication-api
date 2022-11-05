@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
@@ -55,10 +56,11 @@ public final class SchemaOrgDocument {
 
     private Model getModelWithMappings() {
         var model = ModelFactory.createDefaultModel();
-        logger.info("Using publication: {}", attempt(() -> MAPPER.writeValueAsString(publication.toString()))
-                .orElseThrow());
         RDFDataMgr.read(model, toInputStream(publication), Lang.JSONLD);
         RDFDataMgr.read(model, ONTOLOGY_MAPPINGS, Lang.TURTLE);
+        var stringWriter = new StringWriter();
+        RDFDataMgr.write(stringWriter, model,  Lang.TURTLE);
+        logger.info("Model: {}", stringWriter);
         return model;
     }
 
