@@ -1,0 +1,11 @@
+dependencies {
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation libs.nva.datamodel.core
+
+    implementation libs.bundles.jena
+    testImplementation libs.bundles.testing
+    testImplementation libs.nva.identifiers
+    testImplementation project(':publication-testing')
+    testImplementation 'uk.co.datumedge:hamcrest-json:0.2'
+}

@@ -8,3 +8,7 @@ plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
 }
+
+test {
+    environment "ID_NAMESPACE", "https://www.example.org/publication"
+}
