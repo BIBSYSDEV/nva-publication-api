@@ -22,7 +22,7 @@ nva:DegreeBachelor rdfs:subClassOf schema:Thesis .
 nva:JournalLeader rdfs:subClassOf schema:ScholarlyArticle .
 nva:MediaInterview rdfs:subClassOf schema:NewsArticle .
 nva:ConferencePoster rdfs:subClassOf schema:PresentationDigitalDocument .
-nva:ChapterArticle rdfs:subClassOf schema:Chapter, schema:ScholarlyArticle .
+nva:ChapterArticle rdfs:subClassOf schema:Chapter .
 nva:Lecture rdfs:subClassOf schema:PresentationDigitalDocument .
 nva:VisualArts rdfs:subClassOf schema:VisualArtwork .
 nva:ReportResearch rdfs:subClassOf schema:Report .

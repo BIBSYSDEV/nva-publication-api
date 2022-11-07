@@ -1,28 +1,27 @@
 PREFIX nva: <https://nva.sikt.no/ontology/publication#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX schema: <https://schema.org/>
 
 CONSTRUCT {
-  ?id a ?schemaOrgType ;
+  ?id a ?type ;
     schema:provider <https://sikt.no> ;
     schema:name ?name ;
-    schema:creator [ a schema:Person ;
-      schema:name ?contributorName ] .
+    schema:creator [
+      a schema:Person ;
+      schema:name ?contributor
+    ] .
 
   <https://sikt.no> a schema:Organization ;
       schema:name "Sikt" .
 } WHERE {
-  ?id a nva:Publication .
-  ?id nva:entityDescription ?entityDescription .
-  ?entityDescription nva:mainTitle ?name .
 
-  ?entityDescription nva:reference/nva:publicationInstance ?publicationInstance .
-  ?publicationInstance a ?nvaType .
-  ?nvaType rdfs:subClassOf ?schemaOrgType .
+    ?id a nva:Publication .
+    ?id nva:entityDescription ?entityDescription .
+    ?entityDescription nva:mainTitle ?name .
+    ?entityDescription nva:reference/nva:publicationInstance/rdf:type/rdfs:subClassOf ?type .
 
-  OPTIONAL {
-      ?entityDescription nva:contributor ?contributors .
-      ?contributors nva:identity ?identity .
-      ?identity nva:name ?contributorName .
-  }
+    OPTIONAL {
+        ?id nva:entityDescription/nva:contributor/nva:identity/nva:name ?contributor .
+    }
 }

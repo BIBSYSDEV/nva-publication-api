@@ -69,7 +69,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
-        
         return createResponse(requestInfo, publication);
     }
     
