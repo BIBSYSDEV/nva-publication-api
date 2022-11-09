@@ -93,7 +93,7 @@ public class PublishingRequestCase extends TicketEntry {
         
         if (resourceHasNoTitle(resource)) {
             throwErrorWhenPublishingResourceWithoutMainTitle(resource);
-        } else if (resourceHasNeitherLinkNorFile(resource)) {
+        } else if (resourceHasNoAssociatedArtifacts(resource)) {
             throwErrorWhenPublishingResourceWithoutData(resource);
         }
     }
@@ -249,9 +249,10 @@ public class PublishingRequestCase extends TicketEntry {
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);
         return newPublishingRequest;
     }
-    
-    private static boolean resourceHasNeitherLinkNorFile(Publication resource) {
-        return isNull(resource.getLink()) && emptyResourceFiles(resource);
+
+    // TODO: Remove link check since it is not in use following implementation of AssociatedLink
+    private static boolean resourceHasNoAssociatedArtifacts(Publication resource) {
+        return isNull(resource.getLink()) && hasEmptyAssociatedArtifacts(resource);
     }
     
     private static void throwErrorWhenPublishingResourceWithoutData(Publication resource)
@@ -266,7 +267,7 @@ public class PublishingRequestCase extends TicketEntry {
         return resource.getClass().getDeclaredField(publicationField).getName();
     }
     
-    private static boolean emptyResourceFiles(Publication resource) {
+    private static boolean hasEmptyAssociatedArtifacts(Publication resource) {
         return Optional.ofNullable(resource.getAssociatedArtifacts())
                 .map(AssociatedArtifactList::isEmpty)
                 .orElse(true);
