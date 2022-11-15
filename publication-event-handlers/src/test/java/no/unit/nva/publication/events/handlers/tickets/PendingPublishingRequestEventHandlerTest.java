@@ -74,7 +74,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publishingRequest = pendingPublishingRequest();
         var event = createEvent(publishingRequest);
         var customerAllowingPublishing =
-            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval();
+            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval();
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
     
         this.handler = new PendingPublishingRequestEventHandler(ticketService, httpClient, s3Client);
@@ -128,7 +128,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private void callApiOfCustomerAllowingAutomaticPublishing(PublishingRequestCase completedTicket)
             throws IOException {
         var customerAllowingPublishing =
-                mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval();
+                mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval();
 
         var event = createEvent(completedTicket);
 
@@ -155,7 +155,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
     }
     
-    private static String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsAprroval() {
+    private static String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
         return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
             "customer_allowing_publishing.json"));
     }
