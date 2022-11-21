@@ -1,0 +1,27 @@
+apply plugin: 'io.freefair.lombok'
+
+dependencies {
+
+    testImplementation project(":publication-testing")
+    implementation project(":s3-import-commons")
+
+
+    testImplementation libs.nva.testutils
+
+    implementation libs.aws.sdk2.eventbridge
+    implementation libs.aws.sdk2.s3
+    implementation libs.aws.lambda.java.core
+    implementation libs.aws.lambda.events
+
+    implementation libs.nva.eventhandlers
+    implementation libs.nva.s3
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation(libs.nva.datamodel.core) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
