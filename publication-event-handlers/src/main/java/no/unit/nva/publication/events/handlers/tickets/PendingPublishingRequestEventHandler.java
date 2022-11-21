@@ -21,12 +21,17 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -38,19 +43,24 @@ public class PendingPublishingRequestEventHandler
     private final S3Driver s3Driver;
     private final TicketService ticketService;
     private final HttpClient httpClient;
+
+    private final ResourceService resourceService;
     
     @JacocoGenerated
     public PendingPublishingRequestEventHandler() {
-        this(defaultPublishingRequestService(), HttpClient.newHttpClient(), DEFAULT_S3_CLIENT);
+        this(ResourceService.defaultService(), defaultPublishingRequestService(), HttpClient.newHttpClient(),
+             DEFAULT_S3_CLIENT);
     }
     
-    protected PendingPublishingRequestEventHandler(TicketService ticketService,
+    protected PendingPublishingRequestEventHandler(ResourceService resourceService,
+                                                   TicketService ticketService,
                                                    HttpClient httpClient,
                                                    S3Client s3Client) {
         super(EventReference.class);
-        this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
+        this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.httpClient = httpClient;
+        this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
     
     @Override
@@ -60,11 +70,33 @@ public class PendingPublishingRequestEventHandler
         var updateEvent = parseInput(input);
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
         if (customerAllowsPublishing(publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
-            attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED)).orElseThrow();
+            attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED))
+                .orElse(fail -> logFailingTicketStatusUpdate(fail.getException()));
         }
+        if (customerAllowsMetadataPublishing(publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
+            publishMetadata(publishingRequest);
+        }
+
         return null;
     }
-    
+
+    private void publishMetadata(PublishingRequestCase publishingRequest) {
+        var userInstance = UserInstance.create(publishingRequest.getOwner(), publishingRequest.getCustomerId());
+        attempt(() -> resourceService.publishPublicationMetadata(userInstance,
+                                                                 publishingRequest.extractPublicationIdentifier()))
+            .orElse(fail -> logError(fail.getException()));
+    }
+
+    private PublishPublicationStatusResponse logError(Exception exception) {
+        logger.warn(ExceptionUtils.stackTraceInSingleLine(exception));
+        return null;
+    }
+
+    private TicketEntry logFailingTicketStatusUpdate(Exception exception) {
+        logError(exception);
+        return null;
+    }
+
     private static boolean ticketHasNotBeenCompleted(PublishingRequestCase publishingRequest) {
         return !TicketStatus.COMPLETED.equals(publishingRequest.getStatus());
     }
@@ -79,6 +111,12 @@ public class PendingPublishingRequestEventHandler
         var customerId = publishingRequest.getCustomerId();
         var fetchCustomerResult = attempt(() -> fetchCustomer(customerId)).orElseThrow();
         return fetchCustomerResult.isKnownThatCustomerAllowsPublishing();
+    }
+
+    private boolean customerAllowsMetadataPublishing(PublishingRequestCase publishingRequest) {
+        var customerId = publishingRequest.getCustomerId();
+        var fetchCustomerResult = attempt(() -> fetchCustomer(customerId)).orElseThrow();
+        return fetchCustomerResult.isKnownThatCustomerAllowsPublishingOfMetadata();
     }
     
     private HttpTransactionResult fetchCustomer(URI customerId) throws IOException, InterruptedException {
@@ -113,6 +151,11 @@ public class PendingPublishingRequestEventHandler
         
         public boolean isKnownThatCustomerAllowsPublishing() {
             return customer.map(CustomerDto::customerAllowsRegistratorsToPublishDataAndMetadata)
+                       .orElse(fail -> returnFalseAndLogUnsuccessfulResponse(httpResponse, customerId));
+        }
+
+        public boolean isKnownThatCustomerAllowsPublishingOfMetadata() {
+            return customer.map(CustomerDto::customerAllowsRegistratorsToPublishMetadata)
                        .orElse(fail -> returnFalseAndLogUnsuccessfulResponse(httpResponse, customerId));
         }
         

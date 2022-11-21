@@ -41,6 +41,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     
     public static final String PUBLISH_COMPLETED = "Publication is published.";
+
+    public static final String PUBLISH_METADATA_COMPLETED = "Publication metadata is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
     public static final String RESOURCE_LINK_FIELD = "link";
@@ -87,7 +89,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         
         return publicationUpdate;
     }
-    
+
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
         throws NotFoundException {
         Resource existingResource = readResourceService.getResource(oldOwner, identifier);
@@ -111,7 +113,25 @@ public class UpdateResourceService extends ServiceWithTransactions {
             throw new UnsupportedOperationException("Functionality not specified");
         }
     }
-    
+
+    PublishPublicationStatusResponse publishPublicationMetadata(UserInstance userInstance,
+                                                                SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
+        if (publicationIsPublished(publication) || publicationMetadataPublished(publication)) {
+            return publishMetadataCompletedStatus();
+        } else if (publicationIsDraft(publication)) {
+            publishPublicationMetadata(publication);
+            return publishingInProgressStatus();
+        } else {
+            throw new UnsupportedOperationException("Functionality not specified");
+        }
+    }
+
+    private boolean publicationMetadataPublished(Publication publication) {
+        return PublicationStatus.PUBLISHED_METADATA.equals(publication.getStatus());
+    }
+
     private static boolean publicationIsPublished(Publication publication) {
         return PublicationStatus.PUBLISHED.equals(publication.getStatus());
     }
@@ -122,6 +142,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         publication.setPublishedDate(clockForTimestamps.instant());
         //TODO: the associated artifacts are updated when the Publication is converted to a Resource.
         // make this fact a bit more clear.
+        updatePublicationIncludingStatus(publication);
+    }
+
+    private void publishPublicationMetadata(Publication publication) throws InvalidPublicationException {
+        assertThatPublicationHasMinimumMandatoryFields(publication);
+        publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
+        publication.setPublishedDate(clockForTimestamps.instant());
         updatePublicationIncludingStatus(publication);
     }
     
@@ -181,5 +208,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private PublishPublicationStatusResponse publishCompletedStatus() {
         return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
+    }
+
+    private PublishPublicationStatusResponse publishMetadataCompletedStatus() {
+        return new PublishPublicationStatusResponse(PUBLISH_METADATA_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
     }
 }
