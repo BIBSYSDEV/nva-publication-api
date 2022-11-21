@@ -23,7 +23,6 @@ import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -71,7 +70,7 @@ public class PendingPublishingRequestEventHandler
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
         if (customerAllowsPublishing(publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
             attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED))
-                .orElse(fail -> logFailingTicketStatusUpdate(fail.getException()));
+                .orElseThrow();
         }
         if (customerAllowsMetadataPublishing(publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
             publishMetadata(publishingRequest);
@@ -89,11 +88,6 @@ public class PendingPublishingRequestEventHandler
 
     private PublishPublicationStatusResponse logError(Exception exception) {
         logger.warn(ExceptionUtils.stackTraceInSingleLine(exception));
-        return null;
-    }
-
-    private TicketEntry logFailingTicketStatusUpdate(Exception exception) {
-        logError(exception);
         return null;
     }
 
