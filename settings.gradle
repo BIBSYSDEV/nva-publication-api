@@ -14,3 +14,5 @@ include 'cristin-import'
 include 'resource-enricher'
 include 'tickets'
 include 'schema-org-metadata'
+include 'brage-import'
+

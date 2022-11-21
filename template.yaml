@@ -38,6 +38,10 @@ Parameters:
   AthenaQueriesBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Athena/QueriesBucketName'
+  BrageMigrationInputBucketName:
+    Type: 'String'
+    Default: "brage-migration-input-files"
+    Description: Name of bucket for input brage migration files
 
   MaxConcurrency:
     Type: Number
@@ -622,6 +626,27 @@ Resources:
 
   #==========================Event Lambda functions====================================================
 
+  BrageMigrationEventConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: brage-import
+      Handler: no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer::handleRequest
+      Runtime: java11
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        BrageMigrationEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref BrageMigrationInputBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.json'
+
+
   DeletionProcessInitializationHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -1184,7 +1209,7 @@ Resources:
     Properties:
       Name: !Join [ '',[ 'resource-service-internal-bus',!Ref Suffix ] ]
 
- #=========================Cristin-Athena===================================================================
+  #=========================Cristin-Athena===================================================================
 
   CristinImportDatabase:
     Type: AWS::Glue::Database
@@ -1388,4 +1413,17 @@ Resources:
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
 
+
+  #============================S3 buckets===============================================================
+
+  BrageMigrationInputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub "${BrageMigrationInputBucketName}-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteContentAfter3Days
+            Status: Enabled
+            ExpirationInDays: 3
 
