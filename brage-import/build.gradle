@@ -13,6 +13,8 @@ dependencies {
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
 
+    implementation libs.bundles.logging
+
     implementation libs.nva.eventhandlers
     implementation libs.nva.s3
     implementation libs.nva.core
