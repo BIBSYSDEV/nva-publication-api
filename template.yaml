@@ -630,7 +630,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.BrageEntryEventConsumer::handleRequest
+      Handler: no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer::handleRequest
       Runtime: java11
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
