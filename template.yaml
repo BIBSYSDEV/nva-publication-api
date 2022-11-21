@@ -631,6 +631,7 @@ Resources:
     Properties:
       CodeUri: brage-import
       Handler: no.sikt.nva.brage.migration.BrageEntryEventConsumer::handleRequest
+      Runtime: java11
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Events:
