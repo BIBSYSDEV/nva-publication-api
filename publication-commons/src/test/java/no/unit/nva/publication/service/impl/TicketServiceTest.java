@@ -136,7 +136,8 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "Publication status: {0}")
     @DisplayName("should throw Error when Doi is requested for ineligible publication ")
-    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED"}, mode = Mode.EXCLUDE)
+    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED", "PUBLISHED_METADATA"},
+        mode = Mode.EXCLUDE)
     void shouldThrowErrorWhenDoiIsRequestedForIneligiblePublication(PublicationStatus status)
         throws ApiGatewayException {
         var publication = persistPublication(owner, status);

@@ -1,6 +1,8 @@
 package no.unit.nva.publication.fetch;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -12,17 +14,23 @@ import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.util.List;
+import java.util.Set;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.AccessRight;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -30,6 +38,7 @@ import nva.commons.core.JacocoGenerated;
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     
     public static final Clock CLOCK = Clock.systemDefaultZone();
+    private static final Set<PublicationStatus> PUBLICLY_READABLE_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     private final ResourceService resourceService;
     
     @JacocoGenerated
@@ -66,12 +75,27 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
-        return createResponse(requestInfo, publication);
+        if (PUBLICLY_READABLE_STATUSES.contains(publication.getStatus()) || isAuthorized(requestInfo, publication)) {
+            return createResponse(requestInfo, publication);
+        } else {
+            throw new NotFoundException("The requested resource could not be found");
+        }
     }
-    
+
+    private boolean isAuthorized(RequestInfo requestInfo, Publication publication) throws UnauthorizedException {
+        return requestInfo.clientIsInternalBackend() || isAuthorizedClient(requestInfo, publication);
+    }
+
+    private static boolean isAuthorizedClient(RequestInfo requestInfo, Publication publication)
+        throws UnauthorizedException {
+        var publicationOwner = UserInstance.fromPublication(publication);
+        var requester = UserInstance.fromRequestInfo(requestInfo);
+        return publicationOwner.getUsername().equals(requester.getUsername())
+               || requestInfo.userIsAuthorized(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString());
+    }
+
     @Override
     protected Integer getSuccessStatusCode(Void input, String output) {
         return HttpURLConnection.HTTP_OK;

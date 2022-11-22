@@ -1,4 +1,4 @@
 {
-  "publicationWorkflow": "RegistratorPublishesMetadataOnly",
+  "publicationWorkflow": "RegistratorRequiresApprovalForMetadataAndFiles",
   "type": "Customer"
 }

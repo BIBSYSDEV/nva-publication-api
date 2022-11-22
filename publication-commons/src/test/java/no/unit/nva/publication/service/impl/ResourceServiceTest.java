@@ -5,6 +5,7 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -107,6 +108,9 @@ import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 
 class ResourceServiceTest extends ResourcesLocalTest {
     
@@ -482,7 +486,41 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         assertThat(actualResource, is(equalTo(expectedResource)));
     }
-    
+
+    @Test
+    void shouldPublishResourceMetadataWhenClientRequestsToPublish() throws ApiGatewayException {
+        var resource = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(resource);
+        resourceService.publishPublicationMetadata(userInstance, resource.getIdentifier());
+        var actualResource = resourceService.getPublication(resource);
+        var expectedResource = resource.copy()
+                                   .withStatus(PUBLISHED_METADATA)
+                                   .withModifiedDate(actualResource.getModifiedDate())
+                                   .withPublishedDate(actualResource.getPublishedDate())
+                                   .build();
+
+        assertThat(actualResource, is(equalTo(expectedResource)));
+    }
+
+    @ParameterizedTest(name = "Should not change publication status when user requests to publish metadata and "
+                              + "publication status is: {0}")
+    @EnumSource(value = PublicationStatus.class, mode = Mode.INCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
+    void shouldNotUpdatePublicationStatusWhenUserRequestsToPublishMetadataAndStatusIsPublished(PublicationStatus status)
+        throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication().copy().withStatus(status).build();
+        var resource = resourceService.insertPreexistingPublication(publication);
+        var userInstance = UserInstance.fromPublication(resource);
+        resourceService.publishPublicationMetadata(userInstance, resource.getIdentifier());
+        var actualResource = resourceService.getPublication(resource);
+        var expectedResource = resource.copy()
+                                   .withStatus(status)
+                                   .withModifiedDate(actualResource.getModifiedDate())
+                                   .withPublishedDate(actualResource.getPublishedDate())
+                                   .build();
+
+        assertThat(actualResource, is(equalTo(expectedResource)));
+    }
+
     @Test
     void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
