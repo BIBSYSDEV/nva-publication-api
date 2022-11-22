@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(":s3-import-commons")
     testImplementation libs.nva.testutils
 
     implementation libs.aws.sdk2.s3
@@ -6,6 +7,8 @@ dependencies {
     implementation libs.aws.lambda.events
 
     implementation libs.bundles.logging
+
+    implementation libs.bundles.jackson
 
     implementation libs.nva.s3
     implementation libs.nva.core

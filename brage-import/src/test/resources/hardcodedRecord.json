@@ -1,0 +1,60 @@
+{
+  "customerId" : "https://api.dev.nva.aws.unit.no/customer/b4497570-2903-49a2-9c2a-d6ab8b0eacc2",
+  "bareOrigin" : "file:///home/anette/Downloads/Brage/NVE/2488796/98/",
+  "id" : "http://hdl.handle.net/11250/2500669",
+  "publisherAuthority" : null,
+  "type" : {
+    "brage" : [ "Report" ],
+    "nva" : "Report"
+  },
+  "spatialCoverage" : "Norge",
+  "language" : {
+    "brage" : [ "eng" ],
+    "nva" : "http://lexvo.org/id/iso639-3/eng"
+  },
+  "publication" : {
+    "issn" : "1501-2832",
+    "isbn" : "9788241009518",
+    "publisher" : "NVE",
+    "id" : "450187"
+  },
+  "entityDescription" : {
+    "descriptions" : [ ],
+    "abstracts" : [ "In order to enhance the accuracy and precision of the snow maps, and to remove the detected significant systematic biases, a New revised version (v.1.1.1) of the seNorge snow model was developed during 2012-2013. This report summarizes the revisions made to the new seNorge snow model (v.1.1.1), and\r\ndescribes in some more details the development of the new snow melt module, based on statistical analysis of NVEs snow pillow data, as well as the new addition to the model for estimation of the snow distribution and fraction of snow-covered area in the model grid cells." ],
+    "publicationDate" : {
+      "brage" : "2014",
+      "nva" : "2014"
+    },
+    "mainTitle" : "New version (v.1.1.1) of the seNorge snow model and snow maps for Norway",
+    "alternativeTitles" : [ ],
+    "contributors" : [ {
+      "brageRole" : "author",
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "name" : "Saloranta, Tuomo"
+      },
+      "role" : "Author"
+    } ],
+    "tags" : [ "seNorge", "snow", "modelling" ],
+    "publicationInstance" : { }
+  },
+  "recordContent" : {
+    "contentFiles" : [ {
+      "description" : "Datagrunnlag",
+      "license" : {
+        "brageLicense" : null,
+        "nvaLicense" : {
+          "identifier" : "Rights Reserved",
+          "type" : "License"
+        }
+      },
+      "filename" : "rapport2014_06.pdf",
+      "bundleType" : "ORIGINAL",
+      "identifier" : "bf7c6496-f052-47f4-8ba3-e065ece24471"
+    } ]
+  },
+  "errors" : [ ],
+  "warnings" : [ ],
+  "brageLocation" : "2488796/98"
+}
