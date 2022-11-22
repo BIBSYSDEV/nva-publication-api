@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publication> {
+
     private static final int SINGLE_EXPECTED_RECORD = 0;
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
 
@@ -41,7 +42,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail) {
-        logger.error("Oh no!, there is poop in the input data");
+        logger.error("Could not convert brage record to nva publication");
         return new RuntimeException(fail.getException());
     }
 
@@ -52,7 +53,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private Publication convertBrageRecordToNvaPublication(Record record) {
         return BrageNvaMapper.toNvaPublication(record);
-
     }
 
     private Record getBrageRecordFromS3(S3Event event) throws JsonProcessingException {
