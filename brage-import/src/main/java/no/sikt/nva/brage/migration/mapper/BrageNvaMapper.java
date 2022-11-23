@@ -29,7 +29,7 @@ public final class BrageNvaMapper {
 
     private static EntityDescription createEntityDescriptionFromBrageRecord(Record brageRecord) {
         var entityDescription = new EntityDescription();
-        entityDescription.setLanguage(brageRecord.getLanguage().getNva());
+        entityDescription.setLanguage(brageRecord.getEntityDescription().getLanguage().getNva());
         return entityDescription;
     }
 }

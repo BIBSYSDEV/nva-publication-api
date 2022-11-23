@@ -68,8 +68,15 @@ public class NvaBrageMigrationDataGenerator {
         record.setDoi(builder.getDoi());
         record.setId(builder.getHandle());
         record.setContentBundle(new ResourceContent(builder.getContentFiles()));
-        record.setLanguage(builder.getLanguage());
+        record.setEntityDescription(createBrageEntityDescription(builder));
         return record;
+    }
+
+    private no.sikt.nva.brage.migration.model.entitydescription.EntityDescription createBrageEntityDescription(
+        Builder builder) {
+        var entityDescription = new no.sikt.nva.brage.migration.model.entitydescription.EntityDescription();
+        entityDescription.setLanguage(builder.getLanguage());
+        return entityDescription;
     }
 
     public static class Builder {

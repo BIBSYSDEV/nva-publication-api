@@ -22,7 +22,6 @@ public class Record {
     private URI doi;
     private Path origin;
     private Type type;
-    private Language language;
     private Boolean publisherAuthority;
     private String rightsholder;
     private String spatialCoverage;
@@ -115,7 +114,7 @@ public class Record {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(entityDescription, customerId, id, doi, origin, type, language, publisherAuthority,
+        return Objects.hash(entityDescription, customerId, id, doi, origin, type, publisherAuthority,
                             rightsholder, spatialCoverage, partOf, publication, contentBundle, publishedDate, cristinId,
                             brageLocation, errors, warnings);
     }
@@ -136,7 +135,6 @@ public class Record {
                && Objects.equals(doi, record.doi)
                && Objects.equals(origin, record.origin)
                && Objects.equals(type, record.type)
-               && Objects.equals(language, record.language)
                && Objects.equals(publisherAuthority, record.publisherAuthority)
                && Objects.equals(rightsholder, record.rightsholder)
                && Objects.equals(spatialCoverage, record.spatialCoverage)
@@ -209,15 +207,6 @@ public class Record {
     @JacocoGenerated
     public void setType(Type type) {
         this.type = type;
-    }
-
-    @JsonProperty("language")
-    public Language getLanguage() {
-        return this.language;
-    }
-
-    public void setLanguage(Language language) {
-        this.language = language;
     }
 
     @JsonProperty("bareOrigin")
