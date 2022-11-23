@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Objects;
 import no.sikt.nva.brage.migration.model.content.ResourceContent;
 import no.sikt.nva.brage.migration.model.entitydescription.EntityDescription;
-import no.sikt.nva.brage.migration.model.entitydescription.Language;
 import no.sikt.nva.brage.migration.model.entitydescription.PublishedDate;
 import nva.commons.core.JacocoGenerated;
 
