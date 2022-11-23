@@ -12,6 +12,7 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.core
     implementation libs.nva.json
+    implementation libs.nva.language
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }

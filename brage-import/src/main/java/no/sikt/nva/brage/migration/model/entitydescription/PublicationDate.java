@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class PublicationDate {
     private final String brage;
     private final String nva;
@@ -18,6 +17,7 @@ public class PublicationDate {
         this.nva = nva;
     }
 
+    @JacocoGenerated
     public String getNva() {
         return nva;
     }
@@ -41,6 +41,7 @@ public class PublicationDate {
         return Objects.equals(brage, that.brage) && Objects.equals(nva, that.nva);
     }
 
+    @JacocoGenerated
     public String getBrage() {
         return brage;
     }

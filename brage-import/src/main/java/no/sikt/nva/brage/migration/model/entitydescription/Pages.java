@@ -3,7 +3,6 @@ package no.sikt.nva.brage.migration.model.entitydescription;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class Pages {
 
 
@@ -13,45 +12,55 @@ public class Pages {
     @SuppressWarnings("PMD.AvoidFieldNameMatchingTypeName")
     private String pages;
 
+    @JacocoGenerated
     public Pages() {
 
     }
 
+    @JacocoGenerated
     public Pages(String bragePages, Range range, String pages) {
         this.bragePages = bragePages;
         this.range = range;
         this.pages = pages;
     }
 
+    @JacocoGenerated
     public String getBragePages() {
         return bragePages;
     }
 
+    @JacocoGenerated
     public void setBragePages(String bragePages) {
         this.bragePages = bragePages;
     }
 
+    @JacocoGenerated
     public Range getRange() {
         return range;
     }
 
+    @JacocoGenerated
     public void setRange(Range range) {
         this.range = range;
     }
 
+    @JacocoGenerated
     public String getPages() {
         return pages;
     }
 
+    @JacocoGenerated
     public void setPages(String pages) {
         this.pages = pages;
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(bragePages, range, pages);
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {

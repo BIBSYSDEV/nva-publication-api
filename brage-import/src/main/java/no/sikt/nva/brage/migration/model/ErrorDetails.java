@@ -5,31 +5,35 @@ import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class ErrorDetails {
     private final Error errorCode;
     private final List<String> details;
 
+    @JacocoGenerated
     public ErrorDetails(Error errorCode, List<String> details) {
         this.errorCode = errorCode;
         this.details = details;
     }
 
+    @JacocoGenerated
     @JsonProperty("errorCode")
     public Error getErrorCode() {
         return errorCode;
     }
 
+    @JacocoGenerated
     @JsonProperty("details")
     public List<String> getDetails() {
         return details;
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(errorCode);
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -42,6 +46,7 @@ public class ErrorDetails {
         return this.errorCode.equals(errorDetail.errorCode);
     }
 
+    @JacocoGenerated
     @Override
     public String toString() {
         return errorCode + " = " + details;

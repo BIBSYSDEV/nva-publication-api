@@ -23,10 +23,12 @@ public class ResourceContent {
         return contentFiles;
     }
 
+    @JacocoGenerated
     public void setContentFiles(List<ContentFile> contentFiles) {
         this.contentFiles = contentFiles;
     }
 
+    @JacocoGenerated
     public ContentFile getContentFileByFilename(String filename) {
         return contentFiles.stream()
                    .filter(contentFile -> contentFile.getFilename().equals(filename))

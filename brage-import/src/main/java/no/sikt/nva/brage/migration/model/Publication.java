@@ -14,20 +14,24 @@ public class Publication {
     private String partOfSeries;
     private String id;
 
+    @JacocoGenerated
     @JsonProperty("id")
     public String getId() {
         return id;
     }
 
+    @JacocoGenerated
     public void setId(String id) {
         this.id = id;
     }
 
+    @JacocoGenerated
     @JsonProperty("partOfSeries")
     public String getPartOfSeries() {
         return partOfSeries;
     }
 
+    @JacocoGenerated
     public void setPartOfSeries(String partOfSeries) {
         this.partOfSeries = partOfSeries;
     }
@@ -62,6 +66,7 @@ public class Publication {
         return journal;
     }
 
+    @JacocoGenerated
     public void setJournal(String journal) {
         this.journal = journal;
     }
@@ -72,6 +77,7 @@ public class Publication {
         return issn;
     }
 
+    @JacocoGenerated
     public void setIssn(String issn) {
         this.issn = issn;
     }
@@ -82,6 +88,7 @@ public class Publication {
         return isbn;
     }
 
+    @JacocoGenerated
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
@@ -92,6 +99,7 @@ public class Publication {
         return publisher;
     }
 
+    @JacocoGenerated
     public void setPublisher(String publisher) {
         this.publisher = publisher;
     }

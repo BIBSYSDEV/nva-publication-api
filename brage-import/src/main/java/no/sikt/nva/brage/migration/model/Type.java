@@ -8,7 +8,6 @@ import nva.commons.core.JacocoGenerated;
 
 
 @SuppressWarnings("PMD.ShortClassName")
-@JacocoGenerated
 public class Type {
 
     private final List<String> brage;
@@ -22,10 +21,12 @@ public class Type {
         this.nva = nva;
     }
 
+    @JacocoGenerated
     public String getNva() {
         return nva;
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(brage, nva);
@@ -44,6 +45,7 @@ public class Type {
         return Objects.equals(getBrage(), type.getBrage()) && Objects.equals(getNva(), type.getNva());
     }
 
+    @JacocoGenerated
     public List<String> getBrage() {
         return brage;
     }

@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.nio.file.Path;
@@ -8,12 +9,10 @@ import java.util.List;
 import java.util.Objects;
 import no.sikt.nva.brage.migration.model.content.ResourceContent;
 import no.sikt.nva.brage.migration.model.entitydescription.EntityDescription;
+import no.sikt.nva.brage.migration.model.entitydescription.Language;
 import no.sikt.nva.brage.migration.model.entitydescription.PublishedDate;
 import nva.commons.core.JacocoGenerated;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
-
-@JacocoGenerated
 @SuppressWarnings("PMD.TooManyFields")
 public class Record {
 
@@ -36,15 +35,18 @@ public class Record {
     private List<ErrorDetails> errors;
     private List<WarningDetails> warnings;
 
+    @JacocoGenerated
     public static <T> boolean listEqualsIgnoreOrder(List<T> list1, List<T> list2) {
         return new HashSet<>(list1).equals(new HashSet<>(list2));
     }
 
+    @JacocoGenerated
     @JsonProperty("partOf")
     public String getPartOf() {
         return partOf;
     }
 
+    @JacocoGenerated
     public void setPartOf(String partOf) {
         this.partOf = partOf;
     }
@@ -54,15 +56,18 @@ public class Record {
         return brageLocation;
     }
 
+    @JacocoGenerated
     public void setBrageLocation(String brageLocation) {
         this.brageLocation = brageLocation;
     }
 
+    @JacocoGenerated
     @JsonProperty("warnings")
     public List<WarningDetails> getWarnings() {
         return warnings;
     }
 
+    @JacocoGenerated
     public void setWarnings(List<WarningDetails> warnings) {
         this.warnings = warnings;
     }
@@ -72,6 +77,7 @@ public class Record {
         return errors;
     }
 
+    @JacocoGenerated
     public void setErrors(List<ErrorDetails> errors) {
         this.errors = errors;
     }
@@ -81,6 +87,7 @@ public class Record {
         return cristinId;
     }
 
+    @JacocoGenerated
     public void setCristinId(String cristinId) {
         this.cristinId = cristinId;
     }
@@ -90,6 +97,7 @@ public class Record {
         return publishedDate;
     }
 
+    @JacocoGenerated
     public void setPublishedDate(PublishedDate publishedDate) {
         this.publishedDate = publishedDate;
     }
@@ -102,6 +110,7 @@ public class Record {
     public void setContentBundle(ResourceContent contentBundle) {
         this.contentBundle = contentBundle;
     }
+
 
     @JacocoGenerated
     @Override
@@ -140,12 +149,13 @@ public class Record {
                && listEqualsIgnoreOrder(warnings, record.warnings);
     }
 
-    @JacocoGenerated
+
     @JsonProperty("spatialCoverage")
     public String getSpatialCoverage() {
         return spatialCoverage;
     }
 
+    @JacocoGenerated
     public void setSpatialCoverage(String spatialCoverage) {
         this.spatialCoverage = spatialCoverage;
     }
@@ -156,6 +166,7 @@ public class Record {
         return publisherAuthority;
     }
 
+    @JacocoGenerated
     public void setPublisherAuthority(Boolean publisherAuthority) {
         this.publisherAuthority = publisherAuthority;
     }
@@ -165,17 +176,18 @@ public class Record {
         return publication;
     }
 
+    @JacocoGenerated
     public void setPublication(Publication publication) {
         this.publication = publication;
     }
 
-    @JacocoGenerated
+
     @JsonProperty("customerId")
     public URI getCustomerId() {
         return this.customerId;
     }
 
-    @JacocoGenerated
+
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
@@ -194,11 +206,11 @@ public class Record {
         return this.type;
     }
 
+    @JacocoGenerated
     public void setType(Type type) {
         this.type = type;
     }
 
-    @JacocoGenerated
     @JsonProperty("language")
     public Language getLanguage() {
         return this.language;
@@ -213,6 +225,7 @@ public class Record {
         return origin;
     }
 
+    @JacocoGenerated
     public void setOrigin(Path origin) {
         this.origin = origin;
     }
@@ -222,6 +235,7 @@ public class Record {
         return rightsholder;
     }
 
+    @JacocoGenerated
     public void setRightsHolder(String rightsholder) {
         this.rightsholder = rightsholder;
     }
@@ -240,6 +254,7 @@ public class Record {
         return entityDescription;
     }
 
+    @JacocoGenerated
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }

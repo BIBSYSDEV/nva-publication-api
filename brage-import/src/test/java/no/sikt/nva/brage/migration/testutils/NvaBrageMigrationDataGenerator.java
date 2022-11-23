@@ -7,11 +7,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
-import no.sikt.nva.brage.migration.model.Language;
+import no.sikt.nva.brage.migration.model.entitydescription.Language;
 import no.sikt.nva.brage.migration.model.Record;
 import no.sikt.nva.brage.migration.model.content.ContentFile;
 import no.sikt.nva.brage.migration.model.content.ResourceContent;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import nva.commons.core.language.LanguageMapper;
@@ -40,9 +41,15 @@ public class NvaBrageMigrationDataGenerator {
                               .withDoi(builder.getDoi())
                               .withHandle(builder.getHandle())
                               .withEntityDescription(createEntityDescription(builder))
-                              .withResourceOwner(createResourceOwner(builder))
+                              .withPublisher(createPublisher(builder))
                               .build();
         return publication;
+    }
+
+    private Organization createPublisher(Builder builder) {
+        var organization = new Organization();
+        organization.setId(builder.getCustomerUri());
+        return organization;
     }
 
     private EntityDescription createEntityDescription(Builder builder) {
@@ -122,12 +129,12 @@ public class NvaBrageMigrationDataGenerator {
                 customerUri = randomUri();
             }
             if (Objects.isNull(language)) {
-                language = randomLanguage();
+                language = randomLanguage1();
             }
             return new NvaBrageMigrationDataGenerator(this);
         }
 
-        private Language randomLanguage() {
+        private Language randomLanguage1() {
             var someWeirdNess = randomInteger(3);
             switch (someWeirdNess) {
                 case 0:

@@ -11,20 +11,24 @@ public class PublishedDate {
     private List<String> brageDates;
     private String nvaDate;
 
+    @JacocoGenerated
     @JsonProperty("brage")
     public List<String> getBrageDates() {
         return brageDates;
     }
 
+    @JacocoGenerated
     public void setBrageDates(List<String> brageDates) {
         this.brageDates = brageDates;
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(brageDates, nvaDate);
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -37,11 +41,13 @@ public class PublishedDate {
         return Objects.equals(brageDates, that.brageDates) && Objects.equals(nvaDate, that.nvaDate);
     }
 
+    @JacocoGenerated
     @JsonProperty("nva")
     public String getNvaDate() {
         return nvaDate;
     }
 
+    @JacocoGenerated
     public void setNvaDate(String nvaDate) {
         this.nvaDate = nvaDate;
     }

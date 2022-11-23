@@ -1,9 +1,7 @@
 package no.sikt.nva.brage.migration.model.license;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public enum NvaLicenseIdentifier {
     CC_BY("CC BY"),
     CC_BY_NC("CC BY-NC"),

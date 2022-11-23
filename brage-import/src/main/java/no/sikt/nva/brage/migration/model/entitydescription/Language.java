@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.model;
+package no.sikt.nva.brage.migration.model.entitydescription;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,7 +6,6 @@ import java.net.URI;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class Language {
 
     private List<String> brage;
@@ -24,6 +23,7 @@ public class Language {
         return brage;
     }
 
+    @JacocoGenerated
     public void setBrage(List<String> brage) {
         this.brage = brage;
     }
@@ -33,6 +33,7 @@ public class Language {
         return nva;
     }
 
+    @JacocoGenerated
     public void setNva(URI nva) {
         this.nva = nva;
     }
