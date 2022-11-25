@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 class InvalidPublicationExceptionTest {
     
     @Test
-    public void getStatusCodeReturnsConflict() {
-        InvalidPublicationException exception = new InvalidPublicationException("someMessage");
+    void getStatusCodeReturnsConflict() {
+        var exception = new InvalidPublicationException("someMessage");
         assertThat(exception.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CONFLICT)));
     }
 }
