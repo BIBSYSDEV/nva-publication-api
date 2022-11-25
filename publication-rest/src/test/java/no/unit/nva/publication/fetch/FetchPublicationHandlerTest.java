@@ -35,6 +35,7 @@ import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -49,7 +50,6 @@ import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -86,7 +86,22 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         output = new ByteArrayOutputStream();
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, environment);
     }
-    
+
+    // TODO: replace test with tests that assert unauth/non-owner/non-curator users do not receive unpublished files
+    //  with published metadata and authenticated users do
+    @Test
+    void shouldReturnStatusPublishedForPublicationsWithStatusPublishedMetadata()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedPublicationWithStatusPublishedMetadata();
+        assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED_METADATA)));
+        var identifier = publication.getIdentifier().toString();
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier), output, context);
+        var response = parseHandlerResponse();
+        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+        var body = response.getBodyObject(PublicationResponse.class);
+        assertThat(body.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
@@ -229,6 +244,15 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createPersistedPublicationWithStatusPublishedMetadata() throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication();
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        SortableIdentifier publicationIdentifier =
+            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        publicationService.publishPublicationMetadata(userInstance, publicationIdentifier);
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 
