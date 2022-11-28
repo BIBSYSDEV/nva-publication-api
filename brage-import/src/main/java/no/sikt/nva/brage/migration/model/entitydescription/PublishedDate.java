@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.model.entitydescription;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
@@ -10,6 +11,16 @@ public class PublishedDate {
 
     private List<String> brageDates;
     private String nvaDate;
+
+    public PublishedDate() {
+    }
+
+    @JsonCreator
+    public PublishedDate(@JsonProperty("brage") List<String> brageDates,
+                         @JsonProperty("nva") String nvaDate) {
+        this.brageDates = brageDates;
+        this.nvaDate = nvaDate;
+    }
 
     @JacocoGenerated
     @JsonProperty("brage")
@@ -51,5 +62,4 @@ public class PublishedDate {
     public void setNvaDate(String nvaDate) {
         this.nvaDate = nvaDate;
     }
-
 }

@@ -30,6 +30,22 @@ public final class BrageNvaMapper {
     private static EntityDescription createEntityDescriptionFromBrageRecord(Record brageRecord) {
         var entityDescription = new EntityDescription();
         entityDescription.setLanguage(brageRecord.getEntityDescription().getLanguage().getNva());
+        entityDescription.setAbstract(getAbstractWhenNonNull(brageRecord));
+        entityDescription.setDescription(getDescriptionsWhenNonNull(brageRecord));
         return entityDescription;
+    }
+
+    private static String getDescriptionsWhenNonNull(Record brageRecord) {
+        if (!brageRecord.getEntityDescription().getDescriptions().isEmpty()) {
+            return brageRecord.getEntityDescription().getDescriptions().get(0);
+        }
+        return null;
+    }
+
+    private static String getAbstractWhenNonNull(Record brageRecord) {
+        if (!brageRecord.getEntityDescription().getAbstracts().isEmpty()) {
+            return brageRecord.getEntityDescription().getAbstracts().get(0);
+        }
+        return null;
     }
 }

@@ -3,7 +3,6 @@ package no.sikt.nva.brage.migration.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -19,7 +18,6 @@ public class Record {
     private URI customerId;
     private URI id;
     private URI doi;
-    private Path origin;
     private Type type;
     private Boolean publisherAuthority;
     private String rightsholder;
@@ -109,11 +107,10 @@ public class Record {
         this.contentBundle = contentBundle;
     }
 
-
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(entityDescription, customerId, id, doi, origin, type, publisherAuthority,
+        return Objects.hash(entityDescription, customerId, id, doi, type, publisherAuthority,
                             rightsholder, spatialCoverage, partOf, publication, contentBundle, publishedDate, cristinId,
                             brageLocation, errors, warnings);
     }
@@ -132,7 +129,6 @@ public class Record {
                && Objects.equals(customerId, record.customerId)
                && Objects.equals(id, record.id)
                && Objects.equals(doi, record.doi)
-               && Objects.equals(origin, record.origin)
                && Objects.equals(type, record.type)
                && Objects.equals(publisherAuthority, record.publisherAuthority)
                && Objects.equals(rightsholder, record.rightsholder)
@@ -145,7 +141,6 @@ public class Record {
                && listEqualsIgnoreOrder(errors, record.errors)
                && listEqualsIgnoreOrder(warnings, record.warnings);
     }
-
 
     @JsonProperty("spatialCoverage")
     public String getSpatialCoverage() {
@@ -178,12 +173,10 @@ public class Record {
         this.publication = publication;
     }
 
-
     @JsonProperty("customerId")
     public URI getCustomerId() {
         return this.customerId;
     }
-
 
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
@@ -206,16 +199,6 @@ public class Record {
     @JacocoGenerated
     public void setType(Type type) {
         this.type = type;
-    }
-
-    @JsonProperty("bareOrigin")
-    public Path getOrigin() {
-        return origin;
-    }
-
-    @JacocoGenerated
-    public void setOrigin(Path origin) {
-        this.origin = origin;
     }
 
     @JsonProperty("rightsholder")
@@ -246,5 +229,4 @@ public class Record {
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }
-
 }

@@ -63,6 +63,13 @@ public class BrageEntryEventConsumerTest {
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
+    @Test
+    void some() {
+        var generator = new NvaBrageMigrationDataGenerator.Builder().build();
+        var record = generator.getBrageRecord();
+        var test = "test";
+    }
+
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {
         var invalidBrageRecord = randomJson();
         var uri = s3Driver.insertFile(randomS3Path(), invalidBrageRecord);

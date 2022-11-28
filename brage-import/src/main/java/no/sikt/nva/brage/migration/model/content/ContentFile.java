@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.model.content;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import java.util.UUID;
@@ -12,10 +13,24 @@ public class ContentFile {
     private String filename;
     private BundleType bundleType;
     private String description;
-    private String unknownType;
     private UUID identifier;
     private License license;
     private String embargoDate;
+
+    @JsonCreator
+    public ContentFile(@JsonProperty("fileName") String filename,
+                       @JsonProperty("bundleType") BundleType bundleType,
+                       @JsonProperty("description") String description,
+                       @JsonProperty("identifier") UUID identifier,
+                       @JsonProperty("license") License license,
+                       @JsonProperty("embargoDate") String embargoDate) {
+        this.filename = filename;
+        this.bundleType = bundleType;
+        this.description = description;
+        this.identifier = identifier;
+        this.license = license;
+        this.embargoDate = embargoDate;
+    }
 
     @JacocoGenerated
     public ContentFile() {
@@ -45,20 +60,9 @@ public class ContentFile {
     }
 
     @JacocoGenerated
-    @JsonProperty("unknownType")
-    public String getUnknownType() {
-        return unknownType;
-    }
-
-    @JacocoGenerated
-    public void setUnknownType(String unknownType) {
-        this.unknownType = unknownType;
-    }
-
-    @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(filename, bundleType, description, unknownType, identifier, license, embargoDate);
+        return Objects.hash(filename, bundleType, description, identifier, license, embargoDate);
     }
 
     @JacocoGenerated
@@ -74,7 +78,6 @@ public class ContentFile {
         return Objects.equals(filename, that.filename)
                && bundleType == that.bundleType
                && Objects.equals(description, that.description)
-               && Objects.equals(unknownType, that.unknownType)
                && Objects.equals(identifier, that.identifier)
                && Objects.equals(license, that.license)
                && Objects.equals(embargoDate, that.embargoDate);
