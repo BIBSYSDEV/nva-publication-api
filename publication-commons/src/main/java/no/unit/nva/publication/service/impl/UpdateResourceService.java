@@ -44,7 +44,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public static final String PUBLISH_METADATA_COMPLETED = "Publication metadata is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
-    public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
     public static final String RESOURCE_LINK_FIELD = "link";
     
     //TODO: fix affiliation update when updating owner

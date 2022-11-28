@@ -11,11 +11,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceService.ASSOCIATED_ARIFACTS_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
-import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -133,8 +130,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final URI SOME_ORG = randomUri();
     public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
     private static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
+    public static final String RESOURCE_LACKS_DATA = "Resource does not have required data to be published:";
     private ResourceService resourceService;
     
     private TicketService ticketService;
@@ -578,14 +575,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
         String actualMessage = exception.getMessage();
-        assertThat(actualMessage, containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+        assertThat(actualMessage, containsString(RESOURCE_LACKS_DATA));
     }
     
     @Test
-    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkAndNoFiles()
-        throws NoSuchFieldException {
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkNoFilesAndNoDoi() {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(null);
+        sampleResource.getEntityDescription().getReference().setDoi(null);
         sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
         Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
     
@@ -593,18 +590,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
         String actualMessage = exception.getMessage();
     
-        assertThat(actualMessage, containsString(InvalidPublicationException.ERROR_MESSAGE_TEMPLATE));
-        assertThat(actualMessage,
-            containsString(sampleResource.getClass().getDeclaredField(RESOURCE_LINK_FIELD).getName()));
-        assertThat(actualMessage,
-            containsString(sampleResource.getClass().getDeclaredField(ASSOCIATED_ARIFACTS_FIELD).getName()));
+        assertThat(actualMessage, containsString(RESOURCE_LACKS_DATA));
     }
     
     @Test
-    void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles() throws ApiGatewayException {
-        
+    void publishResourcePublishesResourceWhenDoiIsPresentButNoFiles() throws ApiGatewayException {
         Publication sampleResource = publicationWithIdentifier();
-        sampleResource.setLink(SOME_LINK);
+        sampleResource.getEntityDescription().getReference().setDoi(randomDoi());
         sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
         Publication savedResource = createPersistedPublicationWithoutDoi();
         Publication updatedResource = publishResource(savedResource);
@@ -612,10 +604,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void publishResourcePublishesResourceWhenResourceHasFilesButNoLink() throws ApiGatewayException {
+    void publishResourcePublishesResourceWhenResourceHasFilesButNoDoi() throws ApiGatewayException {
     
         Publication sampleResource = createPersistedPublicationWithoutDoi();
         sampleResource.setLink(null);
+        sampleResource.getEntityDescription().getReference().setDoi(null);
     
         Publication updatedResource = publishResource(sampleResource);
         assertThat(updatedResource.getStatus(), is(equalTo(PUBLISHED)));
@@ -855,7 +848,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(samplePublication);
         var exception = assertThrows(InvalidPublicationException.class,
             () -> resourceService.publishPublication(userInstance, samplePublication.getIdentifier()));
-        assertThat(exception.getMessage(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+        assertThat(exception.getMessage(), containsString(RESOURCE_LACKS_DATA));
     }
     
     @Test
