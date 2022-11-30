@@ -1,20 +1,17 @@
-package no.sikt.nva.brage.migration.model.content;
+package no.sikt.nva.brage.migration.record.content;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class ResourceContent {
 
     private List<ContentFile> contentFiles;
 
-    public ResourceContent() {
-
-    }
-
-    public ResourceContent(List<ContentFile> contentFiles) {
+    @JsonCreator
+    public ResourceContent(@JsonProperty("contentFiles") List<ContentFile> contentFiles) {
         this.contentFiles = contentFiles;
     }
 
@@ -26,14 +23,6 @@ public class ResourceContent {
     @JacocoGenerated
     public void setContentFiles(List<ContentFile> contentFiles) {
         this.contentFiles = contentFiles;
-    }
-
-    @JacocoGenerated
-    public ContentFile getContentFileByFilename(String filename) {
-        return contentFiles.stream()
-                   .filter(contentFile -> contentFile.getFilename().equals(filename))
-                   .findAny()
-                   .orElse(null);
     }
 
     @JacocoGenerated
@@ -55,6 +44,7 @@ public class ResourceContent {
         return Objects.equals(contentFiles, that.contentFiles);
     }
 
+    @JacocoGenerated
     public enum BundleType {
         ORIGINAL("ORIGINAL"),
         TEXT("TEXT"),
@@ -71,7 +61,6 @@ public class ResourceContent {
             this.value = value;
         }
 
-        @JacocoGenerated
         public String getValue() {
             return value;
         }

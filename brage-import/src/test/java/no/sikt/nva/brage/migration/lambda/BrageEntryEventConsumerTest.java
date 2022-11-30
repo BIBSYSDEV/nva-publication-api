@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import no.sikt.nva.brage.migration.model.Record;
+import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
@@ -61,13 +61,6 @@ public class BrageEntryEventConsumerTest {
     void shouldThrowExceptionWhenInvalidBrageRecordIsProvided() throws IOException {
         var s3Event = createNewInvalidBrageRecordEvent();
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
-    }
-
-    @Test
-    void some() {
-        var generator = new NvaBrageMigrationDataGenerator.Builder().build();
-        var record = generator.getBrageRecord();
-        var test = "test";
     }
 
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {

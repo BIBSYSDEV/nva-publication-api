@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.model.license;
+package no.sikt.nva.brage.migration.record.license;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
@@ -9,13 +9,7 @@ public class NvaLicense {
     private static final String TYPE = "License";
     private NvaLicenseIdentifier identifier;
 
-    @JacocoGenerated
-    public NvaLicense() {
-        
-    }
-
-    @JacocoGenerated
-    public NvaLicense(NvaLicenseIdentifier identifier) {
+    public NvaLicense(@JsonProperty("identifier") NvaLicenseIdentifier identifier) {
         this.identifier = identifier;
     }
 
@@ -29,7 +23,6 @@ public class NvaLicense {
         this.identifier = identifier;
     }
 
-    @JacocoGenerated
     @JsonProperty("type")
     public String getType() {
         return TYPE;

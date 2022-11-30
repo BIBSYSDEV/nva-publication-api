@@ -1,25 +1,21 @@
-package no.sikt.nva.brage.migration.model.entitydescription;
+package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-public class PublicationDate {
-    private final String brage;
-    private final String nva;
+@JacocoGenerated
+public class PublisherAuthority {
 
-    @JacocoGenerated
+    private String brage;
+    private Boolean nva;
+
     @JsonCreator
-    public PublicationDate(@JsonProperty("brage") String brage,
-                           @JsonProperty("nva") String nva) {
-        this.brage = brage;
+    public PublisherAuthority(@JsonProperty("brage") String brage,
+                              @JsonProperty("nva") Boolean nva) {
         this.nva = nva;
-    }
-
-    @JacocoGenerated
-    public String getNva() {
-        return nva;
+        this.brage = brage;
     }
 
     @JacocoGenerated
@@ -37,13 +33,25 @@ public class PublicationDate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        PublicationDate that = (PublicationDate) o;
+        PublisherAuthority that = (PublisherAuthority) o;
         return Objects.equals(brage, that.brage) && Objects.equals(nva, that.nva);
     }
 
-    @JacocoGenerated
+    @JsonProperty("brage")
     public String getBrage() {
         return brage;
     }
 
+    public void setBrage(String brage) {
+        this.brage = brage;
+    }
+
+    @JsonProperty("nva")
+    public Boolean getNva() {
+        return nva;
+    }
+
+    public void setNva(Boolean nva) {
+        this.nva = nva;
+    }
 }

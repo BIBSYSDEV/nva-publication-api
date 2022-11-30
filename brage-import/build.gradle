@@ -1,5 +1,6 @@
 dependencies {
     testImplementation libs.nva.testutils
+    testImplementation libs.nva.datamodel.testutils
 
     implementation libs.aws.sdk2.s3
     implementation libs.aws.lambda.java.core
@@ -16,6 +17,8 @@ dependencies {
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+
+
 }
 
 test {

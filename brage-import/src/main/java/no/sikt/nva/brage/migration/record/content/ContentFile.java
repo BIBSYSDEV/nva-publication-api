@@ -1,13 +1,14 @@
-package no.sikt.nva.brage.migration.model.content;
+package no.sikt.nva.brage.migration.record.content;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import java.util.UUID;
-import no.sikt.nva.brage.migration.model.content.ResourceContent.BundleType;
-import no.sikt.nva.brage.migration.model.license.License;
+import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
+import no.sikt.nva.brage.migration.record.license.License;
 import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class ContentFile {
 
     private String filename;
@@ -16,6 +17,10 @@ public class ContentFile {
     private UUID identifier;
     private License license;
     private String embargoDate;
+
+    public ContentFile() {
+
+    }
 
     @JsonCreator
     public ContentFile(@JsonProperty("fileName") String filename,
@@ -32,40 +37,29 @@ public class ContentFile {
         this.embargoDate = embargoDate;
     }
 
-    @JacocoGenerated
-    public ContentFile() {
-
-    }
-
-    @JacocoGenerated
     @JsonProperty("embargoDate")
     public String getEmbargoDate() {
         return embargoDate;
     }
 
-    @JacocoGenerated
     public void setEmbargoDate(String embargoDate) {
         this.embargoDate = embargoDate;
     }
 
-    @JacocoGenerated
     @JsonProperty("identifier")
     public UUID getIdentifier() {
         return identifier;
     }
 
-    @JacocoGenerated
     public void setIdentifier(UUID identifier) {
         this.identifier = identifier;
     }
 
-    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(filename, bundleType, description, identifier, license, embargoDate);
     }
 
-    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -83,45 +77,38 @@ public class ContentFile {
                && Objects.equals(embargoDate, that.embargoDate);
     }
 
-    @JacocoGenerated
     @JsonProperty("filename")
     public String getFilename() {
         return filename;
     }
 
-    @JacocoGenerated
     public void setFilename(String filename) {
         this.filename = filename;
     }
 
-    @JacocoGenerated
     @JsonProperty("bundleType")
     public BundleType getBundleType() {
         return bundleType;
     }
 
-    @JacocoGenerated
     public void setBundleType(BundleType bundleType) {
         this.bundleType = bundleType;
     }
 
-    @JacocoGenerated
+    @JsonProperty("license")
     public License getLicense() {
         return license;
     }
 
-    @JacocoGenerated
     public void setLicense(License license) {
         this.license = license;
     }
 
-    @JacocoGenerated
     @JsonProperty("description")
     public String getDescription() {
         return description;
     }
 
-    @JacocoGenerated
     public void setDescription(String description) {
         this.description = description;
     }

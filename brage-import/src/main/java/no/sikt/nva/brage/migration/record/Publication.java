@@ -1,37 +1,25 @@
-package no.sikt.nva.brage.migration.model;
+package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class Publication {
 
     private String journal;
     private String issn;
     private String isbn;
-    private String publisher;
+    private PublicationContext publicationContext;
     private String partOfSeries;
-    private String id;
 
-    @JacocoGenerated
-    @JsonProperty("id")
-    public String getId() {
-        return id;
+    public Publication() {
     }
 
-    @JacocoGenerated
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    @JacocoGenerated
     @JsonProperty("partOfSeries")
     public String getPartOfSeries() {
         return partOfSeries;
     }
 
-    @JacocoGenerated
     public void setPartOfSeries(String partOfSeries) {
         this.partOfSeries = partOfSeries;
     }
@@ -39,7 +27,7 @@ public class Publication {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(journal, issn, isbn, publisher, partOfSeries, id);
+        return Objects.hash(journal, issn, isbn, publicationContext, partOfSeries);
     }
 
     @JacocoGenerated
@@ -55,9 +43,8 @@ public class Publication {
         return Objects.equals(journal, that.journal)
                && Objects.equals(issn, that.issn)
                && Objects.equals(isbn, that.isbn)
-               && Objects.equals(publisher, that.publisher)
-               && Objects.equals(partOfSeries, that.partOfSeries)
-               && Objects.equals(id, that.id);
+               && Objects.equals(publicationContext, that.publicationContext)
+               && Objects.equals(partOfSeries, that.partOfSeries);
     }
 
     @JacocoGenerated
@@ -66,7 +53,6 @@ public class Publication {
         return journal;
     }
 
-    @JacocoGenerated
     public void setJournal(String journal) {
         this.journal = journal;
     }
@@ -77,7 +63,6 @@ public class Publication {
         return issn;
     }
 
-    @JacocoGenerated
     public void setIssn(String issn) {
         this.issn = issn;
     }
@@ -88,20 +73,17 @@ public class Publication {
         return isbn;
     }
 
-    @JacocoGenerated
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
 
     @JacocoGenerated
-    @JsonProperty("publisher")
-    public String getPublisher() {
-        return publisher;
+    @JsonProperty("publicationContext")
+    public PublicationContext getPublicationContext() {
+        return publicationContext;
     }
 
-    @JacocoGenerated
-    public void setPublisher(String publisher) {
-        this.publisher = publisher;
+    public void setPublicationContext(PublicationContext publicationContext) {
+        this.publicationContext = publicationContext;
     }
-
 }

@@ -1,11 +1,10 @@
-package no.sikt.nva.brage.migration.model;
+package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
-
 
 @SuppressWarnings("PMD.ShortClassName")
 public class Type {
@@ -21,7 +20,6 @@ public class Type {
         this.nva = nva;
     }
 
-    @JacocoGenerated
     public String getNva() {
         return nva;
     }
@@ -45,9 +43,7 @@ public class Type {
         return Objects.equals(getBrage(), type.getBrage()) && Objects.equals(getNva(), type.getNva());
     }
 
-    @JacocoGenerated
     public List<String> getBrage() {
         return brage;
     }
-
 }

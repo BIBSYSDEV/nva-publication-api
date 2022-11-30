@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.model.license;
+package no.sikt.nva.brage.migration.record.license;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

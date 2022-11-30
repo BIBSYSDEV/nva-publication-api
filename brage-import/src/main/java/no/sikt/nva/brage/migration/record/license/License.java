@@ -1,9 +1,8 @@
-package no.sikt.nva.brage.migration.model.license;
+package no.sikt.nva.brage.migration.record.license;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
-
 
 public class License {
 
@@ -11,13 +10,11 @@ public class License {
     private String brageLicense;
     private NvaLicense nvaLicense;
 
-    @JacocoGenerated
     public License(String brageLisense, NvaLicense nvaLicense) {
         this.brageLicense = brageLisense;
         this.nvaLicense = nvaLicense;
     }
 
-    @JacocoGenerated
     public License() {
 
     }
@@ -48,9 +45,8 @@ public class License {
         return Objects.hash(brageLicense, nvaLicense);
     }
 
-
-    @JacocoGenerated
     @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -68,5 +64,4 @@ public class License {
     public String toString() {
         return brageLicense;
     }
-
 }

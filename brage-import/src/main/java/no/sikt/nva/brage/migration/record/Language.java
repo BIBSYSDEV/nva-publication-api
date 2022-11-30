@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.model.entitydescription;
+package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,5 +37,4 @@ public class Language {
     public void setNva(URI nva) {
         this.nva = nva;
     }
-
 }

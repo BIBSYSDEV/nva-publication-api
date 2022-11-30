@@ -3,14 +3,14 @@ package no.sikt.nva.brage.migration.testutils.type;
 import static java.util.Map.entry;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.brage.migration.model.ErrorDetails.Error.MANY_UNMAPPABLE_TYPES;
+import static no.sikt.nva.brage.migration.ErrorDetails.Error.MANY_UNMAPPABLE_TYPES;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import no.sikt.nva.brage.migration.model.ErrorDetails;
+import no.sikt.nva.brage.migration.ErrorDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

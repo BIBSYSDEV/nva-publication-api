@@ -1,27 +1,32 @@
-package no.sikt.nva.brage.migration.model;
+package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import no.sikt.nva.brage.migration.model.content.ResourceContent;
-import no.sikt.nva.brage.migration.model.entitydescription.EntityDescription;
-import no.sikt.nva.brage.migration.model.entitydescription.PublishedDate;
+import no.sikt.nva.brage.migration.ErrorDetails;
+import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import nva.commons.core.JacocoGenerated;
 
+@JsonPropertyOrder({"customer", "brageLocation", "id", "cristinId", "doi", "publishedDate", "publisherAuthority",
+    "rightsholder",
+    "type", "partOf", "publisherAuthority", "spatialCoverage", "date", "language", "publication", "entityDescription",
+    "recordContent", "errors", "warnings"})
 @SuppressWarnings("PMD.TooManyFields")
 public class Record {
 
     private EntityDescription entityDescription;
-    private URI customerId;
+    private String customer;
     private URI id;
     private URI doi;
     private Type type;
-    private Boolean publisherAuthority;
+    private Language language;
+    private PublisherAuthority publisherAuthority;
     private String rightsholder;
-    private String spatialCoverage;
+    private List<String> spatialCoverage;
     private String partOf;
     private Publication publication;
     private ResourceContent contentBundle;
@@ -31,12 +36,14 @@ public class Record {
     private List<ErrorDetails> errors;
     private List<WarningDetails> warnings;
 
+    public Record() {
+    }
+
     @JacocoGenerated
     public static <T> boolean listEqualsIgnoreOrder(List<T> list1, List<T> list2) {
         return new HashSet<>(list1).equals(new HashSet<>(list2));
     }
 
-    @JacocoGenerated
     @JsonProperty("partOf")
     public String getPartOf() {
         return partOf;
@@ -52,12 +59,10 @@ public class Record {
         return brageLocation;
     }
 
-    @JacocoGenerated
     public void setBrageLocation(String brageLocation) {
         this.brageLocation = brageLocation;
     }
 
-    @JacocoGenerated
     @JsonProperty("warnings")
     public List<WarningDetails> getWarnings() {
         return warnings;
@@ -93,7 +98,6 @@ public class Record {
         return publishedDate;
     }
 
-    @JacocoGenerated
     public void setPublishedDate(PublishedDate publishedDate) {
         this.publishedDate = publishedDate;
     }
@@ -110,7 +114,7 @@ public class Record {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(entityDescription, customerId, id, doi, type, publisherAuthority,
+        return Objects.hash(entityDescription, customer, id, doi, type, language, publisherAuthority,
                             rightsholder, spatialCoverage, partOf, publication, contentBundle, publishedDate, cristinId,
                             brageLocation, errors, warnings);
     }
@@ -126,10 +130,11 @@ public class Record {
         }
         Record record = (Record) o;
         return Objects.equals(entityDescription, record.entityDescription)
-               && Objects.equals(customerId, record.customerId)
+               && Objects.equals(customer, record.customer)
                && Objects.equals(id, record.id)
                && Objects.equals(doi, record.doi)
                && Objects.equals(type, record.type)
+               && Objects.equals(language, record.language)
                && Objects.equals(publisherAuthority, record.publisherAuthority)
                && Objects.equals(rightsholder, record.rightsholder)
                && Objects.equals(spatialCoverage, record.spatialCoverage)
@@ -142,24 +147,26 @@ public class Record {
                && listEqualsIgnoreOrder(warnings, record.warnings);
     }
 
+    @JacocoGenerated
     @JsonProperty("spatialCoverage")
-    public String getSpatialCoverage() {
+    public List<String> getSpatialCoverage() {
         return spatialCoverage;
     }
 
     @JacocoGenerated
-    public void setSpatialCoverage(String spatialCoverage) {
+    public void setSpatialCoverage(List<String> spatialCoverage) {
         this.spatialCoverage = spatialCoverage;
     }
 
     @JsonInclude
     @JsonProperty("publisherAuthority")
-    public Boolean getPublisherAuthority() {
+    public PublisherAuthority getPublisherAuthority() {
         return publisherAuthority;
     }
 
     @JacocoGenerated
-    public void setPublisherAuthority(Boolean publisherAuthority) {
+
+    public void setPublisherAuthority(PublisherAuthority publisherAuthority) {
         this.publisherAuthority = publisherAuthority;
     }
 
@@ -168,18 +175,19 @@ public class Record {
         return publication;
     }
 
-    @JacocoGenerated
     public void setPublication(Publication publication) {
         this.publication = publication;
     }
 
-    @JsonProperty("customerId")
-    public URI getCustomerId() {
-        return this.customerId;
+    @JacocoGenerated
+    @JsonProperty("customer")
+    public String getCustomer() {
+        return this.customer;
     }
 
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
+    @JacocoGenerated
+    public void setCustomer(String customer) {
+        this.customer = customer;
     }
 
     @JsonProperty("id")
@@ -196,9 +204,18 @@ public class Record {
         return this.type;
     }
 
-    @JacocoGenerated
     public void setType(Type type) {
         this.type = type;
+    }
+
+    @JsonProperty("language")
+    public Language getLanguage() {
+        return this.language;
+    }
+
+    @JacocoGenerated
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 
     @JsonProperty("rightsholder")
@@ -225,7 +242,6 @@ public class Record {
         return entityDescription;
     }
 
-    @JacocoGenerated
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }

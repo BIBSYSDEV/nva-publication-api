@@ -2,14 +2,17 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
-import no.sikt.nva.brage.migration.model.Record;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.S3Event;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -46,12 +49,14 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return new RuntimeException(fail.getException());
     }
 
-    private Publication parseBrageRecord(S3Event event) throws JsonProcessingException {
+    private Publication parseBrageRecord(S3Event event)
+        throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var record = getBrageRecordFromS3(event);
         return convertBrageRecordToNvaPublication(record);
     }
 
-    private Publication convertBrageRecordToNvaPublication(Record record) {
+    private Publication convertBrageRecordToNvaPublication(Record record)
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return BrageNvaMapper.toNvaPublication(record);
     }
 

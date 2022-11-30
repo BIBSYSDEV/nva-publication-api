@@ -1,11 +1,10 @@
-package no.sikt.nva.brage.migration.model.entitydescription;
+package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
-import nva.commons.core.JacocoGenerated;
+import no.unit.nva.language.tooling.JacocoGenerated;
 
-@JacocoGenerated
 public class EntityDescription {
 
     private PublicationDate publicationDate;
@@ -25,12 +24,10 @@ public class EntityDescription {
         return publicationDate;
     }
 
-    @JacocoGenerated
     public void setPublicationDate(PublicationDate publicationDate) {
         this.publicationDate = publicationDate;
     }
 
-    @JacocoGenerated
     @JsonProperty("publicationInstance")
     public PublicationInstance getPublicationInstance() {
         return publicationInstance;
@@ -41,7 +38,6 @@ public class EntityDescription {
         this.publicationInstance = publicationInstance;
     }
 
-    @JacocoGenerated
     @JsonProperty("tags")
     public List<String> getTags() {
         return this.tags;
@@ -52,29 +48,24 @@ public class EntityDescription {
         this.tags = tags;
     }
 
-    @JacocoGenerated
     @JsonProperty("contributors")
     public List<Contributor> getContributors() {
         return contributors;
     }
 
-    @JacocoGenerated
     public void setContributors(List<Contributor> contributors) {
         this.contributors = contributors;
     }
 
-    @JacocoGenerated
     @JsonProperty("mainTitle")
     public String getMainTitle() {
         return this.mainTitle;
     }
 
-    @JacocoGenerated
     public void setMainTitle(String mainTitle) {
         this.mainTitle = mainTitle;
     }
 
-    @JacocoGenerated
     @JsonProperty
     public List<String> getDescriptions() {
         return descriptions;
@@ -85,7 +76,6 @@ public class EntityDescription {
         this.descriptions = descriptions;
     }
 
-    @JacocoGenerated
     @JsonProperty
     public List<String> getAbstracts() {
         return abstracts;
@@ -96,13 +86,11 @@ public class EntityDescription {
         this.abstracts = abstracts;
     }
 
-    @JacocoGenerated
     @JsonProperty("alternativeTitles")
     public List<String> getAlternativeTitles() {
         return alternativeTitles;
     }
 
-    @JacocoGenerated
     public void setAlternativeTitles(List<String> alternativeTitles) {
         this.alternativeTitles = alternativeTitles;
     }
@@ -143,5 +131,4 @@ public class EntityDescription {
                && Objects.equals(tags, that.tags)
                && Objects.equals(publicationInstance, that.publicationInstance);
     }
-
 }
