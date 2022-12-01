@@ -35,7 +35,7 @@ import nva.commons.core.SingletonCollector;
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
     @JsonSubTypes.Type(name = PublishingRequestDao.TYPE, value = PublishingRequestDao.class),
     @JsonSubTypes.Type(name = GeneralSupportRequestDao.TYPE, value = GeneralSupportRequestDao.class),
-    @JsonSubTypes.Type(name = "GeneralSupportRequest", value = GeneralSupportRequestDao.class)
+    @JsonSubTypes.Type(name = GeneralSupportRequestDao.LEGACY_TYPE, value = GeneralSupportRequestDao.class)
 })
 public abstract class TicketDao extends Dao implements JoinWithResource {
     

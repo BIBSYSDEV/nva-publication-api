@@ -14,7 +14,7 @@ public class GeneralSupportRequestDaoTest {
 
     @ParameterizedTest(name = "Should return GeneralSupportRequestDao when type is {0}")
     @ValueSource(strings = {"GeneralSupportRequest", "GeneralSupportCase"})
-    void jsonAcceptOldAndNewTypesForGeneralSupportCase(String type) {
+    void shouldAcceptLegacyAndCurrentTypeForGeneralSupportCase(String type) {
         var input = JsonUtils.dynamoObjectMapper.createObjectNode()
                         .put("type", type);
 

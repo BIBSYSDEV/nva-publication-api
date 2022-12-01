@@ -17,6 +17,7 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
     public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
     
     public static final String TYPE = "GeneralSupportCase";
+    public static final String LEGACY_TYPE = "GeneralSupportRequest";
     
     public GeneralSupportRequestDao() {
         super();
