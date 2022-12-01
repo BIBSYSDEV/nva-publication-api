@@ -2,6 +2,7 @@ package no.unit.nva.publication.ticket;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -33,8 +34,9 @@ public class MessageDto implements JsonSerializable {
     private User ownerIdentifier;
     @JsonProperty(TEXT_FIELD)
     private String text;
-    @JsonProperty("date")
-    private Instant date;
+    @JsonProperty("createdDate")
+    @JsonAlias("date")
+    private Instant createdDate;
     @JsonProperty("messageType")
     private String messageType;
     @JsonProperty("recipient")
@@ -45,7 +47,7 @@ public class MessageDto implements JsonSerializable {
         messageDto.setOwnerIdentifier(message.getOwner());
         messageDto.setSenderIdentifier(message.getSender());
         messageDto.setText(message.getText());
-        messageDto.setDate(message.getCreatedDate());
+        messageDto.setCreatedDate(message.getCreatedDate());
         messageDto.setMessageId(constructMessageId(message));
         messageDto.setMessageIdentifier(message.getIdentifier());
         messageDto.setRecipient(message.getRecipient());
@@ -89,12 +91,12 @@ public class MessageDto implements JsonSerializable {
     @Override
     public int hashCode() {
         return Objects.hash(getMessageId(),
-            getMessageIdentifier(),
-            getSenderIdentifier(),
-            getOwnerIdentifier(),
-            getText(),
-            getDate(),
-            getMessageType());
+                            getMessageIdentifier(),
+                            getSenderIdentifier(),
+                            getOwnerIdentifier(),
+                            getText(),
+                            getCreatedDate(),
+                            getMessageType());
     }
     
     @JacocoGenerated
@@ -113,7 +115,7 @@ public class MessageDto implements JsonSerializable {
                && Objects.equals(getSenderIdentifier(), that.getSenderIdentifier())
                && Objects.equals(getOwnerIdentifier(), that.getOwnerIdentifier())
                && Objects.equals(getText(), that.getText())
-               && Objects.equals(getDate(), that.getDate());
+               && Objects.equals(getCreatedDate(), that.getCreatedDate());
     }
     
     @Override
@@ -143,13 +145,13 @@ public class MessageDto implements JsonSerializable {
     }
     
     @JacocoGenerated
-    public Instant getDate() {
-        return date;
+    public Instant getCreatedDate() {
+        return createdDate;
     }
     
     @JacocoGenerated
-    public void setDate(Instant date) {
-        this.date = date;
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
     }
     
     @JacocoGenerated
