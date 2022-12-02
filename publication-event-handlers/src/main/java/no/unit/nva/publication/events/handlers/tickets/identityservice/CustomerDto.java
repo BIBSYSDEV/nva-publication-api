@@ -22,4 +22,9 @@ public class CustomerDto {
     public Boolean customerAllowsRegistratorsToPublishDataAndMetadata() {
         return PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publicationWorkflow);
     }
+
+    @JsonIgnore
+    public Boolean customerAllowsRegistratorsToPublishMetadata() {
+        return PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publicationWorkflow);
+    }
 }

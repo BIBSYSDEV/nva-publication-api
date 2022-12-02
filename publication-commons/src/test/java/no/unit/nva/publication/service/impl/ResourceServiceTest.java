@@ -5,16 +5,14 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceService.ASSOCIATED_ARIFACTS_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
-import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -107,6 +105,9 @@ import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 
 class ResourceServiceTest extends ResourcesLocalTest {
     
@@ -129,8 +130,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final URI SOME_ORG = randomUri();
     public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
     private static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
+    public static final String RESOURCE_LACKS_DATA = "Resource does not have required data to be published:";
     private ResourceService resourceService;
     
     private TicketService ticketService;
@@ -482,7 +483,41 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         assertThat(actualResource, is(equalTo(expectedResource)));
     }
-    
+
+    @Test
+    void shouldPublishResourceMetadataWhenClientRequestsToPublish() throws ApiGatewayException {
+        var resource = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(resource);
+        resourceService.publishPublicationMetadata(userInstance, resource.getIdentifier());
+        var actualResource = resourceService.getPublication(resource);
+        var expectedResource = resource.copy()
+                                   .withStatus(PUBLISHED_METADATA)
+                                   .withModifiedDate(actualResource.getModifiedDate())
+                                   .withPublishedDate(actualResource.getPublishedDate())
+                                   .build();
+
+        assertThat(actualResource, is(equalTo(expectedResource)));
+    }
+
+    @ParameterizedTest(name = "Should not change publication status when user requests to publish metadata and "
+                              + "publication status is: {0}")
+    @EnumSource(value = PublicationStatus.class, mode = Mode.INCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
+    void shouldNotUpdatePublicationStatusWhenUserRequestsToPublishMetadataAndStatusIsPublished(PublicationStatus status)
+        throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication().copy().withStatus(status).build();
+        var resource = resourceService.insertPreexistingPublication(publication);
+        var userInstance = UserInstance.fromPublication(resource);
+        resourceService.publishPublicationMetadata(userInstance, resource.getIdentifier());
+        var actualResource = resourceService.getPublication(resource);
+        var expectedResource = resource.copy()
+                                   .withStatus(status)
+                                   .withModifiedDate(actualResource.getModifiedDate())
+                                   .withPublishedDate(actualResource.getPublishedDate())
+                                   .build();
+
+        assertThat(actualResource, is(equalTo(expectedResource)));
+    }
+
     @Test
     void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
@@ -540,14 +575,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
         String actualMessage = exception.getMessage();
-        assertThat(actualMessage, containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+        assertThat(actualMessage, containsString(RESOURCE_LACKS_DATA));
     }
     
     @Test
-    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkAndNoFiles()
-        throws NoSuchFieldException {
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkNoFilesAndNoDoi() {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(null);
+        sampleResource.getEntityDescription().getReference().setDoi(null);
         sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
         Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
     
@@ -555,18 +590,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
         String actualMessage = exception.getMessage();
     
-        assertThat(actualMessage, containsString(InvalidPublicationException.ERROR_MESSAGE_TEMPLATE));
-        assertThat(actualMessage,
-            containsString(sampleResource.getClass().getDeclaredField(RESOURCE_LINK_FIELD).getName()));
-        assertThat(actualMessage,
-            containsString(sampleResource.getClass().getDeclaredField(ASSOCIATED_ARIFACTS_FIELD).getName()));
+        assertThat(actualMessage, containsString(RESOURCE_LACKS_DATA));
     }
     
     @Test
-    void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles() throws ApiGatewayException {
-        
+    void publishResourcePublishesResourceWhenDoiIsPresentButNoFiles() throws ApiGatewayException {
         Publication sampleResource = publicationWithIdentifier();
-        sampleResource.setLink(SOME_LINK);
+        sampleResource.getEntityDescription().getReference().setDoi(randomDoi());
         sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
         Publication savedResource = createPersistedPublicationWithoutDoi();
         Publication updatedResource = publishResource(savedResource);
@@ -574,10 +604,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
     
     @Test
-    void publishResourcePublishesResourceWhenResourceHasFilesButNoLink() throws ApiGatewayException {
+    void publishResourcePublishesResourceWhenResourceHasFilesButNoDoi() throws ApiGatewayException {
     
         Publication sampleResource = createPersistedPublicationWithoutDoi();
         sampleResource.setLink(null);
+        sampleResource.getEntityDescription().getReference().setDoi(null);
     
         Publication updatedResource = publishResource(sampleResource);
         assertThat(updatedResource.getStatus(), is(equalTo(PUBLISHED)));
@@ -817,7 +848,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(samplePublication);
         var exception = assertThrows(InvalidPublicationException.class,
             () -> resourceService.publishPublication(userInstance, samplePublication.getIdentifier()));
-        assertThat(exception.getMessage(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+        assertThat(exception.getMessage(), containsString(RESOURCE_LACKS_DATA));
     }
     
     @Test

@@ -148,6 +148,12 @@ public class ResourceService extends ServiceWithTransactions {
         throws ApiGatewayException {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
+
+    public PublishPublicationStatusResponse publishPublicationMetadata(UserInstance userInstance,
+                                                               SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        return updateResourceService.publishPublicationMetadata(userInstance, resourceIdentifier);
+    }
     
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
@@ -234,7 +240,7 @@ public class ResourceService extends ServiceWithTransactions {
         var resource = fetchResourceForElevatedUser(userInstance.getOrganizationUri(), publicationIdentifier);
         return resource.fetchAllTickets(this);
     }
-    
+
     private Entity migrateOther(Entity dataEntry) {
         if (dataEntry instanceof TicketEntry) {
             var ticket = (TicketEntry) dataEntry;

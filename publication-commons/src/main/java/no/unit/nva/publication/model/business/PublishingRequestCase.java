@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
@@ -13,14 +12,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -34,7 +29,8 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings("PMD.GodClass")
 public class PublishingRequestCase extends TicketEntry {
     
-    public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
+    public static final String RESOURCE_LACKS_REQUIRED_DATA = "Resource does not have required data to be "
+                                                              + "published: ";
     
     public static final String TYPE = "PublishingRequestCase";
     
@@ -42,8 +38,6 @@ public class PublishingRequestCase extends TicketEntry {
         "Publication is already published.";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
-    public static final String RESOURCE_LINK_FIELD = "link";
-    public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -90,11 +84,9 @@ public class PublishingRequestCase extends TicketEntry {
     
     public static void assertThatPublicationHasMinimumMandatoryFields(Publication resource)
         throws InvalidPublicationException {
-        
-        if (resourceHasNoTitle(resource)) {
-            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
-        } else if (resourceHasNoAssociatedArtifacts(resource)) {
-            throwErrorWhenPublishingResourceWithoutData(resource);
+
+        if (!resource.isPublishable()) {
+            throwErrorWhenPublishingResourceThatDoesNotHaveRequiredData(resource);
         }
     }
     
@@ -250,38 +242,8 @@ public class PublishingRequestCase extends TicketEntry {
         return newPublishingRequest;
     }
 
-    // TODO: Remove link check since it is not in use following implementation of AssociatedLink
-    private static boolean resourceHasNoAssociatedArtifacts(Publication resource) {
-        return isNull(resource.getLink()) && hasEmptyAssociatedArtifacts(resource);
-    }
-    
-    private static void throwErrorWhenPublishingResourceWithoutData(Publication resource)
+    private static void throwErrorWhenPublishingResourceThatDoesNotHaveRequiredData(Publication resource)
         throws InvalidPublicationException {
-        var linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-        var files = attempt(() -> findFieldNameOrThrowError(resource, ASSOCIATED_ARTIFACTS_FIELD)).orElseThrow();
-        throw new InvalidPublicationException(List.of(files, linkField));
-    }
-    
-    private static String findFieldNameOrThrowError(Publication resource, String publicationField)
-        throws NoSuchFieldException {
-        return resource.getClass().getDeclaredField(publicationField).getName();
-    }
-    
-    private static boolean hasEmptyAssociatedArtifacts(Publication resource) {
-        return Optional.ofNullable(resource.getAssociatedArtifacts())
-                .map(AssociatedArtifactList::isEmpty)
-                .orElse(true);
-    }
-    
-    private static void throwErrorWhenPublishingResourceWithoutMainTitle(Publication resource)
-        throws InvalidPublicationException {
-        throw new InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
-    }
-    
-    private static boolean resourceHasNoTitle(Publication publication) {
-        return Optional.ofNullable(publication)
-                   .map(Publication::getEntityDescription)
-                   .map(EntityDescription::getMainTitle)
-                   .isEmpty();
+        throw new InvalidPublicationException(RESOURCE_LACKS_REQUIRED_DATA + resource.getIdentifier().toString());
     }
 }

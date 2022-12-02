@@ -16,6 +16,7 @@ import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
@@ -69,9 +70,18 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
+        temporaryHackWhileWeWaitForUnauthenticatedUserAccess(publication);
         return createResponse(requestInfo, publication);
     }
-    
+
+    // TODO: implement unauthenticated users to allow us to remove unpublished files from returned data when the user
+    //  is unauthenticated.
+    private static void temporaryHackWhileWeWaitForUnauthenticatedUserAccess(Publication publication) {
+        if (PublicationStatus.PUBLISHED_METADATA.equals(publication.getStatus())) {
+            publication.setStatus(PublicationStatus.PUBLISHED);
+        }
+    }
+
     @Override
     protected Integer getSuccessStatusCode(Void input, String output) {
         return HttpURLConnection.HTTP_OK;

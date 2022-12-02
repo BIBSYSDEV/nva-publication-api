@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,6 +35,8 @@ import org.junit.jupiter.api.Test;
 class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     
     private static final Context CONTEXT = new FakeContext();
+    public static final String RESOURCE_LACKS_REQUIRED_DATA = "Resource does not have required data to be "
+                                                              + "published: ";
     private ResourceService resourceService;
     private AcceptedPublishingRequestEventHandler handler;
     private ByteArrayOutputStream outputStream;
@@ -86,7 +87,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
-        assertThat(logger.getMessages(), containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
+        assertThat(logger.getMessages(), containsString(RESOURCE_LACKS_REQUIRED_DATA));
     }
     
     private InputStream createEvent(TicketEntry pendingPublishingRequest,
