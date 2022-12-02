@@ -1,7 +1,6 @@
 package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -113,11 +112,9 @@ public final class PublicationContextMapper {
 
     @JacocoGenerated
     private static String extractPartOfSeriesValue(String partOfSeriesValue) {
-        var potentialSeriesNumber = partOfSeriesValue.split(";")[1];
-        if (nonNull(potentialSeriesNumber)) {
-            return extractPotentialSeriesNumberValue(potentialSeriesNumber);
-        }
-        return null;
+        return Optional.ofNullable(partOfSeriesValue.split(";")[1])
+                   .map(PublicationContextMapper::extractPotentialSeriesNumberValue)
+                   .orElse(null);
     }
 
     private static Series extractSeries(Record record) {
