@@ -112,11 +112,9 @@ public class Record {
     }
 
     @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(entityDescription, customer, id, doi, type, language, publisherAuthority,
-                            rightsholder, spatialCoverage, partOf, publication, contentBundle, publishedDate, cristinId,
-                            brageLocation, errors, warnings);
+    @JsonProperty("spatialCoverage")
+    public List<String> getSpatialCoverage() {
+        return spatialCoverage;
     }
 
     @JacocoGenerated
@@ -129,28 +127,33 @@ public class Record {
             return false;
         }
         Record record = (Record) o;
-        return Objects.equals(entityDescription, record.entityDescription)
-               && Objects.equals(customer, record.customer)
-               && Objects.equals(id, record.id)
-               && Objects.equals(doi, record.doi)
-               && Objects.equals(type, record.type)
-               && Objects.equals(language, record.language)
-               && Objects.equals(publisherAuthority, record.publisherAuthority)
-               && Objects.equals(rightsholder, record.rightsholder)
-               && Objects.equals(spatialCoverage, record.spatialCoverage)
-               && Objects.equals(partOf, record.partOf)
-               && Objects.equals(publication, record.publication)
-               && Objects.equals(contentBundle, record.contentBundle)
-               && Objects.equals(publishedDate, record.publishedDate)
-               && Objects.equals(cristinId, record.cristinId)
-               && listEqualsIgnoreOrder(errors, record.errors)
-               && listEqualsIgnoreOrder(warnings, record.warnings);
+        return Objects.equals(getEntityDescription(), record.getEntityDescription())
+               && Objects.equals(getCustomer(), record.getCustomer())
+               && Objects.equals(getId(), record.getId())
+               && Objects.equals(getDoi(), record.getDoi())
+               && Objects.equals(getType(), record.getType())
+               && Objects.equals(getLanguage(), record.getLanguage())
+               && Objects.equals(getPublisherAuthority(), record.getPublisherAuthority())
+               && Objects.equals(getRightsholder(), record.getRightsholder())
+               && Objects.equals(getSpatialCoverage(), record.getSpatialCoverage())
+               && Objects.equals(getPartOf(), record.getPartOf())
+               && Objects.equals(getPublication(), record.getPublication())
+               && Objects.equals(getContentBundle(), record.getContentBundle())
+               && Objects.equals(getPublishedDate(), record.getPublishedDate())
+               && Objects.equals(getCristinId(), record.getCristinId())
+               && Objects.equals(getBrageLocation(), record.getBrageLocation())
+               && Objects.equals(getErrors(), record.getErrors())
+               && Objects.equals(getWarnings(), record.getWarnings());
     }
 
     @JacocoGenerated
-    @JsonProperty("spatialCoverage")
-    public List<String> getSpatialCoverage() {
-        return spatialCoverage;
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEntityDescription(), getCustomer(), getId(), getDoi(), getType(), getLanguage(),
+                            getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
+                            getPublication(),
+                            getContentBundle(), getPublishedDate(), getCristinId(), getBrageLocation(), getErrors(),
+                            getWarnings());
     }
 
     @JacocoGenerated

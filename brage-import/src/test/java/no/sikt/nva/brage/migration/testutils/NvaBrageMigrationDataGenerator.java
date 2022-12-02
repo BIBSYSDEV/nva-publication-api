@@ -9,6 +9,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
@@ -29,7 +30,6 @@ import no.sikt.nva.brage.migration.testutils.type.BrageType;
 import no.sikt.nva.brage.migration.testutils.type.TypeMapper;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.Role;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
@@ -72,9 +72,11 @@ public class NvaBrageMigrationDataGenerator {
         return new EntityDescription.Builder()
                    .withLanguage(builder.getLanguage().getNva())
                    .withContributors(List.of(createCorrespondingContributor()))
-                   .withReference(new Reference())
+                   .withReference(ReferenceGenerator.generateReference(builder))
                    .withDescription(builder.getDescription())
                    .withAbstract(builder.getEntityAbstract())
+                   .withAlternativeTitles(builder.getAlternativeTitlesMap())
+                   .withMainTitle(builder.getMainTitle())
                    .build();
     }
 
@@ -143,11 +145,12 @@ public class NvaBrageMigrationDataGenerator {
         Builder builder) {
         var entityDescription = new no.sikt.nva.brage.migration.record.EntityDescription();
         entityDescription.setLanguage(builder.getLanguage());
-        entityDescription.setMainTitle(randomString());
+        entityDescription.setMainTitle(builder.getMainTitle());
         entityDescription.setAlternativeTitles(List.of(randomString()));
         entityDescription.setContributors(List.of(createContributor()));
         entityDescription.setDescriptions(Collections.singletonList(builder.getDescription()));
         entityDescription.setAbstracts(Collections.singletonList(builder.getEntityAbstract()));
+        entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
         return entityDescription;
     }
 
@@ -178,6 +181,21 @@ public class NvaBrageMigrationDataGenerator {
         private no.sikt.nva.brage.migration.record.Publication publication;
         private String description;
         private String entityAbstract;
+        private List<String> alternativeTitles;
+        private Map<String, String> alternativeTitlesMap;
+        private String mainTitle;
+
+        public String getMainTitle() {
+            return mainTitle;
+        }
+
+        public Map<String, String> getAlternativeTitlesMap() {
+            return alternativeTitlesMap;
+        }
+
+        public List<String> getAlternativeTitles() {
+            return alternativeTitles;
+        }
 
         public String getEntityAbstract() {
             return entityAbstract;
@@ -240,6 +258,11 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withMainTitle(String mainTitle) {
+            this.mainTitle = mainTitle;
+            return this;
+        }
+
         public Builder withEntityDescription(EntityDescription entityDescription) {
             this.entityDescription = entityDescription;
             return this;
@@ -250,8 +273,18 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withAlternativeLanguages(List<String> alternativeLanguages) {
+            this.alternativeTitles = alternativeLanguages;
+            return this;
+        }
+
         public Builder withHandle(URI handle) {
             this.handle = handle;
+            return this;
+        }
+
+        public Builder withAlternativeTitlesMap(Map<String, String> map) {
+            this.alternativeTitlesMap = map;
             return this;
         }
 
@@ -280,7 +313,7 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withType() {
+        public Builder withType(Type type) {
             this.type = type;
             return this;
         }
@@ -293,6 +326,12 @@ public class NvaBrageMigrationDataGenerator {
         public NvaBrageMigrationDataGenerator build() {
             if (Objects.isNull(handle)) {
                 handle = randomHandle();
+            }
+            if (Objects.isNull(alternativeTitles)) {
+                alternativeTitles = notRandomAlternativeTitle();
+            }
+            if (Objects.isNull(alternativeTitlesMap)) {
+                alternativeTitlesMap = createCorrespondingMap();
             }
             if (Objects.isNull(doi) && randomBoolean()) {
                 doi = randomDoi();
@@ -312,7 +351,29 @@ public class NvaBrageMigrationDataGenerator {
             if (Objects.isNull(entityAbstract)) {
                 entityAbstract = randomString();
             }
+            if(Objects.isNull(mainTitle)) {
+                mainTitle = randomString();
+            }
             return new NvaBrageMigrationDataGenerator(this);
+        }
+
+        private Map<String, String> createCorrespondingMap() {
+            return Map.of("no", "Noe på norsk språk",
+                          "en", "Something in English",
+                          "fr", "Une chose en Francais",
+                          "lv", "Labdien, mans nezināmais draugs",
+                          "de", "Ein ding aus Deutsch",
+                          "is", "Mér likar þessir hestar");
+        }
+
+        private List<String> notRandomAlternativeTitle() {
+            return List.of("Noe på norsk språk",
+                           "Something in English",
+                           "One more title in English",
+                           "Une chose en Francais",
+                           "Labdien, mans nezināmais draugs",
+                           "Ein ding aus Deutsch",
+                           "Mér likar þessir hestar");
         }
 
         private PublishedDate randomPublishedDate() {

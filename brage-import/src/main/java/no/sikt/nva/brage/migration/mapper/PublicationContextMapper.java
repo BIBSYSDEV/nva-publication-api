@@ -18,18 +18,20 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
-public class PublicationContextMapper {
+public final class PublicationContextMapper {
 
     public static final URI BASE_URL = URI.create("https://api.dev.nva.aws.unit.no/publication-channels");
 
-    @JacocoGenerated
-    public PublicationContext buildPublicationContext(Record record)
+    private PublicationContextMapper() {
+    }
+
+    public static PublicationContext buildPublicationContext(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         if (isNull(record.getPublication().getPublicationContext())) {
             return null;
         }
-        if (isReport(record)) {
-            return buildPublicationContextWhenReport(record);
+        if (isReport(record) || isBook(record)) {
+            return buildPublicationContextWhenReportOrBook(record);
         }
         return null;
     }
@@ -55,7 +57,11 @@ public class PublicationContextMapper {
         return potentialSeriesNumber;
     }
 
-    private Report buildPublicationContextWhenReport(Record record)
+    private static boolean isBook(Record record) {
+        return NvaType.BOOK.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenReportOrBook(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Report.Builder()
                    .withPublisher(extractPublisher(record))
@@ -65,13 +71,13 @@ public class PublicationContextMapper {
                    .build();
     }
 
-    private String extractSeriesNumber(Record record) {
+    private static String extractSeriesNumber(Record record) {
         var partOfSeriesValue = record.getPublication().getPartOfSeries();
         return extractPartOfSeriesValue(partOfSeriesValue);
     }
 
     @JacocoGenerated
-    private String extractPartOfSeriesValue(String partOfSeriesValue) {
+    private static String extractPartOfSeriesValue(String partOfSeriesValue) {
         var potentialSeriesNumber = partOfSeriesValue.split(";")[1];
         if (nonNull(potentialSeriesNumber)) {
             return extractPotentialSeriesNumberValue(potentialSeriesNumber);
@@ -79,23 +85,29 @@ public class PublicationContextMapper {
         return null;
     }
 
-    private Series extractSeries(Record record) {
+    private static Series extractSeries(Record record) {
         var identifier = record.getPublication().getPublicationContext().getSeries().getId();
         var year = extractYear(record);
-        return new Series(generatePublicationChannelUri(BASE_URL, ChannelType.SERIES, identifier, year));
+        return new Series(generatePublicationChannelUri(ChannelType.SERIES, identifier, year));
     }
 
-    private Publisher extractPublisher(Record record) {
+    private static Publisher extractPublisher(Record record) {
         var identifier = record.getPublication().getPublicationContext().getPublisher().getId();
         var year = extractYear(record);
-        return new Publisher(generatePublicationChannelUri(BASE_URL, ChannelType.PUBLISHER, identifier, year));
+        return new Publisher(generatePublicationChannelUri(ChannelType.PUBLISHER, identifier, year));
     }
 
-    private URI generatePublicationChannelUri(URI base, ChannelType type, String publisherIdentifier, String year) {
-        return UriWrapper.fromUri(base).addChild(type.getType()).addChild(publisherIdentifier).addChild(year).getUri();
+    private static URI generatePublicationChannelUri(ChannelType type, String publisherIdentifier,
+                                                     String year) {
+        return UriWrapper.fromUri(
+                PublicationContextMapper.BASE_URL)
+                   .addChild(type.getType())
+                   .addChild(publisherIdentifier)
+                   .addChild(year)
+                   .getUri();
     }
 
-    private boolean isReport(Record record) {
+    private static boolean isReport(Record record) {
         return NvaType.REPORT.getValue().equals(record.getType().getNva());
     }
 }

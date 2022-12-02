@@ -47,9 +47,9 @@ public class BrageNvaMapperTest {
     @Test
     public void shouldMapPublicationContextCorrectly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var recordToMap = constructRecordToMapToPublicationContext(SERIES, PUBLISHER, ISBN,
-                                                                   YEAR, PART_OF_SERIES_VALUE_V1);
-        var report = generateReport(ISBN, SERIES, PUBLISHER, YEAR);
+        var recordToMap = constructRecordToMapToPublicationContext(
+            PART_OF_SERIES_VALUE_V1);
+        var report = generateReport();
         var expectedPublicationContext = constructPublicationWithPublicationContextForReport(report)
                                              .getEntityDescription()
                                              .getReference()
@@ -66,8 +66,8 @@ public class BrageNvaMapperTest {
         PART_OF_SERIES_VALUE_V3, PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
     void shouldConvertPartOfSeriesValueCorrectly(String partOfSeries)
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
-        var recordToMap = constructRecordToMapToPublicationContext(SERIES, PUBLISHER, ISBN, YEAR, partOfSeries);
-        var report = generateReport(ISBN, SERIES, PUBLISHER, YEAR);
+        var recordToMap = constructRecordToMapToPublicationContext(partOfSeries);
+        var report = generateReport();
         var expectedPublicationContext = constructPublicationWithPublicationContextForReport(report)
                                              .getEntityDescription()
                                              .getReference()
@@ -80,14 +80,13 @@ public class BrageNvaMapperTest {
         assertThat(expectedPublicationContext, is(equalTo(actualPublicationContext)));
     }
 
-    private Report generateReport(String isbn, String seriesIdentifier, String publisherIdentifier,
-                                  String publicationYear)
+    private Report generateReport()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new Report.Builder()
-                   .withPublisher(generatePublisher(publisherIdentifier, publicationYear))
+                   .withPublisher(generatePublisher(BrageNvaMapperTest.PUBLISHER, BrageNvaMapperTest.YEAR))
                    .withSeriesNumber(EXPECTED_EXTRACTED_SERIES_NUMBER)
-                   .withIsbnList(Collections.singletonList(isbn))
-                   .withSeries(generateSeries(seriesIdentifier, publicationYear))
+                   .withIsbnList(Collections.singletonList(BrageNvaMapperTest.ISBN))
+                   .withSeries(generateSeries(BrageNvaMapperTest.SERIES, BrageNvaMapperTest.YEAR))
                    .build();
     }
 
@@ -97,9 +96,10 @@ public class BrageNvaMapperTest {
         return new no.unit.nva.model.Publication.Builder().withEntityDescription(entity).build();
     }
 
-    private no.sikt.nva.brage.migration.record.EntityDescription generateEntityDescriptionForReport(String year) {
+    private no.sikt.nva.brage.migration.record.EntityDescription generateEntityDescriptionForReport() {
         var entityDescription = new no.sikt.nva.brage.migration.record.EntityDescription();
-        var publicationDate = new PublicationDate(year, new PublicationDateNva.Builder().withYear(year).build());
+        var publicationDate = new PublicationDate(BrageNvaMapperTest.YEAR, new PublicationDateNva.Builder().withYear(
+            BrageNvaMapperTest.YEAR).build());
         entityDescription.setPublicationDate(publicationDate);
         return entityDescription;
     }
@@ -121,26 +121,25 @@ public class BrageNvaMapperTest {
                 .addChild(publicationYear).getUri());
     }
 
-    private Record constructRecordToMapToPublicationContext(String seriesIdentifier, String publisherIdentifier,
-                                                            String isbn, String publicationYear, String partOfSeries) {
+    private Record constructRecordToMapToPublicationContext(String partOfSeries) {
         var record = new Record();
-        record.setPublication(generatePublicationForReport(seriesIdentifier, publisherIdentifier, isbn, partOfSeries));
-        record.setEntityDescription(generateEntityDescriptionForReport(publicationYear));
+        record.setPublication(generatePublicationForReport(
+            partOfSeries));
+        record.setEntityDescription(generateEntityDescriptionForReport());
         record.setType(new Type(Collections.singletonList(REPORT), REPORT));
         return record;
     }
 
-    private Publication generatePublicationForReport(String seriesIdentifier, String publisherIdentifier, String isbn
-        , String partOfSeries) {
+    private Publication generatePublicationForReport(String partOfSeries) {
         var publication = new Publication();
-        publication.setIsbn(isbn);
+        publication.setIsbn(BrageNvaMapperTest.ISBN);
         publication.setIssn(randomIssn());
         publication.setPartOfSeries(partOfSeries);
         publication.setJournal(randomString());
         var publicationContext = new PublicationContext();
         publicationContext.setBragePublisher(randomString());
-        publicationContext.setSeries(new Series(seriesIdentifier));
-        publicationContext.setPublisher(new Publisher(publisherIdentifier));
+        publicationContext.setSeries(new Series(BrageNvaMapperTest.SERIES));
+        publicationContext.setPublisher(new Publisher(BrageNvaMapperTest.PUBLISHER));
         publication.setPublicationContext(publicationContext);
         return publication;
     }
