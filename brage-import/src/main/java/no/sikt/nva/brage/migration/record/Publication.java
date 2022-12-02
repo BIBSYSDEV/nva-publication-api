@@ -53,6 +53,7 @@ public class Publication {
         return journal;
     }
 
+    @JacocoGenerated
     public void setJournal(String journal) {
         this.journal = journal;
     }

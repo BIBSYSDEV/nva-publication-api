@@ -6,8 +6,15 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.record.EntityDescription;
+import no.sikt.nva.brage.migration.record.Publication;
+import no.sikt.nva.brage.migration.record.PublicationDate;
+import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
@@ -27,21 +34,37 @@ public final class PublicationContextMapper {
 
     public static PublicationContext buildPublicationContext(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        if (isNull(record.getPublication().getPublicationContext())) {
-            return null;
+        if (isBook(record)) {
+            return buildPublicationContextWhenBook(record);
         }
-        if (isReport(record) || isBook(record)) {
-            return buildPublicationContextWhenReportOrBook(record);
+        if (isReport(record)) {
+            return buildPublicationContextWhenReport(record);
         }
         return null;
     }
 
     private static List<String> extractIsbnList(Record record) {
-        return Collections.singletonList(record.getPublication().getIsbn());
+        return nullIfEmpty(Collections.singletonList(record.getPublication().getIsbn()));
+    }
+
+    private static List<String> nullIfEmpty(List<String> values) {
+        if (noPresentValues(values)) {
+            return null;
+        }
+        return values;
+    }
+
+    @JacocoGenerated
+    private static boolean noPresentValues(List<String> values) {
+        return isNull(values) || values.isEmpty() || values.stream().allMatch(Objects::isNull);
     }
 
     private static String extractYear(Record record) {
-        return record.getEntityDescription().getPublicationDate().getNva().getYear();
+        return Optional.ofNullable(record.getEntityDescription())
+                   .map(EntityDescription::getPublicationDate)
+                   .map(PublicationDate::getNva)
+                   .map(PublicationDateNva::getYear)
+                   .orElse(null);
     }
 
     private static String extractPotentialSeriesNumberValue(String potentialSeriesNumber) {
@@ -61,7 +84,17 @@ public final class PublicationContextMapper {
         return NvaType.BOOK.getValue().equals(record.getType().getNva());
     }
 
-    private static PublicationContext buildPublicationContextWhenReportOrBook(Record record)
+    private static PublicationContext buildPublicationContextWhenBook(Record record)
+        throws InvalidIsbnException {
+        return new Book.BookBuilder()
+                   .withPublisher(extractPublisher(record))
+                   .withSeries(extractSeries(record))
+                   .withIsbnList(extractIsbnList(record))
+                   .withSeriesNumber(extractSeriesNumber(record))
+                   .build();
+    }
+
+    private static PublicationContext buildPublicationContextWhenReport(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Report.Builder()
                    .withPublisher(extractPublisher(record))
@@ -72,8 +105,10 @@ public final class PublicationContextMapper {
     }
 
     private static String extractSeriesNumber(Record record) {
-        var partOfSeriesValue = record.getPublication().getPartOfSeries();
-        return extractPartOfSeriesValue(partOfSeriesValue);
+        return Optional.ofNullable(record.getPublication())
+                   .map(Publication::getPartOfSeries)
+                   .map(PublicationContextMapper::extractPartOfSeriesValue)
+                   .orElse(null);
     }
 
     @JacocoGenerated
@@ -86,25 +121,39 @@ public final class PublicationContextMapper {
     }
 
     private static Series extractSeries(Record record) {
-        var identifier = record.getPublication().getPublicationContext().getSeries().getId();
         var year = extractYear(record);
-        return new Series(generatePublicationChannelUri(ChannelType.SERIES, identifier, year));
+        return Optional.ofNullable(record.getPublication().getPublicationContext())
+                   .map(no.sikt.nva.brage.migration.record.PublicationContext::getSeries)
+                   .map(no.sikt.nva.brage.migration.record.Series::getId)
+                   .map(id -> generateSeries(id, year)).orElse(null);
     }
 
     private static Publisher extractPublisher(Record record) {
-        var identifier = record.getPublication().getPublicationContext().getPublisher().getId();
         var year = extractYear(record);
-        return new Publisher(generatePublicationChannelUri(ChannelType.PUBLISHER, identifier, year));
+        return Optional.ofNullable(record.getPublication().getPublicationContext())
+                   .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
+                   .map(no.sikt.nva.brage.migration.record.Publisher::getId)
+                   .map(id -> generatePublisher(id, year)).orElse(null);
     }
 
-    private static URI generatePublicationChannelUri(ChannelType type, String publisherIdentifier,
-                                                     String year) {
-        return UriWrapper.fromUri(
+    private static Publisher generatePublisher(String publisherIdentifier,
+                                               String year) {
+        return new Publisher(UriWrapper.fromUri(
                 PublicationContextMapper.BASE_URL)
-                   .addChild(type.getType())
-                   .addChild(publisherIdentifier)
-                   .addChild(year)
-                   .getUri();
+                                 .addChild(ChannelType.PUBLISHER.getType())
+                                 .addChild(publisherIdentifier)
+                                 .addChild(year)
+                                 .getUri());
+    }
+
+    private static Series generateSeries(String publisherIdentifier,
+                                         String year) {
+        return new Series(UriWrapper.fromUri(
+                PublicationContextMapper.BASE_URL)
+                              .addChild(ChannelType.SERIES.getType())
+                              .addChild(publisherIdentifier)
+                              .addChild(year)
+                              .getUri());
     }
 
     private static boolean isReport(Record record) {

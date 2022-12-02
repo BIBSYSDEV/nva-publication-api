@@ -22,6 +22,7 @@ import no.unit.nva.model.Role;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import nva.commons.core.JacocoGenerated;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import org.joda.time.Instant;
 
@@ -42,10 +43,9 @@ public final class BrageNvaMapper {
     }
 
     private static java.time.Instant extractPublishedDate(Record record) {
-        if (isNull(record.getPublishedDate())) {
-            return null;
-        }
-        return Instant.parse(record.getPublishedDate().getNvaDate()).toDate().toInstant();
+        return Optional.ofNullable(record.getPublishedDate())
+            .map(date -> Instant.parse(record.getPublishedDate().getNvaDate()).toDate().toInstant())
+            .orElse(null);
     }
 
     private static URI extractHandle(Record brageRecord) {
@@ -79,11 +79,9 @@ public final class BrageNvaMapper {
                    .orElse(null);
     }
 
+    @JacocoGenerated
     private static List<String> emptyIfNull(List<String> values) {
-        if (isNull(values)) {
-            return Collections.emptyList();
-        }
-        return values;
+        return isNull(values) ? Collections.emptyList() : values;
     }
 
     private static Map<String, String> generateLanguageMap(String title) {
