@@ -20,7 +20,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.record.PublicationDate;
+import no.sikt.nva.brage.migration.record.PublicationDateNva.Builder;
 import no.sikt.nva.brage.migration.record.Record;
+import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
@@ -29,11 +33,22 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class BrageEntryEventConsumerTest {
 
+    public static final String PART_OF_SERIES_VALUE_V1 = "SOMESERIES;42";
+    public static final String PART_OF_SERIES_VALUE_V2 = "SOMESERIES;42:2022";
+    public static final String PART_OF_SERIES_VALUE_V3 = "SOMESERIES;2022:42";
+    public static final String PART_OF_SERIES_VALUE_V4 = "SOMESERIES;2022/42";
+    public static final String PART_OF_SERIES_VALUE_V5 = "SOMESERIES;42/2022";
+    public static final String EXPECTED_SERIES_NUMBER = "42";
     public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
+    public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
+    public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
+                                                                               new Builder().withYear("2020").build());
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
@@ -50,7 +65,37 @@ public class BrageEntryEventConsumerTest {
 
     @Test
     void shouldConvertBrageRecordToNvaPublication() throws IOException {
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().build();
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {PART_OF_SERIES_VALUE_V1, PART_OF_SERIES_VALUE_V2,
+        PART_OF_SERIES_VALUE_V3, PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
+    void shouldConvertBookToNvaPublication(String seriesNumber) throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_BOOK)
+                                                 .withSeriesNumberRecord(seriesNumber)
+                                                 .withSeriesNumberPublication(EXPECTED_SERIES_NUMBER)
+                                                 .withPublicationDate(PUBLICATION_DATE)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertWhenPublicationContextIsNull() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);

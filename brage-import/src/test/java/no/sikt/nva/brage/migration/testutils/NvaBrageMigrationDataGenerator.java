@@ -9,13 +9,15 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Language;
-import no.sikt.nva.brage.migration.record.PublicationInstance;
+import no.sikt.nva.brage.migration.record.PublicationContext;
+import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublishedDate;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
@@ -29,7 +31,6 @@ import no.sikt.nva.brage.migration.testutils.type.BrageType;
 import no.sikt.nva.brage.migration.testutils.type.TypeMapper;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.Role;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
@@ -72,9 +73,12 @@ public class NvaBrageMigrationDataGenerator {
         return new EntityDescription.Builder()
                    .withLanguage(builder.getLanguage().getNva())
                    .withContributors(List.of(createCorrespondingContributor()))
-                   .withReference(new Reference())
+                   .withReference(ReferenceGenerator.generateReference(builder))
                    .withDescription(builder.getDescription())
                    .withAbstract(builder.getEntityAbstract())
+                   .withAlternativeTitles(builder.getAlternativeTitlesMap())
+                   .withMainTitle(builder.getMainTitle())
+                   .withDate(builder.getPublicationDateForPublication())
                    .build();
     }
 
@@ -84,18 +88,12 @@ public class NvaBrageMigrationDataGenerator {
         record.setDoi(builder.getDoi());
         record.setId(builder.getHandle());
         record.setEntityDescription(createBrageEntityDescription(builder));
-        record.setType(createRandomSingleType());
+        record.setType(builder.getType());
         record.setBrageLocation(createRandomBrageLocation());
         record.setContentBundle(createSingleResourceContent());
-        record.setPublication(createRandomPublication());
+        record.setPublication(builder.getPublication());
         record.setPublishedDate(builder.getPublishedDate());
         return record;
-    }
-
-    private no.sikt.nva.brage.migration.record.Publication createRandomPublication() {
-        var publication = new no.sikt.nva.brage.migration.record.Publication();
-        publication.setIssn(randomIssn());
-        return publication;
     }
 
     private ResourceContent createSingleResourceContent() {
@@ -119,13 +117,6 @@ public class NvaBrageMigrationDataGenerator {
                    .build();
     }
 
-    private Type createRandomSingleType() {
-        int valueToChoose = new Random().nextInt(BrageType.values().length);
-        var randomBrageType = BrageType.values()[valueToChoose];
-        var matchingNvaType = TypeMapper.convertBrageTypeToNvaType(List.of(randomBrageType.toString()));
-        return new Type(List.of(randomBrageType.getType()), matchingNvaType);
-    }
-
     private String createCorrespondingBrageRole(String role) {
         return role.substring(0, 1).toLowerCase() + role.substring(1);
     }
@@ -143,23 +134,18 @@ public class NvaBrageMigrationDataGenerator {
         Builder builder) {
         var entityDescription = new no.sikt.nva.brage.migration.record.EntityDescription();
         entityDescription.setLanguage(builder.getLanguage());
-        entityDescription.setMainTitle(randomString());
+        entityDescription.setMainTitle(builder.getMainTitle());
         entityDescription.setAlternativeTitles(List.of(randomString()));
         entityDescription.setContributors(List.of(createContributor()));
         entityDescription.setDescriptions(Collections.singletonList(builder.getDescription()));
         entityDescription.setAbstracts(Collections.singletonList(builder.getEntityAbstract()));
+        entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
+        entityDescription.setPublicationDate(builder.getPublicationDate());
         return entityDescription;
     }
 
     private Contributor createContributor() {
         return new Contributor(new Identity("Ola"), "Creator", "author");
-    }
-
-    private PublicationInstance createRandomPublicationInstance() {
-        var publicationInstance = new PublicationInstance();
-        publicationInstance.setVolume(randomInteger().toString());
-        publicationInstance.setIssue(randomInteger().toString());
-        return publicationInstance;
     }
 
     public static class Builder {
@@ -178,6 +164,41 @@ public class NvaBrageMigrationDataGenerator {
         private no.sikt.nva.brage.migration.record.Publication publication;
         private String description;
         private String entityAbstract;
+        private List<String> alternativeTitles;
+        private Map<String, String> alternativeTitlesMap;
+        private String mainTitle;
+        private PublicationDate publicationDate;
+        private String seriesNumberRecord;
+        private String seriesNumberPublication;
+        private no.unit.nva.model.PublicationDate publicationDateForPublication;
+
+        public PublicationDate getPublicationDate() {
+            return publicationDate;
+        }
+
+        public String getSeriesNumberPublication() {
+            return seriesNumberPublication;
+        }
+
+        public String getSeriesNumberRecord() {
+            return seriesNumberRecord;
+        }
+
+        public no.unit.nva.model.PublicationDate getPublicationDateForPublication() {
+            return publicationDateForPublication;
+        }
+
+        public String getMainTitle() {
+            return mainTitle;
+        }
+
+        public Map<String, String> getAlternativeTitlesMap() {
+            return alternativeTitlesMap;
+        }
+
+        public List<String> getAlternativeTitles() {
+            return alternativeTitles;
+        }
 
         public String getEntityAbstract() {
             return entityAbstract;
@@ -240,6 +261,16 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withPublicationDateForPublication(no.unit.nva.model.PublicationDate publicationDate) {
+            this.publicationDateForPublication = publicationDate;
+            return this;
+        }
+
+        public Builder withMainTitle(String mainTitle) {
+            this.mainTitle = mainTitle;
+            return this;
+        }
+
         public Builder withEntityDescription(EntityDescription entityDescription) {
             this.entityDescription = entityDescription;
             return this;
@@ -250,8 +281,18 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withAlternativeLanguages(List<String> alternativeLanguages) {
+            this.alternativeTitles = alternativeLanguages;
+            return this;
+        }
+
         public Builder withHandle(URI handle) {
             this.handle = handle;
+            return this;
+        }
+
+        public Builder withAlternativeTitlesMap(Map<String, String> map) {
+            this.alternativeTitlesMap = map;
             return this;
         }
 
@@ -265,6 +306,16 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withSeriesNumberRecord(String seriesNumberRecord) {
+            this.seriesNumberRecord = seriesNumberRecord;
+            return this;
+        }
+
+        public Builder withSeriesNumberPublication(String seriesNumberPublication) {
+            this.seriesNumberPublication = seriesNumberPublication;
+            return this;
+        }
+
         public Builder withDoi(URI doi) {
             this.doi = doi;
             return this;
@@ -275,12 +326,17 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withPublicationDate(PublicationDate publicationDate) {
+            this.publicationDate = publicationDate;
+            return this;
+        }
+
         public Builder withContributor(Contributor contributor) {
             this.contributor = contributor;
             return this;
         }
 
-        public Builder withType() {
+        public Builder withType(Type type) {
             this.type = type;
             return this;
         }
@@ -293,6 +349,12 @@ public class NvaBrageMigrationDataGenerator {
         public NvaBrageMigrationDataGenerator build() {
             if (Objects.isNull(handle)) {
                 handle = randomHandle();
+            }
+            if (Objects.isNull(alternativeTitles)) {
+                alternativeTitles = notRandomAlternativeTitle();
+            }
+            if (Objects.isNull(alternativeTitlesMap)) {
+                alternativeTitlesMap = createCorrespondingMap();
             }
             if (Objects.isNull(doi) && randomBoolean()) {
                 doi = randomDoi();
@@ -312,7 +374,42 @@ public class NvaBrageMigrationDataGenerator {
             if (Objects.isNull(entityAbstract)) {
                 entityAbstract = randomString();
             }
+            if (Objects.isNull(mainTitle)) {
+                mainTitle = randomString();
+            }
+            if (Objects.isNull(type)) {
+                type = createRandomSingleType();
+            }
+            if (Objects.isNull(publication)) {
+                publication = createRandomPublication();
+            }
+            if (Objects.nonNull(publicationDate)) {
+                this.publicationDateForPublication =
+                    new no.unit.nva.model.PublicationDate.Builder().withDay(publicationDate.getNva().getDay())
+                        .withMonth(publicationDate.getNva().getMonth())
+                        .withDay(publicationDate.getNva().getDay())
+                        .build();
+            }
             return new NvaBrageMigrationDataGenerator(this);
+        }
+
+        private Map<String, String> createCorrespondingMap() {
+            return Map.of("no", "Noe på norsk språk",
+                          "en", "Something in English",
+                          "fr", "Une chose en Francais",
+                          "lv", "Labdien, mans nezināmais draugs",
+                          "de", "Ein ding aus Deutsch",
+                          "is", "Mér likar þessir hestar");
+        }
+
+        private List<String> notRandomAlternativeTitle() {
+            return List.of("Noe på norsk språk",
+                           "Something in English",
+                           "One more title in English",
+                           "Une chose en Francais",
+                           "Labdien, mans nezināmais draugs",
+                           "Ein ding aus Deutsch",
+                           "Mér likar þessir hestar");
         }
 
         private PublishedDate randomPublishedDate() {
@@ -337,6 +434,21 @@ public class NvaBrageMigrationDataGenerator {
 
         private URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
+        }
+
+        private Type createRandomSingleType() {
+            int valueToChoose = new Random().nextInt(BrageType.values().length);
+            var randomBrageType = BrageType.values()[valueToChoose];
+            var matchingNvaType = TypeMapper.convertBrageTypeToNvaType(List.of(randomBrageType.toString()));
+            return new Type(List.of(randomBrageType.getType()), matchingNvaType);
+        }
+
+        private no.sikt.nva.brage.migration.record.Publication createRandomPublication() {
+            var publication = new no.sikt.nva.brage.migration.record.Publication();
+            publication.setIssn(randomIssn());
+            publication.setPublicationContext(new PublicationContext());
+            publication.setPartOfSeries(this.seriesNumberRecord);
+            return publication;
         }
     }
 }

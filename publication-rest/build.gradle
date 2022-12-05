@@ -38,12 +38,6 @@ dependencies {
     compileOnly(libs.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
-
-    //To support dynamodb local when testing, using mac m1
-    if (System.getProperty("os.arch") == "aarch64") {
-        testImplementation group: 'io.github.ganadist.sqlite4java', name: 'libsqlite4java-osx-aarch64', version: '1.0.392'
-    }
-
 }
 
 test {

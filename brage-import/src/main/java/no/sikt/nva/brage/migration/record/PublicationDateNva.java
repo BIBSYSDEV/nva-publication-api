@@ -17,7 +17,7 @@ public final class PublicationDateNva {
     private String day;
 
     @JsonCreator
-    private PublicationDateNva(Builder builder) {
+    public PublicationDateNva(Builder builder) {
         setYear(builder.year);
         setMonth(builder.month);
         setDay(builder.day);
