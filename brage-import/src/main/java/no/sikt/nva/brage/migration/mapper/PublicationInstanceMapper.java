@@ -1,16 +1,20 @@
 package no.sikt.nva.brage.migration.mapper;
 
+import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescription;
 import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.BrageType;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.researchdata.DataSet;
+import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
@@ -18,11 +22,18 @@ import org.joda.time.DateTime;
 
 public final class PublicationInstanceMapper {
 
-    private PublicationInstanceMapper(){}
+    private PublicationInstanceMapper() {
+    }
 
     public static PublicationInstance<? extends Pages> buildPublicationInstance(Record record) {
         if (isJournalArticle(record)) {
             return buildPublicationInstanceWhenJournalArticle(record);
+        }
+        if (isMap(record)) {
+            return buildPublicationInstanceWhenMap(record);
+        }
+        if (isDataset(record)) {
+            return buildPublicationInstanceWhenDataset(record);
         }
         if (isBachelorThesis(record)) {
             return buildPublicationInstanceWhenBachelorThesis(record);
@@ -33,7 +44,31 @@ public final class PublicationInstanceMapper {
         if (isDoctoralThesis(record)) {
             return buildPublicationInstanceWhenDoctoralThesis(record);
         }
+
         return null;
+    }
+
+    private static boolean isDataset(Record record) {
+        return NvaType.DATASET.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDataset(Record record) {
+        return new DataSet(false, new GeographicalDescription(String.join(", ", extractSpatialCoverage(record))),
+                           null, null, null);
+    }
+
+    private static String extractSpatialCoverage(Record record) {
+        return Optional.ofNullable(record.getSpatialCoverage())
+                   .map(spatialCoverages -> String.join(", ", spatialCoverages))
+                   .orElse(null);
+    }
+
+    private static boolean isMap(Record record) {
+        return NvaType.MAP.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMap(Record record) {
+        return new Map(extractDescription(record), extractMonographPages(record));
     }
 
     private static String extractPublicationYear(Record record) {
@@ -121,7 +156,8 @@ public final class PublicationInstanceMapper {
     }
 
     private static String extractPagesWhenMonographPages(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationInstance().getPages())
+        return Optional.ofNullable(record.getEntityDescription().getPublicationInstance())
+                   .map(no.sikt.nva.brage.migration.record.PublicationInstance::getPages)
                    .map(PublicationInstanceMapper::generatePages)
                    .orElse(null);
     }

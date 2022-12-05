@@ -19,14 +19,19 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva.Builder;
+import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.paths.UnixPath;
@@ -47,8 +52,13 @@ public class BrageEntryEventConsumerTest {
     public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
+    public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
+    public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
                                                                                new Builder().withYear("2020").build());
+    public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(URI.create(
+        "https://api.nva.unit.no/customer/test")).build();
+    public static final String TEST_CUSTOMER = "TEST";
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
@@ -64,9 +74,13 @@ public class BrageEntryEventConsumerTest {
     }
 
     @Test
-    void shouldConvertBrageRecordToNvaPublication() throws IOException {
+    void shouldConvertBrageRecordToNvaPublicationWithCorrectCustomer() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_BOOK)
+                                                 .withCustomer(TEST_CUSTOMER)
+                                                 .withDescription(null)
+                                                 .withAbstracts(null)
+                                                 .withOrganization(TEST_ORGANIZATION)
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
@@ -80,9 +94,39 @@ public class BrageEntryEventConsumerTest {
     void shouldConvertBookToNvaPublication(String seriesNumber) throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_BOOK)
+                                                 .withDescription(List.of("Description"))
+                                                 .withAbstracts(List.of("Abstract"))
                                                  .withSeriesNumberRecord(seriesNumber)
                                                  .withSeriesNumberPublication(EXPECTED_SERIES_NUMBER)
                                                  .withPublicationDate(PUBLICATION_DATE)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertMapToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_MAP)
+                                                 .withDescription(Collections.emptyList())
+                                                 .withAbstracts(Collections.emptyList())
+                                                 .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
+                                                 .withMonographPages(
+                                                     new MonographPages.Builder().withPages("5").build())
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertDatasetToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_DATASET)
+                                                 .withSpatialCoverage(List.of("Norway"))
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
