@@ -54,7 +54,7 @@ public class AssociatedArtifactMover {
     }
 
     private String getSourceBucket() {
-        return s3Event.getRecords().get(0).getS3().getBucket().toString();
+        return s3Event.getRecords().get(0).getS3().getBucket().getName();
     }
 
     private String getObjectKeyPath() {

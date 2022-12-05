@@ -10,7 +10,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.record.Language;
+import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
+import no.sikt.nva.brage.migration.record.content.ContentFile;
+import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -21,6 +24,9 @@ import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Role;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -43,6 +49,7 @@ public final class BrageNvaMapper {
                    .withPublishedDate(extractPublishedDate(record))
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withPublisher(extractPublisher(record))
+                   .withAssociatedArtifacts(extractAssociatedArtifacts(record))
                    .build();
     }
 
@@ -50,6 +57,48 @@ public final class BrageNvaMapper {
         return Optional.ofNullable(record.getEntityDescription().getDescriptions())
                    .map(BrageNvaMapper::generateDescription)
                    .orElse(null);
+    }
+
+    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record record) {
+        return Optional.ofNullable(record.getContentBundle())
+                   .map(ResourceContent::getContentFiles)
+                   .map(list -> convertFilesToAssociatedArtifact(list, record))
+                   .orElse(null);
+    }
+
+    private static List<AssociatedArtifact> convertFilesToAssociatedArtifact(List<ContentFile> files, Record record) {
+        return files.stream()
+                   .map(file -> generateFile(file, record))
+                   .collect(Collectors.toList());
+    }
+
+    private static AssociatedArtifact generateFile(ContentFile file, Record record) {
+        return File.builder()
+                   .withName(file.getFilename())
+                   .withIdentifier(file.getIdentifier())
+                   .withLicense(extractLicense(file))
+                   .withPublisherAuthority(extractPublisherAuthority(record))
+                   .withEmbargoDate(extractEmbargoDate(file))
+                   .buildPublishedFile();
+    }
+
+    private static java.time.Instant extractEmbargoDate(ContentFile file) {
+        return Optional.ofNullable(file)
+                   .map(ContentFile::getEmbargoDate)
+                   .map(date -> Instant.parse(date).toDate().toInstant())
+                   .orElse(null);
+    }
+
+    private static Boolean extractPublisherAuthority(Record record) {
+        return Optional.ofNullable(record.getPublisherAuthority())
+                   .map(PublisherAuthority::getNva)
+                   .orElse(false);
+    }
+
+    private static License extractLicense(ContentFile file) {
+        return new License.Builder()
+                   .withIdentifier(file.getLicense().getNvaLicense().getIdentifier().getValue())
+                   .build();
     }
 
     private static Organization extractPublisher(Record record) {

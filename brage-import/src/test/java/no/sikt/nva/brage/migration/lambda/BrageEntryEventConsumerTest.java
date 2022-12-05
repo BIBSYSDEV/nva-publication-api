@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
@@ -24,6 +25,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import no.sikt.nva.brage.migration.AssociatedArtifactException;
+import java.util.UUID;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationDate;
@@ -33,9 +35,17 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
 import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
+import no.sikt.nva.brage.migration.record.content.ContentFile;
+import no.sikt.nva.brage.migration.record.content.ResourceContent;
+import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
+import no.sikt.nva.brage.migration.record.license.License;
+import no.sikt.nva.brage.migration.record.license.NvaLicense;
+import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -56,28 +66,33 @@ public class BrageEntryEventConsumerTest {
     public static final String PART_OF_SERIES_VALUE_V4 = "SOMESERIES;2022/42";
     public static final String PART_OF_SERIES_VALUE_V5 = "SOMESERIES;42/2022";
     public static final String EXPECTED_SERIES_NUMBER = "42";
+    public static final UUID UUID = java.util.UUID.randomUUID();
     public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
     public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
     public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
+    public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
                                                                                new Builder().withYear("2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(URI.create(
         "https://api.nva.unit.no/customer/test")).build();
     public static final String TEST_CUSTOMER = "TEST";
+    public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
+    public static final String FILENAME = "filename";
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
+    private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
 
     @BeforeEach
     void init() {
         s3Client = new FakeS3cClientWithCopyObjectSupport();
         this.handler = new BrageEntryEventConsumer(s3Client);
-        s3Driver = new S3Driver(s3Client, "ignored");
+        s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
     }
 
     @Test
@@ -87,6 +102,8 @@ public class BrageEntryEventConsumerTest {
                                                  .withCustomer(TEST_CUSTOMER)
                                                  .withDescription(null)
                                                  .withAbstracts(null)
+                                                 .withResourceContent(createResourceContent())
+                                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                                                  .withOrganization(TEST_ORGANIZATION)
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
@@ -165,32 +182,54 @@ public class BrageEntryEventConsumerTest {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
+                                                 .withResourceContent(createResourceContent())
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
-        assertThrows(AssociatedArtifactException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
     @Test
     void shouldCopyAssociatedArtifactsToResourceStorage() throws IOException {
-        s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withPublishedDate(null)
+                                                 .withResourceContent(createResourceContent())
                                                  .withType(TYPE_BOOK)
                                                  .build();
         var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(nvaBrageMigrationDataGenerator.getBrageRecord()
             , "my/path/some.json");
-        var objectKey = "";
+        var objectKey = UUID;
         var expectedDopyObjRequest = CopyObjectRequest.builder()
-                                 .sourceBucket("ignored")
-                                 .destinationBucket(new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
-                                 .sourceKey("my/path/" + objectKey)
-                                 .destinationKey(objectKey)
-                                 .build();
+                                         .sourceBucket(INPUT_BUCKET_NAME)
+                                         .destinationBucket(
+                                             new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
+                                         .sourceKey("my/path/" + objectKey)
+                                         .destinationKey(objectKey.toString())
+                                         .build();
         handler.handleRequest(s3Event, CONTEXT);
         var fakeS3cClientWithCopyObjectSupport = (FakeS3cClientWithCopyObjectSupport) s3Client;
         var actualCopyObjectRequests = fakeS3cClientWithCopyObjectSupport.getCopyObjectRequestList();
         assertThat(actualCopyObjectRequests, hasSize(1));
         assertThat(actualCopyObjectRequests, contains(expectedDopyObjRequest));
+    }
+    private ResourceContent createResourceContent() {
+        var file = new ContentFile(FILENAME,
+                                   BundleType.ORIGINAL,
+                                   "description",
+                                   UUID,
+                                   new License("someLicense", new NvaLicense(LICENSE_IDENTIFIER)),
+                                   EMBARGO_DATE);
+
+        return new ResourceContent(Collections.singletonList(file));
+    }
+
+    private List<AssociatedArtifact> createCorrespondingAssociatedArtifacts() {
+        return List.of(File.builder()
+                           .withIdentifier(UUID)
+                           .withLicense(new no.unit.nva.model.associatedartifacts.file.License.Builder()
+                                            .withIdentifier(String.valueOf(LICENSE_IDENTIFIER.getValue())).build())
+                           .withName(FILENAME)
+                           .withEmbargoDate(Instant.parse(EMBARGO_DATE))
+                           .buildPublishedFile());
     }
 
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {
@@ -237,7 +276,7 @@ public class BrageEntryEventConsumerTest {
     }
 
     private S3Entity createS3Entity(String expectedObjectKey) {
-        var bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
+        var bucket = new S3BucketEntity(INPUT_BUCKET_NAME, EMPTY_USER_IDENTITY, randomString());
         var object = new S3ObjectEntity(expectedObjectKey,
                                         SOME_FILE_SIZE,
                                         randomString(),
