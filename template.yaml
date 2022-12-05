@@ -634,6 +634,9 @@ Resources:
       Runtime: java11
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: 'nva-resource-storage-${AWS::AccountId}'
       Events:
         BrageMigrationEvent:
           Type: S3

@@ -3,7 +3,9 @@ package no.sikt.nva.brage.migration.lambda;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -21,6 +23,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import no.sikt.nva.brage.migration.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationDate;
@@ -28,18 +31,22 @@ import no.sikt.nva.brage.migration.record.PublicationDateNva.Builder;
 import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
+import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
+import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
 public class BrageEntryEventConsumerTest {
 
@@ -68,7 +75,7 @@ public class BrageEntryEventConsumerTest {
 
     @BeforeEach
     void init() {
-        s3Client = new FakeS3Client();
+        s3Client = new FakeS3cClientWithCopyObjectSupport();
         this.handler = new BrageEntryEventConsumer(s3Client);
         s3Driver = new S3Driver(s3Client, "ignored");
     }
@@ -152,6 +159,40 @@ public class BrageEntryEventConsumerTest {
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
+    @Test
+    void shouldThrowExceptionIfItCannotCopyAssociatedArtifacts() throws IOException {
+        s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        assertThrows(AssociatedArtifactException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
+    void shouldCopyAssociatedArtifactsToResourceStorage() throws IOException {
+        s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(nvaBrageMigrationDataGenerator.getBrageRecord()
+            , "my/path/some.json");
+        var objectKey = "";
+        var expectedDopyObjRequest = CopyObjectRequest.builder()
+                                 .sourceBucket("ignored")
+                                 .destinationBucket(new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
+                                 .sourceKey("my/path/" + objectKey)
+                                 .destinationKey(objectKey)
+                                 .build();
+        handler.handleRequest(s3Event, CONTEXT);
+        var fakeS3cClientWithCopyObjectSupport = (FakeS3cClientWithCopyObjectSupport) s3Client;
+        var actualCopyObjectRequests = fakeS3cClientWithCopyObjectSupport.getCopyObjectRequestList();
+        assertThat(actualCopyObjectRequests, hasSize(1));
+        assertThat(actualCopyObjectRequests, contains(expectedDopyObjRequest));
+    }
+
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {
         var invalidBrageRecord = randomJson();
         var uri = s3Driver.insertFile(randomS3Path(), invalidBrageRecord);
@@ -161,6 +202,12 @@ public class BrageEntryEventConsumerTest {
     private S3Event createNewBrageRecordEvent(Record record) throws IOException {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
         var uri = s3Driver.insertFile(randomS3Path(), recordAsJson);
+        return createS3Event(uri);
+    }
+
+    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record, String path) throws IOException {
+        var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
+        var uri = s3Driver.insertFile(UnixPath.of(path), recordAsJson);
         return createS3Event(uri);
     }
 
