@@ -21,6 +21,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationDate;
@@ -28,9 +29,17 @@ import no.sikt.nva.brage.migration.record.PublicationDateNva.Builder;
 import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
+import no.sikt.nva.brage.migration.record.content.ContentFile;
+import no.sikt.nva.brage.migration.record.content.ResourceContent;
+import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
+import no.sikt.nva.brage.migration.record.license.License;
+import no.sikt.nva.brage.migration.record.license.NvaLicense;
+import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -49,16 +58,20 @@ public class BrageEntryEventConsumerTest {
     public static final String PART_OF_SERIES_VALUE_V4 = "SOMESERIES;2022/42";
     public static final String PART_OF_SERIES_VALUE_V5 = "SOMESERIES;42/2022";
     public static final String EXPECTED_SERIES_NUMBER = "42";
+    public static final UUID UUID = java.util.UUID.randomUUID();
     public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
     public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
     public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
+    public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
                                                                                new Builder().withYear("2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(URI.create(
         "https://api.nva.unit.no/customer/test")).build();
     public static final String TEST_CUSTOMER = "TEST";
+    public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
+    public static final String FILENAME = "filename";
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
@@ -80,6 +93,8 @@ public class BrageEntryEventConsumerTest {
                                                  .withCustomer(TEST_CUSTOMER)
                                                  .withDescription(null)
                                                  .withAbstracts(null)
+                                                 .withResourceContent(createResourceContent())
+                                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                                                  .withOrganization(TEST_ORGANIZATION)
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
@@ -150,6 +165,27 @@ public class BrageEntryEventConsumerTest {
     void shouldThrowExceptionWhenInvalidBrageRecordIsProvided() throws IOException {
         var s3Event = createNewInvalidBrageRecordEvent();
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
+    private ResourceContent createResourceContent() {
+        var file = new ContentFile(FILENAME,
+                                   BundleType.ORIGINAL,
+                                   "description",
+                                   UUID,
+                                   new License("someLicense", new NvaLicense(LICENSE_IDENTIFIER)),
+                                   EMBARGO_DATE);
+
+        return new ResourceContent(Collections.singletonList(file));
+    }
+
+    private List<AssociatedArtifact> createCorrespondingAssociatedArtifacts() {
+        return List.of(File.builder()
+                           .withIdentifier(UUID)
+                           .withLicense(new no.unit.nva.model.associatedartifacts.file.License.Builder()
+                                            .withIdentifier(String.valueOf(LICENSE_IDENTIFIER.getValue())).build())
+                           .withName(FILENAME)
+                           .withEmbargoDate(Instant.parse(EMBARGO_DATE))
+                           .buildPublishedFile());
     }
 
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {
