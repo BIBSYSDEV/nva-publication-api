@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -13,6 +14,8 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
 public class AssociatedArtifactMover {
 
+    public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE = "Could not copy associated "
+                                                                                      + "artefact";
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
@@ -25,31 +28,27 @@ public class AssociatedArtifactMover {
 
     public Publication pushAssociatedArtifactsToPersistedStorage(Publication publication) {
         publication.getAssociatedArtifacts()
-            .forEach(associatedArtifact -> pushAssociatedArtifactToPersistedStorage(associatedArtifact));
+            .forEach(this::pushAssociatedArtifactToPersistedStorage);
         return publication;
     }
 
     private void pushAssociatedArtifactToPersistedStorage(AssociatedArtifact associatedArtifact) {
-        if (associatedArtifact instanceof File) {
 
-            try {
-                var file = (File) associatedArtifact;
-                var objectKey = file.getIdentifier().toString();
-                var objectKeyPath = getObjectKeyPath();
-                var sourceBucket = getSourceBucket();
+        try {
+            var file = (File) associatedArtifact;
+            var objectKey = file.getIdentifier().toString();
+            var objectKeyPath = getObjectKeyPath();
+            var sourceBucket = getSourceBucket();
 
-                var copyObjRequest = CopyObjectRequest.builder()
-                                         .sourceBucket(sourceBucket)
-                                         .destinationBucket(persistedStorageBucket)
-                                         .sourceKey(objectKeyPath + objectKey)
-                                         .destinationKey(objectKey)
-                                         .build();
-                s3Client.copyObject(copyObjRequest);
-            } catch (Exception e) {
-                throw new AssociatedArtifactException("Could not copy associated artefact");
-            }
-        } else {
-            throw new AssociatedArtifactException("Associated Artefact not a file");
+            var copyObjRequest = CopyObjectRequest.builder()
+                                     .sourceBucket(sourceBucket)
+                                     .destinationBucket(persistedStorageBucket)
+                                     .sourceKey(objectKeyPath + objectKey)
+                                     .destinationKey(objectKey)
+                                     .build();
+            s3Client.copyObject(copyObjRequest);
+        } catch (Exception e) {
+            throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE);
         }
     }
 
@@ -60,8 +59,8 @@ public class AssociatedArtifactMover {
     private String getObjectKeyPath() {
         var recordObjectKey = s3Event.getRecords().get(0).getS3().getObject().getKey();
         Path path = Paths.get(recordObjectKey);
-        var directory = path.getParent().toString();
-        if (StringUtils.isNotEmpty(directory)) {
+        var directory = path.getParent();
+        if (Objects.nonNull(directory)) {
             return directory + "/";
         } else {
             return StringUtils.EMPTY_STRING;

@@ -1,9 +1,11 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static no.sikt.nva.brage.migration.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -11,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
@@ -24,7 +25,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import no.sikt.nva.brage.migration.AssociatedArtifactException;
 import java.util.UUID;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Pages;
@@ -33,14 +33,14 @@ import no.sikt.nva.brage.migration.record.PublicationDateNva.Builder;
 import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
-import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
-import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
+import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
+import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
@@ -54,6 +54,7 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
@@ -178,14 +179,19 @@ public class BrageEntryEventConsumerTest {
 
     @Test
     void shouldThrowExceptionIfItCannotCopyAssociatedArtifacts() throws IOException {
-        s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
+        this.s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
+        this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+        this.handler = new BrageEntryEventConsumer(s3Client);
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .withResourceContent(createResourceContent())
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
-        assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+
+        Executable action = () -> handler.handleRequest(s3Event, CONTEXT);
+        var exception = assertThrows(RuntimeException.class, action);
+        assertThat(exception.getMessage(), containsString(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE));
     }
 
     @Test
