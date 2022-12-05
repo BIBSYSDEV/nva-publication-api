@@ -14,9 +14,11 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -39,13 +41,32 @@ public final class BrageNvaMapper {
                    .withHandle(extractHandle(record))
                    .withEntityDescription(extractEntityDescription(record))
                    .withPublishedDate(extractPublishedDate(record))
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withPublisher(extractPublisher(record))
                    .build();
+    }
+
+    public static String extractDescription(Record record) {
+        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
+                   .map(BrageNvaMapper::generateDescription)
+                   .orElse(null);
+    }
+
+    private static Organization extractPublisher(Record record) {
+        return Optional.ofNullable(record.getCustomer())
+                   .map(CustomerMapper::getCustomerUri)
+                   .map(BrageNvaMapper::generateOrganization)
+                   .orElse(null);
+    }
+
+    private static Organization generateOrganization(URI customerUri) {
+        return new Organization.Builder().withId(customerUri).build();
     }
 
     private static java.time.Instant extractPublishedDate(Record record) {
         return Optional.ofNullable(record.getPublishedDate())
-            .map(date -> Instant.parse(record.getPublishedDate().getNvaDate()).toDate().toInstant())
-            .orElse(null);
+                   .map(date -> Instant.parse(record.getPublishedDate().getNvaDate()).toDate().toInstant())
+                   .orElse(null);
     }
 
     private static URI extractHandle(Record brageRecord) {
@@ -169,18 +190,12 @@ public final class BrageNvaMapper {
         return language.getNva();
     }
 
-    private static String extractDescription(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
-                   .map(BrageNvaMapper::generateDescription)
-                   .orElse(null);
-    }
-
     private static String generateDescription(List<String> descriptions) {
-        return descriptions.get(0);
+        return isNull(descriptions) || descriptions.isEmpty() ? null : descriptions.get(0);
     }
 
-    private static String generateAbstract(List<String> descriptions) {
-        return descriptions.get(0);
+    private static String generateAbstract(List<String> abstracts) {
+        return isNull(abstracts) || abstracts.isEmpty() ? null : abstracts.get(0);
     }
 
     private static String extractAbstract(Record record) {

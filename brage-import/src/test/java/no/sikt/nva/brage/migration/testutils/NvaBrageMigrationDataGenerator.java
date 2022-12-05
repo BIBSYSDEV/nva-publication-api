@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.testutils;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -16,8 +17,10 @@ import java.util.UUID;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Language;
+import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationContext;
 import no.sikt.nva.brage.migration.record.PublicationDate;
+import no.sikt.nva.brage.migration.record.PublicationInstance;
 import no.sikt.nva.brage.migration.record.PublishedDate;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
@@ -30,8 +33,11 @@ import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
 import no.sikt.nva.brage.migration.testutils.type.BrageType;
 import no.sikt.nva.brage.migration.testutils.type.TypeMapper;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Role;
+import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.Instant;
@@ -60,13 +66,14 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
-        var publication = new Publication.Builder()
-                              .withDoi(builder.getDoi())
-                              .withHandle(builder.getHandle())
-                              .withEntityDescription(createEntityDescription(builder))
-                              .withPublishedDate(convertPublishedDateToInstant(builder))
-                              .build();
-        return publication;
+        return new Publication.Builder()
+                   .withDoi(builder.getDoi())
+                   .withHandle(builder.getHandle())
+                   .withEntityDescription(createEntityDescription(builder))
+                   .withPublishedDate(convertPublishedDateToInstant(builder))
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withPublisher(builder.getOrganization())
+                   .build();
     }
 
     private EntityDescription createEntityDescription(Builder builder) {
@@ -74,8 +81,8 @@ public class NvaBrageMigrationDataGenerator {
                    .withLanguage(builder.getLanguage().getNva())
                    .withContributors(List.of(createCorrespondingContributor()))
                    .withReference(ReferenceGenerator.generateReference(builder))
-                   .withDescription(builder.getDescription())
-                   .withAbstract(builder.getEntityAbstract())
+                   .withDescription(builder.getDescriptionsForPublication())
+                   .withAbstract(builder.getEntityAbstractsForPublication())
                    .withAlternativeTitles(builder.getAlternativeTitlesMap())
                    .withMainTitle(builder.getMainTitle())
                    .withDate(builder.getPublicationDateForPublication())
@@ -84,6 +91,7 @@ public class NvaBrageMigrationDataGenerator {
 
     private Record createRecord(Builder builder) {
         var record = new Record();
+        record.setSpatialCoverage(builder.getSpatialCoverage());
         record.setCustomer(builder.getCustomer());
         record.setDoi(builder.getDoi());
         record.setId(builder.getHandle());
@@ -137,11 +145,18 @@ public class NvaBrageMigrationDataGenerator {
         entityDescription.setMainTitle(builder.getMainTitle());
         entityDescription.setAlternativeTitles(List.of(randomString()));
         entityDescription.setContributors(List.of(createContributor()));
-        entityDescription.setDescriptions(Collections.singletonList(builder.getDescription()));
-        entityDescription.setAbstracts(Collections.singletonList(builder.getEntityAbstract()));
+        entityDescription.setDescriptions(builder.getDescriptions());
+        entityDescription.setAbstracts(builder.getAbstracts());
         entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
         entityDescription.setPublicationDate(builder.getPublicationDate());
+        entityDescription.setPublicationInstance(createPublicationInstance(builder));
         return entityDescription;
+    }
+
+    private PublicationInstance createPublicationInstance(Builder builder) {
+        var publicationInstance = new PublicationInstance();
+        publicationInstance.setPageNumber(builder.getPages());
+        return publicationInstance;
     }
 
     private Contributor createContributor() {
@@ -154,16 +169,14 @@ public class NvaBrageMigrationDataGenerator {
         private URI doi;
         private String brageLocation;
         private List<ContentFile> contentFiles;
-        private String customerUri;
         private Language language;
         private Contributor contributor;
         private Type type;
         private ResourceContent resourceContent;
         private PublishedDate publishedDate;
-        private EntityDescription entityDescription;
         private no.sikt.nva.brage.migration.record.Publication publication;
-        private String description;
-        private String entityAbstract;
+        private List<String> descriptions;
+        private List<String> abstracts;
         private List<String> alternativeTitles;
         private Map<String, String> alternativeTitlesMap;
         private String mainTitle;
@@ -171,6 +184,46 @@ public class NvaBrageMigrationDataGenerator {
         private String seriesNumberRecord;
         private String seriesNumberPublication;
         private no.unit.nva.model.PublicationDate publicationDateForPublication;
+        private Pages pages;
+        private MonographPages monographPages;
+        private List<String> spatialCoverage;
+        private String customer;
+        private Organization organization;
+
+        public List<String> getAbstracts() {
+            return abstracts;
+        }
+
+        public Builder withAbstracts(List<String> abstracts) {
+            this.abstracts = abstracts;
+            return this;
+        }
+
+        public Organization getOrganization() {
+            return organization;
+        }
+
+        public String getCustomer() {
+            return customer;
+        }
+
+        public Builder withOrganization(Organization organization) {
+            this.organization = organization;
+            return this;
+        }
+
+        public Builder withCustomer(String customer) {
+            this.customer = customer;
+            return this;
+        }
+
+        public List<String> getSpatialCoverage() {
+            return spatialCoverage;
+        }
+
+        public Pages getPages() {
+            return pages;
+        }
 
         public PublicationDate getPublicationDate() {
             return publicationDate;
@@ -200,16 +253,8 @@ public class NvaBrageMigrationDataGenerator {
             return alternativeTitles;
         }
 
-        public String getEntityAbstract() {
-            return entityAbstract;
-        }
-
         public no.sikt.nva.brage.migration.record.Publication getPublication() {
             return publication;
-        }
-
-        public EntityDescription getEntityDescription() {
-            return entityDescription;
         }
 
         public PublishedDate getPublishedDate() {
@@ -224,8 +269,12 @@ public class NvaBrageMigrationDataGenerator {
             return brageLocation;
         }
 
-        public String getDescription() {
-            return description;
+        public List<String> getDescriptions() {
+            return descriptions;
+        }
+
+        public String getDescriptionsForPublication() {
+            return isNull(descriptions) || descriptions.isEmpty() ? null : descriptions.get(0);
         }
 
         public Type getType() {
@@ -252,8 +301,18 @@ public class NvaBrageMigrationDataGenerator {
             return contentFiles;
         }
 
-        public String getCustomer() {
-            return customerUri;
+        public MonographPages getMonographPages() {
+            return monographPages;
+        }
+
+        public Builder withMonographPages(MonographPages monographPages) {
+            this.monographPages = monographPages;
+            return this;
+        }
+
+        public Builder withSpatialCoverage(List<String> spatialCoverage) {
+            this.spatialCoverage = spatialCoverage;
+            return this;
         }
 
         public Builder withPublication(no.sikt.nva.brage.migration.record.Publication publication) {
@@ -271,11 +330,6 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withEntityDescription(EntityDescription entityDescription) {
-            this.entityDescription = entityDescription;
-            return this;
-        }
-
         public Builder withPublishedDate(PublishedDate publishedDate) {
             this.publishedDate = publishedDate;
             return this;
@@ -283,6 +337,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withAlternativeLanguages(List<String> alternativeLanguages) {
             this.alternativeTitles = alternativeLanguages;
+            return this;
+        }
+
+        public Builder withPages(Pages pages) {
+            this.pages = pages;
             return this;
         }
 
@@ -341,46 +400,37 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withDescription() {
-            this.description = description;
+        public Builder withDescription(List<String> descriptions) {
+            this.descriptions = descriptions;
             return this;
         }
 
         public NvaBrageMigrationDataGenerator build() {
-            if (Objects.isNull(handle)) {
+            if (isNull(handle)) {
                 handle = randomHandle();
             }
-            if (Objects.isNull(alternativeTitles)) {
+            if (isNull(alternativeTitles)) {
                 alternativeTitles = notRandomAlternativeTitle();
             }
-            if (Objects.isNull(alternativeTitlesMap)) {
+            if (isNull(alternativeTitlesMap)) {
                 alternativeTitlesMap = createCorrespondingMap();
             }
-            if (Objects.isNull(doi) && randomBoolean()) {
+            if (isNull(doi) && randomBoolean()) {
                 doi = randomDoi();
             }
-            if (Objects.isNull(customerUri)) {
-                customerUri = randomString();
-            }
-            if (Objects.isNull(language)) {
+            if (isNull(language)) {
                 language = randomLanguage1();
             }
-            if (Objects.isNull(publishedDate)) {
+            if (isNull(publishedDate)) {
                 publishedDate = randomPublishedDate();
             }
-            if (Objects.isNull(description)) {
-                description = randomString();
-            }
-            if (Objects.isNull(entityAbstract)) {
-                entityAbstract = randomString();
-            }
-            if (Objects.isNull(mainTitle)) {
+            if (isNull(mainTitle)) {
                 mainTitle = randomString();
             }
-            if (Objects.isNull(type)) {
+            if (isNull(type)) {
                 type = createRandomSingleType();
             }
-            if (Objects.isNull(publication)) {
+            if (isNull(publication)) {
                 publication = createRandomPublication();
             }
             if (Objects.nonNull(publicationDate)) {
@@ -391,6 +441,10 @@ public class NvaBrageMigrationDataGenerator {
                         .build();
             }
             return new NvaBrageMigrationDataGenerator(this);
+        }
+
+        public String getEntityAbstractsForPublication() {
+            return isNull(abstracts) || abstracts.isEmpty() ? null : abstracts.get(0);
         }
 
         private Map<String, String> createCorrespondingMap() {
