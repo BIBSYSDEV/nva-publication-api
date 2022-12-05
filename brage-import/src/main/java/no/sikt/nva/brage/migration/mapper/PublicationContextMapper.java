@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.EntityDescription;
@@ -43,19 +42,9 @@ public final class PublicationContextMapper {
     }
 
     private static List<String> extractIsbnList(Record record) {
-        return nullIfEmpty(Collections.singletonList(record.getPublication().getIsbn()));
-    }
-
-    private static List<String> nullIfEmpty(List<String> values) {
-        if (noPresentValues(values)) {
-            return null;
-        }
-        return values;
-    }
-
-    @JacocoGenerated
-    private static boolean noPresentValues(List<String> values) {
-        return isNull(values) || values.isEmpty() || values.stream().allMatch(Objects::isNull);
+        return isNull(record.getPublication().getIsbn())
+                   ? Collections.emptyList()
+                   : Collections.singletonList(record.getPublication().getIsbn());
     }
 
     private static String extractYear(Record record) {
@@ -118,35 +107,29 @@ public final class PublicationContextMapper {
     }
 
     private static Series extractSeries(Record record) {
-        var year = extractYear(record);
         return Optional.ofNullable(record.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getSeries)
                    .map(no.sikt.nva.brage.migration.record.Series::getId)
-                   .map(id -> generateSeries(id, year)).orElse(null);
+                   .map(id -> generateSeries(id, extractYear(record))).orElse(null);
     }
 
     private static Publisher extractPublisher(Record record) {
-        var year = extractYear(record);
         return Optional.ofNullable(record.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
                    .map(no.sikt.nva.brage.migration.record.Publisher::getId)
-                   .map(id -> generatePublisher(id, year)).orElse(null);
+                   .map(id -> generatePublisher(id, extractYear(record))).orElse(null);
     }
 
-    private static Publisher generatePublisher(String publisherIdentifier,
-                                               String year) {
-        return new Publisher(UriWrapper.fromUri(
-                PublicationContextMapper.BASE_URL)
+    private static Publisher generatePublisher(String publisherIdentifier, String year) {
+        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(publisherIdentifier)
                                  .addChild(year)
                                  .getUri());
     }
 
-    private static Series generateSeries(String publisherIdentifier,
-                                         String year) {
-        return new Series(UriWrapper.fromUri(
-                PublicationContextMapper.BASE_URL)
+    private static Series generateSeries(String publisherIdentifier, String year) {
+        return new Series(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                               .addChild(ChannelType.SERIES.getType())
                               .addChild(publisherIdentifier)
                               .addChild(year)
