@@ -57,7 +57,7 @@ public class AssociatedArtifactMover {
     }
 
     private String getObjectKeyPath() {
-        var recordObjectKey = s3Event.getRecords().get(0).getS3().getObject().getKey();
+        var recordObjectKey = getRecordObjectKey();
         Path path = Paths.get(recordObjectKey);
         var directory = path.getParent();
         if (Objects.nonNull(directory)) {
@@ -65,5 +65,9 @@ public class AssociatedArtifactMover {
         } else {
             return StringUtils.EMPTY_STRING;
         }
+    }
+
+    private String getRecordObjectKey() {
+        return s3Event.getRecords().get(0).getS3().getObject().getKey();
     }
 }
