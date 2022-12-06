@@ -37,6 +37,7 @@ import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -96,10 +97,12 @@ public class BrageEntryEventConsumerTest {
                                                  .withResourceContent(createResourceContent())
                                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                                                  .withOrganization(TEST_ORGANIZATION)
+                                                 .withIdentifier(SortableIdentifier.next())
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -118,6 +121,7 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -134,6 +138,7 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -146,6 +151,7 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -158,6 +164,7 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 

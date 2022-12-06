@@ -12,7 +12,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
+import no.sikt.nva.brage.migration.mapper.ResourceOwnerMapper;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Language;
@@ -27,10 +29,12 @@ import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.testutils.type.BrageType;
 import no.sikt.nva.brage.migration.testutils.type.TypeMapper;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
@@ -61,6 +65,13 @@ public class NvaBrageMigrationDataGenerator {
                    .toInstant();
     }
 
+    private static ResourceOwner getResourceOwnerIfPresent(Builder builder) {
+        return Optional.ofNullable(builder)
+                   .map(Builder::getCustomer)
+                   .map(ResourceOwnerMapper::getResourceOwner)
+                   .orElse(null);
+    }
+
     private Publication createCorrespondingNvaPublication(Builder builder) {
         return new Publication.Builder()
                    .withDoi(builder.getDoi())
@@ -70,6 +81,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withPublisher(builder.getOrganization())
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
+                   .withResourceOwner(getResourceOwnerIfPresent(builder))
                    .build();
     }
 
@@ -166,6 +178,16 @@ public class NvaBrageMigrationDataGenerator {
         private String customer;
         private Organization organization;
         private List<AssociatedArtifact> associatedArtifacts;
+        private SortableIdentifier identifier;
+
+        public SortableIdentifier getIdentifier() {
+            return identifier;
+        }
+
+        public Builder withIdentifier(SortableIdentifier identifier) {
+            this.identifier = identifier;
+            return this;
+        }
 
         public List<AssociatedArtifact> getAssociatedArtifacts() {
             return associatedArtifacts;
