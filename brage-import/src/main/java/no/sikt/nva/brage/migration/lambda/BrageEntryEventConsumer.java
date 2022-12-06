@@ -13,10 +13,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UriWrapper;
+import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -25,8 +29,11 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private static final int SINGLE_EXPECTED_RECORD = 0;
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
+    private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
 
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
+    public static final String BRAGE_MIGRATION_ERROR_BUCKET_NAME = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
+    private String brageRecordFile;
     private final S3Client s3Client;
 
     public BrageEntryEventConsumer(S3Client s3Client) {
@@ -41,12 +48,46 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     @Override
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
-                   .orElseThrow(this::handleSavingError);
+                   .orElseThrow(fail -> handleSavingError(fail, s3Event));
     }
 
-    private RuntimeException handleSavingError(Failure<Publication> fail) {
-        logger.error("Could not convert brage record to nva publication");
+    private RuntimeException handleSavingError(Failure<Publication> fail, S3Event s3Event) {
+
+        String brageObjectId = extractFilename(s3Event);
+        String errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectId;
+        logger.error(errorMessage, fail.getException());
+        saveReportToS3(fail, s3Event);
         return new RuntimeException(fail.getException());
+    }
+
+    private void saveReportToS3(Failure<Publication> fail,
+                                S3Event event) {
+        var errorFileUri = constructErrorFileUri(event, fail.getException());
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
+        var content = determineBestEventReference(event);
+        var reportContent = ImportResult.reportFailure(content, fail.getException());
+        attempt(() -> s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
+    }
+
+    private String determineBestEventReference(S3Event event) {
+        if (StringUtils.isNotEmpty(brageRecordFile)) {
+            return brageRecordFile;
+        }else {
+            return extractFilename(event);
+        }
+    }
+
+    private UriWrapper constructErrorFileUri(S3Event event,
+                                             Exception exception) {
+        var fileUri = UriWrapper.fromUri(extractFilename(event));
+        var timestamp = event.getRecords().get(0).getEventTime().toString(
+            DateTimeFormat.forPattern("yyyy-MM-dd'T'HH.mm.ss.SSSVV"));
+        var bucket = fileUri.getHost();
+        return bucket
+                   .addChild(timestamp)
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(fileUri.getPath())
+                   .addChild(fileUri.getLastPathElement());
     }
 
     private Publication parseBrageRecord(S3Event event)
@@ -61,7 +102,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Record getBrageRecordFromS3(S3Event event) throws JsonProcessingException {
-        var brageRecordFile = readFileFromS3(event);
+        brageRecordFile = readFileFromS3(event);
         return parseBrageRecordJson(brageRecordFile);
     }
 

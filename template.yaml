@@ -42,6 +42,10 @@ Parameters:
     Type: 'String'
     Default: "brage-migration-input-files"
     Description: Name of bucket for input brage migration files
+  BrageMigrationErrorBucketName:
+    Type: 'String'
+    Default: "brage-migration-errors"
+    Description: Name of bucket for output brage migration errors
 
   MaxConcurrency:
     Type: Number
@@ -634,6 +638,9 @@ Resources:
       Runtime: java11
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
       Events:
         BrageMigrationEvent:
           Type: S3
@@ -1427,3 +1434,8 @@ Resources:
             Status: Enabled
             ExpirationInDays: 3
 
+  BrageMigrationErrorBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
