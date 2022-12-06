@@ -48,7 +48,7 @@ public class AssociatedArtifactMover {
                                      .build();
             s3Client.copyObject(copyObjRequest);
         } catch (Exception e) {
-            throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE);
+            throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE, e);
         }
     }
 
