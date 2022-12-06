@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.Random;
+import no.sikt.nva.brage.migration.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
@@ -53,6 +54,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     @Override
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
+                    .map(publication -> pushAssociatedFilesToPersistedStorage(publication, s3Event))
                    .flatMap(publication -> persistInDatabase(publication))
                    .orElseThrow(this::handleSavingError);
     }
@@ -92,6 +94,12 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private Publication createPublication(Publication publication) {
         return resourceService.createPublicationFromImportedEntry(publication);
+    }
+
+    private Publication pushAssociatedFilesToPersistedStorage(Publication publication, S3Event s3Event) {
+        var associatedArtifactMover = new AssociatedArtifactMover(s3Client, s3Event);
+        associatedArtifactMover.pushAssociatedArtifactsToPersistedStorage(publication);
+        return publication;
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail) {

@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DELETE_DRAFT_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.REQUEST_DRAFT_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -38,6 +39,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -168,7 +170,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         assertThat(actual.getTopic(), is(equalTo(REQUEST_DRAFT_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), is(equalTo(draftRequest.toPublication(resourceService))));
     }
-    
+
     @Test
     void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
@@ -226,7 +228,29 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
-    
+
+    @Test
+    void shouldSendRequestToDeleteADraftDoiWhenDraftDoiIsPresentAndDoiRequestTicketIsClosed() throws IOException {
+        var publication = persistPublicationWithDoi();
+        var oldDoiRequest = DoiRequest.fromPublication(publication);
+        var newDoiRequest = getClosedDoiRequest(publication);
+        var event = createEvent(oldDoiRequest, newDoiRequest);
+
+        handler.handleRequest(event, outputStream, context);
+
+        var actual = outputToPublicationHolder(outputStream);
+
+        assertThat(actual.getTopic(), is(equalTo(DELETE_DRAFT_DOI_EVENT_TOPIC)));
+    }
+
+    private DoiRequest getClosedDoiRequest(Publication publication) {
+        var doiRequest = DoiRequest.fromPublication(publication);
+
+        doiRequest.setStatus(TicketStatus.CLOSED);
+
+        return doiRequest;
+    }
+
     private InputStream createEvent(Entity oldImage, Entity newImage) throws IOException {
         var dataEntry = createDataEntry(oldImage, newImage);
         var s3driver = new S3Driver(s3Client, "ignored");
