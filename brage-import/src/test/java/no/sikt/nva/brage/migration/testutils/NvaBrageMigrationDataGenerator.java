@@ -12,8 +12,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
+import no.sikt.nva.brage.migration.mapper.ResourceOwnerMapper;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Language;
@@ -26,17 +27,16 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
-import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
-import no.sikt.nva.brage.migration.record.license.License;
-import no.sikt.nva.brage.migration.record.license.NvaLicense;
-import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
 import no.sikt.nva.brage.migration.testutils.type.BrageType;
 import no.sikt.nva.brage.migration.testutils.type.TypeMapper;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
@@ -65,6 +65,13 @@ public class NvaBrageMigrationDataGenerator {
                    .toInstant();
     }
 
+    private static ResourceOwner getResourceOwnerIfPresent(Builder builder) {
+        return Optional.ofNullable(builder)
+                   .map(Builder::getCustomer)
+                   .map(ResourceOwnerMapper::getResourceOwner)
+                   .orElse(null);
+    }
+
     private Publication createCorrespondingNvaPublication(Builder builder) {
         return new Publication.Builder()
                    .withDoi(builder.getDoi())
@@ -73,6 +80,8 @@ public class NvaBrageMigrationDataGenerator {
                    .withPublishedDate(convertPublishedDateToInstant(builder))
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withPublisher(builder.getOrganization())
+                   .withAssociatedArtifacts(builder.getAssociatedArtifacts())
+                   .withResourceOwner(getResourceOwnerIfPresent(builder))
                    .build();
     }
 
@@ -98,18 +107,10 @@ public class NvaBrageMigrationDataGenerator {
         record.setEntityDescription(createBrageEntityDescription(builder));
         record.setType(builder.getType());
         record.setBrageLocation(createRandomBrageLocation());
-        record.setContentBundle(createSingleResourceContent());
+        record.setContentBundle(builder.getResourceContent());
         record.setPublication(builder.getPublication());
         record.setPublishedDate(builder.getPublishedDate());
         return record;
-    }
-
-    private ResourceContent createSingleResourceContent() {
-        var fileName = randomString();
-        var description = randomString();
-        var license = new License(null, new NvaLicense(NvaLicenseIdentifier.DEFAULT_LICENSE));
-        var contentFile = new ContentFile(fileName, BundleType.ORIGINAL, description, UUID.randomUUID(), license, null);
-        return new ResourceContent(List.of(contentFile));
     }
 
     private String createRandomBrageLocation() {
@@ -123,19 +124,6 @@ public class NvaBrageMigrationDataGenerator {
                    .withIdentity(new no.unit.nva.model.Identity.Builder().withName(name).build())
                    .withRole(Role.lookup(contributor.getRole()))
                    .build();
-    }
-
-    private String createCorrespondingBrageRole(String role) {
-        return role.substring(0, 1).toLowerCase() + role.substring(1);
-    }
-
-    private Identity createRandomIdentity() {
-        return new Identity(randomString());
-    }
-
-    private String createRandomRole() {
-        var listOfSomePossibleRoles = List.of("Creator", "Advisor", "Editor");
-        return listOfSomePossibleRoles.get(randomInteger(2));
     }
 
     private no.sikt.nva.brage.migration.record.EntityDescription createBrageEntityDescription(
@@ -189,6 +177,26 @@ public class NvaBrageMigrationDataGenerator {
         private List<String> spatialCoverage;
         private String customer;
         private Organization organization;
+        private List<AssociatedArtifact> associatedArtifacts;
+        private SortableIdentifier identifier;
+
+        public SortableIdentifier getIdentifier() {
+            return identifier;
+        }
+
+        public Builder withIdentifier(SortableIdentifier identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public List<AssociatedArtifact> getAssociatedArtifacts() {
+            return associatedArtifacts;
+        }
+
+        public Builder withAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+            this.associatedArtifacts = associatedArtifacts;
+            return this;
+        }
 
         public List<String> getAbstracts() {
             return abstracts;
