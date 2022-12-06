@@ -3,7 +3,9 @@ package no.sikt.nva.brage.migration.lambda;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -35,6 +37,8 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
+import no.sikt.nva.brage.migration.testutils.FakeResourceService;
+import no.sikt.nva.brage.migration.testutils.FakeResourceServiceThrowingException;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -80,11 +84,14 @@ public class BrageEntryEventConsumerTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
 
+    private FakeResourceService resourceService;
+
     @BeforeEach
     void init() {
-        s3Client = new FakeS3Client();
-        this.handler = new BrageEntryEventConsumer(s3Client);
-        s3Driver = new S3Driver(s3Client, "ignored");
+        this.resourceService = new FakeResourceService();
+        this.s3Client = new FakeS3Client();
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        this.s3Driver = new S3Driver(s3Client, "ignored");
     }
 
     @Test
@@ -102,7 +109,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -121,7 +127,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -138,7 +143,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -151,7 +155,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -164,7 +167,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -172,6 +174,33 @@ public class BrageEntryEventConsumerTest {
     void shouldThrowExceptionWhenInvalidBrageRecordIsProvided() throws IOException {
         var s3Event = createNewInvalidBrageRecordEvent();
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
+    void shouldPersistPublicationInDatabase() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(resourceService.getPublicationsThatHasBeenCreatedByImportedEntry(), hasSize(1));
+        assertThat(resourceService.getPublicationsThatHasBeenCreatedByImportedEntry(), contains(actualPublication));
+    }
+
+    @Test
+    void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
+        throws IOException {
+        var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException();
+        this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException);
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+        assertThat(fakeResourceServiceThrowingException.getAttemtsToSavePublication(),
+                   is(equalTo(BrageEntryEventConsumer.MAX_EFFORTS + 1)));
     }
 
     private ResourceContent createResourceContent() {

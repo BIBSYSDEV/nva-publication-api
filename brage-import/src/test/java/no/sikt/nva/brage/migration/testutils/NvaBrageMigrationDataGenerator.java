@@ -79,6 +79,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withEntityDescription(createEntityDescription(builder))
                    .withPublishedDate(convertPublishedDateToInstant(builder))
                    .withStatus(PublicationStatus.PUBLISHED)
+                   .withIdentifier(FakeResourceService.SORTABLE_IDENTIFIER)
                    .withPublisher(builder.getOrganization())
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
                    .withResourceOwner(getResourceOwnerIfPresent(builder))
@@ -179,10 +180,6 @@ public class NvaBrageMigrationDataGenerator {
         private Organization organization;
         private List<AssociatedArtifact> associatedArtifacts;
         private SortableIdentifier identifier;
-
-        public SortableIdentifier getIdentifier() {
-            return identifier;
-        }
 
         public Builder withIdentifier(SortableIdentifier identifier) {
             this.identifier = identifier;

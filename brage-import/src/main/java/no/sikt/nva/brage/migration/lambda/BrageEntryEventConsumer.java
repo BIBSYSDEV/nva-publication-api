@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.util.Random;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
@@ -13,9 +14,11 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
+import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,25 +26,72 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publication> {
 
+    private static final int MAX_SLEEP_TIME = 100;
+
+    public static final Random RANDOM = new Random(System.currentTimeMillis());
+
+    public static final int MAX_EFFORTS = 10;
+
     private static final int SINGLE_EXPECTED_RECORD = 0;
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
 
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
     private final S3Client s3Client;
 
-    public BrageEntryEventConsumer(S3Client s3Client) {
+    private final ResourceService resourceService;
+
+    public BrageEntryEventConsumer(S3Client s3Client, ResourceService resourceService) {
         this.s3Client = s3Client;
+        this.resourceService = resourceService;
     }
 
     @JacocoGenerated
     public BrageEntryEventConsumer() {
-        this(S3Driver.defaultS3Client().build());
+        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService());
     }
 
     @Override
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
+                   .flatMap(publication -> persistInDatabase(publication))
                    .orElseThrow(this::handleSavingError);
+    }
+
+    private Try<Publication> persistInDatabase(Publication publication) {
+        Try<Publication> attemptSave = tryPersistingInDatabase(publication);
+
+        for (int efforts = 0; shouldTryAgain(attemptSave, efforts); efforts++) {
+            attemptSave = tryPersistingInDatabase(publication);
+
+            avoidCongestionInDatabase();
+        }
+        return attemptSave;
+    }
+
+    private void avoidCongestionInDatabase() {
+        int sleepTime = spreadWriteRequests();
+        try {
+            Thread.sleep(sleepTime);
+        } catch (InterruptedException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    // Randomize waiting time to avoiding creating parallel executions that perform retries in sync.
+    private int spreadWriteRequests() {
+        return RANDOM.nextInt(MAX_SLEEP_TIME);
+    }
+
+    private boolean shouldTryAgain(Try<Publication> attemptSave, int efforts) {
+        return attemptSave.isFailure() && efforts < MAX_EFFORTS;
+    }
+
+    private Try<Publication> tryPersistingInDatabase(Publication publication) {
+        return attempt(() -> createPublication(publication));
+    }
+
+    private Publication createPublication(Publication publication) {
+        return resourceService.createPublicationFromImportedEntry(publication);
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail) {
