@@ -20,6 +20,8 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -50,11 +52,14 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.publication.s3imports.FileContentsEvent;
+import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import org.joda.time.format.DateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -97,7 +102,8 @@ public class BrageEntryEventConsumerTest {
     @BeforeEach
     void init() {
         this.resourceService = new FakeResourceService();
-        this.s3Client = new FakeS3cClientWithCopyObjectSupport();;
+        this.s3Client = new FakeS3cClientWithCopyObjectSupport();
+        ;
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
     }
@@ -250,6 +256,52 @@ public class BrageEntryEventConsumerTest {
         var actualCopyObjectRequests = fakeS3cClientWithCopyObjectSupport.getCopyObjectRequestList();
         assertThat(actualCopyObjectRequests, hasSize(1));
         assertThat(actualCopyObjectRequests, contains(expectedDopyObjRequest));
+    }
+
+    @Test
+    void shouldSaveErrorReportInS3ContainingTheOriginalInputData() throws IOException {
+        this.s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
+        this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withResourceContent(createResourceContent())
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+
+        Executable action = () -> handler.handleRequest(s3Event, CONTEXT);
+        var exception = assertThrows(RuntimeException.class, action);
+        var actualReport = extractActualReportFromS3Client(s3Event, exception);
+        var input = actualReport.get("input").toString();
+        var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
+        assertThat(actualErrorReportBrageRecord,
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
+    }
+
+    private JsonNode extractActualReportFromS3Client(
+        S3Event s3Event,
+        Exception exception) throws JsonProcessingException {
+        UriWrapper errorFileUri = constructErrorFileUri(s3Event, exception);
+        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        return JsonUtils.dtoObjectMapper.readTree(content);
+    }
+
+    private UriWrapper constructErrorFileUri(S3Event event,
+                                             Exception exception) {
+        var fileUri = UriWrapper.fromUri(extractFilename(event));
+        var timestamp = event.getRecords().get(0).getEventTime().toString();
+        var bucket = fileUri.getHost();
+        return bucket
+                   .addChild(timestamp)
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(fileUri.getPath())
+                   .addChild(fileUri.getLastPathElement());
+    }
+
+    private String extractFilename(S3Event event) {
+        return event.getRecords().get(0).getS3().getObject().getKey();
     }
 
     private ResourceContent createResourceContent() {

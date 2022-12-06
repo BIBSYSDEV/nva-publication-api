@@ -24,7 +24,6 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
-import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -72,7 +71,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         String errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectId;
         logger.error(errorMessage, fail.getException());
         saveReportToS3(fail, s3Event);
-        return new RuntimeException(fail.getException());
+        return ExceptionMapper.castToCorrectRuntimeException(fail.getException());
     }
 
     private Try<Publication> persistInDatabase(Publication publication) {
@@ -130,7 +129,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private String determineBestEventReference(S3Event event) {
         if (StringUtils.isNotEmpty(brageRecordFile)) {
             return brageRecordFile;
-        }else {
+        } else {
             return extractFilename(event);
         }
     }
@@ -138,8 +137,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private UriWrapper constructErrorFileUri(S3Event event,
                                              Exception exception) {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
-        var timestamp = event.getRecords().get(0).getEventTime().toString(
-            DateTimeFormat.forPattern("yyyy-MM-dd'T'HH.mm.ss.SSSVV"));
+        var timestamp = event.getRecords().get(0).getEventTime().toString();
         var bucket = fileUri.getHost();
         return bucket
                    .addChild(timestamp)
