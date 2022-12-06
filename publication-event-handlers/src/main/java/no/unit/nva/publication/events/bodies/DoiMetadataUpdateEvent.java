@@ -12,6 +12,7 @@ public class DoiMetadataUpdateEvent {
     
     public static final String REQUEST_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.CreationRequest";
     public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
+    public static final String DELETE_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.DeleteDraftRequest";
     public static final String TOPIC = "topic";
     public static final String ITEM = "item";
     protected static final String EMPTY_EVENT_TOPIC = "empty";
@@ -35,6 +36,11 @@ public class DoiMetadataUpdateEvent {
     
     public static DoiMetadataUpdateEvent createNewDoiEvent(DoiRequest newEntry, ResourceService resourceService) {
         return new DoiMetadataUpdateEvent(REQUEST_DRAFT_DOI_EVENT_TOPIC, newEntry.toPublication(resourceService));
+    }
+
+    public static DoiMetadataUpdateEvent createDeleteDraftDoiEvent(DoiRequest doiRequest,
+                                                                   ResourceService resourceService) {
+        return new DoiMetadataUpdateEvent(DELETE_DRAFT_DOI_EVENT_TOPIC, doiRequest.toPublication(resourceService));
     }
     
     public static DoiMetadataUpdateEvent empty() {

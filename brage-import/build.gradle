@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(":publication-commons")
     testImplementation libs.nva.testutils
     testImplementation libs.nva.datamodel.testutils
     implementation project(":s3-import-commons")
@@ -6,6 +7,7 @@ dependencies {
     implementation libs.aws.sdk2.s3
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
+    implementation libs.aws.sdk.dynamodb
 
     implementation libs.bundles.logging
 
@@ -29,4 +31,5 @@ dependencies {
 test {
     useJUnitPlatform()
     environment "BRAGE_MIGRATION_ERROR_BUCKET_NAME", "some-migration-error-bucket"
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-bucket"
 }

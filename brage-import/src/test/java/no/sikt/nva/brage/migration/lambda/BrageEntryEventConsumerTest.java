@@ -1,9 +1,13 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static no.sikt.nva.brage.migration.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -35,6 +39,10 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
+import no.sikt.nva.brage.migration.testutils.FakeResourceService;
+import no.sikt.nva.brage.migration.testutils.FakeResourceServiceThrowingException;
+import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
+import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -44,12 +52,15 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
 public class BrageEntryEventConsumerTest {
 
@@ -79,12 +90,16 @@ public class BrageEntryEventConsumerTest {
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
+    private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
+
+    private FakeResourceService resourceService;
 
     @BeforeEach
     void init() {
-        s3Client = new FakeS3Client();
-        this.handler = new BrageEntryEventConsumer(s3Client);
-        s3Driver = new S3Driver(s3Client, "ignored");
+        this.resourceService = new FakeResourceService();
+        this.s3Client = new FakeS3cClientWithCopyObjectSupport();;
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
     }
 
     @Test
@@ -102,7 +117,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -121,7 +135,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -138,7 +151,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -151,7 +163,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -164,7 +175,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -172,6 +182,74 @@ public class BrageEntryEventConsumerTest {
     void shouldThrowExceptionWhenInvalidBrageRecordIsProvided() throws IOException {
         var s3Event = createNewInvalidBrageRecordEvent();
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
+    void shouldPersistPublicationInDatabase() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(resourceService.getPublicationsThatHasBeenCreatedByImportedEntry(), hasSize(1));
+        assertThat(resourceService.getPublicationsThatHasBeenCreatedByImportedEntry(), contains(actualPublication));
+    }
+
+    @Test
+    void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
+        throws IOException {
+        var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException();
+        this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException);
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+        assertThat(fakeResourceServiceThrowingException.getAttemtsToSavePublication(),
+                   is(equalTo(BrageEntryEventConsumer.MAX_EFFORTS + 1)));
+    }
+
+    @Test
+    void shouldThrowExceptionIfItCannotCopyAssociatedArtifacts() throws IOException {
+        this.s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
+        this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withResourceContent(createResourceContent())
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+
+        Executable action = () -> handler.handleRequest(s3Event, CONTEXT);
+        var exception = assertThrows(RuntimeException.class, action);
+        assertThat(exception.getMessage(), containsString(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE));
+    }
+
+    @Test
+    void shouldCopyAssociatedArtifactsToResourceStorage() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withResourceContent(createResourceContent())
+                                                 .withType(TYPE_BOOK)
+                                                 .build();
+        var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(nvaBrageMigrationDataGenerator.getBrageRecord()
+            , "my/path/some.json");
+        var objectKey = UUID;
+        var expectedDopyObjRequest = CopyObjectRequest.builder()
+                                         .sourceBucket(INPUT_BUCKET_NAME)
+                                         .destinationBucket(
+                                             new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
+                                         .sourceKey("my/path/" + objectKey)
+                                         .destinationKey(objectKey.toString())
+                                         .build();
+        handler.handleRequest(s3Event, CONTEXT);
+        var fakeS3cClientWithCopyObjectSupport = (FakeS3cClientWithCopyObjectSupport) s3Client;
+        var actualCopyObjectRequests = fakeS3cClientWithCopyObjectSupport.getCopyObjectRequestList();
+        assertThat(actualCopyObjectRequests, hasSize(1));
+        assertThat(actualCopyObjectRequests, contains(expectedDopyObjRequest));
     }
 
     private ResourceContent createResourceContent() {
@@ -207,6 +285,12 @@ public class BrageEntryEventConsumerTest {
         return createS3Event(uri);
     }
 
+    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record, String path) throws IOException {
+        var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
+        var uri = s3Driver.insertFile(UnixPath.of(path), recordAsJson);
+        return createS3Event(uri);
+    }
+
     private UnixPath randomS3Path() {
         return UnixPath.of(randomString());
     }
@@ -233,7 +317,7 @@ public class BrageEntryEventConsumerTest {
     }
 
     private S3Entity createS3Entity(String expectedObjectKey) {
-        var bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
+        var bucket = new S3BucketEntity(INPUT_BUCKET_NAME, EMPTY_USER_IDENTITY, randomString());
         var object = new S3ObjectEntity(expectedObjectKey,
                                         SOME_FILE_SIZE,
                                         randomString(),

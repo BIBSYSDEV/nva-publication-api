@@ -14,7 +14,6 @@ import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -22,7 +21,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
@@ -49,10 +47,8 @@ public final class BrageNvaMapper {
                    .withHandle(extractHandle(record))
                    .withEntityDescription(extractEntityDescription(record))
                    .withPublishedDate(extractPublishedDate(record))
-                   .withStatus(PublicationStatus.PUBLISHED)
                    .withPublisher(extractPublisher(record))
                    .withAssociatedArtifacts(extractAssociatedArtifacts(record))
-                   .withIdentifier(SortableIdentifier.next())
                    .withResourceOwner(extractResourceOwner(record))
                    .build();
     }
