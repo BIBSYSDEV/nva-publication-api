@@ -2,7 +2,6 @@ package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
@@ -11,10 +10,6 @@ import no.sikt.nva.brage.migration.ErrorDetails;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import nva.commons.core.JacocoGenerated;
 
-@JsonPropertyOrder({"customer", "brageLocation", "id", "cristinId", "doi", "publishedDate", "publisherAuthority",
-    "rightsholder",
-    "type", "partOf", "publisherAuthority", "spatialCoverage", "date", "language", "publication", "entityDescription",
-    "recordContent", "errors", "warnings"})
 @SuppressWarnings("PMD.TooManyFields")
 public class Record {
 
@@ -118,6 +113,21 @@ public class Record {
     }
 
     @JacocoGenerated
+    public void setSpatialCoverage(List<String> spatialCoverage) {
+        this.spatialCoverage = spatialCoverage;
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEntityDescription(), getCustomer(), getId(), getDoi(), getType(), getLanguage(),
+                            getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
+                            getPublication(),
+                            getContentBundle(), getPublishedDate(), getCristinId(), getBrageLocation(), getErrors(),
+                            getWarnings());
+    }
+
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -144,21 +154,6 @@ public class Record {
                && Objects.equals(getBrageLocation(), record.getBrageLocation())
                && Objects.equals(getErrors(), record.getErrors())
                && Objects.equals(getWarnings(), record.getWarnings());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getEntityDescription(), getCustomer(), getId(), getDoi(), getType(), getLanguage(),
-                            getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
-                            getPublication(),
-                            getContentBundle(), getPublishedDate(), getCristinId(), getBrageLocation(), getErrors(),
-                            getWarnings());
-    }
-
-    @JacocoGenerated
-    public void setSpatialCoverage(List<String> spatialCoverage) {
-        this.spatialCoverage = spatialCoverage;
     }
 
     @JsonInclude
