@@ -27,4 +27,5 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-bucket"
 }
