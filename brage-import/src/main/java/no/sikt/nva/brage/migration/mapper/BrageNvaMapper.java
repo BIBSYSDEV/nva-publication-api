@@ -14,6 +14,7 @@ import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -23,6 +24,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -50,12 +52,21 @@ public final class BrageNvaMapper {
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withPublisher(extractPublisher(record))
                    .withAssociatedArtifacts(extractAssociatedArtifacts(record))
+                   .withIdentifier(SortableIdentifier.next())
+                   .withResourceOwner(extractResourceOwner(record))
                    .build();
     }
 
     public static String extractDescription(Record record) {
         return Optional.ofNullable(record.getEntityDescription().getDescriptions())
                    .map(BrageNvaMapper::generateDescription)
+                   .orElse(null);
+    }
+
+    private static ResourceOwner extractResourceOwner(Record record) {
+        return Optional.ofNullable(record)
+                   .map(Record::getCustomer)
+                   .map(ResourceOwnerMapper::getResourceOwner)
                    .orElse(null);
     }
 
