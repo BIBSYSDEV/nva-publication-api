@@ -91,10 +91,12 @@ public class DoiRequestEventProducer
             return DoiMetadataUpdateEvent.createNewDoiEvent(newEntry, resourceService);
         } else if (isDoiRequestApproval(oldEntry, newEntry)) {
             return createEventForMakingDoiFindable(newEntry);
+        } else if (isDoiRequestRejection(oldEntry, newEntry)) {
+            return DoiMetadataUpdateEvent.createDeleteDraftDoiEvent(newEntry, resourceService);
         }
         return EMPTY_EVENT;
     }
-    
+
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(Resource newEntry) {
         if (resourceWithFindableDoiHasBeenUpdated(newEntry)) {
             var publication = newEntry.toPublication();
@@ -112,7 +114,14 @@ public class DoiRequestEventProducer
         var newEntryIsApproved = matchStatus(newEntry, TicketStatus.COMPLETED);
         return oldEntryIsNotApproved && newEntryIsApproved;
     }
-    
+
+    private boolean isDoiRequestRejection(DoiRequest oldEntry, DoiRequest newEntry) {
+        var oldEntryIsPending = matchStatus(oldEntry, TicketStatus.PENDING);
+        var newEntryIsRejected = matchStatus(newEntry, TicketStatus.CLOSED);
+        return oldEntryIsPending && newEntryIsRejected;
+    }
+
+
     private Boolean matchStatus(DoiRequest oldEntry, TicketStatus approved) {
         return Optional.of(oldEntry)
                    .map(DoiRequest::getStatus)
