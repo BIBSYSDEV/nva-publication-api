@@ -21,7 +21,7 @@ public class AssociatedArtifactMover {
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
-    private Logger logger = LoggerFactory.getLogger(AssociatedArtifactMover.class);
+    private final Logger logger = LoggerFactory.getLogger(AssociatedArtifactMover.class);
 
     public AssociatedArtifactMover(S3Client s3Client, S3Event s3Event) {
         this.s3Client = s3Client;
