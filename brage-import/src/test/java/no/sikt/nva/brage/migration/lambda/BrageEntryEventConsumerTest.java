@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -284,7 +285,7 @@ public class BrageEntryEventConsumerTest {
     private UriWrapper constructErrorFileUri(S3Event event,
                                              Exception exception) {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
-        var timestamp = event.getRecords().get(0).getEventTime().toString();
+        var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var bucket = fileUri.getHost();
         return bucket
                    .addChild(timestamp)
