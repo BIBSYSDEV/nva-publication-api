@@ -15,7 +15,7 @@ public class FakeS3cClientWithCopyObjectSupport extends FakeS3Client {
     }
 
     @Override
-    public CopyObjectResponse copyObject ( CopyObjectRequest copyObjectRequest) {
+    public CopyObjectResponse copyObject(CopyObjectRequest copyObjectRequest) {
         copyObjectRequestList.add(copyObjectRequest);
         return CopyObjectResponse.builder().build();
     }

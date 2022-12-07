@@ -2,7 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import no.sikt.nva.brage.migration.AssociatedArtifactException;
 
-public class ExceptionMapper {
+public final class ExceptionMapper {
 
     private ExceptionMapper() {
 

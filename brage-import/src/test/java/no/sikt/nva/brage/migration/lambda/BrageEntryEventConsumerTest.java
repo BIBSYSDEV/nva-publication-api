@@ -52,14 +52,11 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.publication.s3imports.FileContentsEvent;
-import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import org.joda.time.format.DateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -103,7 +100,6 @@ public class BrageEntryEventConsumerTest {
     void init() {
         this.resourceService = new FakeResourceService();
         this.s3Client = new FakeS3cClientWithCopyObjectSupport();
-        ;
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
     }
@@ -260,20 +256,17 @@ public class BrageEntryEventConsumerTest {
 
     @Test
     void shouldSaveErrorReportInS3ContainingTheOriginalInputData() throws IOException {
-        this.s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
-        this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
-        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        this.handler = new BrageEntryEventConsumer(s3Client, new FakeResourceServiceThrowingException());
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
-                                                 .withResourceContent(createResourceContent())
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
 
         Executable action = () -> handler.handleRequest(s3Event, CONTEXT);
         var exception = assertThrows(RuntimeException.class, action);
         var actualReport = extractActualReportFromS3Client(s3Event, exception);
-        var input = actualReport.get("input").toString();
+        var input = actualReport.get("input").asText();
         var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
         assertThat(actualErrorReportBrageRecord,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
