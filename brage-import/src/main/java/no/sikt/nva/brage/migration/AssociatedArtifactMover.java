@@ -9,6 +9,8 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
@@ -19,6 +21,7 @@ public class AssociatedArtifactMover {
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
+    private final Logger logger = LoggerFactory.getLogger(AssociatedArtifactMover.class);
 
     public AssociatedArtifactMover(S3Client s3Client, S3Event s3Event) {
         this.s3Client = s3Client;
@@ -39,7 +42,10 @@ public class AssociatedArtifactMover {
             var objectKey = file.getIdentifier().toString();
             var objectKeyPath = getObjectKeyPath();
             var sourceBucket = getSourceBucket();
-
+            logger.info("sourceBucket: {}", sourceBucket);
+            logger.info("Nva resource storage bucket: {}", persistedStorageBucket);
+            logger.info("sourceKey {}", objectKeyPath + objectKey);
+            logger.info("destinationKey {}", objectKey);
             var copyObjRequest = CopyObjectRequest.builder()
                                      .sourceBucket(sourceBucket)
                                      .destinationBucket(persistedStorageBucket)
