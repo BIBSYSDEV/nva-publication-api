@@ -32,4 +32,5 @@ test {
     useJUnitPlatform()
     environment "BRAGE_MIGRATION_ERROR_BUCKET_NAME", "some-migration-error-bucket"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-bucket"
+    environment "TABLE_NAME", "some-table-name"
 }

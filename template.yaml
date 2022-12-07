@@ -642,6 +642,7 @@ Resources:
         Variables:
           BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
           NVA_PERSISTED_STORAGE_BUCKET_NAME: 'nva-resource-storage-${AWS::AccountId}'
+          TABLE_NAME: !Ref NvaResourcesTable
       Events:
         BrageMigrationEvent:
           Type: S3
