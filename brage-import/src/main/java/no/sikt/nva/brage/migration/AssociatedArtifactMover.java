@@ -42,14 +42,16 @@ public class AssociatedArtifactMover {
             var objectKey = file.getIdentifier().toString();
             var objectKeyPath = getObjectKeyPath();
             var sourceBucket = getSourceBucket();
-
+            logger.info("sourceBucket: {}", sourceBucket);
+            logger.info("Nva resource storage bucket: {}", persistedStorageBucket);
+            logger.info("sourceKey {}", objectKeyPath + objectKey);
+            logger.info("destinationKey {}", objectKey);
             var copyObjRequest = CopyObjectRequest.builder()
                                      .sourceBucket(sourceBucket)
                                      .destinationBucket(persistedStorageBucket)
                                      .sourceKey(objectKeyPath + objectKey)
                                      .destinationKey(objectKey)
                                      .build();
-            logger.info(copyObjRequest.aclAsString());
             s3Client.copyObject(copyObjRequest);
         } catch (Exception e) {
             throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE, e);
