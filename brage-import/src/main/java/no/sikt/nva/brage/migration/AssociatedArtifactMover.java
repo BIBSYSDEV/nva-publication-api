@@ -19,8 +19,8 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
 public class AssociatedArtifactMover {
 
-    public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE = "Could not copy associated "
-                                                                                      + "artefact";
+    public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE =
+        "Could not copy associated artefact";
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
@@ -33,15 +33,18 @@ public class AssociatedArtifactMover {
     }
 
     public Publication pushAssociatedArtifactsToPersistedStorage(Publication publication) {
+        publication.setAssociatedArtifacts(pushAssociatedArtefactsToPersistedStorageAndGetMetadata(publication));
+        return publication;
+    }
+
+    private AssociatedArtifactList pushAssociatedArtefactsToPersistedStorageAndGetMetadata(Publication publication) {
         var associatedArtifacts =
             publication.getAssociatedArtifacts()
                 .stream()
-                .map(associatedArtifact -> pushAssociatedArtifactToPersistedStorage(associatedArtifact))
+                .map(this::pushAssociatedArtifactToPersistedStorage)
                 .collect(
                     Collectors.toList());
-        var associatedArtifactList = new AssociatedArtifactList(associatedArtifacts);
-        publication.setAssociatedArtifacts(associatedArtifactList);
-        return publication;
+        return new AssociatedArtifactList(associatedArtifacts);
     }
 
     private AssociatedArtifact pushAssociatedArtifactToPersistedStorage(AssociatedArtifact associatedArtifact) {
@@ -78,7 +81,7 @@ public class AssociatedArtifactMover {
                    .withIdentifier(file.getIdentifier())
                    .withLicense(file.getLicense())
                    .withPublisherAuthority(file.isPublisherAuthority())
-                   .withEmbargoDate(file.getEmbargoDate().get())
+                   .withEmbargoDate(file.getEmbargoDate().orElse(null))
                    .withMimeType(mimeType)
                    .withSize(size)
                    .buildPublishedFile();
