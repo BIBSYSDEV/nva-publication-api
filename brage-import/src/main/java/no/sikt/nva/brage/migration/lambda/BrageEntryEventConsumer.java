@@ -42,6 +42,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
     public static final String BRAGE_MIGRATION_ERROR_BUCKET_NAME = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
+    public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     private String brageRecordFile;
     private final S3Client s3Client;
 
@@ -137,7 +138,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private UriWrapper constructErrorFileUri(S3Event event,
                                              Exception exception) {
         var fileUri = UriWrapper.fromUri(extractObjectKey(event));
-        var timestamp = event.getRecords().get(0).getEventTime().toString();
+        var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var bucket = fileUri.getHost();
         return bucket
                    .addChild(timestamp)
