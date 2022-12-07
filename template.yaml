@@ -44,7 +44,7 @@ Parameters:
     Description: Name of bucket for input brage migration files
   BrageMigrationErrorBucketName:
     Type: 'String'
-    Default: "brage-migration-errors"
+    Default: "brage-migration-reports"
     Description: Name of bucket for output brage migration errors
 
   MaxConcurrency:
