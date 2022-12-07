@@ -13,6 +13,7 @@ import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
@@ -35,10 +36,33 @@ public final class PublicationContextMapper {
         if (isBook(record)) {
             return buildPublicationContextWhenBook(record);
         }
-        if (isReport(record)) {
+        if (isReport(record) || isResearchReport(record)) {
             return buildPublicationContextWhenReport(record);
         }
+        if (isDegree(record)) {
+            return buildPublicationContextWhenDegree(record);
+        }
         return null;
+    }
+
+    private static boolean isDegree(Record record) {
+        return NvaType.BACHELOR_THESIS.getValue().equals(record.getType().getNva())
+               || NvaType.MASTER_THESIS.getValue().equals(record.getType().getNva())
+               || NvaType.DOCTORAL_THESIS.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenDegree(Record record)
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        return new Degree.Builder()
+                   .withIsbnList(extractIsbnList(record))
+                   .withSeries(extractSeries(record))
+                   .withPublisher(extractPublisher(record))
+                   .withSeriesNumber(extractSeriesNumber(record))
+                   .build();
+    }
+
+    private static boolean isResearchReport(Record record) {
+        return NvaType.RESEARCH_REPORT.getValue().equals(record.getType().getNva());
     }
 
     private static List<String> extractIsbnList(Record record) {

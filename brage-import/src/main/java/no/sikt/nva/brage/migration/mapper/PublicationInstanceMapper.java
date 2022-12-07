@@ -9,10 +9,14 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.book.BookMonographContentType;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
@@ -20,11 +24,13 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import org.joda.time.DateTime;
 
+@SuppressWarnings("PMD.GodClass")
 public final class PublicationInstanceMapper {
 
     private PublicationInstanceMapper() {
     }
 
+    @SuppressWarnings("PMD.NPathComplexity")
     public static PublicationInstance<? extends Pages> buildPublicationInstance(Record record) {
         if (isJournalArticle(record)) {
             return buildPublicationInstanceWhenJournalArticle(record);
@@ -44,8 +50,48 @@ public final class PublicationInstanceMapper {
         if (isDoctoralThesis(record)) {
             return buildPublicationInstanceWhenDoctoralThesis(record);
         }
+        if (isBook(record)) {
+            return buildPublicationInstanceWhenBook(record);
+        }
+        if (isReport(record)) {
+            return buildPublicationInstanceWhenReport(record);
+        }
+        if (isResearchReport(record)) {
+            return buildPublicationInstanceWhenResearchReport(record);
+        }
 
         return null;
+    }
+
+    private static boolean isResearchReport(Record record) {
+        return NvaType.RESEARCH_REPORT.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenResearchReport(Record record) {
+        return new ReportResearch.Builder()
+                   .withPages(extractMonographPages(record))
+                   .build();
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReport(Record record) {
+        return new ReportBasic.Builder()
+                   .withPages(extractMonographPages(record))
+                   .build();
+    }
+
+    private static boolean isReport(Record record) {
+        return NvaType.REPORT.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBook(Record record) {
+        return new BookMonograph.Builder()
+                   .withContentType(BookMonographContentType.NON_FICTION_MONOGRAPH)
+                   .withPages(extractMonographPages(record))
+                   .build();
+    }
+
+    private static boolean isBook(Record record) {
+        return NvaType.BOOK.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isDataset(Record record) {

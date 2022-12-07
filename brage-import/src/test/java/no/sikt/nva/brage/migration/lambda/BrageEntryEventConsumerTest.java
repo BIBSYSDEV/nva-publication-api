@@ -80,13 +80,19 @@ public class BrageEntryEventConsumerTest {
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
     public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
+    public static final Type TYPE_REPORT = new Type(List.of(NvaType.REPORT.getValue()), NvaType.REPORT.getValue());
+    public static final Type TYPE_RESEARCH_REPORT = new Type(List.of(NvaType.RESEARCH_REPORT.getValue()),
+                                                             NvaType.RESEARCH_REPORT.getValue());
+
+    public static final Type TYPE_BACHELOR = new Type(List.of(NvaType.BACHELOR_THESIS.getValue()),
+                                                             NvaType.BACHELOR_THESIS.getValue());
+
     public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
     public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
                                                                                new Builder().withYear("2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(URI.create(
         "https://api.nva.unit.no/customer/test")).build();
-    public static final String TEST_CUSTOMER = "TEST";
     public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
     public static final String FILENAME = "filename";
     public static final Customer CUSTOMER = new Customer("someCustomer", URI.create("https://dev.nva.sikt"
@@ -159,6 +165,60 @@ public class BrageEntryEventConsumerTest {
     void shouldConvertMapToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_MAP)
+                                                 .withCustomer(CUSTOMER)
+                                                 .withResourceOwner(RESOURCE_OWNER)
+                                                 .withDescription(Collections.emptyList())
+                                                 .withAbstracts(Collections.emptyList())
+                                                 .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
+                                                 .withMonographPages(
+                                                     new MonographPages.Builder().withPages("5").build())
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertReportToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_REPORT)
+                                                 .withCustomer(CUSTOMER)
+                                                 .withResourceOwner(RESOURCE_OWNER)
+                                                 .withDescription(Collections.emptyList())
+                                                 .withAbstracts(Collections.emptyList())
+                                                 .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
+                                                 .withMonographPages(
+                                                     new MonographPages.Builder().withPages("5").build())
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertResearchReportToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_RESEARCH_REPORT)
+                                                 .withCustomer(CUSTOMER)
+                                                 .withResourceOwner(RESOURCE_OWNER)
+                                                 .withDescription(Collections.emptyList())
+                                                 .withAbstracts(Collections.emptyList())
+                                                 .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
+                                                 .withMonographPages(
+                                                     new MonographPages.Builder().withPages("5").build())
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertDegreeToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_BACHELOR)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
                                                  .withDescription(Collections.emptyList())
