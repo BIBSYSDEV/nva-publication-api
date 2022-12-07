@@ -636,7 +636,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: 'nva-resource-storage-${AWS::AccountId}'
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
       Events:
         BrageMigrationEvent:
           Type: S3
