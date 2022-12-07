@@ -67,8 +67,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private RuntimeException handleSavingError(Failure<Publication> fail, S3Event s3Event) {
 
-        String brageObjectId = extractFilename(s3Event);
-        String errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectId;
+        String brageObjectKey = extractObjectKey(s3Event);
+        String errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectKey;
         logger.error(errorMessage, fail.getException());
         saveReportToS3(fail, s3Event);
         return ExceptionMapper.castToCorrectRuntimeException(fail.getException());
@@ -130,13 +130,13 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         if (StringUtils.isNotEmpty(brageRecordFile)) {
             return brageRecordFile;
         } else {
-            return extractFilename(event);
+            return extractObjectKey(event);
         }
     }
 
     private UriWrapper constructErrorFileUri(S3Event event,
                                              Exception exception) {
-        var fileUri = UriWrapper.fromUri(extractFilename(event));
+        var fileUri = UriWrapper.fromUri(extractObjectKey(event));
         var timestamp = event.getRecords().get(0).getEventTime().toString();
         var bucket = fileUri.getHost();
         return bucket
@@ -173,10 +173,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private URI createS3BucketUri(S3Event s3Event) {
-        return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
+        return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractObjectKey(s3Event)));
     }
 
-    private String extractFilename(S3Event event) {
+    private String extractObjectKey(S3Event event) {
         return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
     }
 
