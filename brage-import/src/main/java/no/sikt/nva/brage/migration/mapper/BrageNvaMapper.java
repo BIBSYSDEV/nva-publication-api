@@ -242,7 +242,7 @@ public final class BrageNvaMapper {
     }
 
     private static URI extractLanguage(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getLanguage())
+        return Optional.ofNullable(brageRecord.getEntityDescription().getLanguage())
                    .map(BrageNvaMapper::generateLanguage)
                    .orElse(null);
     }

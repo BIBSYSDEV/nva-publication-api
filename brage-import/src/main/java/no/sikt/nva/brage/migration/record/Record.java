@@ -24,7 +24,6 @@ public class Record {
     private URI id;
     private URI doi;
     private Type type;
-    private Language language;
     private PublisherAuthority publisherAuthority;
     private String rightsholder;
     private List<String> spatialCoverage;
@@ -206,16 +205,6 @@ public class Record {
         this.type = type;
     }
 
-    @JacocoGenerated
-    @JsonProperty("language")
-    public Language getLanguage() {
-        return this.language;
-    }
-
-    public void setLanguage(Language language) {
-        this.language = language;
-    }
-
     @JsonProperty("rightsholder")
     public String getRightsholder() {
         return rightsholder;
@@ -249,7 +238,7 @@ public class Record {
     @Override
     public int hashCode() {
         return Objects.hash(getResourceOwner(), getEntityDescription(), getCustomer(), getId(), getDoi(), getType(),
-                            getLanguage(), getPublisherAuthority(), getRightsholder(), getSpatialCoverage(),
+                            getPublisherAuthority(), getRightsholder(), getSpatialCoverage(),
                             getPartOf(),
                             getPart(), getPublication(), getContentBundle(), getPublishedDate(), getCristinId(),
                             getBrageLocation(), getErrors(), getWarnings());
@@ -271,7 +260,6 @@ public class Record {
                && Objects.equals(getId(), record.getId())
                && Objects.equals(getDoi(), record.getDoi())
                && Objects.equals(getType(), record.getType())
-               && Objects.equals(getLanguage(), record.getLanguage())
                && Objects.equals(getPublisherAuthority(), record.getPublisherAuthority())
                && Objects.equals(getRightsholder(), record.getRightsholder())
                && Objects.equals(getSpatialCoverage(), record.getSpatialCoverage())

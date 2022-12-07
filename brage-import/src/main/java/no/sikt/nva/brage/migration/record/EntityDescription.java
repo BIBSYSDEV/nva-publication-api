@@ -15,9 +15,19 @@ public class EntityDescription {
     private List<Contributor> contributors;
     private List<String> tags;
     private PublicationInstance publicationInstance;
+    private Language language;
 
     public EntityDescription() {
 
+    }
+
+    @JsonProperty("language")
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 
     @JsonProperty("publicationDate")

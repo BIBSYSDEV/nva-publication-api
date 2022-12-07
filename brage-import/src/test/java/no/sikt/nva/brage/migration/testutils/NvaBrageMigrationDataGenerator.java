@@ -108,7 +108,6 @@ public class NvaBrageMigrationDataGenerator {
         var record = new Record();
         record.setResourceOwner(builder.getResourceOwner());
         record.setSpatialCoverage(builder.getSpatialCoverage());
-        record.setLanguage(builder.getLanguage());
         record.setCustomer(builder.getCustomer());
         record.setDoi(builder.getDoi());
         record.setId(builder.getHandle());
@@ -145,6 +144,7 @@ public class NvaBrageMigrationDataGenerator {
         entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
         entityDescription.setPublicationDate(builder.getPublicationDate());
         entityDescription.setPublicationInstance(createPublicationInstance(builder));
+        entityDescription.setLanguage(builder.getLanguage());
         return entityDescription;
     }
 
