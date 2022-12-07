@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
 public class Language {
@@ -36,5 +37,26 @@ public class Language {
     @JacocoGenerated
     public void setNva(URI nva) {
         this.nva = nva;
+    }
+
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Language)) {
+            return false;
+        }
+        Language language = (Language) o;
+        return Objects.equals(getBrage(), language.getBrage())
+               && Objects.equals(getNva(), language.getNva());
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getBrage(), getNva());
     }
 }

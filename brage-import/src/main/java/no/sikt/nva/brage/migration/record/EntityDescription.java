@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.record;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.language.tooling.JacocoGenerated;
 
 public class EntityDescription {
@@ -130,5 +131,15 @@ public class EntityDescription {
                && Objects.equals(contributors, that.contributors)
                && Objects.equals(tags, that.tags)
                && Objects.equals(publicationInstance, that.publicationInstance);
+    }
+
+    @JacocoGenerated
+    @Override
+    public String toString() {
+        try {
+            return JsonUtils.dtoObjectMapper.writeValueAsString(this);
+        } catch (Exception e) {
+            return super.toString();
+        }
     }
 }
