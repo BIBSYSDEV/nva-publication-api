@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
@@ -317,6 +318,7 @@ public class BrageEntryEventConsumerTest {
         var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var bucket = fileUri.getHost();
         return bucket
+                   .addChild(ERROR_BUCKET_PATH)
                    .addChild(timestamp)
                    .addChild(exception.getClass().getSimpleName())
                    .addChild(fileUri.getPath())
