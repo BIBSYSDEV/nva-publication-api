@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
-import no.sikt.nva.brage.migration.mapper.ResourceOwnerMapper;
+import java.util.function.Function;
 import no.sikt.nva.brage.migration.record.Contributor;
+import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Pages;
@@ -24,22 +24,21 @@ import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationInstance;
 import no.sikt.nva.brage.migration.record.PublishedDate;
 import no.sikt.nva.brage.migration.record.Record;
+import no.sikt.nva.brage.migration.record.ResourceOwner;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
-import no.sikt.nva.brage.migration.testutils.type.BrageType;
-import no.sikt.nva.brage.migration.testutils.type.TypeMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.Instant;
 
 public class NvaBrageMigrationDataGenerator {
@@ -65,11 +64,17 @@ public class NvaBrageMigrationDataGenerator {
                    .toInstant();
     }
 
-    private static ResourceOwner getResourceOwnerIfPresent(Builder builder) {
+    private static no.unit.nva.model.ResourceOwner getResourceOwnerIfPresent(Builder builder) {
         return Optional.ofNullable(builder)
-                   .map(Builder::getCustomer)
-                   .map(ResourceOwnerMapper::getResourceOwner)
+                   .map(Builder::getResourceOwner)
+                   .map(generateResourceOwner())
                    .orElse(null);
+    }
+
+    @NotNull
+    private static Function<ResourceOwner, no.unit.nva.model.ResourceOwner> generateResourceOwner() {
+        return resourceOwner -> new no.unit.nva.model.ResourceOwner(resourceOwner.getOwner(),
+                                                                    resourceOwner.getOwnerAffiliation());
     }
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
@@ -80,7 +85,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withPublishedDate(convertPublishedDateToInstant(builder))
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withIdentifier(FakeResourceService.SORTABLE_IDENTIFIER)
-                   .withPublisher(builder.getOrganization())
+                   .withPublisher(new Organization.Builder().withId(builder.getCustomer().getId()).build())
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
                    .withResourceOwner(getResourceOwnerIfPresent(builder))
                    .build();
@@ -101,7 +106,9 @@ public class NvaBrageMigrationDataGenerator {
 
     private Record createRecord(Builder builder) {
         var record = new Record();
+        record.setResourceOwner(builder.getResourceOwner());
         record.setSpatialCoverage(builder.getSpatialCoverage());
+        record.setLanguage(builder.getLanguage());
         record.setCustomer(builder.getCustomer());
         record.setDoi(builder.getDoi());
         record.setId(builder.getHandle());
@@ -130,7 +137,6 @@ public class NvaBrageMigrationDataGenerator {
     private no.sikt.nva.brage.migration.record.EntityDescription createBrageEntityDescription(
         Builder builder) {
         var entityDescription = new no.sikt.nva.brage.migration.record.EntityDescription();
-        entityDescription.setLanguage(builder.getLanguage());
         entityDescription.setMainTitle(builder.getMainTitle());
         entityDescription.setAlternativeTitles(List.of(randomString()));
         entityDescription.setContributors(List.of(createContributor()));
@@ -154,6 +160,7 @@ public class NvaBrageMigrationDataGenerator {
 
     public static class Builder {
 
+        public ResourceOwner resourceOwner;
         private URI handle;
         private URI doi;
         private String brageLocation;
@@ -176,10 +183,19 @@ public class NvaBrageMigrationDataGenerator {
         private Pages pages;
         private MonographPages monographPages;
         private List<String> spatialCoverage;
-        private String customer;
+        private Customer customer;
         private Organization organization;
         private List<AssociatedArtifact> associatedArtifacts;
         private SortableIdentifier identifier;
+
+        public ResourceOwner getResourceOwner() {
+            return resourceOwner;
+        }
+
+        public Builder withResourceOwner(ResourceOwner resourceOwner) {
+            this.resourceOwner = resourceOwner;
+            return this;
+        }
 
         public Builder withIdentifier(SortableIdentifier identifier) {
             this.identifier = identifier;
@@ -208,7 +224,7 @@ public class NvaBrageMigrationDataGenerator {
             return organization;
         }
 
-        public String getCustomer() {
+        public Customer getCustomer() {
             return customer;
         }
 
@@ -217,7 +233,7 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withCustomer(String customer) {
+        public Builder withCustomer(Customer customer) {
             this.customer = customer;
             return this;
         }
@@ -432,9 +448,6 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(mainTitle)) {
                 mainTitle = randomString();
             }
-            if (isNull(type)) {
-                type = createRandomSingleType();
-            }
             if (isNull(publication)) {
                 publication = createRandomPublication();
             }
@@ -473,7 +486,9 @@ public class NvaBrageMigrationDataGenerator {
 
         private PublishedDate randomPublishedDate() {
             var date = randomLocalDate();
-            var publishedDate = new PublishedDate(Collections.singletonList(date.toString()), date.toString());
+            var publishedDate = new PublishedDate();
+            publishedDate.setBrageDates(Collections.singletonList(date.toString()));
+            publishedDate.setNvaDate(date.toString());
             return publishedDate;
         }
 
@@ -493,13 +508,6 @@ public class NvaBrageMigrationDataGenerator {
 
         private URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
-        }
-
-        private Type createRandomSingleType() {
-            int valueToChoose = new Random().nextInt(BrageType.values().length);
-            var randomBrageType = BrageType.values()[valueToChoose];
-            var matchingNvaType = TypeMapper.convertBrageTypeToNvaType(List.of(randomBrageType.toString()));
-            return new Type(List.of(randomBrageType.getType()), matchingNvaType);
         }
 
         private no.sikt.nva.brage.migration.record.Publication createRandomPublication() {

@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
@@ -61,9 +62,13 @@ public final class BrageNvaMapper {
 
     private static ResourceOwner extractResourceOwner(Record record) {
         return Optional.ofNullable(record)
-                   .map(Record::getCustomer)
-                   .map(ResourceOwnerMapper::getResourceOwner)
+                   .map(Record::getResourceOwner)
+                   .map(BrageNvaMapper::generateResourceOwner)
                    .orElse(null);
+    }
+
+    private static ResourceOwner generateResourceOwner(no.sikt.nva.brage.migration.record.ResourceOwner resourceOwner) {
+        return new ResourceOwner(resourceOwner.getOwner(), resourceOwner.getOwnerAffiliation());
     }
 
     private static List<AssociatedArtifact> extractAssociatedArtifacts(Record record) {
@@ -110,7 +115,7 @@ public final class BrageNvaMapper {
 
     private static Organization extractPublisher(Record record) {
         return Optional.ofNullable(record.getCustomer())
-                   .map(CustomerMapper::getCustomerUri)
+                   .map(Customer::getId)
                    .map(BrageNvaMapper::generateOrganization)
                    .orElse(null);
     }
@@ -237,7 +242,7 @@ public final class BrageNvaMapper {
     }
 
     private static URI extractLanguage(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getEntityDescription().getLanguage())
+        return Optional.ofNullable(brageRecord.getLanguage())
                    .map(BrageNvaMapper::generateLanguage)
                    .orElse(null);
     }

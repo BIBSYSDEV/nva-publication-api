@@ -6,37 +6,42 @@ import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class WarningDetails {
 
     private final Warning warningCode;
     private List<String> details;
 
+    @JacocoGenerated
     public WarningDetails(@JsonProperty("warningCode") Warning warningCode,
-                          @JsonProperty("details")List<String> details) {
+                          @JsonProperty("details") List<String> details) {
         this.warningCode = warningCode;
         this.details = details;
     }
 
+    @JacocoGenerated
     public WarningDetails(Warning warningCode) {
         this.warningCode = warningCode;
     }
 
+    @JacocoGenerated
     public WarningDetails(Warning warningCode, String detail) {
         this.warningCode = warningCode;
         this.details = Collections.singletonList(detail);
     }
 
+    @JacocoGenerated
     @JsonProperty("warningCode")
     public Warning getWarningCode() {
         return warningCode;
     }
 
+    @JacocoGenerated
     @JsonProperty("details")
     public List<String> getDetails() {
         return details;
     }
 
+    @JacocoGenerated
     public void setDetails(List<String> details) {
         this.details = details;
     }
@@ -60,6 +65,7 @@ public class WarningDetails {
         return this.warningCode.equals(warningDetail.warningCode);
     }
 
+    @JacocoGenerated
     @Override
     public String toString() {
         return warningCode + " = " + details;

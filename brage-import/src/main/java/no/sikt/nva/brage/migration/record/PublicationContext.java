@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class PublicationContext {
 
     private String bragePublisher;
@@ -20,6 +19,7 @@ public class PublicationContext {
         return journal;
     }
 
+    @JacocoGenerated
     public void setJournal(Journal journal) {
         this.journal = journal;
     }

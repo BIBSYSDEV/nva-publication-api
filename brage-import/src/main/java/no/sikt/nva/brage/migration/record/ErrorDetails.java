@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration;
+package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;

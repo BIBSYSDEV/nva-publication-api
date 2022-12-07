@@ -11,6 +11,7 @@ public class PublicationDate {
     private final String brage;
     private final PublicationDateNva nva;
 
+    @JacocoGenerated
     @JsonCreator
     public PublicationDate(@JsonProperty("brage") String brage,
                            @JsonProperty("nva") PublicationDateNva nva) {
@@ -41,7 +42,6 @@ public class PublicationDate {
         return Objects.equals(brage, that.brage) && Objects.equals(nva, that.nva);
     }
 
-    @JacocoGenerated
     public String getBrage() {
         return brage;
     }

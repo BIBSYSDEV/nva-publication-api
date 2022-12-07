@@ -3,7 +3,6 @@ package no.sikt.nva.brage.migration.record;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class Pages {
 
     private String bragePages;
@@ -22,18 +21,22 @@ public class Pages {
         this.pages = pages;
     }
 
+    @JacocoGenerated
     public String getBragePages() {
         return bragePages;
     }
 
+    @JacocoGenerated
     public void setBragePages(String bragePages) {
         this.bragePages = bragePages;
     }
 
+    @JacocoGenerated
     public Range getRange() {
         return range;
     }
 
+    @JacocoGenerated
     public void setRange(Range range) {
         this.range = range;
     }

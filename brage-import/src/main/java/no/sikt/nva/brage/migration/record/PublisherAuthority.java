@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class PublisherAuthority {
 
     private List<String> brage;
     private Boolean nva;
 
+    @JacocoGenerated
     @JsonCreator
     public PublisherAuthority(@JsonProperty("brage") List<String> brage,
                               @JsonProperty("nva") Boolean nva) {
@@ -38,20 +38,24 @@ public class PublisherAuthority {
         return Objects.equals(brage, that.brage) && Objects.equals(nva, that.nva);
     }
 
+    @JacocoGenerated
     @JsonProperty("brage")
     public List<String> getBrage() {
         return brage;
     }
 
+    @JacocoGenerated
     public void setBrage(List<String> brage) {
         this.brage = brage;
     }
 
+    @JacocoGenerated
     @JsonProperty("nva")
     public Boolean getNva() {
         return nva;
     }
 
+    @JacocoGenerated
     public void setNva(Boolean nva) {
         this.nva = nva;
     }

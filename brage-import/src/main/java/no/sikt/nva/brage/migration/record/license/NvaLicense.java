@@ -13,7 +13,6 @@ public class NvaLicense {
         this.identifier = identifier;
     }
 
-    @JacocoGenerated
     public NvaLicenseIdentifier getIdentifier() {
         return identifier;
     }

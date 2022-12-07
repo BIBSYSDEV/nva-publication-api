@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class PublicationInstance {
 
     private String volume;
