@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class Range {
 
     private String begin;
@@ -20,6 +19,7 @@ public class Range {
         return begin;
     }
 
+    @JacocoGenerated
     public void setBegin(String begin) {
         this.begin = begin;
     }
@@ -28,6 +28,7 @@ public class Range {
         return end;
     }
 
+    @JacocoGenerated
     public void setEnd(String end) {
         this.end = end;
     }

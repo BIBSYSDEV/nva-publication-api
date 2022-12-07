@@ -15,6 +15,7 @@ public class License {
         this.nvaLicense = nvaLicense;
     }
 
+    @JacocoGenerated
     public License() {
 
     }
@@ -45,8 +46,8 @@ public class License {
         return Objects.hash(brageLicense, nvaLicense);
     }
 
-    @Override
     @JacocoGenerated
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

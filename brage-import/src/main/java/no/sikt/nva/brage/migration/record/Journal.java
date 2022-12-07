@@ -3,21 +3,27 @@ package no.sikt.nva.brage.migration.record;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import no.unit.nva.language.tooling.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Journal {
 
-    private final String id;
+    private String id;
 
+    @JacocoGenerated
     @JsonCreator
     public Journal(@JsonProperty("id") String id) {
         this.id = id;
     }
 
+    @JacocoGenerated
     @JsonProperty("id")
     public String getId() {
         return id;
+    }
+
+    @JacocoGenerated
+    public void setId(String id) {
+        this.id = id;
     }
 }

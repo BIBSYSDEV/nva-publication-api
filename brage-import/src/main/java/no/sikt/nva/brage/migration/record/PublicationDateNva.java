@@ -9,20 +9,18 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public final class PublicationDateNva {
 
-    @JsonProperty("year")
     private String year;
-    @JsonProperty("month")
     private String month;
-    @JsonProperty("day")
     private String day;
 
     @JsonCreator
-    public PublicationDateNva(Builder builder) {
+    private PublicationDateNva(Builder builder) {
         setYear(builder.year);
         setMonth(builder.month);
         setDay(builder.day);
     }
 
+    @JsonProperty("year")
     public String getYear() {
         return year;
     }
@@ -31,6 +29,7 @@ public final class PublicationDateNva {
         this.year = year;
     }
 
+    @JsonProperty("month")
     public String getMonth() {
         return month;
     }
@@ -39,6 +38,7 @@ public final class PublicationDateNva {
         this.month = month;
     }
 
+    @JsonProperty("day")
     public String getDay() {
         return day;
     }
@@ -68,7 +68,6 @@ public final class PublicationDateNva {
                && Objects.equals(getDay(), that.getDay());
     }
 
-    @JacocoGenerated
     public static final class Builder {
 
         private String year;

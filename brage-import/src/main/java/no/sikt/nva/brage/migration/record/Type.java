@@ -20,6 +20,7 @@ public class Type {
         this.nva = nva;
     }
 
+    @JacocoGenerated
     public String getNva() {
         return nva;
     }

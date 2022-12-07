@@ -29,6 +29,26 @@ public class Language {
         this.brage = brage;
     }
 
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getBrage(), getNva());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Language language = (Language) o;
+        return Objects.equals(getBrage(), language.getBrage()) && Objects.equals(getNva(),
+                                                                                 language.getNva());
+    }
+
     @JsonProperty("nva")
     public URI getNva() {
         return nva;
@@ -37,26 +57,5 @@ public class Language {
     @JacocoGenerated
     public void setNva(URI nva) {
         this.nva = nva;
-    }
-
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Language)) {
-            return false;
-        }
-        Language language = (Language) o;
-        return Objects.equals(getBrage(), language.getBrage())
-               && Objects.equals(getNva(), language.getNva());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getBrage(), getNva());
     }
 }

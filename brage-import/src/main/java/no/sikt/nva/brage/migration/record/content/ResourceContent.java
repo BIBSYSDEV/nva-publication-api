@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class ResourceContent {
 
     private List<ContentFile> contentFiles;
@@ -19,10 +20,16 @@ public class ResourceContent {
     public List<ContentFile> getContentFiles() {
         return contentFiles;
     }
-
     @JacocoGenerated
     public void setContentFiles(List<ContentFile> contentFiles) {
         this.contentFiles = contentFiles;
+    }
+
+    public ContentFile getContentFileByFilename(String filename) {
+        return contentFiles.stream()
+                   .filter(contentFile -> contentFile.getFilename().equals(filename))
+                   .findAny()
+                   .orElse(null);
     }
 
     @JacocoGenerated
@@ -44,7 +51,6 @@ public class ResourceContent {
         return Objects.equals(contentFiles, that.contentFiles);
     }
 
-    @JacocoGenerated
     public enum BundleType {
         ORIGINAL("ORIGINAL"),
         TEXT("TEXT"),
@@ -57,10 +63,12 @@ public class ResourceContent {
 
         private final String value;
 
+        @JacocoGenerated
         BundleType(String value) {
             this.value = value;
         }
 
+        @JacocoGenerated
         public String getValue() {
             return value;
         }

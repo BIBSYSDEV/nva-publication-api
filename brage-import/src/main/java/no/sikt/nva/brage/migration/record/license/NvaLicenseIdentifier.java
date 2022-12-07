@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.record.license;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import nva.commons.core.JacocoGenerated;
 
 public enum NvaLicenseIdentifier {
     CC_BY("CC BY"),
@@ -17,6 +18,7 @@ public enum NvaLicenseIdentifier {
         this.value = value;
     }
 
+    @JacocoGenerated
     @JsonValue
     public String getValue() {
         return value;

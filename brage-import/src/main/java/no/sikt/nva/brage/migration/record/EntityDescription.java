@@ -3,8 +3,7 @@ package no.sikt.nva.brage.migration.record;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
-import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.language.tooling.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class EntityDescription {
 
@@ -16,10 +15,21 @@ public class EntityDescription {
     private List<Contributor> contributors;
     private List<String> tags;
     private PublicationInstance publicationInstance;
-
     private Language language;
 
-    @JacocoGenerated
+    public EntityDescription() {
+
+    }
+
+    @JsonProperty("language")
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
+    }
+
     @JsonProperty("publicationDate")
     public PublicationDate getPublicationDate() {
         return publicationDate;
@@ -34,7 +44,6 @@ public class EntityDescription {
         return publicationInstance;
     }
 
-    @JacocoGenerated
     public void setPublicationInstance(PublicationInstance publicationInstance) {
         this.publicationInstance = publicationInstance;
     }
@@ -72,7 +81,6 @@ public class EntityDescription {
         return descriptions;
     }
 
-    @JacocoGenerated
     public void setDescriptions(List<String> descriptions) {
         this.descriptions = descriptions;
     }
@@ -82,7 +90,6 @@ public class EntityDescription {
         return abstracts;
     }
 
-    @JacocoGenerated
     public void setAbstracts(List<String> abstracts) {
         this.abstracts = abstracts;
     }
@@ -96,20 +103,11 @@ public class EntityDescription {
         this.alternativeTitles = alternativeTitles;
     }
 
-    @JsonProperty("language")
-    public Language getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(Language language) {
-        this.language = language;
-    }
-
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(publicationDate, descriptions, abstracts, mainTitle, alternativeTitles, contributors, tags,
-                            publicationInstance, language);
+                            publicationInstance);
     }
 
     @JacocoGenerated
@@ -125,21 +123,10 @@ public class EntityDescription {
         return Objects.equals(publicationDate, that.publicationDate)
                && Objects.equals(descriptions, that.descriptions)
                && Objects.equals(abstracts, that.abstracts)
-               && Objects.equals(language, that.language)
                && Objects.equals(mainTitle, that.mainTitle)
                && Objects.equals(alternativeTitles, that.alternativeTitles)
                && Objects.equals(contributors, that.contributors)
                && Objects.equals(tags, that.tags)
                && Objects.equals(publicationInstance, that.publicationInstance);
-    }
-
-    @JacocoGenerated
-    @Override
-    public String toString() {
-        try {
-            return JsonUtils.dtoObjectMapper.writeValueAsString(this);
-        } catch (Exception e) {
-            return super.toString();
-        }
     }
 }

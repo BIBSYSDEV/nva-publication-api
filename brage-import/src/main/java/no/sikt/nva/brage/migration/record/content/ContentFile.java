@@ -8,7 +8,6 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 public class ContentFile {
 
     private String filename;
@@ -18,6 +17,7 @@ public class ContentFile {
     private License license;
     private String embargoDate;
 
+    @JacocoGenerated
     public ContentFile() {
 
     }
@@ -42,6 +42,7 @@ public class ContentFile {
         return embargoDate;
     }
 
+    @JacocoGenerated
     public void setEmbargoDate(String embargoDate) {
         this.embargoDate = embargoDate;
     }
@@ -51,15 +52,18 @@ public class ContentFile {
         return identifier;
     }
 
+    @JacocoGenerated
     public void setIdentifier(UUID identifier) {
         this.identifier = identifier;
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(filename, bundleType, description, identifier, license, embargoDate);
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -77,11 +81,13 @@ public class ContentFile {
                && Objects.equals(embargoDate, that.embargoDate);
     }
 
+    @JacocoGenerated
     @JsonProperty("filename")
     public String getFilename() {
         return filename;
     }
 
+    @JacocoGenerated
     public void setFilename(String filename) {
         this.filename = filename;
     }
@@ -91,6 +97,7 @@ public class ContentFile {
         return bundleType;
     }
 
+    @JacocoGenerated
     public void setBundleType(BundleType bundleType) {
         this.bundleType = bundleType;
     }
@@ -100,6 +107,7 @@ public class ContentFile {
         return license;
     }
 
+    @JacocoGenerated
     public void setLicense(License license) {
         this.license = license;
     }
@@ -109,6 +117,7 @@ public class ContentFile {
         return description;
     }
 
+    @JacocoGenerated
     public void setDescription(String description) {
         this.description = description;
     }

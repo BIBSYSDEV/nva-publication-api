@@ -14,10 +14,12 @@ public enum BrageLicense {
 
     private final String value;
 
+    @JacocoGenerated
     BrageLicense(String value) {
         this.value = value;
     }
 
+    @JacocoGenerated
     public static BrageLicense fromValue(String value) {
         for (BrageLicense license : BrageLicense.values()) {
             if (license.getValue().equalsIgnoreCase(value)) {
@@ -27,6 +29,7 @@ public enum BrageLicense {
         return null;
     }
 
+    @JacocoGenerated
     @JsonValue
     public String getValue() {
         return value;
