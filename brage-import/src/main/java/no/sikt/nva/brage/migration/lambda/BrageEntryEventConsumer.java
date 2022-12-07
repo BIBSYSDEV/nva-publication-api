@@ -61,7 +61,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
                    .map(publication -> pushAssociatedFilesToPersistedStorage(publication, s3Event))
-                   .flatMap(publication -> persistInDatabase(publication))
+                   .flatMap(this::persistInDatabase)
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
     }
 
