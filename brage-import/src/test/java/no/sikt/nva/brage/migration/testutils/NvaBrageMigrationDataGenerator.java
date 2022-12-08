@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
@@ -25,6 +26,7 @@ import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.PublicationInstance;
 import no.sikt.nva.brage.migration.record.PublishedDate;
 import no.sikt.nva.brage.migration.record.Publisher;
+import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.ResourceOwner;
 import no.sikt.nva.brage.migration.record.Series;
@@ -462,9 +464,6 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(alternativeTitles)) {
                 alternativeTitles = notRandomAlternativeTitle();
             }
-            if (isNull(publication)) {
-                publication = createPublication();
-            }
             if (isNull(descriptions)) {
                 descriptions = List.of(randomString());
             }
@@ -492,14 +491,23 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(mainTitle)) {
                 mainTitle = randomString();
             }
-            if (isNull(publishedDate)) {
-                publishedDate = createRandomPublishedDate();
-            }
             if (isNull(publicationDate) && isNull(publicationDateForPublication)) {
                 this.publicationDate = createPublicationDate();
                 this.publicationDateForPublication = createPublicationDateForPublication(publicationDate);
             } else if (Objects.nonNull(publicationDate) && isNull(publicationDateForPublication)) {
                 this.publicationDateForPublication = createPublicationDateForPublication(publicationDate);
+            }
+            if (isNull(pages)) {
+                pages = new Pages("46 s.", new Range("5", "10"), "5");
+            }
+            if (isNull(monographPages)) {
+                monographPages = new MonographPages.Builder().withPages("5").build();
+            }
+            if (isNull(isbn)) {
+                isbn = randomIsbn10();
+            }
+            if (isNull(publication)) {
+                publication = createPublication();
             }
             return new NvaBrageMigrationDataGenerator(this);
         }

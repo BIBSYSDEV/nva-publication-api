@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.testutils;
 
+import static java.util.Objects.nonNull;
 import java.util.Collections;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
@@ -12,17 +13,21 @@ import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
@@ -51,7 +56,7 @@ public final class ReferenceGenerator {
             if (NvaType.BOOK.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForBook(builder))
-                           .withPublicationInstance(generatePublicationInstanceForBook())
+                           .withPublicationInstance(generatePublicationInstanceForBook(builder))
                            .build();
             }
             if (NvaType.MAP.getValue().equals(builder.getType().getNva())) {
@@ -69,37 +74,51 @@ public final class ReferenceGenerator {
             if (NvaType.REPORT.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(generatePublicationInstanceForReport(builder))
-                           .withPublishingContext(new Report.Builder().withSeries(generateSeries(builder)).build())
+                           .withPublishingContext(generatePublicationContextForReport(builder))
                            .build();
             }
             if (NvaType.RESEARCH_REPORT.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(generatePublicationInstanceForResearchReport(builder))
-                           .withPublishingContext(new Report.Builder().build())
+                           .withPublishingContext(generatePublicationContextForReport(builder))
                            .build();
             }
             if (NvaType.BACHELOR_THESIS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(new Degree.Builder().build())
+                           .withPublishingContext(generatePublicationContextForDegree(builder))
                            .withPublicationInstance(generatePublicationInstanceForBachelorDegree(builder))
                            .build();
             }
             if (NvaType.MASTER_THESIS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(new Degree.Builder().build())
+                           .withPublishingContext(generatePublicationContextForDegree(builder))
                            .withPublicationInstance(generatePublicationInstanceForMasterDegree(builder))
                            .build();
             }
             if (NvaType.DOCTORAL_THESIS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(new Degree.Builder().build())
+                           .withPublishingContext(generatePublicationContextForDegree(builder))
                            .withPublicationInstance(generatePublicationInstanceForPhd(builder))
                            .build();
             }
             if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generateJournal(builder))
-                           .withPublicationInstance(generatePublicationInstanceForJournalArticle())
+                           .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
+                           .build();
+            }
+            if (NvaType.STUDENT_PAPER_OTHERS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(generatePublicationContextForOtherStudentWork(builder))
+                           .withPublicationInstance(
+                               new OtherStudentWork.Builder().withPages(builder.getMonographPages())
+                                   .withSubmittedDate(builder.getPublicationDateForPublication())
+                                   .build()).build();
+            }
+            if (NvaType.SCIENTIFIC_MONOGRAPH.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(generatePublicationContextForBook(builder))
+                           .withPublicationInstance(generatePublicationInstanceForScientificMonograph(builder))
                            .build();
             }
             return new Reference.Builder().build();
@@ -108,9 +127,30 @@ public final class ReferenceGenerator {
         }
     }
 
+    private static PublicationContext generatePublicationContextForReport(Builder builder)
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        return new Report.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
+                   .withSeries(generateSeries(builder))
+                   .build();
+    }
+
     @NotNull
-    private static JournalArticle generatePublicationInstanceForJournalArticle() {
-        return new JournalArticle.Builder().withPages(new Range.Builder().build()).build();
+    private static BookMonograph generatePublicationInstanceForScientificMonograph(Builder builder) {
+        return new BookMonograph.Builder().withContentType(BookMonographContentType.ACADEMIC_MONOGRAPH)
+                   .withPeerReviewed(true)
+                   .withOriginalResearch(false)
+                   .withPages(builder.getMonographPages())
+                   .build();
+    }
+
+    private static PublicationContext generatePublicationContextForOtherStudentWork(Builder builder)
+        throws InvalidIsbnException {
+        return new Book.BookBuilder().withIsbnList(Collections.singletonList(builder.getIsbn())).build();
+    }
+
+    private static JournalArticle generatePublicationInstanceForJournalArticle(Builder builder) {
+        return new JournalArticle.Builder().withPages(new Range(builder.getPages().getRange().getBegin(),
+                                                                builder.getPages().getRange().getEnd())).build();
     }
 
     private static Publisher generatePublisher(Builder builder) {
@@ -122,11 +162,14 @@ public final class ReferenceGenerator {
     }
 
     private static Series generateSeries(Builder builder) {
-        return new Series(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
-                              .addChild(ChannelType.SERIES.getType())
-                              .addChild(builder.getSeriesId())
-                              .addChild(builder.getPublicationDate().getNva().getYear())
-                              .getUri());
+        if (nonNull(builder.getSeriesId())) {
+            return new Series(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+                                  .addChild(ChannelType.SERIES.getType())
+                                  .addChild(builder.getSeriesId())
+                                  .addChild(builder.getPublicationDate().getNva().getYear())
+                                  .getUri());
+        }
+        return null;
     }
 
     private static Journal generateJournal(Builder builder) {
@@ -184,12 +227,19 @@ public final class ReferenceGenerator {
                    .build();
     }
 
-    private static BookMonograph generatePublicationInstanceForBook() {
+    private static BookMonograph generatePublicationInstanceForBook(Builder builder) {
         return new BookMonograph.Builder()
                    .withPeerReviewed(false)
                    .withOriginalResearch(false)
                    .withContentType(BookMonographContentType.NON_FICTION_MONOGRAPH)
-                   .withPages(new MonographPages.Builder().withIllustrated(false).build())
+                   .withPages(new MonographPages.Builder().withIllustrated(false)
+                                  .withPages(builder.getPages().getPages())
+                                  .build())
                    .build();
+    }
+
+    private static Degree generatePublicationContextForDegree(Builder builder)
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        return new Degree.Builder().withIsbnList(Collections.singletonList(builder.getIsbn())).build();
     }
 }
