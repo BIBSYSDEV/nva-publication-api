@@ -376,6 +376,8 @@ public class BrageEntryEventConsumerTest {
                            .withLicense(new no.unit.nva.model.associatedartifacts.file.License.Builder()
                                             .withIdentifier(String.valueOf(LICENSE_IDENTIFIER.getValue())).build())
                            .withName(FILENAME)
+                           .withSize(FakeS3cClientWithCopyObjectSupport.SOME_CONTENT_LENGTH)
+                           .withMimeType(FakeS3cClientWithCopyObjectSupport.APPLICATION_PDF_MIMETYPE)
                            .withEmbargoDate(Instant.parse(EMBARGO_DATE))
                            .buildPublishedFile());
     }
