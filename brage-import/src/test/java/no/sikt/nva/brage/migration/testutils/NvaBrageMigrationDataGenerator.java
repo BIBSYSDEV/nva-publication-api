@@ -21,6 +21,7 @@ import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationContext;
 import no.sikt.nva.brage.migration.record.PublicationDate;
+import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.PublicationInstance;
 import no.sikt.nva.brage.migration.record.PublishedDate;
 import no.sikt.nva.brage.migration.record.Record;
@@ -82,6 +83,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withDoi(builder.getDoi())
                    .withHandle(builder.getHandle())
                    .withEntityDescription(createEntityDescription(builder))
+                   .withCreatedDate(convertPublishedDateToInstant(builder))
                    .withPublishedDate(convertPublishedDateToInstant(builder))
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withIdentifier(FakeResourceService.SORTABLE_IDENTIFIER)
@@ -451,14 +453,39 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(publication)) {
                 publication = createRandomPublication();
             }
-            if (Objects.nonNull(publicationDate)) {
-                this.publicationDateForPublication =
-                    new no.unit.nva.model.PublicationDate.Builder().withDay(publicationDate.getNva().getDay())
-                        .withMonth(publicationDate.getNva().getMonth())
-                        .withDay(publicationDate.getNva().getDay())
-                        .build();
+            if (isNull(publishedDate)) {
+                publishedDate = createRandomPublishedDate();
+            }
+            if (isNull(publicationDate) && isNull(publicationDateForPublication)) {
+                this.publicationDate = createPublicationDate();
+                this.publicationDateForPublication = createPublicationDateForPublication(publicationDate);
+            } else if (Objects.nonNull(publicationDate) && isNull(publicationDateForPublication)) {
+                this.publicationDateForPublication = createPublicationDateForPublication(publicationDate);
             }
             return new NvaBrageMigrationDataGenerator(this);
+        }
+
+        private PublicationDate createPublicationDate() {
+            var publicationDate = new PublicationDate("2020",
+                                                      new PublicationDateNva.Builder()
+                                                          .withYear("2020").build());
+            return publicationDate;
+        }
+
+        private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(
+            PublicationDate publicationDate) {
+            return new no.unit.nva.model.PublicationDate.Builder()
+                       .withYear(publicationDate.getNva().getYear())
+                       .withMonth(publicationDate.getNva().getMonth())
+                       .withDay(publicationDate.getNva().getDay())
+                       .build();
+        }
+
+        private PublishedDate createRandomPublishedDate() {
+            var publishedDate = new PublishedDate();
+            publishedDate.setBrageDates(List.of("2019"));
+            publishedDate.setNvaDate("2019");
+            return publishedDate;
         }
 
         public String getEntityAbstractsForPublication() {
