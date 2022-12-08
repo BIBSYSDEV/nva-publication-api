@@ -494,7 +494,6 @@ public class BrageEntryEventConsumerTest {
                    .addChild(ERROR_BUCKET_PATH)
                    .addChild(timestamp)
                    .addChild(exception.getClass().getSimpleName())
-                   .addChild(fileUri.getPath())
                    .addChild(fileUri.getLastPathElement());
     }
 
