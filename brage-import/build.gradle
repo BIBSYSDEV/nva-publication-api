@@ -8,6 +8,8 @@ dependencies {
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
     implementation libs.aws.sdk.dynamodb
+    implementation libs.hamcrest.base
+    implementation libs.nva.testutils
 
     implementation libs.bundles.logging
 

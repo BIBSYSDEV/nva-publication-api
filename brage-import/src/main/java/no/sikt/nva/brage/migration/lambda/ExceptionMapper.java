@@ -11,6 +11,8 @@ public final class ExceptionMapper {
     public static RuntimeException castToCorrectRuntimeException(Exception exception) {
         if (exception instanceof AssociatedArtifactException) {
             return (AssociatedArtifactException) exception;
+        } else if (exception instanceof MissingFieldsException) {
+            return (MissingFieldsException) exception;
         } else {
             return new RuntimeException(exception);
         }

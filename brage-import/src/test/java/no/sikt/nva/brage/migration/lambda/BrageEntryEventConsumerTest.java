@@ -35,7 +35,7 @@ import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationDate;
-import no.sikt.nva.brage.migration.record.PublicationDateNva.Builder;
+import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.ResourceOwner;
@@ -86,10 +86,10 @@ public class BrageEntryEventConsumerTest {
     public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
     public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
-                                                                               new Builder().withYear("2020").build());
+                                                                               new PublicationDateNva.Builder().withYear(
+                                                                                   "2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(URI.create(
         "https://api.nva.unit.no/customer/test")).build();
-    public static final String TEST_CUSTOMER = "TEST";
     public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
     public static final String FILENAME = "filename";
     public static final Customer CUSTOMER = new Customer("someCustomer", URI.create("https://dev.nva.sikt"
@@ -138,7 +138,7 @@ public class BrageEntryEventConsumerTest {
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
     @ValueSource(strings = {PART_OF_SERIES_VALUE_V1, PART_OF_SERIES_VALUE_V2,
         PART_OF_SERIES_VALUE_V3, PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
     void shouldConvertBookToNvaPublication(String seriesNumber) throws IOException {

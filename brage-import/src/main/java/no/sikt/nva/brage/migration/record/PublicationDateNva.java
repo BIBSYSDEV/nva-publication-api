@@ -1,6 +1,5 @@
 package no.sikt.nva.brage.migration.record;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Objects;
@@ -13,7 +12,10 @@ public final class PublicationDateNva {
     private String month;
     private String day;
 
-    @JsonCreator
+    public PublicationDateNva() {
+        
+    }
+
     private PublicationDateNva(Builder builder) {
         setYear(builder.year);
         setMonth(builder.month);
