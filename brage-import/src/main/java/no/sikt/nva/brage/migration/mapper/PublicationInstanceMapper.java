@@ -53,14 +53,11 @@ public final class PublicationInstanceMapper {
         if (isBook(record)) {
             return buildPublicationInstanceWhenBook(record);
         }
-        if (isReport(record)) {
-            return buildPublicationInstanceWhenReport(record);
-        }
         if (isResearchReport(record)) {
             return buildPublicationInstanceWhenResearchReport(record);
+        } else {
+            return buildPublicationInstanceWhenReport(record);
         }
-
-        return null;
     }
 
     private static boolean isResearchReport(Record record) {
@@ -77,10 +74,6 @@ public final class PublicationInstanceMapper {
         return new ReportBasic.Builder()
                    .withPages(extractMonographPages(record))
                    .build();
-    }
-
-    private static boolean isReport(Record record) {
-        return NvaType.REPORT.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBook(Record record) {
@@ -146,15 +139,20 @@ public final class PublicationInstanceMapper {
     }
 
     private static String generateEnd(no.sikt.nva.brage.migration.record.PublicationInstance publicationInstance) {
-        return publicationInstance.getPages().getRange().getEnd();
+        return Optional.ofNullable(publicationInstance.getPages())
+                   .map(no.sikt.nva.brage.migration.record.Pages::getRange)
+                   .map(no.sikt.nva.brage.migration.record.Range::getEnd)
+                   .orElse(null);
     }
 
     private static String generateBegin(no.sikt.nva.brage.migration.record.PublicationInstance publicationInstance) {
-        return publicationInstance.getPages().getRange().getBegin();
+        return Optional.ofNullable(publicationInstance.getPages())
+                   .map(no.sikt.nva.brage.migration.record.Pages::getRange)
+                   .map(no.sikt.nva.brage.migration.record.Range::getBegin)
+                   .orElse(null);
     }
 
     private static String generateVolume(no.sikt.nva.brage.migration.record.PublicationInstance publicationInstance) {
-
         return publicationInstance.getVolume();
     }
 

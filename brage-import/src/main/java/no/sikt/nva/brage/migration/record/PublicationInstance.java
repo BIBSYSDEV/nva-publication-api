@@ -19,6 +19,7 @@ public class PublicationInstance {
         return articleNumber;
     }
 
+    @JacocoGenerated
     public void setArticleNumber(String articleNumber) {
         this.articleNumber = articleNumber;
     }
@@ -28,6 +29,7 @@ public class PublicationInstance {
         return volume;
     }
 
+    @JacocoGenerated
     public void setVolume(String volume) {
         this.volume = volume;
     }
@@ -37,6 +39,7 @@ public class PublicationInstance {
         return issue;
     }
 
+    @JacocoGenerated
     public void setIssue(String issue) {
         this.issue = issue;
     }

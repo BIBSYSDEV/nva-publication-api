@@ -78,7 +78,9 @@ public class EntityDescription {
 
     @JsonProperty
     public List<String> getDescriptions() {
-        return descriptions;
+        return Objects.nonNull(descriptions)
+                   ? descriptions
+                   : List.of();
     }
 
     public void setDescriptions(List<String> descriptions) {
@@ -106,8 +108,9 @@ public class EntityDescription {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(publicationDate, descriptions, abstracts, mainTitle, alternativeTitles, contributors, tags,
-                            publicationInstance);
+        return Objects.hash(getPublicationDate(), getDescriptions(), getAbstracts(), getMainTitle(),
+                            getAlternativeTitles(),
+                            getContributors(), getTags(), getPublicationInstance(), getLanguage());
     }
 
     @JacocoGenerated
@@ -120,13 +123,15 @@ public class EntityDescription {
             return false;
         }
         EntityDescription that = (EntityDescription) o;
-        return Objects.equals(publicationDate, that.publicationDate)
-               && Objects.equals(descriptions, that.descriptions)
-               && Objects.equals(abstracts, that.abstracts)
-               && Objects.equals(mainTitle, that.mainTitle)
-               && Objects.equals(alternativeTitles, that.alternativeTitles)
-               && Objects.equals(contributors, that.contributors)
-               && Objects.equals(tags, that.tags)
-               && Objects.equals(publicationInstance, that.publicationInstance);
+        return Objects.equals(getPublicationDate(), that.getPublicationDate())
+               && Objects.equals(getDescriptions(), that.getDescriptions())
+               && Objects.equals(getAbstracts(), that.getAbstracts())
+               && Objects.equals(getMainTitle(), that.getMainTitle())
+               && Objects.equals(getAlternativeTitles(), that.getAlternativeTitles())
+               && Objects.equals(getContributors(), that.getContributors())
+               && Objects.equals(getTags(), that.getTags())
+               && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
+               && Objects.equals(getLanguage(), that.getLanguage());
     }
 }
+

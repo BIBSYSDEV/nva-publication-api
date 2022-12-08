@@ -17,14 +17,17 @@ import java.util.function.Function;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Identity;
+import no.sikt.nva.brage.migration.record.Journal;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationContext;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationInstance;
 import no.sikt.nva.brage.migration.record.PublishedDate;
+import no.sikt.nva.brage.migration.record.Publisher;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.ResourceOwner;
+import no.sikt.nva.brage.migration.record.Series;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
@@ -115,9 +118,20 @@ public class NvaBrageMigrationDataGenerator {
         record.setType(builder.getType());
         record.setBrageLocation(createRandomBrageLocation());
         record.setContentBundle(builder.getResourceContent());
-        record.setPublication(builder.getPublication());
+        record.setPublication(createPublication(builder));
         record.setPublishedDate(builder.getPublishedDate());
         return record;
+    }
+
+    private no.sikt.nva.brage.migration.record.Publication createPublication(Builder builder) {
+        var publication = new no.sikt.nva.brage.migration.record.Publication();
+        publication.setPublicationContext(new PublicationContext());
+        publication.getPublicationContext().setPublisher(new Publisher(builder.getPublisherId()));
+        publication.getPublicationContext().setJournal(new Journal(builder.getJournalId()));
+        publication.getPublicationContext().setSeries(new Series(builder.getSeriesId()));
+        publication.setPartOfSeries(builder.getSeriesNumberRecord());
+        publication.setIsbn(builder.getIsbn());
+        return publication;
     }
 
     private String createRandomBrageLocation() {
@@ -170,7 +184,6 @@ public class NvaBrageMigrationDataGenerator {
         private Type type;
         private ResourceContent resourceContent;
         private PublishedDate publishedDate;
-        private no.sikt.nva.brage.migration.record.Publication publication;
         private List<String> descriptions;
         private List<String> abstracts;
         private List<String> alternativeTitles;
@@ -187,6 +200,46 @@ public class NvaBrageMigrationDataGenerator {
         private Organization organization;
         private List<AssociatedArtifact> associatedArtifacts;
         private SortableIdentifier identifier;
+        private String publisherId;
+        private String journalId;
+        private String seriesId;
+        private String isbn;
+
+        public String getIsbn() {
+            return isbn;
+        }
+
+        public Builder withIsbn(String isbn) {
+            this.isbn = isbn;
+            return this;
+        }
+
+        public String getSeriesId() {
+            return seriesId;
+        }
+
+        public Builder withSeries(String seriesId) {
+            this.seriesId = seriesId;
+            return this;
+        }
+
+        public String getJournalId() {
+            return journalId;
+        }
+
+        public Builder withJournalId(String journalId) {
+            this.journalId = journalId;
+            return this;
+        }
+
+        public String getPublisherId() {
+            return publisherId;
+        }
+
+        public Builder withPublisherId(String publisherId) {
+            this.publisherId = publisherId;
+            return this;
+        }
 
         public ResourceOwner getResourceOwner() {
             return resourceOwner;
@@ -274,10 +327,6 @@ public class NvaBrageMigrationDataGenerator {
             return alternativeTitles;
         }
 
-        public no.sikt.nva.brage.migration.record.Publication getPublication() {
-            return publication;
-        }
-
         public PublishedDate getPublishedDate() {
             return publishedDate;
         }
@@ -336,11 +385,6 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withPublication(no.sikt.nva.brage.migration.record.Publication publication) {
-            this.publication = publication;
-            return this;
-        }
-
         public Builder withPublicationDateForPublication(no.unit.nva.model.PublicationDate publicationDate) {
             this.publicationDateForPublication = publicationDate;
             return this;
@@ -356,23 +400,8 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withAlternativeLanguages(List<String> alternativeLanguages) {
-            this.alternativeTitles = alternativeLanguages;
-            return this;
-        }
-
         public Builder withPages(Pages pages) {
             this.pages = pages;
-            return this;
-        }
-
-        public Builder withHandle(URI handle) {
-            this.handle = handle;
-            return this;
-        }
-
-        public Builder withAlternativeTitlesMap(Map<String, String> map) {
-            this.alternativeTitlesMap = map;
             return this;
         }
 
@@ -447,9 +476,6 @@ public class NvaBrageMigrationDataGenerator {
             }
             if (isNull(mainTitle)) {
                 mainTitle = randomString();
-            }
-            if (isNull(publication)) {
-                publication = createRandomPublication();
             }
             if (Objects.nonNull(publicationDate)) {
                 this.publicationDateForPublication =

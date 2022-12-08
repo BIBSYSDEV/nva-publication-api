@@ -56,7 +56,7 @@ public final class BrageNvaMapper {
 
     public static String extractDescription(Record record) {
         return Optional.ofNullable(record.getEntityDescription().getDescriptions())
-                   .map(BrageNvaMapper::generateDescription)
+                   .map(descriptions -> descriptions.isEmpty() ? null : descriptions.get(0))
                    .orElse(null);
     }
 
@@ -251,17 +251,9 @@ public final class BrageNvaMapper {
         return language.getNva();
     }
 
-    private static String generateDescription(List<String> descriptions) {
-        return isNull(descriptions) || descriptions.isEmpty() ? null : descriptions.get(0);
-    }
-
-    private static String generateAbstract(List<String> abstracts) {
-        return isNull(abstracts) || abstracts.isEmpty() ? null : abstracts.get(0);
-    }
-
     private static String extractAbstract(Record record) {
         return Optional.ofNullable(record.getEntityDescription().getAbstracts())
-                   .map(BrageNvaMapper::generateAbstract)
+                   .map(abstracts -> abstracts.isEmpty() ? null : abstracts.get(0))
                    .orElse(null);
     }
 }

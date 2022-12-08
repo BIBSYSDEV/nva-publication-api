@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.lambda.PublicationContextException;
 import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
@@ -14,9 +15,12 @@ import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.GeographicalContent;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -27,6 +31,7 @@ import nva.commons.core.paths.UriWrapper;
 public final class PublicationContextMapper {
 
     public static final URI BASE_URL = URI.create("https://api.dev.nva.aws.unit.no/publication-channels");
+    public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
 
     private PublicationContextMapper() {
     }
@@ -42,7 +47,41 @@ public final class PublicationContextMapper {
         if (isDegree(record)) {
             return buildPublicationContextWhenDegree(record);
         }
-        return null;
+        if (isMap(record)) {
+            return buildPublicationContextWhenMap(record);
+        }
+        if (isDataset(record)) {
+            return buildPublicationContextWhenDataSet(record);
+        }
+        if (isJournalArticle(record)) {
+            return buildPublicationContextWhenJournalArticle(record);
+        } else {
+            throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
+        }
+    }
+
+    private static PublicationContext buildPublicationContextWhenJournalArticle(Record record) {
+        return extractJournal(record);
+    }
+
+    private static boolean isJournalArticle(Record record) {
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenDataSet(Record record) {
+        return new ResearchData(extractPublisher(record));
+    }
+
+    private static boolean isDataset(Record record) {
+        return NvaType.DATASET.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean isMap(Record record) {
+        return NvaType.MAP.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenMap(Record record) {
+        return new GeographicalContent(extractPublisher(record));
     }
 
     private static boolean isDegree(Record record) {
@@ -144,6 +183,13 @@ public final class PublicationContextMapper {
                    .map(id -> generatePublisher(id, extractYear(record))).orElse(null);
     }
 
+    private static Journal extractJournal(Record record) {
+        return Optional.ofNullable(record.getPublication().getPublicationContext())
+                   .map(no.sikt.nva.brage.migration.record.PublicationContext::getJournal)
+                   .map(no.sikt.nva.brage.migration.record.Journal::getId)
+                   .map(id -> generateJournal(id, extractYear(record))).orElse(null);
+    }
+
     private static Publisher generatePublisher(String publisherIdentifier, String year) {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                                  .addChild(ChannelType.PUBLISHER.getType())
@@ -152,10 +198,18 @@ public final class PublicationContextMapper {
                                  .getUri());
     }
 
-    private static Series generateSeries(String publisherIdentifier, String year) {
+    private static Journal generateJournal(String journalIdentifier, String year) {
+        return new Journal(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+                               .addChild(ChannelType.JOURNAL.getType())
+                               .addChild(journalIdentifier)
+                               .addChild(year)
+                               .getUri());
+    }
+
+    private static Series generateSeries(String seriesIdentifier, String year) {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                               .addChild(ChannelType.SERIES.getType())
-                              .addChild(publisherIdentifier)
+                              .addChild(seriesIdentifier)
                               .addChild(year)
                               .getUri());
     }
