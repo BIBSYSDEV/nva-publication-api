@@ -43,6 +43,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
     public static final String BRAGE_MIGRATION_ERROR_BUCKET_NAME = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
+    public static final String ERROR_BUCKET_PATH = "ERROR";
+    public static final String HANDLE_REPORTS_PATH = "HANDLE_REPORTS";
     private String brageRecordFile;
     private final S3Client s3Client;
 
@@ -63,7 +65,23 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return attempt(() -> parseBrageRecord(s3Event))
                    .map(publication -> pushAssociatedFilesToPersistedStorage(publication, s3Event))
                    .flatMap(this::persistInDatabase)
+                   .map(publication -> storeHandleAndPublicationIdentifier(publication, s3Event))
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
+    }
+
+    private Publication storeHandleAndPublicationIdentifier(Publication publication, S3Event s3Event) {
+        var handle = publication.getHandle();
+        var fileUri = constructResourcehandleFileUri(s3Event, publication);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), handle.toString())).orElseThrow();
+        return publication;
+    }
+
+    private UriWrapper constructResourcehandleFileUri(S3Event s3Event, Publication publication) {
+        var timestamp = timePath(s3Event);
+        return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
+                   .addChild(timestamp)
+                   .addChild(publication.getIdentifier().toString());
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail, S3Event s3Event) {
@@ -138,13 +156,18 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private UriWrapper constructErrorFileUri(S3Event event,
                                              Exception exception) {
         var fileUri = UriWrapper.fromUri(extractObjectKey(event));
-        var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        var timestamp = timePath(event);
         var bucket = fileUri.getHost();
         return bucket
+                   .addChild(ERROR_BUCKET_PATH)
                    .addChild(timestamp)
                    .addChild(exception.getClass().getSimpleName())
                    .addChild(fileUri.getPath())
                    .addChild(fileUri.getLastPathElement());
+    }
+
+    private String timePath(S3Event event) {
+        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
     }
 
     private Publication parseBrageRecord(S3Event event)
