@@ -29,6 +29,7 @@ public class PublicationContext {
         return series;
     }
 
+    @JacocoGenerated
     public void setSeries(Series series) {
         this.series = series;
     }
@@ -38,6 +39,7 @@ public class PublicationContext {
         return bragePublisher;
     }
 
+    @JacocoGenerated
     public void setBragePublisher(String bragePublisher) {
         this.bragePublisher = bragePublisher;
     }

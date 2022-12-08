@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
@@ -17,14 +16,17 @@ import java.util.function.Function;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Identity;
+import no.sikt.nva.brage.migration.record.Journal;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PublicationContext;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationInstance;
 import no.sikt.nva.brage.migration.record.PublishedDate;
+import no.sikt.nva.brage.migration.record.Publisher;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.ResourceOwner;
+import no.sikt.nva.brage.migration.record.Series;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
@@ -160,6 +162,9 @@ public class NvaBrageMigrationDataGenerator {
 
     public static class Builder {
 
+        public static final URI CUSTOMER_URi = URI.create("https://dev.nva.sikt.no/registration/0184ebf2c2ad"
+                                                          + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
+        public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
         public ResourceOwner resourceOwner;
         private URI handle;
         private URI doi;
@@ -170,7 +175,6 @@ public class NvaBrageMigrationDataGenerator {
         private Type type;
         private ResourceContent resourceContent;
         private PublishedDate publishedDate;
-        private no.sikt.nva.brage.migration.record.Publication publication;
         private List<String> descriptions;
         private List<String> abstracts;
         private List<String> alternativeTitles;
@@ -187,6 +191,56 @@ public class NvaBrageMigrationDataGenerator {
         private Organization organization;
         private List<AssociatedArtifact> associatedArtifacts;
         private SortableIdentifier identifier;
+        private String publisherId;
+        private String journalId;
+        private String seriesId;
+        private String isbn;
+        private no.sikt.nva.brage.migration.record.Publication publication;
+
+        public no.sikt.nva.brage.migration.record.Publication getPublication() {
+            return publication;
+        }
+
+        public Builder withPublication(no.sikt.nva.brage.migration.record.Publication publication) {
+            this.publication = publication;
+            return this;
+        }
+
+        public String getIsbn() {
+            return isbn;
+        }
+
+        public Builder withIsbn(String isbn) {
+            this.isbn = isbn;
+            return this;
+        }
+
+        public String getSeriesId() {
+            return seriesId;
+        }
+
+        public Builder withSeries(String seriesId) {
+            this.seriesId = seriesId;
+            return this;
+        }
+
+        public String getJournalId() {
+            return journalId;
+        }
+
+        public Builder withJournalId(String journalId) {
+            this.journalId = journalId;
+            return this;
+        }
+
+        public String getPublisherId() {
+            return publisherId;
+        }
+
+        public Builder withPublisherId(String publisherId) {
+            this.publisherId = publisherId;
+            return this;
+        }
 
         public ResourceOwner getResourceOwner() {
             return resourceOwner;
@@ -274,10 +328,6 @@ public class NvaBrageMigrationDataGenerator {
             return alternativeTitles;
         }
 
-        public no.sikt.nva.brage.migration.record.Publication getPublication() {
-            return publication;
-        }
-
         public PublishedDate getPublishedDate() {
             return publishedDate;
         }
@@ -295,7 +345,7 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public String getDescriptionsForPublication() {
-            return isNull(descriptions) || descriptions.isEmpty() ? null : descriptions.get(0);
+            return isNull(descriptions) || descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions);
         }
 
         public Type getType() {
@@ -336,11 +386,6 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withPublication(no.sikt.nva.brage.migration.record.Publication publication) {
-            this.publication = publication;
-            return this;
-        }
-
         public Builder withPublicationDateForPublication(no.unit.nva.model.PublicationDate publicationDate) {
             this.publicationDateForPublication = publicationDate;
             return this;
@@ -356,23 +401,8 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withAlternativeLanguages(List<String> alternativeLanguages) {
-            this.alternativeTitles = alternativeLanguages;
-            return this;
-        }
-
         public Builder withPages(Pages pages) {
             this.pages = pages;
-            return this;
-        }
-
-        public Builder withHandle(URI handle) {
-            this.handle = handle;
-            return this;
-        }
-
-        public Builder withAlternativeTitlesMap(Map<String, String> map) {
-            this.alternativeTitlesMap = map;
             return this;
         }
 
@@ -433,6 +463,21 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(alternativeTitles)) {
                 alternativeTitles = notRandomAlternativeTitle();
             }
+            if (isNull(publication)) {
+                publication = createPublication();
+            }
+            if (isNull(descriptions)) {
+                descriptions = List.of(randomString());
+            }
+            if (isNull(abstracts)) {
+                abstracts = List.of(randomString());
+            }
+            if (isNull(customer)) {
+                customer = new Customer("someCustomer", CUSTOMER_URi);
+            }
+            if (isNull(resourceOwner)) {
+                resourceOwner = new ResourceOwner("someOwner", RESOURCE_OWNER_URI);
+            }
             if (isNull(alternativeTitlesMap)) {
                 alternativeTitlesMap = createCorrespondingMap();
             }
@@ -448,9 +493,6 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(mainTitle)) {
                 mainTitle = randomString();
             }
-            if (isNull(publication)) {
-                publication = createRandomPublication();
-            }
             if (Objects.nonNull(publicationDate)) {
                 this.publicationDateForPublication =
                     new no.unit.nva.model.PublicationDate.Builder().withDay(publicationDate.getNva().getDay())
@@ -462,7 +504,15 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public String getEntityAbstractsForPublication() {
-            return isNull(abstracts) || abstracts.isEmpty() ? null : abstracts.get(0);
+            return isNull(abstracts) || abstracts.isEmpty() ? null : mergeStringsByLineBreak(abstracts);
+        }
+
+        private static String mergeStringsByLineBreak(List<String> list) {
+            var sb = new StringBuilder();
+            for (String string : list) {
+                sb.append(string).append("\n");
+            }
+            return sb.toString();
         }
 
         private Map<String, String> createCorrespondingMap() {
@@ -510,11 +560,14 @@ public class NvaBrageMigrationDataGenerator {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
         }
 
-        private no.sikt.nva.brage.migration.record.Publication createRandomPublication() {
+        private no.sikt.nva.brage.migration.record.Publication createPublication() {
             var publication = new no.sikt.nva.brage.migration.record.Publication();
-            publication.setIssn(randomIssn());
             publication.setPublicationContext(new PublicationContext());
-            publication.setPartOfSeries(this.seriesNumberRecord);
+            publication.getPublicationContext().setPublisher(new Publisher(publisherId));
+            publication.getPublicationContext().setJournal(new Journal(journalId));
+            publication.getPublicationContext().setSeries(new Series(seriesId));
+            publication.setPartOfSeries(seriesNumberRecord);
+            publication.setIsbn(isbn);
             return publication;
         }
     }

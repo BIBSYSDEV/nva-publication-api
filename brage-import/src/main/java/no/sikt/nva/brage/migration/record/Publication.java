@@ -64,6 +64,7 @@ public class Publication {
         return issn;
     }
 
+    @JacocoGenerated
     public void setIssn(String issn) {
         this.issn = issn;
     }
@@ -74,6 +75,7 @@ public class Publication {
         return isbn;
     }
 
+    @JacocoGenerated
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
