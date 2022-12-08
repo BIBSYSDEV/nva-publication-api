@@ -103,7 +103,7 @@ public final class ReferenceGenerator {
             }
             if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(generatePublishingContextForJournal(builder))
+                           .withPublishingContext(generateJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
                            .build();
             }
@@ -157,6 +157,7 @@ public final class ReferenceGenerator {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(builder.getPublisherId())
+                                 .addChild(builder.getPublicationDate().getNva().getYear())
                                  .getUri());
     }
 
@@ -165,15 +166,17 @@ public final class ReferenceGenerator {
             return new Series(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                                   .addChild(ChannelType.SERIES.getType())
                                   .addChild(builder.getSeriesId())
+                                  .addChild(builder.getPublicationDate().getNva().getYear())
                                   .getUri());
         }
         return null;
     }
 
-    private static Journal generatePublishingContextForJournal(Builder builder) {
+    private static Journal generateJournal(Builder builder) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(builder.getJournalId())
+                               .addChild(builder.getPublicationDate().getNva().getYear())
                                .getUri());
     }
 

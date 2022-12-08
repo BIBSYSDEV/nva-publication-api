@@ -9,6 +9,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import no.sikt.nva.brage.migration.lambda.MappingConstants;
+import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
 import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
@@ -33,6 +35,8 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.JacocoGenerated;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.joda.time.Instant;
 
 public final class BrageNvaMapper {
@@ -43,15 +47,29 @@ public final class BrageNvaMapper {
 
     public static Publication toNvaPublication(Record record)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Publication.Builder()
-                   .withDoi(extractDoi(record))
-                   .withHandle(extractHandle(record))
-                   .withEntityDescription(extractEntityDescription(record))
-                   .withPublishedDate(extractPublishedDate(record))
-                   .withPublisher(extractPublisher(record))
-                   .withAssociatedArtifacts(extractAssociatedArtifacts(record))
-                   .withResourceOwner(extractResourceOwner(record))
-                   .build();
+        var publication = new Publication.Builder()
+                              .withDoi(extractDoi(record))
+                              .withHandle(extractHandle(record))
+                              .withEntityDescription(extractEntityDescription(record))
+                              .withCreatedDate(extractPublishedDate(record))
+                              .withPublishedDate(extractPublishedDate(record))
+                              .withPublisher(extractPublisher(record))
+                              .withAssociatedArtifacts(extractAssociatedArtifacts(record))
+                              .withResourceOwner(extractResourceOwner(record))
+                              .build();
+        assertPublicationDoesNotHaveEmptyFields(publication);
+        return publication;
+    }
+
+    private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
+        try {
+            assertThat(publication,
+                       doesNotHaveEmptyValuesIgnoringFields(
+                           MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+        } catch (Error error) {
+            String message = error.getMessage();
+            throw new MissingFieldsException(message);
+        }
     }
 
     public static String extractDescription(Record record) {

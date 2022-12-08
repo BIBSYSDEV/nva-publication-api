@@ -20,6 +20,7 @@ public class ResourceContent {
     public List<ContentFile> getContentFiles() {
         return contentFiles;
     }
+
     @JacocoGenerated
     public void setContentFiles(List<ContentFile> contentFiles) {
         this.contentFiles = contentFiles;

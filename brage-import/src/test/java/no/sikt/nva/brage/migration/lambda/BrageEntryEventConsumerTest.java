@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.UUID;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.PublicationDate;
-import no.sikt.nva.brage.migration.record.PublicationDateNva.Builder;
+import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
@@ -101,7 +101,8 @@ public class BrageEntryEventConsumerTest {
 
     public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
-                                                                               new Builder().withYear("2020").build());
+                                                                               new PublicationDateNva.Builder().withYear(
+                                                                                   "2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(URI.create(
         "https://api.nva.unit.no/customer/test")).build();
     public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
@@ -132,7 +133,7 @@ public class BrageEntryEventConsumerTest {
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
     @ValueSource(strings = {PART_OF_SERIES_VALUE_V1, PART_OF_SERIES_VALUE_V2,
         PART_OF_SERIES_VALUE_V3, PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
     void shouldConvertBookToNvaPublication(String seriesNumber) throws IOException {
@@ -358,6 +359,17 @@ public class BrageEntryEventConsumerTest {
         var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
         assertThat(actualErrorReportBrageRecord,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
+    }
+
+    @Test
+    void throwErrorWhenMandatoryFieldsAreMissing() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_BOOK)
+                                                 .withIsbn(randomIsbn10())
+                                                 .withNullHandle()
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        assertThrows(MissingFieldsException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
     @Test
