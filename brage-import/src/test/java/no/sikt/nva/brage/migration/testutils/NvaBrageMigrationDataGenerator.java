@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
@@ -118,20 +117,9 @@ public class NvaBrageMigrationDataGenerator {
         record.setType(builder.getType());
         record.setBrageLocation(createRandomBrageLocation());
         record.setContentBundle(builder.getResourceContent());
-        record.setPublication(createPublication(builder));
+        record.setPublication(builder.getPublication());
         record.setPublishedDate(builder.getPublishedDate());
         return record;
-    }
-
-    private no.sikt.nva.brage.migration.record.Publication createPublication(Builder builder) {
-        var publication = new no.sikt.nva.brage.migration.record.Publication();
-        publication.setPublicationContext(new PublicationContext());
-        publication.getPublicationContext().setPublisher(new Publisher(builder.getPublisherId()));
-        publication.getPublicationContext().setJournal(new Journal(builder.getJournalId()));
-        publication.getPublicationContext().setSeries(new Series(builder.getSeriesId()));
-        publication.setPartOfSeries(builder.getSeriesNumberRecord());
-        publication.setIsbn(builder.getIsbn());
-        return publication;
     }
 
     private String createRandomBrageLocation() {
@@ -204,6 +192,16 @@ public class NvaBrageMigrationDataGenerator {
         private String journalId;
         private String seriesId;
         private String isbn;
+        private no.sikt.nva.brage.migration.record.Publication publication;
+
+        public no.sikt.nva.brage.migration.record.Publication getPublication() {
+            return publication;
+        }
+
+        public Builder withPublication() {
+            this.publication = createPublication(this);
+            return this;
+        }
 
         public String getIsbn() {
             return isbn;
@@ -344,7 +342,7 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public String getDescriptionsForPublication() {
-            return isNull(descriptions) || descriptions.isEmpty() ? null : descriptions.get(0);
+            return isNull(descriptions) || descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions);
         }
 
         public Type getType() {
@@ -488,7 +486,15 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public String getEntityAbstractsForPublication() {
-            return isNull(abstracts) || abstracts.isEmpty() ? null : abstracts.get(0);
+            return isNull(abstracts) || abstracts.isEmpty() ? null : mergeStringsByLineBreak(abstracts);
+        }
+
+        private static String mergeStringsByLineBreak(List<String> list) {
+            var sb = new StringBuilder();
+            for (String string : list) {
+                sb.append(string).append("\n");
+            }
+            return sb.toString();
         }
 
         private Map<String, String> createCorrespondingMap() {
@@ -536,11 +542,14 @@ public class NvaBrageMigrationDataGenerator {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
         }
 
-        private no.sikt.nva.brage.migration.record.Publication createRandomPublication() {
+        private no.sikt.nva.brage.migration.record.Publication createPublication(Builder builder) {
             var publication = new no.sikt.nva.brage.migration.record.Publication();
-            publication.setIssn(randomIssn());
             publication.setPublicationContext(new PublicationContext());
-            publication.setPartOfSeries(this.seriesNumberRecord);
+            publication.getPublicationContext().setPublisher(new Publisher(builder.getPublisherId()));
+            publication.getPublicationContext().setJournal(new Journal(builder.getJournalId()));
+            publication.getPublicationContext().setSeries(new Series(builder.getSeriesId()));
+            publication.setPartOfSeries(builder.getSeriesNumberRecord());
+            publication.setIsbn(builder.getIsbn());
             return publication;
         }
     }

@@ -56,8 +56,16 @@ public final class BrageNvaMapper {
 
     public static String extractDescription(Record record) {
         return Optional.ofNullable(record.getEntityDescription().getDescriptions())
-                   .map(descriptions -> descriptions.isEmpty() ? null : descriptions.get(0))
+                   .map(descriptions -> descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions))
                    .orElse(null);
+    }
+
+    private static String mergeStringsByLineBreak(List<String> list) {
+        var sb = new StringBuilder();
+        for (String string : list) {
+            sb.append(string).append('\n');
+        }
+        return sb.toString();
     }
 
     private static ResourceOwner extractResourceOwner(Record record) {
@@ -253,7 +261,7 @@ public final class BrageNvaMapper {
 
     private static String extractAbstract(Record record) {
         return Optional.ofNullable(record.getEntityDescription().getAbstracts())
-                   .map(abstracts -> abstracts.isEmpty() ? null : abstracts.get(0))
+                   .map(abstracts -> abstracts.isEmpty() ? null : mergeStringsByLineBreak(abstracts))
                    .orElse(null);
     }
 }

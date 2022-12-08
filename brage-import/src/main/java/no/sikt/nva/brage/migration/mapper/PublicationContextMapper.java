@@ -180,7 +180,8 @@ public final class PublicationContextMapper {
         return Optional.ofNullable(record.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
                    .map(no.sikt.nva.brage.migration.record.Publisher::getId)
-                   .map(id -> generatePublisher(id, extractYear(record))).orElse(null);
+                   .map(id -> generatePublisher(id, extractYear(record)))
+                   .orElse(null);
     }
 
     private static Journal extractJournal(Record record) {

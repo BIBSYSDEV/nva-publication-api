@@ -231,6 +231,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_BOOK)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
+                                                 .withPublication()
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
@@ -244,6 +245,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_DESIGN_PRODUCT)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
+                                                 .withPublication()
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
@@ -256,6 +258,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_DESIGN_PRODUCT)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
+                                                 .withPublication()
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
@@ -275,6 +278,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_BOOK)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
+                                                 .withPublication()
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -292,6 +296,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_BOOK)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
+                                                 .withPublication()
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
@@ -310,6 +315,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
                                                  .withResourceContent(createResourceContent())
+                                                 .withPublication()
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
 
@@ -326,6 +332,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_BOOK)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
+                                                 .withPublication()
                                                  .build();
         var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(nvaBrageMigrationDataGenerator.getBrageRecord()
             , "my/path/some.json");
@@ -352,6 +359,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_BOOK)
                                                  .withCustomer(CUSTOMER)
                                                  .withResourceOwner(RESOURCE_OWNER)
+                                                 .withPublication()
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
 
@@ -371,6 +379,7 @@ public class BrageEntryEventConsumerTest {
                    .withJournalId("someId")
                    .withResourceOwner(RESOURCE_OWNER)
                    .withSpatialCoverage(List.of("Norway"))
+                   .withPublication()
                    .build();
     }
 
@@ -381,6 +390,7 @@ public class BrageEntryEventConsumerTest {
                    .withPublisherId("someId")
                    .withResourceOwner(RESOURCE_OWNER)
                    .withSpatialCoverage(List.of("Norway"))
+                   .withPublication()
                    .build();
     }
 
@@ -395,6 +405,7 @@ public class BrageEntryEventConsumerTest {
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
                    .withMonographPages(
                        new MonographPages.Builder().withPages("5").build())
+                   .withPublication()
                    .build();
     }
 
@@ -409,6 +420,7 @@ public class BrageEntryEventConsumerTest {
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
                    .withMonographPages(
                        new MonographPages.Builder().withPages("5").build())
+                   .withPublication()
                    .build();
     }
 
@@ -423,6 +435,7 @@ public class BrageEntryEventConsumerTest {
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
                    .withMonographPages(
                        new MonographPages.Builder().withPages("5").build())
+                   .withPublication()
                    .build();
     }
 
@@ -436,6 +449,7 @@ public class BrageEntryEventConsumerTest {
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
                    .withMonographPages(
                        new MonographPages.Builder().withPages("5").build())
+                   .withPublication()
                    .build();
     }
 
@@ -450,6 +464,7 @@ public class BrageEntryEventConsumerTest {
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
                    .withMonographPages(
                        new MonographPages.Builder().withPages("5").build())
+                   .withPublication()
                    .build();
     }
 
@@ -464,6 +479,7 @@ public class BrageEntryEventConsumerTest {
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
                    .withMonographPages(
                        new MonographPages.Builder().withPages("5").build())
+                   .withPublication()
                    .build();
     }
 
@@ -478,6 +494,7 @@ public class BrageEntryEventConsumerTest {
                    .withSeriesNumberPublication(EXPECTED_SERIES_NUMBER)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
+                   .withPublication()
                    .build();
     }
 
@@ -489,6 +506,7 @@ public class BrageEntryEventConsumerTest {
                    .withResourceOwner(RESOURCE_OWNER)
                    .withDescription(null)
                    .withAbstracts(null)
+                   .withPublication()
                    .withResourceContent(createResourceContent())
                    .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                    .withOrganization(TEST_ORGANIZATION)
