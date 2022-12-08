@@ -45,6 +45,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     public static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String HANDLE_REPORTS_PATH = "HANDLE_REPORTS";
+    public static final String PATH_SEPERATOR = "/";
     private String brageRecordFile;
     private final S3Client s3Client;
 
@@ -157,13 +158,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                              Exception exception) {
         var fileUri = UriWrapper.fromUri(extractObjectKey(event));
         var timestamp = timePath(event);
-        var bucket = fileUri.getHost();
-        return bucket
-                   .addChild(ERROR_BUCKET_PATH)
-                   .addChild(timestamp)
-                   .addChild(exception.getClass().getSimpleName())
-                   .addChild(fileUri.getPath())
-                   .addChild(fileUri.getLastPathElement());
+        return UriWrapper.fromUri(ERROR_BUCKET_PATH + PATH_SEPERATOR
+                                  + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName() +
+                                  PATH_SEPERATOR + fileUri.getLastPathElement());
     }
 
     private String timePath(S3Event event) {
