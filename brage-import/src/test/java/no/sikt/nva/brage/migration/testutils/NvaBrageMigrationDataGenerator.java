@@ -466,6 +466,12 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(publication)) {
                 publication = createPublication();
             }
+            if (isNull(descriptions)) {
+                descriptions = List.of(randomString());
+            }
+            if (isNull(abstracts)) {
+                abstracts = List.of(randomString());
+            }
             if (isNull(customer)) {
                 customer = new Customer("someCustomer", CUSTOMER_URi);
             }

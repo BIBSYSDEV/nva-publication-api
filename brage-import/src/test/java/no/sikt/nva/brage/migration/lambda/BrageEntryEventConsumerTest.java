@@ -355,47 +355,35 @@ public class BrageEntryEventConsumerTest {
     private NvaBrageMigrationDataGenerator buildGeneratorForPhd() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_PHD)
-                   .withDescription(Collections.emptyList())
                    .withPublicationDate(PUBLICATION_DATE)
-                   .withAbstracts(Collections.emptyList())
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
-                   .withMonographPages(
-                       new MonographPages.Builder().withPages("5").build())
+                   .withMonographPages(new MonographPages.Builder().withPages("5").build())
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForMaster() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_MASTER)
-                   .withDescription(Collections.emptyList())
                    .withPublicationDate(PUBLICATION_DATE)
-                   .withAbstracts(Collections.emptyList())
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
-                   .withMonographPages(
-                       new MonographPages.Builder().withPages("5").build())
+                   .withMonographPages(new MonographPages.Builder().withPages("5").build())
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBachelor() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_BACHELOR)
-                   .withDescription(null)
                    .withPublicationDate(PUBLICATION_DATE)
-                   .withAbstracts(Collections.emptyList())
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
-                   .withMonographPages(
-                       new MonographPages.Builder().withPages("5").build())
+                   .withMonographPages(new MonographPages.Builder().withPages("5").build())
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForResearchReport() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_RESEARCH_REPORT)
-                   .withDescription(Collections.singletonList("description"))
-                   .withAbstracts(Collections.emptyList())
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
-                   .withMonographPages(
-                       new MonographPages.Builder().withPages("5").build())
+                   .withMonographPages(new MonographPages.Builder().withPages("5").build())
                    .build();
     }
 
@@ -403,11 +391,8 @@ public class BrageEntryEventConsumerTest {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_REPORT)
                    .withSeries("someSeries")
-                   .withDescription(Collections.emptyList())
-                   .withAbstracts(Collections.emptyList())
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
-                   .withMonographPages(
-                       new MonographPages.Builder().withPages("5").build())
+                   .withMonographPages(new MonographPages.Builder().withPages("5").build())
                    .build();
     }
 
@@ -415,19 +400,14 @@ public class BrageEntryEventConsumerTest {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_MAP)
                    .withPublisherId("someId")
-                   .withDescription(Collections.emptyList())
-                   .withAbstracts(Collections.emptyList())
                    .withPages(new Pages("46 s.", new Range("5", "10"), "5"))
-                   .withMonographPages(
-                       new MonographPages.Builder().withPages("5").build())
+                   .withMonographPages(new MonographPages.Builder().withPages("5").build())
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBook(String seriesNumber) {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_BOOK)
-                   .withDescription(List.of("Description"))
-                   .withAbstracts(List.of("Abstract"))
                    .withSeriesNumberRecord(seriesNumber)
                    .withSeriesNumberPublication(EXPECTED_SERIES_NUMBER)
                    .withPublicationDate(PUBLICATION_DATE)
@@ -439,8 +419,6 @@ public class BrageEntryEventConsumerTest {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_BOOK)
                    .withIsbn(randomIsbn10())
-                   .withDescription(null)
-                   .withAbstracts(null)
                    .withResourceContent(createResourceContent())
                    .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                    .withOrganization(TEST_ORGANIZATION)
