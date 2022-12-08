@@ -162,6 +162,9 @@ public class NvaBrageMigrationDataGenerator {
 
     public static class Builder {
 
+        public static final URI CUSTOMER_URi = URI.create("https://dev.nva.sikt.no/registration/0184ebf2c2ad"
+                                                          + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
+        public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
         public ResourceOwner resourceOwner;
         private URI handle;
         private URI doi;
@@ -198,8 +201,8 @@ public class NvaBrageMigrationDataGenerator {
             return publication;
         }
 
-        public Builder withPublication() {
-            this.publication = createPublication(this);
+        public Builder withPublication(no.sikt.nva.brage.migration.record.Publication publication) {
+            this.publication = publication;
             return this;
         }
 
@@ -460,6 +463,15 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(alternativeTitles)) {
                 alternativeTitles = notRandomAlternativeTitle();
             }
+            if (isNull(publication)) {
+                publication = createPublication();
+            }
+            if (isNull(customer)) {
+                customer = new Customer("someCustomer", CUSTOMER_URi);
+            }
+            if (isNull(resourceOwner)) {
+                resourceOwner = new ResourceOwner("someOwner", RESOURCE_OWNER_URI);
+            }
             if (isNull(alternativeTitlesMap)) {
                 alternativeTitlesMap = createCorrespondingMap();
             }
@@ -542,14 +554,14 @@ public class NvaBrageMigrationDataGenerator {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
         }
 
-        private no.sikt.nva.brage.migration.record.Publication createPublication(Builder builder) {
+        private no.sikt.nva.brage.migration.record.Publication createPublication() {
             var publication = new no.sikt.nva.brage.migration.record.Publication();
             publication.setPublicationContext(new PublicationContext());
-            publication.getPublicationContext().setPublisher(new Publisher(builder.getPublisherId()));
-            publication.getPublicationContext().setJournal(new Journal(builder.getJournalId()));
-            publication.getPublicationContext().setSeries(new Series(builder.getSeriesId()));
-            publication.setPartOfSeries(builder.getSeriesNumberRecord());
-            publication.setIsbn(builder.getIsbn());
+            publication.getPublicationContext().setPublisher(new Publisher(publisherId));
+            publication.getPublicationContext().setJournal(new Journal(journalId));
+            publication.getPublicationContext().setSeries(new Series(seriesId));
+            publication.setPartOfSeries(seriesNumberRecord);
+            publication.setIsbn(isbn);
             return publication;
         }
     }
