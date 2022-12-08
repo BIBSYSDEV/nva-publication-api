@@ -10,6 +10,7 @@ dependencies {
     implementation libs.jsonld
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb
+    implementation libs.bundles.jena
 
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils

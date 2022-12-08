@@ -5,8 +5,6 @@ Description: >
 
   SAM Template for NVA Publication Service
 
-
-
 Parameters:
   CognitoAuthorizerArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
