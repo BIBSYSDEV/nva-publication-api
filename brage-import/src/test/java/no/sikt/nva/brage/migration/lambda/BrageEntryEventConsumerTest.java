@@ -73,6 +73,7 @@ public class BrageEntryEventConsumerTest {
     public static final String PART_OF_SERIES_VALUE_V3 = "SOMESERIES;2022:42";
     public static final String PART_OF_SERIES_VALUE_V4 = "SOMESERIES;2022/42";
     public static final String PART_OF_SERIES_VALUE_V5 = "SOMESERIES;42/2022";
+    public static final String PART_OF_SERIES_VALUE_V6 = "NVE Rapport;";
     public static final String EXPECTED_SERIES_NUMBER = "42";
     public static final UUID UUID = java.util.UUID.randomUUID();
     public static final Context CONTEXT = mock(Context.class);
@@ -139,6 +140,15 @@ public class BrageEntryEventConsumerTest {
         PART_OF_SERIES_VALUE_V3, PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
     void shouldConvertBookToNvaPublication(String seriesNumber) throws IOException {
         var nvaBrageMigrationDataGenerator = buildGeneratorForBook(seriesNumber);
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldNotConvertSeriesNumberWithoutNumber() throws IOException {
+        var nvaBrageMigrationDataGenerator = buildGeneratorForBookWithoutValidSeriesNumber(PART_OF_SERIES_VALUE_V6);
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -440,6 +450,16 @@ public class BrageEntryEventConsumerTest {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_MAP)
                    .withPublisherId("someId")
+                   .build();
+    }
+
+    private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber(String seriesNumber) {
+        return new NvaBrageMigrationDataGenerator.Builder()
+                   .withType(TYPE_BOOK)
+                   .withSeriesNumberRecord(seriesNumber)
+                   .withSeriesNumberPublication(null)
+                   .withPublicationDate(PUBLICATION_DATE)
+                   .withIsbn(randomIsbn10())
                    .build();
     }
 

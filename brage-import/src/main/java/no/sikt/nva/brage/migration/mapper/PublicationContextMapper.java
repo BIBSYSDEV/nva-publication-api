@@ -25,13 +25,13 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 public final class PublicationContextMapper {
 
     public static final URI BASE_URL = URI.create("https://api.dev.nva.aws.unit.no/publication-channels");
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
+    public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
 
     private PublicationContextMapper() {
     }
@@ -171,11 +171,18 @@ public final class PublicationContextMapper {
                    .orElse(null);
     }
 
-    @JacocoGenerated
     private static String extractPartOfSeriesValue(String partOfSeriesValue) {
-        return Optional.ofNullable(partOfSeriesValue.split(";")[1])
-                   .map(PublicationContextMapper::extractPotentialSeriesNumberValue)
+        return Optional.ofNullable(partOfSeriesValue)
+                   .map(value -> hasNumber(value) ? extractPotentialSeriesNumberValue(getNumber(value)) : null)
                    .orElse(null);
+    }
+
+    private static String getNumber(String value) {
+        return value.split(";")[1];
+    }
+
+    private static boolean hasNumber(String value) {
+        return value.split(";").length == HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER;
     }
 
     private static Series extractSeries(Record record) {
