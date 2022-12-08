@@ -7,6 +7,9 @@ entityDescription.reference.publicationInstance.submittedDate
 entityDescription.reference.publicationInstance.articleNumber
 entityDescription.reference.publicationInstance.issue
 entityDescription.reference.publicationInstance.volume
+entityDescription.reference.publicationInstance.related
+entityDescription.reference.publicationInstance.referencedBy
+entityDescription.reference.publicationInstance.compliesWith
 
 entityDescription.reference.publicationContext.onlineIssn
 entityDescription.reference.publicationContext.printIssn

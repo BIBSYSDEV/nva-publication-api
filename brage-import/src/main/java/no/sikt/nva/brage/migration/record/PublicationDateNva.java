@@ -84,11 +84,13 @@ public final class PublicationDateNva {
             return this;
         }
 
+        @JacocoGenerated
         public Builder withMonth(String month) {
             this.month = month;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withDay(String day) {
             this.day = day;
             return this;
