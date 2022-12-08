@@ -36,12 +36,13 @@ public final class PublicationContextMapper {
     private PublicationContextMapper() {
     }
 
+    @SuppressWarnings("PMD.NPathComplexity")
     public static PublicationContext buildPublicationContext(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        if (isBook(record)) {
+        if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record)) {
             return buildPublicationContextWhenBook(record);
         }
-        if (isReport(record) || isResearchReport(record)) {
+        if (isReport(record) || isResearchReport(record) || isOthers(record)) {
             return buildPublicationContextWhenReport(record);
         }
         if (isDegree(record)) {
@@ -60,6 +61,30 @@ public final class PublicationContextMapper {
         }
     }
 
+    public static boolean isScientificMonograph(Record record) {
+        return NvaType.SCIENTIFIC_MONOGRAPH.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isOtherStudentWork(Record record) {
+        return NvaType.STUDENT_PAPER_OTHERS.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isDataset(Record record) {
+        return NvaType.DATASET.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isResearchReport(Record record) {
+        return NvaType.RESEARCH_REPORT.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isBook(Record record) {
+        return NvaType.BOOK.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean isOthers(Record record) {
+        return NvaType.OTHERS.getValue().equals(record.getType().getNva());
+    }
+
     private static PublicationContext buildPublicationContextWhenJournalArticle(Record record) {
         return extractJournal(record);
     }
@@ -70,10 +95,6 @@ public final class PublicationContextMapper {
 
     private static PublicationContext buildPublicationContextWhenDataSet(Record record) {
         return new ResearchData(extractPublisher(record));
-    }
-
-    private static boolean isDataset(Record record) {
-        return NvaType.DATASET.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isMap(Record record) {
@@ -98,10 +119,6 @@ public final class PublicationContextMapper {
                    .withPublisher(extractPublisher(record))
                    .withSeriesNumber(extractSeriesNumber(record))
                    .build();
-    }
-
-    private static boolean isResearchReport(Record record) {
-        return NvaType.RESEARCH_REPORT.getValue().equals(record.getType().getNva());
     }
 
     private static List<String> extractIsbnList(Record record) {
@@ -129,10 +146,6 @@ public final class PublicationContextMapper {
             return Collections.max(seriesNumberAndYear);
         }
         return potentialSeriesNumber;
-    }
-
-    private static boolean isBook(Record record) {
-        return NvaType.BOOK.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationContext buildPublicationContextWhenBook(Record record)
