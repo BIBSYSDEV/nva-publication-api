@@ -42,7 +42,7 @@ public final class PublicationContextMapper {
         if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record)) {
             return buildPublicationContextWhenBook(record);
         }
-        if (isReport(record) || isResearchReport(record) || isOthers(record)) {
+        if (isReport(record) || isResearchReport(record)) {
             return buildPublicationContextWhenReport(record);
         }
         if (isDegree(record)) {
@@ -79,10 +79,6 @@ public final class PublicationContextMapper {
 
     public static boolean isBook(Record record) {
         return NvaType.BOOK.getValue().equals(record.getType().getNva());
-    }
-
-    private static boolean isOthers(Record record) {
-        return NvaType.OTHERS.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationContext buildPublicationContextWhenJournalArticle(Record record) {

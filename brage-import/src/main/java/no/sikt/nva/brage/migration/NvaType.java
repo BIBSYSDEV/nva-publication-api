@@ -5,7 +5,6 @@ public enum NvaType {
     CHAPTER("Chapter"),
     DATASET("DataSet"),
     JOURNAL_ARTICLE("JournalArticle"),
-    OTHERS("Other report"),
     REPORT("Other report"),
     BACHELOR_THESIS("DegreeBachelor"),
     MASTER_THESIS("DegreeMaster"),
