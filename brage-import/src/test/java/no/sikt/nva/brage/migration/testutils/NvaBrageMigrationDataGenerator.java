@@ -169,8 +169,9 @@ public class NvaBrageMigrationDataGenerator {
         public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
         public ResourceOwner resourceOwner;
         private URI handle;
+
+        private boolean handleShouldBeNull;
         private URI doi;
-        private String brageLocation;
         private List<ContentFile> contentFiles;
         private Language language;
         private Contributor contributor;
@@ -232,6 +233,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withJournalId(String journalId) {
             this.journalId = journalId;
+            return this;
+        }
+
+        public Builder withNullHandle() {
+            this.handleShouldBeNull = true;
             return this;
         }
 
@@ -338,10 +344,6 @@ public class NvaBrageMigrationDataGenerator {
             return resourceContent;
         }
 
-        public String getBrageLocation() {
-            return brageLocation;
-        }
-
         public List<String> getDescriptions() {
             return descriptions;
         }
@@ -413,11 +415,6 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withBrageLocation(String location) {
-            this.brageLocation = brageLocation;
-            return this;
-        }
-
         public Builder withSeriesNumberRecord(String seriesNumberRecord) {
             this.seriesNumberRecord = seriesNumberRecord;
             return this;
@@ -459,7 +456,7 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public NvaBrageMigrationDataGenerator build() {
-            if (isNull(handle)) {
+            if (isNull(handle) && !handleShouldBeNull) {
                 handle = randomHandle();
             }
             if (isNull(alternativeTitles)) {
@@ -508,10 +505,9 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         private PublicationDate createPublicationDate() {
-            var publicationDate = new PublicationDate("2020",
-                                                      new PublicationDateNva.Builder()
-                                                          .withYear("2020").build());
-            return publicationDate;
+            return new PublicationDate("2020",
+                                       new PublicationDateNva.Builder()
+                                           .withYear("2020").build());
         }
 
         private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(

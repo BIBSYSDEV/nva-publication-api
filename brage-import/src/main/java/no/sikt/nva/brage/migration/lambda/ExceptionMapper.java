@@ -13,6 +13,8 @@ public final class ExceptionMapper {
             return (AssociatedArtifactException) exception;
         } else if (exception instanceof MissingFieldsException) {
             return (MissingFieldsException) exception;
+        } else if (exception instanceof PublicationContextException) {
+            return (PublicationContextException) exception;
         } else {
             return new RuntimeException(exception);
         }

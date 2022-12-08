@@ -203,9 +203,6 @@ public class BrageEntryEventConsumerTest {
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        var actualEntityDescription = actualPublication.getEntityDescription();
-        var expectedEntityDescription = expectedPublication.getEntityDescription();
-        assertThat(actualEntityDescription, is(equalTo(expectedEntityDescription)));
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -236,7 +233,6 @@ public class BrageEntryEventConsumerTest {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_DESIGN_PRODUCT)
                                                  .build();
-        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
@@ -246,7 +242,6 @@ public class BrageEntryEventConsumerTest {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_DESIGN_PRODUCT)
                                                  .build();
-        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
@@ -341,6 +336,17 @@ public class BrageEntryEventConsumerTest {
         var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
         assertThat(actualErrorReportBrageRecord,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
+    }
+
+    @Test
+    void throwErrorWhenMandatoryFieldsAreMissing() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_BOOK)
+                                                 .withIsbn(randomIsbn10())
+                                                 .withNullHandle()
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        assertThrows(MissingFieldsException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticle() {

@@ -13,6 +13,10 @@ public final class MappingConstants {
     public static final Set<String>
         IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
 
+    private MappingConstants() {
+        
+    }
+
     private static Set<String> readAllIngnoredAndPossiblyEmptyFields() {
         Set<String> result = new HashSet<>(Set.copyOf(IoUtils.linesfromResource(Path.of(ignoredFieldsFile()))));
         result.addAll(Set.copyOf(IoUtils.linesfromResource(Path.of("possiblyEmptyFields.txt"))));
