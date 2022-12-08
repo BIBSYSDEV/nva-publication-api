@@ -311,6 +311,7 @@ public class BrageEntryEventConsumerTest {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
+                                                 .withCustomer(CUSTOMER)
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
