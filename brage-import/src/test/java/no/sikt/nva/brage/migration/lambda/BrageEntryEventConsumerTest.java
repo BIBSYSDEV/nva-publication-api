@@ -5,6 +5,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_B
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
+import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.NORWEGIAN_BOKMAAL;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -32,6 +33,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.PublicationDate;
@@ -524,7 +526,9 @@ public class BrageEntryEventConsumerTest {
                                    BundleType.ORIGINAL,
                                    "description",
                                    UUID,
-                                   new License("someLicense", new NvaLicense(LICENSE_IDENTIFIER)),
+                                   new License("someLicense",
+                                               new NvaLicense(LICENSE_IDENTIFIER, Map.of(NORWEGIAN_BOKMAAL,
+                                                                                         LICENSE_IDENTIFIER.getValue()))),
                                    EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));
@@ -534,7 +538,10 @@ public class BrageEntryEventConsumerTest {
         return List.of(File.builder()
                            .withIdentifier(UUID)
                            .withLicense(new no.unit.nva.model.associatedartifacts.file.License.Builder()
-                                            .withIdentifier(String.valueOf(LICENSE_IDENTIFIER.getValue())).build())
+                                            .withIdentifier(String.valueOf(LICENSE_IDENTIFIER.getValue()))
+                                            .withLabels(Map.of(NORWEGIAN_BOKMAAL,
+                                                               LICENSE_IDENTIFIER.getValue()))
+                                            .build())
                            .withName(FILENAME)
                            .withSize(FakeS3cClientWithCopyObjectSupport.SOME_CONTENT_LENGTH)
                            .withMimeType(FakeS3cClientWithCopyObjectSupport.APPLICATION_PDF_MIMETYPE)

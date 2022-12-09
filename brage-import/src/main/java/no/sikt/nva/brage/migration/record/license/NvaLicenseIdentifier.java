@@ -11,7 +11,7 @@ public enum NvaLicenseIdentifier {
     CC_BY_ND("CC BY-ND"),
     CC_BY_SA("CC BY-SA"),
 
-    DEFAULT_LICENSE("Rights Reserved");
+    DEFAULT_LICENSE("RightsReserved");
     private final String value;
 
     NvaLicenseIdentifier(String value) {

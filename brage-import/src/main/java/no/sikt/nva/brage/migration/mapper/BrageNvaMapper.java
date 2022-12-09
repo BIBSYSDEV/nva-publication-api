@@ -41,6 +41,8 @@ import org.joda.time.Instant;
 
 public final class BrageNvaMapper {
 
+    public static final String NORWEGIAN_BOKMAAL = "nb";
+
     private BrageNvaMapper() {
 
     }
@@ -134,8 +136,10 @@ public final class BrageNvaMapper {
     }
 
     private static License extractLicense(ContentFile file) {
+        var licenseIdentifier = file.getLicense().getNvaLicense().getIdentifier().getValue();
         return new License.Builder()
-                   .withIdentifier(file.getLicense().getNvaLicense().getIdentifier().getValue())
+                   .withIdentifier(licenseIdentifier)
+                   .withLabels(Map.of(NORWEGIAN_BOKMAAL, licenseIdentifier))
                    .build();
     }
 
