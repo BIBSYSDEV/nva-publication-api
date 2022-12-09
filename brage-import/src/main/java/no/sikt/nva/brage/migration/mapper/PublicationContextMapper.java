@@ -57,10 +57,10 @@ public final class PublicationContextMapper {
         if (isDataset(record)) {
             return buildPublicationContextWhenDataSet(record);
         }
-        if (isJournalArticle(record)) {
+        if (isJournalArticle(record) || isScientificArticle(record)) {
             return buildPublicationContextWhenJournalArticle(record);
         }
-        if (isUnconfirmedJournal(record)) {
+        if (isUnconfirmedJournal(record) || isUnconfirmedScientificArticle(record)) {
             return buildPublicationContextForUnconfirmedJournalArticle(record);
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
@@ -85,6 +85,15 @@ public final class PublicationContextMapper {
 
     public static boolean isBook(Record record) {
         return NvaType.BOOK.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isScientificArticle(Record record) {
+        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean isUnconfirmedScientificArticle(Record record) {
+        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(record.getType().getNva())
+               && !hasJournalId(record);
     }
 
     private static PublicationContext buildPublicationContextForUnconfirmedJournalArticle(Record record)
@@ -119,7 +128,16 @@ public final class PublicationContextMapper {
     }
 
     private static boolean hasJournalId(Record record) {
-        return nonNull(record.getPublication().getPublicationContext().getJournal().getId());
+        return nonNull(extractJournalId(record));
+    }
+
+    private static String extractJournalId(Record record) {
+        return Optional.ofNullable(record.getPublication())
+                   .map(Publication::getPublicationContext)
+                   .map(no.sikt.nva.brage.migration.record.PublicationContext::getJournal)
+                   .map(no.sikt.nva.brage.migration.record.Journal::getId)
+                   .map(String::toString)
+                   .orElse(null);
     }
 
     private static PublicationContext buildPublicationContextWhenDataSet(Record record) {
