@@ -643,6 +643,7 @@ Resources:
           BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
           TABLE_NAME: !Ref NvaResourcesTable
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          DOMAIN_NAME: !Ref ApiDomain
       Events:
         BrageMigrationEvent:
           Type: S3
