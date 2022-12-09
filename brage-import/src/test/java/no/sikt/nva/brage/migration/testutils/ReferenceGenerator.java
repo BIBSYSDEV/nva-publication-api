@@ -189,7 +189,7 @@ public final class ReferenceGenerator {
     }
 
     private static Publisher generatePublisher(Builder builder) {
-        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(builder.getPublisherId())
                                  .getUri());
@@ -197,7 +197,7 @@ public final class ReferenceGenerator {
 
     private static Series generateSeries(Builder builder) {
         if (nonNull(builder.getSeriesId())) {
-            return new Series(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+            return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                   .addChild(ChannelType.SERIES.getType())
                                   .addChild(builder.getSeriesId())
                                   .addChild(builder.getPublicationDate().getNva().getYear())
@@ -207,7 +207,7 @@ public final class ReferenceGenerator {
     }
 
     private static Journal generateJournal(Builder builder) {
-        return new Journal(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+        return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(builder.getJournalId())
                                .addChild(builder.getPublicationDate().getNva().getYear())

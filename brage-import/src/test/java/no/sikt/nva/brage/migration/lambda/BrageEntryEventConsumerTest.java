@@ -107,11 +107,13 @@ public class BrageEntryEventConsumerTest {
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
 
     public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
-    public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
-                                                                               new PublicationDateNva.Builder().withYear(
-                                                                                   "2020").build());
-    public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(URI.create(
-        "https://api.nva.unit.no/customer/test")).build();
+    public static final PublicationDate PUBLICATION_DATE =
+        new PublicationDate("2020",
+                            new PublicationDateNva.Builder().withYear(
+                                "2020").build());
+    public static final Organization TEST_ORGANIZATION =
+        new Organization.Builder().withId(URI.create(
+            "https://api.nva.unit.no/customer/test")).build();
     public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
     public static final String FILENAME = "filename";
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;

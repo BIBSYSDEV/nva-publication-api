@@ -27,12 +27,16 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
 public final class PublicationContextMapper {
 
-    public static final URI BASE_URL = URI.create("https://api.dev.nva.aws.unit.no/publication-channels");
+    public static final String PUBLICATION_CHANNELS_PATH = "publication-channels";
+    public static final String DOMAIN_NAME_ENVIRONMENT_VARIABLE_NAME = "DOMAIN_NAME";
+    public static final String HTTPS_PREFIX = "https://";
+    public static final URI CHANNEL_REGISTRY = readChannelRegistryPathFromEnvironment();
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
     public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
 
@@ -116,6 +120,11 @@ public final class PublicationContextMapper {
     private static boolean isUnconfirmedJournal(Record record) {
         return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva())
                && !hasJournalId(record);
+    }
+
+    private static URI readChannelRegistryPathFromEnvironment() {
+        var basePath = new Environment().readEnv(DOMAIN_NAME_ENVIRONMENT_VARIABLE_NAME);
+        return UriWrapper.fromUri(HTTPS_PREFIX + basePath).addChild(PUBLICATION_CHANNELS_PATH).getUri();
     }
 
     private static PublicationContext buildPublicationContextWhenJournalArticle(Record record) {
@@ -259,14 +268,14 @@ public final class PublicationContextMapper {
     }
 
     private static Publisher generatePublisher(String publisherIdentifier) {
-        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(publisherIdentifier)
                                  .getUri());
     }
 
     private static Journal generateJournal(String journalIdentifier, String year) {
-        return new Journal(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+        return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(journalIdentifier)
                                .addChild(year)
@@ -274,7 +283,7 @@ public final class PublicationContextMapper {
     }
 
     private static Series generateSeries(String seriesIdentifier, String year) {
-        return new Series(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
+        return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                               .addChild(ChannelType.SERIES.getType())
                               .addChild(seriesIdentifier)
                               .addChild(year)
