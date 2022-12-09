@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
-import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder;
 import no.sikt.nva.brage.migration.testutils.type.NvaType;
 import no.unit.nva.model.Reference;
@@ -24,6 +23,7 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.Map;
+import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -31,11 +31,13 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
@@ -115,6 +117,12 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
                            .build();
             }
+            if (NvaType.SCIENTIFIC_ARTICLE.getValue().equals(builder.getType().getNva()) && hasJournalId(builder)) {
+                return new Reference.Builder()
+                           .withPublishingContext(generateJournal(builder))
+                           .withPublicationInstance(generatePublicationInstanceForScientificArticle(builder))
+                           .build();
+            }
             if (NvaType.STUDENT_PAPER_OTHERS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForOtherStudentWork(builder))
@@ -133,6 +141,14 @@ public final class ReferenceGenerator {
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
+    }
+
+    private static PublicationInstance<? extends Pages> generatePublicationInstanceForScientificArticle(
+        Builder builder) {
+        return new JournalArticle.Builder().withContent(JournalArticleContentType.ACADEMIC_ARTICLE)
+                   .withPeerReviewed(true)
+                   .withPages(new Range(builder.getPages().getRange().getBegin(),
+                                        builder.getPages().getRange().getEnd())).build();
     }
 
     private static PublicationContext generateUnconfirmedJournal(Builder builder) throws InvalidIssnException {
@@ -167,8 +183,9 @@ public final class ReferenceGenerator {
     }
 
     private static JournalArticle generatePublicationInstanceForJournalArticle(Builder builder) {
-        return new JournalArticle.Builder().withPages(new Range(builder.getPages().getRange().getBegin(),
-                                                                builder.getPages().getRange().getEnd())).build();
+        return new JournalArticle.Builder().withContent(JournalArticleContentType.PROFESSIONAL_ARTICLE)
+                   .withPages(new Range(builder.getPages().getRange().getBegin(),
+                                        builder.getPages().getRange().getEnd())).build();
     }
 
     private static Publisher generatePublisher(Builder builder) {

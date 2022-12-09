@@ -5,10 +5,9 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
-import java.util.List;
 import java.util.Optional;
-import no.sikt.nva.brage.migration.BrageType;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
@@ -21,6 +20,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
@@ -40,6 +40,9 @@ public final class PublicationInstanceMapper {
     public static PublicationInstance<? extends Pages> buildPublicationInstance(Record record) {
         if (isJournalArticle(record)) {
             return buildPublicationInstanceWhenJournalArticle(record);
+        }
+        if (isScientificArticle(record)) {
+            return buildPublicationInstanceWhenScientificArticle(record);
         }
         if (isMap(record)) {
             return buildPublicationInstanceWhenMap(record);
@@ -70,6 +73,16 @@ public final class PublicationInstanceMapper {
         } else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificArticle(Record record) {
+        return new JournalArticle.Builder()
+                   .withPages(extractPages(record))
+                   .withIssue(extractIssue(record))
+                   .withVolume(extractVolume(record))
+                   .withPeerReviewed(true)
+                   .withContent(JournalArticleContentType.ACADEMIC_ARTICLE)
+                   .build();
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificMonograph(Record record) {
@@ -172,10 +185,6 @@ public final class PublicationInstanceMapper {
         return publicationInstance.getVolume();
     }
 
-    private static boolean generatePeerReviewed(List<String> types) {
-        return types.contains(BrageType.PEER_REVIEWED.getValue());
-    }
-
     private static String generatePages(no.sikt.nva.brage.migration.record.Pages pages) {
         return pages.getPages();
     }
@@ -245,14 +254,9 @@ public final class PublicationInstanceMapper {
                    .withPages(extractPages(record))
                    .withIssue(extractIssue(record))
                    .withVolume(extractVolume(record))
-                   .withPeerReviewed(extractPeerReviewed(record))
+                   .withPeerReviewed(false)
+                   .withContent(JournalArticleContentType.PROFESSIONAL_ARTICLE)
                    .build();
-    }
-
-    private static boolean extractPeerReviewed(Record record) {
-        return Optional.ofNullable(record.getType().getBrage())
-                   .map(PublicationInstanceMapper::generatePeerReviewed)
-                   .orElse(false);
     }
 
     private static String extractVolume(Record record) {
