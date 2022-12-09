@@ -27,6 +27,7 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -228,6 +229,15 @@ public class BrageEntryEventConsumerTest {
     }
 
     @Test
+    void shouldConvertJournalArticleWithoutJournalIdToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = buildGeneratorForJournalArticleWithoutId();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
     void shouldConvertOtherStudentWorkToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_OTHER_STUDENT_WORK)
@@ -394,6 +404,14 @@ public class BrageEntryEventConsumerTest {
         var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, actualPublication);
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication().getHandle().toString())));
+    }
+
+    private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticleWithoutId() {
+        return new NvaBrageMigrationDataGenerator.Builder()
+                   .withType(TYPE_JOURNAL_ARTICLE)
+                   .withSpatialCoverage(List.of("Norway"))
+                   .withJournalTitle("Some Very Popular Journal")
+                   .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticle() {
@@ -596,3 +614,5 @@ public class BrageEntryEventConsumerTest {
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
 }
+
+
