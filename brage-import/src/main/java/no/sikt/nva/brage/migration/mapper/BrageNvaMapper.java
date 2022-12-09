@@ -35,6 +35,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.JacocoGenerated;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import org.joda.time.Instant;
@@ -185,6 +186,7 @@ public final class BrageNvaMapper {
 
     private static Map<String, String> extractAlternativeTitles(Record record) {
         return Optional.of(emptyIfNull(record.getEntityDescription().getAlternativeTitles()).stream()
+                               .filter(title -> nonNull(title) && !title.isEmpty())
                                .map(BrageNvaMapper::generateLanguageMap)
                                .flatMap(i -> i.entrySet().stream())
                                .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (first, second) -> first)))

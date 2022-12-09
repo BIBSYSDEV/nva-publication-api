@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,11 +23,13 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.paths.UriWrapper;
 
+@SuppressWarnings("PMD.GodClass")
 public final class PublicationContextMapper {
 
     public static final URI BASE_URL = URI.create("https://api.dev.nva.aws.unit.no/publication-channels");
@@ -56,6 +59,9 @@ public final class PublicationContextMapper {
         }
         if (isJournalArticle(record)) {
             return buildPublicationContextWhenJournalArticle(record);
+        }
+        if (isUnconfirmedJournal(record)) {
+            return buildPublicationContextForUnconfirmedJournalArticle(record);
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
@@ -81,12 +87,39 @@ public final class PublicationContextMapper {
         return NvaType.BOOK.getValue().equals(record.getType().getNva());
     }
 
+    private static PublicationContext buildPublicationContextForUnconfirmedJournalArticle(Record record)
+        throws InvalidIssnException {
+        return new UnconfirmedJournal(extractJournalTitle(record), extractIssn(record), extractIssn(record));
+    }
+
+    private static String extractIssn(Record record) {
+        return Optional.ofNullable(record.getPublication())
+                   .map(Publication::getIssn)
+                   .orElse(null);
+    }
+
+    private static String extractJournalTitle(Record record) {
+        return Optional.ofNullable(record.getPublication())
+                   .map(Publication::getJournal)
+                   .orElse(null);
+    }
+
+    private static boolean isUnconfirmedJournal(Record record) {
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva())
+               && !hasJournalId(record);
+    }
+
     private static PublicationContext buildPublicationContextWhenJournalArticle(Record record) {
         return extractJournal(record);
     }
 
     private static boolean isJournalArticle(Record record) {
-        return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva());
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva())
+               && hasJournalId(record);
+    }
+
+    private static boolean hasJournalId(Record record) {
+        return nonNull(record.getPublication().getPublicationContext().getJournal().getId());
     }
 
     private static PublicationContext buildPublicationContextWhenDataSet(Record record) {
@@ -196,7 +229,7 @@ public final class PublicationContextMapper {
         return Optional.ofNullable(record.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
                    .map(no.sikt.nva.brage.migration.record.Publisher::getId)
-                   .map(id -> generatePublisher(id, extractYear(record)))
+                   .map(PublicationContextMapper::generatePublisher)
                    .orElse(null);
     }
 
@@ -207,11 +240,10 @@ public final class PublicationContextMapper {
                    .map(id -> generateJournal(id, extractYear(record))).orElse(null);
     }
 
-    private static Publisher generatePublisher(String publisherIdentifier, String year) {
+    private static Publisher generatePublisher(String publisherIdentifier) {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(publisherIdentifier)
-                                 .addChild(year)
                                  .getUri());
     }
 

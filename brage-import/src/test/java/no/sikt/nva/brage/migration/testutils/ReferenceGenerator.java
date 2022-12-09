@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
+import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder;
 import no.sikt.nva.brage.migration.testutils.type.NvaType;
 import no.unit.nva.model.Reference;
@@ -18,6 +19,7 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -101,9 +103,15 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(generatePublicationInstanceForPhd(builder))
                            .build();
             }
-            if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva())) {
+            if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva()) && hasJournalId(builder)) {
                 return new Reference.Builder()
                            .withPublishingContext(generateJournal(builder))
+                           .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
+                           .build();
+            }
+            if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva()) && !hasJournalId(builder)) {
+                return new Reference.Builder()
+                           .withPublishingContext(generateUnconfirmedJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
                            .build();
             }
@@ -125,6 +133,16 @@ public final class ReferenceGenerator {
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
+    }
+
+    private static PublicationContext generateUnconfirmedJournal(Builder builder) throws InvalidIssnException {
+        return new UnconfirmedJournal(builder.getPublication().getJournal(),
+                                      builder.getPublication().getIssn(),
+                                      builder.getPublication().getIssn());
+    }
+
+    private static boolean hasJournalId(Builder builder) {
+        return nonNull(builder.getPublication().getPublicationContext().getJournal().getId());
     }
 
     private static PublicationContext generatePublicationContextForReport(Builder builder)
@@ -157,7 +175,6 @@ public final class ReferenceGenerator {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.BASE_URL)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(builder.getPublisherId())
-                                 .addChild(builder.getPublicationDate().getNva().getYear())
                                  .getUri());
     }
 
