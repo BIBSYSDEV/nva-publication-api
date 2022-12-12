@@ -3,10 +3,7 @@ package no.sikt.nva.brage.migration.mapper;
 import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescription;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
@@ -22,13 +19,10 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
-import no.unit.nva.model.instancetypes.event.Lecture;
-import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
-import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
@@ -42,7 +36,7 @@ public final class PublicationInstanceMapper {
     private PublicationInstanceMapper() {
     }
 
-    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
+    @SuppressWarnings("PMD.NPathComplexity")
     public static PublicationInstance<? extends Pages> buildPublicationInstance(Record record) {
         if (isJournalArticle(record)) {
             return buildPublicationInstanceWhenJournalArticle(record);
@@ -50,17 +44,11 @@ public final class PublicationInstanceMapper {
         if (isScientificArticle(record)) {
             return buildPublicationInstanceWhenScientificArticle(record);
         }
-        if (isFeatureArticle(record)) {
-            return buildPublicationInstanceWhenFeatureArticle(record);
-        }
         if (isMap(record)) {
             return buildPublicationInstanceWhenMap(record);
         }
         if (isDataset(record)) {
             return buildPublicationInstanceWhenDataset(record);
-        }
-        if (isLecture(record)) {
-            return new Lecture();
         }
         if (isBachelorThesis(record)) {
             return buildPublicationInstanceWhenBachelorThesis(record);
@@ -82,26 +70,9 @@ public final class PublicationInstanceMapper {
         }
         if (isResearchReport(record)) {
             return buildPublicationInstanceWhenResearchReport(record);
-        }
-        if (isReportWorkingPaper(record)) {
-            return buildPublicationInstanceWhenReportWorkingPaper(record);
         } else {
             return buildPublicationInstanceWhenReport(record);
         }
-    }
-
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record record) {
-        return new FeatureArticle.Builder()
-                   .withPages(extractPages(record))
-                   .withIssue(extractIssue(record))
-                   .withVolume(extractVolume(record))
-                   .build();
-    }
-
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReportWorkingPaper(Record record) {
-        return new ReportWorkingPaper.Builder()
-                   .withPages(extractMonographPages(record))
-                   .build();
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificArticle(Record record) {
