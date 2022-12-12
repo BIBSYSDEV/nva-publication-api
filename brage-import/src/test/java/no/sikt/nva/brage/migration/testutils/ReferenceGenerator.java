@@ -11,7 +11,6 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -31,13 +30,10 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
-import no.unit.nva.model.instancetypes.event.Lecture;
-import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
-import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
@@ -94,12 +90,6 @@ public final class ReferenceGenerator {
                            .withPublishingContext(generatePublicationContextForReport(builder))
                            .build();
             }
-            if (NvaType.WORKING_PAPER.getValue().equals(builder.getType().getNva())) {
-                return new Reference.Builder()
-                           .withPublicationInstance(generatePublicationInstanceForReportWorkingPaper(builder))
-                           .withPublishingContext(generatePublicationContextForReport(builder))
-                           .build();
-            }
             if (NvaType.BACHELOR_THESIS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForDegree(builder))
@@ -122,12 +112,6 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublishingContext(generateJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
-                           .build();
-            }
-            if (NvaType.CHRONICLE.getValue().equals(builder.getType().getNva()) && hasJournalId(builder)) {
-                return new Reference.Builder()
-                           .withPublishingContext(generateJournal(builder))
-                           .withPublicationInstance(generatePublicationInstanceForFeatureArticle(builder))
                            .build();
             }
             if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva()) && !hasJournalId(builder)) {
@@ -156,39 +140,18 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(generatePublicationInstanceForScientificMonograph(builder))
                            .build();
             }
-            if (NvaType.LECTURE.getValue().equals(builder.getType().getNva())) {
-                return new Reference.Builder()
-                           .withPublishingContext(new Event.Builder().build())
-                           .withPublicationInstance(new Lecture())
-                           .build();
-            }
             return new Reference.Builder().build();
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
     }
 
-    private static PublicationInstance<? extends Pages> generatePublicationInstanceForFeatureArticle(Builder builder) {
-        return new FeatureArticle.Builder()
-                   .withPages(generateRange(builder))
-                   .build();
-    }
-
-    @NotNull
-    private static Range generateRange(Builder builder) {
-        return new Range(builder.getPages().getRange().getBegin(), builder.getPages().getRange().getEnd());
-    }
-
-    private static PublicationInstance<? extends Pages> generatePublicationInstanceForReportWorkingPaper(
-        Builder builder) {
-        return new ReportWorkingPaper.Builder().withPages(builder.getMonographPages()).build();
-    }
-
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForScientificArticle(
         Builder builder) {
         return new JournalArticle.Builder().withContent(JournalArticleContentType.ACADEMIC_ARTICLE)
                    .withPeerReviewed(true)
-                   .withPages(generateRange(builder)).build();
+                   .withPages(new Range(builder.getPages().getRange().getBegin(),
+                                        builder.getPages().getRange().getEnd())).build();
     }
 
     private static PublicationContext generateUnconfirmedJournal(Builder builder) throws InvalidIssnException {
@@ -224,7 +187,8 @@ public final class ReferenceGenerator {
 
     private static JournalArticle generatePublicationInstanceForJournalArticle(Builder builder) {
         return new JournalArticle.Builder().withContent(JournalArticleContentType.PROFESSIONAL_ARTICLE)
-                   .withPages(generateRange(builder)).build();
+                   .withPages(new Range(builder.getPages().getRange().getBegin(),
+                                        builder.getPages().getRange().getEnd())).build();
     }
 
     private static Publisher generatePublisher(Builder builder) {
