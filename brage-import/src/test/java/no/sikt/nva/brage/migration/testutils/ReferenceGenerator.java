@@ -174,7 +174,6 @@ public final class ReferenceGenerator {
                    .build();
     }
 
-    @NotNull
     private static Range generateRange(Builder builder) {
         return new Range(builder.getPages().getRange().getBegin(), builder.getPages().getRange().getEnd());
     }
@@ -208,7 +207,6 @@ public final class ReferenceGenerator {
                    .build();
     }
 
-    @NotNull
     private static BookMonograph generatePublicationInstanceForScientificMonograph(Builder builder) {
         return new BookMonograph.Builder().withContentType(BookMonographContentType.ACADEMIC_MONOGRAPH)
                    .withPeerReviewed(true)
