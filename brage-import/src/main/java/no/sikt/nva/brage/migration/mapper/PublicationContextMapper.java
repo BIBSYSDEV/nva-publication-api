@@ -40,6 +40,7 @@ public final class PublicationContextMapper {
     public static final URI CHANNEL_REGISTRY = readChannelRegistryPathFromEnvironment();
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
     public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
+    public static final String CURRENT_YEAR = getCurrentYear();
 
     private PublicationContextMapper() {
     }
@@ -272,7 +273,7 @@ public final class PublicationContextMapper {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(publisherIdentifier)
-                                 .addChild(nonNull(year) ? year : getCurrentYear())
+                                 .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                  .getUri());
     }
 
@@ -284,7 +285,7 @@ public final class PublicationContextMapper {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(journalIdentifier)
-                               .addChild(nonNull(year) ? year : getCurrentYear())
+                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                .getUri());
     }
 
@@ -292,7 +293,7 @@ public final class PublicationContextMapper {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                               .addChild(ChannelType.SERIES.getType())
                               .addChild(seriesIdentifier)
-                              .addChild(nonNull(year) ? year : getCurrentYear())
+                              .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());
     }
 

@@ -41,8 +41,11 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
+import org.joda.time.DateTime;
 
 public final class ReferenceGenerator {
+
+    public static final String CURRENT_YEAR = String.valueOf(DateTime.now().getYear());
 
     public static Reference generateReference(Builder builder) {
         return Optional.ofNullable(builder)
@@ -192,7 +195,12 @@ public final class ReferenceGenerator {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(builder.getPublisherId())
+                                 .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                  .getUri());
+    }
+
+    private static String getYear(Builder builder) {
+        return builder.getPublicationDate().getNva().getYear();
     }
 
     private static Series generateSeries(Builder builder) {
@@ -200,7 +208,7 @@ public final class ReferenceGenerator {
             return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                   .addChild(ChannelType.SERIES.getType())
                                   .addChild(builder.getSeriesId())
-                                  .addChild(builder.getPublicationDate().getNva().getYear())
+                                  .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                   .getUri());
         }
         return null;
@@ -210,7 +218,7 @@ public final class ReferenceGenerator {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(builder.getJournalId())
-                               .addChild(builder.getPublicationDate().getNva().getYear())
+                               .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                .getUri());
     }
 

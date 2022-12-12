@@ -78,9 +78,7 @@ public class EntityDescription {
 
     @JsonProperty
     public List<String> getDescriptions() {
-        return Objects.nonNull(descriptions)
-                   ? descriptions
-                   : List.of();
+        return descriptions;
     }
 
     public void setDescriptions(List<String> descriptions) {
