@@ -118,7 +118,7 @@ public class BrageEntryEventConsumerTest {
     private static final Type TYPE_REPORT_WORKING_PAPER = new Type(List.of(NvaType.WORKING_PAPER.getValue()),
                                                                    NvaType.WORKING_PAPER.getValue());
     private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()),
-                                                                   NvaType.LECTURE.getValue());
+                                                      NvaType.LECTURE.getValue());
     private static final Type TYPE_FEATURE_ARTICLE = new Type(List.of(NvaType.CHRONICLE.getValue()),
                                                               NvaType.CHRONICLE.getValue());
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
