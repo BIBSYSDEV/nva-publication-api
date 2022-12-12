@@ -113,6 +113,10 @@ public final class PublicationContextMapper {
         return NvaType.LECTURE.getValue().equals(record.getType().getNva());
     }
 
+    private static boolean isReport(Record record) {
+        return NvaType.REPORT.getValue().equals(record.getType().getNva());
+    }
+
     private static PublicationContext buildPublicationContextWhenLecture() {
         return new Event.Builder()
                    .build();
@@ -316,9 +320,5 @@ public final class PublicationContextMapper {
                               .addChild(seriesIdentifier)
                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());
-    }
-
-    private static boolean isReport(Record record) {
-        return NvaType.REPORT.getValue().equals(record.getType().getNva());
     }
 }
