@@ -105,7 +105,6 @@ public class BrageEntryEventConsumerTest {
 
     public static final Type TYPE_SCIENTIFIC_ARTICLE = new Type(List.of(NvaType.SCIENTIFIC_ARTICLE.getValue()),
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
-
     public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
     public static final PublicationDate PUBLICATION_DATE =
         new PublicationDate("2020",
@@ -116,10 +115,17 @@ public class BrageEntryEventConsumerTest {
             "https://api.nva.unit.no/customer/test")).build();
     public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
     public static final String FILENAME = "filename";
+    private static final Type TYPE_REPORT_WORKING_PAPER = new Type(List.of(NvaType.WORKING_PAPER.getValue()),
+                                                                   NvaType.WORKING_PAPER.getValue());
+    private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()),
+                                                      NvaType.LECTURE.getValue());
+    private static final Type TYPE_FEATURE_ARTICLE = new Type(List.of(NvaType.CHRONICLE.getValue()),
+                                                              NvaType.CHRONICLE.getValue());
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
+
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
@@ -190,6 +196,17 @@ public class BrageEntryEventConsumerTest {
     }
 
     @Test
+    void shouldConvertReportWorkingPaperToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_REPORT_WORKING_PAPER)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
     void shouldConvertBachelorToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = buildGeneratorForBachelor();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
@@ -249,6 +266,29 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_SCIENTIFIC_ARTICLE)
                                                  .withJournalTitle("Journal")
                                                  .withJournalId("id")
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertFeatureArticleToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_FEATURE_ARTICLE)
+                                                 .withJournalId("journal")
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertLectureToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_LECTURE)
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());

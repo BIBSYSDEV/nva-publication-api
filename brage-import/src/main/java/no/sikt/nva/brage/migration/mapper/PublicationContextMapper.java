@@ -16,6 +16,7 @@ import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -51,8 +52,14 @@ public final class PublicationContextMapper {
         if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record)) {
             return buildPublicationContextWhenBook(record);
         }
-        if (isReport(record) || isResearchReport(record)) {
+        if (isReport(record) || isResearchReport(record) || isReportWorkingPaper(record)) {
             return buildPublicationContextWhenReport(record);
+        }
+        if (isUnconfirmedJournal(record) || isUnconfirmedScientificArticle(record)) {
+            return buildPublicationContextForUnconfirmedJournalArticle(record);
+        }
+        if (isJournalArticle(record) || isScientificArticle(record) || isFeatureArticle(record)) {
+            return buildPublicationContextWhenJournalArticle(record);
         }
         if (isDegree(record)) {
             return buildPublicationContextWhenDegree(record);
@@ -60,17 +67,18 @@ public final class PublicationContextMapper {
         if (isMap(record)) {
             return buildPublicationContextWhenMap(record);
         }
+        if (isLecture(record)) {
+            return buildPublicationContextWhenLecture();
+        }
         if (isDataset(record)) {
             return buildPublicationContextWhenDataSet(record);
-        }
-        if (isJournalArticle(record) || isScientificArticle(record)) {
-            return buildPublicationContextWhenJournalArticle(record);
-        }
-        if (isUnconfirmedJournal(record) || isUnconfirmedScientificArticle(record)) {
-            return buildPublicationContextForUnconfirmedJournalArticle(record);
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
+    }
+
+    public static boolean isFeatureArticle(Record record) {
+        return NvaType.CHRONICLE.getValue().equals(record.getType().getNva());
     }
 
     public static boolean isScientificMonograph(Record record) {
@@ -95,6 +103,23 @@ public final class PublicationContextMapper {
 
     public static boolean isScientificArticle(Record record) {
         return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isReportWorkingPaper(Record record) {
+        return NvaType.WORKING_PAPER.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isLecture(Record record) {
+        return NvaType.LECTURE.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean isReport(Record record) {
+        return NvaType.REPORT.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenLecture() {
+        return new Event.Builder()
+                   .build();
     }
 
     private static boolean isUnconfirmedScientificArticle(Record record) {
@@ -295,9 +320,5 @@ public final class PublicationContextMapper {
                               .addChild(seriesIdentifier)
                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());
-    }
-
-    private static boolean isReport(Record record) {
-        return NvaType.REPORT.getValue().equals(record.getType().getNva());
     }
 }

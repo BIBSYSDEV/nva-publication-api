@@ -1,6 +1,9 @@
 package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -35,9 +38,6 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.JacocoGenerated;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import static java.util.Objects.nonNull;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static org.hamcrest.MatcherAssert.assertThat;
 import org.joda.time.Instant;
 
 public final class BrageNvaMapper {
@@ -64,6 +64,12 @@ public final class BrageNvaMapper {
         return publication;
     }
 
+    public static String extractDescription(Record record) {
+        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
+                   .map(descriptions -> descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions))
+                   .orElse(null);
+    }
+
     private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         try {
             assertThat(publication,
@@ -73,12 +79,6 @@ public final class BrageNvaMapper {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
         }
-    }
-
-    public static String extractDescription(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
-                   .map(descriptions -> descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions))
-                   .orElse(null);
     }
 
     private static String mergeStringsByLineBreak(List<String> list) {
