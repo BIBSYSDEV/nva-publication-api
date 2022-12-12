@@ -29,6 +29,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
+import org.joda.time.DateTime;
 
 @SuppressWarnings("PMD.GodClass")
 public final class PublicationContextMapper {
@@ -39,6 +40,7 @@ public final class PublicationContextMapper {
     public static final URI CHANNEL_REGISTRY = readChannelRegistryPathFromEnvironment();
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
     public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
+    public static final String CURRENT_YEAR = getCurrentYear();
 
     private PublicationContextMapper() {
     }
@@ -256,7 +258,7 @@ public final class PublicationContextMapper {
         return Optional.ofNullable(record.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
                    .map(no.sikt.nva.brage.migration.record.Publisher::getId)
-                   .map(PublicationContextMapper::generatePublisher)
+                   .map(id -> generatePublisher(id, extractYear(record)))
                    .orElse(null);
     }
 
@@ -267,18 +269,23 @@ public final class PublicationContextMapper {
                    .map(id -> generateJournal(id, extractYear(record))).orElse(null);
     }
 
-    private static Publisher generatePublisher(String publisherIdentifier) {
+    private static Publisher generatePublisher(String publisherIdentifier, String year) {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(publisherIdentifier)
+                                 .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                  .getUri());
+    }
+
+    private static String getCurrentYear() {
+        return String.valueOf(DateTime.now().getYear());
     }
 
     private static Journal generateJournal(String journalIdentifier, String year) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(journalIdentifier)
-                               .addChild(year)
+                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                .getUri());
     }
 
@@ -286,7 +293,7 @@ public final class PublicationContextMapper {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                               .addChild(ChannelType.SERIES.getType())
                               .addChild(seriesIdentifier)
-                              .addChild(year)
+                              .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());
     }
 

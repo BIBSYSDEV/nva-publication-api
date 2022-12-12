@@ -18,6 +18,7 @@ entityDescription.reference.publicationContext.level
 entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.linkedContext
 
+entityDescription.date
 entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading

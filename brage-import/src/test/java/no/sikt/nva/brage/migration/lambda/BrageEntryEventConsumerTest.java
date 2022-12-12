@@ -445,6 +445,12 @@ public class BrageEntryEventConsumerTest {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_DATASET)
                    .withPublisherId("someId")
+                   .withPublicationDate(new PublicationDate("03-08",
+                                                            new PublicationDateNva.Builder().withYear(null).withDay(
+                                                                "03").withMonth("08").build()))
+                   .withPublicationDateForPublication(
+                       new no.unit.nva.model.PublicationDate.Builder().withYear(null).withDay(
+                           "03").withMonth("08").build())
                    .withSpatialCoverage(List.of("Norway"))
                    .build();
     }
