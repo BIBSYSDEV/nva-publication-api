@@ -161,7 +161,7 @@ public class BrageEntryEventConsumerTest {
 
     @Test
     void shouldNotConvertSeriesNumberWithoutNumber() throws IOException {
-        var nvaBrageMigrationDataGenerator = buildGeneratorForBookWithoutValidSeriesNumber(PART_OF_SERIES_VALUE_V6);
+        var nvaBrageMigrationDataGenerator = buildGeneratorForBookWithoutValidSeriesNumber();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -407,7 +407,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_BOOK)
                                                  .build();
         var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(nvaBrageMigrationDataGenerator.getBrageRecord()
-            , "my/path/some.json");
+        );
         var objectKey = UUID;
         var expectedDopyObjRequest = CopyObjectRequest.builder()
                                          .sourceBucket(INPUT_BUCKET_NAME)
@@ -536,10 +536,10 @@ public class BrageEntryEventConsumerTest {
                    .build();
     }
 
-    private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber(String seriesNumber) {
+    private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(seriesNumber)
+                   .withSeriesNumberRecord(BrageEntryEventConsumerTest.PART_OF_SERIES_VALUE_V6)
                    .withSeriesNumberPublication(null)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
@@ -642,9 +642,9 @@ public class BrageEntryEventConsumerTest {
         return createS3Event(uri);
     }
 
-    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record, String path) throws IOException {
+    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record) throws IOException {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
-        var uri = s3Driver.insertFile(UnixPath.of(path), recordAsJson);
+        var uri = s3Driver.insertFile(UnixPath.of("my/path/some.json"), recordAsJson);
         return createS3Event(uri);
     }
 
