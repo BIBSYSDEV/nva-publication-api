@@ -10,6 +10,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -136,6 +137,37 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
         assertThat(actualIds, containsInAnyOrder(expectedIds.toArray()));
         assertThat(actualIds, hasSize(expectedIds.size()));
+    }
+
+    @Test
+    void mapReturnsResourceWithSourceCodeAndSourceRecordIdentifierStoredInAdditionalIdentifiers() {
+        var sourceCode = randomString();
+        var sourceRecordIdentifier = randomString();
+        var cristinObject = CristinDataGenerator.randomObject();
+        cristinObject.setSourceCode(sourceCode);
+        cristinObject.setSourceRecordIdentifier(sourceRecordIdentifier);
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(sourceCode, sourceRecordIdentifier);
+        var actualAdditionalIdentifier = cristinObject.toPublication().getAdditionalIdentifiers();
+        assertThat(actualAdditionalIdentifier, hasItem(expectedAdditionalIdentifier));
+    }
+
+    @Test
+    void mapPrioritizeCristinSourceOverSourceCode() {
+        var collidingSourceCode = randomString();
+        var sourceRecordIdentifierA = randomString();
+        var sourceIdentifierB = randomString();
+        var cristinObject = CristinDataGenerator.randomObject();
+        cristinObject.setSourceCode(collidingSourceCode);
+        cristinObject.setSourceRecordIdentifier(sourceRecordIdentifierA);
+        cristinObject.setCristinSources(List.of(CristinSource.builder()
+                                                    .withSourceCode(collidingSourceCode)
+                                                    .withSourceIdentifier(sourceIdentifierB)
+                                                    .build()));
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(collidingSourceCode, sourceIdentifierB);
+        var expectedNotToExist = new AdditionalIdentifier(collidingSourceCode, sourceRecordIdentifierA);
+        var actualAdditionalIdentifier = cristinObject.toPublication().getAdditionalIdentifiers();
+        assertThat(actualAdditionalIdentifier, hasItem(expectedAdditionalIdentifier));
+        assertThat(actualAdditionalIdentifier, not(hasItem(expectedNotToExist)));
     }
 
     @Test

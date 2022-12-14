@@ -27,7 +27,7 @@ import no.unit.nva.model.Publication;
 // This list should be emptied by either mapping the field to an NVA field or asking the Cristin people (Daniel)
 // to remove it from the exports
 @JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet", "peerReviewed",
-    "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
+    "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "type_produkt",
     "kildepostid", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
@@ -35,14 +35,14 @@ import no.unit.nva.model.Publication;
 
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
-    
+
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
     public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
     public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
     public static final String IDENTIFIER_ORIGIN = "Cristin";
-    
+
     public static final String BOOK_OR_REPORT_METADATA = "type_bok_rapport";
-    
+
     @JsonProperty("id")
     private Integer id;
     @JsonProperty("arstall")
@@ -78,28 +78,34 @@ public class CristinObject implements JsonSerializable {
 
     @JsonProperty("varbeid_kilde")
     private List<CristinSource> cristinSources;
-    
+
+    @JsonProperty("kildekode")
+    private String sourceCode;
+
+    @JsonProperty("kildepostid")
+    private String sourceRecordIdentifier;
+
     private String publicationOwner;
-    
+
     public CristinObject() {
     }
-    
+
     public static CristinObject fromJson(JsonNode json) {
         return attempt(() -> cristinEntryMapper.convertValue(json, CristinObject.class)).orElseThrow();
     }
-    
+
     public CristinObjectBuilder copy() {
         return this.toBuilder();
     }
-    
+
     public Publication toPublication() {
         return new CristinMapper(this).generatePublication();
     }
-    
+
     public void hardcodePublicationOwner(String publicationsOwner) {
         this.setPublicationOwner(publicationsOwner);
     }
-    
+
     public boolean isPeerReviewed() {
         return nonNull(yearReported);
     }

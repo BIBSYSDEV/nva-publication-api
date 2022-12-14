@@ -4,6 +4,7 @@ import static cucumber.utils.transformers.CristinContributorAffiliationTransform
 import static cucumber.utils.transformers.CristinSourceTransformer.parseCristinSourceFromMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -14,6 +15,7 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -442,6 +444,26 @@ public class GeneralMappingRules {
                                      .getPublisher()
                                      .getId();
         assertThat(actuallPublisherId.toString(), is(equalTo(expectedPublisherId)));
+    }
+
+    @And("the NVA Resource does not have an additional identifier with key {string} and value "
+         + "{string}")
+    public void theNVAResourceDoesNotHaveAnAdditionalIdentifierWithKeyAndValue(String key, String value) {
+        Set<AdditionalIdentifier> actualAdditionalIdentifiers =
+            scenarioContext.getNvaEntry().getAdditionalIdentifiers();
+        AdditionalIdentifier expectedIdentifier =
+            new AdditionalIdentifier(key, value);
+        assertThat(actualAdditionalIdentifiers, not(hasItem(expectedIdentifier)));
+    }
+
+    @And("the Cristin Result has sourceCode equal to {string}")
+    public void theCristinResultHasSourceCodeEqualTo(String sourceCode) {
+        scenarioContext.getCristinEntry().setSourceCode(sourceCode);
+    }
+
+    @And("the Cristin Result has sourceRecordIdentifier equal to {string}")
+    public void theCristinResultHasSourceRecordIdentifierEqualTo(String sourceRecordIdentifier) {
+        scenarioContext.getCristinEntry().setSourceRecordIdentifier(sourceRecordIdentifier);
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,

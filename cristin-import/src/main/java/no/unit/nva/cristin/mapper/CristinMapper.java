@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OWNER_AFFILIATION;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
@@ -205,7 +206,26 @@ public class CristinMapper extends CristinMappingModule {
         var cristinId = new AdditionalIdentifier(CristinObject.IDENTIFIER_ORIGIN, cristinObject.getId().toString());
         var additionalIdentifiers = extractCristinSourceids(cristinObject);
         additionalIdentifiers.add(cristinId);
+        if (nonNull(cristinObject.getSourceCode())
+            && sourceCodeHasNotBeenMappedAlready(additionalIdentifiers, cristinObject.getSourceCode())) {
+            additionalIdentifiers.add(extractAdditionalIdentifierFromSourceCode());
+        }
         return additionalIdentifiers;
+    }
+
+    private AdditionalIdentifier extractAdditionalIdentifierFromSourceCode() {
+        return new AdditionalIdentifier(cristinObject.getSourceCode(), cristinObject.getSourceRecordIdentifier());
+    }
+
+    private boolean sourceCodeHasNotBeenMappedAlready(Set<AdditionalIdentifier> additionalIdentifiers,
+                                                      String sourceCode) {
+        return additionalIdentifiers
+                   .stream()
+                   .noneMatch(additionalIdentifier -> hasIdenticalSourceCode(sourceCode, additionalIdentifier));
+    }
+
+    private boolean hasIdenticalSourceCode(String sourceCode, AdditionalIdentifier additionalIdentifier) {
+        return additionalIdentifier.getSource().equals(sourceCode);
     }
 
     private Set<AdditionalIdentifier> extractCristinSourceids(CristinObject cristinObject) {
