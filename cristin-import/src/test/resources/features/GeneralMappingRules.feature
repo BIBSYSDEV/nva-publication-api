@@ -13,7 +13,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | Source Code Text | Source Identifier Text   |
       | SomeCode         | Some identifier |
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has additional identifiers with key "SomeCode" and value 12345
+    Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
 
   Scenario: NVA Resource gets the single Cristin title which is annotated as
   "Original Title" as Main Title. (i.e., the Cristin entry has no more titles except for the original title).

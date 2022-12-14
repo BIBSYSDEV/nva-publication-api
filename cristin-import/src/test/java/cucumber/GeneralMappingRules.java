@@ -1,6 +1,7 @@
 package cucumber;
 
 import static cucumber.utils.transformers.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
+import static cucumber.utils.transformers.CristinSourceTransformer.parseCristinSourceFromMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -31,7 +32,6 @@ import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
-import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -170,7 +170,8 @@ public class GeneralMappingRules {
     }
 
     @Given("the Cristin Result has a non null array of CristinSources with values:")
-    public void theCristinResultHasCristinSourcesWithValues(List<CristinSource> cristinSources) {
+    public void theCristinResultHasCristinSourcesWithValues(DataTable dataTable) {
+        var cristinSources = parseCristinSourceFromMap(dataTable);
         scenarioContext.getCristinEntry().setCristinSources(cristinSources);
     }
 
