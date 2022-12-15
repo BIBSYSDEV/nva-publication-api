@@ -496,8 +496,7 @@
     It is a string containing arbitrary codes such as "scopus" "norart", "BIBSYS" etc.
     """ ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :Result, :VARBEID_KILDE_Class ;
-    :currently_ignored "true" .
+    rdfs:domain        :Result, :VARBEID_KILDE_Class ; .
 
 :kildepostid
     a                  :cristinfield ;
@@ -508,8 +507,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
      de-referenced.
     """ ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :Result ;
-    :currently_ignored "true" .
+    rdfs:domain        :Result ; .
 
 :kildeid
     a            :cristinfield ;
