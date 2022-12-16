@@ -1227,7 +1227,7 @@ Resources:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
         Description: Read-only database mirroring the data in S3 bucket for expanded resources
-        Name: cristin-anette
+        Name: cristin
 
   CristinCrawler:
     Type: AWS::Glue::Crawler
@@ -1287,7 +1287,7 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors/2022-12-13T11:03:25.762752Z'
+          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors/2022-10-31T15:04:41.245923Z'
             Exclusions: [ '*.error' ]
 
 
