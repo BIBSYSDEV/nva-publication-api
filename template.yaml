@@ -1288,6 +1288,9 @@ Resources:
       Targets:
         S3Targets:
           - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors/2022-12-13T11:03:25.762752Z'
+            Exclusions: [ '*.error' ]
+
+
 
   ImportQuery:
     Type: AWS::Athena::NamedQuery
