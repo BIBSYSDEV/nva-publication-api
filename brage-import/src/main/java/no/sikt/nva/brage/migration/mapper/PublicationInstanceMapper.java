@@ -12,6 +12,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOthe
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificChapter;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
 import java.util.Collections;
@@ -27,7 +28,8 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
-import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -72,6 +74,9 @@ public final class PublicationInstanceMapper {
         if (isChapter(record)) {
             return buildPublicationInstanceWhenChapter(record);
         }
+        if (isScientificChapter(record)) {
+            return buildPublicationInstanceWhenScientificChapter(record);
+        }
         if (isLecture(record)) {
             return new Lecture();
         }
@@ -109,6 +114,14 @@ public final class PublicationInstanceMapper {
         }
     }
 
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {
+        return new ChapterArticle.Builder()
+                   .withPages(extractPages(record))
+                   .withPeerReviewed(false)
+                   .withContentType(ChapterArticleContentType.NON_FICTION_CHAPTER)
+                   .build();
+    }
+
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic() {
         return new MusicPerformance(Collections.emptyList());
     }
@@ -118,9 +131,11 @@ public final class PublicationInstanceMapper {
                                   null, Collections.emptyList());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {
-        return new ChapterInReport.Builder()
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificChapter(Record record) {
+        return new ChapterArticle.Builder()
                    .withPages(extractPages(record))
+                   .withPeerReviewed(true)
+                   .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
                    .build();
     }
 

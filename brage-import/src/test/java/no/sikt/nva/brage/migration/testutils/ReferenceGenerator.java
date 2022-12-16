@@ -32,7 +32,8 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
-import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -166,8 +167,29 @@ public final class ReferenceGenerator {
             if (NvaType.CHAPTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Chapter())
-                           .withPublicationInstance(new ChapterInReport.Builder()
+                           .withPublicationInstance(new ChapterArticle.Builder()
                                                         .withPages(generateRange(builder))
+                                                        .withContentType(ChapterArticleContentType.NON_FICTION_CHAPTER)
+                                                        .build())
+                           .build();
+            }
+            if (NvaType.SCIENTIFIC_CHAPTER.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Chapter())
+                           .withPublicationInstance(new ChapterArticle.Builder()
+                                                        .withPages(generateRange(builder))
+                                                        .withPeerReviewed(true)
+                                                        .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
+                                                        .build())
+                           .build();
+            }
+            if (NvaType.SCIENTIFIC_ARTICLE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Chapter())
+                           .withPublicationInstance(new ChapterArticle.Builder()
+                                                        .withPages(generateRange(builder))
+                                                        .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
+                                                        .withPeerReviewed(true)
                                                         .build())
                            .build();
             }

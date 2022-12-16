@@ -69,7 +69,7 @@ public final class PublicationContextMapper {
         if (isMap(record)) {
             return buildPublicationContextWhenMap(record);
         }
-        if (isChapter(record)) {
+        if (isChapter(record) || isScientificChapter(record)) {
             return new Chapter.Builder().build();
         }
         if (isLecture(record)) {
@@ -138,6 +138,10 @@ public final class PublicationContextMapper {
 
     public static boolean isDesignProduct(Record record) {
         return NvaType.DESIGN_PRODUCT.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isScientificChapter(Record record) {
+        return NvaType.SCIENTIFIC_CHAPTER.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isReport(Record record) {
