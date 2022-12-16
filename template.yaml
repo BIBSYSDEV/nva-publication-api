@@ -1273,7 +1273,7 @@ Resources:
         {
             "Version":1.0,
             "Grouping":{
-              "TableLevelConfiguration":4
+              "TableLevelConfiguration":3
             }
         }
       DatabaseName: !Ref    CristinImportDatabase
@@ -1287,7 +1287,7 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors'
+          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors/2022-12-13T11:03:25.762752Z'
             Exclusions: [ '*.error' ]
 
 
