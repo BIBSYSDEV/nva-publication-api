@@ -1431,11 +1431,6 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${BrageMigrationInputBucketName}-${AWS::AccountId}"
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteContentAfter3Days
-            Status: Enabled
-            ExpirationInDays: 3
 
   BrageMigrationErrorBucket:
     Type: AWS::S3::Bucket
