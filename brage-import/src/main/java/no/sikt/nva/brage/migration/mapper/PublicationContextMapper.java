@@ -14,6 +14,7 @@ import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
@@ -77,11 +78,18 @@ public final class PublicationContextMapper {
         if (isChapter(record)) {
             return new Chapter();
         }
+        if (isDesignProduct(record) || isMusic(record)) {
+            return new Artistic();
+        }
         if (isDataset(record)) {
             return buildPublicationContextWhenDataSet(record);
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
+    }
+
+    public static boolean isMusic(Record record) {
+        return NvaType.RECORDING_MUSICAL.getValue().equals(record.getType().getNva());
     }
 
     public static boolean isStudentPaper(Record record) {
@@ -126,6 +134,10 @@ public final class PublicationContextMapper {
 
     public static boolean isLecture(Record record) {
         return NvaType.LECTURE.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isDesignProduct(Record record) {
+        return NvaType.DESIGN_PRODUCT.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isReport(Record record) {

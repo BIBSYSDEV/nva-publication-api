@@ -8,6 +8,7 @@ import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder;
 import no.sikt.nva.brage.migration.testutils.type.NvaType;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
@@ -25,6 +26,10 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
+import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
+import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
 import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
@@ -164,6 +169,19 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(new ChapterInReport.Builder()
                                                         .withPages(generateRange(builder))
                                                         .build())
+                           .build();
+            }
+            if (NvaType.DESIGN_PRODUCT.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Artistic())
+                           .withPublicationInstance(new ArtisticDesign(ArtisticDesignSubtype.create(
+                               ArtisticDesignSubtypeEnum.OTHER), null, Collections.emptyList()))
+                           .build();
+            }
+            if (NvaType.RECORDING_MUSICAL.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Artistic())
+                           .withPublicationInstance(new MusicPerformance(Collections.emptyList()))
                            .build();
             }
             return new Reference.Builder().build();

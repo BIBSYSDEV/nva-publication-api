@@ -4,20 +4,27 @@ import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescripti
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isChapter;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
+import java.util.Collections;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
+import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
+import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
 import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
@@ -68,6 +75,12 @@ public final class PublicationInstanceMapper {
         if (isLecture(record)) {
             return new Lecture();
         }
+        if (isDesignProduct(record)) {
+            return buildPublicationInstanceWhenDesignProduct();
+        }
+        if (isMusic(record)) {
+            return buildPublicationInstanceWhenMusic();
+        }
         if (isBachelorThesis(record)) {
             return buildPublicationInstanceWhenBachelorThesis(record);
         }
@@ -94,6 +107,15 @@ public final class PublicationInstanceMapper {
         } else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic() {
+        return new MusicPerformance(Collections.emptyList());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDesignProduct() {
+        return new ArtisticDesign(ArtisticDesignSubtype.create(ArtisticDesignSubtypeEnum.OTHER),
+                                  null, Collections.emptyList());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {

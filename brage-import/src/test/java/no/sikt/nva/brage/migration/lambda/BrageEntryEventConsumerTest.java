@@ -98,7 +98,6 @@ public class BrageEntryEventConsumerTest {
                                                  NvaType.DOCTORAL_THESIS.getValue());
     public static final Type TYPE_STUDENT_PAPER_OTHERS = new Type(List.of(NvaType.STUDENT_PAPER_OTHERS.getValue()),
                                                                   NvaType.STUDENT_PAPER_OTHERS.getValue());
-
     public static final Type TYPE_OTHER_STUDENT_WORK = new Type(List.of(NvaType.STUDENT_PAPER.getValue()),
                                                                 NvaType.STUDENT_PAPER.getValue());
     public static final Type TYPE_SCIENTIFIC_MONOGRAPH = new Type(List.of(NvaType.SCIENTIFIC_MONOGRAPH.getValue()),
@@ -128,6 +127,8 @@ public class BrageEntryEventConsumerTest {
                                                       NvaType.CHAPTER.getValue());
     private static final Type TYPE_FEATURE_ARTICLE = new Type(List.of(NvaType.CHRONICLE.getValue()),
                                                               NvaType.CHRONICLE.getValue());
+    private static final Type TYPE_SOFTWARE = new Type(List.of(NvaType.SOFTWARE.getValue()),
+                                                       NvaType.SOFTWARE.getValue());
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
@@ -337,6 +338,28 @@ public class BrageEntryEventConsumerTest {
     }
 
     @Test
+    void shouldConvertDesignProductToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_DESIGN_PRODUCT)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertMusicToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_MUSIC)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
     void shouldConvertScientificMonographToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_SCIENTIFIC_MONOGRAPH)
@@ -363,7 +386,7 @@ public class BrageEntryEventConsumerTest {
     @Test
     void shouldThrowExceptionWhenTypeIsNotSupportedInPublicationContext() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withType(TYPE_DESIGN_PRODUCT)
+                                                 .withType(TYPE_SOFTWARE)
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
@@ -372,7 +395,7 @@ public class BrageEntryEventConsumerTest {
     @Test
     void shouldThrowExceptionWhenTypeIsNotSupportedInPublicationInstance() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withType(TYPE_DESIGN_PRODUCT)
+                                                 .withType(TYPE_SOFTWARE)
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
