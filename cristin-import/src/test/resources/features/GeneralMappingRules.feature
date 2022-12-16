@@ -8,6 +8,29 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "Cristin" and value 12345
 
+  Scenario: Cristin sources are saved as additional identifiers
+    Given the Cristin Result has id equal to 12345
+    And the Cristin Result has a non null array of CristinSources with values:
+      | Source Code Text | Source Identifier Text |
+      | SomeCode         | Some identifier        |
+      | Some other code  | Some other identifier  |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
+    And the NVA Resource has an additional identifier with key "Cristin" and value 12345
+    And the NVA Resource has an additional identifier with key "Some other code" and value "Some other identifier"
+
+  Scenario: CristinSource collides with sourceCode
+    Given the Cristin Result has id equal to 12345
+    And the Cristin Result has sourceCode equal to "SomeCode"
+    And the Cristin Result has sourceRecordIdentifier equal to "Some other identifier"
+    And the Cristin Result has a non null array of CristinSources with values:
+      | Source Code Text | Source Identifier Text |
+      | SomeCode         | Some identifier        |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
+    And the NVA Resource has an additional identifier with key "Cristin" and value 12345
+    And the NVA Resource does not have an additional identifier with key "SomeCode" and value "Some other identifier"
+
   Scenario: NVA Resource gets the single Cristin title which is annotated as
   "Original Title" as Main Title. (i.e., the Cristin entry has no more titles except for the original title).
     Given the Cristin Result has an non null array of CristinTitles
