@@ -1227,7 +1227,7 @@ Resources:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
         Description: Read-only database mirroring the data in S3 bucket for expanded resources
-        Name: cristin
+        Name: cristin-anette
 
   CristinCrawler:
     Type: AWS::Glue::Crawler
