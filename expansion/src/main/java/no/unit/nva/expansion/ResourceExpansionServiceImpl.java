@@ -20,17 +20,17 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
-    
+
     public static final String UNSUPPORTED_TYPE = "Expansion is not supported for type:";
-    
+
     private final ResourceService resourceService;
     private final TicketService ticketService;
-    
+
     public ResourceExpansionServiceImpl(ResourceService resourceService, TicketService ticketService) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
     }
-    
+
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource) {
@@ -45,22 +45,22 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
     }
-    
+
     @Override
     public Set<URI> getOrganizationIds(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry) {
             var resourceIdentifier = ((TicketEntry) dataEntry).extractPublicationIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
-                       .stream()
-                       .map(
-                           this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
-                       .flatMap(Collection::stream)
-                       .collect(Collectors.toSet());
+                .stream()
+                .map(
+                    this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
         }
         return Collections.emptySet();
     }
-    
+
     private List<URI> retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg(
         URI affiliation) {
         return List.of(affiliation);

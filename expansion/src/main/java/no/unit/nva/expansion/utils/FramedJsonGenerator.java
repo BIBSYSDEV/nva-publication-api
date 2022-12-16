@@ -20,27 +20,27 @@ import org.slf4j.LoggerFactory;
 
 @JacocoGenerated
 public class FramedJsonGenerator {
-    
+
     public static final String JSON_LD_GRAPH = "@graph";
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private final Map<String, Object> framedJson;
-    
+
     public FramedJsonGenerator(List<InputStream> streams, InputStream frame) {
         framedJson = attempt(() -> objectMapper.readValue(frame, Map.class))
-                         .toOptional(fail -> logFramingFailure(fail.getException()))
-                         .map(map -> createFramedJson(streams, map))
-                         .orElseThrow();
+            .toOptional(fail -> logFramingFailure(fail.getException()))
+            .map(map -> createFramedJson(streams, map))
+            .orElseThrow();
     }
-    
+
     public String getFramedJson() throws IOException {
         return com.github.jsonldjava.utils.JsonUtils.toPrettyString(framedJson);
     }
-    
+
     private Map<String, Object> createFramedJson(List<InputStream> streams, Map<?, ?> frameMap) {
         return JsonLdProcessor.frame(createGraphDocumentFromInputStreams(streams),
-            Objects.requireNonNull(frameMap), getDefaultOptions());
+                                     Objects.requireNonNull(frameMap), getDefaultOptions());
     }
-    
+
     private Map<String, Object> createGraphDocumentFromInputStreams(List<InputStream> streams) {
         ObjectNode document = objectMapper.createObjectNode();
         ArrayNode graph = objectMapper.createArrayNode();
@@ -49,23 +49,23 @@ public class FramedJsonGenerator {
             .filter(this::keepSuccessesAndLogErrors)
             .map(Try::orElseThrow)
             .forEach(graph::add);
-        
+
         document.set(JSON_LD_GRAPH, graph);
         return objectMapper.convertValue(document, new TypeReference<>() {
         });
     }
-    
+
     private boolean keepSuccessesAndLogErrors(Try<JsonNode> jsonNodeTry) {
         if (jsonNodeTry.isFailure()) {
             logFramingFailure(jsonNodeTry.getException());
         }
         return jsonNodeTry.isSuccess();
     }
-    
+
     private void logFramingFailure(Exception exception) {
         logger.warn("Framing failed:", exception);
     }
-    
+
     private JsonLdOptions getDefaultOptions() {
         JsonLdOptions options = new JsonLdOptions();
         options.setOmitGraph(true);

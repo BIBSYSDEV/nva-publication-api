@@ -45,6 +45,24 @@
   },
   "@type": "Publication",
   "entityDescription": {
+    "contributors": {
+      "affiliations": {
+        "type": "Organization",
+        "@context": {
+          "partOf": {
+            "@container": "@set"
+          },
+          "hasPart": {
+            "@container": "@set"
+          }
+        },
+        "@embed": "@always",
+        "partOf": {
+          "@embed": "@always",
+          "type": "Organization"
+        }
+      }
+    },
     "reference": {
       "publicationContext": {
         "@embed": "@always"
