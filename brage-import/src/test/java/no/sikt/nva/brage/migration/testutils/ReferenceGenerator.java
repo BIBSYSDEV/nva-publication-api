@@ -27,6 +27,7 @@ import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -44,7 +45,6 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
 public final class ReferenceGenerator {
@@ -59,11 +59,6 @@ public final class ReferenceGenerator {
 
     private static Reference buildReference(Builder builder) {
         try {
-            if (NvaType.CHAPTER.getValue().equals(builder.getType().getNva())) {
-                return new Reference.Builder()
-                           .withPublishingContext(new Chapter.Builder().build())
-                           .build();
-            }
             if (NvaType.BOOK.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForBook(builder))
@@ -142,7 +137,8 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(generatePublicationInstanceForScientificArticle(builder))
                            .build();
             }
-            if (NvaType.STUDENT_PAPER_OTHERS.getValue().equals(builder.getType().getNva())) {
+            if (NvaType.STUDENT_PAPER_OTHERS.getValue().equals(builder.getType().getNva())
+                || NvaType.STUDENT_PAPER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForOtherStudentWork(builder))
                            .withPublicationInstance(
@@ -160,6 +156,14 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublishingContext(new Event.Builder().build())
                            .withPublicationInstance(new Lecture())
+                           .build();
+            }
+            if (NvaType.CHAPTER.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Chapter())
+                           .withPublicationInstance(new ChapterInReport.Builder()
+                                                        .withPages(generateRange(builder))
+                                                        .build())
                            .build();
             }
             return new Reference.Builder().build();

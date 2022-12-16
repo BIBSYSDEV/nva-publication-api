@@ -81,6 +81,8 @@ public class BrageEntryEventConsumerTest {
     public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
+    public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
+                                                   NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
                                                             NvaType.DESIGN_PRODUCT.getValue());
     public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
@@ -94,8 +96,11 @@ public class BrageEntryEventConsumerTest {
                                                     NvaType.MASTER_THESIS.getValue());
     public static final Type TYPE_PHD = new Type(List.of(NvaType.DOCTORAL_THESIS.getValue()),
                                                  NvaType.DOCTORAL_THESIS.getValue());
-    public static final Type TYPE_OTHER_STUDENT_WORK = new Type(List.of(NvaType.STUDENT_PAPER_OTHERS.getValue()),
-                                                                NvaType.STUDENT_PAPER_OTHERS.getValue());
+    public static final Type TYPE_STUDENT_PAPER_OTHERS = new Type(List.of(NvaType.STUDENT_PAPER_OTHERS.getValue()),
+                                                                  NvaType.STUDENT_PAPER_OTHERS.getValue());
+
+    public static final Type TYPE_OTHER_STUDENT_WORK = new Type(List.of(NvaType.STUDENT_PAPER.getValue()),
+                                                                NvaType.STUDENT_PAPER.getValue());
     public static final Type TYPE_SCIENTIFIC_MONOGRAPH = new Type(List.of(NvaType.SCIENTIFIC_MONOGRAPH.getValue()),
                                                                   NvaType.SCIENTIFIC_MONOGRAPH.getValue());
 
@@ -119,6 +124,8 @@ public class BrageEntryEventConsumerTest {
                                                                    NvaType.WORKING_PAPER.getValue());
     private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()),
                                                       NvaType.LECTURE.getValue());
+    private static final Type TYPE_CHAPTER = new Type(List.of(NvaType.CHAPTER.getValue()),
+                                                      NvaType.CHAPTER.getValue());
     private static final Type TYPE_FEATURE_ARTICLE = new Type(List.of(NvaType.CHRONICLE.getValue()),
                                                               NvaType.CHRONICLE.getValue());
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
@@ -289,6 +296,28 @@ public class BrageEntryEventConsumerTest {
     void shouldConvertLectureToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_LECTURE)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertChapterToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_CHAPTER)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertStudentPaperToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_STUDENT_PAPER_OTHERS)
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());

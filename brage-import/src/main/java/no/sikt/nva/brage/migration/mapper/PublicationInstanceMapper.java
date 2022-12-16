@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.mapper;
 
 import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescription;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isChapter;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
@@ -10,6 +11,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isRepo
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Record;
@@ -18,6 +20,7 @@ import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -59,6 +62,9 @@ public final class PublicationInstanceMapper {
         if (isDataset(record)) {
             return buildPublicationInstanceWhenDataset(record);
         }
+        if (isChapter(record)) {
+            return buildPublicationInstanceWhenChapter(record);
+        }
         if (isLecture(record)) {
             return new Lecture();
         }
@@ -71,7 +77,7 @@ public final class PublicationInstanceMapper {
         if (isDoctoralThesis(record)) {
             return buildPublicationInstanceWhenDoctoralThesis(record);
         }
-        if (isOtherStudentWork(record)) {
+        if (isOtherStudentWork(record) || isStudentPaper(record)) {
             return buildPublicationInstanceWhenOtherStudentWork(record);
         }
         if (isBook(record)) {
@@ -88,6 +94,12 @@ public final class PublicationInstanceMapper {
         } else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {
+        return new ChapterInReport.Builder()
+                   .withPages(extractPages(record))
+                   .build();
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record record) {
