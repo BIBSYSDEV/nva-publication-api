@@ -14,7 +14,9 @@ import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
@@ -46,10 +48,10 @@ public final class PublicationContextMapper {
     private PublicationContextMapper() {
     }
 
-    @SuppressWarnings("PMD.NPathComplexity")
+    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
     public static PublicationContext buildPublicationContext(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record)) {
+        if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record) || isStudentPaper(record)) {
             return buildPublicationContextWhenBook(record);
         }
         if (isReport(record) || isResearchReport(record) || isReportWorkingPaper(record)) {
@@ -67,14 +69,32 @@ public final class PublicationContextMapper {
         if (isMap(record)) {
             return buildPublicationContextWhenMap(record);
         }
+        if (isChapter(record) || isScientificChapter(record)) {
+            return new Chapter();
+        }
         if (isLecture(record)) {
             return buildPublicationContextWhenLecture();
+        }
+        if (isDesignProduct(record) || isMusic(record) || isPlanOrBlueprint(record)) {
+            return new Artistic();
         }
         if (isDataset(record)) {
             return buildPublicationContextWhenDataSet(record);
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
+    }
+
+    public static boolean isMusic(Record record) {
+        return NvaType.RECORDING_MUSICAL.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isStudentPaper(Record record) {
+        return NvaType.STUDENT_PAPER.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isChapter(Record record) {
+        return NvaType.CHAPTER.getValue().equals(record.getType().getNva());
     }
 
     public static boolean isFeatureArticle(Record record) {
@@ -113,12 +133,25 @@ public final class PublicationContextMapper {
         return NvaType.LECTURE.getValue().equals(record.getType().getNva());
     }
 
+    public static boolean isDesignProduct(Record record) {
+        return NvaType.DESIGN_PRODUCT.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isScientificChapter(Record record) {
+        return NvaType.SCIENTIFIC_CHAPTER.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isPlanOrBlueprint(Record record) {
+        return NvaType.PLAN_OR_BLUEPRINT.getValue().equals(record.getType().getNva());
+    }
+
     private static boolean isReport(Record record) {
         return NvaType.REPORT.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationContext buildPublicationContextWhenLecture() {
         return new Event.Builder()
+
                    .build();
     }
 
