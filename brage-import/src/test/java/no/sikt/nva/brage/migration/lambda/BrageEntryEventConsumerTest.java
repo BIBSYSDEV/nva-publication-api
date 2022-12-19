@@ -85,6 +85,8 @@ public class BrageEntryEventConsumerTest {
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
                                                             NvaType.DESIGN_PRODUCT.getValue());
+    public static final Type TYPE_PLAN_OR_BLUEPRINT = new Type(List.of(NvaType.PLAN_OR_BLUEPRINT.getValue()),
+                                                            NvaType.PLAN_OR_BLUEPRINT.getValue());
     public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
     public static final Type TYPE_REPORT = new Type(List.of(NvaType.REPORT.getValue()), NvaType.REPORT.getValue());
     public static final Type TYPE_RESEARCH_REPORT = new Type(List.of(NvaType.RESEARCH_REPORT.getValue()),
@@ -354,6 +356,17 @@ public class BrageEntryEventConsumerTest {
     void shouldConvertDesignProductToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_DESIGN_PRODUCT)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertPlanOrBluePrintToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_PLAN_OR_BLUEPRINT)
                                                  .build();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());

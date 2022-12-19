@@ -78,7 +78,7 @@ public final class PublicationContextMapper {
         if (isChapter(record)) {
             return new Chapter();
         }
-        if (isDesignProduct(record) || isMusic(record)) {
+        if (isDesignProduct(record) || isMusic(record) || isPlanOrBlueprint(record)) {
             return new Artistic();
         }
         if (isDataset(record)) {
@@ -142,6 +142,10 @@ public final class PublicationContextMapper {
 
     public static boolean isScientificChapter(Record record) {
         return NvaType.SCIENTIFIC_CHAPTER.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isPlanOrBlueprint(Record record) {
+        return NvaType.PLAN_OR_BLUEPRINT.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isReport(Record record) {

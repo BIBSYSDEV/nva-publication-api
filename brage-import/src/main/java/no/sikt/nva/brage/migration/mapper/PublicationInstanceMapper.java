@@ -9,6 +9,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeat
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPlanOrBlueprint;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
@@ -22,6 +23,9 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
+import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
+import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
@@ -83,6 +87,9 @@ public final class PublicationInstanceMapper {
         if (isDesignProduct(record)) {
             return buildPublicationInstanceWhenDesignProduct();
         }
+        if (isPlanOrBlueprint(record)) {
+            return buildPublicationInstanceWhePlanOrBluePrint();
+        }
         if (isMusic(record)) {
             return buildPublicationInstanceWhenMusic();
         }
@@ -112,6 +119,11 @@ public final class PublicationInstanceMapper {
         } else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhePlanOrBluePrint() {
+        return new Architecture(ArchitectureSubtype.create(ArchitectureSubtypeEnum.OTHER),
+                                null, Collections.emptyList());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {

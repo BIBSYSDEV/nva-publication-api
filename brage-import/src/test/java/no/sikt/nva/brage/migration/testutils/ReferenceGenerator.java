@@ -26,6 +26,9 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
+import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
+import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
@@ -51,6 +54,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
 public final class ReferenceGenerator {
@@ -147,10 +151,8 @@ public final class ReferenceGenerator {
                 || NvaType.STUDENT_PAPER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForOtherStudentWork(builder))
-                           .withPublicationInstance(
-                               new OtherStudentWork.Builder().withPages(builder.getMonographPages())
-                                   .withSubmittedDate(builder.getPublicationDateForPublication())
-                                   .build()).build();
+                           .withPublicationInstance(generatePublicationInstanceForStudentPaper(builder))
+                           .build();
             }
             if (NvaType.SCIENTIFIC_MONOGRAPH.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
@@ -167,37 +169,25 @@ public final class ReferenceGenerator {
             if (NvaType.CHAPTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Chapter())
-                           .withPublicationInstance(new ChapterArticle.Builder()
-                                                        .withPages(generateRange(builder))
-                                                        .withContentType(ChapterArticleContentType.NON_FICTION_CHAPTER)
-                                                        .build())
+                           .withPublicationInstance(generatePublicationInstanceForChapter(builder))
                            .build();
             }
             if (NvaType.SCIENTIFIC_CHAPTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Chapter())
-                           .withPublicationInstance(new ChapterArticle.Builder()
-                                                        .withPages(generateRange(builder))
-                                                        .withPeerReviewed(true)
-                                                        .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
-                                                        .build())
+                           .withPublicationInstance(generatePublicationInstanceForScientificChapter(builder))
                            .build();
             }
             if (NvaType.SCIENTIFIC_ARTICLE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Chapter())
-                           .withPublicationInstance(new ChapterArticle.Builder()
-                                                        .withPages(generateRange(builder))
-                                                        .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
-                                                        .withPeerReviewed(true)
-                                                        .build())
+                           .withPublicationInstance(generatePublicationInstanceForScientificArticle(builder))
                            .build();
             }
             if (NvaType.DESIGN_PRODUCT.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Artistic())
-                           .withPublicationInstance(new ArtisticDesign(ArtisticDesignSubtype.create(
-                               ArtisticDesignSubtypeEnum.OTHER), null, Collections.emptyList()))
+                           .withPublicationInstance(generatePublicationInstanceForDesignProduct())
                            .build();
             }
             if (NvaType.RECORDING_MUSICAL.getValue().equals(builder.getType().getNva())) {
@@ -206,10 +196,52 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(new MusicPerformance(Collections.emptyList()))
                            .build();
             }
+            if (NvaType.PLAN_OR_BLUEPRINT.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Artistic())
+                           .withPublicationInstance(generatePublicationInstanceForArchitecture())
+                           .build();
+            }
             return new Reference.Builder().build();
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
+    }
+
+    @NotNull
+    private static OtherStudentWork generatePublicationInstanceForStudentPaper(Builder builder) {
+        return new OtherStudentWork.Builder().withPages(builder.getMonographPages())
+                   .withSubmittedDate(builder.getPublicationDateForPublication())
+                   .build();
+    }
+
+    private static PublicationInstance<? extends Pages> generatePublicationInstanceForScientificChapter(
+        Builder builder) {
+        return new ChapterArticle.Builder()
+                   .withPages(generateRange(builder))
+                   .withPeerReviewed(true)
+                   .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
+                   .build();
+    }
+
+    private static PublicationInstance<? extends Pages> generatePublicationInstanceForChapter(
+        Builder builder) {
+        return new ChapterArticle.Builder()
+                   .withPages(generateRange(builder))
+                   .withContentType(ChapterArticleContentType.NON_FICTION_CHAPTER)
+                   .build();
+    }
+
+    @NotNull
+    private static ArtisticDesign generatePublicationInstanceForDesignProduct() {
+        return new ArtisticDesign(ArtisticDesignSubtype.create(
+            ArtisticDesignSubtypeEnum.OTHER), null, Collections.emptyList());
+    }
+
+    @NotNull
+    private static Architecture generatePublicationInstanceForArchitecture() {
+        return new Architecture(ArchitectureSubtype.create(ArchitectureSubtypeEnum.OTHER), null,
+                                Collections.emptyList());
     }
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForFeatureArticle(Builder builder) {
@@ -301,7 +333,8 @@ public final class ReferenceGenerator {
     }
 
     private static DataSet getPublicationInstanceForDataset(Builder builder) {
-        return new DataSet(false, new GeographicalDescription(String.join(", ", builder.getSpatialCoverage())),
+        return new DataSet(false,
+                           new GeographicalDescription(String.join(", ", builder.getSpatialCoverage())),
                            null, null, null);
     }
 
