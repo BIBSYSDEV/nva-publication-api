@@ -356,7 +356,7 @@ public final class PublicationContextMapper {
 
     private static Series generateSeries(String seriesIdentifier, String year) {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
-                              .addChild(ChannelType.SERIES.getType())
+                              .addChild(ChannelType.JOURNAL.getType())
                               .addChild(seriesIdentifier)
                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());

@@ -316,7 +316,7 @@ public final class ReferenceGenerator {
     private static Series generateSeries(Builder builder) {
         if (nonNull(builder.getSeriesId())) {
             return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
-                                  .addChild(ChannelType.SERIES.getType())
+                                  .addChild(ChannelType.JOURNAL.getType())
                                   .addChild(builder.getSeriesId())
                                   .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                   .getUri());
