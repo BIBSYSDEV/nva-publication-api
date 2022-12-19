@@ -88,7 +88,7 @@ public final class PublicationInstanceMapper {
             return buildPublicationInstanceWhenDesignProduct();
         }
         if (isPlanOrBlueprint(record)) {
-            return buildPublicationInstanceWhePlanOrBluePrint();
+            return buildPublicationInstanceWhenPlanOrBluePrint();
         }
         if (isMusic(record)) {
             return buildPublicationInstanceWhenMusic();
@@ -121,7 +121,7 @@ public final class PublicationInstanceMapper {
         }
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhePlanOrBluePrint() {
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPlanOrBluePrint() {
         return new Architecture(ArchitectureSubtype.create(ArchitectureSubtypeEnum.OTHER),
                                 null, Collections.emptyList());
     }

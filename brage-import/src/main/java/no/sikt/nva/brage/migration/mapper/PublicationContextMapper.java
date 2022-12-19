@@ -70,13 +70,10 @@ public final class PublicationContextMapper {
             return buildPublicationContextWhenMap(record);
         }
         if (isChapter(record) || isScientificChapter(record)) {
-            return new Chapter.Builder().build();
+            return new Chapter();
         }
         if (isLecture(record)) {
             return buildPublicationContextWhenLecture();
-        }
-        if (isChapter(record)) {
-            return new Chapter();
         }
         if (isDesignProduct(record) || isMusic(record) || isPlanOrBlueprint(record)) {
             return new Artistic();
