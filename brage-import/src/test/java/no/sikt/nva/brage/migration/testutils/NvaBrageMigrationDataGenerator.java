@@ -621,8 +621,8 @@ public class NvaBrageMigrationDataGenerator {
             publication.getPublicationContext().setJournal(new Journal(journalId));
             publication.getPublicationContext().setSeries(new Series(seriesId));
             publication.setPartOfSeries(seriesNumberRecord);
-            publication.setIsbn(isbn);
-            publication.setIssn(List.of(issn));
+            publication.setIsbnList(List.of(isbn));
+            publication.setIssnList(List.of(issn));
             publication.setJournal(journal);
             return publication;
         }

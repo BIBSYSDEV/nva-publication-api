@@ -35,10 +35,10 @@ public final class TypeMapper {
         entry(Set.of(BrageType.STUDENT_PAPER_OTHERS), NvaType.STUDENT_PAPER_OTHERS),
         entry(Set.of(BrageType.DESIGN_PRODUCT), NvaType.DESIGN_PRODUCT),
         entry(Set.of(BrageType.CHRONICLE), NvaType.CHRONICLE),
-        entry(Set.of(BrageType.SOFTWARE), NvaType.SOFTWARE),
+        //        entry(Set.of(BrageType.SOFTWARE), NvaType.SOFTWARE),
+        //        entry(Set.of(BrageType.RECORDING_ORAL), NvaType.RECORDING_ORAL),
         entry(Set.of(BrageType.LECTURE), NvaType.LECTURE),
         entry(Set.of(BrageType.RECORDING_MUSICAL), NvaType.RECORDING_MUSICAL),
-        entry(Set.of(BrageType.RECORDING_ORAL), NvaType.RECORDING_ORAL),
         entry(Set.of(BrageType.PLAN_OR_BLUEPRINT), NvaType.PLAN_OR_BLUEPRINT),
         entry(Set.of(BrageType.MAP), NvaType.MAP)
     );

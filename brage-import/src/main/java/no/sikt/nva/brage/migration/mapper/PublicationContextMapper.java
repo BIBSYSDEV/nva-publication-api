@@ -174,7 +174,7 @@ public final class PublicationContextMapper {
 
     private static List<String> extractIssnList(Record record) {
         return Optional.ofNullable(record.getPublication())
-                   .map(Publication::getIssn)
+                   .map(Publication::getIssnList)
                    .orElse(null);
     }
 
@@ -245,9 +245,9 @@ public final class PublicationContextMapper {
     }
 
     private static List<String> extractIsbnList(Record record) {
-        return isNull(record.getPublication().getIsbn())
+        return isNull(record.getPublication().getIsbnList())
                    ? Collections.emptyList()
-                   : Collections.singletonList(record.getPublication().getIsbn());
+                   : record.getPublication().getIsbnList();
     }
 
     private static String extractYear(Record record) {
