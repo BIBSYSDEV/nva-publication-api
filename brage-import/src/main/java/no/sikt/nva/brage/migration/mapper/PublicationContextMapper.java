@@ -44,6 +44,7 @@ public final class PublicationContextMapper {
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
     public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
     public static final String CURRENT_YEAR = getCurrentYear();
+    public static final int SIZE_ONE = 1;
 
     private PublicationContextMapper() {
     }
@@ -162,10 +163,16 @@ public final class PublicationContextMapper {
 
     private static PublicationContext buildPublicationContextForUnconfirmedJournalArticle(Record record)
         throws InvalidIssnException {
-        return new UnconfirmedJournal(extractJournalTitle(record), extractIssn(record), extractIssn(record));
+        var issnList = extractIssnList(record);
+        if (issnList.size() > SIZE_ONE) {
+            return new UnconfirmedJournal(extractJournalTitle(record), issnList.get(0), issnList.get(1));
+        } else {
+            var issn = !issnList.isEmpty() ? issnList.get(0) : null;
+            return new UnconfirmedJournal(extractJournalTitle(record), issn, issn);
+        }
     }
 
-    private static String extractIssn(Record record) {
+    private static List<String> extractIssnList(Record record) {
         return Optional.ofNullable(record.getPublication())
                    .map(Publication::getIssn)
                    .orElse(null);

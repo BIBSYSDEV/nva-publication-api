@@ -201,6 +201,8 @@ public class NvaBrageMigrationDataGenerator {
         private String seriesId;
         private String isbn;
         private String issn;
+        private String journal;
+        private no.sikt.nva.brage.migration.record.Publication publication;
 
         public String getJournal() {
             return journal;
@@ -210,9 +212,6 @@ public class NvaBrageMigrationDataGenerator {
             this.journal = journal;
             return this;
         }
-
-        private String journal;
-        private no.sikt.nva.brage.migration.record.Publication publication;
 
         public String getIssn() {
             return issn;
@@ -527,11 +526,11 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(isbn)) {
                 isbn = randomIsbn10();
             }
-            if (isNull(publication)) {
-                publication = createPublication();
-            }
             if (isNull(issn)) {
                 issn = randomIssn();
+            }
+            if (isNull(publication)) {
+                publication = createPublication();
             }
             return new NvaBrageMigrationDataGenerator(this);
         }
@@ -623,7 +622,7 @@ public class NvaBrageMigrationDataGenerator {
             publication.getPublicationContext().setSeries(new Series(seriesId));
             publication.setPartOfSeries(seriesNumberRecord);
             publication.setIsbn(isbn);
-            publication.setIssn(issn);
+            publication.setIssn(List.of(issn));
             publication.setJournal(journal);
             return publication;
         }

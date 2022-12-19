@@ -268,8 +268,8 @@ public final class ReferenceGenerator {
 
     private static PublicationContext generateUnconfirmedJournal(Builder builder) throws InvalidIssnException {
         return new UnconfirmedJournal(builder.getPublication().getJournal(),
-                                      builder.getPublication().getIssn(),
-                                      builder.getPublication().getIssn());
+                                      builder.getIssn(),
+                                      builder.getIssn());
     }
 
     private static boolean hasJournalId(Builder builder) {

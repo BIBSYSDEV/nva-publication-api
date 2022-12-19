@@ -1,13 +1,14 @@
 package no.sikt.nva.brage.migration.record;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
 public class Publication {
 
     private String journal;
-    private String issn;
+    private List<String> issn;
     private String isbn;
     private PublicationContext publicationContext;
     private String partOfSeries;
@@ -59,13 +60,13 @@ public class Publication {
     }
 
     @JacocoGenerated
-    @JsonProperty("issn")
-    public String getIssn() {
+    @JsonProperty("issnList")
+    public List<String> getIssn() {
         return issn;
     }
 
     @JacocoGenerated
-    public void setIssn(String issn) {
+    public void setIssn(List<String> issn) {
         this.issn = issn;
     }
 
