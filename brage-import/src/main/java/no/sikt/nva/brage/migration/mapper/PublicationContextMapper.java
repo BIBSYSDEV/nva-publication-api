@@ -44,6 +44,7 @@ public final class PublicationContextMapper {
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
     public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
     public static final String CURRENT_YEAR = getCurrentYear();
+    public static final int SIZE_ONE = 1;
 
     private PublicationContextMapper() {
     }
@@ -162,12 +163,18 @@ public final class PublicationContextMapper {
 
     private static PublicationContext buildPublicationContextForUnconfirmedJournalArticle(Record record)
         throws InvalidIssnException {
-        return new UnconfirmedJournal(extractJournalTitle(record), extractIssn(record), extractIssn(record));
+        var issnList = extractIssnList(record);
+        if (issnList.size() > SIZE_ONE) {
+            return new UnconfirmedJournal(extractJournalTitle(record), issnList.get(0), issnList.get(1));
+        } else {
+            var issn = !issnList.isEmpty() ? issnList.get(0) : null;
+            return new UnconfirmedJournal(extractJournalTitle(record), issn, issn);
+        }
     }
 
-    private static String extractIssn(Record record) {
+    private static List<String> extractIssnList(Record record) {
         return Optional.ofNullable(record.getPublication())
-                   .map(Publication::getIssn)
+                   .map(Publication::getIssnList)
                    .orElse(null);
     }
 
@@ -238,9 +245,9 @@ public final class PublicationContextMapper {
     }
 
     private static List<String> extractIsbnList(Record record) {
-        return isNull(record.getPublication().getIsbn())
+        return isNull(record.getPublication().getIsbnList())
                    ? Collections.emptyList()
-                   : Collections.singletonList(record.getPublication().getIsbn());
+                   : record.getPublication().getIsbnList();
     }
 
     private static String extractYear(Record record) {
@@ -349,7 +356,7 @@ public final class PublicationContextMapper {
 
     private static Series generateSeries(String seriesIdentifier, String year) {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
-                              .addChild(ChannelType.SERIES.getType())
+                              .addChild(ChannelType.JOURNAL.getType())
                               .addChild(seriesIdentifier)
                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());
