@@ -1,6 +1,5 @@
 package no.sikt.nva.brage.migration.mapper;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.Arrays;
@@ -16,6 +15,7 @@ import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
@@ -23,10 +23,13 @@ import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -55,7 +58,7 @@ public final class PublicationContextMapper {
         if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record) || isStudentPaper(record)) {
             return buildPublicationContextWhenBook(record);
         }
-        if (isReport(record) || isResearchReport(record) || isReportWorkingPaper(record)) {
+        if (isSupportedReportType(record)) {
             return buildPublicationContextWhenReport(record);
         }
         if (isUnconfirmedJournal(record) || isUnconfirmedScientificArticle(record)) {
@@ -84,6 +87,10 @@ public final class PublicationContextMapper {
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
+    }
+
+    public static boolean isSupportedReportType(Record record) {
+        return isReport(record) || isResearchReport(record) || isReportWorkingPaper(record);
     }
 
     public static boolean isMusic(Record record) {
@@ -152,7 +159,6 @@ public final class PublicationContextMapper {
 
     private static PublicationContext buildPublicationContextWhenLecture() {
         return new Event.Builder()
-
                    .build();
     }
 
@@ -168,7 +174,7 @@ public final class PublicationContextMapper {
             return new UnconfirmedJournal(extractJournalTitle(record), issnList.get(0), issnList.get(1));
         } else {
             var issn = !issnList.isEmpty() ? issnList.get(0) : null;
-            return new UnconfirmedJournal(extractJournalTitle(record), issn, issn);
+            return new UnconfirmedJournal(extractJournalTitle(record), issn, null);
         }
     }
 
@@ -235,7 +241,7 @@ public final class PublicationContextMapper {
     }
 
     private static PublicationContext buildPublicationContextWhenDegree(Record record)
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Degree.Builder()
                    .withIsbnList(extractIsbnList(record))
                    .withSeries(extractSeries(record))
@@ -245,9 +251,9 @@ public final class PublicationContextMapper {
     }
 
     private static List<String> extractIsbnList(Record record) {
-        return isNull(record.getPublication().getIsbnList())
-                   ? Collections.emptyList()
-                   : record.getPublication().getIsbnList();
+        return Optional.ofNullable(record.getPublication())
+                   .map(Publication::getIsbnList)
+                   .orElse(Collections.emptyList());
     }
 
     private static String extractYear(Record record) {
@@ -272,7 +278,7 @@ public final class PublicationContextMapper {
     }
 
     private static PublicationContext buildPublicationContextWhenBook(Record record)
-        throws InvalidIsbnException {
+        throws InvalidIsbnException, InvalidIssnException {
         return new Book.BookBuilder()
                    .withPublisher(extractPublisher(record))
                    .withSeries(extractSeries(record))
@@ -312,18 +318,44 @@ public final class PublicationContextMapper {
         return value.split(";").length == HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER;
     }
 
-    private static Series extractSeries(Record record) {
+    @SuppressWarnings("PMD.NullAssignment")
+    private static BookSeries extractSeries(Record record) throws InvalidIssnException {
         return Optional.ofNullable(record.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getSeries)
                    .map(no.sikt.nva.brage.migration.record.Series::getId)
-                   .map(id -> generateSeries(id, extractYear(record))).orElse(null);
+                   .map(id -> generateSeries(id, extractYear(record)))
+                   .orElse(isSupportedReportType(record) ? generateUnconfirmedSeries(record) : null);
     }
 
-    private static Publisher extractPublisher(Record record) {
+    private static BookSeries generateUnconfirmedSeries(Record record) throws InvalidIssnException {
+        var issnList = extractIssnList(record);
+        if (issnList.size() > SIZE_ONE) {
+            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(record), issnList.get(0), issnList.get(1));
+        } else {
+            var issn = !issnList.isEmpty() ? issnList.get(0) : null;
+            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(record), issn, null);
+        }
+    }
+
+    private static String generateUnconfirmedSeriesTitle(Record record) {
+        return Optional.ofNullable(record.getPublication())
+                   .map(Publication::getPartOfSeries)
+                   .map(partOfSeriesValue -> partOfSeriesValue.split(";")[0])
+                   .orElse(null);
+    }
+
+    private static PublishingHouse extractPublisher(Record record) {
         return Optional.ofNullable(record.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
                    .map(no.sikt.nva.brage.migration.record.Publisher::getId)
                    .map(id -> generatePublisher(id, extractYear(record)))
+                   .orElse(generateUnconfirmedPublisher(record));
+    }
+
+    private static UnconfirmedPublisher generateUnconfirmedPublisher(Record record) {
+        return Optional.ofNullable(record.getPublication().getPublicationContext())
+                   .map(no.sikt.nva.brage.migration.record.PublicationContext::getBragePublisher)
+                   .map(UnconfirmedPublisher::new)
                    .orElse(null);
     }
 
@@ -334,7 +366,7 @@ public final class PublicationContextMapper {
                    .map(id -> generateJournal(id, extractYear(record))).orElse(null);
     }
 
-    private static Publisher generatePublisher(String publisherIdentifier, String year) {
+    private static PublishingHouse generatePublisher(String publisherIdentifier, String year) {
         return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(publisherIdentifier)
@@ -354,7 +386,7 @@ public final class PublicationContextMapper {
                                .getUri());
     }
 
-    private static Series generateSeries(String seriesIdentifier, String year) {
+    private static BookSeries generateSeries(String seriesIdentifier, String year) {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                               .addChild(ChannelType.JOURNAL.getType())
                               .addChild(seriesIdentifier)
