@@ -49,6 +49,8 @@ import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import nva.commons.core.paths.UriWrapper;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.text.IsEmptyString;
 import org.junit.Before;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,8 +96,7 @@ class ExpandedResourceTest {
         assertEquals(seriesName, framedResultNode.at(SERIES_NAME_JSON_PTR).textValue());
 
         var hasPart = framedResultNode.findValue("https://example.org/vocab#hasPart");
-        assertNotNull(hasPart);
-        assertFalse(hasPart.isEmpty());
+        assertThat(hasPart.toString(), CoreMatchers.not(IsEmptyString.emptyOrNullString()));
     }
 
     @ParameterizedTest(name = "should return properly framed document with id based on Id-namespace and resource "
