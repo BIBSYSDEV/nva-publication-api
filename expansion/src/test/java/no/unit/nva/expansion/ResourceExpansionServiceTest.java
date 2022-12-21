@@ -13,18 +13,26 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
+import no.unit.nva.expansion.utils.UriRetriever;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -52,6 +60,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private MessageService messageService;
     private TicketService ticketService;
+    private UriRetriever uriRetriever;
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -107,7 +116,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @MethodSource("listPublicationInstanceTypes")
     void shouldReturnFramedIndexDocumentFromResource(Class<?> instanceType)
         throws JsonProcessingException, NotFoundException {
-        Publication publication = PublicationGenerator.randomPublication(instanceType);
+
+        Publication publication = PublicationGenerator.randomPublication(instanceType)
+            .copy().withEntityDescription(new EntityDescription()).build();
+        ;
+
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         assertThat(indexDoc.fetchId(), is(not(nullValue())));
@@ -160,6 +173,39 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getPublication().getTitle(), is(equalTo(expectedTitle)));
     }
 
+    @Test
+    void shouldThrowIfUnsupportedType() {
+        var unsupportedImplementation = mock(Entity.class);
+        assertThrows(UnsupportedOperationException.class,
+                     () -> expansionService.expandEntry(unsupportedImplementation));
+    }
+
+    @ParameterizedTest(name = "should add resource title to expanded ticket:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistDraftPublicationWithoutDoi();
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+
+        var expectedOrgIds = Set.of(publication.getResourceOwner().getOwnerAffiliation());
+        var orgIds = expansionService.getOrganizationIds(ticket);
+
+        assertThat(orgIds, is(equalTo(expectedOrgIds)));
+    }
+
+    @Test
+    void shouldReturnEmptySetIfNotTicketEntry() throws NotFoundException {
+        var message = Message.builder()
+            .withResourceIdentifier(SortableIdentifier.next())
+            .withTicketIdentifier(SortableIdentifier.next())
+            .withIdentifier(SortableIdentifier.next())
+            .build();
+
+        var actual = expansionService.getOrganizationIds(message);
+
+        assertThat(actual, is(equalTo(Collections.emptySet())));
+    }
+
     private static URI constructExpectedPublicationId(Publication publication) {
         return UriWrapper.fromHost(API_HOST)
             .addChild("publication")
@@ -203,7 +249,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client);
         ticketService = new TicketService(client);
-        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+        uriRetriever = mock(UriRetriever.class);
+        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
     private Publication persistDraftPublicationWithoutDoi() {

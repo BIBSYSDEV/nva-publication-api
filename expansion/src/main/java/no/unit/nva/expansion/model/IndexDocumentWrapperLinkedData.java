@@ -4,6 +4,7 @@ import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUri
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
@@ -11,7 +12,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,7 +23,13 @@ import nva.commons.core.ioutils.IoUtils;
 
 public class IndexDocumentWrapperLinkedData {
 
+    public static final String PART_OF_FIELD = "/partOf";
+    public static final String ID_FIELD = "/id";
     private final UriRetriever uriRetriever;
+
+    private static final String ORGANIZATION_TYPE = "Organization";
+    private static final String TYPE_FIELD = "type";
+
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
@@ -44,7 +50,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Collection<? extends InputStream> fetchAll(List<URI> publicationContextUris) {
-        List<Optional<String>> uriContent = new ArrayList<>(Collections.emptyList());
+        List<Optional<String>> uriContent = new ArrayList<>();
 
         for (URI uri : publicationContextUris) {
             var content = fetch(uri);
@@ -60,20 +66,12 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private void fetchChildUrisForOrganizations(List<Optional<String>> uriContent, String content) {
-        JsonNode json;
+        JsonNode json = attempt(() -> JsonUtils.dtoObjectMapper.readTree(content)).orElseThrow();
 
-        try {
-            json = JsonUtils.dtoObjectMapper.readTree(content);
-        } catch (Exception e) {
-            return;
-        }
-        final String organization = "Organization";
-
-
-        if (json.has("type") && organization.equals(json.at("/type").asText())) {
-            var childOrgs = json.at("/partOf");
+        if (json.has(TYPE_FIELD) && ORGANIZATION_TYPE.equals(json.at("/" + TYPE_FIELD).asText())) {
+            var childOrgs = json.at(PART_OF_FIELD);
             childOrgs.forEach(org ->
-                                  uriContent.add(fetch(URI.create(org.at("/id").asText())))
+                                  uriContent.add(fetch(URI.create(org.at(ID_FIELD).asText())))
             );
         }
     }

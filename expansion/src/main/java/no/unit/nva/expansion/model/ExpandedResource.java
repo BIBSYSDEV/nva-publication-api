@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -40,16 +42,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     // but it contains its data as an inner Json Node.
     public static final String ID_FIELD_NAME = "id";
     public static final String TYPE = "Publication";
-    private static final UriRetriever uriRetriever = new UriRetriever();
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
     public ExpandedResource() {
         this.allFields = new LinkedHashMap<>();
-    }
-
-    public static ExpandedResource fromPublication(Publication publication) throws JsonProcessingException {
-        return fromPublication(uriRetriever, publication);
     }
 
     public static ExpandedResource fromPublication(UriRetriever uriRetriever, Publication publication)
@@ -75,8 +72,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     public static List<URI> extractAffiliationUris(JsonNode indexDocument) {
         var contributors = getContributors(indexDocument);
-        var affiliations = getAffiliations(contributors);
-        return getAffiliationsIds(affiliations);
+        return getAffiliationsIdsFromJsonNode(contributors);
     }
 
     public List<URI> getPublicationContextUris() {
@@ -185,26 +181,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return (ArrayNode) root.at(CONTRIBUTORS_POINTER);
     }
 
-    private static List<JsonNode> getAffiliations(ArrayNode contributorsRoot) {
-        ArrayList<JsonNode> uriList = new ArrayList<>();
-
-        for (JsonNode contributor : contributorsRoot) {
-            for (JsonNode affiliation : contributor.at(AFFILIATIONS_POINTER)) {
-                uriList.add(affiliation);
-            }
-        }
-        return uriList;
-    }
-
-    private static List<URI> getAffiliationsIds(List<JsonNode> affiliations) {
-        ArrayList<URI> uriList = new ArrayList<>();
-
-        for (JsonNode affiliation : affiliations) {
-            var uri = URI.create(affiliation.at("/id").textValue());
-            uriList.add(uri);
-        }
-
-        return uriList;
+    private static List<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
+        return StreamSupport.stream(contributorsRoot.spliterator(), false)
+            .flatMap(node -> StreamSupport.stream(node.at(AFFILIATIONS_POINTER).spliterator(), false))
+            .map(child -> URI.create(child.at("/id").textValue()))
+            .collect(Collectors.toList());
     }
 
     private static URI getBookSeriesUri(JsonNode root) {

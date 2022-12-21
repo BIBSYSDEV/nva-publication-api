@@ -25,15 +25,13 @@ public class AffiliationGenerator {
         String parentSample = stringFromResources(Path.of(TOP_LEVEL_SAMPLE_JSON_FILENAME));
         JsonNode parentJson = attempt(() -> objectMapper.readTree(parentSample)).orElseThrow();
 
-        int i = 0;
+        int childIndex = 0;
         for (URI childURI : childUris) {
             JsonNode content = updateFieldsForChilAffiliation(parentURI, childURI);
 
             uriToContent.put(childURI, content.toString());
 
-            setChildrenForParentAffiliation(parentJson, i, childURI);
-
-            i++;
+            setChildrenForParentAffiliation(parentJson, childIndex++, childURI);
         }
 
         ((ObjectNode) parentJson).put(FIELD_ID, parentURI.toString());

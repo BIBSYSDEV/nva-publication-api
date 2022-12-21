@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
+import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -25,16 +26,27 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private final ResourceService resourceService;
     private final TicketService ticketService;
+    private final UriRetriever uriRetriever;
 
-    public ResourceExpansionServiceImpl(ResourceService resourceService, TicketService ticketService) {
+    public ResourceExpansionServiceImpl(ResourceService resourceService,
+                                        TicketService ticketService) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
+        this.uriRetriever = new UriRetriever();
+    }
+
+    public ResourceExpansionServiceImpl(ResourceService resourceService,
+                                        TicketService ticketService,
+                                        UriRetriever uriRetriever) {
+        this.resourceService = resourceService;
+        this.ticketService = ticketService;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource) {
-            return ExpandedResource.fromPublication(dataEntry.toPublication(resourceService));
+            return ExpandedResource.fromPublication(uriRetriever, dataEntry.toPublication(resourceService));
         } else if (dataEntry instanceof TicketEntry) {
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
         } else if (dataEntry instanceof Message) {
@@ -61,6 +73,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         return Collections.emptySet();
     }
 
+    //TODO: does not do what the name says it does?
     private List<URI> retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg(
         URI affiliation) {
         return List.of(affiliation);
