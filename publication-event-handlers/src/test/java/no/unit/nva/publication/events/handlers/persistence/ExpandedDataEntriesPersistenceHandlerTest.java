@@ -11,13 +11,16 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
@@ -29,6 +32,7 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -50,7 +54,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
-    
+
     private static final String HELP_MESSAGE = String.format("%s should be compared for equality only as json "
                                                              + "objects", ExpandedResource.class.getSimpleName());
     private ExpandedDataEntriesPersistenceHandler handler;
@@ -61,16 +65,20 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
-    
+
     @BeforeEach
     public void setup() {
         super.init();
         Clock clock = Clock.systemDefaultZone();
         resourceService = new ResourceService(client, clock);
         ticketService = new TicketService(client);
-        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+
+        var mockUriRetriever = mock(UriRetriever.class);
+        when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
+
+        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever);
     }
-    
+
     @BeforeEach
     public void init() {
         var eventsBucket = new FakeS3Client();
@@ -78,10 +86,10 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
-        
+
         output = new ByteArrayOutputStream();
     }
-    
+
     @ParameterizedTest(name = "should emit event containing S3 URI to persisted expanded resource:{0}")
     @MethodSource("expandedEntriesTypeProvider")
     void shouldEmitEventContainingS3UriToPersistedExpandedResource(Class<?> entryType)
@@ -92,7 +100,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         assertThat(indexingEventPayload, is(not(emptyString())));
     }
-    
+
     @ParameterizedTest(name = "should store entry containing the data referenced in the received event:{0}")
     @MethodSource("expandedEntriesTypeProvider")
     void shouldStoreEntryContainingTheDataReferencedInTheReceivedEvent(Class<?> entryType)
@@ -107,25 +115,25 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var actualJson = JsonUtils.dtoObjectMapper.readTree(indexDocument.getBody().toJsonString());
         assertThat(HELP_MESSAGE, actualJson, is(equalTo(expectedJson)));
     }
-    
+
     @ParameterizedTest(name = "should store entry containing the general type (index name) of the persisted event")
     @MethodSource("expandedEntriesTypeProvider")
     void shouldStoreEntryContainingTheIndexNameForThePersistedEntry(Class<?> expandedEntryType)
         throws IOException, ApiGatewayException {
-        
+
         var expectedPersistedEntry = generateExpandedEntry(expandedEntryType);
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
-            expectedPersistedEntry.entry.toJsonString());
+                                                      expectedPersistedEntry.entry.toJsonString());
         EventReference outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
         assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
-    
+
     private static Stream<Class<?>> expandedEntriesTypeProvider() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
-    
+
     private PersistedEntryWithExpectedType generateExpandedEntry(Class<?> expandedEntryType)
         throws JsonProcessingException, ApiGatewayException {
         if (ExpandedResource.class.equals(expandedEntryType)) {
@@ -139,41 +147,41 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         }
         throw new RuntimeException();
     }
-    
+
     private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var openingCaseObject =
             TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class).persistNewTicket(ticketService);
         return resourceExpansionService.expandEntry(openingCaseObject);
     }
-    
+
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var publishingRequest = PublishingRequestCase
-                                    .createOpeningCaseObject(publication)
-                                    .persistNewTicket(ticketService);
-    
+            .createOpeningCaseObject(publication)
+            .persistNewTicket(ticketService);
+
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
-    
+
     private ExpandedResource randomResource() throws JsonProcessingException, ApiGatewayException {
         var resource = Resource.fromPublication(createPublicationWithoutDoi());
         return (ExpandedResource) resourceExpansionService.expandEntry(resource);
     }
-    
+
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
         var publication = randomPublication().copy().withDoi(null).build();
         var persisted = Resource.fromPublication(publication)
-                            .persistNew(resourceService, UserInstance.fromPublication(publication));
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
-    
+
     private ExpandedDoiRequest randomDoiRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var doiRequest = DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
         return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest);
     }
-    
+
     private EventReference sendEvent() throws JsonProcessingException {
         EventReference eventReference =
             new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, eventUriInEventsBucket);
@@ -181,12 +189,12 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, output, mock(Context.class));
         return objectMapper.readValue(output.toString(), EventReference.class);
     }
-    
+
     private static class PersistedEntryWithExpectedType {
-        
+
         final ExpandedDataEntry entry;
         final String index;
-        
+
         public PersistedEntryWithExpectedType(ExpandedDataEntry databaseEntry, String index) {
             this.entry = databaseEntry;
             this.index = index;

@@ -155,11 +155,12 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var event = createEvent(pendingPublishingRequest);
-        var logger = LogUtils.getTestingAppenderForRootLogger();
+
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse
                .create(mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(), HTTP_OK));
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, httpClient, s3Client);
 
+        var logger = LogUtils.getTestingAppenderForRootLogger();
         handler.handleRequest(event, output, context);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
@@ -172,12 +173,15 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var event = createEvent(pendingPublishingRequest);
-        var logger = LogUtils.getTestingAppenderForRootLogger();
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse
                .create(mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(), HTTP_OK));
         var expectedMessage = "Testing string";
         var failingResourceService = mockResourceServiceFailure(expectedMessage);
-        this.handler = new PendingPublishingRequestEventHandler(failingResourceService, ticketService, httpClient, s3Client);
+        var logger = LogUtils.getTestingAppenderForRootLogger();
+        this.handler = new PendingPublishingRequestEventHandler(failingResourceService,
+                                                                ticketService,
+                                                                httpClient,
+                                                                s3Client);
         handler.handleRequest(event, output, context);
         assertThat(logger.getMessages(), containsString(expectedMessage));
     }
@@ -263,6 +267,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         return createPendingPublishingRequest(publication);
     }
+
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
         return PublishingRequestCase.createOpeningCaseObject(publication);
     }
