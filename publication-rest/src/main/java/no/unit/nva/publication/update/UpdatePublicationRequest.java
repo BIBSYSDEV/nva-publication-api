@@ -11,6 +11,7 @@ import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Funding;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -27,6 +28,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
+    private List<Funding> fundings;
     
     public Publication generatePublicationUpdate(Publication existingPublication) {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
@@ -38,6 +40,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
                    .withAssociatedArtifacts(this.associatedArtifacts)
                    .withProjects(this.projects)
                    .withSubjects(this.subjects)
+                   .withFundings(this.fundings)
                    .build();
     }
     
@@ -112,7 +115,19 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     public void setContext(JsonNode context) {
         this.context = context;
     }
-    
+
+    @Override
+    @JacocoGenerated
+    public List<Funding> getFundings() {
+        return fundings;
+    }
+
+    @Override
+    @JacocoGenerated
+    public void setFundings(List<Funding> fundings) {
+        this.fundings = fundings;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {

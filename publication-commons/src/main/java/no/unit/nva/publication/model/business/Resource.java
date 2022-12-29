@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Funding;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -69,6 +70,8 @@ public class Resource implements Entity {
     private Set<AdditionalIdentifier> additionalIdentifiers;
     @JsonProperty
     private List<URI> subjects;
+    @JsonProperty
+    private List<Funding> fundings;
     
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
@@ -120,6 +123,7 @@ public class Resource implements Entity {
                    .withHandle(publication.getHandle())
                    .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
                    .withSubjects(publication.getSubjects())
+                   .withFundings(publication.getFundings())
                    .build();
     }
     
@@ -180,6 +184,7 @@ public class Resource implements Entity {
                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
                    .withAssociatedArtifacts(calculateArtifacts(this))
                    .withSubjects(getSubjects())
+                   .withFundings(getFundings())
                    .build();
     }
     
@@ -332,7 +337,8 @@ public class Resource implements Entity {
                    .withDoi(getDoi())
                    .withHandle(getHandle())
                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withSubjects(getSubjects());
+                   .withSubjects(getSubjects())
+                   .withFundings(getFundings());
     }
     
     public List<URI> getSubjects() {
@@ -342,7 +348,15 @@ public class Resource implements Entity {
     public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
     }
-    
+
+    public List<Funding> getFundings() {
+        return nonNull(fundings) ? fundings : Collections.emptyList();
+    }
+
+    public void setFundings(List<Funding> fundings) {
+        this.fundings = fundings;
+    }
+
     /**
      * Calculates hashcode without considering the row version.
      *

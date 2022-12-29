@@ -29,15 +29,15 @@ class ResourceTest {
     public static final String DOI_REQUEST_FIELD = "doiRequest";
     private final Javers javers = JaversBuilder.javers().build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
-    
-    @ParameterizedTest
+
+    @ParameterizedTest(name = "builder contains all fields: {0}")
     @MethodSource("publicationInstanceProvider")
     void builderContainsAllFields(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
         assertThat(resource, doesNotHaveEmptyValues());
     }
-    
-    @ParameterizedTest
+
+    @ParameterizedTest(name = "copy contains all fields: {0}")
     @MethodSource("publicationInstanceProvider")
     void copyContainsAllFields(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
@@ -49,7 +49,7 @@ class ResourceTest {
         assertThat(resourceJson, is(equalTo(copyJson)));
     }
     
-    @ParameterizedTest
+    @ParameterizedTest(name = "to DTO returns DTO without loss of information: {0}")
     @MethodSource("publicationInstanceProvider")
     void toDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
@@ -60,7 +60,7 @@ class ResourceTest {
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
     }
     
-    @ParameterizedTest
+    @ParameterizedTest(name = "from dto to dao and back without loss for type {0}")
     @MethodSource("publicationInstanceProvider")
     void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         var expected = PublicationGenerator.randomPublication(publicationInstanceType);

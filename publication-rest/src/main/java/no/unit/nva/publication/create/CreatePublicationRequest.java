@@ -12,6 +12,7 @@ import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Funding;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -26,7 +27,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private List<ResearchProject> projects;
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
-    
+    private List<Funding> fundings;
+
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setEntityDescription(publication.getEntityDescription());
@@ -34,6 +36,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         createPublicationRequest.setProjects(publication.getProjects());
         createPublicationRequest.setSubjects(publication.getSubjects());
         createPublicationRequest.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
+        createPublicationRequest.setFundings(publication.getFundings());
         return createPublicationRequest;
     }
     
@@ -52,6 +55,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         publication.setProjects(getProjects());
         publication.setSubjects(getSubjects());
         publication.setAdditionalIdentifiers(getAdditionalIdentifiers());
+        publication.setFundings(getFundings());
         return publication;
     }
     
@@ -102,7 +106,19 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
     }
-    
+
+    @Override
+    @JacocoGenerated
+    public List<Funding> getFundings() {
+        return fundings;
+    }
+
+    @Override
+    @JacocoGenerated
+    public void setFundings(List<Funding> fundings) {
+        this.fundings = fundings;
+    }
+
     @Override
     @JacocoGenerated
     public JsonNode getContext() {

@@ -30,6 +30,7 @@ entityDescription.npiSubjectHeading
 entityDescription.reference.doi
 subjects
 projects
+fundings
 status
 modifiedDate
 link
