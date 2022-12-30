@@ -7,6 +7,7 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Funding;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
@@ -99,7 +100,12 @@ public final class ResourceBuilder {
         resource.setSubjects(subjects);
         return this;
     }
-    
+
+    public ResourceBuilder withFundings(List<Funding> fundings) {
+        resource.setFundings(fundings);
+        return this;
+    }
+
     public Resource build() {
         return resource;
     }

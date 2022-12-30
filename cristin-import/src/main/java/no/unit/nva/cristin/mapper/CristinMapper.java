@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +70,7 @@ public class CristinMapper extends CristinMappingModule {
                                       .withLink(HARDCODED_SAMPLE_DOI)
                                       .withProjects(extractProjects())
                                       .withSubjects(generateNvaHrcsCategoriesAndActivities())
+                                      .withFundings(Collections.emptyList())
                                       .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
