@@ -120,7 +120,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
     }
 
     private static boolean isCristinAdditionalIdentifier(AdditionalIdentifier additionalIdentifier) {
-        return additionalIdentifier.getSource().equals(CristinObject.IDENTIFIER_ORIGIN);
+        return CristinObject.IDENTIFIER_ORIGIN.equals(additionalIdentifier.getSource());
     }
 
     private Publication storePublicationIdentifierAndCristinIdInS3(Publication publication,
