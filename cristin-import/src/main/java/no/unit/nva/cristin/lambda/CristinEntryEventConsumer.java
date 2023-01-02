@@ -20,6 +20,7 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -28,6 +29,7 @@ import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
@@ -43,7 +45,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  * {@link CristinEntryEventConsumer#EVENT_SUBTOPIC}.
  */
 public class CristinEntryEventConsumer extends EventHandler<EventReference, Publication> {
-    
+
     public static final String WRONG_SUBTOPIC_ERROR_TEMPLATE =
         "Unexpected subtopic: %s. Expected subtopic is: %s.";
     public static final int MAX_EFFORTS = 10;
@@ -54,56 +56,52 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
     public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
     public static final UnixPath ERRORS_FOLDER = UnixPath.of("errors");
-    
+    public static final UnixPath SUCCESS_FOLDER = UnixPath.of("SUCCESS");
+
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final Clock CLOCK = Clock.systemDefaultZone();
-    
+
     private final ResourceService resourceService;
     private final S3Client s3Client;
-    
+
     @JacocoGenerated
     public CristinEntryEventConsumer() {
         this(defaultDynamoDbClient(), defaultS3Client());
     }
-    
+
     @JacocoGenerated
     protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient, S3Client s3Client) {
         this(new ResourceService(dynamoDbClient, CLOCK),
-            s3Client);
+             s3Client);
     }
-    
+
     protected CristinEntryEventConsumer(ResourceService resourceService, S3Client s3Client) {
         super(EventReference.class);
         this.resourceService = resourceService;
         this.s3Client = s3Client;
     }
-    
+
     @Override
     protected Publication processInput(EventReference input,
                                        AwsEventBridgeEvent<EventReference> event,
                                        Context context) {
-        
+
         validateEvent(event);
         var eventBody = readEventBody(input);
         return attempt(() -> parseCristinObject(eventBody))
                    .map(CristinObject::toPublication)
                    .flatMap(this::persistInDatabase)
+                   .map(publication -> storePublicationIdentifierAndCristinIdInS3(publication, eventBody))
                    .orElseThrow(fail -> handleSavingError(fail, eventBody));
     }
-    
-    private FileContentsEvent<JsonNode> readEventBody(EventReference input) {
-        var s3Driver = new S3Driver(s3Client, input.extractBucketName());
-        var json = s3Driver.readEvent(input.getUri());
-        return FileContentsEvent.fromJson(json, JsonNode.class);
-    }
-    
+
     @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Client.builder()
                    .httpClient(UrlConnectionHttpClient.create())
                    .build();
     }
-    
+
     @JacocoGenerated
     private static AmazonDynamoDB defaultDynamoDbClient() {
         return AmazonDynamoDBClientBuilder
@@ -111,25 +109,65 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
                    .withRegion(ApplicationConstants.AWS_REGION.id())
                    .build();
     }
-    
+
+    private static Optional<String> getCristinIdentifier(Publication publication) {
+        return publication.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(
+                       additionalIdentifier -> isCristinAdditionalIdentifier(additionalIdentifier))
+                   .findFirst()
+                   .map(additionalIdentifier -> additionalIdentifier.getValue());
+    }
+
+    private static boolean isCristinAdditionalIdentifier(AdditionalIdentifier additionalIdentifier) {
+        return additionalIdentifier.getSource().equals(CristinObject.IDENTIFIER_ORIGIN);
+    }
+
+    private Publication storePublicationIdentifierAndCristinIdInS3(Publication publication,
+                                                                   FileContentsEvent<JsonNode> eventBody) {
+        var cristinIdentifier =
+            getCristinIdentifier(publication);
+        var fileUri = constructResourcehandleFileUri(eventBody, publication);
+        var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
+                                          cristinIdentifier.orElse(StringUtils.EMPTY_STRING))).orElseThrow();
+        return publication;
+    }
+
+    private UriWrapper constructResourcehandleFileUri(FileContentsEvent<JsonNode> eventBody, Publication publication) {
+        var fileUri = UriWrapper.fromUri(eventBody.getFileUri());
+        var timestamp = eventBody.getTimestamp();
+        var bucket = fileUri.getHost();
+        return bucket
+                   .addChild(SUCCESS_FOLDER)
+                   .addChild(timestampToString(timestamp))
+                   .addChild(publication.getIdentifier().toString());
+    }
+
+    private FileContentsEvent<JsonNode> readEventBody(EventReference input) {
+        var s3Driver = new S3Driver(s3Client, input.extractBucketName());
+        var json = s3Driver.readEvent(input.getUri());
+        return FileContentsEvent.fromJson(json, JsonNode.class);
+    }
+
     private CristinObject parseCristinObject(FileContentsEvent<JsonNode> eventBody) {
         CristinObject cristinObject = jsonNodeToCristinObject(eventBody);
         cristinObject.hardcodePublicationOwner(HARDCODED_PUBLICATIONS_OWNER);
         return cristinObject;
     }
-    
+
     private Identifiable parseIdentifiableObject(FileContentsEvent<JsonNode> event) {
         return attempt(event::getContents)
                    .map(jsonNode -> eventHandlerObjectMapper.convertValue(jsonNode, Identifiable.class))
                    .orElseThrow();
     }
-    
+
     private CristinObject jsonNodeToCristinObject(FileContentsEvent<JsonNode> event) {
         return attempt(event::getContents)
                    .map(CristinObject::fromJson)
                    .orElseThrow();
     }
-    
+
     private void validateEvent(AwsEventBridgeEvent<EventReference> event) {
         if (!EVENT_SUBTOPIC.equalsIgnoreCase(event.getDetail().getSubtopic())) {
             String errorMessage = messageIndicatingTheCorrectEventType(event);
@@ -137,34 +175,34 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
             throw new IllegalArgumentException(errorMessage);
         }
     }
-    
+
     private String messageIndicatingTheCorrectEventType(AwsEventBridgeEvent<EventReference> event) {
         return String.format(WRONG_SUBTOPIC_ERROR_TEMPLATE, event.getDetail().getSubtopic(), EVENT_SUBTOPIC);
     }
-    
+
     private Try<Publication> persistInDatabase(Publication publication) {
         Try<Publication> attemptSave = tryPersistingInDatabase(publication);
-        
+
         for (int efforts = 0; shouldTryAgain(attemptSave, efforts); efforts++) {
             attemptSave = tryPersistingInDatabase(publication);
-            
+
             avoidCongestionInDatabase();
         }
         return attemptSave;
     }
-    
+
     private boolean shouldTryAgain(Try<Publication> attemptSave, int efforts) {
         return attemptSave.isFailure() && efforts < MAX_EFFORTS;
     }
-    
+
     private Try<Publication> tryPersistingInDatabase(Publication publication) {
         return attempt(() -> createPublication(publication));
     }
-    
+
     private Publication createPublication(Publication publication) {
         return resourceService.createPublicationFromImportedEntry(publication);
     }
-    
+
     private void avoidCongestionInDatabase() {
         int sleepTime = spreadWriteRequests();
         try {
@@ -173,23 +211,23 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
             throw new RuntimeException(exception);
         }
     }
-    
+
     // Randomize waiting time to avoiding creating parallel executions that perform retries in sync.
     private int spreadWriteRequests() {
         return RANDOM.nextInt(MAX_SLEEP_TIME);
     }
-    
+
     private RuntimeException handleSavingError(Failure<Publication> fail,
                                                FileContentsEvent<JsonNode> eventBody) {
         String cristinObjectId = extractCristinObjectId(eventBody).orElse(DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE);
         String errorMessage = ERROR_SAVING_CRISTIN_RESULT + cristinObjectId;
         logger.error(errorMessage, fail.getException());
-        
+
         saveReportToS3(fail, eventBody);
-        
+
         return castToCorrectRuntimeException(fail.getException());
     }
-    
+
     private void saveReportToS3(Failure<Publication> fail,
                                 FileContentsEvent<JsonNode> event) {
         var errorFileUri = constructErrorFileUri(event, fail.getException());
@@ -197,7 +235,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         var reportContent = ImportResult.reportFailure(event, fail.getException());
         attempt(() -> s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
     }
-    
+
     private UriWrapper constructErrorFileUri(FileContentsEvent<JsonNode> event,
                                              Exception exception) {
         var fileUri = UriWrapper.fromUri(event.getFileUri());
@@ -210,20 +248,20 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
                    .addChild(fileUri.getPath())
                    .addChild(createErrorReportFilename(event));
     }
-    
+
     private String createErrorReportFilename(FileContentsEvent<JsonNode> eventBody) {
         return extractCristinObjectId(eventBody)
                    .map(idString -> idString + JSON)
                    .orElseGet(this::unknownCristinIdReportFilename);
     }
-    
+
     private Optional<String> extractCristinObjectId(FileContentsEvent<JsonNode> event) {
         return attempt(() -> parseIdentifiableObject(event))
                    .map(Identifiable::getId)
                    .toOptional()
                    .map(Objects::toString);
     }
-    
+
     private String unknownCristinIdReportFilename() {
         return UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX + UUID.randomUUID() + JSON;
     }

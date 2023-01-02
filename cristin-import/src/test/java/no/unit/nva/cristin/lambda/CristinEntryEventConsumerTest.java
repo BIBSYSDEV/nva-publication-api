@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.EVENT_SUBTOPIC;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
@@ -154,12 +155,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
 
         var expectedTimestamp = eventBody.getTimestamp();
-        var CREATED_NVA_IDENTIFIERS = UnixPath.of("SUCESS");
-        var expectedErrorFileLocation = CREATED_NVA_IDENTIFIERS
+        var expectedErrorFileLocation = SUCCESS_FOLDER
                                             .addChild(timestampToString(expectedTimestamp))
                                             .addChild(expectedFileNameStoredInS3);
 
-        assertDoesNotThrow(() ->  s3Driver.getFile(expectedErrorFileLocation));
+        assertDoesNotThrow(() -> s3Driver.getFile(expectedErrorFileLocation));
     }
 
     @Test
