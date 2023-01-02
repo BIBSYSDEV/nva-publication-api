@@ -1245,8 +1245,6 @@ Resources:
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
       Role: !GetAtt CristinCrawlerRole.Arn
-      Schedule:
-        ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
       SchemaChangePolicy:
         DeleteBehavior: DELETE_FROM_DATABASE
         UpdateBehavior: UPDATE_IN_DATABASE
@@ -1267,6 +1265,32 @@ Resources:
         EnforceWorkGroupConfiguration: false
         ResultConfiguration:
           OutputLocation: !Sub "s3://${AthenaQueriesBucketName}/results"
+
+  CristinErrorsCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Configuration: >
+        {
+            "Version":1.0,
+            "Grouping":{
+              "TableLevelConfiguration":3
+            }
+        }
+      DatabaseName: !Ref    CristinImportDatabase
+      Description: Crawler that crawls the s3 bucket of the cristin data
+      Name: CristinImportErrorCrawler
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !GetAtt CristinCrawlerRole.Arn
+      SchemaChangePolicy:
+        DeleteBehavior: DELETE_FROM_DATABASE
+        UpdateBehavior: UPDATE_IN_DATABASE
+      Targets:
+        S3Targets:
+          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors/2022-10-31T15:04:41.245923Z'
+            Exclusions: [ '*.error' ]
+
+
 
   ImportQuery:
     Type: AWS::Athena::NamedQuery
