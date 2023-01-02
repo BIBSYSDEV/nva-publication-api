@@ -35,6 +35,7 @@ import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
@@ -44,6 +45,7 @@ import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
+import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 
 public final class CristinDataGenerator {
@@ -217,6 +219,25 @@ public final class CristinDataGenerator {
         CristinObject cristinObject = randomBook();
         cristinObject.getBookOrReportMetadata().setIsbn("123");
         return cristinObjectAsObjectNode(cristinObject);
+    }
+
+    public static JsonNode objectWithTags() throws JsonProcessingException {
+        var cristingTagsList =
+            List.of(CristinTags.builder()
+                        .withBokmal(randomString())
+                        .withEnglish(randomString())
+                        .withNynorsk(randomString())
+                        .build());
+        var CristinObject = randomObject();
+        CristinObject.setTags(cristingTagsList);
+        return cristinObjectAsObjectNode(CristinObject);
+    }
+
+    public static JsonNode objectWithCristinHrcsCategoriesAndActivities() throws JsonProcessingException {
+        var cristinhrcsCategoriesAndActivities = CristinHrcsCategoriesAndActivities.builder().withCategory("2").withActivity("1.1").build();
+        var CristinObject = randomObject();
+        CristinObject.setHrcsCategoriesAndActivities(List.of(cristinhrcsCategoriesAndActivities));
+        return cristinObjectAsObjectNode(CristinObject);
     }
 
     public static JsonNode bookObjectWithInvalidIssn() throws JsonProcessingException {
