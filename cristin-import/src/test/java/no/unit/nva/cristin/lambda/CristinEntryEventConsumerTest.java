@@ -24,7 +24,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -145,7 +144,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldStoreNvaPuclicationIdAndCristinIdInS3() throws IOException {
+    void shouldPersistCristinIdInFileNamedWithPublicationIdentifier() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var eventReference = createEventReference(eventBody);
@@ -418,8 +417,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private static JavaType constructImportResultJavaType() {
 
-        JavaType fileContentsType = eventHandlerObjectMapper.getTypeFactory()
-                                        .constructParametricType(FileContentsEvent.class, JsonNode.class);
+        var fileContentsType = eventHandlerObjectMapper.getTypeFactory()
+                                   .constructParametricType(FileContentsEvent.class, JsonNode.class);
         return eventHandlerObjectMapper.getTypeFactory()
                    .constructParametricType(ImportResult.class, fileContentsType);
     }

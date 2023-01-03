@@ -91,7 +91,8 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         return attempt(() -> parseCristinObject(eventBody))
                    .map(CristinObject::toPublication)
                    .flatMap(this::persistInDatabase)
-                   .map(publication -> storePublicationIdentifierAndCristinIdInS3(publication, eventBody))
+                   .map(publication -> persistCristinIdentifierInFileNamedWithPublicationIdentifier(publication,
+                                                                                                    eventBody))
                    .orElseThrow(fail -> handleSavingError(fail, eventBody));
     }
 
@@ -113,28 +114,27 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
     private static Optional<String> getCristinIdentifier(Publication publication) {
         return publication.getAdditionalIdentifiers()
                    .stream()
-                   .filter(
-                       additionalIdentifier -> isCristinAdditionalIdentifier(additionalIdentifier))
+                   .filter(CristinEntryEventConsumer::isCristinAdditionalIdentifier)
                    .findFirst()
-                   .map(additionalIdentifier -> additionalIdentifier.getValue());
+                   .map(AdditionalIdentifier::getValue);
     }
 
     private static boolean isCristinAdditionalIdentifier(AdditionalIdentifier additionalIdentifier) {
         return CristinObject.IDENTIFIER_ORIGIN.equals(additionalIdentifier.getSource());
     }
 
-    private Publication storePublicationIdentifierAndCristinIdInS3(Publication publication,
-                                                                   FileContentsEvent<JsonNode> eventBody) {
+    private Publication persistCristinIdentifierInFileNamedWithPublicationIdentifier
+        (Publication publication, FileContentsEvent<JsonNode> eventBody) {
         var cristinIdentifier =
             getCristinIdentifier(publication);
-        var fileUri = constructResourcehandleFileUri(eventBody, publication);
+        var fileUri = constructSuccessFileUri(eventBody, publication);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
                                           cristinIdentifier.orElse(StringUtils.EMPTY_STRING))).orElseThrow();
         return publication;
     }
 
-    private UriWrapper constructResourcehandleFileUri(FileContentsEvent<JsonNode> eventBody, Publication publication) {
+    private UriWrapper constructSuccessFileUri(FileContentsEvent<JsonNode> eventBody, Publication publication) {
         var fileUri = UriWrapper.fromUri(eventBody.getFileUri());
         var timestamp = eventBody.getTimestamp();
         var bucket = fileUri.getHost();
