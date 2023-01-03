@@ -17,18 +17,28 @@ import nva.commons.core.JacocoGenerated;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinTags {
-    
+
     private static final String BOKMAL = "emneordnavn_bokmal";
     private static final String ENGLISH = "emneordnavn_engelsk";
     private static final String NYNORSK = "emneordnavn_nynorsk";
-    
+
+    private static final String TAG_SERIAL_NUMBER = "emneordlopenr";
+
     @JsonProperty(BOKMAL)
     private String bokmal;
     @JsonProperty(ENGLISH)
     private String english;
     @JsonProperty(NYNORSK)
     private String nynorsk;
-    
+
+    @JsonProperty(TAG_SERIAL_NUMBER)
+    private int tagSerialNumber;
+
+    @JacocoGenerated
+    public CristinTags() {
+
+    }
+
     @JacocoGenerated
     public CristinTagsBuilder copy() {
         return this.toBuilder();

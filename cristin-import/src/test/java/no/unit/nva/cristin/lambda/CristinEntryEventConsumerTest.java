@@ -410,13 +410,31 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertDoesNotThrow(action);
     }
 
+    @Test
+    void shouldBeAbleToParseCristinTags() throws IOException {
+        var cristinObjectWithTags = CristinDataGenerator.objectWithTags();
+        var eventBody = createEventBody(cristinObjectWithTags);
+        var eventReference = createEventReference(eventBody);
+        Executable action = () -> handler.handleRequest(eventReference, outputStream, CONTEXT);
+        assertDoesNotThrow(action);
+    }
+
+    @Test
+    void shouldBeAbleToParseCristinHrcsCategoriesAndActivities() throws IOException {
+        var cristinObjectWithCristinHrcsCategoriesAndActivities =
+            CristinDataGenerator.objectWithCristinHrcsCategoriesAndActivities();
+        var eventBody = createEventBody(cristinObjectWithCristinHrcsCategoriesAndActivities);
+        var eventReference = createEventReference(eventBody);
+        Executable action = () -> handler.handleRequest(eventReference, outputStream, CONTEXT);
+        assertDoesNotThrow(action);
+    }
+
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
         return new FileContentsEvent<>(randomString(), EVENT_SUBTOPIC, randomUri(), Instant.now(),
                                        cristinObject);
     }
 
     private static JavaType constructImportResultJavaType() {
-
         var fileContentsType = eventHandlerObjectMapper.getTypeFactory()
                                    .constructParametricType(FileContentsEvent.class, JsonNode.class);
         return eventHandlerObjectMapper.getTypeFactory()

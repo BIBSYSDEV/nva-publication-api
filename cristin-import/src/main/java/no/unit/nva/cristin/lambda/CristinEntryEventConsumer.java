@@ -123,8 +123,8 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         return CristinObject.IDENTIFIER_ORIGIN.equals(additionalIdentifier.getSource());
     }
 
-    private Publication persistCristinIdentifierInFileNamedWithPublicationIdentifier
-        (Publication publication, FileContentsEvent<JsonNode> eventBody) {
+    private Publication persistCristinIdentifierInFileNamedWithPublicationIdentifier(Publication publication,
+                                                                                     FileContentsEvent<JsonNode> eventBody) {
         var cristinIdentifier =
             getCristinIdentifier(publication);
         var fileUri = constructSuccessFileUri(eventBody, publication);
