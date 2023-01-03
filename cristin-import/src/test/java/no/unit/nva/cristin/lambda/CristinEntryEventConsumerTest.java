@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.EVENT_SUBTOPIC;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
@@ -140,6 +141,24 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         assertThat(actualPublication, is(equalTo(expectedPublication)));
         assertThat(actualPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    @Test
+    void shouldPersistCristinIdInFileNamedWithPublicationIdentifier() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventBody = createEventBody(cristinObject);
+        var eventReference = createEventReference(eventBody);
+        handler.handleRequest(eventReference, outputStream, CONTEXT);
+        var json = outputStream.toString();
+        var actualPublication = eventHandlerObjectMapper.readValue(json, Publication.class);
+        var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
+
+        var expectedTimestamp = eventBody.getTimestamp();
+        var expectedErrorFileLocation = SUCCESS_FOLDER
+                                            .addChild(timestampToString(expectedTimestamp))
+                                            .addChild(expectedFileNameStoredInS3);
+
+        assertDoesNotThrow(() -> s3Driver.getFile(expectedErrorFileLocation));
     }
 
     @Test
@@ -416,9 +435,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private static JavaType constructImportResultJavaType() {
-
-        JavaType fileContentsType = eventHandlerObjectMapper.getTypeFactory()
-                                        .constructParametricType(FileContentsEvent.class, JsonNode.class);
+        var fileContentsType = eventHandlerObjectMapper.getTypeFactory()
+                                   .constructParametricType(FileContentsEvent.class, JsonNode.class);
         return eventHandlerObjectMapper.getTypeFactory()
                    .constructParametricType(ImportResult.class, fileContentsType);
     }

@@ -228,16 +228,17 @@ public final class CristinDataGenerator {
                         .withEnglish(randomString())
                         .withNynorsk(randomString())
                         .build());
-        var CristinObject = randomObject();
-        CristinObject.setTags(cristingTagsList);
-        return cristinObjectAsObjectNode(CristinObject);
+        var cristinObject = randomObject();
+        cristinObject.setTags(cristingTagsList);
+        return cristinObjectAsObjectNode(cristinObject);
     }
 
     public static JsonNode objectWithCristinHrcsCategoriesAndActivities() throws JsonProcessingException {
-        var cristinhrcsCategoriesAndActivities = CristinHrcsCategoriesAndActivities.builder().withCategory("2").withActivity("1.1").build();
-        var CristinObject = randomObject();
-        CristinObject.setHrcsCategoriesAndActivities(List.of(cristinhrcsCategoriesAndActivities));
-        return cristinObjectAsObjectNode(CristinObject);
+        var cristinhrcsCategoriesAndActivities =
+            CristinHrcsCategoriesAndActivities.builder().withCategory("2").withActivity("1.1").build();
+        var cristinObject = randomObject();
+        cristinObject.setHrcsCategoriesAndActivities(List.of(cristinhrcsCategoriesAndActivities));
+        return cristinObjectAsObjectNode(cristinObject);
     }
 
     public static JsonNode bookObjectWithInvalidIssn() throws JsonProcessingException {
