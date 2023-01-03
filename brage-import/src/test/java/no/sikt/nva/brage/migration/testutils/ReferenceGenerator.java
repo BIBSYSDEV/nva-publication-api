@@ -10,6 +10,7 @@ import no.sikt.nva.brage.migration.testutils.type.NvaType;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
@@ -21,6 +22,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -267,9 +269,18 @@ public final class ReferenceGenerator {
     }
 
     private static PublicationContext generateUnconfirmedJournal(Builder builder) throws InvalidIssnException {
-        return new UnconfirmedJournal(builder.getPublication().getJournal(),
-                                      builder.getIssn(),
-                                      builder.getIssn());
+        if (builder.getIssnList().size() > 1) {
+            return new UnconfirmedJournal(builder.getPublication().getJournal(),
+                                          builder.getIssnList().get(0),
+                                          builder.getIssnList().get(1));
+        }
+        if (builder.getIssnList().size() == 1) {
+            return new UnconfirmedJournal(builder.getPublication().getJournal(),
+                                          builder.getIssnList().get(0), null);
+        } else {
+            return new UnconfirmedJournal(builder.getPublication().getJournal(),
+                                          null, null);
+        }
     }
 
     private static boolean hasJournalId(Builder builder) {
@@ -280,7 +291,9 @@ public final class ReferenceGenerator {
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new Report.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
                    .withSeries(generateSeries(builder))
+                   .withSeriesNumber(builder.getSeriesNumberPublication())
                    .build();
+
     }
 
     private static BookMonograph generatePublicationInstanceForScientificMonograph(Builder builder) {
@@ -313,15 +326,17 @@ public final class ReferenceGenerator {
         return builder.getPublicationDate().getNva().getYear();
     }
 
-    private static Series generateSeries(Builder builder) {
+    private static BookSeries generateSeries(Builder builder) throws InvalidIssnException {
         if (nonNull(builder.getSeriesId())) {
             return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                   .addChild(ChannelType.JOURNAL.getType())
                                   .addChild(builder.getSeriesId())
                                   .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                   .getUri());
+        } else {
+            return new UnconfirmedSeries(builder.getSeriesTitle(), builder.getIssnList().get(0),
+                                         builder.getIssnList().get(1));
         }
-        return null;
     }
 
     private static Journal generateJournal(Builder builder) {

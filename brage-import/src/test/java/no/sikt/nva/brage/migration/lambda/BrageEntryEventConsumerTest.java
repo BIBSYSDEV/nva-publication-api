@@ -7,6 +7,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SE
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.NORWEGIAN_BOKMAAL;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -86,7 +87,7 @@ public class BrageEntryEventConsumerTest {
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
                                                             NvaType.DESIGN_PRODUCT.getValue());
     public static final Type TYPE_PLAN_OR_BLUEPRINT = new Type(List.of(NvaType.PLAN_OR_BLUEPRINT.getValue()),
-                                                            NvaType.PLAN_OR_BLUEPRINT.getValue());
+                                                               NvaType.PLAN_OR_BLUEPRINT.getValue());
     public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
     public static final Type TYPE_REPORT = new Type(List.of(NvaType.REPORT.getValue()), NvaType.REPORT.getValue());
     public static final Type TYPE_RESEARCH_REPORT = new Type(List.of(NvaType.RESEARCH_REPORT.getValue()),
@@ -128,7 +129,7 @@ public class BrageEntryEventConsumerTest {
     private static final Type TYPE_CHAPTER = new Type(List.of(NvaType.CHAPTER.getValue()),
                                                       NvaType.CHAPTER.getValue());
     private static final Type TYPE_SCIENTIFIC_CHAPTER = new Type(List.of(NvaType.SCIENTIFIC_CHAPTER.getValue()),
-                                                      NvaType.SCIENTIFIC_CHAPTER.getValue());
+                                                                 NvaType.SCIENTIFIC_CHAPTER.getValue());
     private static final Type TYPE_FEATURE_ARTICLE = new Type(List.of(NvaType.CHRONICLE.getValue()),
                                                               NvaType.CHRONICLE.getValue());
     private static final Type TYPE_SOFTWARE = new Type(List.of(NvaType.SOFTWARE.getValue()),
@@ -192,6 +193,15 @@ public class BrageEntryEventConsumerTest {
     @Test
     void shouldConvertReportToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = buildGeneratorForReport();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertReportWithUnconfirmedSeriesToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = buildGeneratorForReportWithUnconfirmedSeries();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -266,6 +276,15 @@ public class BrageEntryEventConsumerTest {
     @Test
     void shouldConvertJournalArticleWithoutJournalIdToNvaPublication() throws IOException {
         var nvaBrageMigrationDataGenerator = buildGeneratorForJournalArticleWithoutId();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldConvertJournalArticleWithUnconfirmedJournalToNvaPublication() throws IOException {
+        var nvaBrageMigrationDataGenerator = buildGeneratorForJournalArticleWithUnconfirmedJournal();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -548,6 +567,16 @@ public class BrageEntryEventConsumerTest {
                    .withType(TYPE_JOURNAL_ARTICLE)
                    .withSpatialCoverage(List.of("Norway"))
                    .withJournalTitle("Some Very Popular Journal")
+                   .withIssn(List.of(randomIssn(), randomIssn()))
+                   .build();
+    }
+
+    private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticleWithUnconfirmedJournal() {
+        return new NvaBrageMigrationDataGenerator.Builder()
+                   .withType(TYPE_JOURNAL_ARTICLE)
+                   .withSpatialCoverage(List.of("Norway"))
+                   .withJournalTitle("Some Very Popular Journal")
+                   .withIssn(List.of(randomIssn()))
                    .build();
     }
 
@@ -603,7 +632,18 @@ public class BrageEntryEventConsumerTest {
     private NvaBrageMigrationDataGenerator buildGeneratorForReport() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_REPORT)
-                   .withSeries("someSeries")
+                   .withSeries("someSeries;42")
+                   .withIssn(List.of(randomIssn()))
+                   .build();
+    }
+
+    private NvaBrageMigrationDataGenerator buildGeneratorForReportWithUnconfirmedSeries() {
+        return new NvaBrageMigrationDataGenerator.Builder()
+                   .withType(TYPE_REPORT)
+                   .withSeriesNumberRecord("series;42")
+                   .withSeriesNumberPublication("42")
+                   .withSeriesTitle("series")
+                   .withIssn(List.of(randomIssn(), randomIssn()))
                    .build();
     }
 

@@ -200,9 +200,19 @@ public class NvaBrageMigrationDataGenerator {
         private String journalId;
         private String seriesId;
         private String isbn;
-        private String issn;
+        private List<String> issnList;
         private String journal;
+        private String seriesTitle;
         private no.sikt.nva.brage.migration.record.Publication publication;
+
+        public String getSeriesTitle() {
+            return seriesTitle;
+        }
+
+        public Builder withSeriesTitle(String seriesTitle) {
+            this.seriesTitle = seriesTitle;
+            return this;
+        }
 
         public String getJournal() {
             return journal;
@@ -213,12 +223,12 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public String getIssn() {
-            return issn;
+        public List<String> getIssnList() {
+            return issnList;
         }
 
-        public Builder withIssn(String issn) {
-            this.issn = issn;
+        public Builder withIssn(List<String> issn) {
+            this.issnList = issn;
             return this;
         }
 
@@ -526,8 +536,8 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(isbn)) {
                 isbn = randomIsbn10();
             }
-            if (isNull(issn)) {
-                issn = randomIssn();
+            if (isNull(issnList)) {
+                issnList = List.of(randomIssn(), randomIssn());
             }
             if (isNull(publication)) {
                 publication = createPublication();
@@ -601,6 +611,7 @@ public class NvaBrageMigrationDataGenerator {
             switch (someWeirdNess) {
                 case 0:
                     return new Language(List.of("nob"),
+
                                         UriWrapper.fromUri(LanguageMapper.LEXVO_URI_PREFIX + "nob").getUri());
                 case 1:
                     return new Language(null, UriWrapper.fromUri(LanguageMapper.LEXVO_URI_UNDEFINED).getUri());
@@ -622,7 +633,7 @@ public class NvaBrageMigrationDataGenerator {
             publication.getPublicationContext().setSeries(new Series(seriesId));
             publication.setPartOfSeries(seriesNumberRecord);
             publication.setIsbnList(List.of(isbn));
-            publication.setIssnList(List.of(issn));
+            publication.setIssnList(issnList);
             publication.setJournal(journal);
             return publication;
         }
