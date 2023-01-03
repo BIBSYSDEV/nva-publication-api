@@ -164,6 +164,8 @@ public final class CristinDataGenerator {
                 return randomResearchReport();
             case DEGREE_PHD:
                 return randomDegreePhd();
+            case DEGREE_LICENTIATE:
+                return randomDegreeLicentiate();
             case DEGREE_MASTER:
             case SECOND_DEGREE_THESIS:
             case MEDICAL_THESIS:
@@ -234,8 +236,10 @@ public final class CristinDataGenerator {
     }
 
     public static JsonNode objectWithCristinHrcsCategoriesAndActivities() throws JsonProcessingException {
-        var cristinhrcsCategoriesAndActivities =
-            CristinHrcsCategoriesAndActivities.builder().withCategory("2").withActivity("1.1").build();
+        var cristinhrcsCategoriesAndActivities = CristinHrcsCategoriesAndActivities.builder()
+                                                     .withCategory("2")
+                                                     .withActivity("1.1")
+                                                     .build();
         var cristinObject = randomObject();
         cristinObject.setHrcsCategoriesAndActivities(List.of(cristinhrcsCategoriesAndActivities));
         return cristinObjectAsObjectNode(cristinObject);
@@ -307,6 +311,10 @@ public final class CristinDataGenerator {
         var json = JsonUtils.dtoObjectMapper.convertValue(object, ObjectNode.class);
         json.put(propertyName, randomString());
         return json;
+    }
+
+    private static CristinObject randomDegreeLicentiate() {
+        return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.DEGREE_LICENTIATE);
     }
 
     private static CristinObject randomEvent(CristinSecondaryCategory secondaryCategory) {
