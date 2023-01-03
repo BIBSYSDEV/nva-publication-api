@@ -242,9 +242,14 @@ public final class BrageNvaMapper {
 
     private static Contributor mapContributorToNva(no.sikt.nva.brage.migration.record.Contributor contributor) {
         return new Contributor.Builder()
-                   .withRole(Role.lookup(contributor.getRole()))
+                   .withRole(extractRole(contributor))
                    .withIdentity(extractIdentity(contributor))
                    .build();
+    }
+
+    private static Role extractRole(no.sikt.nva.brage.migration.record.Contributor contributor) {
+        return Optional.ofNullable(Role.lookup(contributor.getRole()))
+                   .orElse(Role.OTHER);
     }
 
     private static Identity extractIdentity(no.sikt.nva.brage.migration.record.Contributor contributor) {
