@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeLicentiate;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
@@ -91,7 +92,7 @@ public class ReferenceBuilder extends CristinMappingModule {
     
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
-        if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
+        if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject) || isDegreeLicentiate(cristinObject)) {
             return new NvaDegreeBuilder(cristinObject).buildDegree();
         }
         return new NvaReportBuilder(cristinObject).buildNvaReport();

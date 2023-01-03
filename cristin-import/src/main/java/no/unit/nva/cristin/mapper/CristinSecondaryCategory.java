@@ -122,7 +122,11 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.SECOND_DEGREE_THESIS.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.MEDICAL_THESIS.equals(cristinObject.getSecondaryCategory());
     }
-    
+
+    public static boolean isDegreeLicentiate(CristinObject cristinObject) {
+        return CristinSecondaryCategory.DEGREE_LICENTIATE.equals(cristinObject.getSecondaryCategory());
+    }
+
     public static boolean isChapterArticle(CristinObject cristinObject) {
         return CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())

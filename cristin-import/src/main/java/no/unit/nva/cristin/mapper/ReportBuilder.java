@@ -1,9 +1,11 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeLicentiate;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isResearchReport;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
@@ -23,6 +25,8 @@ public class ReportBuilder extends AbstractBookReportBuilder {
             return createDegreePhd();
         } else if (isDegreeMaster(getCristinObject())) {
             return createDegreeMaster();
+        } else if (isDegreeLicentiate(getCristinObject())) {
+            return createDegreeLicentiate();
         } else {
             throw unknownSecondaryCategory();
         }
@@ -32,7 +36,13 @@ public class ReportBuilder extends AbstractBookReportBuilder {
     protected CristinMainCategory getExpectedType() {
         return CristinMainCategory.REPORT;
     }
-    
+
+    private PublicationInstance<? extends Pages> createDegreeLicentiate() {
+        return new DegreeLicentiate.Builder()
+                   .withPages(createMonographPages())
+                   .build();
+    }
+
     private PublicationInstance<? extends Pages> createReportResearch() {
         return new ReportResearch.Builder().build();
     }
