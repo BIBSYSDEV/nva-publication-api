@@ -12,6 +12,8 @@ Feature:
       | FAGLIG_KAPITTEL   | NonFictionChapter     |
       | POPVIT_KAPITTEL   | PopularScienceChapter |
       | LEKSIKAL_INNF     | EncyclopediaChapter   |
+      | FORORD            | Introduction          |
+      | INNLEDNING        | Introduction          |
 
   Scenario: Cristin Result's sidenr_fra and sidenr_til is copied to the pages value of the NVA Result.
     Given a valid Cristin Result with secondary category "KAPITTEL"
