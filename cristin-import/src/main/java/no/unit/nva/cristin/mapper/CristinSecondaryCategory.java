@@ -36,6 +36,7 @@ public enum CristinSecondaryCategory {
     DEGREE_LICENTIATE("LISENSIATAVH", "DEGREE_LICENTIATE"),
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
     DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
+    EXHIBITION_CATALOG("UTSTILLINGSKAT", "EXHIBITION_CATALOG"),
     SECOND_DEGREE_THESIS("HOVEDFAGSOPPGAVE", "SECOND_DEGREE_THESIS"),
     MEDICAL_THESIS("FORSKERLINJEOPPG", "MEDICAL_THESIS"),
     CHAPTER_ACADEMIC("KAPITTEL", "CHAPTER_ACADEMIC"),
@@ -49,7 +50,7 @@ public enum CristinSecondaryCategory {
     OTHER_PRESENTATION("ANNEN_PRESENTASJ", "OTHER_PRESENTATION"),
     INTERNET_EXHIBIT("UTST_WEB", "INTERNET_EXHIBIT"),
     UNMAPPED;
-    
+
     public static final int DEFAULT_VALUE = 0;
     public static final Map<CristinSecondaryCategory, JournalArticleContentType> mapToJournalContentType =
         createMapToJournalContentType();
@@ -57,52 +58,53 @@ public enum CristinSecondaryCategory {
         createMapToBookMonographContentType();
     private static final String CONVERSION_ERROR_MESSAGE = "Secondary category %s cannot be transformed to %s";
     private final List<String> aliases;
-    
+
     CristinSecondaryCategory(String... aliases) {
         this.aliases = Arrays.asList(aliases);
     }
-    
+
     @JsonCreator
     public static CristinSecondaryCategory fromString(String category) {
         return Arrays.stream(values())
                    .filter(enumValue -> enumValue.aliases.contains(category))
                    .collect(SingletonCollector.collectOrElse(UNMAPPED));
     }
-    
+
     public static boolean isAnthology(CristinObject cristinObject) {
         return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isMonograph(CristinObject cristinObject) {
         return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.TEXTBOOK.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.NON_FICTION_BOOK.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory());
+               || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isFeatureArticle(CristinObject cristinObject) {
         return CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isJournalLetter(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.READER_OPINION.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isJournalReview(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isJournalLeader(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_LEADER.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isJournalCorrigendum(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_CORRIGENDUM.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isJournalArticle(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
@@ -110,15 +112,15 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.SHORT_COMMUNICATION.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isResearchReport(CristinObject cristinObject) {
         return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isDegreePhd(CristinObject cristinObject) {
         return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isDegreeMaster(CristinObject cristinObject) {
         return CristinSecondaryCategory.DEGREE_MASTER.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.SECOND_DEGREE_THESIS.equals(cristinObject.getSecondaryCategory())
@@ -137,25 +139,25 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.FOREWORD.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.INTRODUCTION.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isConferenceLecture(CristinObject cristinObject) {
         return CristinSecondaryCategory.CONFERENCE_LECTURE.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isConferencePoster(CristinObject cristinObject) {
         return CristinSecondaryCategory.CONFERENCE_POSTER.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isLecture(CristinObject cristinObject) {
         return CristinSecondaryCategory.LECTURE.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_SCIENTIFIC_LECTURE.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     public static boolean isOtherPresentation(CristinObject cristinObject) {
         return CristinSecondaryCategory.OTHER_PRESENTATION.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.INTERNET_EXHIBIT.equals(cristinObject.getSecondaryCategory());
     }
-    
+
     @JsonValue
     public String getValue() {
         if (Objects.nonNull(aliases) && !aliases.isEmpty()) {
@@ -163,11 +165,11 @@ public enum CristinSecondaryCategory {
         }
         return this.name();
     }
-    
+
     public boolean isUnknownCategory() {
         return UNMAPPED.equals(this);
     }
-    
+
     public JournalArticleContentType toJournalArticleContentType() {
         if (mapToJournalContentType.containsKey(this)) {
             return mapToJournalContentType.get(this);
@@ -175,7 +177,7 @@ public enum CristinSecondaryCategory {
             throw new IllegalStateException(conversionError(this, JournalArticleContentType.class));
         }
     }
-    
+
     public BookMonographContentType toBookMonographContentType() {
         if (mapToBookMonographContentType.containsKey(this)) {
             return mapToBookMonographContentType.get(this);
@@ -183,7 +185,7 @@ public enum CristinSecondaryCategory {
             throw new IllegalStateException(conversionError(this, BookMonographContentType.class));
         }
     }
-    
+
     public ChapterArticleContentType toChapterArticleContentType() {
         if (createMapToChapterContentType().containsKey(this)) {
             return createMapToChapterContentType().get(this);
@@ -191,24 +193,25 @@ public enum CristinSecondaryCategory {
             throw new IllegalStateException(conversionError(this, ChapterArticleContentType.class));
         }
     }
-    
+
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
         return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
-            POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
-            ARTICLE, JournalArticleContentType.ACADEMIC_ARTICLE,
-            ACADEMIC_REVIEW, JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW,
-            SHORT_COMMUNICATION, JournalArticleContentType.ACADEMIC_ARTICLE);
+                      POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
+                      ARTICLE, JournalArticleContentType.ACADEMIC_ARTICLE,
+                      ACADEMIC_REVIEW, JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW,
+                      SHORT_COMMUNICATION, JournalArticleContentType.ACADEMIC_ARTICLE);
     }
-    
+
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {
         return Map.of(MONOGRAPH, BookMonographContentType.ACADEMIC_MONOGRAPH,
-            POPULAR_BOOK, BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH,
-            TEXTBOOK, BookMonographContentType.TEXTBOOK,
-            ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
-            NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
-            REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
+                      POPULAR_BOOK, BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH,
+                      TEXTBOOK, BookMonographContentType.TEXTBOOK,
+                      ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
+                      NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
+                      EXHIBITION_CATALOG, BookMonographContentType.EXHIBITION_CATALOG,
+                      REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
     }
-    
+
     private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
         return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
                       POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
@@ -217,7 +220,7 @@ public enum CristinSecondaryCategory {
                       INTRODUCTION, ChapterArticleContentType.INTRODUCTION,
                       LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
-    
+
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {
         return String.format(CONVERSION_ERROR_MESSAGE, category, publicatoinInstanceClass.getSimpleName());
     }

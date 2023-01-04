@@ -17,7 +17,7 @@ import nva.commons.core.JacocoGenerated;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinTags {
-
+    
     private static final String BOKMAL = "emneordnavn_bokmal";
     private static final String ENGLISH = "emneordnavn_engelsk";
     private static final String NYNORSK = "emneordnavn_nynorsk";

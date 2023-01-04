@@ -34,7 +34,7 @@ public class CristinBookOrReportMetadata {
     public static final String ISSUE = "hefte";
     public static final String VOLUME = "volum_serie";
     public static final String PUBLISHER = "forlag";
-    
+
     @JsonProperty(ISBN_LIST)
     private String isbn;
     @JsonProperty(PUBLISHER_NAME)
@@ -52,19 +52,19 @@ public class CristinBookOrReportMetadata {
     private String volume;
     @JsonProperty(PUBLISHER)
     private CristinPublisher cristinPublisher;
-    
+
     public CristinBookOrReportMetadata() {
-    
+
     }
-    
+
     public String getNumberOfPages() {
         return numberOfPages;
     }
-    
+
     public String getPublisherName() {
         return publisherName;
     }
-    
+
     @JacocoGenerated
     public CristinBookOrReportMetadata.CristinBookReportBuilder copy() {
         return this.toBuilder();

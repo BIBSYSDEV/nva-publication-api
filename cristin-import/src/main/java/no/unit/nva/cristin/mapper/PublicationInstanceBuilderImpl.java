@@ -12,19 +12,19 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 
 public class PublicationInstanceBuilderImpl {
-    
+
     public static final String ERROR_CRISTIN_OBJECT_IS_NULL = "CristinObject can not be null";
-    
+
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
-    
+
     private final CristinObject cristinObject;
-    
+
     public PublicationInstanceBuilderImpl(CristinObject cristinObject) {
         Objects.requireNonNull(cristinObject, ERROR_CRISTIN_OBJECT_IS_NULL);
         this.cristinObject = cristinObject;
     }
-    
+
     public PublicationInstance<? extends Pages> build() {
         if (isBook(cristinObject)) {
             return new BookBuilder(cristinObject).build();

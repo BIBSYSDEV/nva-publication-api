@@ -17,11 +17,11 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 
 public class JournalBuilder extends AbstractPublicationInstanceBuilder {
-    
+
     public JournalBuilder(CristinObject cristinObject) {
         super(cristinObject);
     }
-    
+
     @Override
     public PublicationInstance<? extends Pages> build() {
         if (isFeatureArticle(getCristinObject())) {
@@ -40,12 +40,12 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
             throw unknownSecondaryCategory();
         }
     }
-    
+
     @Override
     protected CristinMainCategory getExpectedType() {
         return CristinMainCategory.JOURNAL;
     }
-    
+
     private PublicationInstance<? extends Pages> createFeatureArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new FeatureArticle.Builder()
@@ -54,7 +54,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withIssue(extractIssue())
                    .build();
     }
-    
+
     private PublicationInstance<? extends Pages> createJournalLetter() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLetter.Builder()
@@ -63,7 +63,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withVolume(extractVolume())
                    .build();
     }
-    
+
     private PublicationInstance<? extends Pages> createJournalReview() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalReview.Builder()
@@ -72,7 +72,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withVolume(extractVolume())
                    .build();
     }
-    
+
     private PublicationInstance<? extends Pages> createJournalLeader() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLeader.Builder()
@@ -81,7 +81,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withVolume(extractVolume())
                    .build();
     }
-    
+
     private PublicationInstance<? extends Pages> createJournalCorrigendum() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalCorrigendum.Builder()
@@ -90,7 +90,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withVolume(extractVolume())
                    .build();
     }
-    
+
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
@@ -101,19 +101,19 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withVolume(extractVolume())
                    .build();
     }
-    
+
     private String extractPagesBegin() {
         return getCristinObject().getJournalPublication().getPagesBegin();
     }
-    
+
     private String extractPagesEnd() {
         return getCristinObject().getJournalPublication().getPagesEnd();
     }
-    
+
     private String extractVolume() {
         return getCristinObject().getJournalPublication().getVolume();
     }
-    
+
     private String extractIssue() {
         return getCristinObject().getJournalPublication().getIssue();
     }

@@ -27,28 +27,28 @@ public class CristinPresentationalWork {
     
     private static final String PROJECT = "project";
     private static final String PROSJEKT = "PROSJEKT";
-    
+
     @JsonProperty("presentasjonslopenr")
     private Integer identifier;
     @JsonProperty("presentasjonstypekode")
     private String presentationType;
-    
+
     @JacocoGenerated
     public CristinPresentationalWork() {
-    
+
     }
-    
+
     @JacocoGenerated
     public CristinPresentationalWorkBuilder copy() {
         return this.toBuilder();
     }
-    
+
     public boolean isProject() {
         return PROSJEKT.equals(presentationType);
     }
-    
+
     public ResearchProject toNvaResearchProject() {
-        
+
         UriWrapper idUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PROJECT, identifier.toString());
         return new ResearchProject.Builder()
                    .withId(idUri.getUri())

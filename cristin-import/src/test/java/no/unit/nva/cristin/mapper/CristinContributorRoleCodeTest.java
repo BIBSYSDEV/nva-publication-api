@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class CristinContributorRoleCodeTest {
-    
+
     @Test
     public void fromStringShouldThrowExceptionWithInvalidRoleWhenInvalidRoleIsProvided() {
         String roleCode = randomString();
@@ -21,14 +21,14 @@ class CristinContributorRoleCodeTest {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), containsString(roleCode));
     }
-    
+
     @Test
     public void fromStringShouldReturnEditorWhenInputIsRedaktor() {
         String roleCode = "REDAKTØR";
         CristinContributorRoleCode role = CristinContributorRoleCode.fromString(roleCode);
         assertThat(role, is(equalTo(CristinContributorRoleCode.EDITOR)));
     }
-    
+
     @Test
     public void fromStringReturnsEnumValueWhenInputIsValidAndIsUtf8() {
         List<String> roleCodes = IoUtils.linesfromResource(Path.of("contributer_role_codes.txt"));

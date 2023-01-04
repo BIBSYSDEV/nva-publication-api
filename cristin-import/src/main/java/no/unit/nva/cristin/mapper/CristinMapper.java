@@ -49,7 +49,7 @@ import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper extends CristinMappingModule {
-
+    
     public static final String EMPTY_STRING = "";
 
     public CristinMapper(CristinObject cristinObject) {

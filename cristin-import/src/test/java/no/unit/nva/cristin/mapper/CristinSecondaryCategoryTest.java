@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class CristinSecondaryCategoryTest {
-    
+
     @Test
     void toJournalArticleContentTypeThrowsExceptionWhenSecCatShouldNotBeMappedToJournalArticleContentType() {
         List<CristinSecondaryCategory> secondaryCategoriesNotMappingToJournalArticle =

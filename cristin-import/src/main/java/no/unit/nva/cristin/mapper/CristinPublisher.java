@@ -25,8 +25,8 @@ public class CristinPublisher {
     private String publisherName;
     @JsonProperty(NSD_CODE)
     private Integer nsdCode;
-    
+
     public CristinPublisher() {
-    
+
     }
 }

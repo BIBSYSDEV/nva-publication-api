@@ -20,10 +20,10 @@ public class CristinContributorRole {
     
     @JsonProperty("rollekode")
     private CristinContributorRoleCode roleCode;
-    
+
     public CristinContributorRole() {
     }
-    
+
     public Role toNvaRole() {
         if (CristinContributorRoleCode.CREATOR.equals(roleCode)) {
             return Role.CREATOR;

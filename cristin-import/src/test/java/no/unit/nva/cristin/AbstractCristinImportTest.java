@@ -6,7 +6,7 @@ import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 
 public class AbstractCristinImportTest extends ResourcesLocalTest {
-    
+
     public Stream<CristinObject> cristinObjects(int numberOfObjects) {
         return IntStream.range(0, numberOfObjects)
                    .boxed()
