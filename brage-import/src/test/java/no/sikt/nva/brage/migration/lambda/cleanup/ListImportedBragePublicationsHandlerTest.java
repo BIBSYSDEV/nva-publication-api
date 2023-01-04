@@ -46,15 +46,13 @@ public class ListImportedBragePublicationsHandlerTest {
         putObjectsInBucket(expectedIdentifiers);
         var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC, EMPTY_SUBTOPIC,
                                                URI.create("s3://brage-migration-reports-750639270376"), NOW);
-
         var actualList = handler.handleRequest(toJsonStream(importRequest), context);
         assertThat(actualList, is(equalTo(expectedIdentifiers)));
     }
 
     @Test
     void shouldThrowExceptionWhenFailsToParseUri() {
-        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC, EMPTY_SUBTOPIC,
-                                               null, NOW);
+        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC, EMPTY_SUBTOPIC, null, NOW);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(toJsonStream(importRequest), context));
     }
 
