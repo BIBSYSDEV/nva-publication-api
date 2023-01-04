@@ -54,7 +54,6 @@ public class ListImportedBragePublicationsHandler implements RequestHandler<Stri
                    .build();
     }
 
-    @NotNull
     private static List<String> getIdentifiers(ListIterator<S3Object> iterator) {
         List<String> list = new ArrayList<>();
         while (iterator.hasNext()) {
