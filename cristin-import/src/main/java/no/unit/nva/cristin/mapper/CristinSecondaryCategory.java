@@ -133,7 +133,9 @@ public enum CristinSecondaryCategory {
         return CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory());
+               || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.FOREWORD.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.INTRODUCTION.equals(cristinObject.getSecondaryCategory());
     }
     
     public static boolean isConferenceLecture(CristinObject cristinObject) {
@@ -209,9 +211,11 @@ public enum CristinSecondaryCategory {
     
     private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
         return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
-            POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
-            CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
-            LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
+                      POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
+                      CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
+                      FOREWORD, ChapterArticleContentType.INTRODUCTION,
+                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION,
+                      LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
     
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {
