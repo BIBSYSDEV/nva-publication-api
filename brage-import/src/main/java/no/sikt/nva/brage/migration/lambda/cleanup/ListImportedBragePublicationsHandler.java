@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -44,6 +46,25 @@ public class ListImportedBragePublicationsHandler implements RequestHandler<Stri
         return key.split("/")[key.split("/").length - 1];
     }
 
+    private static ListObjectsRequest buildListObjectRequest(String bucketName, String marker) {
+        return ListObjectsRequest.builder()
+                   .bucket(bucketName)
+                   .marker(marker)
+                   .maxKeys(MAX_KEYS)
+                   .build();
+    }
+
+    @NotNull
+    private static List<String> getIdentifiers(ListIterator<S3Object> iterator) {
+        List<String> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            S3Object object = iterator.next();
+            System.out.println(object.key() + " - " + object.size());
+            list.add(getIdentifier(object.key()));
+        }
+        return list;
+    }
+
     private String extractMarker(String input) {
         return URI.create(input).getPath();
     }
@@ -53,18 +74,8 @@ public class ListImportedBragePublicationsHandler implements RequestHandler<Stri
     }
 
     private List<String> getIdentifiersStoredInS3(String bucketName, String marker) {
-        var request = ListObjectsRequest.builder()
-                          .bucket(bucketName)
-                          .marker(marker)
-                          .maxKeys(MAX_KEYS)
-                          .build();
+        var request = buildListObjectRequest(bucketName, marker);
         var iterator = s3Client.listObjects(request).contents().listIterator();
-        List<String> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            S3Object object = iterator.next();
-            System.out.println(object.key() + " - " + object.size());
-            list.add(getIdentifier(object.key()));
-        }
-        return list;
+        return getIdentifiers(iterator);
     }
 }
