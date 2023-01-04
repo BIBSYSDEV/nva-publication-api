@@ -34,6 +34,7 @@ public enum CristinSecondaryCategory {
     DEGREE_LICENTIATE("LISENSIATAVH", "DEGREE_LICENTIATE"),
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
     DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
+    EXHIBITION_CATALOG("UTSTILLINGSKAT", "EXHIBITION_CATALOG"),
     SECOND_DEGREE_THESIS("HOVEDFAGSOPPGAVE", "SECOND_DEGREE_THESIS"),
     MEDICAL_THESIS("FORSKERLINJEOPPG", "MEDICAL_THESIS"),
     CHAPTER_ACADEMIC("KAPITTEL", "CHAPTER_ACADEMIC"),
@@ -77,7 +78,8 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.NON_FICTION_BOOK.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory());
+               || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isFeatureArticle(CristinObject cristinObject) {
@@ -202,6 +204,7 @@ public enum CristinSecondaryCategory {
                       TEXTBOOK, BookMonographContentType.TEXTBOOK,
                       ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
                       NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
+                      EXHIBITION_CATALOG, BookMonographContentType.EXHIBITION_CATALOG,
                       REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
     }
 

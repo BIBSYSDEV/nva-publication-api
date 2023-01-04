@@ -175,6 +175,8 @@ public final class CristinDataGenerator {
             case POPULAR_CHAPTER_ARTICLE:
             case LEXICAL_IMPORT:
                 return randomChapterArticle(category);
+            case EXHIBITION_CATALOG:
+                return randomExhibitCatalogue();
             case CONFERENCE_LECTURE:
             case CONFERENCE_POSTER:
             case POPULAR_SCIENTIFIC_LECTURE:
@@ -311,6 +313,10 @@ public final class CristinDataGenerator {
         var json = JsonUtils.dtoObjectMapper.convertValue(object, ObjectNode.class);
         json.put(propertyName, randomString());
         return json;
+    }
+
+    private static CristinObject randomExhibitCatalogue() {
+        return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.EXHIBITION_CATALOG);
     }
 
     private static CristinObject randomDegreeLicentiate() {
