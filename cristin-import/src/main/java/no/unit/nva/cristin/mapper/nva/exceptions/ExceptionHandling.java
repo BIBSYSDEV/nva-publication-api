@@ -5,12 +5,12 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.JacocoGenerated;
 
 public final class ExceptionHandling {
-    
+
     @JacocoGenerated
     public ExceptionHandling() {
-    
+        
     }
-    
+
     @SuppressWarnings("PMD.NPathComplexity")
     public static RuntimeException castToCorrectRuntimeException(Exception exception) {
         if (exception instanceof InvalidIssnRuntimeException) {
@@ -45,7 +45,7 @@ public final class ExceptionHandling {
         }
         return new RuntimeException(exception);
     }
-    
+
     public static RuntimeException handlePublicationContextFailure(Exception exception) {
         if (exception instanceof InvalidIssnException) {
             return new InvalidIssnRuntimeException(exception);

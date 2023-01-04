@@ -10,7 +10,6 @@ public class CristinSourceTransformer {
 
     public static List<CristinSource> parseCristinSourceFromMap(DataTable dataTable) {
         return dataTable.asMaps().stream().map(CristinSourceTransformer::toCristinSource).collect(Collectors.toList());
-
     }
 
     public static CristinSource toCristinSource(Map<String, String> entry) {

@@ -23,25 +23,25 @@ public class CristinBookOrReportPartMetadata {
     
     public static final String PAGES_START = "sidenr_fra";
     public static final String PAGES_END = "sidenr_til";
-    
+
     @JsonProperty(PAGES_START)
     private String pagesStart;
     @JsonProperty(PAGES_END)
     private String pagesEnd;
-    
+
     @JacocoGenerated
     public CristinBookOrReportPartMetadata() {
-    
+
     }
-    
+
     public String getPagesStart() {
         return pagesStart;
     }
-    
+
     public String getPagesEnd() {
         return pagesEnd;
     }
-    
+
     @JacocoGenerated
     public CristinBookReportPartBuilder copy() {
         return this.toBuilder();

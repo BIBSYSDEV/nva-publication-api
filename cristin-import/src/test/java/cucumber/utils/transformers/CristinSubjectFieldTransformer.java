@@ -5,13 +5,13 @@ import java.util.Map;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 
 public class CristinSubjectFieldTransformer {
-    
+
     public static final int CURRENTLY_MAPPED_FIELDS = 1;
     public static final String WRONG_NUMBER_OF_FIELDS_FOR_CRISTIN_SUBJECT_FIELD =
         String.format("This transformer maps only %d number of fields. Update the transformer to map more fields",
-            CURRENTLY_MAPPED_FIELDS);
+                      CURRENTLY_MAPPED_FIELDS);
     private static final String FIELD_CODE = "FieldCode";
-    
+
     @DataTableType
     public CristinSubjectField toCristinSubjectField(Map<String, String> entry) {
         if (entry.keySet().size() != CURRENTLY_MAPPED_FIELDS) {

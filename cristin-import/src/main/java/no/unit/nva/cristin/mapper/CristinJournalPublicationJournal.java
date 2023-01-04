@@ -25,7 +25,7 @@ public class CristinJournalPublicationJournal {
     public static final String ISSN_ONLINE = "issn_elektronisk";
     public static final String JOURNAL_TITLE = "tidsskriftnavn";
     public static final String NSD_JOURNAL_IDENTIFIER = "nsdkode";
-    
+
     @JsonProperty(ISSN)
     private String issn;
     @JsonProperty(ISSN_ONLINE)
@@ -34,11 +34,11 @@ public class CristinJournalPublicationJournal {
     private String journalTitle;
     @JsonProperty(NSD_JOURNAL_IDENTIFIER)
     private Integer nsdCode;
-    
+
     public CristinJournalPublicationJournal() {
-    
+
     }
-    
+
     @JacocoGenerated
     public CristinJournalPublicationJournalBuilder copy() {
         return this.toBuilder();

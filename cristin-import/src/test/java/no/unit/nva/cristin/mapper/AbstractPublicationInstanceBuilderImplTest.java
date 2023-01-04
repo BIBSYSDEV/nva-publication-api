@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 public class AbstractPublicationInstanceBuilderImplTest {
-    
+
     @Test
     public void publicationInstanceBuilderConstructorThrowsNullPointerExceptionIfParameterIsNull() {
         CristinObject cristinObjectThatIsNull = null;

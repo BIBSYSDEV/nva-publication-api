@@ -23,14 +23,14 @@ public class CristinSubjectField {
     public static final String SUBJECT_FIELD_CODE = "fagfeltkode";
     public static final String MISSING_SUBJECT_FIELD_CODE =
         "The value of the field \"fagfeltkode\" in the Cristin entry cant be null.";
-    
+
     @JsonProperty(SUBJECT_FIELD_CODE)
     private Integer subjectFieldCode;
-    
+
     public CristinSubjectField() {
-    
+
     }
-    
+
     @JacocoGenerated
     public CristinSubjectFieldBuilder copy() {
         return this.toBuilder();

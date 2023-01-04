@@ -17,7 +17,7 @@ import nva.commons.core.JacocoGenerated;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinSource {
-
+    
     @JsonProperty("kildekode")
     private String sourceCode;
 

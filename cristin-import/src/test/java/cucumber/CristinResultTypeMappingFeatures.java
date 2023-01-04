@@ -16,18 +16,18 @@ import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
 
 public class CristinResultTypeMappingFeatures {
-    
+
     private final ScenarioContext scenarioContext;
-    
+
     public CristinResultTypeMappingFeatures(ScenarioContext scenarioContext) {
         this.scenarioContext = scenarioContext;
     }
-    
+
     @Given("a valid Cristin Result with secondary category {string}")
     public void valid_cristin_result_with_secondary_category(String secondaryCategory) {
         this.scenarioContext.newCristinEntry(() -> CristinDataGenerator.randomObject(secondaryCategory));
     }
-    
+
     @Then("the NVA Resource has a Publication Instance of type {string}")
     public void theNvaResourceIsAnInstanceOf(String type) {
         String publicationType = this.scenarioContext.getNvaEntry()
@@ -37,7 +37,7 @@ public class CristinResultTypeMappingFeatures {
                                      .getInstanceType();
         assertThat(publicationType, is(equalTo(type)));
     }
-    
+
     @Then("the NVA JournalArticle Resource has a Content type of type {string}")
     public void theNvaJournalArticleResourceHasAContentTypeOfType(String expectedType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
@@ -49,7 +49,7 @@ public class CristinResultTypeMappingFeatures {
         String actuallType = contentType.getValue();
         assertThat(actuallType, is(equalTo(expectedType)));
     }
-    
+
     @Then("the NVA BookMonograph Resource has a Content type of type {string}")
     public void theNvaBookMonographResourceHasAContentTypeOfType(String expectedType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
@@ -61,7 +61,7 @@ public class CristinResultTypeMappingFeatures {
         String actuallType = contentType.getValue();
         assertThat(actuallType, is(equalTo(expectedType)));
     }
-    
+
     @Then("the NVA ChapterArticle Resource has a Content type of type {string}")
     public void theNvaChapterArticleResourceHasAContentTypeOfType(String expectedContentType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
@@ -73,7 +73,7 @@ public class CristinResultTypeMappingFeatures {
         String actualType = contentType.getValue();
         assertThat(actualType, is(equalTo(expectedContentType)));
     }
-    
+
     @Given("the Cristin Result has a value for the date when it was reported in NVI.")
     public void theCristinResultHasAValueForTheDateWhenItWasReportedInNVI() {
         this.scenarioContext.getCristinEntry().setYearReported(2020);

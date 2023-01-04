@@ -41,27 +41,27 @@ public class CristinContributorsAffiliation {
     private Integer groupNumber;
     @JsonProperty("VARBEID_PERSON_STED_ROLLE")
     private List<CristinContributorRole> roles;
-    
+
     public CristinContributorsAffiliation() {
     }
-    
+
     public Organization toNvaOrganization() {
         return new Organization.Builder()
                    .withId(buildId())
                    .withLabels(Collections.emptyMap())
                    .build();
     }
-    
+
     public CristinContributorsAffiliationBuilder copy() {
         return this.toBuilder();
     }
-    
+
     private URI buildId() {
         String affiliationCristinCode = String.join(CRISTIN_UNITS_DELIMITER,
-            institutionIdentifier.toString(),
-            departmentIdentifier.toString(),
-            subdepartmentIdentifier.toString(),
-            groupNumber.toString());
+                                                    institutionIdentifier.toString(),
+                                                    departmentIdentifier.toString(),
+                                                    subdepartmentIdentifier.toString(),
+                                                    groupNumber.toString());
         return UriWrapper.fromUri(MappingConstants.CRISTIN_ORG_URI)
                    .addChild(affiliationCristinCode)
                    .getUri();

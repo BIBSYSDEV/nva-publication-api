@@ -12,11 +12,11 @@ import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.pages.Pages;
 
 public class EventBuilder extends AbstractPublicationInstanceBuilder {
-    
+
     public EventBuilder(CristinObject cristinObject) {
         super(cristinObject);
     }
-    
+
     @Override
     public PublicationInstance<? extends Pages> build() {
         if (isConferenceLecture(getCristinObject())) {
@@ -34,24 +34,24 @@ public class EventBuilder extends AbstractPublicationInstanceBuilder {
             throw unknownSecondaryCategory();
         }
     }
-    
+
     @Override
     protected CristinMainCategory getExpectedType() {
         return CristinMainCategory.EVENT;
     }
-    
+
     private PublicationInstance<? extends Pages> createConferenceLecture() {
         return new ConferenceLecture();
     }
-    
+
     private PublicationInstance<? extends Pages> createConferencePoster() {
         return new ConferencePoster();
     }
-    
+
     private PublicationInstance<? extends Pages> createLecture() {
         return new Lecture();
     }
-    
+
     private PublicationInstance<? extends Pages> createOtherPresentation() {
         return new OtherPresentation();
     }
