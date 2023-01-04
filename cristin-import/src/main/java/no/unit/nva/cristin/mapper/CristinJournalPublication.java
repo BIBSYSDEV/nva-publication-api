@@ -27,7 +27,7 @@ public class CristinJournalPublication {
     public static final String VOLUME = "volum";
     public static final String ISSUE = "hefte";
     public static final String DOI = "doi";
-    
+
     @JsonProperty(JOURNAL)
     private CristinJournalPublicationJournal journal;
     @JsonProperty(PAGES_BEGIN)
@@ -40,11 +40,11 @@ public class CristinJournalPublication {
     private String issue;
     @JsonProperty(DOI)
     private String doi;
-    
+
     public CristinJournalPublication() {
-    
+
     }
-    
+
     @JacocoGenerated
     public CristinJournalPublicationBuilder copy() {
         return this.toBuilder();

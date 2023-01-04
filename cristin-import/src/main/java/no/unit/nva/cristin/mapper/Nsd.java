@@ -8,23 +8,23 @@ import java.net.URI;
 import nva.commons.core.paths.UriWrapper;
 
 public class Nsd {
-    
+
     private final int nsdCode;
     private final int year;
-    
+
     public Nsd(int nsdCode, int year) {
         this.nsdCode = nsdCode;
         this.year = year;
     }
-    
+
     public URI createJournalOrSeriesUri() {
         return getNsdProxyUri(NSD_PROXY_PATH_JOURNAL);
     }
-    
+
     public URI getPublisherUri() {
         return getNsdProxyUri(NSD_PROXY_PATH_PUBLISHER);
     }
-    
+
     private URI getNsdProxyUri(String nsdProxyPathPublisher) {
         return nvaProxyUri()
                    .addChild(nsdProxyPathPublisher)
@@ -32,7 +32,7 @@ public class Nsd {
                    .addChild(Integer.toString(year))
                    .getUri();
     }
-    
+
     private UriWrapper nvaProxyUri() {
         return UriWrapper.fromUri(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH);
     }
