@@ -14,8 +14,6 @@ import java.util.ListIterator;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -23,8 +21,6 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 public class ListImportedBragePublicationsHandler implements RequestHandler<InputStream, List<String>> {
 
     public static final int MAX_KEYS = 10_000_000;
-    public static final String HANDLER_INPUT = "Handler input:\n";
-    private static final Logger logger = LoggerFactory.getLogger(ListImportedBragePublicationsHandler.class);
     private final S3Client s3Client;
 
     public ListImportedBragePublicationsHandler(S3Client s3Client) {
@@ -38,7 +34,6 @@ public class ListImportedBragePublicationsHandler implements RequestHandler<Inpu
 
     @Override
     public List<String> handleRequest(InputStream input, Context context) {
-        logger.trace(HANDLER_INPUT + input);
         var uri = getUri(input);
         var bucketName = extractBucketName(uri);
         var marker = extractMarker(uri);
