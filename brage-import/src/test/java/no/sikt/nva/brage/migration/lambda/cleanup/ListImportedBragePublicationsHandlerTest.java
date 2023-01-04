@@ -6,13 +6,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.sikt.nva.brage.migration.lambda.cleanup.model.InputUri;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -36,9 +34,11 @@ public class ListImportedBragePublicationsHandlerTest {
     void shouldReturnListOfImportedPublicationsFromS3() {
         var expectedIdentifiers = createRandomIdentifiers();
         putObjectsInBucket(expectedIdentifiers);
-        var actualList = handler.handleRequest("{\n"
-                                               + "\t\"uri\": \"s3://someBucketName/reports/date\"\n"
-                                               + "}", context);
+        var actualList = handler.handleRequest(IoUtils.stringToStream("{\n"
+                                                                      + "  \"uri\" : "
+                                                                      + "\"s3://brage-migration-reports-750639270376"
+                                                                      + "/HANDLE_REPORTS/2022-12-12:07/\"\n"
+                                                                      + "}"), context);
         assertThat(actualList, is(equalTo(expectedIdentifiers)));
     }
 
@@ -50,14 +50,5 @@ public class ListImportedBragePublicationsHandlerTest {
         keys.forEach(object -> s3Client.putObject(
             PutObjectRequest.builder().bucket(bucketName).key(HARDCODED_PATH + object).build(),
             RequestBody.empty()));
-    }
-
-    @Test
-    void some() throws JsonProcessingException {
-        var input = "{\n"
-                    + "  \"uri\": \"s3://brage-migration-reports-750639270376/HANDLE_REPORTS/2022-12-12:07/\"\n"
-                    + "}";
-        var inputObject = JsonUtils.dtoObjectMapper.readValue(input, InputUri.class);
-        var l ="";
     }
 }
