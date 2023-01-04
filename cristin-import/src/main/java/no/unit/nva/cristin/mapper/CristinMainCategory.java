@@ -11,6 +11,7 @@ public enum CristinMainCategory {
     REPORT("RAPPORT", "REPORT"),
     CHAPTER("BOKRAPPORTDEL", "CHAPTER"),
     EVENT("FOREDRAG", "EVENT"),
+    MEDIA_CONTRIBUTION("MEDIEBIDRAG", "MEDIA_CONTRIBUTION"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;

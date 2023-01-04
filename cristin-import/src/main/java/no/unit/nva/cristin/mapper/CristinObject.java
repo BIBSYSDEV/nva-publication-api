@@ -76,6 +76,9 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("type_foredrag_poster")
     private CristinLectureOrPosterMetaData lectureOrPosterMetaData;
 
+    @JsonProperty("type_mediebidrag")
+    private CristinMediaContribution mediaContribution;
+
     @JsonProperty("varbeid_kilde")
     private List<CristinSource> cristinSources;
 

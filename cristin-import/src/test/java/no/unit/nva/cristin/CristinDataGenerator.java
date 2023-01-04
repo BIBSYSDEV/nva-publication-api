@@ -12,6 +12,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,6 +40,8 @@ import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
+import no.unit.nva.cristin.mapper.CristinMediaContribution;
+import no.unit.nva.cristin.mapper.CristinMediumType;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinPublisher;
@@ -184,6 +187,8 @@ public final class CristinDataGenerator {
             case OTHER_PRESENTATION:
             case INTERNET_EXHIBIT:
                 return randomEvent(category);
+            case INTERVIEW:
+                return randomMedia(category);
             default:
                 break;
         }
@@ -313,6 +318,41 @@ public final class CristinDataGenerator {
         var json = JsonUtils.dtoObjectMapper.convertValue(object, ObjectNode.class);
         json.put(propertyName, randomString());
         return json;
+    }
+
+    private static CristinObject randomMedia(CristinSecondaryCategory secondaryCategory) {
+        return createRandomMediaWithSpecifiedSecondaryCategory(secondaryCategory);
+    }
+
+    private static CristinObject createRandomMediaWithSpecifiedSecondaryCategory(
+        CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+                   .withYearReported(2001)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.MEDIA_CONTRIBUTION)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withMediaContribution(randomMediaContribution())
+                   .build();
+    }
+
+    private static CristinMediaContribution randomMediaContribution() {
+        return CristinMediaContribution.builder()
+                   .withCristinMediumType(randomCristinMediumType())
+                   .withMediaPlaceName(randomBoolean() ? randomString() : null)
+                   .withJournalPublication(randomBoolean() ? randomJournalPublictaion() : null)
+                   .build();
+    }
+
+    private static CristinMediumType randomCristinMediumType() {
+        return CristinMediumType.builder()
+                   .withMediumTypeCode(randomString())
+                   .withMediumTypeNameNorwegianBokmaal(randomString())
+                   .build();
     }
 
     private static CristinObject randomExhibitCatalogue() {
