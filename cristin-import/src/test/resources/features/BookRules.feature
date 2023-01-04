@@ -15,7 +15,7 @@ Feature: Book conversion rules
     Then the NVA Resource has a PublicationContext of type "Book"
 
   Scenario Outline: Cristin Result "Academic Monograph, Non-fiction Monograph, Popular Science Monograph,
-  Textbook, Encyclopedia" is converted to NVA Resource type BookMonograph and correct sub-type
+  Textbook, Encyclopedia, Exhibition Catalog" is converted to NVA Resource type BookMonograph and correct sub-type
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
@@ -28,6 +28,7 @@ Feature: Book conversion rules
       | LEKSIKON          | Encyclopedia            |
       | POPVIT_BOK        | PopularScienceMonograph |
       | OPPSLAGSVERK      | Encyclopedia            |
+      | UTSTILLINGSKAT    | ExhibitionCatalog       |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
