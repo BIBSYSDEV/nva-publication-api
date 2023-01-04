@@ -6,9 +6,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.sikt.nva.brage.migration.lambda.cleanup.model.InputUri;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.stubs.FakeS3Client;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,5 +50,14 @@ public class ListImportedBragePublicationsHandlerTest {
         keys.forEach(object -> s3Client.putObject(
             PutObjectRequest.builder().bucket(bucketName).key(HARDCODED_PATH + object).build(),
             RequestBody.empty()));
+    }
+
+    @Test
+    void some() throws JsonProcessingException {
+        var input = "{\n"
+                    + "  \"uri\": \"s3://brage-migration-reports-750639270376/HANDLE_REPORTS/2022-12-12:07/\"\n"
+                    + "}";
+        var inputObject = JsonUtils.dtoObjectMapper.readValue(input, InputUri.class);
+        var l ="";
     }
 }

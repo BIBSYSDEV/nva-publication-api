@@ -1,15 +1,17 @@
 package no.sikt.nva.brage.migration.lambda.cleanup;
 
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import no.sikt.nva.brage.migration.lambda.cleanup.model.InputUri;
+import no.unit.nva.commons.json.JsonUtils;
+import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -23,6 +25,11 @@ public class ListImportedBragePublicationsHandler implements RequestHandler<Stri
         this.s3Client = s3Client;
     }
 
+    @JacocoGenerated
+    public ListImportedBragePublicationsHandler() {
+        this(defaultS3Client());
+    }
+
     @Override
     public List<String> handleRequest(String input, Context context) {
         var uri = getUri(input);
@@ -32,10 +39,9 @@ public class ListImportedBragePublicationsHandler implements RequestHandler<Stri
     }
 
     private static String getUri(String input) {
-        ObjectMapper mapper = new ObjectMapper();
         try {
-            var json = mapper.readValue(input, ObjectNode.class);
-            return json.get("uri").toString().replaceAll("\"", "");
+            var json = JsonUtils.dtoObjectMapper.readValue(input, InputUri.class);
+            return json.getUri().replaceAll("\"", "");
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

@@ -640,6 +640,9 @@ Resources:
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
 
   BrageMigrationEventConsumer:
     Type: AWS::Serverless::Function

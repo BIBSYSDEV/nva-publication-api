@@ -36,4 +36,6 @@ test {
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-bucket"
     environment "TABLE_NAME", "some-table-name"
     environment "DOMAIN_NAME", "test.nva.aws.unit.no"
+    environment "EVENT_BUS_NAME", "eventBusName"
+
 }
