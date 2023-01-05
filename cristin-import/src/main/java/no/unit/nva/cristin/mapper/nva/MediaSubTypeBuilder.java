@@ -1,19 +1,20 @@
 package no.unit.nva.cristin.mapper.nva;
 
 import java.util.Map;
+import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
 
 public class MediaSubTypeBuilder {
 
-    private static final Map<String, MediaSubTypeEnum> cristinMediumTypeToNVAMediumTypeRule =
-        Map.of("RADIO", MediaSubTypeEnum.RADIO,
-               "TIDSSKRIFT", MediaSubTypeEnum.JOURNAL,
-               "FAGBLAD", MediaSubTypeEnum.JOURNAL,
-               "AVIS", MediaSubTypeEnum.JOURNAL,
-               "TV", MediaSubTypeEnum.TV,
-               "INTERNETT", MediaSubTypeEnum.INTERNET);
+    private static final Map<CristinMediumTypeCode, MediaSubTypeEnum> cristinMediumTypeToNVAMediumTypeRule =
+        Map.of(CristinMediumTypeCode.RADIO, MediaSubTypeEnum.RADIO,
+               CristinMediumTypeCode.JOURNAL, MediaSubTypeEnum.JOURNAL,
+               CristinMediumTypeCode.PROFESSIONAL_JOURNAL, MediaSubTypeEnum.JOURNAL,
+               CristinMediumTypeCode.NEWSPAPER, MediaSubTypeEnum.JOURNAL,
+               CristinMediumTypeCode.TV, MediaSubTypeEnum.TV,
+               CristinMediumTypeCode.INTERNET, MediaSubTypeEnum.INTERNET);
 
     private final CristinObject cristinObject;
 

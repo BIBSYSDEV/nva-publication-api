@@ -25,6 +25,4 @@ Feature: Rules that apply for Media
       | INTERNETT         | Internet | NULL      |
       | AVIS              | Journal  | TEXT      |
       | RADIO             | Radio    | SOUND     |
-      | NULL              | Other    | NULL      |
-
 

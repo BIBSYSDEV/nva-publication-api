@@ -6,6 +6,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
+import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
@@ -33,7 +34,7 @@ public class MediaContributionFeatures {
             .getCristinEntry()
             .getMediaContribution()
             .getCristinMediumType()
-            .setMediumTypeCode(mediumType);
+            .setMediumTypeCode(CristinMediumTypeCode.fromValue(mediumType));
     }
 
     @Then("the NVA resource has a MediaContribution with medium {string}")

@@ -19,7 +19,7 @@ import nva.commons.core.JacocoGenerated;
 public class CristinMediumType {
 
     @JsonProperty("mediumtypekode")
-    private String mediumTypeCode;
+    private CristinMediumTypeCode mediumTypeCode;
 
     @JsonProperty("mediumtypenavn")
     private String mediumTypeNameNorwegianBokmaal;

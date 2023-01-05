@@ -50,6 +50,7 @@ import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
+import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 
 public final class CristinDataGenerator {
 
@@ -76,6 +77,7 @@ public final class CristinDataGenerator {
     private static final String HRCS_CATEGORIES_AND_ACTIVITIES = ".hrcsCategoriesAndActivities";
     private static final String CRISTIN_MODIFIED_DATE = "entryLastModifiedDate";
     private static final String LECTURE_OR_POSTER_METADATA = ".lectureOrPosterMetaData";
+    private static final String MEDIA_CONTRIBUTION = "mediaContribution";
     private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
         MONOGRAPH,
         TEXTBOOK,
@@ -350,7 +352,7 @@ public final class CristinDataGenerator {
 
     private static CristinMediumType randomCristinMediumType() {
         return CristinMediumType.builder()
-                   .withMediumTypeCode(randomString())
+                   .withMediumTypeCode(CristinMediumTypeCode.TV)
                    .withMediumTypeNameNorwegianBokmaal(randomString())
                    .build();
     }
@@ -628,7 +630,7 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS, SOURCE_RECORD_IDENTIFIER,
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
-                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_SOURCES)));
+                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
 
         return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }
