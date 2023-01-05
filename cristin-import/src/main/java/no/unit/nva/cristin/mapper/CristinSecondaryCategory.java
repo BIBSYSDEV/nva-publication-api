@@ -20,6 +20,8 @@ public enum CristinSecondaryCategory {
     POPULAR_BOOK("POPVIT_BOK", "POPULAR_BOOK"),
     REFERENCE_MATERIAL("OPPSLAGSVERK", "REFERENCE_MATERIAL"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
+    FOREWORD("FORORD", "FOREWORD"),
+    INTRODUCTION("INNLEDNING", "INTRODUCTION"),
     JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
     READER_OPINION("LESERINNLEGG", "READER_OPINIION"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
@@ -133,7 +135,9 @@ public enum CristinSecondaryCategory {
         return CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory());
+               || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.FOREWORD.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.INTRODUCTION.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isConferenceLecture(CristinObject cristinObject) {
@@ -212,6 +216,8 @@ public enum CristinSecondaryCategory {
         return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
                       POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
                       CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
+                      FOREWORD, ChapterArticleContentType.INTRODUCTION,
+                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION,
                       LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
 
