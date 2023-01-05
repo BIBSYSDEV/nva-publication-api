@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isMediaContribution;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import java.util.Objects;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
@@ -36,7 +37,10 @@ public class PublicationInstanceBuilderImpl {
             return new ChapterArticleBuilder(cristinObject).build();
         } else if (isEvent(cristinObject)) {
             return new EventBuilder(cristinObject).build();
-        } else if (cristinObject.getMainCategory().isUnknownCategory()) {
+        }else if (isMediaContribution(cristinObject)) {
+            return new MediaContributionBuilder(cristinObject).build();
+        }
+        else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedMainCategoryException();
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
             throw new UnsupportedSecondaryCategoryException();

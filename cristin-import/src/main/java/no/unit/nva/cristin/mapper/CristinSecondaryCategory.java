@@ -137,6 +137,10 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory());
     }
 
+    public static boolean isInterview(CristinObject cristinObject) {
+        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
     public static boolean isConferenceLecture(CristinObject cristinObject) {
         return CristinSecondaryCategory.CONFERENCE_LECTURE.equals(cristinObject.getSecondaryCategory());
     }

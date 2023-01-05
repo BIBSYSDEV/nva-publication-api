@@ -48,6 +48,10 @@ public enum CristinMainCategory {
         return CristinMainCategory.EVENT.equals(cristinObject.getMainCategory());
     }
 
+    public static boolean isMediaContribution(CristinObject cristinObject) {
+        return CristinMainCategory.MEDIA_CONTRIBUTION.equals(cristinObject.getMainCategory());
+    }
+
     public boolean isUnknownCategory() {
         return UNMAPPED.equals(this);
     }

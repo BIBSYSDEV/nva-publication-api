@@ -8,6 +8,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.media.MediaFormat;
 
 public class MediaContributionFeatures {
 
@@ -44,5 +45,18 @@ public class MediaContributionFeatures {
         assertThat(context, is(instanceOf(MediaContribution.class)));
         var mediaContribution = (MediaContribution) context;
         assertThat(mediaContribution.getMedium().getType().getValue(), is(equalTo(mediumType)));
+    }
+
+    @And("the NVA resource has a MediaContribution with format {string}")
+    public void theNVAResourceHasAMediaContributionWithFormat(String format) {
+        var nullString = "NULL";
+        var context = scenarioContext.getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationContext();
+        assertThat(context, is(instanceOf(MediaContribution.class)));
+        var mediaContribution = (MediaContribution) context;
+        var expectedFormat = nullString.equals(format) ? null : MediaFormat.valueOf(format);
+        assertThat(mediaContribution.getFormat(), is(equalTo(expectedFormat)));
     }
 }

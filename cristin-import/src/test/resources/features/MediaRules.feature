@@ -16,12 +16,15 @@ Feature: Rules that apply for Media
     And the cristin result has mediaContribution with mediumType equal to "<cristinMediumType>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA resource has a MediaContribution with medium "<medium>"
+    And the NVA resource has a MediaContribution with format "<nvaFormat>"
     Examples:
-      | cristinMediumType | medium        |
-      | TIDSSKRIFT        | JOURNAL       |
-      | TV                | TV            |
-      | FAGBLAD           | JOURNAL       |
-      | INTERNETT         | INTERNET      |
-      | AVIS              | JOURNAL       |
-      | RADIO             | RADIO         |
-      | NULL              | OTHER         |
+      | cristinMediumType | medium   | nvaFormat |
+      | TIDSSKRIFT        | Journal  | TEXT      |
+      | TV                | TV       | VIDEO     |
+      | FAGBLAD           | Journal  | TEXT      |
+      | INTERNETT         | Internet | NULL      |
+      | AVIS              | Journal  | TEXT      |
+      | RADIO             | Radio    | SOUND     |
+      | NULL              | Other    | NULL      |
+
+
