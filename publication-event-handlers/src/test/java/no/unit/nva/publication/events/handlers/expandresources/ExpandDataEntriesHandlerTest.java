@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -12,6 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -55,6 +57,8 @@ import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
@@ -92,9 +96,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
 
-    @Test
+    @ParameterizedTest
+    @EnumSource(value = PublicationStatus.class, mode = INCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
     void shouldProduceAnExpandedDataEntryWhenInputHasNewImage() throws IOException {
-        var oldImage = createPublishedPublication();
+        var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -106,7 +111,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotProduceAnExpandedDataEntryWhenInputHasNoNewImage() throws IOException {
-        var oldImage = createPublishedPublication();
+        var oldImage = createPublicationWithStatus(PUBLISHED);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, DELETED_RESOURCE);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
@@ -115,7 +120,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldLogFailingExpansionNotThrowExceptionAndEmitEmptyEvent() throws IOException {
-        var oldImage = createPublishedPublication();
+        var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
 
@@ -130,7 +135,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
-        var oldImage = createPublishedPublication().copy().withStatus(DRAFT).build();
+        var oldImage = createPublicationWithStatus(DRAFT);
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
 
@@ -166,8 +171,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
     }
 
-    private Publication createPublishedPublication() {
-        return randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build();
+    private Publication createPublicationWithStatus(PublicationStatus status) {
+        return randomPublication().copy().withStatus(status).build();
     }
 
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
