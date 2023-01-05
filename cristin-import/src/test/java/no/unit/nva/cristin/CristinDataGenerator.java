@@ -178,6 +178,8 @@ public final class CristinDataGenerator {
             case CHAPTER_ACADEMIC:
             case CHAPTER:
             case POPULAR_CHAPTER_ARTICLE:
+            case FOREWORD:
+            case INTRODUCTION:
             case LEXICAL_IMPORT:
                 return randomChapterArticle(category);
             case EXHIBITION_CATALOG:

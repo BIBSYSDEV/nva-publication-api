@@ -630,6 +630,20 @@ Resources:
 
   #==========================Event Lambda functions====================================================
 
+  ListImportedBragePublicationsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: 'List identifiers to publication imported from Brage. Accepts Json object with "uri" field'
+      CodeUri: brage-import
+      Handler: no.sikt.nva.brage.migration.lambda.cleanup.ListImportedBragePublicationsHandler::handleRequest
+      Runtime: java11
+      Timeout: 900 # 15 min timeout
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+
   BrageMigrationEventConsumer:
     Type: AWS::Serverless::Function
     Properties:
