@@ -348,7 +348,6 @@ public final class CristinDataGenerator {
         return CristinMediaContribution.builder()
                    .withCristinMediumType(randomCristinMediumType())
                    .withMediaPlaceName(randomBoolean() ? randomString() : null)
-                   .withJournalPublication(randomBoolean() ? randomJournalPublictaion() : null)
                    .build();
     }
 
