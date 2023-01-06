@@ -96,7 +96,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
                    .flatMap(this::persistInDatabase)
                    .map(publication -> persistCristinIdentifierInFileNamedWithPublicationIdentifier(publication,
                                                                                                     eventBody))
-                   .map(publication -> persistPartOfCristinIdentifer(publication, eventBody))
+                   .map(publication -> persistPartOfCristinIdentiferIfPartOfExists(publication, eventBody))
                    .orElseThrow(fail -> handleSavingError(fail, eventBody));
     }
 
@@ -127,32 +127,39 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         return CristinObject.IDENTIFIER_ORIGIN.equals(additionalIdentifier.getSource());
     }
 
-    private Publication persistPartOfCristinIdentifer(Publication publication, FileContentsEvent<JsonNode> eventBody) {
-        var cristinObject = parseCristinObject(eventBody);
-        if (nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
-            cristinObject.getBookOrReportPartMetadata().getPartOf())) {
-            persistPartOfCristinIdentifierWithPublicationId(eventBody, publication,
-                                                            cristinObject.getBookOrReportPartMetadata().getPartOf());
+    private Publication persistPartOfCristinIdentiferIfPartOfExists(Publication publication,
+                                                                    FileContentsEvent<JsonNode> eventBody) {
+        if (cristinObjectIsPartOfAnotherPublication(eventBody)) {
+            persistPartOfCristinIdentifierWithPublicationId(publication, eventBody);
         }
         return publication;
     }
 
-    private void persistPartOfCristinIdentifierWithPublicationId(FileContentsEvent<JsonNode> eventBody,
-                                                                 Publication publication, String partOf) {
-        var fileUri = constructPartOfFileUri(eventBody, publication);
-        var partOfJson = createPartOfJson(publication, partOf);
-
-        var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
-        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), partOfJson)).orElseThrow();
+    private boolean cristinObjectIsPartOfAnotherPublication(FileContentsEvent<JsonNode> eventBody) {
+        var cristinObject = parseCristinObject(eventBody);
+        return nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
+            cristinObject.getBookOrReportPartMetadata().getPartOf());
     }
 
-    private String createPartOfJson(Publication publication, String partOf) {
-        var nvaPublicationPartOfCristinPublication =
+    private String getPartOfCristinIdentifier(FileContentsEvent<JsonNode> eventBody) {
+        var cristinObject = parseCristinObject(eventBody);
+        return cristinObject.getBookOrReportPartMetadata().getPartOf();
+    }
+
+    private void persistPartOfCristinIdentifierWithPublicationId(Publication publication,
+                                                                 FileContentsEvent<JsonNode> eventBody) {
+        var partOf = createPartOf(publication, getPartOfCristinIdentifier(eventBody));
+        var fileUri = constructPartOfFileUri(eventBody, publication);
+        var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), partOf.toJsonString())).orElseThrow();
+    }
+
+    private NvaPublicationPartOfCristinPublication createPartOf(Publication publication, String partOf) {
+        return
             NvaPublicationPartOfCristinPublication.builder()
                 .withNvaPublicationIdentifier(publication.getIdentifier().toString())
                 .withPartOf(NvaPublicationPartOf.builder().withCristinId(partOf).build())
                 .build();
-        return nvaPublicationPartOfCristinPublication.toJsonString();
     }
 
     private Publication persistCristinIdentifierInFileNamedWithPublicationIdentifier(Publication publication,
