@@ -17,17 +17,23 @@ import nva.commons.core.JacocoGenerated;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"varbeidlopenr_inngar_i", "antall_sider_totalt",
+@JsonIgnoreProperties({"antall_sider_totalt",
     "status_utgitt_av_forlag", "delangivelse", "sprakkode_oversatt_fra", "doi", "fagfelt"})
 public class CristinBookOrReportPartMetadata {
+
+
     
     public static final String PAGES_START = "sidenr_fra";
     public static final String PAGES_END = "sidenr_til";
+    public static final String PART_OF = "varbeidlopenr_inngar_i";
 
     @JsonProperty(PAGES_START)
     private String pagesStart;
     @JsonProperty(PAGES_END)
     private String pagesEnd;
+
+    @JsonProperty(PART_OF)
+    private String partOf;
 
     @JacocoGenerated
     public CristinBookOrReportPartMetadata() {

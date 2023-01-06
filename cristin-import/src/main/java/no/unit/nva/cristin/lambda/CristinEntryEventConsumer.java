@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
@@ -17,6 +18,8 @@ import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
@@ -93,6 +96,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
                    .flatMap(this::persistInDatabase)
                    .map(publication -> persistCristinIdentifierInFileNamedWithPublicationIdentifier(publication,
                                                                                                     eventBody))
+                   .map(publication -> persistPartOfCristinIdentifer(publication, eventBody))
                    .orElseThrow(fail -> handleSavingError(fail, eventBody));
     }
 
@@ -123,6 +127,34 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         return CristinObject.IDENTIFIER_ORIGIN.equals(additionalIdentifier.getSource());
     }
 
+    private Publication persistPartOfCristinIdentifer(Publication publication, FileContentsEvent<JsonNode> eventBody) {
+        var cristinObject = parseCristinObject(eventBody);
+        if (nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
+            cristinObject.getBookOrReportPartMetadata().getPartOf())) {
+            persistPartOfCristinIdentifierWithPublicationId(eventBody, publication,
+                                                            cristinObject.getBookOrReportPartMetadata().getPartOf());
+        }
+        return publication;
+    }
+
+    private void persistPartOfCristinIdentifierWithPublicationId(FileContentsEvent<JsonNode> eventBody,
+                                                                 Publication publication, String partOf) {
+        var fileUri = constructPartOfFileUri(eventBody, publication);
+        var partOfJson = createPartOfJson(publication, partOf);
+
+        var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), partOfJson)).orElseThrow();
+    }
+
+    private String createPartOfJson(Publication publication, String partOf) {
+        var nvaPublicationPartOfCristinPublication =
+            NvaPublicationPartOfCristinPublication.builder()
+                .withNvaPublicationIdentifier(publication.getIdentifier().toString())
+                .withPartOf(NvaPublicationPartOf.builder().withCristinId(partOf).build())
+                .build();
+        return nvaPublicationPartOfCristinPublication.toJsonString();
+    }
+
     private Publication persistCristinIdentifierInFileNamedWithPublicationIdentifier(Publication publication,
                                                                                      FileContentsEvent<JsonNode> eventBody) {
         var cristinIdentifier =
@@ -132,6 +164,16 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
                                           cristinIdentifier.orElse(StringUtils.EMPTY_STRING))).orElseThrow();
         return publication;
+    }
+
+    private UriWrapper constructPartOfFileUri(FileContentsEvent<JsonNode> eventBody, Publication publication) {
+        var fileUri = UriWrapper.fromUri(eventBody.getFileUri());
+        var timestamp = eventBody.getTimestamp();
+        var bucket = fileUri.getHost();
+        return bucket
+                   .addChild("PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS")
+                   .addChild(timestampToString(timestamp))
+                   .addChild(publication.getIdentifier().toString());
     }
 
     private UriWrapper constructSuccessFileUri(FileContentsEvent<JsonNode> eventBody, Publication publication) {
