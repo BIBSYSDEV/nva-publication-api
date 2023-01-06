@@ -1,7 +1,9 @@
 package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 
 public enum CristinMediumTypeCode {
     JOURNAL("TIDSSKRIFT"),
@@ -18,12 +20,10 @@ public enum CristinMediumTypeCode {
     }
 
     public static CristinMediumTypeCode fromValue(String value) {
-        for (CristinMediumTypeCode type : CristinMediumTypeCode.values()) {
-            if (type.getValue().equalsIgnoreCase(value)) {
-                return type;
-            }
-        }
-        throw new IllegalArgumentException();
+        return
+            Arrays.stream(CristinMediumTypeCode.values())
+                .filter(type -> type.getValue().equalsIgnoreCase(value))
+                .collect(SingletonCollector.collect());
     }
 
     @JacocoGenerated

@@ -37,10 +37,9 @@ public class PublicationInstanceBuilderImpl {
             return new ChapterArticleBuilder(cristinObject).build();
         } else if (isEvent(cristinObject)) {
             return new EventBuilder(cristinObject).build();
-        }else if (isMediaContribution(cristinObject)) {
+        } else if (isMediaContribution(cristinObject)) {
             return new MediaContributionBuilder(cristinObject).build();
-        }
-        else if (cristinObject.getMainCategory().isUnknownCategory()) {
+        } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedMainCategoryException();
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
             throw new UnsupportedSecondaryCategoryException();
