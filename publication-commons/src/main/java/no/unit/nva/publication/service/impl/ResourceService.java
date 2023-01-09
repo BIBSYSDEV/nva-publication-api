@@ -191,6 +191,11 @@ public class ResourceService extends ServiceWithTransactions {
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return readResourceService.getResourceByIdentifier(identifier);
     }
+
+    public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
+        return  readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+
+    }
     
     public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);

@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -73,7 +74,26 @@ public class ReadResourceService {
         var queryResult = queryObject.fetchByIdentifier(client);
         return (Resource) queryResult.getData();
     }
-    
+
+    public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
+        var partitionKey = "CristinIdentifier:" + cristinIdentifier;
+        var queryExpressionSpec = new ExpressionSpecBuilder()
+                                      .withKeyCondition(S("PK4").eq(partitionKey)).buildForQuery();
+        var valuesMap = queryExpressionSpec.getValueMap()
+                            .entrySet()
+                            .stream()
+                            .collect(
+                                Collectors.toMap(
+                                    Entry::getKey,
+                                    mapEntry -> new AttributeValue((String) mapEntry.getValue())
+                                )
+                            );
+        var namesMap = queryExpressionSpec.getNameMap();
+        var result = performQuery(queryExpressionSpec.getKeyConditionExpression(), valuesMap, namesMap);
+
+        return queryResultToListOfPublications(result);
+    }
+
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
         return getResource(resourceQueryObject(userInstance, identifier));
     }

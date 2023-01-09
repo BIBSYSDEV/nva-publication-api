@@ -61,6 +61,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -412,7 +413,31 @@ class ResourceServiceTest extends ResourcesLocalTest {
         
         assertThat(actualResourcesSet, containsInAnyOrder(userResources.toArray(Publication[]::new)));
     }
-    
+
+    @Test
+    void getResourcesByCristinIdentifierReturnsAllResourcesWithCristinIdentifier() {
+        String cristinIdentifier = randomString();
+        Set<Publication> publicationsWithCristinIdentifier = createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
+        List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+        HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
+        assertThat(actualResourcesSet, containsInAnyOrder(publicationsWithCristinIdentifier.toArray(Publication[]::new)));
+    }
+
+    private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
+        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
+        return Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
+                   .map(publication -> injectOwner(userInstance, publication))
+                   .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
+                   .map(attempt(res -> createPersistedPublicationWithDoi(resourceService, res)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toSet());
+    }
+
+    private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
+        return publication;
+    }
+
     @Test
     void getResourcesByOwnerReturnsEmptyListWhenUseHasNoPublications() {
         
