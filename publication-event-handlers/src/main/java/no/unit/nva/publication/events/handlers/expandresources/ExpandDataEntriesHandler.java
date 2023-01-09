@@ -66,12 +66,8 @@ public class ExpandDataEntriesHandler
                                                  Context context) {
 
         var blobObject = readBlobFromS3(input);
-        var dataToBeEnriched = Optional.ofNullable(blobObject.getNewData())
-            .filter(this::shouldBeEnriched);
-        if (dataToBeEnriched.isEmpty()) {
-            throw new IllegalStateException("Dataentry should not be enriched.");
-        }
-        return dataToBeEnriched
+        return Optional.ofNullable(blobObject.getNewData())
+            .filter(this::shouldBeEnriched)
             .flatMap(this::enrich)
             .map(this::insertEventBodyToS3)
             .stream()

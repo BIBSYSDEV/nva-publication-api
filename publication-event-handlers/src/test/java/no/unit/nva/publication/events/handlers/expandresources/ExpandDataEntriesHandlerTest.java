@@ -13,6 +13,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -98,8 +100,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @EnumSource(value = PublicationStatus.class, mode = INCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldProduceAnExpandedDataEntryWhenInputHasNewImage() throws IOException {
-        var oldImage = createPublicationWithStatus(PUBLISHED);
+    void shouldProduceAnExpandedDataEntryWhenInputHasNewImage(PublicationStatus status) throws IOException {
+        var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -107,6 +109,17 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var eventBlobStoredInS3 = s3Driver.readEvent(response.getUri());
         var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, ExpandedDataEntry.class);
         assertThat(blobObject.identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
+    void shouldNotProduceEntryWhenNotPublishedEntry(PublicationStatus status) throws IOException {
+        var oldImage = createPublicationWithStatus(status);
+        var newImage = createUpdatedVersionOfPublication(oldImage);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var response = parseHandlerResponse();
+        assertThat(response, is(equalTo(emptyEvent(response.getTimestamp()))));
     }
 
     @Test
