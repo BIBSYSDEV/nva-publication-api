@@ -401,7 +401,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
     }
-    
+
+    @ParameterizedTest(name = "Should return publication by owner when status is {0}")
+    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"DRAFT_FOR_DELETION"})
+    void shouldReturnPublicationsForOwnerWithStatus(PublicationStatus status) {
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        var publication = createPublicationWithStatus(userInstance, status);
+        var actualResources = resourceService.getPublicationsByOwner(userInstance);
+        var resourceSet = new HashSet<>(actualResources);
+        assertThat(resourceSet, containsInAnyOrder(publication));
+    }
+
     @Test
     void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
         UserInstance userInstance = UserInstance.create(randomString(), randomUri());
@@ -1132,7 +1142,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .map(Try::orElseThrow)
                    .collect(Collectors.toSet());
     }
-    
+
+    private Publication createPublicationWithStatus(UserInstance userInstance, PublicationStatus status) {
+        var publication = injectOwner(userInstance, publicationWithIdentifier());
+        publicationWithIdentifier().setStatus(status);
+        return attempt(() -> createPersistedPublicationWithDoi(resourceService, publication)).orElseThrow();
+    }
+
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
         return publication.copy()
                    .withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))

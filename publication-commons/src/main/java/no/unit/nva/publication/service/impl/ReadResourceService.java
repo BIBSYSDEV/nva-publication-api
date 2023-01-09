@@ -149,7 +149,8 @@ public class ReadResourceService {
         return new QueryRequest()
                    .withTableName(tableName)
                    .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withKeyConditions(keyConditions);
+                   .withKeyConditions(keyConditions)
+                   .withLimit(100);
     }
     
     private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
