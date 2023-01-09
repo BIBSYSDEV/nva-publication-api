@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
@@ -97,7 +99,9 @@ public class ExpandDataEntriesHandler
     private boolean shouldBeEnriched(Entity entry) {
         if (entry instanceof Resource) {
             Resource resource = (Resource) entry;
-            return PublicationStatus.PUBLISHED.equals(resource.getStatus());
+            PublicationStatus status = resource.getStatus();
+            return PUBLISHED.equals(status)
+                   || PUBLISHED_METADATA.equals(status);
         } else if (entry instanceof DoiRequest) {
             return isDoiRequestReadyForEvaluation((DoiRequest) entry);
         } else {
@@ -106,7 +110,7 @@ public class ExpandDataEntriesHandler
     }
 
     private boolean isDoiRequestReadyForEvaluation(DoiRequest doiRequest) {
-        return PublicationStatus.PUBLISHED.equals(doiRequest.getResourceStatus());
+        return PUBLISHED.equals(doiRequest.getResourceStatus());
     }
 
     private URI insertEventBodyToS3(String string) {
