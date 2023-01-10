@@ -7,10 +7,13 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -30,26 +33,22 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publication> {
 
-    private static final int MAX_SLEEP_TIME = 100;
-
     public static final Random RANDOM = new Random(System.currentTimeMillis());
-
     public static final int MAX_EFFORTS = 10;
-
-    private static final int SINGLE_EXPECTED_RECORD = 0;
-    private static final String S3_URI_TEMPLATE = "s3://%s/%s";
-    private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
-
-    private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
+    public static final String IDENTIFIER_ORIGIN = "Cristin";
     public static final String BRAGE_MIGRATION_ERROR_BUCKET_NAME = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     public static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String HANDLE_REPORTS_PATH = "HANDLE_REPORTS";
     public static final String PATH_SEPERATOR = "/";
-    private String brageRecordFile;
+    private static final int MAX_SLEEP_TIME = 100;
+    private static final int SINGLE_EXPECTED_RECORD = 0;
+    private static final String S3_URI_TEMPLATE = "s3://%s/%s";
+    private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
+    private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
     private final S3Client s3Client;
-
     private final ResourceService resourceService;
+    private String brageRecordFile;
 
     public BrageEntryEventConsumer(S3Client s3Client, ResourceService resourceService) {
         this.s3Client = s3Client;
@@ -65,9 +64,26 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
                    .map(publication -> pushAssociatedFilesToPersistedStorage(publication, s3Event))
-                   .flatMap(this::persistInDatabase)
-                   .map(publication -> storeHandleAndPublicationIdentifier(publication, s3Event))
+                   .map(this::handlePublicationWithCristinId)
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
+                   .flatMap(this::persistInDatabase)
+                        .map(publication -> storeHandleAndPublicationIdentifier(publication, s3Event))
+    }
+
+    private Publication handlePublicationWithCristinId(Publication publication) {
+        var cristinIdentifier = getCristinIdentifier(publication);
+    }
+
+    private Set<String> getCristinIdentifier(Publication publication) {
+        return publication.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(this::isCristinIdentifier)
+                   .map(AdditionalIdentifier::getValue)
+                   .collect(Collectors.toSet());
+    }
+
+    private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
+        return identifier.getSource().equals(IDENTIFIER_ORIGIN);
     }
 
     private Publication storeHandleAndPublicationIdentifier(Publication publication, S3Event s3Event) {
