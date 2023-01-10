@@ -12,6 +12,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,6 +40,8 @@ import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
+import no.unit.nva.cristin.mapper.CristinMediaContribution;
+import no.unit.nva.cristin.mapper.CristinMediumType;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinPublisher;
@@ -47,6 +50,7 @@ import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
+import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 
 public final class CristinDataGenerator {
 
@@ -73,6 +77,7 @@ public final class CristinDataGenerator {
     private static final String HRCS_CATEGORIES_AND_ACTIVITIES = ".hrcsCategoriesAndActivities";
     private static final String CRISTIN_MODIFIED_DATE = "entryLastModifiedDate";
     private static final String LECTURE_OR_POSTER_METADATA = ".lectureOrPosterMetaData";
+    private static final String MEDIA_CONTRIBUTION = "mediaContribution";
     private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
         MONOGRAPH,
         TEXTBOOK,
@@ -186,6 +191,8 @@ public final class CristinDataGenerator {
             case OTHER_PRESENTATION:
             case INTERNET_EXHIBIT:
                 return randomEvent(category);
+            case INTERVIEW:
+                return randomMedia(category);
             default:
                 break;
         }
@@ -315,6 +322,40 @@ public final class CristinDataGenerator {
         var json = JsonUtils.dtoObjectMapper.convertValue(object, ObjectNode.class);
         json.put(propertyName, randomString());
         return json;
+    }
+
+    private static CristinObject randomMedia(CristinSecondaryCategory secondaryCategory) {
+        return createRandomMediaWithSpecifiedSecondaryCategory(secondaryCategory);
+    }
+
+    private static CristinObject createRandomMediaWithSpecifiedSecondaryCategory(
+        CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+                   .withYearReported(2001)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(CristinMainCategory.MEDIA_CONTRIBUTION)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withMediaContribution(randomMediaContribution())
+                   .build();
+    }
+
+    private static CristinMediaContribution randomMediaContribution() {
+        return CristinMediaContribution.builder()
+                   .withCristinMediumType(randomCristinMediumType())
+                   .withMediaPlaceName(randomBoolean() ? randomString() : null)
+                   .build();
+    }
+
+    private static CristinMediumType randomCristinMediumType() {
+        return CristinMediumType.builder()
+                   .withMediumTypeCode(CristinMediumTypeCode.TV)
+                   .withMediumTypeNameNorwegianBokmaal(randomString())
+                   .build();
     }
 
     private static CristinObject randomExhibitCatalogue() {
@@ -590,7 +631,7 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS, SOURCE_RECORD_IDENTIFIER,
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
-                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_SOURCES)));
+                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
 
         return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }

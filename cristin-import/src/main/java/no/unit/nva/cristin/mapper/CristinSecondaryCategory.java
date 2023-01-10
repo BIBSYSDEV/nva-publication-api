@@ -49,6 +49,7 @@ public enum CristinSecondaryCategory {
     POPULAR_SCIENTIFIC_LECTURE("POPVIT_FOREDRAG", "POPULAR_SCIENTIFIC_LECTURE"),
     OTHER_PRESENTATION("ANNEN_PRESENTASJ", "OTHER_PRESENTATION"),
     INTERNET_EXHIBIT("UTST_WEB", "INTERNET_EXHIBIT"),
+    INTERVIEW("INTERVJU", "INTERVIEW"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -138,6 +139,10 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.FOREWORD.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.INTRODUCTION.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isInterview(CristinObject cristinObject) {
+        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isConferenceLecture(CristinObject cristinObject) {
