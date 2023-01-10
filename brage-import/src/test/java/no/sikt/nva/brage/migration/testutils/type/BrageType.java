@@ -24,7 +24,7 @@ public enum BrageType {
     PLAN_OR_BLUEPRINT("Plan or blueprint"),
     MAP("Map"),
     NOTES("Notat"),
-    POSTS("Poster"),
+    POSTER("Poster"),
     PRESENTATION("Presentasjon"),
     PEER_REVIEWED("Peer reviewed");
 

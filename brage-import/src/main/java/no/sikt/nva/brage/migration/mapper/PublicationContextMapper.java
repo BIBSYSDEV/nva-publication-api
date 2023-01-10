@@ -154,7 +154,7 @@ public final class PublicationContextMapper {
     }
 
     public static boolean isConferencePoster(Record record) {
-        return NvaType.CONFERENCE_POSTS.getValue().equals(record.getType().getNva());
+        return NvaType.CONFERENCE_POSTER.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isReport(Record record) {

@@ -206,7 +206,7 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(generatePublicationInstanceForArchitecture())
                            .build();
             }
-            if (NvaType.CONFERENCE_POSTS.getValue().equals(builder.getType().getNva())) {
+            if (NvaType.CONFERENCE_POSTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Event.Builder().build())
                            .withPublicationInstance(generatePublicationInstanceForConferencePoster())

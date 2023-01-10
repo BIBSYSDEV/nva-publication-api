@@ -103,8 +103,8 @@ public class BrageEntryEventConsumerTest {
                                                                   NvaType.STUDENT_PAPER_OTHERS.getValue());
     public static final Type TYPE_OTHER_STUDENT_WORK = new Type(List.of(NvaType.STUDENT_PAPER.getValue()),
                                                                 NvaType.STUDENT_PAPER.getValue());
-    public static final Type TYPE_CONFERENCE_POSTER = new Type(List.of(NvaType.CONFERENCE_POSTS.getValue()),
-                                                                NvaType.CONFERENCE_POSTS.getValue());
+    public static final Type TYPE_CONFERENCE_POSTER = new Type(List.of(NvaType.CONFERENCE_POSTER.getValue()),
+                                                                NvaType.CONFERENCE_POSTER.getValue());
     public static final Type TYPE_SCIENTIFIC_MONOGRAPH = new Type(List.of(NvaType.SCIENTIFIC_MONOGRAPH.getValue()),
                                                                   NvaType.SCIENTIFIC_MONOGRAPH.getValue());
 
