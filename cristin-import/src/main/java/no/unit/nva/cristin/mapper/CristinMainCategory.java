@@ -11,6 +11,7 @@ public enum CristinMainCategory {
     REPORT("RAPPORT", "REPORT"),
     CHAPTER("BOKRAPPORTDEL", "CHAPTER"),
     EVENT("FOREDRAG", "EVENT"),
+    MEDIA_CONTRIBUTION("MEDIEBIDRAG", "MEDIA_CONTRIBUTION"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -45,6 +46,10 @@ public enum CristinMainCategory {
 
     public static boolean isEvent(CristinObject cristinObject) {
         return CristinMainCategory.EVENT.equals(cristinObject.getMainCategory());
+    }
+
+    public static boolean isMediaContribution(CristinObject cristinObject) {
+        return CristinMainCategory.MEDIA_CONTRIBUTION.equals(cristinObject.getMainCategory());
     }
 
     public boolean isUnknownCategory() {

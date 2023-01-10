@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isMediaContribution;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeLicentiate;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
@@ -21,6 +22,7 @@ import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -87,7 +89,17 @@ public class ReferenceBuilder extends CristinMappingModule {
         if (isEvent(cristinObject)) {
             return buildEventForPublicationContext();
         }
+        if (isMediaContribution(cristinObject)) {
+            return buildMediaContributionForPublicationContext();
+        }
         return null;
+    }
+
+    private PublicationContext buildMediaContributionForPublicationContext() {
+        return new MediaContribution.Builder()
+                   .withFormat(new MediaFormatBuilder(cristinObject).build())
+                   .withMedium( new MediaSubTypeBuilder(cristinObject).build())
+                   .build();
     }
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()

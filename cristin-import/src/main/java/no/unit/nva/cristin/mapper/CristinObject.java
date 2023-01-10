@@ -26,7 +26,7 @@ import no.unit.nva.model.Publication;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 // This list should be emptied by either mapping the field to an NVA field or asking the Cristin people (Daniel)
 // to remove it from the exports
-@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet", "peerReviewed",
+@JsonIgnoreProperties({"brukernavn_opprettet", "peerReviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "type_produkt",
     "kildepostid", "eierkode_opprettet", "arkivpost",
@@ -75,6 +75,9 @@ public class CristinObject implements JsonSerializable {
     private CristinJournalPublication journalPublication;
     @JsonProperty("type_foredrag_poster")
     private CristinLectureOrPosterMetaData lectureOrPosterMetaData;
+
+    @JsonProperty("type_mediebidrag")
+    private CristinMediaContribution mediaContribution;
 
     @JsonProperty("varbeid_kilde")
     private List<CristinSource> cristinSources;
