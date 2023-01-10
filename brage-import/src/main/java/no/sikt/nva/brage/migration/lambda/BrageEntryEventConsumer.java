@@ -85,10 +85,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private boolean hasExistingCristinIdentifier(Publication publication) {
         String cristinIdentifier = getCristinIdentifier(publication);
         return nonNull(cristinIdentifier)
-               && !getExistingPublicationWithCorrespondingCristinIdentifier(cristinIdentifier).isEmpty();
+               && !getPublicationsByCristinIdentifier(cristinIdentifier).isEmpty();
     }
 
-    private List<Publication> getExistingPublicationWithCorrespondingCristinIdentifier(String cristinIdentifier) {
+    private List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
         return resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
     }
 
@@ -100,9 +100,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Publication attemptToUpdateExistingPublication(Publication publication, S3Event s3Event) {
-        var existingPublications =
-            getExistingPublicationWithCorrespondingCristinIdentifier(getCristinIdentifier(publication));
-        return attempt(() -> existingPublications)
+        return attempt(() -> getCristinIdentifier(publication))
+                   .map(this::getPublicationsByCristinIdentifier)
                    .map(publications -> mergeTwoPublications(publication, getOnlyElement(publications), s3Event))
                    .orElseThrow();
     }
