@@ -37,6 +37,7 @@ public class ReadResourceService {
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
     
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
+    public static final int DEFAULT_LIMIT = 100;
     private final AmazonDynamoDB client;
     private final String tableName;
     
@@ -62,7 +63,7 @@ public class ReadResourceService {
         var querySpec = partitionKeyToQuerySpec(partitionKey);
         var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
         var namesMap = querySpec.getNameMap();
-        var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
+        var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap, DEFAULT_LIMIT);
         
         return queryResultToListOfPublications(result);
     }
@@ -115,12 +116,13 @@ public class ReadResourceService {
     }
     
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
-                                     Map<String, String> namesMap) {
+                                     Map<String, String> namesMap, int limit) {
         return client.query(
             new QueryRequest().withKeyConditionExpression(conditionExpression)
                 .withExpressionAttributeNames(namesMap)
                 .withExpressionAttributeValues(valuesMap)
                 .withTableName(tableName)
+                .withLimit(limit)
         );
     }
     
@@ -149,8 +151,7 @@ public class ReadResourceService {
         return new QueryRequest()
                    .withTableName(tableName)
                    .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withKeyConditions(keyConditions)
-                   .withLimit(100);
+                   .withKeyConditions(keyConditions);
     }
     
     private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
