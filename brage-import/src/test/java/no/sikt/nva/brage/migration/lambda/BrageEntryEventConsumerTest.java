@@ -18,6 +18,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -31,11 +32,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
@@ -56,7 +59,12 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.Environment;
@@ -69,7 +77,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
-public class BrageEntryEventConsumerTest {
+public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     public static final String PART_OF_SERIES_VALUE_V1 = "SOMESERIES;42";
     public static final String PART_OF_SERIES_VALUE_V2 = "SOMESERIES;42:2022";
@@ -122,6 +130,7 @@ public class BrageEntryEventConsumerTest {
             "https://api.nva.unit.no/customer/test")).build();
     public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
     public static final String FILENAME = "filename";
+    public static final String HARD_CODED_CRISTIN_IDENTIFIER = "12345";
     private static final Type TYPE_REPORT_WORKING_PAPER = new Type(List.of(NvaType.WORKING_PAPER.getValue()),
                                                                    NvaType.WORKING_PAPER.getValue());
     private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()),
@@ -138,14 +147,16 @@ public class BrageEntryEventConsumerTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
-
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private FakeResourceService resourceService;
+    private ResourceService resource;
 
     @BeforeEach
-    void init() {
+    public void init() {
+        super.init();
+        resource = new ResourceService(client, Clock.systemDefaultZone());
         this.resourceService = new FakeResourceService();
         this.s3Client = new FakeS3cClientWithCopyObjectSupport();
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
@@ -161,6 +172,64 @@ public class BrageEntryEventConsumerTest {
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
+    @Test
+    void shouldAttachAssociatedArtifactsToExistingPublicationWhenCristinIdsMatch()
+        throws IOException, NotFoundException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_REPORT_WORKING_PAPER)
+                                                 .withCristinIdentifier("123456")
+                                                 .withResourceContent(createResourceContent())
+                                                 .build();
+        var existingPublication = persistInDatabase(nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication());
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var handler = new BrageEntryEventConsumer(s3Client, resource);
+        var expectedPublication = existingPublication.copy().withAssociatedArtifacts(
+            new AssociatedArtifactList(createCorrespondingAssociatedArtifacts())).build();
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication.getIdentifier(), is(equalTo(expectedPublication.getIdentifier())));
+        assertThat(actualPublication.getAssociatedArtifacts(),
+                   is(equalTo(expectedPublication.getAssociatedArtifacts())));
+    }
+
+    @Test
+    void shouldCreateNewPublicationWhenPublicationHasCristinIdWhichIsNotPresentInNva()
+        throws IOException, NotFoundException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_REPORT_WORKING_PAPER)
+                                                 .withCristinIdentifier("123456")
+                                                 .withResourceContent(createResourceContent())
+                                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var handler = new BrageEntryEventConsumer(s3Client, resource);
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        actualPublication.setIdentifier(FakeResourceService.SORTABLE_IDENTIFIER);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldCreateNewPublicationWhenPublicationHasNoCristinId() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_REPORT_WORKING_PAPER)
+                                                 .build();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var handler = new BrageEntryEventConsumer(s3Client, resource);
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        actualPublication.setIdentifier(FakeResourceService.SORTABLE_IDENTIFIER);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenThereIsMultipleSearchResultsOnCristinId() throws IOException {
+        persistMultiplePublicationWithSameCristinId();
+        var s3Event = createNewBrageRecordEvent(buildGeneratorObjectWithCristinId()
+                                                    .getBrageRecord());
+        var handler = new BrageEntryEventConsumer(s3Client, resource);
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
     @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
     @ValueSource(strings = {PART_OF_SERIES_VALUE_V1, PART_OF_SERIES_VALUE_V2,
         PART_OF_SERIES_VALUE_V3, PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
@@ -174,7 +243,7 @@ public class BrageEntryEventConsumerTest {
 
     @Test
     void shouldNotConvertSeriesNumberWithoutNumber() throws IOException {
-        var nvaBrageMigrationDataGenerator = buildGeneratorForBookWithoutValidSeriesNumber(PART_OF_SERIES_VALUE_V6);
+        var nvaBrageMigrationDataGenerator = buildGeneratorForBookWithoutValidSeriesNumber();
         var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -504,7 +573,7 @@ public class BrageEntryEventConsumerTest {
                                                  .withType(TYPE_BOOK)
                                                  .build();
         var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(nvaBrageMigrationDataGenerator.getBrageRecord()
-            , "my/path/some.json");
+        );
         var objectKey = UUID;
         var expectedDopyObjRequest = CopyObjectRequest.builder()
                                          .sourceBucket(INPUT_BUCKET_NAME)
@@ -560,6 +629,19 @@ public class BrageEntryEventConsumerTest {
         var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, actualPublication);
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication().getHandle().toString())));
+    }
+
+    private void persistMultiplePublicationWithSameCristinId() {
+        IntStream.range(0, 5).boxed()
+            .map(i -> buildGeneratorObjectWithCristinId())
+            .map(NvaBrageMigrationDataGenerator::getCorrespondingNvaPublication)
+            .forEach(this::persistInDatabase);
+    }
+
+    private Publication persistInDatabase(Publication expectedPublication) {
+        return Resource.fromPublication(expectedPublication).persistNew(resource,
+                                                                        UserInstance.fromPublication(
+                                                                            expectedPublication));
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticleWithoutId() {
@@ -623,6 +705,14 @@ public class BrageEntryEventConsumerTest {
                    .build();
     }
 
+    private NvaBrageMigrationDataGenerator buildGeneratorObjectWithCristinId() {
+        return new NvaBrageMigrationDataGenerator.Builder()
+                   .withType(TYPE_BACHELOR)
+                   .withPublicationDate(PUBLICATION_DATE)
+                   .withCristinIdentifier(HARD_CODED_CRISTIN_IDENTIFIER)
+                   .build();
+    }
+
     private NvaBrageMigrationDataGenerator buildGeneratorForResearchReport() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_RESEARCH_REPORT)
@@ -654,10 +744,10 @@ public class BrageEntryEventConsumerTest {
                    .build();
     }
 
-    private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber(String seriesNumber) {
+    private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber() {
         return new NvaBrageMigrationDataGenerator.Builder()
                    .withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(seriesNumber)
+                   .withSeriesNumberRecord(PART_OF_SERIES_VALUE_V6)
                    .withSeriesNumberPublication(null)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
@@ -760,9 +850,9 @@ public class BrageEntryEventConsumerTest {
         return createS3Event(uri);
     }
 
-    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record, String path) throws IOException {
+    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record) throws IOException {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
-        var uri = s3Driver.insertFile(UnixPath.of(path), recordAsJson);
+        var uri = s3Driver.insertFile(UnixPath.of("my/path/some.json"), recordAsJson);
         return createS3Event(uri);
     }
 
