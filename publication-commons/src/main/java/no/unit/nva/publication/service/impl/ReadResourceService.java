@@ -20,8 +20,10 @@ import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -37,6 +39,7 @@ public class ReadResourceService {
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
     
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
+    private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
     private final AmazonDynamoDB client;
     private final String tableName;
     
@@ -73,7 +76,14 @@ public class ReadResourceService {
         var queryResult = queryObject.fetchByIdentifier(client);
         return (Resource) queryResult.getData();
     }
-    
+
+    public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
+        var queryObject = new ResourceDao(resourceQueryObjectWithCristinIdentifier(cristinIdentifier));
+        var queryRequest = queryObject.createQueryFindByCristinIdentifier();
+        var queryResult = client.query(queryRequest);
+        return queryResultToListOfPublications(queryResult);
+    }
+
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
         return getResource(resourceQueryObject(userInstance, identifier));
     }
@@ -101,10 +111,17 @@ public class ReadResourceService {
                    .map(Resource.class::cast)
                    .collect(Collectors.toList());
     }
-    
+
+    private Resource resourceQueryObjectWithCristinIdentifier(String cristinIdentifier) {
+        var resource = new Resource();
+        resource.setAdditionalIdentifiers(
+            Set.of(new AdditionalIdentifier(ADDITIONAL_IDENTIFIER_CRISTIN, cristinIdentifier)));
+        return resource;
+    }
+
     private String constructPrimaryPartitionKey(UserInstance userInstance) {
         return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
-            userInstance.getUsername());
+                                                        userInstance.getUsername());
     }
     
     private List<Publication> queryResultToListOfPublications(QueryResult result) {
