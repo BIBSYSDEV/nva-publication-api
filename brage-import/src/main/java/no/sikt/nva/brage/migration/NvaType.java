@@ -21,6 +21,7 @@ public enum NvaType {
     RECORDING_ORAL("Lydopptak, verbalt"),
     PLAN_OR_BLUEPRINT("Architecture"),
     MAP("Map"),
+    CONFERENCE_POSTS("ConferencePoster"),
     SCIENTIFIC_MONOGRAPH("Vitenskapelig monografi"),
     SCIENTIFIC_CHAPTER("Vitenskapelig kapittel"),
     SCIENTIFIC_ARTICLE("Vitenskapelig artikkel");

@@ -23,6 +23,9 @@ public enum BrageType {
     RECORDING_ORAL("Recording, oral"),
     PLAN_OR_BLUEPRINT("Plan or blueprint"),
     MAP("Map"),
+    NOTES("Notat"),
+    POSTS("Poster"),
+    PRESENTATION("Presentasjon"),
     PEER_REVIEWED("Peer reviewed");
 
     private final String value;

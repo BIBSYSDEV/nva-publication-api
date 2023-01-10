@@ -43,6 +43,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
+import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -53,6 +54,7 @@ import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.NullPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
@@ -204,10 +206,22 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(generatePublicationInstanceForArchitecture())
                            .build();
             }
+            if (NvaType.CONFERENCE_POSTS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Event.Builder().build())
+                           .withPublicationInstance(generatePublicationInstanceForConferencePoster())
+                           .build();
+            }
             return new Reference.Builder().build();
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
+    }
+
+    private static ConferencePoster generatePublicationInstanceForConferencePoster() {
+        var poster = new ConferencePoster();
+        poster.setPages(new NullPages());
+        return poster;
     }
 
     @NotNull
@@ -293,7 +307,6 @@ public final class ReferenceGenerator {
                    .withSeries(generateSeries(builder))
                    .withSeriesNumber(builder.getSeriesNumberPublication())
                    .build();
-
     }
 
     private static BookMonograph generatePublicationInstanceForScientificMonograph(Builder builder) {
