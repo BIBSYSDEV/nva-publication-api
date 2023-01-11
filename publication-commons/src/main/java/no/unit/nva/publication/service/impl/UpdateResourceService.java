@@ -25,6 +25,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
@@ -48,7 +49,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     //TODO: fix affiliation update when updating owner
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
-    
+    public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
+    public static final String DELETION_IN_PROGRESS = "Deletion in progress. This may take a while";
+
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
@@ -125,6 +128,31 @@ public class UpdateResourceService extends ServiceWithTransactions {
         } else {
             throw new UnsupportedOperationException("Functionality not specified");
         }
+    }
+
+    DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
+        throws NotFoundException {
+        var publication =
+            readResourceService.getResourceByIdentifier(resourceIdentifier).toPublication();
+        //TODO: waiting for PublicationStatus.Deleted in nva-datamodel to be approved.
+        if (PublicationStatus.NEW.equals(publication.getStatus())) {
+            return deletionStatusIsCompleted();
+        } else {
+            publication.setStatus(PublicationStatus.NEW);
+            publication.setPublishedDate(null);
+            updatePublicationIncludingStatus(publication);
+            return deletionStatusChangeInProgress();
+        }
+    }
+
+    protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
+        return new DeletePublicationStatusResponse(RESOURCE_ALREADY_DELETED,
+                                                   HttpURLConnection.HTTP_NO_CONTENT);
+    }
+
+    protected static DeletePublicationStatusResponse deletionStatusChangeInProgress() {
+        return new DeletePublicationStatusResponse(DELETION_IN_PROGRESS,
+                                                   HttpURLConnection.HTTP_ACCEPTED);
     }
 
     private boolean publicationMetadataPublished(Publication publication) {

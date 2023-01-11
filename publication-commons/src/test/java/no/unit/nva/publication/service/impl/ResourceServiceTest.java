@@ -947,7 +947,36 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
         assertThat(persistedPublished.getAssociatedArtifacts(), everyItem(is(instanceOf(AssociatedLink.class))));
     }
-    
+
+    @Test
+    void shouldBePossibleToSetPublicationStatusToDeletedForPublishedPublication() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var publicationIdentifier = publishedResource.getIdentifier();
+        var expectedUpdateStatus = UpdateResourceService.deletionStatusChangeInProgress();
+        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        assertThat(actualUpdateStatus, is(equalTo(expectedUpdateStatus)));
+        var actualPublicationInDatabaseAfterStatusUpdate =
+            resourceService.getPublicationByIdentifier(publicationIdentifier);
+        //TODO: waiting for PublicationStatus.Deleted in nva-datamodel to be approved.
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(PublicationStatus.NEW)));
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getPublishedDate(), is(equalTo(null)));
+    }
+
+    @Test
+    void updatePublishedStatusToDeletedShouldReturnResourceAlreadyDeletedMessage () throws NotFoundException {
+        var deletedPublication  = createDeletedResource();
+        var publicationIdentifier = deletedPublication.getIdentifier();
+        var expectedUpdateStatus = UpdateResourceService.deletionStatusIsCompleted();
+        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
+    }
+
+    private Publication createDeletedResource() {
+        var publication = randomPublication().copy().withStatus(PublicationStatus.NEW).withDoi(null).build();
+        return Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }
