@@ -6,6 +6,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultCloc
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -54,7 +55,6 @@ class FilenameEventEmitterTest {
     
     public static final String EMPTY_SUBTOPIC = null;
     private static final String SOME_BUCKET = "someBucket";
-    private static final String VALID_SUBTOPIC_CRISTIN_IMPORT = "PublicationService.CristinData.DataEntry";
     private static final URI SOME_S3_LOCATION = URI.create("s3://" + SOME_BUCKET + "/");
     private static final Context CONTEXT = mock(Context.class);
     private static final Instant NOW = Instant.now();
@@ -103,7 +103,9 @@ class FilenameEventEmitterTest {
         
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
         var s3Location = URI.create(SOME_S3_LOCATION + pathSeparator);
-        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC, VALID_SUBTOPIC_CRISTIN_IMPORT, s3Location,
+        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                               SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+                                               s3Location,
                                                NOW);
         var inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -136,7 +138,7 @@ class FilenameEventEmitterTest {
     }
 
     @ParameterizedTest(
-        name = "should emit supopic from importRequest when valid subtopics are supplied")
+        name = "should emit suptopic from importRequest when valid subtopics are supplied")
     @ValueSource(strings = {"PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry"})
     void shouldEmitSubtopicFromImportRequestIfSupported(String subtopic) {
         var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
@@ -293,7 +295,7 @@ class FilenameEventEmitterTest {
     
     private EventReference newImportRequest() {
         return new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
-                                  VALID_SUBTOPIC_CRISTIN_IMPORT,
+                                  SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
                                   SOME_S3_LOCATION,
                                   NOW);
     }
