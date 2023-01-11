@@ -49,6 +49,7 @@ public enum CristinSecondaryCategory {
     POPULAR_SCIENTIFIC_LECTURE("POPVIT_FOREDRAG", "POPULAR_SCIENTIFIC_LECTURE"),
     OTHER_PRESENTATION("ANNEN_PRESENTASJ", "OTHER_PRESENTATION"),
     INTERNET_EXHIBIT("UTST_WEB", "INTERNET_EXHIBIT"),
+    PROGRAM_PARTICIPATION("PROGDELTAGELSE", "PROGRAM_PARTICIPATION"),
     INTERVIEW("INTERVJU", "INTERVIEW"),
     UNMAPPED;
 
@@ -143,6 +144,10 @@ public enum CristinSecondaryCategory {
 
     public static boolean isInterview(CristinObject cristinObject) {
         return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isProgramParticipation(CristinObject cristinObject) {
+        return CristinSecondaryCategory.PROGRAM_PARTICIPATION.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isConferenceLecture(CristinObject cristinObject) {

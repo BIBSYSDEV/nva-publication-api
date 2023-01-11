@@ -193,6 +193,8 @@ public final class CristinDataGenerator {
                 return randomEvent(category);
             case INTERVIEW:
                 return randomMedia(category);
+            case PROGRAM_PARTICIPATION:
+                return randomTVOMedia(category);
             default:
                 break;
         }
@@ -322,6 +324,13 @@ public final class CristinDataGenerator {
         var json = JsonUtils.dtoObjectMapper.convertValue(object, ObjectNode.class);
         json.put(propertyName, randomString());
         return json;
+    }
+
+    private static CristinObject randomTVOMedia(CristinSecondaryCategory category) {
+        var cristinObject = createRandomMediaWithSpecifiedSecondaryCategory(category);
+        cristinObject.getMediaContribution()
+            .setCristinMediumType(CristinMediumType.builder().withMediumTypeCode(CristinMediumTypeCode.TV).build());
+        return cristinObject;
     }
 
     private static CristinObject randomMedia(CristinSecondaryCategory secondaryCategory) {
