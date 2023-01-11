@@ -23,12 +23,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -51,23 +50,25 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class FilenameEventEmitter implements RequestStreamHandler {
     
     public static final String FILENAME_EMISSION_EVENT_TOPIC = "PublicationService.DataImport.Filename";
+    public static final String SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER =
+        "PublicationService.CristinData.DataEntry";
+    public static final String SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER =
+        "PublicationService.CristinData.PatchEntry";
+    public static final Set<String> SUPPORTED_SUBTOPICS =
+        Set.of(SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+               SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER);
     
-    public static final Environment ENVIRONMENT = new Environment();
     public static final String EXPECTED_BODY_MESSAGE =
         "The expected json body contains only an s3Location.\nThe received body was: ";
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
-    
-    public static final String INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV =
-        "Import event subtopic is set for this handler and cannot be set by the user. "
-        + EXPECTED_BODY_MESSAGE;
-    
+
+    public static final String INFORM_USER_THAT_SUBTYPE_IS_INVALID_TEMPLATE =
+        "Invalid subtopic supplied: %s, , only these are valid: %s";
+
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:{}";
     public static final String RUNNING_CLASS_NAME = FilenameEventEmitter.class.getCanonicalName();
     public static final String ERROR_REPORT_FILENAME = Instant.now().toString() + "emitFilenamesReport.error.";
-    
-    public static final String FILENAME_EMISSION_EVENT_SUBTOPIC =
-        ENVIRONMENT.readEnv("FILENAME_EMISSION_EVENT_SUBTOPIC");
     public static final int NUMBER_OF_EMITTED_FILENAMES_PER_BATCH = 10;
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
@@ -92,7 +93,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         var importRequest = parseInput(input);
         var files = listFiles(importRequest);
         validateImportRequest(importRequest, files);
-        var failedRequests = emitEvents(context, files);
+        var failedRequests = emitEvents(context, files, importRequest);
         logWarningForNotEmittedFilenames(failedRequests);
         List<URI> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
         writeFailedEmitActionsInS3(failedRequests, importRequest);
@@ -159,39 +160,43 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .map(EventReference::getUri)
                    .collect(Collectors.toList());
     }
-    
-    private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
-        
+
+    private List<PutEventsResult> emitEvents(Context context, List<URI> files, EventReference importRequest) {
+
         var filenameEvents = files.stream()
-                                 .map(this::newImportRequestForSingleFile)
+                                 .map(file -> newImportRequestForSingleFile(file, importRequest))
                                  .collect(Collectors.toList());
-        
+
         return returnEmitAllEvents(context, filenameEvents);
     }
     
     private List<PutEventsResult> returnEmitAllEvents(Context context, List<EventReference> filenameEvents) {
         var batchEventEmitter = new BatchEventEmitter(RUNNING_CLASS_NAME,
-            context.getInvokedFunctionArn(), eventBridgeClient);
-    
+                                                      context.getInvokedFunctionArn(), eventBridgeClient);
+
         batchEventEmitter.addEvents(filenameEvents);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
     }
-    
-    private EventReference newImportRequestForSingleFile(URI uri) {
-        return new EventReference(FILENAME_EMISSION_EVENT_TOPIC, FILENAME_EMISSION_EVENT_SUBTOPIC, uri,
-            commonTimestampForAllEmittedEventsIndicatingTheBeginningOfTheImport);
+
+    private EventReference newImportRequestForSingleFile(URI uri, EventReference importRequest) {
+        return new EventReference(FILENAME_EMISSION_EVENT_TOPIC, importRequest.getSubtopic(), uri,
+                                  commonTimestampForAllEmittedEventsIndicatingTheBeginningOfTheImport);
     }
     
     private void validateImportRequest(EventReference importRequest, List<URI> files) {
         if (isNull(files) || files.isEmpty()) {
             throw new IllegalArgumentException(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getUri());
         }
-        if (StringUtils.isNotBlank(importRequest.getSubtopic())) {
-            throw new IllegalArgumentException(
-                INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV + importRequest.toJsonString());
+        if (isNull(importRequest.getSubtopic()) || !isSupportedSubtopic(importRequest)) {
+            throw new IllegalArgumentException(String.format(INFORM_USER_THAT_SUBTYPE_IS_INVALID_TEMPLATE,
+                                                             importRequest.getSubtopic(), SUPPORTED_SUBTOPICS));
         }
     }
-    
+
+    private boolean isSupportedSubtopic(EventReference importRequest) {
+        return SUPPORTED_SUBTOPICS.contains(importRequest.getSubtopic());
+    }
+
     private EventReference parseInput(InputStream input) {
         String inputString = IoUtils.streamToString(input);
         return attempt(() -> EventReference.fromJson(inputString))

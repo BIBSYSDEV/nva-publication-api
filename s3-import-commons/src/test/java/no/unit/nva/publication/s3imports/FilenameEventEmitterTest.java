@@ -6,6 +6,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultCloc
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -102,7 +103,10 @@ class FilenameEventEmitterTest {
         
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
         var s3Location = URI.create(SOME_S3_LOCATION + pathSeparator);
-        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC, EMPTY_SUBTOPIC, s3Location, NOW);
+        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                               SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+                                               s3Location,
+                                               NOW);
         var inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         var fileList = fetchEmittedEventReferences()
@@ -112,7 +116,45 @@ class FilenameEventEmitterTest {
         
         assertThat(fileList, containsInAnyOrder(injectedFiles.toArray(URI[]::new)));
     }
-    
+
+    @Test
+    void shouldThrowExceptionWhenSubtopicIsNotSet() {
+        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                               EMPTY_SUBTOPIC,
+                                               SOME_S3_LOCATION,
+                                               NOW);
+        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        assertThrows(IllegalArgumentException.class, action);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenSubtopicIsNotRecognized() {
+        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                               "some.invalid.subtopic",
+                                               SOME_S3_LOCATION,
+                                               NOW);
+        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        assertThrows(IllegalArgumentException.class, action);
+    }
+
+    @ParameterizedTest(
+        name = "should emit suptopic from importRequest when valid subtopics are supplied")
+    @ValueSource(strings = {"PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry"})
+    void shouldEmitSubtopicFromImportRequestIfSupported(String subtopic) {
+        var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                               subtopic,
+                                               SOME_S3_LOCATION,
+                                               NOW);
+        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        assertDoesNotThrow(action);
+        List<EventReference> actualEmittedEvents = fetchEmittedEventReferences();
+
+        for (var emittedEvent : actualEmittedEvents) {
+            assertThat(emittedEvent.getSubtopic(),
+                       is(equalTo(subtopic)));
+        }
+    }
+
     @Test
     void handlerReturnsEmptyListWhenAllFilenamesHaveBeenEmittedSuccessfully()
         throws IOException {
@@ -135,7 +177,7 @@ class FilenameEventEmitterTest {
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(),
-            containsString(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getUri()));
+                   containsString(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getUri()));
     }
     
     @Test
@@ -175,11 +217,7 @@ class FilenameEventEmitterTest {
             assertThat(content, containsString(filename.toString()));
         }
     }
-    
-    private UnixPath extractPathFromS3Location(EventReference importRequest) {
-        return UriWrapper.fromUri(importRequest.getUri()).toS3bucketPath();
-    }
-    
+
     @Test
     void handlerDoesNotCreateReportFileWhenNoErrorHasOccurred()
         throws IOException {
@@ -215,15 +253,7 @@ class FilenameEventEmitterTest {
             assertThat(emittedImportRequest.getTimestamp(), is(equalTo(expectedTimestamp)));
         }
     }
-    
-    private List<EventReference> fetchEmittedEventReferences() {
-        return eventBridgeClient.getRequestEntries()
-                   .stream()
-                   .map(PutEventsRequestEntry::detail)
-                   .map(EventReference::fromJson)
-                   .collect(Collectors.toList());
-    }
-    
+
     @Test
     void shouldEmitEventWithTopicFilenameEmissionEvent() throws IOException {
         EventReference importRequest = newImportRequest();
@@ -232,12 +262,22 @@ class FilenameEventEmitterTest {
         
         for (var emittedEvent : actualEmittedEvents) {
             assertThat(emittedEvent.getTopic(),
-                is(equalTo(FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC)));
-            assertThat(emittedEvent.getSubtopic(),
-                is(equalTo(FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC)));
+                       is(equalTo(FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC)));
         }
     }
-    
+
+    private UnixPath extractPathFromS3Location(EventReference importRequest) {
+        return UriWrapper.fromUri(importRequest.getUri()).toS3bucketPath();
+    }
+
+    private List<EventReference> fetchEmittedEventReferences() {
+        return eventBridgeClient.getRequestEntries()
+                   .stream()
+                   .map(PutEventsRequestEntry::detail)
+                   .map(EventReference::fromJson)
+                   .collect(Collectors.toList());
+    }
+
     private URI insertRandomFile() throws IOException {
         UnixPath firstFilePath = UnixPath.of(randomString()).addChild(randomString());
         return s3Driver.insertFile(firstFilePath, randomString());
@@ -255,9 +295,9 @@ class FilenameEventEmitterTest {
     
     private EventReference newImportRequest() {
         return new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
-            EMPTY_SUBTOPIC,
-            SOME_S3_LOCATION,
-            NOW);
+                                  SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+                                  SOME_S3_LOCATION,
+                                  NOW);
     }
     
     private FilenameEventEmitter handlerThatFailsToEmitMessages() {
