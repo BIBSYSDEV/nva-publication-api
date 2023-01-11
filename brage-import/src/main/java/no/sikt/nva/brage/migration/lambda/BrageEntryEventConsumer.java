@@ -52,6 +52,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
+    private List<Publication> publicationsByCristinIdentifier;
 
     public BrageEntryEventConsumer(S3Client s3Client, ResourceService resourceService) {
         this.s3Client = s3Client;
@@ -67,7 +68,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
                    .map(publication -> pushAssociatedFilesToPersistedStorage(publication, s3Event))
-                   .map(publication -> hasExistingCristinIdentifier(publication)
+                   .map(publication -> publicationWithCristinIdentifierAlreadyExists(publication)
                                            ? attemptToUpdateExistingPublication(publication, s3Event)
                                            : createNewPublication(publication, s3Event))
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
@@ -82,10 +83,13 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return Iterables.getOnlyElement(publications);
     }
 
-    private boolean hasExistingCristinIdentifier(Publication publication) {
+    private boolean publicationWithCristinIdentifierAlreadyExists(Publication publication) {
         String cristinIdentifier = getCristinIdentifier(publication);
-        return nonNull(cristinIdentifier)
-               && !getPublicationsByCristinIdentifier(cristinIdentifier).isEmpty();
+        if (nonNull(cristinIdentifier)) {
+            publicationsByCristinIdentifier = getPublicationsByCristinIdentifier(cristinIdentifier);
+            return !publicationsByCristinIdentifier.isEmpty();
+        }
+        return false;
     }
 
     private List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
@@ -100,8 +104,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Publication attemptToUpdateExistingPublication(Publication publication, S3Event s3Event) {
-        return attempt(() -> getCristinIdentifier(publication))
-                   .map(this::getPublicationsByCristinIdentifier)
+        return attempt(() -> publicationsByCristinIdentifier)
                    .map(publications -> mergeTwoPublications(publication, getOnlyElement(publications), s3Event))
                    .orElseThrow();
     }

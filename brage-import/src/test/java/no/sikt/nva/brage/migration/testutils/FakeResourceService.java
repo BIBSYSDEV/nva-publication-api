@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.testutils;
 
+import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -9,12 +10,16 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public class FakeResourceService extends ResourceService {
 
-    private final List<Publication> publicationList;
     public static SortableIdentifier SORTABLE_IDENTIFIER = ResourceService.DEFAULT_IDENTIFIER_SUPPLIER.get();
+    private final List<Publication> publicationList;
 
     public FakeResourceService() {
         super(null, null, null);
         this.publicationList = new ArrayList<>();
+    }
+
+    public void addPublicationWithCristinIdentifier(Publication publication) {
+        publicationList.add(publication);
     }
 
     @Override
@@ -23,6 +28,16 @@ public class FakeResourceService extends ResourceService {
         publication.setStatus(PublicationStatus.PUBLISHED);
         publicationList.add(publication);
         return publication;
+    }
+
+    @Override
+    public List<Publication> getPublicationsByCristinIdentifier(String cristinId) {
+        return publicationList;
+    }
+
+    @Override
+    public Publication updatePublication(Publication resourceUpdate) {
+        return Iterables.getOnlyElement(publicationList);
     }
 
     public List<Publication> getPublicationsThatHasBeenCreatedByImportedEntry() {

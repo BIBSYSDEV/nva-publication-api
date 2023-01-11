@@ -46,7 +46,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.Instant;
 
 public class NvaBrageMigrationDataGenerator {
@@ -64,7 +63,7 @@ public class NvaBrageMigrationDataGenerator {
         return brageRecord;
     }
 
-    public Publication getCorrespondingNvaPublication() {
+    public Publication getNvaPublication() {
         return correspondingNvaPublication;
     }
 
