@@ -63,6 +63,8 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
 
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final Clock CLOCK = Clock.systemDefaultZone();
+    private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
+        "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS";
 
     private final ResourceService resourceService;
     private final S3Client s3Client;
@@ -96,7 +98,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
                    .flatMap(this::persistInDatabase)
                    .map(publication -> persistCristinIdentifierInFileNamedWithPublicationIdentifier(publication,
                                                                                                     eventBody))
-                   .map(publication -> persistPartOfCristinIdentiferIfPartOfExists(publication, eventBody))
+                   .map(publication -> persistPartOfCristinIdentifierIfPartOfExists(publication, eventBody))
                    .orElseThrow(fail -> handleSavingError(fail, eventBody));
     }
 
@@ -127,8 +129,8 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         return CristinObject.IDENTIFIER_ORIGIN.equals(additionalIdentifier.getSource());
     }
 
-    private Publication persistPartOfCristinIdentiferIfPartOfExists(Publication publication,
-                                                                    FileContentsEvent<JsonNode> eventBody) {
+    private Publication persistPartOfCristinIdentifierIfPartOfExists(Publication publication,
+                                                                     FileContentsEvent<JsonNode> eventBody) {
         if (cristinObjectIsPartOfAnotherPublication(eventBody)) {
             persistPartOfCristinIdentifierWithPublicationId(publication, eventBody);
         }
@@ -178,7 +180,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         var timestamp = eventBody.getTimestamp();
         var bucket = fileUri.getHost();
         return bucket
-                   .addChild("PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS")
+                   .addChild(PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH)
                    .addChild(timestampToString(timestamp))
                    .addChild(publication.getIdentifier().toString());
     }
