@@ -23,7 +23,6 @@ import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -32,7 +31,6 @@ import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
@@ -93,12 +91,9 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
 
         validateEvent(event);
         var eventBody = readEventBody(input);
-        return attempt(() -> parseCristinObject(eventBody))
-                   .map(CristinObject::toPublication)
-                   .flatMap(this::persistInDatabase)
-                   .map(publication -> persistCristinIdentifierInFileNamedWithPublicationIdentifier(publication,
-                                                                                                    eventBody))
-                   .map(publication -> persistPartOfCristinIdentifierIfPartOfExists(publication, eventBody))
+        return attempt(() -> mapEventToNvaPublication(eventBody))
+                   .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
+                   .map(this::persistConversionReports)
                    .orElseThrow(fail -> handleSavingError(fail, eventBody));
     }
 
@@ -117,82 +112,88 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
                    .build();
     }
 
-    private static Optional<String> getCristinIdentifier(Publication publication) {
-        return publication.getAdditionalIdentifiers()
-                   .stream()
-                   .filter(CristinEntryEventConsumer::isCristinAdditionalIdentifier)
-                   .findFirst()
-                   .map(AdditionalIdentifier::getValue);
+    private Publication persistConversionReports(PublicationRepresentations publicationRepresentations) {
+        persistCristinIdentifierInFileNamedWithPublicationIdentifier(publicationRepresentations);
+        persistPartOfCristinIdentifierIfPartOfExists(publicationRepresentations);
+        return publicationRepresentations.getPublication();
     }
 
-    private static boolean isCristinAdditionalIdentifier(AdditionalIdentifier additionalIdentifier) {
-        return CristinObject.IDENTIFIER_ORIGIN.equals(additionalIdentifier.getSource());
+    private PublicationRepresentations mapEventToNvaPublication(
+        FileContentsEvent<JsonNode> eventbody) {
+        var cristinObject = parseCristinObject(eventbody);
+        var publication = cristinObject.toPublication();
+        return new PublicationRepresentations(cristinObject, publication, eventbody);
     }
 
-    private Publication persistPartOfCristinIdentifierIfPartOfExists(Publication publication,
-                                                                     FileContentsEvent<JsonNode> eventBody) {
-        if (cristinObjectIsPartOfAnotherPublication(eventBody)) {
-            persistPartOfCristinIdentifierWithPublicationId(publication, eventBody);
+    private void persistPartOfCristinIdentifierIfPartOfExists(
+        PublicationRepresentations publicationRepresentations) {
+        if (cristinObjectIsPartOfAnotherPublication(publicationRepresentations.getCristinObject())) {
+            persistPartOfCristinIdentifierWithPublicationId(publicationRepresentations);
         }
-        return publication;
     }
 
-    private boolean cristinObjectIsPartOfAnotherPublication(FileContentsEvent<JsonNode> eventBody) {
-        var cristinObject = parseCristinObject(eventBody);
+    private boolean cristinObjectIsPartOfAnotherPublication(CristinObject cristinObject) {
         return nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
             cristinObject.getBookOrReportPartMetadata().getPartOf());
     }
 
-    private String getPartOfCristinIdentifier(FileContentsEvent<JsonNode> eventBody) {
-        var cristinObject = parseCristinObject(eventBody);
+    private String getPartOfCristinIdentifier(CristinObject cristinObject) {
         return cristinObject.getBookOrReportPartMetadata().getPartOf();
     }
 
-    private void persistPartOfCristinIdentifierWithPublicationId(Publication publication,
-                                                                 FileContentsEvent<JsonNode> eventBody) {
-        var partOf = createPartOf(publication, getPartOfCristinIdentifier(eventBody));
-        var fileUri = constructPartOfFileUri(eventBody, publication);
+    private void persistPartOfCristinIdentifierWithPublicationId(
+        PublicationRepresentations publicationRepresentations) {
+        var partOf = createPartOf(publicationRepresentations);
+        var fileUri = constructPartOfFileUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), partOf.toJsonString())).orElseThrow();
     }
 
-    private NvaPublicationPartOfCristinPublication createPartOf(Publication publication, String partOf) {
+    private NvaPublicationPartOfCristinPublication createPartOf(PublicationRepresentations publicationRepresentations) {
+        var publicationIdentifier = publicationRepresentations.getPublication().getIdentifier().toString();
+        var publicationIsPartOfThisCristinPublication =
+            getPartOfCristinIdentifier(publicationRepresentations.getCristinObject());
         return
             NvaPublicationPartOfCristinPublication.builder()
-                .withNvaPublicationIdentifier(publication.getIdentifier().toString())
-                .withPartOf(NvaPublicationPartOf.builder().withCristinId(partOf).build())
+                .withNvaPublicationIdentifier(publicationIdentifier)
+                .withPartOf(
+                    NvaPublicationPartOf.builder()
+                        .withCristinId(publicationIsPartOfThisCristinPublication)
+                        .build())
                 .build();
     }
 
-    private Publication persistCristinIdentifierInFileNamedWithPublicationIdentifier(Publication publication,
-                                                                                     FileContentsEvent<JsonNode> eventBody) {
-        var cristinIdentifier =
-            getCristinIdentifier(publication);
-        var fileUri = constructSuccessFileUri(eventBody, publication);
+    private void persistCristinIdentifierInFileNamedWithPublicationIdentifier(
+        PublicationRepresentations publicationRepresentations) {
+        var cristinIdentifier = publicationRepresentations.getCristinObject().getId().toString();
+        var fileUri = constructSuccessFileUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
-                                          cristinIdentifier.orElse(StringUtils.EMPTY_STRING))).orElseThrow();
-        return publication;
+                                          cristinIdentifier)).orElseThrow();
     }
 
-    private UriWrapper constructPartOfFileUri(FileContentsEvent<JsonNode> eventBody, Publication publication) {
-        var fileUri = UriWrapper.fromUri(eventBody.getFileUri());
-        var timestamp = eventBody.getTimestamp();
+    private UriWrapper constructPartOfFileUri(PublicationRepresentations publicationRepresentations) {
+        var publicationIdentifier = publicationRepresentations.getPublication().getIdentifier().toString();
+        var eventBodyFileUri = publicationRepresentations.getEventBody().getFileUri();
+        var fileUri = UriWrapper.fromUri(eventBodyFileUri);
+        var timestamp = publicationRepresentations.getEventBody().getTimestamp();
         var bucket = fileUri.getHost();
         return bucket
                    .addChild(PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH)
                    .addChild(timestampToString(timestamp))
-                   .addChild(publication.getIdentifier().toString());
+                   .addChild(publicationIdentifier);
     }
 
-    private UriWrapper constructSuccessFileUri(FileContentsEvent<JsonNode> eventBody, Publication publication) {
-        var fileUri = UriWrapper.fromUri(eventBody.getFileUri());
-        var timestamp = eventBody.getTimestamp();
+    private UriWrapper constructSuccessFileUri(PublicationRepresentations publicationRepresentations) {
+        var publicationIdentifier = publicationRepresentations.getPublication().getIdentifier().toString();
+        var eventBodyFileUri = publicationRepresentations.getEventBody().getFileUri();
+        var timestamp = publicationRepresentations.getEventBody().getTimestamp();
+        var fileUri = UriWrapper.fromUri(eventBodyFileUri);
         var bucket = fileUri.getHost();
         return bucket
                    .addChild(SUCCESS_FOLDER)
                    .addChild(timestampToString(timestamp))
-                   .addChild(publication.getIdentifier().toString());
+                   .addChild(publicationIdentifier);
     }
 
     private FileContentsEvent<JsonNode> readEventBody(EventReference input) {
@@ -229,6 +230,14 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
 
     private String messageIndicatingTheCorrectEventType(AwsEventBridgeEvent<EventReference> event) {
         return String.format(WRONG_SUBTOPIC_ERROR_TEMPLATE, event.getDetail().getSubtopic(), EVENT_SUBTOPIC);
+    }
+
+    private PublicationRepresentations persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier
+        (PublicationRepresentations publicationRepresentations) {
+        var publicationWithIdentifier =
+            persistInDatabase(publicationRepresentations.getPublication()).orElseThrow();
+        publicationRepresentations.setPublication(publicationWithIdentifier);
+        return publicationRepresentations;
     }
 
     private Try<Publication> persistInDatabase(Publication publication) {
