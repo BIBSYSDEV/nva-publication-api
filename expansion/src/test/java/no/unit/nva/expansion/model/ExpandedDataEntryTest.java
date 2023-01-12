@@ -9,7 +9,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,6 +24,7 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublicationDetails;
@@ -44,8 +44,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -79,30 +77,40 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     }
 
-    @Test
-    @Disabled("Fails sometimes dependend on what random data is created by createPublicationWithoutDoi()")
-    void shouldReturnExpandedResourceWithoutLossOfInformation() throws JsonProcessingException {
-        var publication = createPublicationWithoutDoi();
-
-        var expandedResource = fromPublication(uriRetriever, publication);
-        var regeneratedPublication = objectMapper.readValue(expandedResource.toJsonString(), Publication.class);
-        assertThat(regeneratedPublication, is(equalTo(publication)));
+    public static Stream<Class<?>> publicationInstanceProvider() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
 
-    @Test
-    void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized()
-        throws JsonProcessingException {
+    @ParameterizedTest(name = "Expanded resource should not loose information for instance type {0}")
+    @MethodSource("publicationInstanceProvider")
+    void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType) throws JsonProcessingException {
+        var publication = createPublicationWithoutDoi(instanceType);
 
-        var publication = randomPublication();
+        var expandedResource = fromPublication(uriRetriever, publication);
+
+        var expandedResourceAsJson = expandedResource.toJsonString();
+
+        var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
+
+        assertThat(expandedResourceAsJson, regeneratedPublication, is(equalTo(publication)));
+    }
+
+    @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
+    @MethodSource("publicationInstanceProvider")
+    void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized(
+        Class<?> instanceType
+    ) throws JsonProcessingException {
+
+        var publication = randomPublication(instanceType);
         var expandedResource = fromPublication(uriRetriever, publication);
         var json = objectMapper.readTree(expandedResource.toJsonString());
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
 
-    //TODO: parametrize test
-    @Test
-    void expandedDoiRequestShouldHaveTypeDoiRequest() throws ApiGatewayException {
-        var publication = createPublicationWithoutDoi();
+    @ParameterizedTest(name = "Expanded DOI request should have type DoiRequest for instance type {0}")
+    @MethodSource("publicationInstanceProvider")
+    void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
+        var publication = createPublicationWithoutDoi(instanceType);
         var doiRequest = createDoiRequest(publication);
         var expandedResource =
             ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
@@ -144,12 +152,16 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return randomPublication().copy().withDoi(null).build();
     }
 
+    private static Publication randomPublicationWithoutDoi(Class<?> instanceType) {
+        return randomPublication(instanceType).copy().withDoi(null).build();
+    }
+
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
         return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
     }
 
-    private Publication createPublicationWithoutDoi() {
-        var publication = randomPublicationWithoutDoi();
+    private Publication createPublicationWithoutDoi(Class<?> instanceType) {
+        var publication = randomPublicationWithoutDoi(instanceType);
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
