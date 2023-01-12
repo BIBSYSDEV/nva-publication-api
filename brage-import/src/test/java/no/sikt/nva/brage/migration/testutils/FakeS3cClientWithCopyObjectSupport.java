@@ -24,15 +24,15 @@ public class FakeS3cClientWithCopyObjectSupport extends FakeS3Client {
         return CopyObjectResponse.builder().build();
     }
 
-    public List<CopyObjectRequest> getCopyObjectRequestList() {
-        return copyObjectRequestList;
-    }
-
     @Override
     public HeadObjectResponse headObject(HeadObjectRequest headObjectRequest) {
         return HeadObjectResponse.builder()
                    .contentLength(SOME_CONTENT_LENGTH)
                    .contentType(APPLICATION_PDF_MIMETYPE)
                    .build();
+    }
+
+    public List<CopyObjectRequest> getCopyObjectRequestList() {
+        return copyObjectRequestList;
     }
 }

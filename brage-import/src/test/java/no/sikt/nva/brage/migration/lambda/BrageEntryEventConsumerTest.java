@@ -30,6 +30,7 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -143,6 +144,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
+    private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
@@ -166,14 +168,39 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
+    //Temporary compares associatedArtifacts based on contentLength. Has to be changed for proper comparison of
+    // artifacts. See AssociatedArtifactComparator.
     @Test
-    void shouldAttachAssociatedArtifactsToExistingPublicationWhenCristinIdsMatch()
+    void shouldNotAttachAssociatedArtifactsToExistingPublicationWhenAssociatedArtifactAlreadyExistsAndWhenCristinIdsMatch()
         throws IOException, NotFoundException {
         var dataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                 .withType(TYPE_REPORT_WORKING_PAPER)
                                 .withCristinIdentifier("123456")
                                 .withResourceContent(createResourceContent())
+                                .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                                 .build();
+        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
+        var file = new java.io.File("src/test/resources/testFile.txt");
+        putAssociatedArtifactsToResourceStorage(dataGenerator, s3Driver, file);
+        var s3Event = createNewBrageRecordEvent(dataGenerator.getBrageRecord());
+        resourceService.addPublicationWithCristinIdentifier(dataGenerator.getNvaPublication());
+        var expectedPublication = createPublicationWithAssociatedArtifacts(dataGenerator.getNvaPublication(),
+                                                                           createCorrespondingAssociatedArtifacts());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    void shouldAttachAssociatedArtifactsToExistingPublicationWhenNewAssociatedArtifactAndWhenCristinIdsMatch()
+        throws IOException {
+        var dataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                .withType(TYPE_REPORT_WORKING_PAPER)
+                                .withCristinIdentifier("123456")
+                                .withResourceContent(createResourceContent())
+                                .build();
+        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
+        var file = new java.io.File("src/test/resources/testFile.txt");
+        putAssociatedArtifactsToResourceStorage(dataGenerator, s3Driver, file);
         var s3Event = createNewBrageRecordEvent(dataGenerator.getBrageRecord());
         resourceService.addPublicationWithCristinIdentifier(dataGenerator.getNvaPublication());
         var expectedPublication = createPublicationWithAssociatedArtifacts(dataGenerator.getNvaPublication(),
@@ -213,6 +240,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(buildGeneratorObjectWithCristinId().getBrageRecord());
         persistMultiplePublicationWithSameCristinId();
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
+    void shouldDoNotUpdateAssociatedArtifactsOnExistingPublicationWhenTheyMatch() {
+
     }
 
     @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
@@ -614,6 +646,20 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, actualPublication);
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getNvaPublication().getHandle().toString())));
+    }
+
+    private static void putAssociatedArtifactsToResourceStorage(NvaBrageMigrationDataGenerator dataGenerator,
+                                                                S3Driver s3Driver, java.io.File file) {
+        dataGenerator.getNvaPublication().getAssociatedArtifacts().stream()
+            .map(artifact -> (File) artifact)
+            .map(File::getIdentifier)
+            .forEach(id -> {
+                try {
+                    s3Driver.insertFile(UnixPath.of(id.toString()), new FileInputStream(file));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     private Publication createPublicationWithAssociatedArtifacts(Publication publication,
