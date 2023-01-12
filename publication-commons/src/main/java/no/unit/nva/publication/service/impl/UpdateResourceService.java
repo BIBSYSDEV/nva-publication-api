@@ -134,11 +134,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var publication =
             readResourceService.getResourceByIdentifier(resourceIdentifier).toPublication();
-        //TODO: waiting for PublicationStatus.Deleted in nva-datamodel to be approved.
-        if (PublicationStatus.NEW.equals(publication.getStatus())) {
+        if (PublicationStatus.DELETED.equals(publication.getStatus())) {
             return deletionStatusIsCompleted();
         } else {
-            publication.setStatus(PublicationStatus.NEW);
+            publication.setStatus(PublicationStatus.DELETED);
             publication.setPublishedDate(null);
             updatePublicationIncludingStatus(publication);
             return deletionStatusChangeInProgress();

@@ -427,10 +427,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourcesByCristinIdentifierReturnsAllResourcesWithCristinIdentifier() {
         String cristinIdentifier = randomString();
-        Set<Publication> publicationsWithCristinIdentifier = createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
+        Set<Publication> publicationsWithCristinIdentifier =
+            createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
         List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
-        assertThat(actualResourcesSet, containsInAnyOrder(publicationsWithCristinIdentifier.toArray(Publication[]::new)));
+        assertThat(actualResourcesSet,
+                   containsInAnyOrder(
+                       publicationsWithCristinIdentifier.toArray(Publication[]::new)));
     }
 
     private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
@@ -957,24 +960,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(actualUpdateStatus, is(equalTo(expectedUpdateStatus)));
         var actualPublicationInDatabaseAfterStatusUpdate =
             resourceService.getPublicationByIdentifier(publicationIdentifier);
-        //TODO: waiting for PublicationStatus.Deleted in nva-datamodel to be approved.
-        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(PublicationStatus.NEW)));
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(PublicationStatus.DELETED)));
         assertThat(actualPublicationInDatabaseAfterStatusUpdate.getPublishedDate(), is(equalTo(null)));
     }
 
     @Test
-    void updatePublishedStatusToDeletedShouldReturnResourceAlreadyDeletedMessage () throws NotFoundException {
-        var deletedPublication  = createDeletedResource();
-        var publicationIdentifier = deletedPublication.getIdentifier();
+    void updatePublishedStatusToDeletedShouldReturnResourceAlreadyDeletedMessage() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var publicationIdentifier = publishedResource.getIdentifier();
         var expectedUpdateStatus = UpdateResourceService.deletionStatusIsCompleted();
+        resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
         var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
         assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
-    }
-
-    private Publication createDeletedResource() {
-        var publication = randomPublication().copy().withStatus(PublicationStatus.NEW).withDoi(null).build();
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
