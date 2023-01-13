@@ -14,11 +14,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public class PublicationRepresentations {
 
-    private CristinObject cristinObject;
-
+    private final CristinObject cristinObject;
+    private final FileContentsEvent<JsonNode> eventBody;
     private Publication publication;
-
-    private FileContentsEvent<JsonNode> eventBody;
 
     public PublicationRepresentations(CristinObject cristinObject, Publication publication,
                                       FileContentsEvent<JsonNode> eventBody) {
@@ -27,13 +25,22 @@ public class PublicationRepresentations {
         this.eventBody = eventBody;
     }
 
+    @JacocoGenerated
     public CristinObject getCristinObject() {
         return cristinObject;
     }
 
+    public Publication getPublication() {
+        return publication;
+    }
+
+    public void setPublication(Publication publication) {
+        this.publication = publication;
+    }
+
     @JacocoGenerated
-    public void setCristinObject(CristinObject cristinObject) {
-        this.cristinObject = cristinObject;
+    public FileContentsEvent<JsonNode> getEventBody() {
+        return eventBody;
     }
 
     public String getNvaPublicationIdentifier() {
@@ -56,7 +63,6 @@ public class PublicationRepresentations {
         return cristinObject.getBookOrReportPartMetadata().getPartOf();
     }
 
-
     public NvaPublicationPartOfCristinPublication getPartOf() {
         var publicationIdentifier = getNvaPublicationIdentifier();
         var publicationIsPartOfThisCristinPublication = getPartOfCristinIdentifier();
@@ -70,29 +76,9 @@ public class PublicationRepresentations {
                 .build();
     }
 
-
     public boolean cristinObjectIsPartOfAnotherPublication() {
         return nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
             cristinObject.getBookOrReportPartMetadata().getPartOf());
-    }
-
-    public Publication getPublication() {
-        return publication;
-    }
-
-    @JacocoGenerated
-    public void setPublication(Publication publication) {
-        this.publication = publication;
-    }
-
-    public FileContentsEvent<JsonNode> getEventBody() {
-        return eventBody;
-    }
-
-    @JacocoGenerated
-    public void setEventBody(
-        FileContentsEvent<JsonNode> eventBody) {
-        this.eventBody = eventBody;
     }
 
     @JacocoGenerated

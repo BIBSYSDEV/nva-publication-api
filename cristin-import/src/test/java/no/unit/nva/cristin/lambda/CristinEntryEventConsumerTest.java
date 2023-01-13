@@ -462,9 +462,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                             .addChild(expectedFileNameStoredInS3);
 
         var partOfFile = s3Driver.getFile(expectedErrorFileLocation);
-        var actualPartOfCristinPublication = JsonUtils.dtoObjectMapper.readValue(partOfFile,
-                                                                                 NvaPublicationPartOfCristinPublication.class);
-        assertThat(actualPartOfCristinPublication, is(equalTo(expectedPartOFCristinPublication)));
+        var actualPartOfCristinPublication =
+            JsonUtils.dtoObjectMapper.readValue(partOfFile,
+                                                NvaPublicationPartOfCristinPublication.class);
+        assertThat(actualPartOfCristinPublication,
+                   is(equalTo(expectedPartOFCristinPublication)));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {

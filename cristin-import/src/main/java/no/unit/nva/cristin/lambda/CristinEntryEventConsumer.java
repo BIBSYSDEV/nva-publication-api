@@ -137,8 +137,6 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), partOf.toJsonString())).orElseThrow();
     }
 
-
-
     private void persistCristinIdentifierInFileNamedWithPublicationIdentifier(
         PublicationRepresentations publicationRepresentations) {
         var cristinIdentifier = publicationRepresentations.getCristinIdentifier();
@@ -208,8 +206,8 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         return String.format(WRONG_SUBTOPIC_ERROR_TEMPLATE, event.getDetail().getSubtopic(), EVENT_SUBTOPIC);
     }
 
-    private PublicationRepresentations persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier
-        (PublicationRepresentations publicationRepresentations) {
+    private PublicationRepresentations persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier(
+        PublicationRepresentations publicationRepresentations) {
         var publicationWithIdentifier =
             persistInDatabase(publicationRepresentations.getPublication()).orElseThrow();
         publicationRepresentations.setPublication(publicationWithIdentifier);
