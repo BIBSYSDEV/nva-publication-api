@@ -8,16 +8,19 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Iterables;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.AssociatedArtifactMover;
+import no.sikt.nva.brage.migration.mapper.AssociatedArtifactComparator;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -74,17 +77,30 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
     }
 
-    private static Publication injectAssociatedArtifacts(Publication publication, Publication existingPublication) {
-        existingPublication.setAssociatedArtifacts(publication.getAssociatedArtifacts());
-        return existingPublication;
-    }
-
     private static Publication getOnlyElement(List<Publication> publications) {
         return Iterables.getOnlyElement(publications);
     }
 
+    private Publication injectAssociatedArtifacts(Publication incomingPublication, Publication existingPublication) {
+        var incomingAssociatedArtifacts = incomingPublication.getAssociatedArtifacts();
+        var existingAssociatedArtifacts = existingPublication.getAssociatedArtifacts();
+        existingPublication.setAssociatedArtifacts(
+            mergeAssociatedArtifacts(incomingAssociatedArtifacts, existingAssociatedArtifacts));
+        return existingPublication;
+    }
+
+    private AssociatedArtifactList mergeAssociatedArtifacts(AssociatedArtifactList associatedArtifacts,
+                                                            AssociatedArtifactList associatedArtifactsToExistingPublication) {
+        var comparator = new AssociatedArtifactComparator(s3Client, associatedArtifactsToExistingPublication);
+        var list = new ArrayList<>(associatedArtifactsToExistingPublication);
+        associatedArtifacts.stream()
+            .filter(artifact -> !comparator.containsAssociatedArtifact(artifact))
+            .forEach(list::add);
+        return new AssociatedArtifactList(list);
+    }
+
     private boolean publicationWithCristinIdentifierAlreadyExists(Publication publication) {
-        String cristinIdentifier = getCristinIdentifier(publication);
+        var cristinIdentifier = getCristinIdentifier(publication);
         if (nonNull(cristinIdentifier)) {
             publicationsByCristinIdentifier = getPublicationsByCristinIdentifier(cristinIdentifier);
             return !publicationsByCristinIdentifier.isEmpty();
