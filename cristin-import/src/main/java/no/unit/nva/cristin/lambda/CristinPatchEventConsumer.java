@@ -26,6 +26,9 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
     public static final String WRONG_SUBTOPIC_ERROR_TEMPLATE =
         "Unexpected subtopic: %s. Expected subtopic is: %s.";
 
+    public static final String MULTIPLE_PARENT_PUBLICATIONS_INFORMATION = "Multiple parent publications found";
+    public static final String NO_PARENT_PUBLICATION_FOUND_EXCEPTION = "No parent publication found";
+
     private static final Clock CLOCK = Clock.systemDefaultZone();
 
     private static final Logger logger = LoggerFactory.getLogger(CristinPatchEventConsumer.class);

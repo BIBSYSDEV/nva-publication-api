@@ -1,10 +1,14 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.MULTIPLE_PARENT_PUBLICATIONS_INFORMATION;
+import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.NO_PARENT_PUBLICATION_FOUND_EXCEPTION;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.SUBTOPIC;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.TOPIC;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -15,6 +19,9 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Set;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
+import no.unit.nva.cristin.mapper.nva.exceptions.ParentPublicationException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -28,6 +35,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,8 +66,17 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenPublicationCannotBeRetrieved() {
-
+    void shouldThrowExceptionWhenPublicationCannotBeRetrieved() throws ApiGatewayException, IOException {
+        var partOfCristinId = randomString();
+        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId);
+        var partOfEventReference = createPartOfEventReference(
+            randomString(),
+            partOfCristinId);
+        var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
+        var eventReference = createInputEventForFile(fileUri);
+        var input = toInputStream(eventReference);
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+        assertThrows(NotFoundException.class, action);
     }
 
     @Test
@@ -68,23 +85,31 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString());
         var partOfCristinId = randomString();
         persistSeveralPublicationsWithTheSameCristinId(partOfCristinId);
-        var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier(), partOfCristinId);
+        var partOfEventReference = createPartOfEventReference(
+            childPublication.getIdentifier().toString(),
+            partOfCristinId);
         var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
         var eventReference = createInputEventForFile(fileUri);
-    }
-
-    private void persistSeveralPublicationsWithTheSameCristinId(String cristinId) throws ApiGatewayException {
-        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId);
-        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId);
-    }
-
-    private String createPartOfEventReference(SortableIdentifier identifier, String partOfCristinId) {
-        return null;
+        var input = toInputStream(eventReference);
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+        var exception = assertThrows(ParentPublicationException.class, action);
+        assertThat(exception.getMessage(), containsString(MULTIPLE_PARENT_PUBLICATIONS_INFORMATION));
     }
 
     @Test
-    void shouldThrowExceptionWhenSearchingForNvaPublicationByCristinIdentifierReturnsNoPublicatiosn() {
-        //blah blah
+    void shouldThrowExceptionWhenSearchingForNvaPublicationByCristinIdentifierReturnsNoPublication()
+        throws ApiGatewayException, IOException {
+        var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString());
+        var partOfCristinId = randomString();
+        var partOfEventReference = createPartOfEventReference(
+            childPublication.getIdentifier().toString(),
+            partOfCristinId);
+        var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
+        var eventReference = createInputEventForFile(fileUri);
+        var input = toInputStream(eventReference);
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+        var exception = assertThrows(ParentPublicationException.class, action);
+        assertThat(exception.getMessage(), containsString(NO_PARENT_PUBLICATION_FOUND_EXCEPTION));
     }
 
     @Test
@@ -121,6 +146,20 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
         request.setDetail(eventReference);
         return request;
+    }
+
+    private void persistSeveralPublicationsWithTheSameCristinId(String cristinId) throws ApiGatewayException {
+        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId);
+        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId);
+    }
+
+    private String createPartOfEventReference(String childPublicationId, String partOfCristinId) {
+        var partOf =
+            NvaPublicationPartOfCristinPublication.builder()
+                .withNvaPublicationIdentifier(childPublicationId)
+                .withPartOf(NvaPublicationPartOf.builder().withCristinId(partOfCristinId).build())
+                .build();
+        return partOf.toJsonString();
     }
 
     private Publication createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(String cristinId)
