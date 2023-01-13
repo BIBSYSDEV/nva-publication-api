@@ -1,7 +1,12 @@
 package no.unit.nva.cristin.lambda;
 
+import static java.util.Objects.nonNull;
+import java.net.URI;
+import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import nva.commons.core.JacocoGenerated;
@@ -29,6 +34,46 @@ public class PublicationRepresentations {
     @JacocoGenerated
     public void setCristinObject(CristinObject cristinObject) {
         this.cristinObject = cristinObject;
+    }
+
+    public String getNvaPublicationIdentifier() {
+        return publication.getIdentifier().toString();
+    }
+
+    public URI getOriginalEventFileUri() {
+        return eventBody.getFileUri();
+    }
+
+    public Instant getOriginalTimeStamp() {
+        return eventBody.getTimestamp();
+    }
+
+    public String getCristinIdentifier() {
+        return cristinObject.getId().toString();
+    }
+
+    public String getPartOfCristinIdentifier() {
+        return cristinObject.getBookOrReportPartMetadata().getPartOf();
+    }
+
+
+    public NvaPublicationPartOfCristinPublication getPartOf() {
+        var publicationIdentifier = getNvaPublicationIdentifier();
+        var publicationIsPartOfThisCristinPublication = getPartOfCristinIdentifier();
+        return
+            NvaPublicationPartOfCristinPublication.builder()
+                .withNvaPublicationIdentifier(publicationIdentifier)
+                .withPartOf(
+                    NvaPublicationPartOf.builder()
+                        .withCristinId(publicationIsPartOfThisCristinPublication)
+                        .build())
+                .build();
+    }
+
+
+    public boolean cristinObjectIsPartOfAnotherPublication() {
+        return nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
+            cristinObject.getBookOrReportPartMetadata().getPartOf());
     }
 
     public Publication getPublication() {

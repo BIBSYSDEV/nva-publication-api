@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.lambda;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
@@ -18,8 +17,6 @@ import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
-import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
-import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
@@ -119,53 +116,32 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
     }
 
     private PublicationRepresentations mapEventToNvaPublication(
-        FileContentsEvent<JsonNode> eventbody) {
-        var cristinObject = parseCristinObject(eventbody);
+        FileContentsEvent<JsonNode> eventBody) {
+        var cristinObject = parseCristinObject(eventBody);
         var publication = cristinObject.toPublication();
-        return new PublicationRepresentations(cristinObject, publication, eventbody);
+        return new PublicationRepresentations(cristinObject, publication, eventBody);
     }
 
     private void persistPartOfCristinIdentifierIfPartOfExists(
         PublicationRepresentations publicationRepresentations) {
-        if (cristinObjectIsPartOfAnotherPublication(publicationRepresentations.getCristinObject())) {
+        if (publicationRepresentations.cristinObjectIsPartOfAnotherPublication()) {
             persistPartOfCristinIdentifierWithPublicationId(publicationRepresentations);
         }
     }
 
-    private boolean cristinObjectIsPartOfAnotherPublication(CristinObject cristinObject) {
-        return nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
-            cristinObject.getBookOrReportPartMetadata().getPartOf());
-    }
-
-    private String getPartOfCristinIdentifier(CristinObject cristinObject) {
-        return cristinObject.getBookOrReportPartMetadata().getPartOf();
-    }
-
     private void persistPartOfCristinIdentifierWithPublicationId(
         PublicationRepresentations publicationRepresentations) {
-        var partOf = createPartOf(publicationRepresentations);
+        var partOf = publicationRepresentations.getPartOf();
         var fileUri = constructPartOfFileUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), partOf.toJsonString())).orElseThrow();
     }
 
-    private NvaPublicationPartOfCristinPublication createPartOf(PublicationRepresentations publicationRepresentations) {
-        var publicationIdentifier = publicationRepresentations.getPublication().getIdentifier().toString();
-        var publicationIsPartOfThisCristinPublication =
-            getPartOfCristinIdentifier(publicationRepresentations.getCristinObject());
-        return
-            NvaPublicationPartOfCristinPublication.builder()
-                .withNvaPublicationIdentifier(publicationIdentifier)
-                .withPartOf(
-                    NvaPublicationPartOf.builder()
-                        .withCristinId(publicationIsPartOfThisCristinPublication)
-                        .build())
-                .build();
-    }
+
 
     private void persistCristinIdentifierInFileNamedWithPublicationIdentifier(
         PublicationRepresentations publicationRepresentations) {
-        var cristinIdentifier = publicationRepresentations.getCristinObject().getId().toString();
+        var cristinIdentifier = publicationRepresentations.getCristinIdentifier();
         var fileUri = constructSuccessFileUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
@@ -173,10 +149,10 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
     }
 
     private UriWrapper constructPartOfFileUri(PublicationRepresentations publicationRepresentations) {
-        var publicationIdentifier = publicationRepresentations.getPublication().getIdentifier().toString();
-        var eventBodyFileUri = publicationRepresentations.getEventBody().getFileUri();
+        var publicationIdentifier = publicationRepresentations.getNvaPublicationIdentifier();
+        var eventBodyFileUri = publicationRepresentations.getOriginalEventFileUri();
         var fileUri = UriWrapper.fromUri(eventBodyFileUri);
-        var timestamp = publicationRepresentations.getEventBody().getTimestamp();
+        var timestamp = publicationRepresentations.getOriginalTimeStamp();
         var bucket = fileUri.getHost();
         return bucket
                    .addChild(PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH)
@@ -185,9 +161,9 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
     }
 
     private UriWrapper constructSuccessFileUri(PublicationRepresentations publicationRepresentations) {
-        var publicationIdentifier = publicationRepresentations.getPublication().getIdentifier().toString();
-        var eventBodyFileUri = publicationRepresentations.getEventBody().getFileUri();
-        var timestamp = publicationRepresentations.getEventBody().getTimestamp();
+        var publicationIdentifier = publicationRepresentations.getNvaPublicationIdentifier();
+        var eventBodyFileUri = publicationRepresentations.getOriginalEventFileUri();
+        var timestamp = publicationRepresentations.getOriginalTimeStamp();
         var fileUri = UriWrapper.fromUri(eventBodyFileUri);
         var bucket = fileUri.getHost();
         return bucket
