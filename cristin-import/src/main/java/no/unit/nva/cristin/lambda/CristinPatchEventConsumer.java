@@ -1,19 +1,28 @@
 package no.unit.nva.cristin.lambda;
 
 import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
+import java.util.stream.Collectors;
+import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
+import no.unit.nva.cristin.mapper.nva.exceptions.ParentPublicationException;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -57,13 +66,42 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
                                        Context context) {
         validateEvent(event);
         var eventBody = readEventBody(input);
-        return null;
+        return attempt(() -> retrieveChildAndParentPublications(eventBody))
+                   .map(something -> something.getChildPublication()).orElseThrow();
     }
 
-    private FileContentsEvent<JsonNode> readEventBody(EventReference input) {
+    private ParentAndChild retrieveChildAndParentPublications(NvaPublicationPartOfCristinPublication eventBody)
+        throws NotFoundException {
+
+        var childPublication =
+            getChildPublication(eventBody);
+        var parentPublication =
+            getParentPublication(eventBody);
+        return new ParentAndChild(childPublication, parentPublication);
+    }
+
+    private Publication getChildPublication(
+        NvaPublicationPartOfCristinPublication nvaPublicationPartOfCristinPublication) throws NotFoundException {
+        return resourceService.getPublicationByIdentifier(
+            new SortableIdentifier(nvaPublicationPartOfCristinPublication.getNvaPublicationIdentifier()));
+    }
+
+    private Publication getParentPublication(
+        NvaPublicationPartOfCristinPublication nvaPublicationPartOfCristinPublication) {
+        var parents = resourceService.getPublicationsByCristinIdentifier(
+            nvaPublicationPartOfCristinPublication.getPartOf().getCristinId());
+        if (parents.size() > 1) {
+            throw new ParentPublicationException(MULTIPLE_PARENT_PUBLICATIONS_INFORMATION);
+        } else if (parents.size() == 0) {
+            throw new ParentPublicationException(NO_PARENT_PUBLICATION_FOUND_EXCEPTION);
+        }
+        return parents.get(0);
+    }
+
+    private NvaPublicationPartOfCristinPublication readEventBody(EventReference input) {
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         var json = s3Driver.readEvent(input.getUri());
-        return FileContentsEvent.fromJson(json, JsonNode.class);
+        return NvaPublicationPartOfCristinPublication.fromJson(json);
     }
 
     private void validateEvent(AwsEventBridgeEvent<EventReference> event) {
@@ -85,5 +123,24 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
 
     private String messageIndicatingTheCorrectSubtopicType(AwsEventBridgeEvent<EventReference> event) {
         return String.format(WRONG_SUBTOPIC_ERROR_TEMPLATE, event.getDetail().getSubtopic(), SUBTOPIC);
+    }
+
+    class ParentAndChild {
+
+        private final Publication childPublication;
+        private final Publication parentPublication;
+
+        ParentAndChild(Publication childPublication, Publication parentPublication) {
+            this.childPublication = childPublication;
+            this.parentPublication = parentPublication;
+        }
+
+        public Publication getChildPublication() {
+            return childPublication;
+        }
+
+        public Publication getParentPublication() {
+            return parentPublication;
+        }
     }
 }

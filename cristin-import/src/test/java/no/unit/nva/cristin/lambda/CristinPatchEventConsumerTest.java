@@ -68,9 +68,10 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenPublicationCannotBeRetrieved() throws ApiGatewayException, IOException {
         var partOfCristinId = randomString();
+        var childPublicationIdentifier = SortableIdentifier.next();
         createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId);
         var partOfEventReference = createPartOfEventReference(
-            randomString(),
+            childPublicationIdentifier.toString(),
             partOfCristinId);
         var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
         var eventReference = createInputEventForFile(fileUri);
@@ -110,16 +111,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         var exception = assertThrows(ParentPublicationException.class, action);
         assertThat(exception.getMessage(), containsString(NO_PARENT_PUBLICATION_FOUND_EXCEPTION));
-    }
-
-    @Test
-    void shouldPersistNvaPublicationIdentifierIfSuccessFulLookup() {
-        // blah blah
-    }
-
-    @Test
-    void shouldLogErrorWhenFailingToStorePublicationToDynamo() {
-        //blah blah
     }
 
     @Test
@@ -169,7 +160,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
-        resourceService.publishPublication(userInstance, publicationIdentifier);
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 

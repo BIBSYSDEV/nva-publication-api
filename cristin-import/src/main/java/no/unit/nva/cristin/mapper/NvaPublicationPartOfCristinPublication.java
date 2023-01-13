@@ -1,6 +1,10 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.CristinImportConfig.cristinEntryMapper;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,5 +31,11 @@ public class NvaPublicationPartOfCristinPublication implements JsonSerializable 
 
     @JacocoGenerated
     public NvaPublicationPartOfCristinPublication() {
+    }
+
+    public static NvaPublicationPartOfCristinPublication fromJson(String json) {
+        return attempt(
+            () -> cristinEntryMapper.readValue(json, NvaPublicationPartOfCristinPublication.class))
+                   .orElseThrow();
     }
 }
