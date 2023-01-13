@@ -32,9 +32,8 @@ public class AssociatedArtifactMover {
         this.persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     }
 
-    public Publication pushAssociatedArtifactsToPersistedStorage(Publication publication) {
+    public void pushAssociatedArtifactsToPersistedStorage(Publication publication) {
         publication.setAssociatedArtifacts(pushAssociatedArtefactsToPersistedStorageAndGetMetadata(publication));
-        return publication;
     }
 
     private AssociatedArtifactList pushAssociatedArtefactsToPersistedStorageAndGetMetadata(Publication publication) {
@@ -42,8 +41,7 @@ public class AssociatedArtifactMover {
             publication.getAssociatedArtifacts()
                 .stream()
                 .map(this::pushAssociatedArtifactToPersistedStorage)
-                .collect(
-                    Collectors.toList());
+                .collect(Collectors.toList());
         return new AssociatedArtifactList(associatedArtifacts);
     }
 

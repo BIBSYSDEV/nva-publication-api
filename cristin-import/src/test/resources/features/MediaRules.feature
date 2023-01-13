@@ -1,10 +1,14 @@
 Feature: Rules that apply for Media
 
-  Scenario: Cristin result "Interview / MediaContribution" is converted to NVA resource of type
-  MediaInterview.
-    Given a valid Cristin Result with secondary category "INTERVJU"
+  Scenario Outline: Cristin result "Interview / MediaContribution, Program participation / MediaContribution"
+  is converted to NVA resource with the correct Publication Instance type.
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "MediaInterview"
+    Then the NVA Resource has a Publication Instance of type "<publicationInstance>"
+    Examples:
+      | secondaryCategory | publicationInstance           |
+      | INTERVJU          | MediaInterview                |
+      | PROGDELTAGELSE    | MediaParticipationInRadioOrTv |
 
   Scenario: Cristin Result "Media Interview" is converted to an NVA entry grouped by "MediaContribution".
     Given a valid Cristin Result with secondary category "INTERVJU"

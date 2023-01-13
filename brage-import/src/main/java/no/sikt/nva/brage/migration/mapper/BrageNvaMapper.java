@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.lambda.MappingConstants;
 import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
@@ -20,6 +22,7 @@ import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -59,6 +62,7 @@ public final class BrageNvaMapper {
                               .withPublisher(extractPublisher(record))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(record))
                               .withResourceOwner(extractResourceOwner(record))
+                              .withAdditionalIdentifiers(extractCristinIdentifier(record))
                               .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
@@ -68,6 +72,14 @@ public final class BrageNvaMapper {
         return Optional.ofNullable(record.getEntityDescription().getDescriptions())
                    .map(descriptions -> descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions))
                    .orElse(null);
+    }
+
+    private static Set<AdditionalIdentifier> extractCristinIdentifier(Record record) {
+        if (isNull(record.getCristinId())) {
+            return Set.of();
+        } else {
+            return Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, record.getCristinId()));
+        }
     }
 
     private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {

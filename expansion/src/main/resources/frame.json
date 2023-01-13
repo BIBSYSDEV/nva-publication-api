@@ -18,6 +18,34 @@
     "projects": {
       "@container": "@set"
     },
+    "fundings": {
+      "@container": "@set"
+    },
+    "outputs": {
+      "@container": "@set"
+    },
+    "trackList": {
+      "@container": "@set"
+    },
+    "related": {
+      "@container": "@set"
+    },
+    "compliesWith": {
+      "@container": "@set"
+    },
+    "concertProgramme": {
+      "@container": "@set"
+    },
+    "referencedBy": {
+      "@container": "@set"
+    },
+    "musicalWorks": {
+      "@container": "@set"
+    },
+    "alternativeNames": {
+      "@id": "alternativeName",
+      "@container": "@language"
+    },
     "tags": {
       "@container": "@set"
     },

@@ -6,6 +6,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENTS_BUCK
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.exceptions.ExceptionUtils.stackTraceInSingleLine;
@@ -70,6 +71,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
     private static final String NODES_IN_ARRAY = "},{";
     private static final Object END_OF_ARRAY = "]";
     private static final String BEGINNING_OF_ARRAY = "[";
+    public static final String WRONG_SUBTOPIC = "event does not contain the correct subtopic";
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
     
@@ -219,6 +221,10 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
         if (!EXPECTED_INPUT_TOPIC.equalsIgnoreCase(event.getDetail().getTopic())) {
             logger.info(event.toJsonString());
             throw new IllegalArgumentException(WRONG_TOPIC_ERROR + event.getDetail().getTopic());
+        }
+        if (!SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER.equalsIgnoreCase(event.getDetail().getSubtopic()))  {
+            logger.info(event.toJsonString());
+            throw new IllegalArgumentException(WRONG_SUBTOPIC + event.getDetail().getSubtopic());
         }
     }
     

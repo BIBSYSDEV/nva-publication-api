@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Customer;
@@ -35,6 +36,7 @@ import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -44,11 +46,11 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.Instant;
 
 public class NvaBrageMigrationDataGenerator {
 
+    public static final String SOURCE_CRISTIN = "Cristin";
     private final Record brageRecord;
     private final Publication correspondingNvaPublication;
 
@@ -61,7 +63,7 @@ public class NvaBrageMigrationDataGenerator {
         return brageRecord;
     }
 
-    public Publication getCorrespondingNvaPublication() {
+    public Publication getNvaPublication() {
         return correspondingNvaPublication;
     }
 
@@ -77,10 +79,17 @@ public class NvaBrageMigrationDataGenerator {
                    .orElse(null);
     }
 
-    @NotNull
     private static Function<ResourceOwner, no.unit.nva.model.ResourceOwner> generateResourceOwner() {
         return resourceOwner -> new no.unit.nva.model.ResourceOwner(resourceOwner.getOwner(),
                                                                     resourceOwner.getOwnerAffiliation());
+    }
+
+    private static Set<AdditionalIdentifier> generateCristinIdentifier(Builder builder) {
+        if (isNull(builder.getCristinIdentifier())) {
+            return null;
+        } else {
+            return Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, builder.cristinIdentifier));
+        }
     }
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
@@ -95,6 +104,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withPublisher(new Organization.Builder().withId(builder.getCustomer().getId()).build())
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
                    .withResourceOwner(getResourceOwnerIfPresent(builder))
+                   .withAdditionalIdentifiers(generateCristinIdentifier(builder))
                    .build();
     }
 
@@ -124,6 +134,7 @@ public class NvaBrageMigrationDataGenerator {
         record.setContentBundle(builder.getResourceContent());
         record.setPublication(builder.getPublication());
         record.setPublishedDate(builder.getPublishedDate());
+        record.setCristinId(builder.getCristinIdentifier());
         return record;
     }
 
@@ -204,6 +215,16 @@ public class NvaBrageMigrationDataGenerator {
         private String journal;
         private String seriesTitle;
         private no.sikt.nva.brage.migration.record.Publication publication;
+        private String cristinIdentifier;
+
+        public String getCristinIdentifier() {
+            return cristinIdentifier;
+        }
+
+        public Builder withCristinIdentifier(String cristinIdentifier) {
+            this.cristinIdentifier = cristinIdentifier;
+            return this;
+        }
 
         public String getSeriesTitle() {
             return seriesTitle;

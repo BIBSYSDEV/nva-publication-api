@@ -1,17 +1,26 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Iterables;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.AssociatedArtifactMover;
+import no.sikt.nva.brage.migration.mapper.AssociatedArtifactComparator;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -30,26 +39,23 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publication> {
 
-    private static final int MAX_SLEEP_TIME = 100;
-
     public static final Random RANDOM = new Random(System.currentTimeMillis());
-
     public static final int MAX_EFFORTS = 10;
-
-    private static final int SINGLE_EXPECTED_RECORD = 0;
-    private static final String S3_URI_TEMPLATE = "s3://%s/%s";
-    private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
-
-    private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
+    public static final String SOURCE_CRISTIN = "Cristin";
     public static final String BRAGE_MIGRATION_ERROR_BUCKET_NAME = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     public static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String HANDLE_REPORTS_PATH = "HANDLE_REPORTS";
     public static final String PATH_SEPERATOR = "/";
-    private String brageRecordFile;
+    private static final int MAX_SLEEP_TIME = 100;
+    private static final int SINGLE_EXPECTED_RECORD = 0;
+    private static final String S3_URI_TEMPLATE = "s3://%s/%s";
+    private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
+    private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
     private final S3Client s3Client;
-
     private final ResourceService resourceService;
+    private String brageRecordFile;
+    private List<Publication> publicationsByCristinIdentifier;
 
     public BrageEntryEventConsumer(S3Client s3Client, ResourceService resourceService) {
         this.s3Client = s3Client;
@@ -65,9 +71,87 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
                    .map(publication -> pushAssociatedFilesToPersistedStorage(publication, s3Event))
-                   .flatMap(this::persistInDatabase)
-                   .map(publication -> storeHandleAndPublicationIdentifier(publication, s3Event))
+                   .map(publication -> publicationWithCristinIdentifierAlreadyExists(publication)
+                                           ? attemptToUpdateExistingPublication(publication, s3Event)
+                                           : createNewPublication(publication, s3Event))
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
+    }
+
+    private static Publication getOnlyElement(List<Publication> publications) {
+        return Iterables.getOnlyElement(publications);
+    }
+
+    private Publication injectAssociatedArtifacts(Publication incomingPublication, Publication existingPublication) {
+        var incomingAssociatedArtifacts = incomingPublication.getAssociatedArtifacts();
+        var existingAssociatedArtifacts = existingPublication.getAssociatedArtifacts();
+        existingPublication.setAssociatedArtifacts(
+            mergeAssociatedArtifacts(incomingAssociatedArtifacts, existingAssociatedArtifacts));
+        return existingPublication;
+    }
+
+    private AssociatedArtifactList mergeAssociatedArtifacts(AssociatedArtifactList associatedArtifacts,
+                                                            AssociatedArtifactList associatedArtifactsToExistingPublication) {
+        var comparator = new AssociatedArtifactComparator(s3Client, associatedArtifactsToExistingPublication);
+        var list = new ArrayList<>(associatedArtifactsToExistingPublication);
+        associatedArtifacts.stream()
+            .filter(artifact -> !comparator.containsAssociatedArtifact(artifact))
+            .forEach(list::add);
+        return new AssociatedArtifactList(list);
+    }
+
+    private boolean publicationWithCristinIdentifierAlreadyExists(Publication publication) {
+        var cristinIdentifier = getCristinIdentifier(publication);
+        if (nonNull(cristinIdentifier)) {
+            publicationsByCristinIdentifier = getPublicationsByCristinIdentifier(cristinIdentifier);
+            return !publicationsByCristinIdentifier.isEmpty();
+        }
+        return false;
+    }
+
+    private List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
+        return resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+    }
+
+    private Publication createNewPublication(Publication publication, S3Event s3Event) {
+        return attempt(() -> publication)
+                   .flatMap(this::persistInDatabase)
+                   .map(pub -> storeHandleAndPublicationIdentifier(pub, s3Event))
+                   .orElseThrow(fail -> handleSavingError(fail, s3Event));
+    }
+
+    private Publication attemptToUpdateExistingPublication(Publication publication, S3Event s3Event) {
+        return attempt(() -> publicationsByCristinIdentifier)
+                   .map(publications -> mergeTwoPublications(publication, getOnlyElement(publications), s3Event))
+                   .orElseThrow();
+    }
+
+    private Publication mergeTwoPublications(Publication publication, Publication existingPublication,
+                                             S3Event s3Event) {
+        return attempt(() -> existingPublication)
+                   .map(publicationToUpdate -> injectAssociatedArtifacts(publication, publicationToUpdate))
+                   .map(resourceService::updatePublication)
+                   .map(pub -> storeHandleAndPublicationIdentifier(pub, s3Event))
+                   .orElseThrow();
+    }
+
+    private String getCristinIdentifier(Publication publication) {
+        var cristinIdentifiers = getCristinIdentifiers(publication);
+        if (cristinIdentifiers.isEmpty()) {
+            return null;
+        }
+        return cristinIdentifiers.iterator().next();
+    }
+
+    private Set<String> getCristinIdentifiers(Publication publication) {
+        return publication.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(this::isCristinIdentifier)
+                   .map(AdditionalIdentifier::getValue)
+                   .collect(Collectors.toSet());
+    }
+
+    private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
+        return SOURCE_CRISTIN.equals(identifier.getSource());
     }
 
     private Publication storeHandleAndPublicationIdentifier(Publication publication, S3Event s3Event) {

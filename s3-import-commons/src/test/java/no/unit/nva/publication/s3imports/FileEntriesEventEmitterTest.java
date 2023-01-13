@@ -7,6 +7,7 @@ import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXT
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -63,6 +64,7 @@ class FileEntriesEventEmitterTest {
     private static final String SOME_BUCKETNAME = "someBucketname";
     
     private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
+    public static final String UNEXPECTED_TOPIC1 = "Unexpected topic";
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
     private FileEntriesEventEmitter handler;
@@ -212,11 +214,26 @@ class FileEntriesEventEmitterTest {
     void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedTopic() throws IOException {
         var sampleObject = SampleObject.random();
         var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
-        var invalidEventReference = new EventReference(UNEXPECTED_TOPIC, fileUri);
+        var invalidEventReference = new EventReference(UNEXPECTED_TOPIC,
+                                                       SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+                                                       fileUri);
         var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
         invalidInputEvent.setDetail(invalidEventReference);
         
         assertThat(invalidEventReference.getTopic(), is(not(equalTo(FILENAME_EMISSION_EVENT_TOPIC))));
+        Executable action = () -> handler.handleRequest(toInputStream(invalidInputEvent), outputStream, CONTEXT);
+        assertThrows(IllegalArgumentException.class, action);
+    }
+
+    @Test
+    void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedSubtopic() throws IOException {
+        var sampleObject = SampleObject.random();
+        var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
+        var invalidEventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                                       UNEXPECTED_TOPIC1,
+                                                       fileUri);
+        var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
+        invalidInputEvent.setDetail(invalidEventReference);
         Executable action = () -> handler.handleRequest(toInputStream(invalidInputEvent), outputStream, CONTEXT);
         assertThrows(IllegalArgumentException.class, action);
     }
@@ -225,7 +242,9 @@ class FileEntriesEventEmitterTest {
     void shouldEmitsEventWithTheSameTimestampWhichIsEqualToTimestampAcquiredByInputEvent() throws IOException {
         var sampleObject = SampleObject.random();
         var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
-        var eventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC, fileUri);
+        var eventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                                SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+                                                fileUri);
         var inputEvent = new AwsEventBridgeEvent<EventReference>();
         inputEvent.setDetail(eventReference);
         
@@ -448,7 +467,7 @@ class FileEntriesEventEmitterTest {
     
     private AwsEventBridgeEvent<EventReference> createInputEventForFile(URI fileUri) {
         var eventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
-            randomString(),
+            SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
             fileUri,
             Instant.now());
         var request = new AwsEventBridgeEvent<EventReference>();
