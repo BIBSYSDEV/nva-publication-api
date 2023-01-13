@@ -448,7 +448,7 @@ public class GeneralMappingRules {
 
     @And("the NVA Resource does not have an additional identifier with key {string} and value "
          + "{string}")
-    public void theNVAResourceDoesNotHaveAnAdditionalIdentifierWithKeyAndValue(String key, String value) {
+    public void theNvaResourceDoesNotHaveAnAdditionalIdentifierWithKeyAndValue(String key, String value) {
         Set<AdditionalIdentifier> actualAdditionalIdentifiers =
             scenarioContext.getNvaEntry().getAdditionalIdentifiers();
         AdditionalIdentifier expectedIdentifier =
