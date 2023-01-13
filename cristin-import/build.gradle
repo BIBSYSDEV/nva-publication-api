@@ -14,6 +14,7 @@ dependencies {
     implementation libs.nva.json
     implementation libs.nva.eventhandlers
     implementation libs.nva.doi
+    implementation libs.nva.apigateway
 
 
     implementation libs.jackson.annotations
@@ -36,6 +37,7 @@ dependencies {
     implementation libs.typesafe.config
     implementation libs.bundles.logging
 
+    testImplementation libs.nva.datamodel.testutils
     testImplementation project(":publication-testing")
     testImplementation libs.javafaker
     testImplementation libs.nva.testutils
