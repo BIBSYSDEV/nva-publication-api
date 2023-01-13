@@ -11,6 +11,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUB
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
@@ -35,8 +36,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
 import java.time.Instant;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
@@ -45,6 +48,8 @@ import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -427,6 +432,41 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventReference = createEventReference(eventBody);
         Executable action = () -> handler.handleRequest(eventReference, outputStream, CONTEXT);
         assertDoesNotThrow(action);
+    }
+
+    @Test
+    void shouldPersistPartOfCristinIdToS3ForPatchPurposes() throws IOException {
+        var partOfIdentifier = randomString();
+        var cristinObject =
+            CristinDataGenerator.randomObject(CHAPTER_ACADEMIC.getValue());
+        cristinObject.setBookOrReportPartMetadata(
+            CristinBookOrReportPartMetadata.builder().withPartOf(partOfIdentifier).build());
+
+        var eventBody = createEventBody(cristinObject);
+        var eventReference = createEventReference(eventBody);
+        handler.handleRequest(eventReference, outputStream, CONTEXT);
+
+        var json = outputStream.toString();
+        var actualPublication = eventHandlerObjectMapper.readValue(json, Publication.class);
+        var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
+        var expectedPartOFCristinPublication = NvaPublicationPartOfCristinPublication.builder()
+                                                   .withPartOf(NvaPublicationPartOf.builder()
+                                                                   .withCristinId(partOfIdentifier)
+                                                                   .build())
+                                                   .withNvaPublicationIdentifier(expectedFileNameStoredInS3)
+                                                   .build();
+
+        var expectedTimestamp = eventBody.getTimestamp();
+        var expectedErrorFileLocation = UnixPath.of("PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS")
+                                            .addChild(timestampToString(expectedTimestamp))
+                                            .addChild(expectedFileNameStoredInS3);
+
+        var partOfFile = s3Driver.getFile(expectedErrorFileLocation);
+        var actualPartOfCristinPublication =
+            JsonUtils.dtoObjectMapper.readValue(partOfFile,
+                                                NvaPublicationPartOfCristinPublication.class);
+        assertThat(actualPartOfCristinPublication,
+                   is(equalTo(expectedPartOFCristinPublication)));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
