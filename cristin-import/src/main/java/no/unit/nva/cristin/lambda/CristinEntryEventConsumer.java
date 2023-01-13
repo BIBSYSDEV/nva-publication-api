@@ -88,7 +88,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
 
         validateEvent(event);
         var eventBody = readEventBody(input);
-        return attempt(() -> mapEventToNvaPublication(eventBody))
+        return attempt(() -> generatePublicationRepresentations(eventBody))
                    .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
                    .map(this::persistConversionReports)
                    .orElseThrow(fail -> handleSavingError(fail, eventBody));
@@ -115,7 +115,7 @@ public class CristinEntryEventConsumer extends EventHandler<EventReference, Publ
         return publicationRepresentations.getPublication();
     }
 
-    private PublicationRepresentations mapEventToNvaPublication(
+    private PublicationRepresentations generatePublicationRepresentations(
         FileContentsEvent<JsonNode> eventBody) {
         var cristinObject = parseCristinObject(eventBody);
         var publication = cristinObject.toPublication();
