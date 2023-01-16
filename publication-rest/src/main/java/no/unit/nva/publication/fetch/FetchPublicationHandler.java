@@ -24,6 +24,7 @@ import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -32,6 +33,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private final ResourceService resourceService;
+
+    public static final String GONE_MESSAFE = "Permanently deleted";
     
     @JacocoGenerated
     public FetchPublicationHandler() {
@@ -93,9 +96,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
     
     private String createResponse(RequestInfo requestInfo,
-                                  Publication publication) throws UnsupportedAcceptHeaderException {
+                                  Publication publication) throws UnsupportedAcceptHeaderException, NotFoundException {
         String response;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
+        if (publicationIsLogicallyDeleted(publication)) {
+            createGoneException();
+        }
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
         } else if (SCHEMA_ORG.equals(contentType)) {
@@ -106,7 +112,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return response;
     }
 
+    private void createGoneException() throws NotFoundException {
+        //TODO: waiting for PR https://github.com/BIBSYSDEV/nva-commons/pull/416
+        throw new NotFoundException(GONE_MESSAFE);
+    }
 
+    private boolean publicationIsLogicallyDeleted(Publication publication) {
+        return PublicationStatus.DELETED.equals(publication.getStatus());
+    }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
         var publicationResponse = PublicationMapper

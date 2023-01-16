@@ -6,8 +6,10 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAFE;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_GONE;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -204,7 +206,27 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actualDetail, containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
-    
+
+    @Test
+    @DisplayName("Handler returns Gone Response when when publication has status Deleted")
+    void handlerReturnsGoneErrorResponseWhenPublicationHasStatusDeleted()
+        throws ApiGatewayException, IOException {
+        var publicationIdentifier = createDeletedPublication();
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
+        String actualDetail = getProblemDetail(gatewayResponse);
+        assertEquals(SC_GONE, gatewayResponse.getStatusCode());
+        assertThat(actualDetail, containsString(GONE_MESSAFE));
+
+    }
+
+    private String createDeletedPublication() throws ApiGatewayException {
+        var createdPublication = createPublication();
+        var publicationIdentifier = createdPublication.getIdentifier();
+        publicationService.updatePublishedStatusToDeleted(publicationIdentifier);
+        return publicationIdentifier.toString();
+    }
+
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
         return restApiMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }
