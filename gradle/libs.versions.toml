@@ -1,17 +1,17 @@
 [versions]
 
 
-nva = { strictly = '1.25.17' }
-nvaDatamodel = { strictly = '0.19.24' }
+nva = { strictly = '1.27.2' }
+nvaDatamodel = { strictly = '0.19.26' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
-jackson = { strictly = '2.13.3' }
-awsSdk = { strictly = '1.12.220' }
-awsSdk2 = { strictly = '2.17.191' }
+jackson = { strictly = '2.14.1' }
+awsSdk = { strictly = '1.12.369' }
+awsSdk2 = { strictly = '2.19.15' }
 log4j = { strictly = '2.17.2' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.27.1' }
 awsLambdaCore = { strictly = '1.2.1' }
-awsLambdaEvents = { strictly = '3.9.0' }
+awsLambdaEvents = { strictly = '3.11.0' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '1.15.0' }
@@ -21,13 +21,13 @@ apacheCommons = { strictly = '4.4' }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.8.2' }
-mockito = { strictly = '3.12.4' }
+mockito = { strictly = '4.5.1' }
 configTypesafe = { strictly = '1.4.1' }
 jsonld = { strictly = '0.13.4' }
 nva-language = { strictly = '1.0' }
 guava = { strictly = '31.1-jre' }
 javers = { strictly = '6.2.4' }
-hamcrestSpotify = { strictly = '1.2.0' }
+hamcrestSpotify = { strictly = '1.3.1' }
 jaxb = { strictly = '2.3.0' }
 jakarta = { strictly = '2.3.2' }
 karate-core = { strictly = '1.1.0' }
