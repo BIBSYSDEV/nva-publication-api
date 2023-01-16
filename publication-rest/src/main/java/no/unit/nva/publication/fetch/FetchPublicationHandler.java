@@ -110,8 +110,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String createResponse(RequestInfo requestInfo,
                                   Publication publication)
-        throws UnsupportedAcceptHeaderException, RedirectToLandingPageException {
-        String response;
+        throws UnsupportedAcceptHeaderException {
+        String response = null;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
@@ -120,7 +120,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         } else if (contentType.is(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
             statusCode = HTTP_SEE_OTHER;
             addAdditionalHeaders(() -> Map.of(LOCATION, landingPageLocation(publication.getIdentifier()).toString()));
-            response = null;
         } else {
             response = createPublicationResponse(requestInfo, publication);
         }

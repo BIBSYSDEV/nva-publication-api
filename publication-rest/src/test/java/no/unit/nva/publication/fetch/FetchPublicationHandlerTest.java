@@ -247,13 +247,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
-        Map<String, String> headers = Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+        Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
         return generateHandlerRequest(publicationIdentifier, headers);
     }
 
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
-                   .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
+                   .withHeaders(Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
                    .build();
     }
 
