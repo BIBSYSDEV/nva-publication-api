@@ -407,7 +407,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          NVA_FRONTEND_DOMAIN: !Red NvaApplicationDomain
+          NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
