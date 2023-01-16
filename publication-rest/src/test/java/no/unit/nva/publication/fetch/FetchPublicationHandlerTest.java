@@ -166,7 +166,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         GatewayResponse<Void> response = restApiMapper.readValue(output.toString(), valueType);
 
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_MOVED_TEMP)));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_SEE_OTHER)));
 
         var expectedLandingPage = "https://localhost/registration/" + identifier;
         assertThat(response.getHeaders().get(LOCATION), is(equalTo(expectedLandingPage)));

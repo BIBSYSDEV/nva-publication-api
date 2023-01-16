@@ -1,9 +1,11 @@
 package no.unit.nva.publication.fetch;
 
+import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.net.MediaType.XHTML_UTF_8;
+import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -17,9 +19,11 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
+import java.util.Map;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
@@ -40,6 +44,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private final ResourceService resourceService;
+
+    private int statusCode = HttpURLConnection.HTTP_OK;
 
     @JacocoGenerated
     public FetchPublicationHandler() {
@@ -94,7 +100,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     @Override
     protected Integer getSuccessStatusCode(Void input, String output) {
-        return HttpURLConnection.HTTP_OK;
+        return statusCode;
     }
 
     @JacocoGenerated
@@ -111,19 +117,20 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             response = createDataCiteMetadata(publication);
         } else if (SCHEMA_ORG.equals(contentType)) {
             response = createSchemaOrgRepresentation(publication);
-        } else if (ANY_TEXT_TYPE.equals(contentType) || XHTML_UTF_8.equals(contentType)) {
-            throw new RedirectToLandingPageException(landingPageLocation(publication.getIdentifier().toString()),
-                                                     HttpURLConnection.HTTP_MOVED_TEMP);
+        } else if (contentType.is(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
+            statusCode = HTTP_SEE_OTHER;
+            addAdditionalHeaders(() -> Map.of(LOCATION, landingPageLocation(publication.getIdentifier()).toString()));
+            response = null;
         } else {
             response = createPublicationResponse(requestInfo, publication);
         }
         return response;
     }
 
-    private URI landingPageLocation(String identifier) {
+    private URI landingPageLocation(SortableIdentifier identifier) {
         return new UriWrapper(HTTPS, environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN))
                    .addChild(REGISTRATION_PATH)
-                   .addChild(identifier)
+                   .addChild(identifier.toString())
                    .getUri();
     }
 
