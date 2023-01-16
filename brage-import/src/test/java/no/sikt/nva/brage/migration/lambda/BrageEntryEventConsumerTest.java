@@ -464,7 +464,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withType(TYPE_CONFERENCE_POSTER)
                                                  .build();
-        var expectedPublication = nvaBrageMigrationDataGenerator.getCorrespondingNvaPublication();
+        var expectedPublication = nvaBrageMigrationDataGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(actualPublication, is(equalTo(expectedPublication)));
