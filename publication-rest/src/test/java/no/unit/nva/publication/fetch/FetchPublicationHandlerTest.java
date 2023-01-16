@@ -150,8 +150,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getBody(), containsString("\"@vocab\" : \"https://schema.org/\""));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"text/html", "application/xhtml+xml"})
+    @ParameterizedTest(name = "should redirect to frontend landing page when accept header is {0}")
+    @ValueSource(strings = {"text/*", "text/html", "application/xhtml+xml"})
     void shouldRedirectToFrontendLandingPageIfPreferredContentTypeIsHtml(String acceptHeaderValue)
         throws ApiGatewayException, IOException {
         var publication = createPublication(JournalArticle.class);

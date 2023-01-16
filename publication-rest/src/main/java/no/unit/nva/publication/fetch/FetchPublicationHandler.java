@@ -76,7 +76,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             APPLICATION_DATACITE_XML,
             SCHEMA_ORG,
             HTML_UTF_8,
-            XHTML_UTF_8
+            XHTML_UTF_8,
+            ANY_TEXT_TYPE
         );
     }
 
