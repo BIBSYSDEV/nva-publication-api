@@ -1,15 +1,20 @@
 package no.unit.nva.publication.fetch;
 
+import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
+import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.google.common.net.MediaType.XHTML_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
 import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.paths.UriWrapper.HTTPS;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import no.unit.nva.PublicationMapper;
@@ -27,22 +32,25 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
-    
+
+    private static final String REGISTRATION_PATH = "registration";
+    protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private final ResourceService resourceService;
-    
+
     @JacocoGenerated
     public FetchPublicationHandler() {
         this(AmazonDynamoDBClientBuilder.defaultClient());
     }
-    
+
     @JacocoGenerated
     public FetchPublicationHandler(AmazonDynamoDB client) {
         this(defaultResourceService(client), new Environment());
     }
-    
+
     /**
      * Constructor for MainHandler.
      *
@@ -53,21 +61,23 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         super(Void.class, environment);
         this.resourceService = resourceService;
     }
-    
+
     @Override
     protected List<MediaType> listSupportedMediaTypes() {
         return List.of(
             JSON_UTF_8,
             APPLICATION_JSON_LD,
             APPLICATION_DATACITE_XML,
-            SCHEMA_ORG
+            SCHEMA_ORG,
+            HTML_UTF_8,
+            XHTML_UTF_8
         );
     }
-    
+
     @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        
+
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
         temporaryHackWhileWeWaitForUnauthenticatedUserAccess(publication);
@@ -86,34 +96,43 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected Integer getSuccessStatusCode(Void input, String output) {
         return HttpURLConnection.HTTP_OK;
     }
-    
+
     @JacocoGenerated
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
         return new ResourceService(client, CLOCK);
     }
-    
+
     private String createResponse(RequestInfo requestInfo,
-                                  Publication publication) throws UnsupportedAcceptHeaderException {
+                                  Publication publication)
+        throws UnsupportedAcceptHeaderException, RedirectToLandingPageException {
         String response;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
         } else if (SCHEMA_ORG.equals(contentType)) {
             response = createSchemaOrgRepresentation(publication);
+        } else if (ANY_TEXT_TYPE.equals(contentType) || XHTML_UTF_8.equals(contentType)) {
+            throw new RedirectToLandingPageException(landingPageLocation(publication.getIdentifier().toString()),
+                                                     HttpURLConnection.HTTP_MOVED_TEMP);
         } else {
             response = createPublicationResponse(requestInfo, publication);
         }
         return response;
     }
 
-
+    private URI landingPageLocation(String identifier) {
+        return new UriWrapper(HTTPS, environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN))
+                   .addChild(REGISTRATION_PATH)
+                   .addChild(identifier)
+                   .getUri();
+    }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
         var publicationResponse = PublicationMapper
                                       .convertValue(publication, PublicationResponse.class);
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
-    
+
     private String createDataCiteMetadata(Publication publication) {
         var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
