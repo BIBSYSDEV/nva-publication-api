@@ -699,6 +699,34 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
+  DeletePublicationHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - PublicationService.Resource.Update
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn # event is consumed by search-api
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+
   DoiRequestEventProducer:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
