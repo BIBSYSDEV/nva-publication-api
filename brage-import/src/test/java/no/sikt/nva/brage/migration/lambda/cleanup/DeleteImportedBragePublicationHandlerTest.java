@@ -35,7 +35,7 @@ public class DeleteImportedBragePublicationHandlerTest extends ResourcesLocalTes
     }
 
     @Test
-    void shouldDeleteImportedPublication() throws IOException {
+    void shouldDeleteImportedPublicationWhenS3UriIsSupplied() throws IOException {
         var publication = randomPublication();
         resourceService.addPublicationWithCristinIdentifier(publication);
         var expectedPublication = publication.copy().withStatus(PublicationStatus.DELETED).build();

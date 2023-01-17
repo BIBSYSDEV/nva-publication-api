@@ -21,7 +21,7 @@ public class MainMethodClassForDeletionOfImportedPublications {
      * location uri instead of empty string and run main method
      */
 
-    public static final String S3LOCATION = "{ 'uri' : ''}";
+    public static final String S3LOCATION = "{ 'uri' : 's3://brage-migration-reports-884807050265/HANDLE_REPORTS/2022-12-13:13/'}";
     public static final Context context = mock(Context.class);
 
     public static void main(String[] args) {
