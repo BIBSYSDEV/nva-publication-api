@@ -11,7 +11,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 
-@JacocoGenerated
 public class DeleteImportedBragePublicationHandler implements RequestHandler<InputStream, Void> {
 
     private final ResourceService resourceService;
