@@ -6,6 +6,7 @@ import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 public class FakeResourceService extends ResourceService {
@@ -31,8 +32,21 @@ public class FakeResourceService extends ResourceService {
     }
 
     @Override
+    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier identifier) {
+        var publication = publicationList.get(0).copy().withStatus(PublicationStatus.DELETED).build();
+        publicationList.clear();
+        publicationList.add(publication);
+        return new DeletePublicationStatusResponse("nice", 200);
+    }
+
+    @Override
     public List<Publication> getPublicationsByCristinIdentifier(String cristinId) {
         return publicationList;
+    }
+
+    @Override
+    public Publication getPublicationByIdentifier(SortableIdentifier identifier) {
+        return publicationList.get(0);
     }
 
     @Override
