@@ -644,22 +644,6 @@ Resources:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
 
-  DeleteImportedBragePublicationHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: 'Should set publication status to deleted'
-      CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.DeleteImportedBragePublicationHandler::handleRequest
-      Runtime: java11
-      Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
-      Role: !GetAtt LambdaRole.Arn
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          TABLE_NAME: !Ref NvaResourcesTable
-
 
   BrageMigrationEventConsumer:
     Type: AWS::Serverless::Function
@@ -1201,6 +1185,23 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
+
+
+  DeleteImportedBragePublicationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: 'Should set publication status to deleted'
+      CodeUri: brage-import
+      Handler: no.sikt.nva.brage.migration.lambda.cleanup.DeleteImportedBragePublicationHandler::handleRequest
+      Runtime: java11
+      Timeout: 900 # 15 min timeout
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          TABLE_NAME: !Ref NvaResourcesTable
 
 
 
