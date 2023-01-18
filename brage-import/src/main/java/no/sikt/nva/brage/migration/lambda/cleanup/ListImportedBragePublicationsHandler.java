@@ -6,7 +6,13 @@ import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,11 +46,22 @@ public class ListImportedBragePublicationsHandler implements RequestHandler<Inpu
     @Override
     public List<String> handleRequest(InputStream input, Context context) {
         var importRequest = parseInput(input);
-        return listFiles(importRequest).stream().map(uri -> getIdentifier(uri.toString())).collect(Collectors.toList());
+        var identifiers = listFiles(importRequest).stream()
+                              .map(uri -> getIdentifier(uri.toString()))
+                              .collect(Collectors.toList());
+        identifiers.forEach(identifier -> new DeleteImportedBragePublicationHandler().handleRequest(IoUtils.stringToStream(identifier), context));
+        return identifiers;
     }
 
     private static String getIdentifier(String key) {
         return key.split("/")[key.split("/").length - 1];
+    }
+
+    private static String identifierToRequestBody(String identifier) throws IOException {
+        Writer writer = new StringWriter();
+        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer);
+        new ObjectMapper().writeTree(jsonGenerator, new ObjectMapper().createObjectNode().put("id", identifier));
+        return writer.toString();
     }
 
     private EventReference parseInput(InputStream input) {

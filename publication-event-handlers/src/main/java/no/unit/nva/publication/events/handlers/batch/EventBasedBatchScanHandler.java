@@ -17,29 +17,28 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
-    
+
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
-    
+
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
-    
+
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
         this(ResourceService.defaultService(), defaultEventBridgeClient());
     }
-    
+
     public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient) {
         super(ScanDatabaseRequest.class);
         this.resourceService = resourceService;
         this.eventBridgeClient = eventBridgeClient;
     }
-    
+
     @Override
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
-        ListingResult<Entity> result =
-            resourceService.scanResources(input.getPageSize(), input.getStartMarker());
+        ListingResult<Entity> result = resourceService.scanResources(input.getPageSize(), input.getStartMarker());
         resourceService.refreshResources(result.getDatabaseEntries());
         logger.info("Query starting point:" + input.getStartMarker());
         if (result.isTruncated()) {
@@ -47,24 +46,24 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
         }
         return null;
     }
-    
+
     @JacocoGenerated
     private static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
                    .httpClientBuilder(UrlConnectionHttpClient.builder())
                    .build();
     }
-    
+
     private void sendEventToInvokeNewRefreshRowVersionExecution(ScanDatabaseRequest input,
                                                                 Context context,
                                                                 ListingResult<Entity> result) {
         PutEventsRequestEntry newEvent = input
                                              .newScanDatabaseRequest(result.getStartMarker())
                                              .createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE,
-                                                 context.getInvokedFunctionArn());
+                                                                  context.getInvokedFunctionArn());
         sendEvent(newEvent);
     }
-    
+
     private void sendEvent(PutEventsRequestEntry putEventRequestEntry) {
         PutEventsRequest putEventRequest = PutEventsRequest.builder()
                                                .entries(putEventRequestEntry)

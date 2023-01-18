@@ -635,7 +635,7 @@ Resources:
     Properties:
       Description: 'List identifiers to publication imported from Brage. Accepts Json object with "uri" field'
       CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.ListImportedBragePublicationsHandler::handleRequest
+      Handler: no.sikt.nva.brage.migration.lambda.cleanup.ListAndDeleteImportedBragePublicationsHandler::handleRequest
       Runtime: java11
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
