@@ -288,10 +288,17 @@ public final class BrageNvaMapper {
     }
 
     private static URI generateCristinOrganization(Affiliation affiliation) {
+        return Optional.ofNullable(affiliation)
+                   .map(Affiliation::getIdentifier)
+                   .map(BrageNvaMapper::constructOrganizationUri)
+                   .orElse(null);
+    }
+
+    private static URI constructOrganizationUri(String id) {
         return UriWrapper.fromUri(HTTPS_PREFIX + BASE_PATH)
                    .addChild(CRISTIN)
                    .addChild(ORGANIZATION)
-                   .addChild(affiliation.getIdentifier())
+                   .addChild(id)
                    .getUri();
     }
 
