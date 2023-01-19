@@ -4,6 +4,7 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static no.unit.nva.publication.indexing.AffiliationGenerator.getAffiliationsWithCommonParent;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
@@ -18,6 +19,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsIterableContaining.hasItems;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +41,7 @@ import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.expansion.utils.UriRetriever;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
@@ -187,6 +191,35 @@ class ExpandedResourceTest {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().setMainTitle(null);
         assertThat(ExpandedResource.fromPublication(uriRetriever, publication), is(not(nullValue())));
+    }
+
+    @Test
+    void shouldNotFailWhenInputContainsAffiliationsThatAreIncomplete() {
+        var publication = createPublicationWithEmptyAffiliations();
+        assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
+    }
+
+    private Publication createPublicationWithEmptyAffiliations() {
+        var publication = PublicationGenerator.randomPublication();
+        publication.setStatus(PUBLISHED);
+        var entityDescription = publication.getEntityDescription();
+        var contributors = entityDescription.getContributors().stream()
+                               .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
+                               .collect(Collectors.toList());
+        entityDescription.setContributors(contributors);
+        return publication;
+    }
+
+    private static Contributor createContributorsWithNoAffiliations(Contributor contributor) {
+        return new Contributor(contributor.getIdentity(), Collections.emptyList(),
+                               contributor.getRole(), contributor.getSequence(),
+                               contributor.isCorrespondingAuthor());
+    }
+
+    private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
+        return new Contributor(contributor.getIdentity(), List.of(new Organization()),
+                               contributor.getRole(), contributor.getSequence(),
+                               contributor.isCorrespondingAuthor());
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {

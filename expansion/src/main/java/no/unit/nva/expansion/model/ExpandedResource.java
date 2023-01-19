@@ -24,7 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.utils.UriRetriever;
@@ -183,9 +185,23 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static List<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
         return StreamSupport.stream(contributorsRoot.spliterator(), false)
-            .flatMap(node -> StreamSupport.stream(node.at(AFFILIATIONS_POINTER).spliterator(), false))
-            .map(child -> URI.create(child.at("/id").textValue()))
-            .collect(Collectors.toList());
+                   .flatMap(ExpandedResource::extractAffiliations)
+                   .map(ExpandedResource::extractAffiliationId)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .collect(Collectors.toList());
+    }
+
+    private static Optional<URI> extractAffiliationId(JsonNode child) {
+        return Optional.ofNullable(child.at("/id"))
+                   .map(JsonNode::textValue)
+                   .map(URI::create);
+    }
+
+    private static Stream<JsonNode> extractAffiliations(JsonNode node) {
+        return Optional.ofNullable(node.at(AFFILIATIONS_POINTER))
+                   .map(o -> StreamSupport.stream(o.spliterator(), false))
+                   .orElse(Stream.empty());
     }
 
     private static URI getBookSeriesUri(JsonNode root) {
