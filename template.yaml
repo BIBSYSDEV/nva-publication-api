@@ -712,6 +712,7 @@ Resources:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
