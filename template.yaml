@@ -699,7 +699,7 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
-  DeletePublicationHandler:
+  DeletePublicationEventHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
@@ -717,7 +717,7 @@ Resources:
               detail:
                 responsePayload:
                   topic:
-                    - PublicationService.Resource.Update
+                    - PublicationService.ExpandedDataEntry.Delete
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:

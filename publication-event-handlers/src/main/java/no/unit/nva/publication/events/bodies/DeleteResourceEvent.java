@@ -9,7 +9,7 @@ import nva.commons.core.JacocoGenerated;
 
 public class DeleteResourceEvent {
 
-    public static final String EVENT_TOPIC = "PublicationService.Resource.Deletion";
+    public static final String EVENT_TOPIC = "PublicationService.ExpandedEntry.Deleted";
 
     private final String topic;
     private final SortableIdentifier identifier;
