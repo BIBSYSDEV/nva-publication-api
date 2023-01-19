@@ -321,10 +321,17 @@ public final class BrageNvaMapper {
     }
 
     private static URI generateIdentityIdentifier(no.sikt.nva.brage.migration.record.Identity identity) {
+        return Optional.ofNullable(identity)
+                   .map(no.sikt.nva.brage.migration.record.Identity::getIdentifier)
+                   .map(BrageNvaMapper::generateIdentityUri)
+                   .orElse(null);
+    }
+
+    private static URI generateIdentityUri(String identifier) {
         return UriWrapper.fromUri(HTTPS_PREFIX + BASE_PATH)
                    .addChild(CRISTIN)
                    .addChild(PERSON)
-                   .addChild(identity.getIdentifier())
+                   .addChild(identifier)
                    .getUri();
     }
 
