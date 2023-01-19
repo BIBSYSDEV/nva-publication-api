@@ -19,7 +19,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
-public class DeletePublicationHandler extends
+public class DeleteEventHandler extends
                                       DestinationsEventBridgeEventHandler<EventReference,
                                                                              DeleteResourceEvent> {
 
@@ -28,11 +28,11 @@ public class DeletePublicationHandler extends
     private final S3Client s3Client;
 
     @JacocoGenerated
-    public DeletePublicationHandler() {
+    public DeleteEventHandler() {
         this(defaultS3Client());
     }
 
-    public DeletePublicationHandler(S3Client s3Client) {
+    public DeleteEventHandler(S3Client s3Client) {
         super(EventReference.class);
         this.s3Client = s3Client;
     }
