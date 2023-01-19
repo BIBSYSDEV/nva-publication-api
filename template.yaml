@@ -46,7 +46,6 @@ Parameters:
     Type: 'String'
     Default: "brage-migration-reports"
     Description: Name of bucket for output brage migration errors
-
   MaxConcurrency:
     Type: Number
     Default: 100
@@ -67,6 +66,10 @@ Parameters:
     Type: String
     Default: ''
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
+  NvaApplicationDomain:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /NVA/ApplicationDomain
+    Description: Domain-name for the NVA frontend
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -404,6 +407,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
