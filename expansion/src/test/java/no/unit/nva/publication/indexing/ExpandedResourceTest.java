@@ -21,8 +21,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -55,7 +53,6 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.text.IsEmptyString;
-import org.junit.Before;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -268,9 +265,9 @@ class ExpandedResourceTest {
 
     private List<URI> extractAffiliationsUris(Publication publication) {
         return publication.getEntityDescription().getContributors()
-            .stream().flatMap(contributor ->
-                                  contributor.getAffiliations().stream().map(Organization::getId))
-            .collect(Collectors.toList());
+                   .stream().flatMap(contributor ->
+                                         contributor.getAffiliations().stream().map(Organization::getId))
+                   .collect(Collectors.toList());
     }
 
     private URI extractSeriesUri(Publication publication) {

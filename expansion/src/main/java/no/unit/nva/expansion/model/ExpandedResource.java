@@ -135,8 +135,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static String enrichJson(UriRetriever uriRetriever, ObjectNode documentWithId) {
         return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever))
-            .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
-            .orElseThrow();
+                   .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
+                   .orElseThrow();
     }
 
     private static ObjectNode createJsonWithId(Publication publication) throws JsonProcessingException {
@@ -186,16 +186,15 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static List<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
         return StreamSupport.stream(contributorsRoot.spliterator(), false)
                    .flatMap(ExpandedResource::extractAffiliations)
-                   .map(ExpandedResource::extractAffiliationId)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
+                   .flatMap(ExpandedResource::extractAffiliationId)
                    .collect(Collectors.toList());
     }
 
-    private static Optional<URI> extractAffiliationId(JsonNode child) {
+    private static Stream<URI> extractAffiliationId(JsonNode child) {
         return Optional.ofNullable(child.at("/id"))
                    .map(JsonNode::textValue)
-                   .map(URI::create);
+                   .map(URI::create)
+                   .stream();
     }
 
     private static Stream<JsonNode> extractAffiliations(JsonNode node) {
