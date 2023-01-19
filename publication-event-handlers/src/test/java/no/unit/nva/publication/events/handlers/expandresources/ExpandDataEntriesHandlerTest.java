@@ -13,7 +13,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,14 +39,11 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -221,13 +217,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private EventReference emptyEvent(Instant timestamp) {
         return new EventReference(EMPTY_EVENT_TOPIC, null, null, timestamp);
-    }
-
-    private Message sampleMessage() {
-        Publication publication = PublicationGenerator.randomPublication();
-        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
-        var sender = UserInstance.fromTicket(ticket);
-        return Message.create(ticket, sender, randomString());
     }
 
     private DoiRequest doiRequestForDraftResource() {

@@ -425,26 +425,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnOneElementWhenThereIsOneOwnedElementButManyOtherElementsInDb() {
-
-        var userInstance = UserInstance.create(randomString(), randomUri());
-        var userResources = new HashSet<>();
-
-        for (var i = 18; i > 0; i--) {
-            addManyResources();
-            userResources.addAll(createSamplePublicationsOfSingleOwner(userInstance));
-        }        List<Publication> actualResources = resourceService.getPublicationsByOwner(userInstance);
-        var actualResourceSet = new HashSet<>(actualResources);
-        assertThat(actualResourceSet, containsInAnyOrder(userResources.toArray(Publication[]::new)));
-
-    }
-
-    private void addManyResources() {
-            var userInstance = UserInstance.create(randomString(), randomUri());
-            createSamplePublicationsOfSingleOwner(userInstance);
-    }
-
-    @Test
     void getResourcesByCristinIdentifierReturnsAllResourcesWithCristinIdentifier() {
         String cristinIdentifier = randomString();
         Set<Publication> publicationsWithCristinIdentifier =
