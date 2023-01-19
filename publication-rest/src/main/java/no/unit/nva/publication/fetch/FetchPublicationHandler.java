@@ -85,6 +85,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected String processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
+        statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
+
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
         temporaryHackWhileWeWaitForUnauthenticatedUserAccess(publication);
