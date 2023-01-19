@@ -33,9 +33,14 @@ public class FakeResourceService extends ResourceService {
 
     @Override
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier identifier) {
-        var publication = publicationList.get(0).copy().withStatus(PublicationStatus.DELETED).build();
-        publicationList.clear();
-        publicationList.add(publication);
+        var publicationToUpdate = publicationList.stream()
+                                      .filter(p -> p.getIdentifier().equals(identifier))
+                                      .findFirst().get();
+        publicationList.remove(publicationToUpdate);
+        var updatedPublication = publicationToUpdate.copy()
+                                     .withStatus(PublicationStatus.DELETED)
+                                     .build();
+        publicationList.add(updatedPublication);
         return new DeletePublicationStatusResponse("nice", 200);
     }
 
@@ -46,7 +51,10 @@ public class FakeResourceService extends ResourceService {
 
     @Override
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) {
-        return publicationList.get(0);
+        return publicationList.stream()
+                   .filter(publication -> publication.getIdentifier().equals(identifier))
+                   .findFirst()
+                   .get();
     }
 
     @Override
