@@ -61,7 +61,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
 
 class FetchPublicationHandlerTest extends ResourcesLocalTest {
-
+    private static final String TEXT_ANY = "text/*";
+    private static final String TEXT_HTML = "text/html";
+    private static final String APPLICATION_XHTML = "application/xhtml+xml";
+    private static final String FIREFOX_DEFAULT_ACCEPT_HEADER = "text/html,application/xhtml+xml,application/xml;q=0"
+                                                                + ".9,image/avif,image/webp,*/*;q=0.8";
+    private static final String WEBKIT_DEFAULT_ACCEPT_HEADER = "application/xml,application/xhtml+xml,text/html;q=0"
+                                                               + ".9,text/plain;q=0.8,image/png,*/*;q=0.5";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = restApiMapper.getTypeFactory()
                                                                            .constructParametricType(
@@ -151,7 +157,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "should redirect to frontend landing page when accept header is {0}")
-    @ValueSource(strings = {"text/*", "text/html", "application/xhtml+xml"})
+    @ValueSource(strings = {
+        TEXT_HTML,
+        APPLICATION_XHTML,
+        TEXT_ANY,
+        FIREFOX_DEFAULT_ACCEPT_HEADER,
+        WEBKIT_DEFAULT_ACCEPT_HEADER
+    })
     void shouldRedirectToFrontendLandingPageIfPreferredContentTypeIsHtml(String acceptHeaderValue)
         throws ApiGatewayException, IOException {
         var publication = createPublication(JournalArticle.class);
@@ -160,9 +172,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers), output, context);
 
         var valueType = restApiMapper.getTypeFactory()
-                                             .constructParametricType(
-                                                 GatewayResponse.class,
-                                                 Void.class);
+                            .constructParametricType(
+                                GatewayResponse.class,
+                                Void.class);
 
         GatewayResponse<Void> response = restApiMapper.readValue(output.toString(), valueType);
 
