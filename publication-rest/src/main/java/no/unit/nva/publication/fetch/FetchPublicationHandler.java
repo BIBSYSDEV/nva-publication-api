@@ -71,13 +71,13 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @Override
     protected List<MediaType> listSupportedMediaTypes() {
         return List.of(
-            JSON_UTF_8,
+            HTML_UTF_8,
+            ANY_TEXT_TYPE,
+            XHTML_UTF_8,
             APPLICATION_JSON_LD,
             APPLICATION_DATACITE_XML,
             SCHEMA_ORG,
-            HTML_UTF_8,
-            XHTML_UTF_8,
-            ANY_TEXT_TYPE
+            JSON_UTF_8
         );
     }
 
