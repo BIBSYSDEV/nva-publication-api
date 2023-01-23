@@ -254,6 +254,7 @@ Resources:
 
   DeleteLambdaRole:
     Type: AWS::IAM::Role
+    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
     Properties:
       Path: /
       AssumeRolePolicyDocument:
@@ -264,21 +265,6 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
-      Policies:
-        - PolicyName: Events
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - events:PutEvents
-                Resource: !GetAtt InternalBus.Arn
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
@@ -339,6 +325,7 @@ Resources:
 
   S3DeleteAccessPermission:
     Type: AWS::IAM::Policy
+    Description: Needed by DeletePublicationEventConsumer
     Properties:
       PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
       Roles:
@@ -744,12 +731,13 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
-  DeletePublicationEventHandler:
+  DeletePublicationEventConsumer:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
+    Description: 'Listens for Delete event emitted from ResourceExpansionHandler. Removes resource from persisted-storage s3 bucket and emits event consumed by search-api.'
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.DeleteEventHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
       Runtime: java11
       Role: !GetAtt DeleteLambdaRole.Arn
       ReservedConcurrentExecutions: 1

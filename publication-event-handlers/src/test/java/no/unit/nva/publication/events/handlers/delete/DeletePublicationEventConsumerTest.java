@@ -35,19 +35,19 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 
-public class DeleteEventHandlerTest {
+public class DeletePublicationEventConsumerTest {
 
     private ByteArrayOutputStream outputStream;
     private Context context;
 
-    private DeleteEventHandler handler;
+    private DeletePublicationEventConsumer handler;
 
     private S3Client s3Client;
 
     @BeforeEach
     public void setUp() {
         s3Client = new FakeS3ClientSupportingDeleteObject();
-        handler = new DeleteEventHandler(s3Client);
+        handler = new DeletePublicationEventConsumer(s3Client);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
     }
