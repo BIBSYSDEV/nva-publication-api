@@ -7,9 +7,11 @@ import static com.google.common.net.HttpHeaders.LOCATION;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAGE;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_GONE;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -245,6 +247,25 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
 
+    @Test
+    @DisplayName("Handler returns Gone Response when when publication has status Deleted")
+    void handlerReturnsGoneErrorResponseWhenPublicationHasStatusDeleted()
+        throws ApiGatewayException, IOException {
+        var publicationIdentifier = createDeletedPublication();
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
+        String actualDetail = getProblemDetail(gatewayResponse);
+        assertEquals(SC_GONE, gatewayResponse.getStatusCode());
+        assertThat(actualDetail, containsString(GONE_MESSAGE));
+    }
+
+    private String createDeletedPublication() throws ApiGatewayException {
+        var createdPublication = createPublication();
+        var publicationIdentifier = createdPublication.getIdentifier();
+        publicationService.updatePublishedStatusToDeleted(publicationIdentifier);
+        return publicationIdentifier.toString();
+    }
+
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
         return restApiMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }
@@ -279,20 +300,20 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         return restApiMapper.readValue(output.toString(), responseWithProblemType);
     }
 
-    private Publication createPublication() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
-        return publicationService.getPublicationByIdentifier(publicationIdentifier);
-    }
-
     private Publication createPersistedPublicationWithStatusPublishedMetadata() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         publicationService.publishPublicationMetadata(userInstance, publicationIdentifier);
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createPublication() throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication();
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        SortableIdentifier publicationIdentifier =
+            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 

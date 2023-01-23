@@ -33,6 +33,7 @@ import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.GoneException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -40,11 +41,11 @@ import nva.commons.core.paths.UriWrapper;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
-    private static final String REGISTRATION_PATH = "registration";
-    protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     public static final Clock CLOCK = Clock.systemDefaultZone();
+    public static final String GONE_MESSAGE = "Permanently deleted";
+    protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
+    private static final String REGISTRATION_PATH = "registration";
     private final ResourceService resourceService;
-
     private int statusCode = HttpURLConnection.HTTP_OK;
 
     @JacocoGenerated
@@ -93,6 +94,11 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return createResponse(requestInfo, publication);
     }
 
+    @Override
+    protected Integer getSuccessStatusCode(Void input, String output) {
+        return statusCode;
+    }
+
     // TODO: implement unauthenticated users to allow us to remove unpublished files from returned data when the user
     //  is unauthenticated.
     private static void temporaryHackWhileWeWaitForUnauthenticatedUserAccess(Publication publication) {
@@ -101,21 +107,25 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         }
     }
 
-    @Override
-    protected Integer getSuccessStatusCode(Void input, String output) {
-        return statusCode;
-    }
-
     @JacocoGenerated
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
         return new ResourceService(client, CLOCK);
     }
 
+    private boolean publicationIsLogicallyDeleted(Publication publication) {
+        return PublicationStatus.DELETED.equals(publication.getStatus());
+    }
+
     private String createResponse(RequestInfo requestInfo,
-                                  Publication publication)
-        throws UnsupportedAcceptHeaderException {
+                                  Publication publication) throws UnsupportedAcceptHeaderException, GoneException {
+
+        if (publicationIsLogicallyDeleted(publication)) {
+            throw new GoneException(GONE_MESSAGE);
+        }
+
         String response = null;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
+
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
         } else if (SCHEMA_ORG.equals(contentType)) {
