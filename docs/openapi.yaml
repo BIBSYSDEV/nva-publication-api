@@ -73,6 +73,12 @@ paths:
             application/vnd.schemaorg.ld+json:
               schema:
                 $ref: '#/components/schemas/PublicationSchemaOrg'
+        '410':
+          description: Permanently gone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     put:
       summary: Update Publication for Identifier
       security:
