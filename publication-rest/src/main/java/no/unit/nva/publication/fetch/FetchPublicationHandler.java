@@ -116,11 +116,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String createResponse(RequestInfo requestInfo,
                                   Publication publication) throws UnsupportedAcceptHeaderException, GoneException {
-        String response = null;
-        var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
+
         if (publicationIsLogicallyDeleted(publication)) {
             throw new GoneException(GONE_MESSAGE);
         }
+
+        String response = null;
+        var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
+
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
         } else if (SCHEMA_ORG.equals(contentType)) {
