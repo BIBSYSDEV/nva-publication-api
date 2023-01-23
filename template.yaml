@@ -179,6 +179,8 @@ Resources:
     Type: "AWS::SQS::Queue"
   DeletePublicationEventProducerDlq:
     Type: "AWS::SQS::Queue"
+  DeletePublicationEventConsumerDlq:
+    Type: "AWS::SQS::Queue"
   PublicationFanoutHandlerDLQ:
     Type: "AWS::SQS::Queue"
   DeleteDraftPublicationHandlerDLQ:
@@ -768,7 +770,7 @@ Resources:
             Destination: !Ref NewNvaEventBusArn # event is consumed by search-api
           OnFailure:
             Type: SQS
-            Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+            Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
 
   DoiRequestEventProducer:
     DependsOn: EventsLambdaPermissions
