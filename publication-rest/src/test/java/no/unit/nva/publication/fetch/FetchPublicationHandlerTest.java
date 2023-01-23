@@ -7,7 +7,7 @@ import static com.google.common.net.HttpHeaders.LOCATION;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAFE;
+import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAGE;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -244,7 +244,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
         String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_GONE, gatewayResponse.getStatusCode());
-        assertThat(actualDetail, containsString(GONE_MESSAFE));
+        assertThat(actualDetail, containsString(GONE_MESSAGE));
     }
 
     private String createDeletedPublication() throws ApiGatewayException {

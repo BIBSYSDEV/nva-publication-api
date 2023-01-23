@@ -42,7 +42,7 @@ import nva.commons.core.paths.UriWrapper;
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     public static final Clock CLOCK = Clock.systemDefaultZone();
-    public static final String GONE_MESSAFE = "Permanently deleted";
+    public static final String GONE_MESSAGE = "Permanently deleted";
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
     private final ResourceService resourceService;
@@ -119,7 +119,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         String response = null;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
         if (publicationIsLogicallyDeleted(publication)) {
-            createGoneException();
+            throw new GoneException(GONE_MESSAGE);
         }
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(publication);
@@ -132,10 +132,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             response = createPublicationResponse(requestInfo, publication);
         }
         return response;
-    }
-
-    private void createGoneException() throws GoneException {
-        throw new GoneException(GONE_MESSAFE);
     }
 
     private URI landingPageLocation(SortableIdentifier identifier) {
