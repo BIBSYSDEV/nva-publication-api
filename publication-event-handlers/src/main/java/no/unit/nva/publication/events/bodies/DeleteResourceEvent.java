@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.bodies;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
@@ -13,22 +12,13 @@ public class DeleteResourceEvent {
 
     private final String topic;
     private final SortableIdentifier identifier;
-    private final String status;
-    private final URI doi;
-    private final URI customerId;
 
     @JsonCreator
     public DeleteResourceEvent(
         @JsonProperty("topic") String topic,
-        @JsonProperty("identifier") SortableIdentifier identifier,
-        @JsonProperty("status") String status,
-        @JsonProperty("doi") URI doi,
-        @JsonProperty("customerId") URI customerId) {
+        @JsonProperty("identifier") SortableIdentifier identifier) {
         this.topic = topic;
         this.identifier = identifier;
-        this.status = status;
-        this.doi = doi;
-        this.customerId = customerId;
     }
 
     public String getTopic() {
@@ -39,27 +29,10 @@ public class DeleteResourceEvent {
         return identifier;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public URI getDoi() {
-        return doi;
-    }
-
-    public URI getCustomerId() {
-        return customerId;
-    }
-
-    @JsonProperty("hasDoi")
-    public boolean hasDoi() {
-        return Objects.nonNull(doi);
-    }
-
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(topic, identifier, status, doi, customerId);
+        return Objects.hash(topic, identifier);
     }
 
     @Override
@@ -73,9 +46,6 @@ public class DeleteResourceEvent {
         }
         DeleteResourceEvent that = (DeleteResourceEvent) o;
         return topic.equals(that.topic)
-               && identifier.equals(that.identifier)
-               && status.equals(that.status)
-               && Objects.equals(doi, that.doi)
-               && Objects.equals(customerId, that.customerId);
+               && identifier.equals(that.identifier);
     }
 }

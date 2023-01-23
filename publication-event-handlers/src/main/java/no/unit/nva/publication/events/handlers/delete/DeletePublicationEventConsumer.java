@@ -76,10 +76,7 @@ public class DeletePublicationEventConsumer extends
 
     private DeleteResourceEvent toDeletePublicationEvent(Publication publication) {
         return new DeleteResourceEvent(DeleteResourceEvent.EVENT_TOPIC,
-                                       publication.getIdentifier(),
-                                       publication.getStatus().getValue(),
-                                       publication.getDoi(),
-                                       publication.getPublisher().getId());
+                                       publication.getIdentifier());
     }
 
     private boolean isDeleted(Publication publication) {

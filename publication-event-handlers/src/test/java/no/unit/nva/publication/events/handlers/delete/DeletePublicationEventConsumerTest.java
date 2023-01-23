@@ -78,7 +78,6 @@ public class DeletePublicationEventConsumerTest {
         var response =
             objectMapper.readValue(outputStream.toString(), DeleteResourceEvent.class);
         assertThat(response.getIdentifier(), notNullValue());
-        assertThat(response.getStatus(), is(equalTo(PublicationStatus.DELETED.getValue())));
         assertThat(response.getTopic(), is(equalTo(DeleteResourceEvent.EVENT_TOPIC)));
         assertThatDeleteObjectHasBeenDoneOnceWithCorrectObjectKey(publication);
     }
