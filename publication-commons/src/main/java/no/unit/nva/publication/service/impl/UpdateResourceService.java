@@ -159,7 +159,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private static boolean publicationIsPublished(Publication publication) {
-        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+        var status = publication.getStatus();
+        return PublicationStatus.PUBLISHED.equals(status)
+               || PublicationStatus.PUBLISHED_METADATA.equals(status);
     }
     
     private void publishPublication(Publication publication) throws InvalidPublicationException {
