@@ -252,6 +252,34 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
+  DeleteLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: Events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: !GetAtt InternalBus.Arn
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
+
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -260,6 +288,7 @@ Resources:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
+        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -295,6 +324,7 @@ Resources:
       PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
+        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -306,6 +336,20 @@ Resources:
               - s3:PutObject
               - s3:PutObjectAcl
             Resource: "*"
+
+  S3DeletePersistedResourcesPermission:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub S3DeletePersistedResourcesPermission-${AWS::StackName}
+      Roles:
+        - !Ref DeleteLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:DeleteObject
+            Resource: "nva-resource-storage-${AWS::AccountId}"
 
   DynamoDbStreamsAccessPolicy:
     Type: AWS::IAM::Policy
@@ -331,6 +375,7 @@ Resources:
       PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
+        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -706,7 +751,7 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteEventHandler::handleRequest
       Runtime: java11
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt DeleteLambdaRole.Arn
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
