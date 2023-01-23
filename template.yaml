@@ -337,10 +337,10 @@ Resources:
               - s3:PutObjectAcl
             Resource: "*"
 
-  S3DeletePersistedResourcesPermission:
+  S3DeleteAccessPermission:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub S3DeletePersistedResourcesPermission-${AWS::StackName}
+      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
       Roles:
         - !Ref DeleteLambdaRole
       PolicyDocument:
@@ -349,7 +349,7 @@ Resources:
           - Effect: Allow
             Action:
               - s3:DeleteObject
-            Resource: "nva-resource-storage-${AWS::AccountId}"
+            Resource: "*"
 
   DynamoDbStreamsAccessPolicy:
     Type: AWS::IAM::Policy
