@@ -180,7 +180,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                      () -> expansionService.expandEntry(unsupportedImplementation));
     }
 
-    @ParameterizedTest(name = "should add resource title to expanded ticket:{0}")
+    @ParameterizedTest(name = "should get all organizationIds for affiliations:{0}")
     @MethodSource("ticketTypeProvider")
     void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {

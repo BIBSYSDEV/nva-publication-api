@@ -1,0 +1,15 @@
+PREFIX  organization: <https://example.org/vocab#>
+
+CONSTRUCT {
+?a a organization:Organization ;
+  organization:name ?c ;
+  organization:topLevelAffiliation ?d .
+?d a organization:Organization ;
+  organization:name ?f
+} WHERE {
+?a a organization:Organization ;
+  organization:name ?c .
+?a organization:partOf+ ?d .
+?d organization:name ?f .
+OPTIONAL { ?d organization:partOf ?h } .
+FILTER(!bound(?h))}

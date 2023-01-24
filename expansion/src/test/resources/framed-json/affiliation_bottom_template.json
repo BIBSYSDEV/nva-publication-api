@@ -1,0 +1,22 @@
+{
+  "type": "Organization",
+  "@context": {
+    "@vocab": "https://example.org/vocab#",
+    "id": "@id",
+    "type": "@type",
+    "name": {
+      "@container": "@language"
+    },
+    "partOf":  {
+      "@container": "@set"
+    }
+  },
+  "id": "https://api.test.nva.aws.unit.no/cristin/organization/224.60.1.0",
+  "name": {
+    "nb": "Avdeling for økonomi, språk og samfunnsfag"
+  },
+  "partOf": [
+  ]
+}
+
+
