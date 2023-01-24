@@ -6,6 +6,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_DELETE_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -108,8 +109,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldNotProduceEntryWhenNotPublishedEntry(PublicationStatus status) throws IOException {
+    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA", "DELETED"})
+    void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status) throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
@@ -163,6 +164,21 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldEmitDeleteEventForPublicationStatusDeleted() throws IOException {
+        var oldImage = randomPublication().copy()
+                           .withIdentifier(SortableIdentifier.next())
+                           .withDoi(null)
+                           .withStatus(PublicationStatus.PUBLISHED).build();
+        var newImage = oldImage.copy()
+                           .withStatus(PublicationStatus.DELETED)
+                           .build();
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_DELETE_EVENT_TOPIC)));
+    }
+
+    @Test
     @Disabled
         //TODO: implement this test as a test or a set of tests
     void shouldAlwaysEmitEventsForAllTypesOfDataEntries() {
@@ -208,10 +224,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
         var publication = randomPublication().copy()
-            .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
-            .withResourceOwner(
-                new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
-            .build();
+                              .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
+                              .withResourceOwner(
+                                  new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
+                              .build();
         return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
     }
 
@@ -221,8 +237,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest doiRequestForDraftResource() {
         Publication publication = randomPublication().copy()
-            .withStatus(DRAFT)
-            .build();
+                                      .withStatus(DRAFT)
+                                      .build();
         Resource resource = Resource.fromPublication(publication);
         return DoiRequest.newDoiRequestForResource(resource);
     }
