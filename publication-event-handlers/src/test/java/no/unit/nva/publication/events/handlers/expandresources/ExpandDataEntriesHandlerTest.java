@@ -6,6 +6,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_DELETE_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -13,7 +14,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,14 +40,11 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -112,8 +109,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldNotProduceEntryWhenNotPublishedEntry(PublicationStatus status) throws IOException {
+    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA", "DELETED"})
+    void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status) throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
@@ -167,6 +164,21 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldEmitDeleteEventForPublicationStatusDeleted() throws IOException {
+        var oldImage = randomPublication().copy()
+                           .withIdentifier(SortableIdentifier.next())
+                           .withDoi(null)
+                           .withStatus(PublicationStatus.PUBLISHED).build();
+        var newImage = oldImage.copy()
+                           .withStatus(PublicationStatus.DELETED)
+                           .build();
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_DELETE_EVENT_TOPIC)));
+    }
+
+    @Test
     @Disabled
         //TODO: implement this test as a test or a set of tests
     void shouldAlwaysEmitEventsForAllTypesOfDataEntries() {
@@ -212,10 +224,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
         var publication = randomPublication().copy()
-            .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
-            .withResourceOwner(
-                new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
-            .build();
+                              .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
+                              .withResourceOwner(
+                                  new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
+                              .build();
         return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
     }
 
@@ -223,17 +235,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         return new EventReference(EMPTY_EVENT_TOPIC, null, null, timestamp);
     }
 
-    private Message sampleMessage() {
-        Publication publication = PublicationGenerator.randomPublication();
-        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
-        var sender = UserInstance.fromTicket(ticket);
-        return Message.create(ticket, sender, randomString());
-    }
-
     private DoiRequest doiRequestForDraftResource() {
         Publication publication = randomPublication().copy()
-            .withStatus(DRAFT)
-            .build();
+                                      .withStatus(DRAFT)
+                                      .build();
         Resource resource = Resource.fromPublication(publication);
         return DoiRequest.newDoiRequestForResource(resource);
     }

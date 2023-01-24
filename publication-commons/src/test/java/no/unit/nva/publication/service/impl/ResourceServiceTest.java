@@ -417,7 +417,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
         UserInstance userInstance = UserInstance.create(randomString(), randomUri());
         Set<Publication> userResources = createSamplePublicationsOfSingleOwner(userInstance);
-        
+
         List<Publication> actualResources = resourceService.getPublicationsByOwner(userInstance);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
         

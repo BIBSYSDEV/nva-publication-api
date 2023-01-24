@@ -108,7 +108,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
         if (publicationIsPublished(publication)) {
             return publishCompletedStatus();
-        } else if (publicationIsDraft(publication)) {
+        } else if (publicationIsDraftOrPublishedMetadataOnly(publication)) {
             publishPublication(publication);
             return publishingInProgressStatus();
         } else {
@@ -122,7 +122,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
         if (publicationIsPublished(publication) || publicationMetadataPublished(publication)) {
             return publishMetadataCompletedStatus();
-        } else if (publicationIsDraft(publication)) {
+        } else if (publicationIsDraftOrPublishedMetadataOnly(publication)) {
             publishPublicationMetadata(publication);
             return publishingInProgressStatus();
         } else {
@@ -159,7 +159,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private static boolean publicationIsPublished(Publication publication) {
-        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+        var status = publication.getStatus();
+        return PublicationStatus.PUBLISHED.equals(status);
     }
     
     private void publishPublication(Publication publication) throws InvalidPublicationException {
@@ -178,8 +179,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
         updatePublicationIncludingStatus(publication);
     }
     
-    private boolean publicationIsDraft(Publication publication) {
-        return PublicationStatus.DRAFT.equals(publication.getStatus());
+    private boolean publicationIsDraftOrPublishedMetadataOnly(Publication publication) {
+        var status = publication.getStatus();
+        return PublicationStatus.DRAFT.equals(status)
+               || PublicationStatus.PUBLISHED_METADATA.equals(status);
     }
     
     private Publication fetchExistingPublication(Publication publication) {

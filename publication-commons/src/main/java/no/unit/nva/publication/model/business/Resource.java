@@ -25,6 +25,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -443,8 +444,8 @@ public class Resource implements Entity {
             return file.toUnpublishedFile();
         } else if (isPublishableFile(file) && shouldBePublished(publicationStatus)) {
             return file.toPublishedFile();
-        } else if (file.isAdministrativeAgreement()) {
-            return file.toUnpublishableFile();
+        } else if (!isPublishableFile(file)) {
+            return file instanceof AdministrativeAgreement ? file : file.toUnpublishableFile();
         } else {
             throw new IllegalStateException("Missing conversion rule for file");
         }
@@ -463,7 +464,7 @@ public class Resource implements Entity {
     }
     
     private static boolean isPublishableFile(File artifact) {
-        return !artifact.isAdministrativeAgreement();
+        return !(artifact instanceof AdministrativeAgreement) && !artifact.isAdministrativeAgreement();
     }
 }
 
