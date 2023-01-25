@@ -255,39 +255,39 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
-#  DeleteLambdaRole:
-#    Type: AWS::IAM::Role
-#    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
-#    Properties:
-#      Path: /
-#      AssumeRolePolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Principal:
-#              Service:
-#                - lambda.amazonaws.com
-#            Action: sts:AssumeRole
+  DeleteLambdaRole:
+    Type: AWS::IAM::Role
+    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
 
-#  DefaultLambdaPermissions:
-#    Type: AWS::IAM::Policy
-#    Properties:
-#      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
-#      Roles:
-#        - !Ref LambdaRole
-#        - !Ref DeleteDraftPublicationLambdaRole
-#        - !Ref UpdateDoiStatusLambdaRole
-#        - !Ref DeleteLambdaRole
-#      PolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Action:
-#              - logs:CreateLogGroup
-#              - logs:CreateLogStream
-#              - logs:PutLogEvents
-#              - lambda:InvokeFunction
-#            Resource: "*"
+  DefaultLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+        - !Ref DeleteDraftPublicationLambdaRole
+        - !Ref UpdateDoiStatusLambdaRole
+        - !Ref DeleteLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - lambda:InvokeFunction
+            Resource: "*"
 
   DatabaseAccessLambdaPermissions:
     Type: AWS::IAM::Policy
@@ -307,75 +307,75 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
 
-#  S3AccessPermsisions:
-#    Type: AWS::IAM::Policy
-#    Properties:
-#      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
-#      Roles:
-#        - !Ref LambdaRole
-#        - !Ref DeleteLambdaRole
-#      PolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Action:
-#              - s3:GetObject
-#              - s3:ListBucket
-#              - s3:ListBucketMultipartUploads
-#              - s3:PutObject
-#              - s3:PutObjectAcl
-#            Resource: "*"
+  S3AccessPermsisions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+        - !Ref DeleteLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+              - s3:PutObjectAcl
+            Resource: "*"
 
-#  S3DeleteAccessPermission:
-#    Type: AWS::IAM::Policy
-#    Description: Needed by DeletePublicationEventConsumer
-#    Properties:
-#      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
-#      Roles:
-#        - !Ref DeleteLambdaRole
-#      PolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Action:
-#              - s3:DeleteObject
-#            Resource: "*"
-#
-#  DynamoDbStreamsAccessPolicy:
-#    Type: AWS::IAM::Policy
-#    Properties:
-#      PolicyName: !Sub DynamoDbStreamAccessPolicy-${AWS::StackName}
-#      Roles:
-#        - !Ref LambdaRole
-#      PolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Action:
-#              - dynamodb:GetShardIterator
-#              - dynamodb:DescribeStream
-#              - dynamodb:ListStreams
-#              - dynamodb:GetRecords
-#            Resource: !GetAtt NvaResourcesTable.StreamArn
+  S3DeleteAccessPermission:
+    Type: AWS::IAM::Policy
+    Description: Needed by DeletePublicationEventConsumer
+    Properties:
+      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
+      Roles:
+        - !Ref DeleteLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:DeleteObject
+            Resource: "*"
+
+  DynamoDbStreamsAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DynamoDbStreamAccessPolicy-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetShardIterator
+              - dynamodb:DescribeStream
+              - dynamodb:ListStreams
+              - dynamodb:GetRecords
+            Resource: !GetAtt NvaResourcesTable.StreamArn
 
 
-#  EventsLambdaPermissions:
-#    Type: AWS::IAM::Policy
-#    Properties:
-#      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
-#      Roles:
-#        - !Ref LambdaRole
-#        - !Ref DeleteLambdaRole
-#      PolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Action:
-#              - events:*
-#              - sqs:SendMessage
-#              - sqs:ReceiveMessage
-#              - sqs:DeleteMessage
-#            Resource: "*"
+  EventsLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+        - !Ref DeleteLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - events:*
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+            Resource: "*"
   InternalAccessToIdentityServicePermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -390,875 +390,875 @@ Resources:
               - secretsmanager:*
             Resource: "*"
 
-#  NvaPublicationApi:
-#    Type: AWS::Serverless::Api
-#    Properties:
-#      AccessLogSetting:
-#        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
-#        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
-#      StageName: Prod
-#      EndpointConfiguration: REGIONAL
-#      DefinitionBody:
-#        'Fn::Transform':
-#          Name: AWS::Include
-#          Parameters:
-#            Location: ./docs/openapi.yaml
+  NvaPublicationApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
+      StageName: Prod
+      EndpointConfiguration: REGIONAL
+      DefinitionBody:
+        'Fn::Transform':
+          Name: AWS::Include
+          Parameters:
+            Location: ./docs/openapi.yaml
 
   #================================ApiGateway handlers====================================================
-#  NvaCreatePublicationFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-rest
-#      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        GetEvent:
-#          Type: Api
-#          Properties:
-#            Path: /
-#            Method: post
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  NvaFetchPublicationFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-rest
-#      Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
-#      Runtime: java11
-#      AutoPublishAlias: live
-#      Architectures:
-#        - x86_64
-#      SnapStart:
-#        ApplyOn: PublishedVersions
-#      DeploymentPreference:
-#        Type: AllAtOnce
-#      ProvisionedConcurrencyConfig:
-#        ProvisionedConcurrentExecutions: 1
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#          NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        GetEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}
-#            Method: get
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  NvaFetchPublicationFunctionScalableTarget:
-#    Type: AWS::ApplicationAutoScaling::ScalableTarget
-#    Properties:
-#      MaxCapacity: !Ref MaxConcurrency
-#      MinCapacity: !Ref MinConcurrency
-#      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
-#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-#      ScalableDimension: lambda:function:ProvisionedConcurrency
-#      ServiceNamespace: lambda
-#    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
-#
-#  NvaFetchPublicationFunctionScalingPolicy:
-#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-#    Properties:
-#      PolicyName: NvaFetchPublicationFunctionScalingPolicy
-#      PolicyType: TargetTrackingScaling
-#      ScalingTargetId: !Ref NvaFetchPublicationFunctionScalableTarget
-#      TargetTrackingScalingPolicyConfiguration:
-#        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
-#        PredefinedMetricSpecification:
-#          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
-#
-#  NvaUpdatePublicationFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-rest
-#      Handler: no.unit.nva.publication.update.UpdatePublicationHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        PutEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}
-#            Method: put
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  NvaDeletePublicationFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-rest
-#      Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        PutEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}
-#            Method: delete
-#            RestApiId: !Ref NvaPublicationApi
-#  NvaPublicationsByOwnerFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-rest
-#      Handler: no.unit.nva.publication.fetch.PublicationsByOwnerHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        GetEvent:
-#          Type: Api
-#          Properties:
-#            Path: /by-owner
-#            Method: get
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  NvaCreateMessageFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: messages
-#      Handler: no.unit.nva.publication.messages.create.NewCreateMessageHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        ApiEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/message
-#            Method: post
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  ListTicketsHandler:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: tickets
-#      Handler: no.unit.nva.publication.ticket.read.ListTicketsHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        ApiEvent:
-#          Type: Api
-#          Properties:
-#            Path: /tickets
-#            Method: get
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  UpdateTicketViewStatusHandler:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: tickets
-#      Handler: no.unit.nva.publication.ticket.update.UpdateTicketViewStatusHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        ApiEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
-#            Method: post
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  CreateTicketFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: tickets
-#      Handler: no.unit.nva.publication.ticket.create.CreateTicketHandler::handleRequest
-#      Runtime: java11
-#      Timeout: 10
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        GetEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}/ticket
-#            Method: post
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  GetTicketFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: tickets
-#      Handler: no.unit.nva.publication.ticket.read.GetTicketHandler::handleRequest
-#      Runtime: java11
-#      Timeout: 10
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        GetEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
-#            Method: get
-#            RestApiId: !Ref NvaPublicationApi
-#  UpdateTicketFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: tickets
-#      Handler: no.unit.nva.publication.ticket.update.UpdateTicketStatusHandler::handleRequest
-#      Runtime: java11
-#      Timeout: 10
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        GetEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
-#            Method: put
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  ListTicketsForPublicationHandler:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: tickets
-#      Handler: no.unit.nva.publication.ticket.read.ListTicketsForPublicationHandler::handleRequest
-#      Runtime: java11
-#      Timeout: 10
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        GetEvent:
-#          Type: Api
-#          Properties:
-#            Path: /{publicationIdentifier}/tickets
-#            Method: get
-#            RestApiId: !Ref NvaPublicationApi
-#
-#  #==========================Event Lambda functions====================================================
-#
-#  ListImportedBragePublicationsHandler:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      Description: 'List identifiers to publication imported from Brage. Accepts Json object with "uri" field'
-#      CodeUri: brage-import
-#      Handler: no.sikt.nva.brage.migration.lambda.cleanup.ListImportedBragePublicationsHandler::handleRequest
-#      Runtime: java11
-#      Timeout: 900 # 15 min timeout
-#      ReservedConcurrentExecutions: 1
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#
-#  BrageMigrationEventConsumer:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: brage-import
-#      Handler: no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer::handleRequest
-#      Runtime: java11
-#      ReservedConcurrentExecutions: 1
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
-#          TABLE_NAME: !Ref NvaResourcesTable
-#          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
-#          DOMAIN_NAME: !Ref ApiDomain
-#      Events:
-#        BrageMigrationEvent:
-#          Type: S3
-#          Properties:
-#            Bucket: !Ref BrageMigrationInputBucket
-#            Events: 's3:ObjectCreated:*'
-#            Filter:
-#              S3Key:
-#                Rules:
-#                  - Name: suffix
-#                    Value: '.json'
-#
-#
-#  DeletionProcessInitializationHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.delete.DeletionProcessInitializationHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 1
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic:
-#                    - PublicationService.DoiRequest.Update
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !Ref NewNvaEventBusArn # event is consumed by DoiRegistrar service
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
-#
-#  DeletePublicationEventConsumer:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Description: 'Listens for Delete event emitted from ResourceExpansionHandler. Removes resource from persisted-storage s3 bucket and emits event consumed by search-api.'
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt DeleteLambdaRole.Arn
-#      ReservedConcurrentExecutions: 1
-#      Environment:
-#        Variables:
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic:
-#                    - PublicationService.ExpandedDataEntry.Delete
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !Ref NewNvaEventBusArn # event is consumed by search-api
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
-#
-#  DoiRequestEventProducer:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer::handleRequest
-#      Runtime: java11
-#      ReservedConcurrentExecutions: 1
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-#          BASE_PATH: !Ref CustomDomainBasePath
-#          DOMAIN_NAME: !Ref ApiDomain
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic: [ "PublicationService.DoiRequest.Update" ]
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !Ref NewNvaEventBusArn
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
-#  ResourceExpansionHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 64
-#      Environment:
-#        Variables:
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-#          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic:
-#                    - "PublicationService.Resource.Update"
-#                    - "PublicationService.Message.Update"
-#                    - "PublicationService.DoiRequest.Update"
-#                    - "PublicationService.PublishingRequest.Update"
-#                    - "PublicationService.GeneralSupportRequest.Update"
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !GetAtt InternalBus.Arn
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-#
-#  ExpandedResourcesPersistenceHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler::handleRequest
-#      Runtime: java11
-#      ReservedConcurrentExecutions: 64
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-#          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-#          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic: [ "PublicationService.ExpandedDataEntry.Update" ]
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !Ref NewNvaEventBusArn
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-#  AnalyticsIntegrationHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.persistence.AnalyticsIntegrationHandler::handleRequest
-#      Runtime: java11
-#      ReservedConcurrentExecutions: 5
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-#          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-#          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic: [ "PublicationService.ExpandedDataEntry.Update" ]
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-#  AcceptedPublishingRequestHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.tickets.AcceptedPublishingRequestEventHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 64
-#      Environment:
-#        Variables:
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-#          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic: [ "PublicationService.PublishingRequest.Update" ]
-#
-#  PendingPublishingRequestHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.tickets.PendingPublishingRequestEventHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 64
-#      Environment:
-#        Variables:
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-#          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic: [ "PublicationService.PublishingRequest.Update" ]
-#
-#  EventBasedBatchScanHandlerTest:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt LambdaRole.Arn
-#      Timeout: 900
-#      ReservedConcurrentExecutions: 1
-#      Environment:
-#        Variables:
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          HANDLER_EVENTS_FOLDER: 'ignored'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                topic: [ "PublicationService.DataEntry.ScanAndUpdateRowVersion" ]
-#
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !GetAtt InternalBus.Arn
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-#
-#  DataEntryUpdateHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.fanout.DataEntryUpdateHandler::handleRequest
-#      Runtime: java11
-#      ReservedConcurrentExecutions: 1
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          HANDLER_EVENTS_FOLDER: "not used"
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                topic: [ "PublicationService.Database.Update" ]
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !GetAtt InternalBus.Arn
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
-#
-#
-#  DeleteDraftPublicationHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.delete.DeleteDraftPublicationHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
-#      Environment:
-#        Variables:
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !Ref NewNvaEventBusName
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic:
-#                    - DoiRegistrarService.Doi.DeletedDraft
-#                  hasDoi:
-#                    - false
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !GetAtt InternalBus.Arn
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
-#
-#
-#  DynamodbStreamToEventBridgeHandler:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
-#      Timeout: 360
-#      Runtime: java11
-#      Tracing: Active
-#      ReservedConcurrentExecutions: 1
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
-#          MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#      Events:
-#        FanoutSource:
-#          Type: DynamoDB
-#          Properties:
-#            Stream: !GetAtt NvaResourcesTable.StreamArn
-#            StartingPosition: TRIM_HORIZON
-#            BatchSize: 10
-#            Enabled: true
-#
-#
-#  UpdateDoiStatusHandlerFunction:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
-#      Environment:
-#        Variables:
-#          TABLE_NAME: !Ref NvaResourcesTable
-#          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !Ref NewNvaEventBusName
-#            Pattern:
-#              detail:
-#                responsePayload:
-#                  topic:
-#                    - DoiRegistrarService.Doi.Updated
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt UpdateDoiStatusDLQ.Arn
-#
-#
-#  CristinEntriesEventEmitter:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: s3-import-commons
-#      Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
-#      Runtime: java11
-#      Timeout: 600 # 10 min timeout
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 6
-#      Environment:
-#        Variables:
-#          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-#          TABLE_NAME: !Ref NvaResourcesTable
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          BATCH_EMISSION_INTERVAL_MILLIS: 700
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                topic: [ "PublicationService.DataImport.Filename" ]
-#                subtopic: [ "PublicationService.CristinData.DataEntry" ]
-#
-#  CristinEntriesEventConsumer:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: cristin-import
-#      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
-#      Runtime: java11
-#      Timeout: 30 #  30 sec timeout
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 10
-#      Environment:
-#        Variables:
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-#          TABLE_NAME: !Ref NvaResourcesTable
-#          BATCH_EMISSION_INTERVAL_MILLIS: 0
-#          DOMAIN_NAME: !Ref ApiDomain
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                topic: [ "PublicationService.DataImport.DataEntry" ]
-#                subtopic: [ "PublicationService.CristinData.DataEntry" ]
-#
-#  CristinEntriesPatchEventConsumer:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: cristin-import
-#      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
-#      Runtime: java11
-#      Timeout: 30 #  30 sec timeout
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 10
-#      Environment:
-#        Variables:
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-#          TABLE_NAME: !Ref NvaResourcesTable
-#          BATCH_EMISSION_INTERVAL_MILLIS: 0
-#          DOMAIN_NAME: !Ref ApiDomain
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt InternalBus.Name
-#            Pattern:
-#              detail:
-#                topic: [ "PublicationService.DataImport.Filename" ]
-#                subtopic: [ "PublicationService.CristinData.PatchEntry" ]
-#
-#
-#  CreatePublishedPublicationHandler:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.create.CreatePublishedPublicationHandler::handleRequest
-#      Runtime: java11
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          TABLE_NAME: !Ref NvaResourcesTable
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        Event:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !Ref NewNvaEventBusArn
-#            Pattern:
-#              detail:
-#                topic: [ "FetchDoi.DataImport.Scopus" ]
-#
-#  ScopusDeletionEventHandler:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.delete.ScopusDeletionEventHandler::handleRequest
-#      Runtime: java11
-#      Role: !GetAtt LambdaRole.Arn
-#      Events:
-#        Event:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !Ref NewNvaEventBusArn
-#            Pattern:
-#              detail:
-#                topic: [ "FetchDoi.Delete.Scopus" ]
-#
-#
-#  #==========================Manually triggered functions=============================================
-#
-#  BatchScanStartHandler:
-#    DependsOn: EventsLambdaPermissions
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: publication-event-handlers
-#      Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
-#      Runtime: java11
-#      Timeout: 60
-#      Role: !GetAtt LambdaRole.Arn
-#      ReservedConcurrentExecutions: 1
-#      Environment:
-#        Variables:
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-#          HANDLER_EVENTS_FOLDER: 'ignored'
-#
-#  StartCristinImportButton:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      Description: 'Starts Cristin Import. Accepts Json object with "uri" field'
-#      CodeUri: s3-import-commons
-#      Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
-#      Runtime: java11
-#      Timeout: 900 # 15 min timeout
-#      ReservedConcurrentExecutions: 1
-#      Role: !GetAtt LambdaRole.Arn
-#      Environment:
-#        Variables:
-#          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-#          TABLE_NAME: !Ref NvaResourcesTable
-#          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-#          BATCH_EMISSION_INTERVAL_MILLIS: 700
+  NvaCreatePublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  NvaFetchPublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
+      Runtime: java11
+      AutoPublishAlias: live
+      Architectures:
+        - x86_64
+      SnapStart:
+        ApplyOn: PublishedVersions
+      DeploymentPreference:
+        Type: AllAtOnce
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  NvaFetchPublicationFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: !Ref MaxConcurrency
+      MinCapacity: !Ref MinConcurrency
+      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  NvaFetchPublicationFunctionScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: NvaFetchPublicationFunctionScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref NvaFetchPublicationFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+  NvaUpdatePublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.update.UpdatePublicationHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        PutEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
+
+  NvaDeletePublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        PutEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}
+            Method: delete
+            RestApiId: !Ref NvaPublicationApi
+  NvaPublicationsByOwnerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.fetch.PublicationsByOwnerHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /by-owner
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  NvaCreateMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler: no.unit.nva.publication.messages.create.NewCreateMessageHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/message
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  ListTicketsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.ListTicketsHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /tickets
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  UpdateTicketViewStatusHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketViewStatusHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  CreateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.create.CreateTicketHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  GetTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.GetTicketHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+  UpdateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketStatusHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
+
+  ListTicketsForPublicationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.read.ListTicketsForPublicationHandler::handleRequest
+      Runtime: java11
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/tickets
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  #==========================Event Lambda functions====================================================
+
+  ListImportedBragePublicationsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: 'List identifiers to publication imported from Brage. Accepts Json object with "uri" field'
+      CodeUri: brage-import
+      Handler: no.sikt.nva.brage.migration.lambda.cleanup.ListImportedBragePublicationsHandler::handleRequest
+      Runtime: java11
+      Timeout: 900 # 15 min timeout
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+
+  BrageMigrationEventConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: brage-import
+      Handler: no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer::handleRequest
+      Runtime: java11
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
+          TABLE_NAME: !Ref NvaResourcesTable
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          DOMAIN_NAME: !Ref ApiDomain
+      Events:
+        BrageMigrationEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref BrageMigrationInputBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.json'
+
+
+  DeletionProcessInitializationHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletionProcessInitializationHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - PublicationService.DoiRequest.Update
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn # event is consumed by DoiRegistrar service
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+
+  DeletePublicationEventConsumer:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Description: 'Listens for Delete event emitted from ResourceExpansionHandler. Removes resource from persisted-storage s3 bucket and emits event consumed by search-api.'
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
+      Runtime: java11
+      Role: !GetAtt DeleteLambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - PublicationService.ExpandedDataEntry.Delete
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn # event is consumed by search-api
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
+
+  DoiRequestEventProducer:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer::handleRequest
+      Runtime: java11
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          BASE_PATH: !Ref CustomDomainBasePath
+          DOMAIN_NAME: !Ref ApiDomain
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.DoiRequest.Update" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
+  ResourceExpansionHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 64
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - "PublicationService.Resource.Update"
+                    - "PublicationService.Message.Update"
+                    - "PublicationService.DoiRequest.Update"
+                    - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.GeneralSupportRequest.Update"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+
+  ExpandedResourcesPersistenceHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler::handleRequest
+      Runtime: java11
+      ReservedConcurrentExecutions: 64
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.ExpandedDataEntry.Update" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+  AnalyticsIntegrationHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.persistence.AnalyticsIntegrationHandler::handleRequest
+      Runtime: java11
+      ReservedConcurrentExecutions: 5
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.ExpandedDataEntry.Update" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+  AcceptedPublishingRequestHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.tickets.AcceptedPublishingRequestEventHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 64
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.PublishingRequest.Update" ]
+
+  PendingPublishingRequestHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.tickets.PendingPublishingRequestEventHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 64
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.PublishingRequest.Update" ]
+
+  EventBasedBatchScanHandlerTest:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.DataEntry.ScanAndUpdateRowVersion" ]
+
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+
+  DataEntryUpdateHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.fanout.DataEntryUpdateHandler::handleRequest
+      Runtime: java11
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          HANDLER_EVENTS_FOLDER: "not used"
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.Database.Update" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
+
+
+  DeleteDraftPublicationHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteDraftPublicationHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusName
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - DoiRegistrarService.Doi.DeletedDraft
+                  hasDoi:
+                    - false
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
+
+
+  DynamodbStreamToEventBridgeHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
+      Timeout: 360
+      Runtime: java11
+      Tracing: Active
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
+          MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+      Events:
+        FanoutSource:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt NvaResourcesTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+            Enabled: true
+
+
+  UpdateDoiStatusHandlerFunction:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref NvaResourcesTable
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusName
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - DoiRegistrarService.Doi.Updated
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt UpdateDoiStatusDLQ.Arn
+
+
+  CristinEntriesEventEmitter:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3-import-commons
+      Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
+      Runtime: java11
+      Timeout: 600 # 10 min timeout
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 6
+      Environment:
+        Variables:
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          BATCH_EMISSION_INTERVAL_MILLIS: 700
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.DataImport.Filename" ]
+                subtopic: [ "PublicationService.CristinData.DataEntry" ]
+
+  CristinEntriesEventConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cristin-import
+      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
+      Runtime: java11
+      Timeout: 30 #  30 sec timeout
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          BATCH_EMISSION_INTERVAL_MILLIS: 0
+          DOMAIN_NAME: !Ref ApiDomain
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.DataImport.DataEntry" ]
+                subtopic: [ "PublicationService.CristinData.DataEntry" ]
+
+  CristinEntriesPatchEventConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cristin-import
+      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
+      Runtime: java11
+      Timeout: 30 #  30 sec timeout
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          BATCH_EMISSION_INTERVAL_MILLIS: 0
+          DOMAIN_NAME: !Ref ApiDomain
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.DataImport.Filename" ]
+                subtopic: [ "PublicationService.CristinData.PatchEntry" ]
+
+
+  CreatePublishedPublicationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.create.CreatePublishedPublicationHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        Event:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusArn
+            Pattern:
+              detail:
+                topic: [ "FetchDoi.DataImport.Scopus" ]
+
+  ScopusDeletionEventHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.ScopusDeletionEventHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        Event:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusArn
+            Pattern:
+              detail:
+                topic: [ "FetchDoi.Delete.Scopus" ]
+
+
+  #==========================Manually triggered functions=============================================
+
+  BatchScanStartHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
+      Runtime: java11
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+
+  StartCristinImportButton:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: 'Starts Cristin Import. Accepts Json object with "uri" field'
+      CodeUri: s3-import-commons
+      Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
+      Runtime: java11
+      Timeout: 900 # 15 min timeout
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          BATCH_EMISSION_INTERVAL_MILLIS: 700
 
 
 
@@ -1267,68 +1267,68 @@ Resources:
   # https://stackoverflow.com/questions/41423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
   #====================================================================================================================#
 
-#  ApiGatewayCreateDeploymentLambdaRole:
-#    Type: AWS::IAM::Role
-#    Properties:
-#      AssumeRolePolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Principal:
-#              Service: lambda.amazonaws.com
-#            Action: sts:AssumeRole
-#      Path: /
-#      ManagedPolicyArns:
-#        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-#      Policies:
-#        - PolicyName: ApiGatewayAdmin
-#          PolicyDocument:
-#            Version: '2012-10-17'
-#            Statement:
-#              - Effect: Allow
-#                Action:
-#                  - apigateway:POST
-#                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${NvaPublicationApi}/deployments'
-#
-#  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-lambda-function-code-cfnresponsemodule.html
-#  ApiGatewayCreateDeploymentLambda:
-#    Type: AWS::Lambda::Function
-#    Properties:
-#      Handler: index.lambda_handler
-#      Timeout: 30
-#      Role: !GetAtt ApiGatewayCreateDeploymentLambdaRole.Arn
-#      Runtime: python3.8
-#      Code:
-#        ZipFile: |
-#          import json, boto3
-#          import cfnresponse
-#          client = boto3.client('apigateway')
-#
-#          def lambda_handler(event, context):
-#            responseData = {}
-#            responseStatus = cfnresponse.SUCCESS
-#            if event['RequestType'] == 'Update':
-#              try:
-#                properties = event['ResourceProperties']
-#                response = client.create_deployment(
-#                  restApiId=properties['RestApiId'],
-#                  stageName=properties['StageName'],
-#                  description='Deployed from Custom Resource'
-#                )
-#              except:
-#                responseStatus = cfnresponse.FAILED
-#
-#            cfnresponse.send(event, context, responseStatus, responseData)
-#
-#  ApiGatewayCreateDeploymentCustomResource:
-#    Type: AWS::CloudFormation::CustomResource
-#    Properties:
-#      ServiceToken: !GetAtt ApiGatewayCreateDeploymentLambda.Arn
-#      RestApiId: !Ref NvaPublicationApi
-#      StageName: !Ref NvaPublicationApi.Stage
-#      Timestamp: '${BUILD_TIMESTAMP}'
-#      AuthorizerArn: !Ref CognitoAuthorizerArn
-#
+  ApiGatewayCreateDeploymentLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: ApiGatewayAdmin
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - apigateway:POST
+                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${NvaPublicationApi}/deployments'
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-lambda-function-code-cfnresponsemodule.html
+  ApiGatewayCreateDeploymentLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Timeout: 30
+      Role: !GetAtt ApiGatewayCreateDeploymentLambdaRole.Arn
+      Runtime: python3.8
+      Code:
+        ZipFile: |
+          import json, boto3
+          import cfnresponse
+          client = boto3.client('apigateway')
+
+          def lambda_handler(event, context):
+            responseData = {}
+            responseStatus = cfnresponse.SUCCESS
+            if event['RequestType'] == 'Update':
+              try:
+                properties = event['ResourceProperties']
+                response = client.create_deployment(
+                  restApiId=properties['RestApiId'],
+                  stageName=properties['StageName'],
+                  description='Deployed from Custom Resource'
+                )
+              except:
+                responseStatus = cfnresponse.FAILED
+
+            cfnresponse.send(event, context, responseStatus, responseData)
+
+  ApiGatewayCreateDeploymentCustomResource:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt ApiGatewayCreateDeploymentLambda.Arn
+      RestApiId: !Ref NvaPublicationApi
+      StageName: !Ref NvaPublicationApi.Stage
+      Timestamp: '${BUILD_TIMESTAMP}'
+      AuthorizerArn: !Ref CognitoAuthorizerArn
+
   #=============================Internal Event Bus=============================================================
   InternalBus:
     Type: AWS::Events::EventBus
@@ -1551,17 +1551,17 @@ Resources:
 
   #===========================BasePathMappings========================================================
 
-#  NvaPublicationBasePathMapping:
-#    Type: AWS::ApiGateway::BasePathMapping
-#    Properties:
-#      BasePath:
-#        !If
-#        - WithSuffix
-#        - !Sub ${CustomDomainBasePath}-${Suffix}
-#        - !Sub ${CustomDomainBasePath}
-#      DomainName: !Ref ApiDomain
-#      RestApiId: !Ref NvaPublicationApi
-#      Stage: !Ref NvaPublicationApi.Stage
+  NvaPublicationBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath:
+        !If
+        - WithSuffix
+        - !Sub ${CustomDomainBasePath}-${Suffix}
+        - !Sub ${CustomDomainBasePath}
+      DomainName: !Ref ApiDomain
+      RestApiId: !Ref NvaPublicationApi
+      Stage: !Ref NvaPublicationApi.Stage
 
 
   #============================S3 buckets===============================================================
