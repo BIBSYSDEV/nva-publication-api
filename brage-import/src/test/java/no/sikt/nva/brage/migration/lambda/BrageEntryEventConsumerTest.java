@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.merger.MergePublicationException;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
