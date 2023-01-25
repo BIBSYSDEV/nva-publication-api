@@ -90,8 +90,6 @@ Globals:
         API_SCHEME: 'https'
         ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
         EVENTS_BUCKET: !Ref NvaEventsBucketsName
-    Architectures:
-      - arm64
 
 Resources:
 
