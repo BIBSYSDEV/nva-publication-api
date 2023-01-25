@@ -758,6 +758,33 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
 
+  DeletePublicationHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB'
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          TABLE_NAME: !Ref NvaResourcesTable
+          DOMAIN_NAME: !Ref ApiDomain
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - DeleteEntriesEvent.FileEntry.Delete
+
+
   DoiRequestEventProducer:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -1243,6 +1270,23 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
+
+  LogicallyDeleteImportedPublicationsButton:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: 'Starts Batch logically delete publication. Accepts Json object with "uri" field pointing to a s3 path containing objects keys corresponding to publication ids that should be deleted.'
+      CodeUri: s3-import-commons
+      Handler: no.unit.nva.publication.s3imports.DeleteEntriesEventEmitter::handleRequest
+      Runtime: java11
+      Timeout: 900 # 15 min timeout
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId # batch-event emitter needs to know the aws-account.
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          BATCH_EMISSION_INTERVAL_MILLIS: 700
+
 
 
   DeleteImportedBragePublicationHandler:
