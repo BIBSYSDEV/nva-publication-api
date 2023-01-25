@@ -8,16 +8,15 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.events.DeleteEntryEvent;
@@ -61,8 +60,10 @@ public class DeleteEntriesEventEmitterTest {
     void shouldReturnListOfImportedPublicationsFromS3() {
         var expectedIdentifiers = createRandomIdentifiers();
         putObjectsInBucket(expectedIdentifiers);
-        var input = toInputStream(createInputEventForFile(URI.create("s3://brage-migration-reports-750639270376")));
-        handler.handleRequest(input, outputStream, context);
+        EventReference importRequest = new EventReference(null, null,
+                                                          URI.create("s3://brage-migration-reports-750639270376"));
+        InputStream inputStream = toInputStream(importRequest);
+        handler.handleRequest(inputStream, outputStream, context);
         List<DeleteEntryEvent> eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
         assertThat(eventBodiesOfEmittedEventReferences,
                    (Every.everyItem(HasPropertyWithValue.hasProperty("topic",
@@ -83,9 +84,17 @@ public class DeleteEntriesEventEmitterTest {
         handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
         var identifiers = createRandomIdentifiers();
         putObjectsInBucket(identifiers);
-        var input = toInputStream(createInputEventForFile(URI.create("s3://brage-migration-reports-750639270376")));
+        var input = toInputStream(
+            new EventReference(null, null, URI.create("s3://brage-migration-reports-750639270376")));
         handler.handleRequest(input, outputStream, context);
         assertThat(appender.getMessages(), containsString(identifiers.get(0)));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUriInEventIsNull() {
+        var input = toInputStream(
+            new EventReference(null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> handler.handleRequest(input, outputStream, context));
     }
 
     private static String getIdentifier(DeleteEntryEvent deleteEntryEvent) {
@@ -100,18 +109,7 @@ public class DeleteEntriesEventEmitterTest {
                    .collect(Collectors.toList());
     }
 
-    private AwsEventBridgeEvent<EventReference> createInputEventForFile(URI fileUri) {
-        var eventReference = new EventReference(null,
-                                                null,
-                                                fileUri,
-                                                Instant.now());
-        var request = new AwsEventBridgeEvent<EventReference>();
-
-        request.setDetail(eventReference);
-        return request;
-    }
-
-    private InputStream toInputStream(AwsEventBridgeEvent<EventReference> request) {
+    private InputStream toInputStream(EventReference request) {
         return attempt(() -> s3ImportsMapper.writeValueAsString(request))
                    .map(IoUtils::stringToStream)
                    .orElseThrow();
