@@ -764,7 +764,7 @@ Resources:
     Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent'
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
