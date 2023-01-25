@@ -255,39 +255,39 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
-  DeleteLambdaRole:
-    Type: AWS::IAM::Role
-    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
-    Properties:
-      Path: /
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action: sts:AssumeRole
+#  DeleteLambdaRole:
+#    Type: AWS::IAM::Role
+#    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
+#    Properties:
+#      Path: /
+#      AssumeRolePolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: Allow
+#            Principal:
+#              Service:
+#                - lambda.amazonaws.com
+#            Action: sts:AssumeRole
 
-  DefaultLambdaPermissions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-        - !Ref DeleteDraftPublicationLambdaRole
-        - !Ref UpdateDoiStatusLambdaRole
-        - !Ref DeleteLambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              - lambda:InvokeFunction
-            Resource: "*"
+#  DefaultLambdaPermissions:
+#    Type: AWS::IAM::Policy
+#    Properties:
+#      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+#      Roles:
+#        - !Ref LambdaRole
+#        - !Ref DeleteDraftPublicationLambdaRole
+#        - !Ref UpdateDoiStatusLambdaRole
+#        - !Ref DeleteLambdaRole
+#      PolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: Allow
+#            Action:
+#              - logs:CreateLogGroup
+#              - logs:CreateLogStream
+#              - logs:PutLogEvents
+#              - lambda:InvokeFunction
+#            Resource: "*"
 
   DatabaseAccessLambdaPermissions:
     Type: AWS::IAM::Policy
@@ -307,75 +307,75 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
 
-  S3AccessPermsisions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-        - !Ref DeleteLambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - s3:GetObject
-              - s3:ListBucket
-              - s3:ListBucketMultipartUploads
-              - s3:PutObject
-              - s3:PutObjectAcl
-            Resource: "*"
+#  S3AccessPermsisions:
+#    Type: AWS::IAM::Policy
+#    Properties:
+#      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
+#      Roles:
+#        - !Ref LambdaRole
+#        - !Ref DeleteLambdaRole
+#      PolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: Allow
+#            Action:
+#              - s3:GetObject
+#              - s3:ListBucket
+#              - s3:ListBucketMultipartUploads
+#              - s3:PutObject
+#              - s3:PutObjectAcl
+#            Resource: "*"
 
-  S3DeleteAccessPermission:
-    Type: AWS::IAM::Policy
-    Description: Needed by DeletePublicationEventConsumer
-    Properties:
-      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
-      Roles:
-        - !Ref DeleteLambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - s3:DeleteObject
-            Resource: "*"
+#  S3DeleteAccessPermission:
+#    Type: AWS::IAM::Policy
+#    Description: Needed by DeletePublicationEventConsumer
+#    Properties:
+#      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
+#      Roles:
+#        - !Ref DeleteLambdaRole
+#      PolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: Allow
+#            Action:
+#              - s3:DeleteObject
+#            Resource: "*"
+#
+#  DynamoDbStreamsAccessPolicy:
+#    Type: AWS::IAM::Policy
+#    Properties:
+#      PolicyName: !Sub DynamoDbStreamAccessPolicy-${AWS::StackName}
+#      Roles:
+#        - !Ref LambdaRole
+#      PolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: Allow
+#            Action:
+#              - dynamodb:GetShardIterator
+#              - dynamodb:DescribeStream
+#              - dynamodb:ListStreams
+#              - dynamodb:GetRecords
+#            Resource: !GetAtt NvaResourcesTable.StreamArn
 
-  DynamoDbStreamsAccessPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub DynamoDbStreamAccessPolicy-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - dynamodb:GetShardIterator
-              - dynamodb:DescribeStream
-              - dynamodb:ListStreams
-              - dynamodb:GetRecords
-            Resource: !GetAtt NvaResourcesTable.StreamArn
 
-
-  EventsLambdaPermissions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-        - !Ref DeleteLambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - events:*
-              - sqs:SendMessage
-              - sqs:ReceiveMessage
-              - sqs:DeleteMessage
-            Resource: "*"
+#  EventsLambdaPermissions:
+#    Type: AWS::IAM::Policy
+#    Properties:
+#      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
+#      Roles:
+#        - !Ref LambdaRole
+#        - !Ref DeleteLambdaRole
+#      PolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Effect: Allow
+#            Action:
+#              - events:*
+#              - sqs:SendMessage
+#              - sqs:ReceiveMessage
+#              - sqs:DeleteMessage
+#            Resource: "*"
   InternalAccessToIdentityServicePermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -390,19 +390,19 @@ Resources:
               - secretsmanager:*
             Resource: "*"
 
-  NvaPublicationApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      AccessLogSetting:
-        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
-        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
-      StageName: Prod
-      EndpointConfiguration: REGIONAL
-      DefinitionBody:
-        'Fn::Transform':
-          Name: AWS::Include
-          Parameters:
-            Location: ./docs/openapi.yaml
+#  NvaPublicationApi:
+#    Type: AWS::Serverless::Api
+#    Properties:
+#      AccessLogSetting:
+#        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+#        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
+#      StageName: Prod
+#      EndpointConfiguration: REGIONAL
+#      DefinitionBody:
+#        'Fn::Transform':
+#          Name: AWS::Include
+#          Parameters:
+#            Location: ./docs/openapi.yaml
 
   #================================ApiGateway handlers====================================================
 #  NvaCreatePublicationFunction:
@@ -1551,17 +1551,17 @@ Resources:
 
   #===========================BasePathMappings========================================================
 
-  NvaPublicationBasePathMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    Properties:
-      BasePath:
-        !If
-        - WithSuffix
-        - !Sub ${CustomDomainBasePath}-${Suffix}
-        - !Sub ${CustomDomainBasePath}
-      DomainName: !Ref ApiDomain
-      RestApiId: !Ref NvaPublicationApi
-      Stage: !Ref NvaPublicationApi.Stage
+#  NvaPublicationBasePathMapping:
+#    Type: AWS::ApiGateway::BasePathMapping
+#    Properties:
+#      BasePath:
+#        !If
+#        - WithSuffix
+#        - !Sub ${CustomDomainBasePath}-${Suffix}
+#        - !Sub ${CustomDomainBasePath}
+#      DomainName: !Ref ApiDomain
+#      RestApiId: !Ref NvaPublicationApi
+#      Stage: !Ref NvaPublicationApi.Stage
 
 
   #============================S3 buckets===============================================================
