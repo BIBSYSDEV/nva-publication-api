@@ -91,7 +91,7 @@ Globals:
         ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
         EVENTS_BUCKET: !Ref NvaEventsBucketsName
     Architectures:
-      - x86_64
+      - arm64
 
 Resources:
 
@@ -433,6 +433,8 @@ Resources:
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
       AutoPublishAlias: live
+      Architectures:
+        - x86_64
       SnapStart:
         ApplyOn: PublishedVersions
       DeploymentPreference:
