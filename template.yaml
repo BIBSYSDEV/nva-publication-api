@@ -761,7 +761,7 @@ Resources:
   DeletePublicationHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
-    Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB'
+    Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent'
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
