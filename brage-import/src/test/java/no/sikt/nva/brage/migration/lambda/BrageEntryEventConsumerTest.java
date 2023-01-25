@@ -6,6 +6,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.NORWEGIAN_BOKMAAL;
+import static no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder.randomHandle;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
@@ -212,6 +213,85 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldAttachCertainMetadataFieldsToExistingPublicatoinWhenExistingPublicationDoesNotHaveThoseFields()
+        throws IOException {
+        // The metadata fields are currently Description, Abstract and handle
+        var dataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                .withType(TYPE_REPORT_WORKING_PAPER)
+                                .withCristinIdentifier("123456")
+                                .withDescription(List.of("My description"))
+                                .withAbstracts(List.of("My abstract"))
+                                .withResourceContent(createResourceContent())
+                                .build();
+        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
+        var file = new java.io.File("src/test/resources/testFile.txt");
+        putAssociatedArtifactsToResourceStorage(dataGenerator, s3Driver, file);
+        var s3Event = createNewBrageRecordEvent(dataGenerator.getBrageRecord());
+        var cristinPublication = dataGenerator.getNvaPublication().copy().build();
+        cristinPublication.getEntityDescription().setDescription(null);
+        cristinPublication.getEntityDescription().setAbstract(null);
+        cristinPublication.setHandle(null);
+        resourceService.addPublicationWithCristinIdentifier(cristinPublication);
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication.getEntityDescription().getDescription(),
+                   is(equalTo(dataGenerator.getNvaPublication().getEntityDescription().getDescription())));
+        assertThat(actualPublication.getEntityDescription().getAbstract(),
+                   is(equalTo(dataGenerator.getNvaPublication().getEntityDescription().getAbstract())));
+        assertThat(actualPublication.getHandle(), is(equalTo(dataGenerator.getNvaPublication().getHandle())));
+    }
+
+    @Test
+    void shouldThrowExceptionIfExistingCristinPublicationContainsDifferentHandle() throws IOException {
+        var dataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                .withType(TYPE_REPORT_WORKING_PAPER)
+                                .withCristinIdentifier("123456")
+                                .withDescription(List.of("My description"))
+                                .withAbstracts(List.of("My abstract"))
+                                .withResourceContent(createResourceContent())
+                                .build();
+        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
+        var file = new java.io.File("src/test/resources/testFile.txt");
+        putAssociatedArtifactsToResourceStorage(dataGenerator, s3Driver, file);
+        var s3Event = createNewBrageRecordEvent(dataGenerator.getBrageRecord());
+        var cristinPublication = dataGenerator.getNvaPublication().copy().build();
+        var cristinHandle = randomHandle();
+        cristinPublication.setHandle(cristinHandle);
+        resourceService.addPublicationWithCristinIdentifier(cristinPublication);
+        var exception = assertThrows(MergePublicationException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+        assertThat(exception.getMessage(), containsString(cristinHandle.toString()));
+        assertThat(exception.getMessage(), containsString(dataGenerator.getNvaPublication().getHandle().toString()));
+        assertThat(exception.getMessage(), containsString("Handle mismatch"));
+    }
+
+    @Test
+    void shouldPrioritizeCristinImportedMetadataWhenMergingPublications() throws IOException {
+        // The metadata fields are currently Description, Abstract and handle
+        var dataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                .withType(TYPE_REPORT_WORKING_PAPER)
+                                .withCristinIdentifier("123456")
+                                .withDescription(List.of("My description"))
+                                .withAbstracts(List.of("My abstract"))
+                                .withResourceContent(createResourceContent())
+                                .build();
+        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
+        var file = new java.io.File("src/test/resources/testFile.txt");
+        putAssociatedArtifactsToResourceStorage(dataGenerator, s3Driver, file);
+        var s3Event = createNewBrageRecordEvent(dataGenerator.getBrageRecord());
+        var cristinPublication = dataGenerator.getNvaPublication().copy().build();
+        var cristinDesciption = randomString();
+        var cristinAbstract = randomString();
+        cristinPublication.getEntityDescription().setDescription(cristinDesciption);
+        cristinPublication.getEntityDescription().setAbstract(cristinAbstract);
+        cristinPublication.setHandle(null);
+        resourceService.addPublicationWithCristinIdentifier(cristinPublication);
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(actualPublication.getEntityDescription().getDescription(),
+                   is(equalTo(cristinDesciption)));
+        assertThat(actualPublication.getEntityDescription().getAbstract(),
+                   is(equalTo(cristinAbstract)));
+    }
+
+    @Test
     void shouldCreateNewPublicationWhenPublicationHasCristinIdWhichIsNotPresentInNva()
         throws IOException, NotFoundException {
         var dataGenerator = new NvaBrageMigrationDataGenerator.Builder()
@@ -242,11 +322,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(buildGeneratorObjectWithCristinId().getBrageRecord());
         persistMultiplePublicationWithSameCristinId();
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
-    }
-
-    @Test
-    void shouldDoNotUpdateAssociatedArtifactsOnExistingPublicationWhenTheyMatch() {
-
     }
 
     @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
