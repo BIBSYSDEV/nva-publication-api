@@ -79,7 +79,7 @@ public class DeleteEntriesEventEmitterTest {
     @Test
     void shouldLogErrorWhenEmittingEventsFails() {
         var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
-        eventBridgeClient = new FakeEventBridgeClientThrowingException(EVENT_BUS_NAME);
+        eventBridgeClient = new FakeEventBridgeClientThatFailsAllPutEvents(EVENT_BUS_NAME);
         handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
         var identifiers = createRandomIdentifiers();
         putObjectsInBucket(identifiers);
@@ -130,17 +130,17 @@ public class DeleteEntriesEventEmitterTest {
             RequestBody.empty()));
     }
 
-    static class FakeEventBridgeClientThrowingException extends FakeEventBridgeClient {
+    static class FakeEventBridgeClientThatFailsAllPutEvents extends FakeEventBridgeClient {
 
-        public FakeEventBridgeClientThrowingException(String eventBusName) {
+        public FakeEventBridgeClientThatFailsAllPutEvents(String eventBusName) {
             super(eventBusName);
         }
 
         @Override
         public PutEventsResponse putEvents(PutEventsRequest putEventsRequest) throws
                                                                               AwsServiceException,
-                                                                                     SdkClientException {
-            throw new UnsupportedOperationException("Something bad happened");
+                                                                              SdkClientException {
+            return PutEventsResponse.builder().failedEntryCount(putEventsRequest.entries().size()).build();
         }
     }
 }

@@ -11,7 +11,7 @@ import nva.commons.core.JacocoGenerated;
 //Event emitted from button lambda DeleteEntriesEventEmitter and consumed by DeletePublicationHandler
 public class DeleteEntryEvent implements JsonSerializable {
 
-    public static String EVENT_TOPIC = "DeleteEntriesEvent.FileEntry.Delete";
+    public static final String EVENT_TOPIC = "DeleteEntriesEvent.FileEntry.Delete";
     private final SortableIdentifier identifier;
     private final String topic;
 

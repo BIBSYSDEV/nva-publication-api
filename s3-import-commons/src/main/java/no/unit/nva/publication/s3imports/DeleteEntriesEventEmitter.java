@@ -52,12 +52,13 @@ public class DeleteEntriesEventEmitter extends EventHandler<EventReference, Stri
      * @param input EventReference containing S3 uri containing files with object keys corresponding to
      *              publication-identifier. Ex. Brage-migration report bucket and cristin-import bucket contains such
      *              objects.
-     * @param _event not used
+     * @param event not used
      * @param context used for obtaining invokingFunctionArn
      * @return null
      */
 
-    protected String processInput(EventReference input, AwsEventBridgeEvent<EventReference> _event, Context context) {
+    @Override
+    protected String processInput(EventReference input, AwsEventBridgeEvent<EventReference> event, Context context) {
         var files = listFilesInBucket(input);
         var deleteEntryEvents = createDeleteEvents(files);
         var failedEntries =
