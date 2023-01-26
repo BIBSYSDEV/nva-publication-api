@@ -29,11 +29,11 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
     public static final String EXPECTED_BODY_MESSAGE =
         "The expected json body contains only an s3Location.\nThe received body was: ";
 
-    public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 100;
+    public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
 
     private static final String LINE_SEPARATOR = System.lineSeparator();
 
-    private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
+    private static final String CANONICAL_NAME = DeleteEntriesEventEmitter.class.getCanonicalName();
 
     private static final String NON_EMITTED_ENTRIES_WARNING_PREFIX = "Some entries failed to be emitted: ";
 

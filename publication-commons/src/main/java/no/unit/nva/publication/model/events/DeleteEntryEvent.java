@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.events;
 
 import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -11,8 +12,13 @@ import nva.commons.core.JacocoGenerated;
 //Event emitted from button lambda DeleteEntriesEventEmitter and consumed by DeletePublicationHandler
 public class DeleteEntryEvent implements JsonSerializable {
 
+    @JsonIgnore
     public static final String EVENT_TOPIC = "DeleteEntriesEvent.FileEntry.Delete";
+
+    @JsonProperty("identifier")
     private final SortableIdentifier identifier;
+
+    @JsonProperty("topic")
     private final String topic;
 
     public DeleteEntryEvent(@JsonProperty("topic") String topic,
@@ -53,5 +59,11 @@ public class DeleteEntryEvent implements JsonSerializable {
         DeleteEntryEvent that = (DeleteEntryEvent) o;
         return Objects.equals(identifier, that.identifier)
                && Objects.equals(topic, that.topic);
+    }
+
+    @JacocoGenerated
+    @Override
+    public String toString() {
+        return toJsonString();
     }
 }

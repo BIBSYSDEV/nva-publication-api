@@ -758,7 +758,7 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
 
-  DeletePublicationHandler:
+  LogicallyDeleteEntriesHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent'
