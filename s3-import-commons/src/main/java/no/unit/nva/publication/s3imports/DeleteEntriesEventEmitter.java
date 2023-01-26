@@ -15,8 +15,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.events.DeleteEntryEvent;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
-import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
@@ -30,17 +28,12 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
         "The expected json body contains only an s3Location.\nThe received body was: ";
 
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
-
+    public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:{}";
     private static final String LINE_SEPARATOR = System.lineSeparator();
-
     private static final String CANONICAL_NAME = DeleteEntriesEventEmitter.class.getCanonicalName();
-
-    private static final String NON_EMITTED_ENTRIES_WARNING_PREFIX = "Some entries failed to be emitted: ";
-
+    private static final Logger logger = LoggerFactory.getLogger(DeleteEntriesEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
-
-    private static final Logger logger = LoggerFactory.getLogger(DeleteEntriesEventEmitter.class);
 
     @JacocoGenerated
     public DeleteEntriesEventEmitter() {
@@ -54,10 +47,11 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
 
     /**
      * Method for emitting DeleteEntryEvents to DeletePublicationHandler
-     * @param input EventReference containing S3 uri containing files with object keys corresponding to
-     *              publication-identifier. Ex. Brage-migration report bucket and cristin-import bucket contains such
-     *              objects.
-     * @param output not used
+     *
+     * @param input   EventReference containing S3 uri containing files with object keys corresponding to
+     *                publication-identifier. Ex. Brage-migration report bucket and cristin-import bucket contains such
+     *                objects.
+     * @param output  not used
      * @param context used for obtaining invokingFunctionArn
      */
 
@@ -67,32 +61,17 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
         var files = listFilesInBucket(importRequest);
         var deleteEntryEvents = createDeleteEvents(files);
         var failedEntries =
-            attempt(() -> emitEventReferences(context, deleteEntryEvents));
-        if (thereAreFailures(failedEntries)) {
-            logWarningForNotEmittedEntries(failedEntries);
-        }
+            attempt(() -> emitEventReferences(context, deleteEntryEvents)).orElseThrow();
+        logWarningForNotEmittedFilenames(failedEntries);
     }
 
-    private boolean thereAreFailures(Try<List<PutEventsResult>> failedEntries) {
-        return completeEmissionFailure(failedEntries) || partialEmissionFailure(failedEntries);
-    }
-
-    private boolean completeEmissionFailure(Try<List<PutEventsResult>> failedEntries) {
-        return failedEntries.isFailure();
-    }
-
-    private boolean partialEmissionFailure(Try<List<PutEventsResult>> failedEntries) {
-        return failedEntries.isSuccess() && !failedEntries.orElseThrow().isEmpty();
-    }
-
-
-    private void logWarningForNotEmittedEntries(Try<List<PutEventsResult>> failedRequests) {
-        String failedRequestsString = failedRequests
-                                          .stream()
-                                          .map(PutEventsResult::toString)
-                                          .collect(Collectors.joining(LINE_SEPARATOR));
-        if (StringUtils.isNotBlank(failedRequestsString)) {
-            logger.warn(NON_EMITTED_ENTRIES_WARNING_PREFIX + failedRequestsString);
+    private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
+        if (!failedRequests.isEmpty()) {
+            String failedRequestsString = failedRequests
+                                              .stream()
+                                              .map(PutEventsResult::toString)
+                                              .collect(Collectors.joining(LINE_SEPARATOR));
+            logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX, failedRequestsString);
         }
     }
 
