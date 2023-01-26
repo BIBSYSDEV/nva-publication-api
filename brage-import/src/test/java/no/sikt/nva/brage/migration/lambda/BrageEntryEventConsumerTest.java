@@ -214,7 +214,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAttachCertainMetadataFieldsToExistingPublicatoinWhenExistingPublicationDoesNotHaveThoseFields()
+    void shouldAttachCertainMetadataFieldsToExistingPublicationWhenExistingPublicationDoesNotHaveThoseFields()
         throws IOException {
         // The metadata fields are currently Description, Abstract and handle
         var dataGenerator = new NvaBrageMigrationDataGenerator.Builder()

@@ -26,7 +26,7 @@ public class CristinImportPublicationMerger {
     }
 
     public Publication mergePublications() {
-        if (cristinImportedPublicationHasHandleThatIsDifferentToBragePublication()) {
+        if (handleMistMatch()) {
             throw new MergePublicationException(String.format(HANDLE_MISMATCH_INFORMATION,
                                                               cristinPublication.getHandle(),
                                                               bragePublication.getHandle()));
@@ -68,7 +68,7 @@ public class CristinImportPublicationMerger {
                    : bragePublication.getEntityDescription().getAbstract();
     }
 
-    private boolean cristinImportedPublicationHasHandleThatIsDifferentToBragePublication() {
+    private boolean handleMistMatch() {
         return nonNull(cristinPublication.getHandle())
                && !cristinPublication.getHandle().equals(bragePublication.getHandle());
     }
