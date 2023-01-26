@@ -1285,57 +1285,6 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
-
-
-  DeleteImportedBragePublicationHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: 'Should set publication status to deleted'
-      CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.DeleteImportedBragePublicationHandler::handleRequest
-      Runtime: java11
-      Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
-      Role: !GetAtt LambdaRole.Arn
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          TABLE_NAME: !Ref NvaResourcesTable
-
-
-  ListImportedBragePublicationsHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: 'List identifiers to publication imported from Brage. Accepts Json object with "uri" field'
-      CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.ListAndDeleteImportedBragePublicationsHandler::handleRequest
-      Runtime: java11
-      Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
-      Role: !GetAtt LambdaRole.Arn
-      Environment:
-        Variables:
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-
-
-  MarkImportedBragePublicationsAsDeletedHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: 'Should set publication status to all imported publications to deleted'
-      CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.MarkImportedBragePublicationsAsDeletedHandlerTest::handleRequest
-      Runtime: java11
-      Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
-      Role: !GetAtt LambdaRole.Arn
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          TABLE_NAME: !Ref NvaResourcesTable
-
-
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
   # https://stackoverflow.com/questions/41423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
