@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-import no.sikt.nva.brage.migration.AssociatedArtifactMover;
+import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.record.Record;
@@ -109,7 +109,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                              S3Event s3Event) {
         return attempt(() -> updatedPublication(publication, existingPublication))
                    .map(resourceService::updatePublication)
-                   .map(pub -> storeHandleAndPublicationIdentifier(pub, s3Event))
+                   .map(updatedPublication -> storeHandleAndPublicationIdentifier(updatedPublication, s3Event))
                    .orElseThrow();
     }
 

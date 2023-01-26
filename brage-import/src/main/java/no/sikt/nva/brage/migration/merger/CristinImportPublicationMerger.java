@@ -1,12 +1,10 @@
 package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
 import java.util.ArrayList;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.StringUtils;
-import nva.commons.core.attempt.Failure;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -36,12 +34,7 @@ public class CristinImportPublicationMerger {
         var publicationForUpdating = cristinPublication.copy()
                                          .withHandle(bragePublication.getHandle())
                                          .build();
-        return attempt(() -> fillNewPublicationWithMetadataFromBrage(publicationForUpdating))
-                   .orElseThrow(this::convertToMergePublicationException);
-    }
-
-    private RuntimeException convertToMergePublicationException(Failure<Publication> fail) {
-        return new MergePublicationException(fail.getException());
+        return fillNewPublicationWithMetadataFromBrage(publicationForUpdating);
     }
 
     @NotNull

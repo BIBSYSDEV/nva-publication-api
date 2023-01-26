@@ -1,6 +1,6 @@
 package no.sikt.nva.brage.migration.testutils;
 
-import com.google.common.collect.Iterables;
+import com.amazonaws.services.kms.model.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -37,7 +37,12 @@ public class FakeResourceService extends ResourceService {
 
     @Override
     public Publication updatePublication(Publication resourceUpdate) {
-        return Iterables.getOnlyElement(publicationList);
+        if (publicationList.stream()
+                .anyMatch(publication -> resourceUpdate.getIdentifier().equals(publication.getIdentifier()))) {
+            return resourceUpdate;
+        } else {
+            throw new NotFoundException("Your bad");
+        }
     }
 
     public List<Publication> getPublicationsThatHasBeenCreatedByImportedEntry() {

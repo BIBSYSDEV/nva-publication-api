@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration;
+package no.sikt.nva.brage.migration.merger;
 
 public class AssociatedArtifactException extends RuntimeException {
 
