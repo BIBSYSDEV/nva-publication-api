@@ -37,11 +37,16 @@ public class FakeResourceService extends ResourceService {
 
     @Override
     public Publication updatePublication(Publication resourceUpdate) {
-        if (publicationList.stream()
-                .anyMatch(publication -> resourceUpdate.getIdentifier().equals(publication.getIdentifier()))) {
+        var correspondingPublication =
+            publicationList.stream()
+                .filter(publication -> publication.getIdentifier().equals(resourceUpdate.getIdentifier()))
+                .findAny();
+        if (correspondingPublication.isPresent()) {
+            publicationList.remove(correspondingPublication.get());
+            publicationList.add(resourceUpdate);
             return resourceUpdate;
         } else {
-            throw new NotFoundException("Your bad");
+            throw new NotFoundException("Not found");
         }
     }
 
