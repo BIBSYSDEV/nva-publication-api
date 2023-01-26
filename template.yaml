@@ -780,9 +780,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                responsePayload:
-                  topic:
-                    - DeleteEntriesEvent.FileEntry.Delete
+                topic: [ "DeleteEntriesEvent.FileEntry.Delete" ]
 
 
   DoiRequestEventProducer:
