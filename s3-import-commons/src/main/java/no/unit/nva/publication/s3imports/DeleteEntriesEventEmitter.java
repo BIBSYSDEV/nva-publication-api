@@ -57,8 +57,8 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) {
-        var importRequest = parseInput(input);
-        var files = listFilesInBucket(importRequest);
+        var logicallyDeleteRequest = parseInput(input);
+        var files = listFilesInBucket(logicallyDeleteRequest);
         var deleteEntryEvents = createDeleteEvents(files);
         var failedEntries =
             attempt(() -> emitEventReferences(context, deleteEntryEvents)).orElseThrow();
