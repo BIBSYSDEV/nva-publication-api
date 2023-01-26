@@ -24,7 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.utils.UriRetriever;
@@ -133,8 +135,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static String enrichJson(UriRetriever uriRetriever, ObjectNode documentWithId) {
         return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever))
-            .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
-            .orElseThrow();
+                   .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
+                   .orElseThrow();
     }
 
     private static ObjectNode createJsonWithId(Publication publication) throws JsonProcessingException {
@@ -183,9 +185,22 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static List<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
         return StreamSupport.stream(contributorsRoot.spliterator(), false)
-            .flatMap(node -> StreamSupport.stream(node.at(AFFILIATIONS_POINTER).spliterator(), false))
-            .map(child -> URI.create(child.at("/id").textValue()))
-            .collect(Collectors.toList());
+                   .flatMap(ExpandedResource::extractAffiliations)
+                   .flatMap(ExpandedResource::extractAffiliationId)
+                   .collect(Collectors.toList());
+    }
+
+    private static Stream<URI> extractAffiliationId(JsonNode child) {
+        return Optional.ofNullable(child.at("/id"))
+                   .map(JsonNode::textValue)
+                   .map(URI::create)
+                   .stream();
+    }
+
+    private static Stream<JsonNode> extractAffiliations(JsonNode node) {
+        return Optional.ofNullable(node.at(AFFILIATIONS_POINTER))
+                   .map(o -> StreamSupport.stream(o.spliterator(), false))
+                   .orElse(Stream.empty());
     }
 
     private static URI getBookSeriesUri(JsonNode root) {

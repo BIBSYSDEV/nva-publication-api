@@ -46,7 +46,6 @@ Parameters:
     Type: 'String'
     Default: "brage-migration-reports"
     Description: Name of bucket for output brage migration errors
-
   MaxConcurrency:
     Type: Number
     Default: 100
@@ -67,6 +66,10 @@ Parameters:
     Type: String
     Default: ''
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
+  NvaApplicationDomain:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /NVA/ApplicationDomain
+    Description: Domain-name for the NVA frontend
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -176,6 +179,8 @@ Resources:
     Type: "AWS::SQS::Queue"
   DeletePublicationEventProducerDlq:
     Type: "AWS::SQS::Queue"
+  DeletePublicationEventConsumerDlq:
+    Type: "AWS::SQS::Queue"
   PublicationFanoutHandlerDLQ:
     Type: "AWS::SQS::Queue"
   DeleteDraftPublicationHandlerDLQ:
@@ -252,6 +257,20 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
+  DeleteLambdaRole:
+    Type: AWS::IAM::Role
+    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -260,6 +279,7 @@ Resources:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
+        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -295,6 +315,7 @@ Resources:
       PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
+        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -305,6 +326,21 @@ Resources:
               - s3:ListBucketMultipartUploads
               - s3:PutObject
               - s3:PutObjectAcl
+            Resource: "*"
+
+  S3DeleteAccessPermission:
+    Type: AWS::IAM::Policy
+    Description: Needed by DeletePublicationEventConsumer
+    Properties:
+      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
+      Roles:
+        - !Ref DeleteLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:DeleteObject
             Resource: "*"
 
   DynamoDbStreamsAccessPolicy:
@@ -331,6 +367,7 @@ Resources:
       PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
+        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -404,6 +441,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -684,6 +722,41 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+
+  DeletePublicationEventConsumer:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Description: 'Listens for Delete event emitted from ResourceExpansionHandler. Removes resource from persisted-storage s3 bucket and emits event consumed by search-api.'
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
+      Runtime: java11
+      Role: !GetAtt DeleteLambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - PublicationService.ExpandedDataEntry.Delete
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn # event is consumed by search-api
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
 
   DoiRequestEventProducer:
     DependsOn: EventsLambdaPermissions
