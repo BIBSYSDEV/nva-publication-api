@@ -57,12 +57,12 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) {
-        var logicallyDeleteRequest = parseInput(input);
-        var files = listFilesInBucket(logicallyDeleteRequest);
-        var deleteEntryEvents = createDeleteEvents(files);
-        var failedEntries =
-            attempt(() -> emitEventReferences(context, deleteEntryEvents)).orElseThrow();
-        logWarningForNotEmittedFilenames(failedEntries);
+        attempt(() -> parseInput(input))
+            .map(this::listFilesInBucket)
+            .map(this::createDeleteEvents)
+            .map(deleteEntryEvents -> emitEventReferences(context, deleteEntryEvents))
+            .forEach(this::logWarningForNotEmittedFilenames)
+            .orElseThrow();
     }
 
     private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
