@@ -758,6 +758,31 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
 
+  LogicallyDeleteEntriesHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent'
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          TABLE_NAME: !Ref NvaResourcesTable
+          DOMAIN_NAME: !Ref ApiDomain
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "DeleteEntriesEvent.FileEntry.Delete" ]
+
+
   DoiRequestEventProducer:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -1244,55 +1269,21 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
-
-  DeleteImportedBragePublicationHandler:
+  LogicallyDeleteImportedPublicationsButton:
     Type: AWS::Serverless::Function
     Properties:
-      Description: 'Should set publication status to deleted'
-      CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.DeleteImportedBragePublicationHandler::handleRequest
+      Description: 'Starts Batch logically delete publication. Accepts Json object with "uri" field pointing to a s3 path containing objects keys corresponding to publication ids that should be deleted.'
+      CodeUri: s3-import-commons
+      Handler: no.unit.nva.publication.s3imports.DeleteEntriesEventEmitter::handleRequest
       Runtime: java11
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId # batch-event emitter needs to know the aws-account.
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          TABLE_NAME: !Ref NvaResourcesTable
-
-
-  ListImportedBragePublicationsHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: 'List identifiers to publication imported from Brage. Accepts Json object with "uri" field'
-      CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.ListAndDeleteImportedBragePublicationsHandler::handleRequest
-      Runtime: java11
-      Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
-      Role: !GetAtt LambdaRole.Arn
-      Environment:
-        Variables:
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-
-
-  MarkImportedBragePublicationsAsDeletedHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: 'Should set publication status to all imported publications to deleted'
-      CodeUri: brage-import
-      Handler: no.sikt.nva.brage.migration.lambda.cleanup.MarkImportedBragePublicationsAsDeletedHandlerTest::handleRequest
-      Runtime: java11
-      Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
-      Role: !GetAtt LambdaRole.Arn
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          TABLE_NAME: !Ref NvaResourcesTable
-
+          BATCH_EMISSION_INTERVAL_MILLIS: 700
 
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:

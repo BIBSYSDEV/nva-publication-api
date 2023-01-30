@@ -6,6 +6,7 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.eventhandlers
+    implementation libs.nva.identifiers
 
     implementation libs.jackson.annotations
     implementation libs.jackson.databind
@@ -37,7 +38,6 @@ dependencies {
     testImplementation libs.aws.sdk2.s3
 
     compileOnly libs.nva.apigateway
-    compileOnly libs.nva.identifiers
     compileOnly libs.zalando
 
     compileOnly(libs.aws.sdk2.auth) {
