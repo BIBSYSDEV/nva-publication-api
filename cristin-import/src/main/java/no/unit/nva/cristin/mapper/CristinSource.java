@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,9 @@ import nva.commons.core.JacocoGenerated;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
+// This list should be emptied by either mapping the field to an NVA field or asking the Cristin people (Daniel)
+// to remove it from the exports
+@JsonIgnoreProperties({"VARBEID_VDISIPLIN"})
 public class CristinSource {
     
     @JsonProperty("kildekode")
