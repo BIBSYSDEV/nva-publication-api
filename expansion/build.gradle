@@ -15,6 +15,7 @@ dependencies {
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils
     testImplementation libs.bundles.testing
+    testImplementation libs.jsonassert
 
 
 }

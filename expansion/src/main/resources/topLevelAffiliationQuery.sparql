@@ -17,3 +17,5 @@ CONSTRUCT {
   OPTIONAL { ?c organization:partOf ?e } .
   FILTER(!bound(?e))
 }
+
+#UNION > Optional
