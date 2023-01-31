@@ -83,11 +83,6 @@
           "hasPart": {
             "@container": "@set"
           }
-        },
-        "@embed": "@always",
-        "partOf": {
-          "@embed": "@always",
-          "type": "Organization"
         }
       }
     },

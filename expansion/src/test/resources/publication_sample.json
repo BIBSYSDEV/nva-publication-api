@@ -1,0 +1,174 @@
+{
+  "type": "Publication",
+  "publicationContextUris": [],
+  "@context": {
+    "@vocab": "https://bibsysdev.github.io/src/nva/ontology.ttl#",
+    "id": "@id",
+    "type": "@type",
+    "contributors": {
+      "@container": "@set"
+    },
+    "additionalIdentifiers": {
+      "@container": "@set"
+    },
+    "affiliations": {
+      "@container": "@set"
+    },
+    "subjects": {
+      "@container": "@set"
+    },
+    "projects": {
+      "@container": "@set"
+    },
+    "tags": {
+      "@container": "@set"
+    },
+    "isbnList": {
+      "@container": "@set"
+    },
+    "venues": {
+      "@container": "@set"
+    },
+    "files": {
+      "@container": "@set"
+    },
+    "grants": {
+      "@container": "@set"
+    },
+    "approvals": {
+      "@container": "@set"
+    },
+    "messages": {
+      "@container": "@set"
+    }
+  },
+  "id": "https://api.dev.nva.aws.unit.no/publication/53b5be5e-a036-4f6d-b8d5-1a0072798971",
+  "createdDate": "2022-10-12T07:03:30.107640Z",
+  "entityDescription": {
+    "type": "EntityDescription",
+    "abstract": "Abstract",
+    "alternativeTitles": {},
+    "contributors": [
+      {
+        "type": "Contributor",
+        "affiliations": [
+          {
+            "type": "Organization",
+            "id": "https://api.dev.nva.aws.unit.no/cristin/organization/1.2.3.0",
+            "name": {
+              "en": "Parent that only exists in partOf",
+              "nb": "Fakultet for informasjonsteknologi og elektroteknikk"
+            },
+            "hasPart": [
+              {
+                "type": "Organization",
+                "id": "https://api.dev.nva.aws.unit.no/cristin/organization/1.2.3.4",
+                "name": {
+                  "en": "Vice-Rector Ålesund",
+                  "nb": "Viserektor Ålesund"
+                }
+              }
+            ],
+            "partOf": [
+              {
+                "type": "Organization",
+                "id": "https://api.dev.nva.aws.unit.no/cristin/organization/1.2.0.0",
+                "name": {
+                  "en": "Parent that only exists in partOf",
+                  "nb": "Fakultet for informasjonsteknologi og elektroteknikk"
+                },
+                "partOf": {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/1.0.0.0"
+                }
+              }
+            ]
+          }
+        ],
+        "correspondingAuthor": true,
+        "identity": {
+          "id": "https://api.dev.nva.aws.unit.no/cristin/person/1136282",
+          "type": "Identity",
+          "name": "Withauthor TestUser"
+        },
+        "role": "Creator",
+        "sequence": 1
+      }
+    ],
+    "date": {
+      "type": "PublicationDate",
+      "day": "31",
+      "month": "12",
+      "year": "2020"
+    },
+    "description": "Description",
+    "language": "http://lexvo.org/id/iso639-3/eng",
+    "mainTitle": "Not Embargoed Image file",
+    "npiSubjectHeading": "010",
+    "reference": {
+      "type": "Reference",
+      "publicationContext": {
+        "type": "UnconfirmedJournal"
+      },
+      "publicationInstance": {
+        "type": "JournalArticle",
+        "contentType": "AcademicArticle",
+        "issue": "2",
+        "originalResearch": false,
+        "pages": {
+          "type": "Range",
+          "begin": "3",
+          "end": "4"
+        },
+        "peerReviewed": true,
+        "volume": "1"
+      }
+    },
+    "tags": [
+      "keyword"
+    ]
+  },
+  "fileSet": {
+    "type": "FileSet",
+    "files": [
+      {
+        "type": "PublishedFile",
+        "administrativeAgreement": false,
+        "identifier": "9d1f0455-472c-49d5-8944-8a6dd6b1c391",
+        "license": {
+          "type": "License",
+          "identifier": "CC0",
+          "labels": {
+            "nb": "CC0"
+          }
+        },
+        "mimeType": "image/png",
+        "name": "sikt.png",
+        "publisherAuthority": false,
+        "size": 5446
+      }
+    ]
+  },
+  "identifier": "0183cb01663b-a63ebed8-c45a-4c06-be48-280ef195cbef",
+  "modelVersion": "0.18.6",
+  "modifiedDate": "2022-10-12T07:03:31.498364Z",
+  "owner": "1136282@20202.0.0.0",
+  "projects": [
+    {
+      "id": "https://api.dev.nva.aws.unit.no/project/403669",
+      "type": "ResearchProject",
+      "name": "test-retest av test batteri til måling av smerte og funksjon hos personer med\r\nkne artrose: reliabilitet, validitet, sensivitet og spesifisitet"
+    }
+  ],
+  "publishedDate": "2022-10-12T07:03:31.498364Z",
+  "publisher": {
+    "id": "https://api.dev.nva.aws.unit.no/customer/0257d023-2466-4609-a0a0-0406bd17c05e",
+    "type": "Organization",
+    "labels": {}
+  },
+  "resourceOwner": {
+    "owner": "1136282@20202.0.0.0",
+    "ownerAffiliation": "https://api.dev.nva.aws.unit.no/cristin/organization/20202.0.0.0"
+  },
+  "status": "PUBLISHED"
+}
