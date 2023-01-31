@@ -2,7 +2,7 @@
 
 
 nva = { strictly = '1.27.2' }
-nvaDatamodel = { strictly = '0.19.27' }
+nvaDatamodel = { strictly = '0.19.28' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
 jackson = { strictly = '2.14.1' }
 awsSdk = { strictly = '1.12.369' }
@@ -34,6 +34,7 @@ karate-core = { strictly = '1.1.0' }
 karate-apache = { strictly = '0.9.6' }
 karate-junit5 = { strictly = '1.1.0' }
 jena = { strictly = '4.6.1'}
+jsonassert = { strictly = '1.5.1'}
 
 
 [libraries]
@@ -61,6 +62,7 @@ jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-datab
 jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
 jackson-module-parameter-names = { group = 'com.fasterxml.jackson.module', name = 'jackson-module-parameter-names', version.ref = 'jackson' }
 jackson-datatype-problem = { group = 'org.zalando', name = 'jackson-datatype-problem', version.ref = 'zalandoProblem' }
+jsonassert = {group = 'org.skyscreamer', name = 'jsonassert', version.ref = 'jsonassert'}
 
 
 aws-lambda-java-core = { group = 'com.amazonaws', name = 'aws-lambda-java-core', version.ref = 'awsLambdaCore' }

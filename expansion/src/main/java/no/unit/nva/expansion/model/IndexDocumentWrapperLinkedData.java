@@ -1,13 +1,12 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
-import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
-import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
-import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.utils.FramedJsonGenerator;
+import no.unit.nva.expansion.utils.SearchIndexFrame;
+import no.unit.nva.expansion.utils.UriRetriever;
+import nva.commons.core.ioutils.IoUtils;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
@@ -15,11 +14,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.utils.FramedJsonGenerator;
-import no.unit.nva.expansion.utils.SearchIndexFrame;
-import no.unit.nva.expansion.utils.UriRetriever;
-import nva.commons.core.ioutils.IoUtils;
+
+import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
+import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
+import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
+import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
 
 public class IndexDocumentWrapperLinkedData {
 
@@ -35,12 +36,13 @@ public class IndexDocumentWrapperLinkedData {
         this.uriRetriever = uriRetriever;
     }
 
-    public String toFramedJsonLd(JsonNode indexDocument) throws IOException {
+    public String toFramedJsonLd(JsonNode indexDocument) {
         String frame = SearchIndexFrame.FRAME_SRC;
         List<InputStream> inputStreams = getInputStreams(indexDocument);
-        return new FramedJsonGenerator(inputStreams, stringToStream(frame)).getFramedJson();
+        return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
     }
 
+    //TODO: parallelize
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
@@ -60,9 +62,9 @@ public class IndexDocumentWrapperLinkedData {
         }
 
         return uriContent.stream()
-            .flatMap(Optional::stream)
-            .map(IoUtils::stringToStream)
-            .collect(Collectors.toList());
+                .flatMap(Optional::stream)
+                .map(IoUtils::stringToStream)
+                .collect(Collectors.toList());
     }
 
     private void fetchChildUrisForOrganizations(List<Optional<String>> uriContent, String content) {
@@ -71,7 +73,7 @@ public class IndexDocumentWrapperLinkedData {
         if (json.has(TYPE_FIELD) && ORGANIZATION_TYPE.equals(json.at("/" + TYPE_FIELD).asText())) {
             var childOrgs = json.at(PART_OF_FIELD);
             childOrgs.forEach(org ->
-                                  uriContent.add(fetch(URI.create(org.at(ID_FIELD).asText())))
+                    uriContent.add(fetch(URI.create(org.at(ID_FIELD).asText())))
             );
         }
     }

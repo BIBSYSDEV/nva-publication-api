@@ -15,16 +15,8 @@
   "name": {
     "nb": "Avdeling for økonomi, språk og samfunnsfag"
   },
-  "partOf": [
-    {
-      "type": "Organization",
-      "id": "https://api.test.nva.aws.unit.no/cristin/organization/224.0.0.0",
-      "name": {
-        "en": "Østfold University College",
-        "nb": "Høgskolen i Østfold"
-      }
-    }
-  ]
+  "partOf": [],
+  "hasPart": []
 }
 
 

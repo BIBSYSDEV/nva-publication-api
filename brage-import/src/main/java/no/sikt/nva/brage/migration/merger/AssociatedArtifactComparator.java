@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.mapper;
+package no.sikt.nva.brage.migration.merger;
 
 import java.util.List;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;

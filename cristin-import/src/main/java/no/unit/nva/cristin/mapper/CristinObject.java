@@ -29,8 +29,9 @@ import no.unit.nva.model.Publication;
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerReviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "type_produkt",
-    "kildepostid", "eierkode_opprettet", "arkivpost",
+    "kildepostid", "eierkode_opprettet", "arkivpost", "VITENSKAPELIGARBEID_LOKAL",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
+    "VARBEID_VDISIPLIN", "FINANSIERING_VARBEID",
     "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst", "h_dbh_forskres_publikasjon"})
 
 @SuppressWarnings({"PMD.TooManyFields"})
