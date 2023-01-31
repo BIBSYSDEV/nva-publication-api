@@ -30,15 +30,11 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     private ByteArrayOutputStream outputStream;
 
-
-    private Clock clock;
-
     @BeforeEach
     public void init() {
         super.init();
         outputStream = new ByteArrayOutputStream();
-        clock = Clock.systemDefaultZone();
-        resourceService = new ResourceService(client, clock);
+        resourceService = new ResourceService(client, Clock.systemDefaultZone());
         handler = new DeletePublicationHandler(resourceService);
     }
 
@@ -47,13 +43,14 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         var expectedPublication =
             publication.copy().withStatus(PublicationStatus.DELETED).withPublishedDate(null).build();
-        handler.handleRequest(createDeleteEntryEventInputStream(publication),  outputStream, context);
+        handler.handleRequest(createDeleteEntryEventInputStream(publication), outputStream, context);
         var actualPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThatActualPublicationIsEqualToExpectedPublicationIgnoringModifiedDate(actualPublication,
                                                                                     expectedPublication);
     }
 
-    private void assertThatActualPublicationIsEqualToExpectedPublicationIgnoringModifiedDate(Publication actualPublication, Publication expectedPublication) {
+    private void assertThatActualPublicationIsEqualToExpectedPublicationIgnoringModifiedDate(
+        Publication actualPublication, Publication expectedPublication) {
         actualPublication.setModifiedDate(null);
         expectedPublication.setModifiedDate(null);
         assertThat(actualPublication, is(equalTo(expectedPublication)));
