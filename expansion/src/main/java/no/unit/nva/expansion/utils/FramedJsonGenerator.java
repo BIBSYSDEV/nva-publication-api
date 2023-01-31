@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
 import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.JsonLDWriteContext;
@@ -53,7 +52,6 @@ public class FramedJsonGenerator {
     private Model addTopLevelAffiliation(Model model) {
 
         var query = AffiliationQueries.TOP_LEVEL_AFFILIATION;
-        QueryFactory.create(query);
 
         try (var qexec = QueryExecutionFactory.create(query, model)) {
             var topLevelNode = qexec.execConstruct();
