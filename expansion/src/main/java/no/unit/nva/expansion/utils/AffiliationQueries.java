@@ -8,7 +8,7 @@ import java.nio.file.Path;
 public final class AffiliationQueries {
 
     public static final String TOP_LEVEL_AFFILIATION =
-            IoUtils.stringFromResources(Path.of("topLevelAffiliationQuery.txt"));
+            IoUtils.stringFromResources(Path.of("topLevelAffiliationQuery.sparql"));
 
     private AffiliationQueries() {
     }

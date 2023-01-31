@@ -7,11 +7,17 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -21,15 +27,14 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
+import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -42,7 +47,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -74,7 +78,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         this.resourceExpansionService =
                 new ResourceExpansionServiceImpl(resourceService, ticketService);
-
     }
 
     public static Stream<Class<?>> publicationInstanceProvider() {
@@ -83,7 +86,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Expanded resource should not loose information for instance type {0}")
     @MethodSource("publicationInstanceProvider")
-    void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType) throws JsonProcessingException {
+    void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
+            throws JsonProcessingException, JSONException {
         var publication = createPublicationWithoutDoi(instanceType);
 
         var expandedResource = fromPublication(uriRetriever, publication);
@@ -92,44 +96,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
 
-        var sortedPublication = sortPublication(publication);
-        var sortedRegeneratedPublication = sortPublication(regeneratedPublication);
-        assertEquals(sortedPublication, sortedRegeneratedPublication);
-    }
+        var jsonOriginal = attempt(() -> objectMapper.writeValueAsString(publication)).orElseThrow();
+        var jsonActual = attempt(() -> objectMapper.writeValueAsString(regeneratedPublication)).orElseThrow();
 
-    public static class HashValueComparator implements Comparator<Object> {
-        @Override
-        public int compare(Object o1, Object o2) {
-            return Integer.compare(o1.hashCode(), o2.hashCode());
-        }
-    }
-
-    private Publication sortPublication(Publication publication) {
-
-        var comparator = new HashValueComparator();
-
-        publication.getSubjects().sort(comparator);
-
-        var projects = publication.getProjects();
-        for (ResearchProject project : projects) {
-            project.getApprovals().sort(comparator);
-        }
-        projects.sort(comparator);
-
-        publication.getFundings().sort(comparator);
-
-        var entityDescription = publication.getEntityDescription();
-        var contributors = entityDescription.getContributors();
-        for (Contributor contributor : contributors) {
-            contributor.getAffiliations().sort(comparator);
-        }
-        contributors.sort(comparator);
-
-        entityDescription.getTags().sort(comparator);
-
-        publication.getAssociatedArtifacts().sort(comparator);
-
-        return publication;
+        JSONAssert.assertEquals(jsonOriginal, jsonActual, false);
     }
 
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
@@ -273,8 +243,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 ResourceExpansionService resourceExpansionService,
                 TicketService ticketService) throws NotFoundException {
             var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
-            return
-                    ExpandedGeneralSupportRequest.create(request, resourceService, resourceExpansionService, ticketService);
+            return ExpandedGeneralSupportRequest.create(request,
+                    resourceService,
+                    resourceExpansionService,
+                    ticketService);
         }
 
         private static Publication createPublication(ResourceService resourceService) {
