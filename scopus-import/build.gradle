@@ -19,13 +19,12 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.language
     implementation libs.nva.logutils
+    implementation libs.nva.identifiers
 
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
     implementation libs.bundles.jackson
-
-    runtimeOnly group: 'com.github.bibsysdev', name: 'identifiers', version: '1.27.2'
 
     testImplementation libs.nva.testutils
     testImplementation libs.nva.json
