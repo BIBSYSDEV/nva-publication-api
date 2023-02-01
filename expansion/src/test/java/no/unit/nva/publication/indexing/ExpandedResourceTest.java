@@ -96,7 +96,7 @@ class ExpandedResourceTest {
     //TODO: fails for depth > 3
     @ParameterizedTest(name = "should return IndexDocument with correct topLevelAffiliation with referencing depth: "
                               + "{0}")
-    @ValueSource(ints = {1, 2, 3})
+    @ValueSource(ints = {0, 1, 2})
     void shouldReturnIndexDocumentWithCorrectTopLevelAffiliation(int depth) throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();

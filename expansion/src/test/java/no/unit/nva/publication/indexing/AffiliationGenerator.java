@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.expansion.utils.UriRetriever;
@@ -37,11 +36,7 @@ public class AffiliationGenerator {
         var upperLevelId = List.of(randomUri());
         List<URI> lowerLevelId = List.of();
 
-        if (depth == 0) {
-            throw new IllegalStateException("Having no depth makes no sense");
-        }
-
-        for (int i = 1; i < depth; i++) {
+        for (int i = 0; i < depth - 1; i++) {
 
             setOneAffiliation(currentLevelUri, lowerLevelId, upperLevelId);
 
