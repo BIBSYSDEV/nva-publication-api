@@ -1,0 +1,45 @@
+dependencies {
+    api(libs.nva.datamodel.core) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
+    implementation group: 'org.apache.tika', name: 'tika-langdetect', version: '1.28.1'
+
+    implementation project(":scopus-generate")
+    implementation libs.xsd2java.jakarta
+    implementation libs.aws.sdk2.s3
+    implementation libs.aws.sdk2.eventbridge
+    implementation libs.aws.sdk2.secrets
+
+    implementation libs.nva.s3
+    implementation libs.nva.secrets
+    implementation libs.nva.json
+    implementation libs.nva.doi
+    implementation libs.nva.core
+    implementation libs.nva.events
+    implementation libs.nva.apigateway
+    implementation libs.nva.language
+    implementation libs.nva.logutils
+
+    implementation libs.aws.lambda.java.core
+    implementation libs.aws.lambda.events
+    implementation libs.bundles.logging
+    implementation libs.bundles.jackson
+
+    runtimeOnly group: 'com.github.bibsysdev', name: 'identifiers', version: '1.27.2'
+
+    testImplementation libs.nva.testutils
+    testImplementation libs.nva.json
+
+    testImplementation libs.wiremock
+
+}
+
+test {
+    environment "API_HOST", "api.localhost.nva.aws.unit.no"
+    environment "EVENTS_BUCKET", "NvaEventsBucket"
+    environment "EVENTS_BUS", "NvaEventBus"
+    environment "PIA_REST_API", "localhost/sentralimport"
+    environment "PIA_SECRETS_NAME", "someSecretName"
+    environment "PIA_USERNAME_KEY", "someUserNameKey"
+    environment "PIA_PASSWORD_KEY", "somePasswordNameKey"
+}
