@@ -21,9 +21,12 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
-    
+
+    private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
     public static final String LOCATION_HEADER = "Location";
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -100,8 +103,13 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
     
     private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user)
-        throws ForbiddenException {
+        throws ApiGatewayException {
         return attempt(() -> resourceService.getPublication(user, publicationIdentifier))
-                   .orElseThrow(fail -> new ForbiddenException());
+                   .orElseThrow(fail -> loggingFailureReporter(fail.getException()));
+    }
+
+    private ApiGatewayException loggingFailureReporter(Exception exception) {
+        logger.error("Request failed: {}", exception.getStackTrace());
+        return new ForbiddenException();
     }
 }
