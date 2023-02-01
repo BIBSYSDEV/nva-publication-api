@@ -1,0 +1,865 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xocs:doc content-type="Abstract" dbname="scopusbase"
+  xsi:schemaLocation="http://www.elsevier.com/xml/xocs/dtd xocs-ani515.xsd"
+  xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd"
+  xmlns:ce="http://www.elsevier.com/xml/ani/common" xmlns:ait="http://www.elsevier.com/xml/ani/ait"
+  xmlns:cto="http://www.elsevier.com/xml/cto/dtd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <xocs:meta>
+    <xocs:eid>2-s2.0-0018132378</xocs:eid>
+    <xocs:oeid>2-s1.0-49C9-70Y0-TWC1-C0WK-00000-00</xocs:oeid>
+    <xocs:doi>10.1111/j.1600-0773.1978.tb02256.x</xocs:doi>
+    <xocs:pmid>707134</xocs:pmid>
+    <xocs:online-status>available</xocs:online-status>
+    <xocs:pui>415812119</xocs:pui>
+    <xocs:sdfullavail>0</xocs:sdfullavail>
+    <xocs:issn>00016683</xocs:issn>
+    <xocs:volume>43</xocs:volume>
+    <xocs:issue>3</xocs:issue>
+    <xocs:author-surname>Soli</xocs:author-surname>
+    <xocs:author-fi>N</xocs:author-fi>
+    <xocs:firstpage>205</xocs:firstpage>
+    <xocs:lastpage>210</xocs:lastpage>
+    <xocs:sort-year>1978</xocs:sort-year>
+    <xocs:sort-yyyymm>197801</xocs:sort-yyyymm>
+    <xocs:pub-year>1978</xocs:pub-year>
+    <xocs:timestamp yyyymmdd="20210925">2021-09-25T06:29:53.337581Z</xocs:timestamp>
+    <xocs:orig-load-date yyyymmdd="20120103">2012-01-03</xocs:orig-load-date>
+    <xocs:datesort>19780101</xocs:datesort>
+    <xocs:indexeddate epoch="1325623736">2012-01-03T20:48:56.000001Z</xocs:indexeddate>
+    <xocs:absavail>1</xocs:absavail>
+    <xocs:suppressdummy>no</xocs:suppressdummy>
+    <xocs:srctype>j</xocs:srctype>
+    <xocs:subjareas>
+      <xocs:subjarea>PHAR</xocs:subjarea>
+    </xocs:subjareas>
+    <xocs:srctitle>Acta Pharmacologica Et Toxicologica</xocs:srctitle>
+    <xocs:countries>
+      <xocs:country>Norway</xocs:country>
+    </xocs:countries>
+    <xocs:languages>
+      <xocs:language>English</xocs:language>
+    </xocs:languages>
+    <xocs:prefnameauids>
+      <xocs:prefnameauid>Søli, N.E.#7003595279</xocs:prefnameauid>
+      <xocs:prefnameauid>Rambæk, J.P.#6603248770</xocs:prefnameauid>
+    </xocs:prefnameauids>
+    <xocs:open-access>
+      <xocs:oa-article-status is-open-access="0">None</xocs:oa-article-status>
+      <xocs:upw-open-access>
+        <xocs:upw-oa-article-status>false</xocs:upw-oa-article-status>
+        <xocs:upw-timestamp>2021-03-26T16:38:45.000439Z</xocs:upw-timestamp>
+        <xocs:upw-oa-journal-is-oa>false</xocs:upw-oa-journal-is-oa>
+        <xocs:upw-oa-journal-is-in-doaj>false</xocs:upw-oa-journal-is-in-doaj>
+      </xocs:upw-open-access>
+    </xocs:open-access>
+    <cto:doctype>ar</cto:doctype>
+    <cto:group-id>0018132378</cto:group-id>
+    <cto:ref-id>0001868148</cto:ref-id>
+    <cto:ref-id>84982035510</cto:ref-id>
+    <cto:ref-id>0015878963</cto:ref-id>
+    <cto:ref-id>84935736226</cto:ref-id>
+    <cto:ref-id>0015174737</cto:ref-id>
+    <cto:ref-id>0017181698</cto:ref-id>
+    <cto:ref-id>84982005046</cto:ref-id>
+    <cto:ref-id>73049179179</cto:ref-id>
+    <cto:ref-id>0015856585</cto:ref-id>
+    <cto:ref-id>28244462562</cto:ref-id>
+    <cto:ref-id>0013648902</cto:ref-id>
+    <cto:ref-id>0014589372</cto:ref-id>
+    <cto:ref-id>0014900946</cto:ref-id>
+    <cto:ref-id>0001126750</cto:ref-id>
+    <cto:ref-id>84982005070</cto:ref-id>
+    <cto:ref-id>0017432160</cto:ref-id>
+    <cto:ref-id>0003414085</cto:ref-id>
+    <cto:unique-author seq="1">
+      <cto:auth-initials>N.E.</cto:auth-initials>
+      <cto:auth-indexed-name>Soli N.E.</cto:auth-indexed-name>
+      <cto:auth-surname>Søli</cto:auth-surname>
+      <cto:auth-id>7003595279</cto:auth-id>
+    </cto:unique-author>
+    <cto:unique-author seq="2">
+      <cto:auth-initials>J.P.</cto:auth-initials>
+      <cto:auth-indexed-name>Rambaek J.P.</cto:auth-indexed-name>
+      <cto:auth-surname>Rambæk</cto:auth-surname>
+      <cto:auth-id>6603248770</cto:auth-id>
+    </cto:unique-author>
+    <cto:unique-auth-count>2</cto:unique-auth-count>
+  </xocs:meta>
+  <xocs:item>
+    <item>
+      <ait:process-info>
+        <ait:date-delivered day="24" month="09" timestamp="2021-09-24T22:56:49.000049-04:00"
+          year="2021"/>
+        <ait:date-sort day="01" month="01" year="1978"/>
+        <ait:status stage="S300" state="update" type="core"/>
+      </ait:process-info>
+      <bibrecord>
+        <item-info>
+          <copyright type="Elsevier">Copyright 2016 Elsevier B.V., All rights reserved.</copyright>
+          <itemidlist>
+            <ce:doi>10.1111/j.1600-0773.1978.tb02256.x</ce:doi>
+            <itemid idtype="PUI">415812119</itemid>
+            <itemid idtype="ARCWBL">20150000812119</itemid>
+            <itemid idtype="CAR-ID">653822606</itemid>
+            <itemid idtype="SCP">0018132378</itemid>
+            <itemid idtype="SGR">0018132378</itemid>
+            <itemid idtype="PUIsecondary">9035478</itemid>
+            <itemid idtype="EMBASE">1979035647</itemid>
+            <itemid idtype="MEDL">707134</itemid>
+          </itemidlist>
+          <history>
+            <date-created day="22" month="11" timestamp="BST 15:48:58" year="2015"/>
+          </history>
+          <dbcollection>ARCWBL</dbcollection>
+          <dbcollection>SCOPUS</dbcollection>
+          <dbcollection>Scopusbase</dbcollection>
+          <dbcollection>EMBASE</dbcollection>
+          <dbcollection>MEDL</dbcollection>
+        </item-info>
+        <head>
+          <citation-info>
+            <citation-type code="ar"/>
+            <citation-language xml:lang="eng" language="English"/>
+            <abstract-language xml:lang="eng" language="English"/>
+            <author-keywords>
+              <author-keyword xml:lang="eng"><sup>64</sup>Cu
+              </author-keyword>
+              <author-keyword xml:lang="eng">excretion</author-keyword>
+              <author-keyword xml:lang="eng">sheep</author-keyword>
+            </author-keywords>
+          </citation-info>
+          <citation-title>
+            <titletext original="y" xml:lang="eng" language="English">Excretion of Intravenously
+              Injected Copper‐64 in Sheep
+            </titletext>
+          </citation-title>
+          <author-group>
+            <author auid="7003595279" seq="1" type="auth">
+              <ce:initials>N.E.</ce:initials>
+              <ce:indexed-name>Soli N.E.</ce:indexed-name>
+              <ce:surname>Søli</ce:surname>
+              <ce:given-name>Nils E.</ce:given-name>
+              <preferred-name>
+                <ce:initials>N.E.</ce:initials>
+                <ce:indexed-name>Søli N.E.</ce:indexed-name>
+                <ce:surname>Søli</ce:surname>
+                <ce:given-name>Nils E.</ce:given-name>
+              </preferred-name>
+            </author>
+            <author auid="6603248770" seq="2" type="auth">
+              <ce:initials>J.P.</ce:initials>
+              <ce:indexed-name>Rambaek J.P.</ce:indexed-name>
+              <ce:surname>Rambæk</ce:surname>
+              <ce:given-name>Jon P.</ce:given-name>
+              <preferred-name>
+                <ce:initials>J.P.</ce:initials>
+                <ce:indexed-name>Rambæk J.P.</ce:indexed-name>
+                <ce:surname>Rambæk</ce:surname>
+                <ce:given-name>Jon P.</ce:given-name>
+              </preferred-name>
+            </author>
+            <affiliation afid="60007008" country="nor" date-locked="2021-06-30T02:56:57.858"
+              dptid="126479223">
+              <organization>Veterinary College of Norway</organization>
+              <organization>Department of Pharmacology and Toxicology</organization>
+              <organization>Isotope Laboratories</organization>
+              <organization>Dep</organization>
+              <organization>Oslo 1</organization>
+              <organization>Institutt for Atomenergi</organization>
+              <address-part>PO. Box 8146</address-part>
+              <city-group>Kjeller</city-group>
+              <affiliation-id afid="60007008" dptid="126479223"/>
+              <country>Norway</country>
+            </affiliation>
+          </author-group>
+          <correspondence>
+            <person>
+              <ce:initials>N.E.</ce:initials>
+              <ce:indexed-name>Soli N.E.</ce:indexed-name>
+              <ce:surname>Søli</ce:surname>
+              <ce:given-name>Nils E.</ce:given-name>
+            </person>
+            <affiliation country="nor">
+              <organization>Veterinary College of Norway</organization>
+              <organization>Department of Pharmacology and Toxicology</organization>
+              <organization>Isotope Laboratories</organization>
+              <organization>Dep</organization>
+              <organization>Oslo 1</organization>
+              <organization>Institutt for Atomenergi</organization>
+              <address-part>PO. Box 8146</address-part>
+              <city-group>Kjeller</city-group>
+              <country>Norway</country>
+            </affiliation>
+          </correspondence>
+          <abstracts>
+            <abstract original="y" xml:lang="eng">
+              <ce:para>Abstract Copper‐64 was injected intravenously into three sheep. The total
+                excretion of copper in sheep was low since only 1.4‐1.7% of the dose injected was
+                excreted during a period of 60 hrs. following the injection. It was found that the
+                biliary system was not a main excretory pathway for copper; other routes of
+                excretion into the gastrointestinal tract seemed to be more important. The urinary
+                and the biliary excretion were of comparable magnitude. The activity in the bile was
+                found to be lower than in the plasma throughout the sampling period. It is assumed
+                that a low excretion capacity of copper in the bile of sheep may be a possible
+                factor of importance for the high susceptibility of this species to excess of
+                copper. 1978 Nordic Pharmacological Society
+              </ce:para>
+            </abstract>
+          </abstracts>
+          <source srcid="34521" type="j">
+            <sourcetitle>Acta Pharmacologica et Toxicologica</sourcetitle>
+            <sourcetitle-abbrev>Acta Pharmacol. Toxicol.</sourcetitle-abbrev>
+            <issn type="electronic">16000773</issn>
+            <issn type="print">00016683</issn>
+            <volisspag>
+              <voliss issue="3" volume="43"/>
+              <pagerange first="205" last="210"/>
+            </volisspag>
+            <publicationyear first="1978"/>
+            <publicationdate>
+              <year>1978</year>
+              <date-text>September 1978</date-text>
+            </publicationdate>
+          </source>
+          <enhancement>
+            <descriptorgroup>
+              <descriptors controlled="y" type="DRG">
+                <descriptor>
+                  <mainterm weight="a" candidate="n">copper 64</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="a" candidate="n">cupric chloride</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">radioisotope</mainterm>
+                </descriptor>
+              </descriptors>
+              <descriptors controlled="y" type="MED">
+                <descriptor>
+                  <mainterm weight="b" candidate="n">animal experiment</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">bile</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="a" candidate="n">biliary excretion</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="a" candidate="n">drug excretion</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">drug feces level</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="a" candidate="n">drug urine level</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">intravenous drug administration</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="a" candidate="n">pharmacokinetics</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="a" candidate="n">sheep</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">urine</mainterm>
+                </descriptor>
+              </descriptors>
+              <descriptors controlled="y" type="MSH">
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Animal</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Bile</mainterm>
+                  <link>analysis</link>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Copper</mainterm>
+                  <link>administration and dosage</link>
+                  <link>metabolism</link>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Feces</mainterm>
+                  <link>analysis</link>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Female</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Injections, Intravenous</mainterm>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Radioisotopes</mainterm>
+                  <link>administration and dosage</link>
+                  <link>metabolism</link>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Saliva</mainterm>
+                  <link>analysis</link>
+                </descriptor>
+                <descriptor>
+                  <mainterm weight="b" candidate="n">Sheep</mainterm>
+                  <link>metabolism</link>
+                </descriptor>
+              </descriptors>
+            </descriptorgroup>
+            <classificationgroup>
+              <classifications type="EMCLASS">
+                <classification>23</classification>
+                <classification>30</classification>
+                <classification>37</classification>
+              </classifications>
+              <classifications type="SUBJECT">
+                <classification>Health</classification>
+                <classification>Life Sciences</classification>
+              </classifications>
+              <classifications type="ASJC">
+                <classification>3005</classification>
+                <classification>3004</classification>
+              </classifications>
+              <classifications type="SUBJABBR">
+                <classification>PHAR</classification>
+              </classifications>
+            </classificationgroup>
+            <manufacturergroup>
+              <manufacturers type="MNF">
+                <manufacturer country="gbr">amersham</manufacturer>
+              </manufacturers>
+            </manufacturergroup>
+            <chemicalgroup>
+              <chemicals source="esbd">
+                <chemical>
+                  <chemical-name>copper 64</chemical-name>
+                  <cas-registry-number>13981-25-4</cas-registry-number>
+                </chemical>
+                <chemical>
+                  <chemical-name>cupric chloride</chemical-name>
+                  <cas-registry-number>7447-39-4</cas-registry-number>
+                </chemical>
+              </chemicals>
+              <chemicals source="nlm">
+                <chemical>
+                  <chemical-name>Copper</chemical-name>
+                  <cas-registry-number>7440-50-8</cas-registry-number>
+                </chemical>
+                <chemical>
+                  <chemical-name>Radioisotopes</chemical-name>
+                  <cas-registry-number>0</cas-registry-number>
+                </chemical>
+              </chemicals>
+            </chemicalgroup>
+          </enhancement>
+        </head>
+        <tail>
+          <bibliography refcount="17">
+            <reference id="1">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Acute stress and trace element metabolism</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001868148</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>W.R.</ce:initials>
+                    <ce:indexed-name>Beisel W.R.</ce:indexed-name>
+                    <ce:surname>Beisel</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>R.S.</ce:initials>
+                    <ce:indexed-name>Pekarek R.S.</ce:indexed-name>
+                    <ce:surname>Pekarek</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Int. Rev. Neurobiol.</ref-sourcetitle>
+                <ref-publicationyear first="1972"/>
+                <ref-volisspag>
+                  <pagerange first="53" last="82"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="2">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>The copper metabolism in milk cows: Experiments with <sup>67</sup>Cu
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84982035510</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>W.T.</ce:initials>
+                    <ce:indexed-name>Binnerts W.T.</ce:indexed-name>
+                    <ce:surname>Binnerts</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>III Int. Conf. Prod. Dis. Farm. Anim. Wageningen</ref-sourcetitle>
+                <ref-publicationyear first="1976"/>
+                <ref-volisspag>
+                  <pagerange first="122" last="124"/>
+                </ref-volisspag>
+                <ref-text>Proc.</ref-text>
+              </ref-info>
+            </reference>
+            <reference id="3">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Copper homeostasis in the mammalian system</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0015878963</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>G.W.</ce:initials>
+                    <ce:indexed-name>Evans G.W.</ce:indexed-name>
+                    <ce:surname>Evans</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Physiol. Rev.</ref-sourcetitle>
+                <ref-publicationyear first="1973"/>
+                <ref-volisspag>
+                  <voliss volume="53"/>
+                  <pagerange first="535" last="570"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="4">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Western United States field trials and radioisotopic investigations
+                    on the molybdenum‐copper interactions in livestock
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84935736226</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>G.L.</ce:initials>
+                    <ce:indexed-name>Fisher G.L.</ce:indexed-name>
+                    <ce:surname>Fisher</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>W.J.</ce:initials>
+                    <ce:indexed-name>Clawson W.J.</ce:indexed-name>
+                    <ce:surname>Clawson</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Nucl. Tech. Anim. Prod. Health IAEA Vienna</ref-sourcetitle>
+                <ref-publicationyear first="1976"/>
+                <ref-volisspag>
+                  <pagerange first="97" last="107"/>
+                </ref-volisspag>
+                <ref-text>Proc.</ref-text>
+              </ref-info>
+            </reference>
+            <reference id="5">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>The binding of copper by bile and serum</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0015174737</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>D.</ce:initials>
+                    <ce:indexed-name>Frommer D.</ce:indexed-name>
+                    <ce:surname>Frommer</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Clin. Sci.</ref-sourcetitle>
+                <ref-publicationyear first="1971"/>
+                <ref-volisspag>
+                  <voliss volume="41"/>
+                  <pagerange first="485" last="493"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="6">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>The concentrations of molybdenum and zinc in liver in relation to
+                    copper accumulation in normal and copper poisoned sheep
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0017181698</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>A.</ce:initials>
+                    <ce:indexed-name>Froslie A.</ce:indexed-name>
+                    <ce:surname>Frøslie</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>G.</ce:initials>
+                    <ce:indexed-name>Norheim G.</ce:indexed-name>
+                    <ce:surname>Norheim</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Acta vet. scand.</ref-sourcetitle>
+                <ref-publicationyear first="1976"/>
+                <ref-volisspag>
+                  <voliss volume="17"/>
+                  <pagerange first="307" last="315"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="7">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>The kidneys</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84982005046</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.H.</ce:initials>
+                    <ce:indexed-name>Gans J.H.</ce:indexed-name>
+                    <ce:surname>Gans</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Dukes Physiology of Domestic Animals</ref-sourcetitle>
+                <ref-publicationyear first="1970"/>
+                <ref-volisspag>
+                  <pagerange first="767" last="812"/>
+                </ref-volisspag>
+                <ref-text>M.J. Swenson, 8th ed., Comstock Publishing Associates</ref-text>
+              </ref-info>
+            </reference>
+            <reference id="8">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Bile secretion in the sheep</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">73049179179</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>F.A.</ce:initials>
+                    <ce:indexed-name>Harrison F.A.</ce:indexed-name>
+                    <ce:surname>Harrison</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Physiol. (Lond.)</ref-sourcetitle>
+                <ref-publicationyear first="1962"/>
+                <ref-volisspag>
+                  <voliss volume="162"/>
+                  <pagerange first="212" last="224"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="9">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Effect of alteration in body temperature on the biliary excretion
+                    of copper
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0015856585</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>C.D.</ce:initials>
+                    <ce:indexed-name>Klaassen C.D.</ce:indexed-name>
+                    <ce:surname>Klaassen</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Proc. Soc. Exp. Biol. Med.</ref-sourcetitle>
+                <ref-publicationyear first="1973"/>
+                <ref-volisspag>
+                  <voliss volume="144"/>
+                  <pagerange first="8" last="12"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="10">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Availability of copper to sheep from Cu‐64 labeled inorganic
+                    compounds
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">28244462562</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.W.</ce:initials>
+                    <ce:indexed-name>Lassiter J.W.</ce:indexed-name>
+                    <ce:surname>Lassiter</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>M.C.</ce:initials>
+                    <ce:indexed-name>Bell M.C.</ce:indexed-name>
+                    <ce:surname>Bell</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Anim. Sci.</ref-sourcetitle>
+                <ref-publicationyear first="1960"/>
+                <ref-volisspag>
+                  <voliss volume="19"/>
+                  <pagerange first="754" last="762"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="11">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Studies on copper metabolism XV. The excretion of copper by
+                    animals
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0013648902</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.P.</ce:initials>
+                    <ce:indexed-name>Mahoney J.P.</ce:indexed-name>
+                    <ce:surname>Mahoney</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>J.A.</ce:initials>
+                    <ce:indexed-name>Bush J.A.</ce:indexed-name>
+                    <ce:surname>Bush</ce:surname>
+                  </author>
+                  <author seq="3">
+                    <ce:initials>C.J.</ce:initials>
+                    <ce:indexed-name>Gubler C.J.</ce:indexed-name>
+                    <ce:surname>Gubler</ce:surname>
+                  </author>
+                  <author seq="4">
+                    <ce:initials>W.H.</ce:initials>
+                    <ce:indexed-name>Moretz W.H.</ce:indexed-name>
+                    <ce:surname>Moretz</ce:surname>
+                  </author>
+                  <author seq="5">
+                    <ce:initials>G.E.</ce:initials>
+                    <ce:indexed-name>Cartwright G.E.</ce:indexed-name>
+                    <ce:surname>Cartwright</ce:surname>
+                  </author>
+                  <author seq="6">
+                    <ce:initials>M.M.</ce:initials>
+                    <ce:indexed-name>Wintrobe M.M.</ce:indexed-name>
+                    <ce:surname>Wintrobe</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Lab. clin. Med.</ref-sourcetitle>
+                <ref-publicationyear first="1955"/>
+                <ref-volisspag>
+                  <voliss volume="46"/>
+                  <pagerange first="702" last="708"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="12">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Effect of dietary molybdenum and sulfate upon copper metabolism in
+                    sheep
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0014589372</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>N.A.</ce:initials>
+                    <ce:indexed-name>Marcilese N.A.</ce:indexed-name>
+                    <ce:surname>Marcilese</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>C.B.</ce:initials>
+                    <ce:indexed-name>Ammerman C.B.</ce:indexed-name>
+                    <ce:surname>Ammerman</ce:surname>
+                  </author>
+                  <author seq="3">
+                    <ce:initials>R.M.</ce:initials>
+                    <ce:indexed-name>Valsecchi R.M.</ce:indexed-name>
+                    <ce:surname>Valsecchi</ce:surname>
+                  </author>
+                  <author seq="4">
+                    <ce:initials>B.G.</ce:initials>
+                    <ce:indexed-name>Dunavant B.G.</ce:indexed-name>
+                    <ce:surname>Dunavant</ce:surname>
+                  </author>
+                  <author seq="5">
+                    <ce:initials>G.K.</ce:initials>
+                    <ce:indexed-name>Davis G.K.</ce:indexed-name>
+                    <ce:surname>Davis</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Nutr.</ref-sourcetitle>
+                <ref-publicationyear first="1969"/>
+                <ref-volisspag>
+                  <voliss volume="99"/>
+                  <pagerange first="177" last="183"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="13">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Effect of dietary molybdenum and sulfate upon urinary excretion of
+                    copper in sheep
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0014900946</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>N.A.</ce:initials>
+                    <ce:indexed-name>Marcilese N.A.</ce:indexed-name>
+                    <ce:surname>Marcilese</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>C.B.</ce:initials>
+                    <ce:indexed-name>Ammerman C.B.</ce:indexed-name>
+                    <ce:surname>Ammerman</ce:surname>
+                  </author>
+                  <author seq="3">
+                    <ce:initials>R.M.</ce:initials>
+                    <ce:indexed-name>Valsecchi R.M.</ce:indexed-name>
+                    <ce:surname>Valsecchi</ce:surname>
+                  </author>
+                  <author seq="4">
+                    <ce:initials>B.G.</ce:initials>
+                    <ce:indexed-name>Dunavant B.G.</ce:indexed-name>
+                    <ce:surname>Dunavant</ce:surname>
+                  </author>
+                  <author seq="5">
+                    <ce:initials>G.K.</ce:initials>
+                    <ce:indexed-name>Davis G.K.</ce:indexed-name>
+                    <ce:surname>Davis</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Nutr.</ref-sourcetitle>
+                <ref-publicationyear first="1970"/>
+                <ref-volisspag>
+                  <voliss volume="100"/>
+                  <pagerange first="1399" last="1405"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="14">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Absorption and excretion of Cu<sup>64</sup>‐labeled copper by the
+                    rat
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001126750</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>C.A.</ce:initials>
+                    <ce:indexed-name>Owen C.A.</ce:indexed-name>
+                    <ce:surname>Owen</ce:surname>
+                    <ce:suffix>Jr.</ce:suffix>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Am. J. Physiol.</ref-sourcetitle>
+                <ref-publicationyear first="1964"/>
+                <ref-volisspag>
+                  <voliss volume="207"/>
+                  <pagerange first="1203" last="1206"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="15">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Effects of dietary molybdenum on the metabolism in sheep of
+                    Copper‐64 injected intravenously in different chemical forms
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84982005070</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>B.S.W.</ce:initials>
+                    <ce:indexed-name>Smith B.S.W.</ce:indexed-name>
+                    <ce:surname>Smith</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>H.</ce:initials>
+                    <ce:indexed-name>Wright H.</ce:indexed-name>
+                    <ce:surname>Wright</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Nucl. Tech. Anim. Prod. Health IAEA Vienna</ref-sourcetitle>
+                <ref-publicationyear first="1976"/>
+                <ref-volisspag>
+                  <pagerange first="109" last="115"/>
+                </ref-volisspag>
+                <ref-text>Proc.</ref-text>
+              </ref-info>
+            </reference>
+            <reference id="16">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>A method for collection of bile in the conscious sheep
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0017432160</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>N.E.</ce:initials>
+                    <ce:indexed-name>Soli N.E.</ce:indexed-name>
+                    <ce:surname>Søli</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>R.</ce:initials>
+                    <ce:indexed-name>Birkeland R.</ce:indexed-name>
+                    <ce:surname>Birkeland</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Acta vet. scand.</ref-sourcetitle>
+                <ref-publicationyear first="1977"/>
+                <ref-volisspag>
+                  <voliss volume="18"/>
+                  <pagerange first="221" last="226"/>
+                </ref-volisspag>
+              </ref-info>
+            </reference>
+            <reference id="17">
+              <ref-info>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0003414085</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>E.J.</ce:initials>
+                    <ce:indexed-name>Underwood E.J.</ce:indexed-name>
+                    <ce:surname>Underwood</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Trace Elements in Human and Animal Nutrition.</ref-sourcetitle>
+                <ref-publicationyear first="1977"/>
+                <ref-volisspag>
+                  <pagerange first="545"/>
+                </ref-volisspag>
+                <ref-text>4th ed., Academic Press, New York</ref-text>
+              </ref-info>
+            </reference>
+          </bibliography>
+        </tail>
+      </bibrecord>
+    </item>
+  </xocs:item>
+</xocs:doc>
