@@ -123,6 +123,8 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
                    .map(eventBodies -> emitEvents(context, eventBodies));
     }
 
+    // This is done because cristin-import JsonIgnoreProperties is case-sensitive, and it seems casing is arbitary
+    // from cristin-export. This functionality may be removed if JsonIgnoreProperty is removed from cristinObject.
     private List<JsonNode> convertFieldNamesToLowerCase(List<JsonNode> jsonNodes) {
         return jsonNodes.stream().map(this::convertKeysToLowerCase).collect(Collectors.toList());
     }
