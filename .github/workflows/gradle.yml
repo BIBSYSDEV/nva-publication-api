@@ -21,12 +21,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: install jq
-        run: sudo apt-get install -y jq
-
-      - name: setup codacy version
-        run: curl -LSs "$(curl -LSs https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | endswith(".jar"))) | .[0].browser_download_url')" -o codacy-coverage-reporter-assembly.jar
-
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:

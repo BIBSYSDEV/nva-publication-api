@@ -11,7 +11,7 @@ import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Funding;
+import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;

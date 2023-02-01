@@ -228,14 +228,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(firstRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
-        var createdTicket = fetchTicket(response).copy();
-        
+
         var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         output = new ByteArrayOutputStream();
         handler.handleRequest(secondRequest, output, CONTEXT);
         var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
         
         assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
+
+        var createdTicket = fetchTicket(response).copy();
         var existingTicket = fetchTicket(secondResponse);
         assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
     }
