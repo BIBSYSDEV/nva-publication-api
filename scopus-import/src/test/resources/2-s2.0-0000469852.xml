@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xocs:doc content-type="Abstract" dbname="scopusbase"
+          xsi:schemaLocation="http://www.elsevier.com/xml/xocs/dtd xocs-ani515.xsd"
+          xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:ce="http://www.elsevier.com/xml/ani/common"
+          xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:cto="http://www.elsevier.com/xml/cto/dtd"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <xocs:meta>
+    <xocs:eid>2-s2.0-0000469852</xocs:eid>
+    <xocs:oeid>2-s1.0-49BY-8TN0-TWC1-C0BW-00000-00</xocs:oeid>
+    <xocs:doi>10.1017/S0960428600000743</xocs:doi>
+    <xocs:online-status>available</xocs:online-status>
+    <xocs:pui>401580671</xocs:pui>
+    <xocs:sdfullavail>0</xocs:sdfullavail>
+    <xocs:issn>09604286</xocs:issn>
+    <xocs:volume>50</xocs:volume>
+    <xocs:issue>1</xocs:issue>
+    <xocs:author-surname>Hjortstam</xocs:author-surname>
+    <xocs:author-fi>K</xocs:author-fi>
+    <xocs:firstpage>105</xocs:firstpage>
+    <xocs:lastpage>119</xocs:lastpage>
+    <xocs:sort-year>1993</xocs:sort-year>
+    <xocs:sort-yyyymm>199301</xocs:sort-yyyymm>
+    <xocs:pub-year>1993</xocs:pub-year>
+    <xocs:timestamp yyyymmdd="20211222">2021-12-22T14:20:37.720802Z</xocs:timestamp>
+    <xocs:orig-load-date yyyymmdd="20120104">2012-01-04</xocs:orig-load-date>
+    <xocs:datesort>19930101</xocs:datesort>
+    <xocs:indexeddate epoch="1325695476">2012-01-04T16:44:36.000001Z</xocs:indexeddate>
+    <xocs:absavail>1</xocs:absavail>
+    <xocs:suppressdummy>no</xocs:suppressdummy>
+    <xocs:srctype>j</xocs:srctype>
+    <xocs:subjareas>
+      <xocs:subjarea>AGRI</xocs:subjarea>
+    </xocs:subjareas>
+    <xocs:srctitle>Edinburgh Journal of Botany</xocs:srctitle>
+    <xocs:countries>
+      <xocs:country>Sweden</xocs:country>
+      <xocs:country>Norway</xocs:country>
+    </xocs:countries>
+    <xocs:languages>
+      <xocs:language>English</xocs:language>
+    </xocs:languages>
+    <xocs:prefnameauids>
+      <xocs:prefnameauid>Hjortstam, K.#6602450235</xocs:prefnameauid>
+      <xocs:prefnameauid>Ryvarden, L.#7004057807</xocs:prefnameauid>
+      <xocs:prefnameauid>Watling, R.#7006089422</xocs:prefnameauid>
+    </xocs:prefnameauids>
+    <xocs:open-access>
+      <xocs:oa-article-status is-open-access="1">Full</xocs:oa-article-status>
+      <xocs:oa-user-license>https://creativecommons.org/licenses/by/4.0/</xocs:oa-user-license>
+      <xocs:upw-open-access>
+        <xocs:upw-oa-article-status>false</xocs:upw-oa-article-status>
+        <xocs:upw-timestamp>2018-09-23T09:31:12.000035Z</xocs:upw-timestamp>
+        <xocs:upw-oa-journal-is-oa>false</xocs:upw-oa-journal-is-oa>
+        <xocs:upw-oa-journal-is-in-doaj>false</xocs:upw-oa-journal-is-in-doaj>
+      </xocs:upw-open-access>
+    </xocs:open-access>
+    <xocs:funding-list has-funding-info="1" pui-match="secondary">
+      <xocs:funding-addon-generated-timestamp>2021-06-04T13:47:58.941Z</xocs:funding-addon-generated-timestamp>
+      <xocs:funding-addon-type>http://vtw.elsevier.com/data/voc/AddOnTypes/50.7/aggregated-refined
+      </xocs:funding-addon-type>
+    </xocs:funding-list>
+    <cto:doctype>ar</cto:doctype>
+    <cto:group-id>0000469852</cto:group-id>
+    <cto:ref-id>0001139630</cto:ref-id>
+    <cto:ref-id>84892912785</cto:ref-id>
+    <cto:ref-id>0001123264</cto:ref-id>
+    <cto:ref-id>0002755595</cto:ref-id>
+    <cto:ref-id>0024233715</cto:ref-id>
+    <cto:ref-id>84959607954</cto:ref-id>
+    <cto:ref-id>0003613027</cto:ref-id>
+    <cto:unique-author seq="1">
+      <cto:auth-initials>K.</cto:auth-initials>
+      <cto:auth-indexed-name>Hjortstam K.</cto:auth-indexed-name>
+      <cto:auth-surname>Hjortstam</cto:auth-surname>
+      <cto:auth-id>6602450235</cto:auth-id>
+    </cto:unique-author>
+    <cto:unique-author seq="2">
+      <cto:auth-initials>L.</cto:auth-initials>
+      <cto:auth-indexed-name>Ryvarden L.</cto:auth-indexed-name>
+      <cto:auth-surname>Ryvarden</cto:auth-surname>
+      <cto:auth-id>7004057807</cto:auth-id>
+    </cto:unique-author>
+    <cto:unique-author seq="3">
+      <cto:auth-initials>R.</cto:auth-initials>
+      <cto:auth-indexed-name>Watling R.</cto:auth-indexed-name>
+      <cto:auth-surname>Watling</cto:auth-surname>
+      <cto:auth-id>7006089422</cto:auth-id>
+    </cto:unique-author>
+    <cto:unique-auth-count>3</cto:unique-auth-count>
+  </xocs:meta>
+  <xocs:item>
+    <item>
+      <ait:process-info>
+        <ait:date-delivered day="22" month="12" timestamp="2021-12-22T08:05:06.000006-05:00" year="2021"/>
+        <ait:date-sort day="01" month="01" year="1993"/>
+        <ait:status stage="S300" state="update" type="core"/>
+      </ait:process-info>
+      <bibrecord>
+        <item-info>
+          <copyright type="Elsevier">Copyright 2016 Elsevier B.V., All rights reserved.</copyright>
+          <itemidlist>
+            <ce:doi>10.1017/S0960428600000743</ce:doi>
+            <itemid idtype="PUI">401580671</itemid>
+            <itemid idtype="ARCCUP">20150001580672</itemid>
+            <itemid idtype="CAR-ID">645734599</itemid>
+            <itemid idtype="SCP">0000469852</itemid>
+            <itemid idtype="SGR">0000469852</itemid>
+          </itemidlist>
+          <history>
+            <date-created day="18" month="02" timestamp="BST 18:27:27" year="2016"/>
+          </history>
+          <dbcollection>ARCCUP</dbcollection>
+          <dbcollection>SCOPUS</dbcollection>
+          <dbcollection>Scopusbase</dbcollection>
+        </item-info>
+        <head>
+          <citation-info>
+            <citation-type code="ar"/>
+            <citation-language xml:lang="eng" language="English"/>
+            <abstract-language xml:lang="eng" language="English"/>
+          </citation-info>
+          <citation-title>
+            <titletext original="y" xml:lang="eng" language="English">Preliminary checklist of non-agaricoid
+              macromycetes in the korup national park, cameroon and surrounding area
+            </titletext>
+          </citation-title>
+          <author-group>
+            <author auid="6602450235" seq="1" type="auth">
+              <ce:initials>K.</ce:initials>
+              <ce:indexed-name>Hjortstam K.</ce:indexed-name>
+              <ce:surname>Hjortstam</ce:surname>
+              <preferred-name>
+                <ce:initials>K.</ce:initials>
+                <ce:indexed-name>Hjortstam K.</ce:indexed-name>
+                <ce:surname>Hjortstam</ce:surname>
+                <ce:given-name>K.</ce:given-name>
+              </preferred-name>
+            </author>
+            <affiliation country="swe">
+              <address-part>Målaregatan 12, S-441 35</address-part>
+              <city-group>Alingsås</city-group>
+              <country>Sweden</country>
+            </affiliation>
+          </author-group>
+          <author-group>
+            <author auid="7004057807" seq="2" type="auth">
+              <ce:initials>L.</ce:initials>
+              <ce:indexed-name>Ryvarden L.</ce:indexed-name>
+              <ce:surname>Ryvarden</ce:surname>
+              <preferred-name>
+                <ce:initials>L.</ce:initials>
+                <ce:indexed-name>Ryvarden L.</ce:indexed-name>
+                <ce:surname>Ryvarden</ce:surname>
+                <ce:given-name>L.</ce:given-name>
+              </preferred-name>
+            </author>
+            <affiliation afid="60010348" country="nor" dptid="103564959">
+              <organization>Department of Botany</organization>
+              <organization>University of Oslo</organization>
+              <address-part>Postboks 1045, Blindern, 0316</address-part>
+              <city-group>Oslo 3</city-group>
+              <affiliation-id afid="60010348" dptid="103564959"/>
+              <country>Norway</country>
+            </affiliation>
+          </author-group>
+          <author-group>
+            <author auid="7006089422" seq="3" type="auth">
+              <ce:initials>R.</ce:initials>
+              <ce:indexed-name>Watling R.</ce:indexed-name>
+              <ce:surname>Watling</ce:surname>
+              <preferred-name>
+                <ce:initials>R.</ce:initials>
+                <ce:indexed-name>Watling R.</ce:indexed-name>
+                <ce:surname>Watling</ce:surname>
+                <ce:given-name>R.</ce:given-name>
+              </preferred-name>
+            </author>
+          </author-group>
+          <abstracts><abstract original="y" xml:lang="eng"><ce:para>The identifications of taxa of larger fungi (basidiomycetes) covering collections from the Korup National Park, Cameroon is given with relevant details on the distribution elsewhere in the world if known. A few other records from the south western province are also given. Several rare and previously unrecorded fungi for the area are documented. © 1993, Trustees of the Royal Botanic Garden Edinburgh. All rights reserved.</ce:para></abstract></abstracts>
+          <source srcid="17999" type="j">
+            <sourcetitle>Edinburgh Journal of Botany</sourcetitle>
+            <sourcetitle-abbrev>Edinburgh J. Bot.</sourcetitle-abbrev>
+            <issn type="electronic">14740036</issn>
+            <issn type="print">09604286</issn>
+            <volisspag>
+              <voliss issue="1" volume="50"/>
+              <pagerange first="105" last="119"/>
+            </volisspag>
+            <publicationyear first="1993"/>
+            <publicationdate>
+              <year>1993</year>
+              <date-text>March 1993</date-text>
+            </publicationdate>
+          </source>
+          <enhancement>
+            <classificationgroup>
+              <classifications type="ASJC">
+                <classification>1105</classification>
+                <classification>1110</classification>
+              </classifications>
+              <classifications type="SUBJABBR">
+                <classification>AGRI</classification>
+              </classifications>
+            </classificationgroup>
+          </enhancement>
+        </head>
+        <tail>
+          <bibliography refcount="7">
+            <reference id="1">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Diagnoses of new families, new names, etc., for the seventh edition
+                    of Willis's ‘Dictionary
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001139630</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>H.K.</ce:initials>
+                    <ce:indexed-name>Airy-Shaw H.K.</ce:indexed-name>
+                    <ce:surname>Airy-Shaw</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Kew Bull</ref-sourcetitle>
+                <ref-publicationyear first="1965"/>
+                <ref-volisspag>
+                  <voliss volume="18"/>
+                  <pagerange first="249" last="274"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>Airy-Shaw H.K. (1965). Diagnoses of new families, new names, etc., for the
+                seventh edition of Willis's ‘Dictionary’. Kew Bull. 18: 249-274.
+              </ref-fulltext>
+            </reference>
+            <reference id="2">
+              <ref-info>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84892912785</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.S.</ce:initials>
+                    <ce:indexed-name>Gartlan J.S.</ce:indexed-name>
+                    <ce:surname>Gartlan</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-publicationyear first="1974"/>
+                <ref-volisspag>
+                  <pagerange first="509" last="524"/>
+                </ref-volisspag>
+                <ref-text>The African forests and problems in conservation. Symp. 5th Cong. Int. Primat.
+                  Soc
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>Gartlan J.S. (1974). The African forests and problems in conservation. Symp.
+                5th Cong. Int. Primat. Soc: 509-524.
+              </ref-fulltext>
+            </reference>
+            <reference id="3">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>The influence of topography and soil phosphorus on the vegetation of
+                    Korup Forest Reserve, Cameroon
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001123264</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.S.</ce:initials>
+                    <ce:indexed-name>Gartlan J.S.</ce:indexed-name>
+                    <ce:surname>Gartlan</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>D.M.</ce:initials>
+                    <ce:indexed-name>Newbery D.M.</ce:indexed-name>
+                    <ce:surname>Newbery</ce:surname>
+                    <ce:given-name>D. MCC</ce:given-name>
+                  </author>
+                  <author seq="3">
+                    <ce:initials>D.W.</ce:initials>
+                    <ce:indexed-name>Thomas D.W.</ce:indexed-name>
+                    <ce:surname>Thomas</ce:surname>
+                  </author>
+                  <author seq="4">
+                    <ce:initials>P.G.</ce:initials>
+                    <ce:indexed-name>Waterman P.G.</ce:indexed-name>
+                    <ce:surname>Waterman</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Vegetatio</ref-sourcetitle>
+                <ref-publicationyear first="1986"/>
+                <ref-volisspag>
+                  <voliss volume="65"/>
+                  <pagerange first="131" last="148"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>Gartlan J.S., Newbery D.MCC, Thomas D.W. &amp; Waterman P.G. (1986). The
+                influence of topography and soil phosphorus on the vegetation of Korup Forest Reserve,
+                Cameroon. Vegetatio 65: 131-148.
+              </ref-fulltext>
+            </reference>
+            <reference id="4">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Higher Taxaof Basidiomycetes</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0002755595</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>W.</ce:initials>
+                    <ce:indexed-name>Julich W.</ce:indexed-name>
+                    <ce:surname>Julich</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Bibliotheca Mycologica</ref-sourcetitle>
+                <ref-publicationyear first="1981"/>
+                <ref-volisspag>
+                  <voliss volume="85"/>
+                  <pagerange first="131" last="148"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>Julich W. (1981). Higher Taxaof Basidiomycetes. Bibliotheca Mycologica 85:
+                131-148.
+              </ref-fulltext>
+            </reference>
+            <reference id="5">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Ectomycorrhizal rain-forest legumes and soil phosphorus in Korup
+                    National Park, Cameroon
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0024233715</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>D.M.</ce:initials>
+                    <ce:indexed-name>Newbery D.M.</ce:indexed-name>
+                    <ce:surname>Newbery</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>I.J.</ce:initials>
+                    <ce:indexed-name>Alexander I.J.</ce:indexed-name>
+                    <ce:surname>Alexander</ce:surname>
+                  </author>
+                  <author seq="3">
+                    <ce:initials>D.W.</ce:initials>
+                    <ce:indexed-name>Thomas D.W.</ce:indexed-name>
+                    <ce:surname>Thomas</ce:surname>
+                  </author>
+                  <author seq="4">
+                    <ce:initials>J.S.</ce:initials>
+                    <ce:indexed-name>Gartlan J.S.</ce:indexed-name>
+                    <ce:surname>Gartlan</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>New Phytol</ref-sourcetitle>
+                <ref-publicationyear first="1988"/>
+                <ref-volisspag>
+                  <voliss volume="109"/>
+                  <pagerange first="433" last="450"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>Newbery D.M., Alexander I.J., Thomas D.W. &amp; Gartlan J.S. (1988).
+                Ectomycorrhizal rain-forest legumes and soil phosphorus in Korup National Park,
+                Cameroon. New Phytol. 109: 433-450.
+              </ref-fulltext>
+            </reference>
+            <reference id="6">
+              <ref-info>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84959607954</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>R.M.</ce:initials>
+                    <ce:indexed-name>Polhill R.M.</ce:indexed-name>
+                    <ce:surname>Polhill</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>P.H.</ce:initials>
+                    <ce:indexed-name>Raven P.H.</ce:indexed-name>
+                    <ce:surname>Raven</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-publicationyear first="1981"/>
+                <ref-volisspag>
+                  <pagerange first="55" last="64"/>
+                </ref-volisspag>
+                <ref-text>(eds) () Taxonomic Part, in Advances in Legume Systematics Part 1. Royal
+                  Botanic Gardens, Kew
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>Polhill R.M. &amp; Raven P.H. (eds) (1981) Taxonomic Part, in Advances in
+                Legume Systematics Part 1. Royal Botanic Gardens, Kew: 55-64.
+              </ref-fulltext>
+            </reference>
+            <reference id="7">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Oslo Fungiflora</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0003613027</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>L.</ce:initials>
+                    <ce:indexed-name>Ryvarden L.</ce:indexed-name>
+                    <ce:surname>Ryvarden</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>I.</ce:initials>
+                    <ce:indexed-name>Johansen I.</ce:indexed-name>
+                    <ce:surname>Johansen</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>A Preliminary Polypore Flora of East Africa</ref-sourcetitle>
+                <ref-publicationyear first="1980"/>
+              </ref-info>
+              <ref-fulltext>Ryvarden L. &amp; Johansen I. (1980). A Preliminary Polypore Flora of East
+                Africa. Oslo Fungiflora.
+              </ref-fulltext>
+            </reference>
+          </bibliography>
+        </tail>
+      </bibrecord>
+    </item>
+  </xocs:item>
+</xocs:doc>

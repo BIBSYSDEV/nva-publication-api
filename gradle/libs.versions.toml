@@ -22,6 +22,7 @@ hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.8.2' }
 mockito = { strictly = '3.12.4' }
+wiremock = { strictly = "2.32.0" }
 configTypesafe = { strictly = '1.4.1' }
 jsonld = { strictly = '0.13.4' }
 nva-language = { strictly = '1.0' }
@@ -44,6 +45,7 @@ nva-identifiers = { group = 'com.github.bibsysdev', name = 'identifiers', versio
 nva-s3 = { group = 'com.github.bibsysdev', name = 's3', version.ref = 'nva' }
 nva-apigateway = { group = 'com.github.bibsysdev', name = 'apigateway', version.ref = 'nva' }
 nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', version.ref = 'nva' }
+nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
 logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
 
 nva-datamodel-core = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
@@ -53,6 +55,7 @@ nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
 nva-testutils = { group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nva' }
 nva-doi-partner-data = { group = 'com.github.BIBSYSDEV.nva-doi-partner-data', name = 'datacite-transform', version.ref = 'nvaDoiPartnerData' }
+nva-logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
 
 
 jackson-core = { group = 'com.fasterxml.jackson.core', name = 'jackson-core', version.ref = 'jackson' }
@@ -86,6 +89,8 @@ aws-sdk2-utils = { group = 'software.amazon.awssdk', name = 'utils', version.ref
 aws-sdk2-auth = { group = 'software.amazon.awssdk', name = 'auth', version.ref = 'awsSdk2' }
 aws-sdk2-sqs = { group = 'software.amazon.awssdk', name = 'sqs', version.ref = 'awsSdk2' }
 aws-apache-client = { group = 'software.amazon.awssdk', name = 'apache-client', version.ref = 'awsSdk2' }
+aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', version.ref = 'awsSdk2' }
+
 
 aws-ion = { group = 'software.amazon.ion', name = 'ion-java', version.ref = 'awsIon' }
 
@@ -122,6 +127,8 @@ junit-vintage-engine = { group = 'org.junit.vintage', name = 'junit-vintage-engi
 junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit' }
 
 mockito-core = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
+
+wiremock = { group = "com.github.tomakehurst", name = "wiremock-jre8", version.ref = "wiremock" }
 
 cucumber-java = { group = 'io.cucumber', name = 'cucumber-java', version.ref = 'cucumber' }
 cucumber-java8 = { group = 'io.cucumber', name = 'cucumber-java8', version.ref = 'cucumber' }

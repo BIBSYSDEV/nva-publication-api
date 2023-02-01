@@ -16,4 +16,5 @@ include 'tickets'
 include 'schema-org-metadata'
 include 'brage-import'
 include 'scopus-generate'
+include 'scopus-import'
 
