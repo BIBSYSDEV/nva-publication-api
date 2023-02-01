@@ -29,7 +29,7 @@ import no.unit.nva.model.Publication;
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "type_produkt",
-    "kildepostid", "eierkode_opprettet", "arkivpost",
+    "kildepostid", "eierkode_opprettet", "arkivpost", "varbeid_url",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst", "h_dbh_forskres_publikasjon"})
 
