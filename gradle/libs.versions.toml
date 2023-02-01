@@ -99,6 +99,12 @@ jaxb-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'jaxb' }
 jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.ref = 'jaxb' }
 jakarta-xml-bind-api = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version.ref = 'jakarta' }
 
+xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '3.0.2' }
+xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '3.0.2' }
+xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359' }
+xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
+xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
+
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
 dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
@@ -135,7 +141,6 @@ karate-parent = { group = 'com.intuit.karate', name = 'karate-parent', version.r
 jena-core = { group=  'org.apache.jena', name = 'jena-core', version.ref = 'jena' }
 jena-arq = { group = 'org.apache.jena', name = 'jena-arq', version.ref = 'jena' }
 
-
 [bundles]
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
     'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core', 'hamcrest-jackson',
@@ -145,3 +150,5 @@ logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']
 jaxb = ['jaxb-api', 'jaxb-runtime', 'jakarta-xml-bind-api']
 jena = ['jena-core', 'jena-arq']
+xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
+

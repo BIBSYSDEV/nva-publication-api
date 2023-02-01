@@ -1,0 +1,24 @@
+<bindings xmlns="https://jakarta.ee/xml/ns/jaxb"
+          xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance"
+          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          version="3.0">
+    <bindings schemaLocation="https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd" version="1.0">
+        <!-- Customise the package name -->
+        <schemaBindings>
+            <package name="no.scopus.generated"/>
+        </schemaBindings>
+
+        <!-- rename the value element -->
+        <bindings node="//xs:complexType[@name='affiliationType']">
+            <bindings node=".//xs:element[@name='country']">
+                <property name="countryAttribute"/>
+            </bindings>
+        </bindings>
+    </bindings>
+    <bindings schemaLocation="https://schema.elsevier.com/dtds/document/abstracts/mathml3/mathml3-presentation.xsd" version="1.0">
+        <bindings node="/xs:schema/xs:element/xs:complexType/xs:sequence/xs:group[@ref='m:MultiScriptExpression']">
+            <property name="EMultiScriptExpression" />
+        </bindings>
+    </bindings>
+</bindings>
