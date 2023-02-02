@@ -30,6 +30,7 @@ dependencies {
     testImplementation(libs.javafaker) {
         because('For generating test data in tests. Another alternative is jfairy')
     }
+    testImplementation libs.logutils
 
     compileOnly libs.zalando
     compileOnly libs.aws.lambda.java.core

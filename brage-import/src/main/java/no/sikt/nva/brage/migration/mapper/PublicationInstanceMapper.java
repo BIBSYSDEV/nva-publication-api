@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.mapper;
 import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescription;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isChapter;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConferencePoster;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
@@ -38,6 +39,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
+import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -48,6 +50,7 @@ import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.NullPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import org.joda.time.DateTime;
@@ -114,11 +117,20 @@ public final class PublicationInstanceMapper {
         if (isResearchReport(record)) {
             return buildPublicationInstanceWhenResearchReport(record);
         }
+        if (isConferencePoster(record)) {
+            return buildPublicationInstanceWhenConferencePoster();
+        }
         if (isReportWorkingPaper(record)) {
             return buildPublicationInstanceWhenReportWorkingPaper(record);
         } else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferencePoster() {
+        var poster = new ConferencePoster();
+        poster.setPages(new NullPages());
+        return poster;
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPlanOrBluePrint() {

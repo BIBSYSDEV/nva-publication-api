@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration;
+package no.sikt.nva.brage.migration.merger;
 
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import java.nio.file.Path;

@@ -417,7 +417,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
         UserInstance userInstance = UserInstance.create(randomString(), randomUri());
         Set<Publication> userResources = createSamplePublicationsOfSingleOwner(userInstance);
-        
+
         List<Publication> actualResources = resourceService.getPublicationsByOwner(userInstance);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
         
@@ -427,10 +427,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourcesByCristinIdentifierReturnsAllResourcesWithCristinIdentifier() {
         String cristinIdentifier = randomString();
-        Set<Publication> publicationsWithCristinIdentifier = createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
+        Set<Publication> publicationsWithCristinIdentifier =
+            createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
         List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
-        assertThat(actualResourcesSet, containsInAnyOrder(publicationsWithCristinIdentifier.toArray(Publication[]::new)));
+        assertThat(actualResourcesSet,
+                   containsInAnyOrder(
+                       publicationsWithCristinIdentifier.toArray(Publication[]::new)));
     }
 
     private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
@@ -947,7 +950,30 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
         assertThat(persistedPublished.getAssociatedArtifacts(), everyItem(is(instanceOf(AssociatedLink.class))));
     }
-    
+
+    @Test
+    void shouldBePossibleToSetPublicationStatusToDeletedForPublishedPublication() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var publicationIdentifier = publishedResource.getIdentifier();
+        var expectedUpdateStatus = UpdateResourceService.deletionStatusChangeInProgress();
+        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        assertThat(actualUpdateStatus, is(equalTo(expectedUpdateStatus)));
+        var actualPublicationInDatabaseAfterStatusUpdate =
+            resourceService.getPublicationByIdentifier(publicationIdentifier);
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(PublicationStatus.DELETED)));
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getPublishedDate(), is(equalTo(null)));
+    }
+
+    @Test
+    void updatePublishedStatusToDeletedShouldReturnResourceAlreadyDeletedMessage() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var publicationIdentifier = publishedResource.getIdentifier();
+        var expectedUpdateStatus = UpdateResourceService.deletionStatusIsCompleted();
+        resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }

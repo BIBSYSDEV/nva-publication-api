@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Identity;
@@ -46,6 +47,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.Instant;
 
 public class NvaBrageMigrationDataGenerator {
@@ -90,6 +92,20 @@ public class NvaBrageMigrationDataGenerator {
         } else {
             return Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, builder.cristinIdentifier));
         }
+    }
+
+    @NotNull
+    private static List<Organization> createAffiliationList() {
+        return List.of(new Organization.Builder().withId(
+            URI.create("https://test.nva.aws.unit.no/cristin/organization/12345")).build());
+    }
+
+    @NotNull
+    private static no.unit.nva.model.Identity createIdentity(String name) {
+        return new no.unit.nva.model.Identity.Builder()
+                   .withName(name)
+                   .withId(URI.create("https://test.nva.aws.unit.no/cristin/person/123"))
+                   .build();
     }
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
@@ -146,7 +162,8 @@ public class NvaBrageMigrationDataGenerator {
         var contributor = createContributor();
         String name = contributor.getIdentity().getName();
         return new no.unit.nva.model.Contributor.Builder()
-                   .withIdentity(new no.unit.nva.model.Identity.Builder().withName(name).build())
+                   .withIdentity(createIdentity(name))
+                   .withAffiliations(createAffiliationList())
                    .withRole(Role.lookup(contributor.getRole()))
                    .build();
     }
@@ -173,7 +190,9 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private Contributor createContributor() {
-        return new Contributor(new Identity("Ola"), "Creator", "author");
+        return new Contributor(new Identity("Ola", "123"), "Creator", "author", List.of(new Affiliation("12345",
+                                                                                                        "someAffiliation",
+                                                                                                        "handle")));
     }
 
     public static class Builder {
@@ -642,7 +661,7 @@ public class NvaBrageMigrationDataGenerator {
             }
         }
 
-        private URI randomHandle() {
+        public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
         }
 

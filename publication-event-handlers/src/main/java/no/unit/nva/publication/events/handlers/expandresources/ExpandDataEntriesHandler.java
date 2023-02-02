@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static java.util.Objects.isNull;
+import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
@@ -27,7 +29,6 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
@@ -40,7 +41,9 @@ public class ExpandDataEntriesHandler
     public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
     public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
+    public static final String EXPANDED_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Delete";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
+    public static final String PUBLICATION_SERVICE_DATA_ENTRY_DELETION = "Publicationservice-DataEntryDeletion";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
@@ -66,13 +69,14 @@ public class ExpandDataEntriesHandler
                                                  Context context) {
 
         var blobObject = readBlobFromS3(input);
-        return Optional.ofNullable(blobObject.getNewData())
-            .filter(this::shouldBeEnriched)
-            .flatMap(this::enrich)
-            .map(this::insertEventBodyToS3)
-            .stream()
-            .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
-            .collect(SingletonCollector.collectOrElse(emptyEvent()));
+
+        if (shouldBeDeleted(blobObject.getNewData())) {
+            return createDeleteEventReference(blobObject.getNewData());
+        } else if (shouldBeEnriched(blobObject.getNewData())) {
+            return createEnrichedEventReference(blobObject.getNewData()).orElseGet(this::emptyEvent);
+        } else {
+            return emptyEvent();
+        }
     }
 
     @JacocoGenerated
@@ -87,6 +91,32 @@ public class ExpandDataEntriesHandler
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
 
+    private EventReference createDeleteEventReference(Entity newData) {
+        var resource = (Resource) newData;
+        var publication = resource.toPublication();
+        var uri = insertDeleteEventBodyToS3(publication.toString());
+        return new EventReference(EXPANDED_ENTRY_DELETE_EVENT_TOPIC, uri);
+    }
+
+    private Optional<EventReference> createEnrichedEventReference(Entity newData) {
+        return enrich(newData)
+                   .map(this::insertEnrichEventBodyToS3)
+                   .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri));
+    }
+
+    private boolean shouldBeDeleted(Entity entity) {
+        return getPublicationStatus(entity).map(DELETED::equals).orElse(false);
+    }
+
+    private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
+        if (entity instanceof Resource) {
+            Resource resource = (Resource) entity;
+            return Optional.of(resource.getStatus());
+        } else {
+            return Optional.empty();
+        }
+    }
+
     private DataEntryUpdateEvent readBlobFromS3(EventReference input) {
         var blobString = s3Driver.readEvent(input.getUri());
         return DataEntryUpdateEvent.fromJson(blobString);
@@ -97,11 +127,12 @@ public class ExpandDataEntriesHandler
     }
 
     private boolean shouldBeEnriched(Entity entry) {
-        if (entry instanceof Resource) {
-            Resource resource = (Resource) entry;
-            PublicationStatus status = resource.getStatus();
-            return PUBLISHED.equals(status)
-                   || PUBLISHED_METADATA.equals(status);
+        if (isNull(entry)) {
+            return false;
+        }
+        var publicationStatus = getPublicationStatus(entry);
+        if (publicationStatus.isPresent()) {
+            return PUBLISHED.equals(publicationStatus.get()) || PUBLISHED_METADATA.equals(publicationStatus.get());
         } else if (entry instanceof DoiRequest) {
             return isDoiRequestReadyForEvaluation((DoiRequest) entry);
         } else {
@@ -113,13 +144,18 @@ public class ExpandDataEntriesHandler
         return PUBLISHED.equals(doiRequest.getResourceStatus());
     }
 
-    private URI insertEventBodyToS3(String string) {
+    private URI insertDeleteEventBodyToS3(String body) {
+        return attempt(
+            () -> s3Driver.insertEvent(UnixPath.of(PUBLICATION_SERVICE_DATA_ENTRY_DELETION), body)).orElseThrow();
+    }
+
+    private URI insertEnrichEventBodyToS3(String string) {
         return attempt(() -> s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string)).orElseThrow();
     }
 
     private Optional<String> enrich(Entity newData) {
         return attempt(() -> createExpandedResourceUpdate(newData))
-            .toOptional(fail -> logError(fail, newData));
+                   .toOptional(fail -> logError(fail, newData));
     }
 
     private String createExpandedResourceUpdate(Entity input) throws JsonProcessingException, NotFoundException {

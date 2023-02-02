@@ -1,0 +1,21 @@
+#Constructs an organization with a topLevelAffiliation field determined by recursively looking in the orgs partOf
+#field until an org isn't part of another org.
+
+PREFIX  organization: <https://example.org/vocab#>
+
+CONSTRUCT {
+  ?a a organization:Organization ;
+    organization:name ?b ;
+    organization:topLevelAffiliation ?c .
+  ?c a organization:Organization ;
+    organization:name ?d
+  } WHERE {
+  ?a a organization:Organization ;
+    organization:name ?b .
+  ?a organization:partOf+ ?c .
+  ?c organization:name ?d .
+  OPTIONAL { ?c organization:partOf ?e } .
+  FILTER(!bound(?e))
+}
+
+#UNION > Optional

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -37,6 +38,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
+import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +77,18 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         testUserName = samplePublication.getResourceOwner().getOwner();
         testOrgId = samplePublication.getPublisher().getId();
         topLevelCristinOrgId = randomUri();
+    }
+
+    @Test
+    void shouldAcceptUnpublishableFileType() throws IOException {
+        var serialized = IoUtils.stringFromResources(Path.of("publication_with_unpublishable_file.json"));
+        var deserialized = attempt(() -> dtoObjectMapper.readValue(serialized, Publication.class)).orElseThrow();
+        var publishingRequest = CreatePublicationRequest.fromPublication(deserialized);
+        var inputStream = createPublicationRequest(publishingRequest);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
     
     @Test

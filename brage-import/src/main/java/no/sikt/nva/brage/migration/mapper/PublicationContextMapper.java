@@ -76,8 +76,8 @@ public final class PublicationContextMapper {
         if (isChapter(record) || isScientificChapter(record)) {
             return new Chapter();
         }
-        if (isLecture(record)) {
-            return buildPublicationContextWhenLecture();
+        if (isLecture(record) || isConferencePoster(record)) {
+            return buildPublicationContextWhenEvent();
         }
         if (isDesignProduct(record) || isMusic(record) || isPlanOrBlueprint(record)) {
             return new Artistic();
@@ -153,11 +153,15 @@ public final class PublicationContextMapper {
         return NvaType.PLAN_OR_BLUEPRINT.getValue().equals(record.getType().getNva());
     }
 
+    public static boolean isConferencePoster(Record record) {
+        return NvaType.CONFERENCE_POSTER.getValue().equals(record.getType().getNva());
+    }
+
     private static boolean isReport(Record record) {
         return NvaType.REPORT.getValue().equals(record.getType().getNva());
     }
 
-    private static PublicationContext buildPublicationContextWhenLecture() {
+    private static PublicationContext buildPublicationContextWhenEvent() {
         return new Event.Builder()
                    .build();
     }

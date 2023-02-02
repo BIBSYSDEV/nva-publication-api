@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.lambda;
 
-import no.sikt.nva.brage.migration.AssociatedArtifactException;
+import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
+import no.sikt.nva.brage.migration.merger.MergePublicationException;
 
 public final class ExceptionMapper {
 
@@ -15,6 +16,8 @@ public final class ExceptionMapper {
             return (MissingFieldsException) exception;
         } else if (exception instanceof PublicationContextException) {
             return (PublicationContextException) exception;
+        } else if (exception instanceof MergePublicationException) {
+            return (MergePublicationException) exception;
         } else {
             return new RuntimeException(exception);
         }

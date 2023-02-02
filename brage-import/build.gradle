@@ -10,6 +10,7 @@ dependencies {
     implementation libs.aws.sdk.dynamodb
     implementation libs.hamcrest.base
     implementation libs.nva.testutils
+    implementation libs.nva.apigateway
 
     implementation libs.bundles.logging
 

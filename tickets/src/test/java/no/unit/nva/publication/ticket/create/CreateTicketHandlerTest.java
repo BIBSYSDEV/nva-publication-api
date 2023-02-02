@@ -15,6 +15,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,6 +44,8 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,6 +53,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
+
 
 class CreateTicketHandlerTest extends TicketTestLocal {
     
@@ -228,16 +232,29 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(firstRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
+
         var createdTicket = fetchTicket(response).copy();
-        
+
         var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         output = new ByteArrayOutputStream();
         handler.handleRequest(secondRequest, output, CONTEXT);
         var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
-        
+
         assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
+
         var existingTicket = fetchTicket(secondResponse);
         assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
+    }
+
+    @Test
+    void shouldLogErrorWhenErrorOccurs() throws IOException {
+        final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
+        var requestBody = constructDto(DoiRequest.class);
+        var ownerForOnePublication = UserInstance.fromPublication(randomPublication());
+        var anotherPublication = randomPublication();
+        var input = createHttpTicketCreationRequest(requestBody, anotherPublication, ownerForOnePublication);
+        handler.handleRequest(input, output, CONTEXT);
+        assertThat(appender.getMessages(), containsString("Request failed:"));
     }
     
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {

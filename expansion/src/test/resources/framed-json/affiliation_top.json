@@ -1,0 +1,21 @@
+{
+  "type": "Organization",
+  "@context": {
+    "@vocab": "https://example.org/vocab#",
+    "id": "@id",
+    "type": "@type",
+    "name": {
+      "@container": "@language"
+    },
+    "hasPart": {
+      "@container": "@set"
+    }
+  },
+  "id": "https://api.test.nva.aws.unit.no/cristin/organization/224.0.0.0",
+  "name": {
+    "en": "Østfold University College",
+    "nb": "Høgskolen i Østfold"
+  },
+  "hasPart": [
+  ]
+}

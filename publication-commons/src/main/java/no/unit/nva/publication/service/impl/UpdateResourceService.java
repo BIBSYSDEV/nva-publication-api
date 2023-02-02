@@ -25,6 +25,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
@@ -48,7 +49,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     //TODO: fix affiliation update when updating owner
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
-    
+    public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
+    public static final String DELETION_IN_PROGRESS = "Deletion in progress. This may take a while";
+
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
@@ -105,7 +108,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
         if (publicationIsPublished(publication)) {
             return publishCompletedStatus();
-        } else if (publicationIsDraft(publication)) {
+        } else if (publicationIsDraftOrPublishedMetadataOnly(publication)) {
             publishPublication(publication);
             return publishingInProgressStatus();
         } else {
@@ -119,7 +122,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
         if (publicationIsPublished(publication) || publicationMetadataPublished(publication)) {
             return publishMetadataCompletedStatus();
-        } else if (publicationIsDraft(publication)) {
+        } else if (publicationIsDraftOrPublishedMetadataOnly(publication)) {
             publishPublicationMetadata(publication);
             return publishingInProgressStatus();
         } else {
@@ -127,12 +130,37 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
     }
 
+    DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
+        throws NotFoundException {
+        var publication =
+            readResourceService.getResourceByIdentifier(resourceIdentifier).toPublication();
+        if (PublicationStatus.DELETED.equals(publication.getStatus())) {
+            return deletionStatusIsCompleted();
+        } else {
+            publication.setStatus(PublicationStatus.DELETED);
+            publication.setPublishedDate(null);
+            updatePublicationIncludingStatus(publication);
+            return deletionStatusChangeInProgress();
+        }
+    }
+
+    protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
+        return new DeletePublicationStatusResponse(RESOURCE_ALREADY_DELETED,
+                                                   HttpURLConnection.HTTP_NO_CONTENT);
+    }
+
+    protected static DeletePublicationStatusResponse deletionStatusChangeInProgress() {
+        return new DeletePublicationStatusResponse(DELETION_IN_PROGRESS,
+                                                   HttpURLConnection.HTTP_ACCEPTED);
+    }
+
     private boolean publicationMetadataPublished(Publication publication) {
         return PublicationStatus.PUBLISHED_METADATA.equals(publication.getStatus());
     }
 
     private static boolean publicationIsPublished(Publication publication) {
-        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+        var status = publication.getStatus();
+        return PublicationStatus.PUBLISHED.equals(status);
     }
     
     private void publishPublication(Publication publication) throws InvalidPublicationException {
@@ -151,8 +179,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
         updatePublicationIncludingStatus(publication);
     }
     
-    private boolean publicationIsDraft(Publication publication) {
-        return PublicationStatus.DRAFT.equals(publication.getStatus());
+    private boolean publicationIsDraftOrPublishedMetadataOnly(Publication publication) {
+        var status = publication.getStatus();
+        return PublicationStatus.DRAFT.equals(status)
+               || PublicationStatus.PUBLISHED_METADATA.equals(status);
     }
     
     private Publication fetchExistingPublication(Publication publication) {

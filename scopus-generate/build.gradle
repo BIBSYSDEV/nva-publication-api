@@ -1,0 +1,40 @@
+project.ext {
+    jaxbTargetDir = file("$buildDir/generated/sources/xjc")
+}
+
+sourceSets.main.java.srcDirs += jaxbTargetDir
+
+configurations {
+    jaxb
+}
+
+dependencies {
+    jaxb libs.bundles.xsd2java
+    implementation libs.bundles.xsd2java
+}
+
+tasks.register('xsd2java') {
+    doLast {
+        jaxbTargetDir.mkdirs()
+        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.jaxb.asPath)
+        ant.jaxbTargetDir = jaxbTargetDir
+        ant.xjc(
+                destdir: '${jaxbTargetDir}',
+                package: 'no.scopus.generated',
+                schema: 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd',
+                binding: 'src/main/resources/xocs-ani515.xjb'
+        )
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn(xsd2java)
+}
+
+tasks.withType(Checkstyle).configureEach {
+    exclude { '**/generated/*' }
+}
+
+tasks.withType(Pmd).configureEach {
+    exclude { '**/generated/*' }
+}
