@@ -7,6 +7,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.core.SingletonCollector;
 
 public class FakeResourceService extends ResourceService {
 
@@ -24,15 +25,21 @@ public class FakeResourceService extends ResourceService {
 
     @Override
     public Publication createPublicationFromImportedEntry(Publication publication) {
-        publication.setIdentifier(SORTABLE_IDENTIFIER);
-        publication.setStatus(PublicationStatus.PUBLISHED);
-        publicationList.add(publication);
-        return publication;
+        var importedPublication = publishPublication(publication);
+        publicationList.add(importedPublication);
+        return importedPublication;
     }
 
     @Override
     public List<Publication> getPublicationsByCristinIdentifier(String cristinId) {
         return publicationList;
+    }
+
+    @Override
+    public Publication getPublicationByIdentifier(SortableIdentifier identifier) {
+        return publicationList.stream()
+                   .filter(publication -> publication.getIdentifier().equals(identifier))
+                   .collect(SingletonCollector.collect());
     }
 
     @Override
@@ -52,5 +59,9 @@ public class FakeResourceService extends ResourceService {
 
     public List<Publication> getPublicationsThatHasBeenCreatedByImportedEntry() {
         return publicationList;
+    }
+
+    private Publication publishPublication(Publication publication) {
+        return publication.copy().withIdentifier(SORTABLE_IDENTIFIER).withStatus(PublicationStatus.PUBLISHED).build();
     }
 }
