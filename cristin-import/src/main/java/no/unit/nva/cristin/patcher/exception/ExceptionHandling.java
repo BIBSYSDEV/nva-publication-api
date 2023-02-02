@@ -2,7 +2,7 @@ package no.unit.nva.cristin.patcher.exception;
 
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-public class ExceptionHandling {
+public final class ExceptionHandling {
 
     private ExceptionHandling() {
 

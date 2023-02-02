@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
-import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.MULTIPLE_PARENT_PUBLICATIONS_INFORMATION;
-import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.NO_PARENT_PUBLICATION_FOUND_EXCEPTION;
+import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.INVALID_PARENT_MESSAGE;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.SUBTOPIC;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.TOPIC;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
@@ -95,7 +94,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var input = toInputStream(eventReference);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         var exception = assertThrows(ParentPublicationException.class, action);
-        assertThat(exception.getMessage(), containsString(MULTIPLE_PARENT_PUBLICATIONS_INFORMATION));
+        assertThat(exception.getMessage(), containsString(INVALID_PARENT_MESSAGE));
     }
 
     @Test
@@ -110,7 +109,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var input = toInputStream(eventReference);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         var exception = assertThrows(ParentPublicationException.class, action);
-        assertThat(exception.getMessage(), containsString(NO_PARENT_PUBLICATION_FOUND_EXCEPTION));
+        assertThat(exception.getMessage(), containsString(INVALID_PARENT_MESSAGE));
     }
 
     @Test

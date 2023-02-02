@@ -19,6 +19,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -30,8 +31,7 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
 
     public static final String WRONG_SUBTOPIC_ERROR_TEMPLATE = "Unexpected subtopic: %s. Expected subtopic is: %s.";
 
-    public static final String MULTIPLE_PARENT_PUBLICATIONS_INFORMATION = "Multiple parent publications found";
-    public static final String NO_PARENT_PUBLICATION_FOUND_EXCEPTION = "No parent publication found";
+    public static final String INVALID_PARENT_MESSAGE = "Could not retrieve a single valid parent publciation";
 
     private static final Clock CLOCK = Clock.systemDefaultZone();
 
@@ -61,8 +61,7 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
                                        Context context) {
         validateEvent(event);
         var eventBody = readEventBody(input);
-        return attempt(() -> retrieveChildAndParentPublications(eventBody))
-                   .map(ParentAndChild::getChildPublication)
+        return attempt(() -> retrieveChildAndParentPublications(eventBody)).map(ParentAndChild::getChildPublication)
                    .orElseThrow(fail -> castToCorrectRuntimeException(fail.getException()));
     }
 
@@ -82,14 +81,12 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
 
     private Publication getParentPublication(
         NvaPublicationPartOfCristinPublication nvaPublicationPartOfCristinPublication) {
-        var parents = resourceService.getPublicationsByCristinIdentifier(
+        var parentPublications = resourceService.getPublicationsByCristinIdentifier(
             nvaPublicationPartOfCristinPublication.getPartOf().getCristinId());
-        if (parents.size() > 1) {
-            throw new ParentPublicationException(MULTIPLE_PARENT_PUBLICATIONS_INFORMATION);
-        } else if (parents.size() == 0) {
-            throw new ParentPublicationException(NO_PARENT_PUBLICATION_FOUND_EXCEPTION);
-        }
-        return parents.get(0);
+        return attempt(() -> parentPublications
+                                 .stream()
+                                 .collect(SingletonCollector.collect())).orElseThrow(
+            fail -> new ParentPublicationException(INVALID_PARENT_MESSAGE, fail.getException()));
     }
 
     private NvaPublicationPartOfCristinPublication readEventBody(EventReference input) {
