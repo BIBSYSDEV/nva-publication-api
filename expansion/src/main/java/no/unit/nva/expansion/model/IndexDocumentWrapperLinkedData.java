@@ -1,12 +1,12 @@
 package no.unit.nva.expansion.model;
 
+import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
+import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
+import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
+import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.databind.JsonNode;
-import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.utils.FramedJsonGenerator;
-import no.unit.nva.expansion.utils.SearchIndexFrame;
-import no.unit.nva.expansion.utils.UriRetriever;
-import nva.commons.core.ioutils.IoUtils;
-
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
@@ -14,13 +14,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
-import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
-import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
-import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.utils.FramedJsonGenerator;
+import no.unit.nva.expansion.utils.SearchIndexFrame;
+import no.unit.nva.expansion.utils.UriRetriever;
+import nva.commons.core.ioutils.IoUtils;
 
 public class IndexDocumentWrapperLinkedData {
 
@@ -30,7 +28,6 @@ public class IndexDocumentWrapperLinkedData {
 
     private static final String ORGANIZATION_TYPE = "Organization";
     private static final String TYPE_FIELD = "type";
-
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
@@ -62,9 +59,9 @@ public class IndexDocumentWrapperLinkedData {
         }
 
         return uriContent.stream()
-                .flatMap(Optional::stream)
-                .map(IoUtils::stringToStream)
-                .collect(Collectors.toList());
+            .flatMap(Optional::stream)
+            .map(IoUtils::stringToStream)
+            .collect(Collectors.toList());
     }
 
     private void fetchChildUrisForOrganizations(List<Optional<String>> uriContent, String content) {
@@ -72,9 +69,11 @@ public class IndexDocumentWrapperLinkedData {
 
         if (json.has(TYPE_FIELD) && ORGANIZATION_TYPE.equals(json.at("/" + TYPE_FIELD).asText())) {
             var childOrgs = json.at(PART_OF_FIELD);
-            childOrgs.forEach(org ->
-                    uriContent.add(fetch(URI.create(org.at(ID_FIELD).asText())))
-            );
+            childOrgs.forEach(org -> {
+                var child = fetch(URI.create(org.at(ID_FIELD).asText()));
+                uriContent.add(child);
+                child.ifPresent(c -> fetchChildUrisForOrganizations(uriContent, c));
+            });
         }
     }
 

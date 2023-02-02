@@ -1,7 +1,7 @@
 {
   "type": "Organization",
   "@context": {
-    "@vocab": "https://example.org/vocab#",
+    "@vocab": "https://bibsysdev.github.io/src/nva/ontology.ttl#",
     "id": "@id",
     "type": "@type",
     "name": {

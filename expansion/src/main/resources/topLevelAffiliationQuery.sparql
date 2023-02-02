@@ -1,21 +1,20 @@
 #Constructs an organization with a topLevelAffiliation field determined by recursively looking in the orgs partOf
 #field until an org isn't part of another org.
 
-PREFIX  organization: <https://example.org/vocab#>
+PREFIX  organization: <https://bibsysdev.github.io/src/nva/ontology.ttl#>
 
 CONSTRUCT {
-  ?a a organization:Organization ;
-    organization:name ?b ;
-    organization:partOf ?org_partOf ;
-    organization:topLevelAffiliation ?c .
-  ?c a organization:Organization ;
-    organization:name ?d
+  ?org a organization:Organization ;
+    organization:name ?org_name ;
+    organization:topLevelAffiliation ?top_org .
+  ?top_org a organization:Organization ;
+    organization:name ?top_org_name
   } WHERE {
-  ?a a organization:Organization ;
-    organization:name ?b ;
-    organization:partOf* ?org_partOf .
-  FILTER NOT EXISTS { ?c organization:partOf ?e } .
-  ?c organization:name ?d .
+  ?org a organization:Organization ;
+    organization:name ?org_name ;
+    organization:partOf* ?top_org .
+  ?top_org organization:name ?top_org_name .
+    FILTER NOT EXISTS { ?top_org organization:partOf ?e } .
 }
 
 #UNION > Optional

@@ -93,10 +93,9 @@ class ExpandedResourceTest {
     }
 
     //TODO: should check that you get affiliation names
-    //TODO: fails for depth > 3
     @ParameterizedTest(name = "should return IndexDocument with correct topLevelAffiliation with referencing depth: "
                               + "{0}")
-    @ValueSource(ints = {0, 1, 2})
+    @ValueSource(ints = {1, 2, 3, 6})
     void shouldReturnIndexDocumentWithCorrectTopLevelAffiliation(int depth) throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
@@ -116,7 +115,7 @@ class ExpandedResourceTest {
         final ExpandedResource indexDocument = fromPublication(mockUriRetriever, publication);
         final JsonNode framedResultNode = indexDocument.asJsonNode();
 
-        var topLevelAffiliations = framedResultNode.findValues("https://example.org/vocab#topLevelAffiliation");
+        var topLevelAffiliations = framedResultNode.findValues("topLevelAffiliation");
         var distinctTopLevelIds = topLevelAffiliations.stream()
             .map(node -> node.get("id"))
             .distinct()
