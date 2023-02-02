@@ -1,4 +1,4 @@
-package no.unit.nva.cristin.mapper.nva.exceptions;
+package no.unit.nva.cristin.patcher.exception;
 
 public class ParentPublicationException extends RuntimeException {
 
