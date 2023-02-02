@@ -180,7 +180,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     @Disabled
-        //TODO: implement this test as a test or a set of tests
+    //TODO: implement this test as a test or a set of tests
     void shouldAlwaysEmitEventsForAllTypesOfDataEntries() {
 
     }

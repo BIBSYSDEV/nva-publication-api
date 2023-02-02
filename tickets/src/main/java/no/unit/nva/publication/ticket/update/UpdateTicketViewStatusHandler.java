@@ -71,7 +71,18 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
         markTicketForElevatedUser(input, oldTicket);
         return oldTicket;
     }
-    
+
+    private void markTicketForElevatedUser(UpdateViewStatusRequest input, TicketEntry ticket) {
+
+        if (ViewStatus.READ.equals(input.getViewStatus())) {
+            ticket.markReadForCurators().persistUpdate(ticketService);
+        } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
+            ticket.markUnreadForCurators().persistUpdate(ticketService);
+        } else {
+            throw new UnsupportedOperationException("Unknown ViewedStatus");
+        }
+    }
+
     private void assertThatPublicationIdentifierInPathReferencesCorrectPublication(TicketEntry ticket,
                                                                                    RequestInfo requestInfo)
         throws ForbiddenException {
@@ -111,16 +122,5 @@ public class UpdateTicketViewStatusHandler extends TicketHandler<UpdateViewStatu
         throws ForbiddenException {
         return attempt(() -> ticketService.fetchTicket(userInstance, ticketIdentifier)).orElseThrow(
             fail -> new ForbiddenException());
-    }
-    
-    private void markTicketForElevatedUser(UpdateViewStatusRequest input, TicketEntry ticket) {
-        
-        if (ViewStatus.READ.equals(input.getViewStatus())) {
-            ticket.markReadForCurators().persistUpdate(ticketService);
-        } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
-            ticket.markUnreadForCurators().persistUpdate(ticketService);
-        } else {
-            throw new UnsupportedOperationException("Unknown ViewedStatus");
-        }
     }
 }
