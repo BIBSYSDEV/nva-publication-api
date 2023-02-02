@@ -17,7 +17,7 @@ import nva.commons.core.JacocoGenerated;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"status_invitert", "status_referee_ordning", "status_plenar", "hendelse", "HENDELSE"})
+@JsonIgnoreProperties({"status_invitert", "status_referee_ordning", "status_plenar", "hendelse"})
 public class CristinLectureOrPosterMetaData {
 
     public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
