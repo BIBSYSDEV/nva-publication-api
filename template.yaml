@@ -46,6 +46,14 @@ Parameters:
     Type: 'String'
     Default: "brage-migration-reports"
     Description: Name of bucket for output brage migration errors
+  ScopusZipBucketName:
+    Type: String
+    Default: "scopus-zip-files"
+    Description: Name of bucket for incoming zip-files to be unzipped (containing scopus xml-files)
+  ScopusXmlBucketName:
+    Type: String
+    Default: "scopus-xml-files"
+    Description: Name of bucket for unzipped scopus xml files
   MaxConcurrency:
     Type: Number
     Default: 100
