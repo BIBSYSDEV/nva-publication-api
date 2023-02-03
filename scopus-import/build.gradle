@@ -7,7 +7,8 @@ dependencies {
     implementation project(":scopus-generate")
     implementation libs.xsd2java.jakarta
     implementation libs.aws.sdk2.s3
-    implementation libs.aws.sdk2.eventbridge
+    implementation libs.aws.lambda.events
+    implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.secrets
 
     implementation libs.nva.s3
@@ -25,11 +26,16 @@ dependencies {
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
     implementation libs.bundles.jackson
+    implementation project(path: ':publication-commons')
+    implementation project(":s3-import-commons")
+
 
     testImplementation libs.nva.testutils
     testImplementation libs.nva.json
 
     testImplementation libs.wiremock
+    testImplementation project(path: ':brage-import')
+    testImplementation project(path: ':brage-import')
 
 }
 

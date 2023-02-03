@@ -78,6 +78,26 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /NVA/ApplicationDomain
     Description: Domain-name for the NVA frontend
+  ScopusZipBucketName:
+    Type: String
+    Default: "scopus-zip-files-v2"
+    Description: Name of bucket for incoming zip-files to be unzipped (containing scopus xml-files)
+  ScopusXmlBucketName:
+    Type: String
+    Default: "scopus-xml-files-v2"
+    Description: Name of bucket for unzipped scopus xml files
+  PiaRestHost:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/PiaRestHost'
+  PiaRestCredentialsTokenName:
+    Type: String
+    Default: 'PiaRestCredentials'
+  PiaRestUsernameKey:
+    Type: String
+    Default: "PiaRestUser"
+  PiaRestUsernamePasswordKey:
+    Type: String
+    Default: "PiaRestPass"
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -414,6 +434,33 @@ Resources:
           Parameters:
             Location: ./docs/openapi.yaml
 
+  ScopusHandlersRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+  ScopusBucketsAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ScopusBucketsAccessPolicy-${AWS::StackName}
+      Roles:
+        - !Ref ScopusHandlersRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:*'
+            Resource:
+              - !Sub '${ScopusXmlBucket.Arn}/*'
+              - !Sub '${ScopusZipBucket.Arn}/*'
+
   #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
@@ -519,6 +566,7 @@ Resources:
             Path: /{publicationIdentifier}
             Method: delete
             RestApiId: !Ref NvaPublicationApi
+
   NvaPublicationsByOwnerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -634,6 +682,7 @@ Resources:
             Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
+
   UpdateTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -703,6 +752,35 @@ Resources:
                     Value: '.json'
 
 
+  NvaScopusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: scopus-import
+      Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt ScopusHandlersRole.Arn
+      ReservedConcurrentExecutions: 5 # Throttled to slow down create publication requests from scopus files
+      Environment:
+        Variables:
+          API_HOST: !Ref ApiDomain
+          TABLE_NAME: !Ref NvaResourcesTable
+          PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
+          PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
+          PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
+          PIA_REST_API: !Ref PiaRestHost
+      Events:
+        Scopus:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusXmlBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.xml'
+
+
   DeletionProcessInitializationHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -730,6 +808,7 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+
 
   DeletePublicationEventConsumer:
     DependsOn: EventsLambdaPermissions
@@ -765,6 +844,7 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
+
 
   LogicallyDeleteEntriesHandler:
     DependsOn: EventsLambdaPermissions
@@ -824,6 +904,8 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
+
+
   ResourceExpansionHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
