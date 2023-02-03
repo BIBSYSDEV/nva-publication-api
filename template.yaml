@@ -70,6 +70,26 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /NVA/ApplicationDomain
     Description: Domain-name for the NVA frontend
+  ScopusZipBucketName:
+    Type: String
+    Default: "scopus-zip-files"
+    Description: Name of bucket for incoming zip-files to be unzipped (containing scopus xml-files)
+  ScopusXmlBucketName:
+    Type: String
+    Default: "scopus-xml-files"
+    Description: Name of bucket for unzipped scopus xml files
+  PiaRestHost:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/PiaRestHost'
+  PiaRestCredentialsTokenName:
+    Type: String
+    Default: 'PiaRestCredentials'
+  PiaRestUsernameKey:
+    Type: String
+    Default: "PiaRestUser"
+  PiaRestUsernamePasswordKey:
+    Type: String
+    Default: "PiaRestPass"
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
