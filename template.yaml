@@ -558,6 +558,7 @@ Resources:
             Path: /{publicationIdentifier}
             Method: delete
             RestApiId: !Ref NvaPublicationApi
+
   NvaPublicationsByOwnerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -673,6 +674,7 @@ Resources:
             Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
+
   UpdateTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -745,8 +747,9 @@ Resources:
   NvaScopusFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-publication-from-scopus
+      CodeUri: scopus-import
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
+      Runtime: java11
       Role: !GetAtt ScopusHandlersRole.Arn
       ReservedConcurrentExecutions: 5 # Throttled to slow down create publication requests from scopus files
       Environment:
@@ -798,6 +801,7 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
+
   DeletePublicationEventConsumer:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -832,6 +836,7 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
+
 
   LogicallyDeleteEntriesHandler:
     DependsOn: EventsLambdaPermissions
@@ -891,6 +896,8 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
+
+
   ResourceExpansionHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
