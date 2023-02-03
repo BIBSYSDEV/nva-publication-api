@@ -1285,6 +1285,48 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
+  ScopusUnzipperFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          XML_BUCKET_NAME: !Ref ScopusXmlBucket
+      PackageType: Zip
+      InlineCode: |
+        import boto3, zipfile, os
+        from io import BytesIO
+        def lambda_handler(event, context):
+            xml_bucket = os.environ['XML_BUCKET_NAME']
+            zip_bucket = event['Records'][0]['s3']['bucket']['name']
+            zip_file = event['Records'][0]['s3']['object']['key']
+            client = boto3.client('s3')
+            resource = boto3.resource('s3')
+            zip_object = resource.Object(bucket_name=zip_bucket, key=zip_file)
+            buffer = BytesIO(zip_object.get()['Body'].read())
+            z = zipfile.ZipFile(buffer)
+            for fname in z.namelist():
+                client.put_object(
+                    Body=z.open(fname).read(),
+                    Bucket=zip_bucket if fname.endswith('.zip') else xml_bucket,
+                    Key=f'unzipped/{fname}' if fname.endswith('.zip') else fname
+                )
+      Role: !GetAtt ScopusHandlersRole.Arn
+      Events:
+        UnzipEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusZipBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.zip'
+
+
+
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
   # https://stackoverflow.com/questions/41423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
@@ -1465,8 +1507,7 @@ Resources:
                 - glue.amazonaws.com
             Action: sts:AssumeRole
       Path: "/"
-      ManagedPolicyArns:
-        [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
+      ManagedPolicyArns: [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
       Policies:
         - PolicyName: CrawlerReadsPersistedMetadataPolicy
           PolicyDocument:
@@ -1555,8 +1596,7 @@ Resources:
                 - glue.amazonaws.com
             Action: sts:AssumeRole
       Path: "/"
-      ManagedPolicyArns:
-        [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
+      ManagedPolicyArns: [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
       Policies:
         - PolicyName: CrawlerReadsPersistedMetadataPolicy
           PolicyDocument:
@@ -1577,8 +1617,7 @@ Resources:
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      BasePath:
-        !If
+      BasePath: !If
         - WithSuffix
         - !Sub ${CustomDomainBasePath}-${Suffix}
         - !Sub ${CustomDomainBasePath}
@@ -1600,3 +1639,26 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
+
+  ScopusZipBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteContentAfter3Days
+            Status: Enabled
+            ExpirationInDays: 3
+            Prefix: 'unzipped'
+
+  ScopusXmlBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteContentAfter3Days
+            Status: Enabled
+            ExpirationInDays: 3
