@@ -14,9 +14,12 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -115,10 +118,42 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, String
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         return attempt(() -> fetchFileFromS3(input, s3Driver))
                    .map(this::parseContents)
+                   .map(this::convertFieldNamesToLowerCase)
                    .map(jsonNodes -> generateEventBodies(input, jsonNodes))
                    .map(eventBodies -> emitEvents(context, eventBodies));
     }
-    
+
+    // This is done because cristin-import JsonIgnoreProperties is case-sensitive, and it seems casing is arbitary
+    // from cristin-export. This functionality may be removed if JsonIgnoreProperty is removed from cristinObject.
+    private List<JsonNode> convertFieldNamesToLowerCase(List<JsonNode> jsonNodes) {
+        return jsonNodes.stream().map(this::convertKeysToLowerCase).collect(Collectors.toList());
+    }
+
+    private JsonNode convertKeysToLowerCase(JsonNode jsonNode) {
+        if (jsonNode instanceof ObjectNode) {
+            var objectNode = (ObjectNode) jsonNode;
+            var fieldNames = new ArrayList<String>();
+            objectNode.fieldNames().forEachRemaining(name -> addIfHasUpperCase(name, fieldNames));
+            fieldNames.forEach(name -> setObjectNodeToLowerCase(name, objectNode));
+        }
+        jsonNode.elements().forEachRemaining(this::convertKeysToLowerCase);
+        return jsonNode;
+    }
+
+    private void setObjectNodeToLowerCase(String name, ObjectNode objectNode) {
+        var lowerCaseName = name.toLowerCase(Locale.ROOT);
+        var child = objectNode.get(name);
+        objectNode.remove(name);
+        objectNode.set(lowerCaseName, child);
+    }
+
+    @SuppressWarnings("PMD.UnnecessaryCaseChange")
+    private void addIfHasUpperCase(String name, List<String> fieldNames) {
+        if (!name.toLowerCase(Locale.ROOT).equals(name)) {
+            fieldNames.add(name);
+        }
+    }
+
     private String returnNothingOrThrowExceptionWhenEmissionFailedCompletely(
         Try<List<PutEventsResult>> emitEventsAttempt) {
         return emitEventsAttempt.map(attempt -> EMPTY_STRING).orElseThrow();

@@ -23,13 +23,16 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -412,7 +415,25 @@ class FileEntriesEventEmitterTest {
     
         assertThat(actualSubtopic, is(equalTo(inputEvent.getDetail().getSubtopic())));
     }
-    
+
+    @Test
+    void shouldEmitEventBodiesWithLowerCasedJsonKeyNames() throws IOException {
+        var input = IoUtils.stringFromResources(Path.of("bundle.txt"));
+        var fileUri = s3Driver.insertFile(randomPath(), input);
+        var inputEvent = createInputEventForFile(fileUri);
+        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+        var contentBodyOfEmittedEvent = eventBridgeClient.getRequestEntries()
+                                            .stream()
+                                            .map(PutEventsRequestEntry::detail)
+                                            .map(EventReference::fromJson)
+                                            .map(EventReference::getUri)
+                                            .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
+                                            .map(json -> FileContentsEvent.fromJson(json, JsonNode.class))
+                                            .map(FileContentsEvent::getContents)
+                                            .collect(Collectors.toList());
+        assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(contentBodyOfEmittedEvent);
+    }
+
     private static String createNewIonObjectsList(SampleObject... sampleObjects) {
         return Arrays.stream(sampleObjects)
                    .map(attempt(s3ImportsMapper::writeValueAsString))
@@ -433,7 +454,16 @@ class FileEntriesEventEmitterTest {
         writer.writeValues(reader);
         return stringAppender.toString();
     }
-    
+
+    private void assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(List<JsonNode> contents) {
+        contents.forEach(this::assertThatFieldNamesAreLowerCase);
+    }
+
+    private void assertThatFieldNamesAreLowerCase(JsonNode content) {
+        content.fieldNames().forEachRemaining(name -> assertThat(name, is(equalTo(name.toLowerCase(Locale.ROOT)))));
+        content.elements().forEachRemaining(this::assertThatFieldNamesAreLowerCase);
+    }
+
     private UnixPath randomPath() {
         return UnixPath.of(randomString(), randomString());
     }
