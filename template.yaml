@@ -695,6 +695,34 @@ Resources:
                     Value: '.json'
 
 
+  NvaScopusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-publication-from-scopus
+      Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
+      Role: !GetAtt ScopusHandlersRole.Arn
+      ReservedConcurrentExecutions: 5 # Throttled to slow down create publication requests from scopus files
+      Environment:
+        Variables:
+          API_HOST: !Ref ApiDomain
+          TABLE_NAME: !Ref NvaResourcesTable
+          PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
+          PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
+          PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
+          PIA_REST_API: !Ref PiaRestHost
+      Events:
+        Scopus:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusXmlBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.xml'
+
+
   DeletionProcessInitializationHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function

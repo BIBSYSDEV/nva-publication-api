@@ -47,7 +47,6 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -104,6 +103,7 @@ import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
@@ -116,18 +116,17 @@ import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.utils.ContentWrapper;
 import no.sikt.nva.scopus.utils.CristinPersonGenerator;
+import no.sikt.nva.scopus.utils.FakeResourceService;
+import no.sikt.nva.scopus.utils.FakeResourceServiceThrowingException;
 import no.sikt.nva.scopus.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.utils.PiaAuthorResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
-import no.unit.nva.events.models.EventReference;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
@@ -142,7 +141,6 @@ import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
@@ -166,7 +164,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
@@ -208,10 +205,10 @@ class ScopusHandlerTest {
     private WireMockServer httpServer;
     private URI serverUriJournal;
     private URI serverUriPublisher;
-    private FakeEventBridgeClient eventBridgeClient;
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
+    private FakeResourceService resourceService;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
@@ -235,8 +232,8 @@ class ScopusHandlerTest {
         var piaEnvironment = createPiaConnectionEnvironment();
         piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
         cristinConnection = new CristinConnection(httpClient);
-        eventBridgeClient = new FakeEventBridgeClient();
-        scopusHandler = new ScopusHandler(s3Client, eventBridgeClient, piaConnection, cristinConnection);
+        resourceService = new FakeResourceService();
+        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService);
         scopusData = new ScopusGenerator();
     }
 
@@ -251,7 +248,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, eventBridgeClient, piaConnection, cristinConnection);
+        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
@@ -280,7 +277,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnpublicationWithMainTitle() throws IOException {
+    void shouldReturnPublicationWithMainTitle() throws IOException {
         createEmptyPiaMock();
         var s3Event = createNewScopusPublicationEvent();
         var titleObject = extractTitle(scopusData);
@@ -361,7 +358,7 @@ class ScopusHandlerTest {
         var exception = assertThrows(RuntimeException.class, action);
         var expectedMessage = "no.unit.nva.model.exceptions.InvalidIssnException: The ISSN";
         var actualMessage = exception.getMessage();
-        assertThat(actualMessage, startsWith(expectedMessage));
+        assertThat(actualMessage, containsString(expectedMessage));
     }
 
     @Test
@@ -375,23 +372,28 @@ class ScopusHandlerTest {
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
     }
 
-        @Test
-        void
-        shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeB()
-            throws IOException {
-            createEmptyPiaMock();
-            scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
-            var s3Event = createNewScopusPublicationEvent();
-            var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-            var actualPublicationContext = publication.getEntityDescription().getReference()
-                                               .getPublicationContext();
-            assertThat(actualPublicationContext, instanceOf(Book.class));
-            var actualPublisher = ((Book) actualPublicationContext).getPublisher();
-            var expectedPublisherName = scopusData.getDocument().getItem().getItem().getBibrecord().getHead()
-            .getSource().getPublisher().get(0).getPublishername();
-//            var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
-//            assertThat(actualPublisherName, is(expectedPublisherName));
-        }
+    @Test
+    void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeB()
+        throws IOException {
+        createEmptyPiaMock();
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
+        var s3Event = createNewScopusPublicationEvent();
+        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+        var expectedPublisherName = scopusData.getDocument()
+                                        .getItem()
+                                        .getItem()
+                                        .getBibrecord()
+                                        .getHead()
+                                        .getSource()
+                                        .getPublisher()
+                                        .get(0)
+                                        .getPublishername();
+        //            var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+        //            assertThat(actualPublisherName, is(expectedPublisherName));
+    }
 
     @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrcTypeBandIsNotAChapter()
@@ -406,7 +408,6 @@ class ScopusHandlerTest {
         scopusData.setPublicationYear(expectedYear);
         var s3Event = createNewScopusPublicationEvent();
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
-        ;
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
@@ -465,10 +466,10 @@ class ScopusHandlerTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
-//        var actualSeries = ((Book) actualPublicationContext).getSeries();
-//        assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
-//        var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
-//        assertThat(actualIssn, is(expectedIssn));
+        //        var actualSeries = ((Book) actualPublicationContext).getSeries();
+        //        assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
+        //        var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
+        //        assertThat(actualIssn, is(expectedIssn));
     }
 
     @Test
@@ -620,18 +621,6 @@ class ScopusHandlerTest {
         assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
     }
 
-    @Test
-    void shouldEmitMessageToEventReferenceContainingS3UriPointingToNewpublication() throws IOException {
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var expectedRequest = scopusHandler.handleRequest(event, CONTEXT);
-        var emittedEvent = fetchEmittedEvent();
-        var publicationS3Path = UriWrapper.fromUri(emittedEvent.getUri()).toS3bucketPath();
-        var publicationJson = s3Driver.getFile(publicationS3Path);
-        var request = JsonUtils.dtoObjectMapper.readValue(publicationJson, Publication.class);
-        assertThat(request, is(not(nullValue())));
-        assertThat(request, is(equalTo(expectedRequest)));
-    }
 
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
@@ -937,6 +926,18 @@ class ScopusHandlerTest {
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR));
+    }
+
+    @Test
+    void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
+        throws IOException {
+        var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException();
+        var s3Event = createNewScopusPublicationEvent();
+        var handler = new ScopusHandler(this.s3Client, this.piaConnection,
+                                        this.cristinConnection, fakeResourceServiceThrowingException);
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+        assertThat(fakeResourceServiceThrowingException.getAttemptsToSavePublication(),
+                   is(Matchers.equalTo(BrageEntryEventConsumer.MAX_EFFORTS + 1)));
     }
 
     private static List<Serializable> contentWithSupInftagsScopus14244261628() {
@@ -1247,14 +1248,6 @@ class ScopusHandlerTest {
         return contributors.stream()
                    .filter(contributor -> sequence.equals(Integer.toString(contributor.getSequence())))
                    .collect(Collectors.toList());
-    }
-
-    private EventReference fetchEmittedEvent() {
-        return eventBridgeClient.getRequestEntries()
-                   .stream()
-                   .map(PutEventsRequestEntry::detail)
-                   .map(EventReference::fromJson)
-                   .collect(SingletonCollector.collect());
     }
 
     private String getExpectedFullAuthorName(AuthorTp authorTp) {

@@ -650,7 +650,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
-        assertThat(fakeResourceServiceThrowingException.getAttemtsToSavePublication(),
+        assertThat(fakeResourceServiceThrowingException.getAttemptsToSavePublication(),
                    is(equalTo(BrageEntryEventConsumer.MAX_EFFORTS + 1)));
     }
 
