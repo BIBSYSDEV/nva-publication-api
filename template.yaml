@@ -72,11 +72,11 @@ Parameters:
     Description: Domain-name for the NVA frontend
   ScopusZipBucketName:
     Type: String
-    Default: "scopus-zip-files"
+    Default: "scopus-zip-files-v2"
     Description: Name of bucket for incoming zip-files to be unzipped (containing scopus xml-files)
   ScopusXmlBucketName:
     Type: String
-    Default: "scopus-xml-files"
+    Default: "scopus-xml-files-v2"
     Description: Name of bucket for unzipped scopus xml files
   PiaRestHost:
     Type: 'AWS::SSM::Parameter::Value<String>'
@@ -425,6 +425,33 @@ Resources:
           Name: AWS::Include
           Parameters:
             Location: ./docs/openapi.yaml
+
+  ScopusHandlersRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+  ScopusBucketsAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ScopusBucketsAccessPolicy-${AWS::StackName}
+      Roles:
+        - !Ref ScopusHandlersRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:*'
+            Resource:
+              - !Sub '${ScopusXmlBucket.Arn}/*'
+              - !Sub '${ScopusZipBucket.Arn}/*'
 
   #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:

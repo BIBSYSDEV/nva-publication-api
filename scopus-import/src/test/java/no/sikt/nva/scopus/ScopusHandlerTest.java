@@ -621,7 +621,6 @@ class ScopusHandlerTest {
         assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
     }
 
-
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
         createEmptyPiaMock();
@@ -933,8 +932,8 @@ class ScopusHandlerTest {
         throws IOException {
         var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException();
         var s3Event = createNewScopusPublicationEvent();
-        var handler = new ScopusHandler(this.s3Client, this.piaConnection,
-                                        this.cristinConnection, fakeResourceServiceThrowingException);
+        var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
+                                        fakeResourceServiceThrowingException);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
         assertThat(fakeResourceServiceThrowingException.getAttemptsToSavePublication(),
                    is(Matchers.equalTo(BrageEntryEventConsumer.MAX_EFFORTS + 1)));
