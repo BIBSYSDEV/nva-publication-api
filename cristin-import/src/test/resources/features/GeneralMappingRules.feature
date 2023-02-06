@@ -114,10 +114,10 @@ Feature: Mappings that hold for all types of Cristin Results
       | Have, Comma | Surname     |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a List of NVA Contributors:
-      | Name                 |
-      | Adams, John          |
-      | Loremius, C.J.B.     |
-      | Surname, Have, Comma |
+      | Name                |
+      | John Adams          |
+      | C.J.B. Loremius     |
+      | Have, Comma Surname |
 
   Scenario: The NVA Contributor sequence is the same as the Cristin Contributor Sequence
     Given that the Cristin Result has the Contributors with names and sequence:
