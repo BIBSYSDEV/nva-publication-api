@@ -30,3 +30,8 @@ Feature: Rules that apply for Media
       | AVIS              | Journal  | TEXT      |
       | RADIO             | Radio    | SOUND     |
 
+  Scenario: Cristin result with secondary category "INTERVJUSKRIFTL" is converted to NVA entry
+    Given a valid Cristin Result with secondary category "INTERVJUSKRIFTL"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA resource has a MediaContribution with medium "Journal"
+    And the NVA resource has a MediaContribution with format "TEXT"
