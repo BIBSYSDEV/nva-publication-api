@@ -41,6 +41,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import nva.commons.core.paths.UriWrapper;
@@ -98,6 +99,7 @@ public class ScopusConverter {
                    .withResourceOwner(new ResourceOwner("someUser@unit.no", URI.create("https://www.example.org")))
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
+                   .withStatus(PublicationStatus.DRAFT)
                    .build();
     }
 
