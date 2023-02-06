@@ -8,6 +8,7 @@ import jakarta.xml.bind.JAXB;
 import java.io.StringReader;
 import java.net.URI;
 import java.util.Random;
+import java.util.stream.Collectors;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
@@ -52,7 +53,9 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     @Override
     public Publication handleRequest(S3Event event, Context context) {
-        return attempt(() -> createPublication(event)).flatMap(this::persistInDatabase)
+        return attempt(() -> createPublication(event))
+                   .flatMap(this::persistInDatabase)
+                   .map(this::log)
                    .orElseThrow(this::handleSavingError);
     }
 
@@ -64,6 +67,19 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     @JacocoGenerated
     private static CristinConnection defaultCristinConnection() {
         return new CristinConnection();
+    }
+
+    private static String getScopusIdentifier(Publication publication) {
+        return publication.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(additionalIdentifier -> "SCOPUS".equals(additionalIdentifier.getSource()))
+                   .collect(Collectors.toList()).toString();
+    }
+
+    private Publication log(Publication publication) {
+        logger.info("Persisted publication: " + publication.getIdentifier());
+        logger.info("Scopus identifier: " + getScopusIdentifier(publication));
+        return publication;
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail) {

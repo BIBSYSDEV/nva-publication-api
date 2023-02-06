@@ -965,7 +965,6 @@ class ScopusHandlerTest {
 
     private Environment createPiaConnectionEnvironment(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var environment = mock(Environment.class);
-        var portNumber = wireMockRuntimeInfo.getHttpsPort();
         when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         when(environment.readEnv(API_HOST_ENV_KEY)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         when(environment.readEnv(PIA_USERNAME_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);

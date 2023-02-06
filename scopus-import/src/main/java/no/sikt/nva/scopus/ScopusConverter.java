@@ -46,9 +46,8 @@ import nva.commons.core.paths.UriWrapper;
 
 public class ScopusConverter {
 
-    public static final URI HARDCODED_ID = URI.create("https://api.api.sandbox.nva.aws.unit"
-                                                      + ".no/customer/f54c8aa9-073a-46a1-8f7c"
-                                                      + "-dde66c853934");
+    public static final URI HARDCODED_ID = URI.create("https://api.sandbox.nva.aws.unit"
+                                                      + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
