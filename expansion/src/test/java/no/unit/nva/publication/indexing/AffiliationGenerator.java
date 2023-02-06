@@ -78,10 +78,10 @@ public class AffiliationGenerator {
             return;
         }
 
-        JsonNode childNode = readFileAsJson(BOTTOM_LEVEL_TEMPLATE);
+        JsonNode hasPartContent = readFileAsJson(BOTTOM_LEVEL_TEMPLATE);
 
         ArrayNode hasPart = objectMapper.createArrayNode();
-        hasPartIds.forEach(id -> hasPart.add(setId(childNode, id)));
+        hasPartIds.forEach(id -> hasPart.add(setId(hasPartContent, id)));
 
         ((ObjectNode) affiliation).replace(HAS_PART_FIELD, hasPart);
     }
@@ -92,10 +92,10 @@ public class AffiliationGenerator {
             return;
         }
 
-        JsonNode childNode = readFileAsJson(TOP_LEVEL_TEMPLATE);
+        JsonNode partOfContent = readFileAsJson(TOP_LEVEL_TEMPLATE);
 
         ArrayNode partOf = objectMapper.createArrayNode();
-        partOfIds.forEach(id -> partOf.add(setId(childNode, id)));
+        partOfIds.forEach(id -> partOf.add(setId(partOfContent, id)));
 
         ((ObjectNode) affiliation).replace(PART_OF_FIELD, partOf);
     }

@@ -1,5 +1,5 @@
-#Constructs an organization with a topLevelAffiliation field determined by recursively looking in the orgs partOf
-#field until an org isn't part of another org.
+#Constructs an organization with a topLevelAffiliation field determined by recursively looking in
+#the orgs partOf-field until an org isn't part of another org.
 
 PREFIX  organization: <https://bibsysdev.github.io/src/nva/ontology.ttl#>
 
@@ -16,5 +16,3 @@ CONSTRUCT {
   ?top_org organization:name ?top_org_name .
     FILTER NOT EXISTS { ?top_org organization:partOf ?e } .
 }
-
-#UNION > Optional
