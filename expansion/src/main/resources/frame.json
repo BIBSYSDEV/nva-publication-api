@@ -81,7 +81,8 @@
             "@container": "@set"
           },
           "hasPart": {
-            "@container": "@set"
+            "@container": "@set",
+            "@embed": "@always"
           }
         }
       }
