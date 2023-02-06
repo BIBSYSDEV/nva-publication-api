@@ -46,12 +46,12 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Collection<? extends InputStream> fetchAll(List<URI> publicationContextUris) {
-        List<Optional<String>> uriContent =
-            publicationContextUris.stream().map(this::fetch).collect(Collectors.toList());
-        return uriContent.stream()
-            .flatMap(Optional::stream)
-            .map(IoUtils::stringToStream)
-            .collect(Collectors.toList());
+        return publicationContextUris.stream()
+                .map(this::fetch)
+                .flatMap(Optional::stream)
+                .map(IoUtils::stringToStream)
+                .collect(Collectors.toList());
+
     }
 
     private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
