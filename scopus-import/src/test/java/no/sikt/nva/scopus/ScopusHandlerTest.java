@@ -4,8 +4,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
@@ -67,10 +65,10 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import jakarta.xml.bind.JAXBElement;
 import java.io.IOException;
 import java.io.Serializable;
@@ -156,7 +154,6 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -169,6 +166,7 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
+@WireMockTest(httpsEnabled = true)
 class ScopusHandlerTest {
 
     public static final Context CONTEXT = mock(Context.class);
@@ -204,7 +202,6 @@ class ScopusHandlerTest {
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
-    private WireMockServer httpServer;
     private URI serverUriJournal;
     private URI serverUriPublisher;
     private PiaConnection piaConnection;
@@ -222,26 +219,20 @@ class ScopusHandlerTest {
     }
 
     @BeforeEach
-    public void init() {
+    public void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
         var secretsReader = new SecretsReader(fakeSecretsManagerClient);
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWRORD_SECRET_KEY, randomString());
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
-        startWiremockServer();
         var httpClient = WiremockHttpClient.create();
-        var piaEnvironment = createPiaConnectionEnvironment();
+        var piaEnvironment = createPiaConnectionEnvironment(wireMockRuntimeInfo);
         piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
         cristinConnection = new CristinConnection(httpClient);
         resourceService = new FakeResourceService();
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService);
         scopusData = new ScopusGenerator();
-    }
-
-    @AfterEach
-    public void tearDown() {
-        httpServer.stop();
     }
 
     @Test
@@ -409,7 +400,6 @@ class ScopusHandlerTest {
         var expectedYear = String.valueOf(randomYear());
         scopusData.setPublicationYear(expectedYear);
         var s3Event = createNewScopusPublicationEvent();
-        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
@@ -521,8 +511,6 @@ class ScopusHandlerTest {
         final var expectedIssn = randomIssn();
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var s3Event = createNewScopusPublicationEvent();
-        var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
-        var expectedSeriesUri = mockedPublicationChannelsReturnsUri(queryUri);
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
@@ -874,9 +862,9 @@ class ScopusHandlerTest {
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = publication.getEntityDescription().getContributors();
-        actualContributors.stream()
-            .filter(contributor -> isAuthor(contributor, authorTypes))
-            .forEach(
+        var authorList = actualContributors.stream()
+            .filter(contributor -> isAuthor(contributor, authorTypes)).collect(Collectors.toList());
+        authorList.forEach(
                 contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors,
                                                                                 cristinPersons));
     }
@@ -975,22 +963,11 @@ class ScopusHandlerTest {
         return Arguments.of(List.of(language), languageUri);
     }
 
-    private static WireMockServer getHttpServer() {
-        WireMockConfiguration options = null;
-        while (isNull(options)) {
-            try {
-                options = options().dynamicHttpsPort();
-            } catch (Exception e) {
-                // NO-OP
-            }
-        }
-        return new WireMockServer(options);
-    }
-
-    private Environment createPiaConnectionEnvironment() {
+    private Environment createPiaConnectionEnvironment(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var environment = mock(Environment.class);
-        when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(httpServer.baseUrl());
-        when(environment.readEnv(API_HOST_ENV_KEY)).thenReturn(httpServer.baseUrl());
+        var portNumber = wireMockRuntimeInfo.getHttpsPort();
+        when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        when(environment.readEnv(API_HOST_ENV_KEY)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         when(environment.readEnv(PIA_USERNAME_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
         when(environment.readEnv(PIA_PASSWORD_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
         when(environment.readEnv(PIA_SECRETS_NAME_ENV_KEY)).thenReturn(PIA_SECRET_NAME);
@@ -1011,7 +988,7 @@ class ScopusHandlerTest {
     private void generateCristinPersonsResponse(ArrayList<Person> cristinPersons, Integer cristinId)
         throws JsonProcessingException {
         var cristinPerson = CristinPersonGenerator.generateCristinPerson(
-            UriWrapper.fromUri(httpServer.baseUrl() + "/cristin/person/" + cristinId.toString()).getUri(),
+            UriWrapper.fromUri("/cristin/person/" + cristinId.toString()).getUri(),
             randomString(), randomString());
         cristinPersons.add(cristinPerson);
         mockCristinPerson(cristinId.toString(), CristinPersonGenerator.convertToJson(cristinPerson));
@@ -1184,7 +1161,7 @@ class ScopusHandlerTest {
     }
 
     private void createEmptyPiaMock() {
-        stubFor(WireMock.get(urlPathEqualTo("/sentralimport/authors"))
+        stubFor(WireMock.get(urlMatching("/sentralimport/authors"))
                     .willReturn(aResponse().withBody("[]").withStatus(HttpURLConnection.HTTP_OK)));
     }
 
@@ -1312,13 +1289,6 @@ class ScopusHandlerTest {
                     .willReturn(aResponse().withBody(publicationChannelsResponseBody.toPrettyString())
                                     .withStatus(HttpURLConnection.HTTP_OK)));
         return uri;
-    }
-
-    private void startWiremockServer() {
-        httpServer = getHttpServer();
-        httpServer.start();
-        serverUriJournal = URI.create(httpServer.baseUrl());
-        serverUriPublisher = URI.create(httpServer.baseUrl());
     }
 
     private ArrayNode createPublicationChannelsResponseWithUri(URI uri) {

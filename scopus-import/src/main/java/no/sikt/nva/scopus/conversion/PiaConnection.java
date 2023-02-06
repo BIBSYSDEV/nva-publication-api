@@ -101,18 +101,16 @@ public class PiaConnection {
     }
 
     private String getPiaJsonAsString(String scopusId) {
-        var uri =
-            UriWrapper.fromHost(piaHost)
-                .addChild("sentralimport")
-                .addChild("authors")
-                .addQueryParameter(
-                    "author_id", "SCOPUS:" + scopusId).getUri();
-        return attempt(
-            () -> getPiaResponse(uri))
+        var baseUri = URI.create(piaHost);
+        var uri = UriWrapper.fromUri(baseUri)
+                      .addChild("sentralimport")
+                      .addChild("authors")
+                      .addQueryParameter("author_id", "SCOPUS:" + scopusId).getUri();
+        return attempt(() -> getPiaResponse(uri))
                    .map(this::getBodyFromResponse)
-                   .orElseThrow(
-                       fail -> logExceptionAndThrowRuntimeError(fail.getException(), COULD_NOT_GET_ERROR_MESSAGE
-                                                                                     + scopusId));
+                   .orElseThrow(fail ->
+                                    logExceptionAndThrowRuntimeError(fail.getException(),
+                                                                     COULD_NOT_GET_ERROR_MESSAGE + scopusId));
     }
 
     private RuntimeException logExceptionAndThrowRuntimeError(Exception exception, String message) {
