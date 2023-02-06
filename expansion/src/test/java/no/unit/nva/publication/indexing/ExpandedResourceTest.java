@@ -109,8 +109,8 @@ class ExpandedResourceTest {
         addPublicationChannelPublisherToMockUriRetriever(mockUriRetriever, seriesUri, seriesName, publisherUri,
                                                          publisherName);
 
-        URI expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
-        List<JsonNode> distinctTopLevelIds = extractDistinctTopLevelIds(
+        var expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
+        var distinctTopLevelIds = extractDistinctTopLevelIds(
             fromPublication(mockUriRetriever, publication).asJsonNode());
         assertThat(distinctTopLevelIds.size(), is(equalTo(1)));
         assertThat(distinctTopLevelIds.get(0).asText(), is(equalTo(expectedTopLevelUri.toString())));
