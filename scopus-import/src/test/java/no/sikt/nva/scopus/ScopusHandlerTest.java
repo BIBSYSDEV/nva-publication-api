@@ -85,7 +85,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.namespace.QName;
@@ -980,7 +979,7 @@ class ScopusHandlerTest {
         WireMockConfiguration options = null;
         while (isNull(options)) {
             try {
-                options = options().port(randomPort());
+                options = options().dynamicHttpsPort();
             } catch (Exception e) {
                 // NO-OP
             }
@@ -988,12 +987,7 @@ class ScopusHandlerTest {
         return new WireMockServer(options);
     }
 
-    private static int randomPort() {
-        return ThreadLocalRandom.current().nextInt(1000, 10_000);
-    }
-
     private Environment createPiaConnectionEnvironment() {
-        httpServer.resetAll();
         var environment = mock(Environment.class);
         when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(httpServer.baseUrl());
         when(environment.readEnv(API_HOST_ENV_KEY)).thenReturn(httpServer.baseUrl());
