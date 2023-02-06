@@ -109,19 +109,25 @@ class ExpandedResourceTest {
         addPublicationChannelPublisherToMockUriRetriever(mockUriRetriever, seriesUri, seriesName, publisherUri,
                                                          publisherName);
 
+        URI expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
+        List<JsonNode> distinctTopLevelIds = extractDistinctTopLevelIds(
+            fromPublication(mockUriRetriever, publication).asJsonNode());
+        assertThat(distinctTopLevelIds.size(), is(equalTo(1)));
+        assertThat(distinctTopLevelIds.get(0).asText(), is(equalTo(expectedTopLevelUri.toString())));
+    }
+
+    private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
         var affiliationGenerator = new AffiliationGenerator(depth, mockUriRetriever);
         var expectedTopLevelUri = affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
+        return expectedTopLevelUri;
+    }
 
-        final ExpandedResource indexDocument = fromPublication(mockUriRetriever, publication);
-        final JsonNode framedResultNode = indexDocument.asJsonNode();
-
+    private List<JsonNode> extractDistinctTopLevelIds(JsonNode framedResultNode) {
         var topLevelAffiliations = framedResultNode.findValues("topLevelAffiliation");
-        var distinctTopLevelIds = topLevelAffiliations.stream()
+        return topLevelAffiliations.stream()
             .map(node -> node.get("id"))
             .distinct()
             .collect(Collectors.toList());
-        assertThat(distinctTopLevelIds.size(), is(equalTo(1)));
-        assertThat(distinctTopLevelIds.get(0).asText(), is(equalTo(expectedTopLevelUri.toString())));
     }
 
     @ParameterizedTest(name = "should return properly framed document with id based on Id-namespace and resource "
