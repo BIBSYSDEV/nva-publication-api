@@ -6,9 +6,14 @@ import java.util.List;
 import nva.commons.core.SingletonCollector;
 
 public enum CristinMainCategory {
-    BOOK("BOK", "BOOK"), JOURNAL("TIDSSKRIFTPUBL", "JOURNAL"), REPORT("RAPPORT", "REPORT"), CHAPTER("BOKRAPPORTDEL",
-                                                                                                    "CHAPTER"), EVENT(
-        "FOREDRAG", "EVENT"), MEDIA_CONTRIBUTION("MEDIEBIDRAG", "MEDIA_CONTRIBUTION"), UNMAPPED;
+    BOOK("BOK", "BOOK"),
+    JOURNAL("TIDSSKRIFTPUBL", "JOURNAL"),
+    REPORT("RAPPORT", "REPORT"),
+    CHAPTER("BOKRAPPORTDEL", "CHAPTER"),
+    EVENT(
+        "FOREDRAG", "EVENT"),
+    MEDIA_CONTRIBUTION("MEDIEBIDRAG", "MEDIA_CONTRIBUTION"),
+    UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
     private final List<String> aliases;
