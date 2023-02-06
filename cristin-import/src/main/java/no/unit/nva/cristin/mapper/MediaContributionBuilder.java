@@ -2,6 +2,7 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isInterview;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isProgramParticipation;
+import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaParticipationInRadioOrTv;
@@ -25,8 +26,8 @@ public class MediaContributionBuilder extends AbstractPublicationInstanceBuilder
     }
 
     @Override
-    protected CristinMainCategory getExpectedType() {
-        return CristinMainCategory.MEDIA_CONTRIBUTION;
+    protected Set<CristinMainCategory> getExpectedType() {
+        return Set.of(CristinMainCategory.MEDIA_CONTRIBUTION, CristinMainCategory.JOURNAL);
     }
 
     private static MediaInterview createMediaInterview() {

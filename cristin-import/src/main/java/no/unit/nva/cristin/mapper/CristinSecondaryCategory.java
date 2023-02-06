@@ -12,47 +12,38 @@ import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import nva.commons.core.SingletonCollector;
 
 public enum CristinSecondaryCategory {
-    ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
-    MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
-    TEXTBOOK("LÆREBOK", "TEXTBOOK"),
-    NON_FICTION_BOOK("FAGBOK", "NON_FICTION_BOOK"),
-    ENCYCLOPEDIA("LEKSIKON", "ENCYCLOPEDIA"),
-    POPULAR_BOOK("POPVIT_BOK", "POPULAR_BOOK"),
-    REFERENCE_MATERIAL("OPPSLAGSVERK", "REFERENCE_MATERIAL"),
-    FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
-    FOREWORD("FORORD", "FOREWORD"),
-    INTRODUCTION("INNLEDNING", "INTRODUCTION"),
-    JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
-    READER_OPINION("LESERINNLEGG", "READER_OPINIION"),
-    JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
-    JOURNAL_LEADER("LEDER", "JOURNAL_LEADER"),
-    JOURNAL_CORRIGENDUM("ERRATA", "JOURNAL_CORRIGENDUM"),
-    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
-    POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"),
-    ARTICLE("ARTIKKEL", "ARTICLE"),
-    ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
-    SHORT_COMMUNICATION("SHORTCOMM", "SHORT_COMMUNICATION"),
-    RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
-    DEGREE_LICENTIATE("LISENSIATAVH", "DEGREE_LICENTIATE"),
-    DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
-    DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
-    EXHIBITION_CATALOG("UTSTILLINGSKAT", "EXHIBITION_CATALOG"),
-    SECOND_DEGREE_THESIS("HOVEDFAGSOPPGAVE", "SECOND_DEGREE_THESIS"),
-    MEDICAL_THESIS("FORSKERLINJEOPPG", "MEDICAL_THESIS"),
-    CHAPTER_ACADEMIC("KAPITTEL", "CHAPTER_ACADEMIC"),
-    CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
-    POPULAR_CHAPTER_ARTICLE("POPVIT_KAPITTEL", "POPULAR_CHAPTER_ARTICLE"),
-    LEXICAL_IMPORT("LEKSIKAL_INNF", "LEXICAL_IMPORT"),
-    CONFERENCE_LECTURE("VIT_FOREDRAG", "CONFERENCE_LECTURE"),
-    CONFERENCE_POSTER("POSTER", "CONFERENCE_POSTER"),
-    LECTURE("FOREDRAG_FAG", "LECTURE"),
-    POPULAR_SCIENTIFIC_LECTURE("POPVIT_FOREDRAG", "POPULAR_SCIENTIFIC_LECTURE"),
-    OTHER_PRESENTATION("ANNEN_PRESENTASJ", "OTHER_PRESENTATION"),
-    INTERNET_EXHIBIT("UTST_WEB", "INTERNET_EXHIBIT"),
-    PROGRAM_PARTICIPATION("PROGDELTAGELSE", "PROGRAM_PARTICIPATION"),
-    INTERVIEW("INTERVJU", "INTERVIEW"),
-    WRITTEN_INTERVIEW("INTERVJUSKRIFTL", "WRITTEN INTERVIEW"),
-    UNMAPPED;
+    ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"), MONOGRAPH("MONOGRAFI", "MONOGRAPH"), TEXTBOOK("LÆREBOK",
+                                                                                      "TEXTBOOK"), NON_FICTION_BOOK(
+        "FAGBOK", "NON_FICTION_BOOK"), ENCYCLOPEDIA("LEKSIKON", "ENCYCLOPEDIA"), POPULAR_BOOK("POPVIT_BOK",
+                                                                                              "POPULAR_BOOK"),
+    REFERENCE_MATERIAL(
+        "OPPSLAGSVERK", "REFERENCE_MATERIAL"), FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"), FOREWORD("FORORD",
+                                                                                                       "FOREWORD"),
+    INTRODUCTION(
+        "INNLEDNING", "INTRODUCTION"), JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"), READER_OPINION("LESERINNLEGG",
+                                                                                                        "READER_OPINIION"), JOURNAL_REVIEW(
+        "BOKANMELDELSE", "JOURNAL_REVIEW"), JOURNAL_LEADER("LEDER", "JOURNAL_LEADER"), JOURNAL_CORRIGENDUM("ERRATA",
+                                                                                                           "JOURNAL_CORRIGENDUM"), JOURNAL_ARTICLE(
+        "ARTIKKEL_FAG", "JOURNAL_ARTICLE"), POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"), ARTICLE("ARTIKKEL",
+                                                                                                        "ARTICLE"),
+    ACADEMIC_REVIEW(
+        "OVERSIKTSART", "ACADEMIC_REVIEW"), SHORT_COMMUNICATION("SHORTCOMM", "SHORT_COMMUNICATION"), RESEARCH_REPORT(
+        "RAPPORT", "RESEARCH_REPORT"), DEGREE_LICENTIATE("LISENSIATAVH", "DEGREE_LICENTIATE"), DEGREE_PHD("DRGRADAVH",
+                                                                                                          "DEGREE_PHD"
+    ), DEGREE_MASTER(
+        "MASTERGRADSOPPG", "DEGREE_MASTER"), EXHIBITION_CATALOG("UTSTILLINGSKAT",
+                                                                "EXHIBITION_CATALOG"), SECOND_DEGREE_THESIS(
+        "HOVEDFAGSOPPGAVE", "SECOND_DEGREE_THESIS"), MEDICAL_THESIS("FORSKERLINJEOPPG",
+                                                                    "MEDICAL_THESIS"), CHAPTER_ACADEMIC("KAPITTEL",
+                                                                                                        "CHAPTER_ACADEMIC"), CHAPTER(
+        "FAGLIG_KAPITTEL", "CHAPTER"), POPULAR_CHAPTER_ARTICLE("POPVIT_KAPITTEL",
+                                                               "POPULAR_CHAPTER_ARTICLE"), LEXICAL_IMPORT(
+        "LEKSIKAL_INNF", "LEXICAL_IMPORT"), CONFERENCE_LECTURE("VIT_FOREDRAG", "CONFERENCE_LECTURE"), CONFERENCE_POSTER(
+        "POSTER", "CONFERENCE_POSTER"), LECTURE("FOREDRAG_FAG", "LECTURE"), POPULAR_SCIENTIFIC_LECTURE(
+        "POPVIT_FOREDRAG", "POPULAR_SCIENTIFIC_LECTURE"), OTHER_PRESENTATION("ANNEN_PRESENTASJ",
+                                                                             "OTHER_PRESENTATION"), INTERNET_EXHIBIT(
+        "UTST_WEB", "INTERNET_EXHIBIT"), PROGRAM_PARTICIPATION("PROGDELTAGELSE", "PROGRAM_PARTICIPATION"), INTERVIEW(
+        "INTERVJU", "INTERVIEW"), WRITTEN_INTERVIEW("INTERVJUSKRIFTL", "WRITTEN INTERVIEW"), UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
     public static final Map<CristinSecondaryCategory, JournalArticleContentType> mapToJournalContentType =
@@ -144,7 +135,8 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isInterview(CristinObject cristinObject) {
-        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isProgramParticipation(CristinObject cristinObject) {
@@ -206,30 +198,28 @@ public enum CristinSecondaryCategory {
     }
 
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
-        return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
-                      POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
-                      ARTICLE, JournalArticleContentType.ACADEMIC_ARTICLE,
-                      ACADEMIC_REVIEW, JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW,
-                      SHORT_COMMUNICATION, JournalArticleContentType.ACADEMIC_ARTICLE);
+        return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE, POPULAR_ARTICLE,
+                      JournalArticleContentType.POPULAR_SCIENCE_ARTICLE, ARTICLE,
+                      JournalArticleContentType.ACADEMIC_ARTICLE, ACADEMIC_REVIEW,
+                      JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW, SHORT_COMMUNICATION,
+                      JournalArticleContentType.ACADEMIC_ARTICLE);
     }
 
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {
-        return Map.of(MONOGRAPH, BookMonographContentType.ACADEMIC_MONOGRAPH,
-                      POPULAR_BOOK, BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH,
-                      TEXTBOOK, BookMonographContentType.TEXTBOOK,
-                      ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
-                      NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
-                      EXHIBITION_CATALOG, BookMonographContentType.EXHIBITION_CATALOG,
-                      REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
+        return Map.of(MONOGRAPH, BookMonographContentType.ACADEMIC_MONOGRAPH, POPULAR_BOOK,
+                      BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH, TEXTBOOK, BookMonographContentType.TEXTBOOK,
+                      ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA, NON_FICTION_BOOK,
+                      BookMonographContentType.NON_FICTION_MONOGRAPH, EXHIBITION_CATALOG,
+                      BookMonographContentType.EXHIBITION_CATALOG, REFERENCE_MATERIAL,
+                      BookMonographContentType.ENCYCLOPEDIA);
     }
 
     private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
-        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
-                      POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
-                      CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
-                      FOREWORD, ChapterArticleContentType.INTRODUCTION,
-                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION,
-                      LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
+        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER, POPULAR_CHAPTER_ARTICLE,
+                      ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER, CHAPTER,
+                      ChapterArticleContentType.NON_FICTION_CHAPTER, FOREWORD, ChapterArticleContentType.INTRODUCTION,
+                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION, LEXICAL_IMPORT,
+                      ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
 
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {

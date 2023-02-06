@@ -2,6 +2,7 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
+import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -25,8 +26,8 @@ public class BookBuilder extends AbstractBookReportBuilder {
     }
     
     @Override
-    protected CristinMainCategory getExpectedType() {
-        return CristinMainCategory.BOOK;
+    protected Set<CristinMainCategory> getExpectedType() {
+        return Set.of(CristinMainCategory.BOOK);
     }
 
     private BookAnthology createBookAnthology() {
