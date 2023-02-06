@@ -15,6 +15,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.expansion.utils.UriRetriever;
@@ -47,43 +49,45 @@ public class IndexDocumentWrapperLinkedData {
 
     private Collection<? extends InputStream> fetchAll(List<URI> publicationContextUris) {
         return publicationContextUris.stream()
-                .map(this::fetch)
-                .flatMap(Optional::stream)
-                .map(IoUtils::stringToStream)
-                .collect(Collectors.toList());
-
+                   .map(this::fetch)
+                   .flatMap(Optional::stream)
+                   .map(IoUtils::stringToStream)
+                   .collect(Collectors.toList());
     }
 
-    private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
-        List<Optional<String>> uriContent = new ArrayList<>();
-
-        var affiliationUris = extractAffiliationUris(indexDocument);
-
-        affiliationUris.forEach(uri -> fetchContentRecursively(uriContent, uri));
-
-        return uriContent.stream()
-            .flatMap(Optional::stream)
-            .map(IoUtils::stringToStream)
-            .collect(Collectors.toList());
+    private List<InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
+        return extractAffiliationUris(indexDocument)
+                   .stream().flatMap(this::fetchContentRecursively)
+                   .map(IoUtils::stringToStream)
+                   .collect(Collectors.toList());
     }
 
-    private void fetchContentRecursively(List<Optional<String>> contentList, URI uri) {
+    private Stream<String> fetchContentRecursively(URI uri) {
         var affiliation = fetch(uri);
-        contentList.add(affiliation);
-
         if (affiliation.isEmpty()) {
-            return;
+            return Stream.empty();
         }
+        var parentAffiliations = extractParentAffiliationNodes(affiliation.get())
+                                     .map(IndexDocumentWrapperLinkedData::extractIdField)
+                                     .map(URI::create)
+                                     .flatMap(this::fetchContentRecursively);
+        return Stream.concat(Stream.of(affiliation.get()), parentAffiliations);
+    }
 
-        var json = attempt(() -> dtoObjectMapper.readTree(affiliation.get())).orElseThrow();
+    private static String extractIdField(JsonNode i) {
+        return i.at(ID_FIELD).asText();
+    }
 
-        var parentAffiliations = json.at(PART_OF_FIELD);
-        parentAffiliations.forEach(
-            parentAff -> fetchContentRecursively(contentList, URI.create(parentAff.at(ID_FIELD).asText()))
-        );
+    private static Stream<JsonNode> extractParentAffiliationNodes(String affiliation) {
+        var json = attempt(() -> dtoObjectMapper.readTree(affiliation)).orElseThrow().at(PART_OF_FIELD);
+        return toStream(json);
     }
 
     private Optional<String> fetch(URI externalReference) {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
+    }
+
+    private static Stream<JsonNode> toStream(JsonNode jsonNode) {
+        return StreamSupport.stream(jsonNode.spliterator(), false);
     }
 }
