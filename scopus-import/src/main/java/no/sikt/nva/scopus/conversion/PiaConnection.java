@@ -102,7 +102,7 @@ public class PiaConnection {
 
     private String getPiaJsonAsString(String scopusId) {
         var uri =
-            UriWrapper.fromUri(piaHost)
+            UriWrapper.fromHost(piaHost)
                 .addChild("sentralimport")
                 .addChild("authors")
                 .addQueryParameter(

@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
@@ -68,6 +69,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.Fault;
 import jakarta.xml.bind.JAXBElement;
 import java.io.IOException;
@@ -83,6 +85,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.namespace.QName;
@@ -973,7 +976,24 @@ class ScopusHandlerTest {
         return Arguments.of(List.of(language), languageUri);
     }
 
+    private static WireMockServer getHttpServer() {
+        WireMockConfiguration options = null;
+        while (isNull(options)) {
+            try {
+                options = options().port(randomPort());
+            } catch (Exception e) {
+                // NO-OP
+            }
+        }
+        return new WireMockServer(options);
+    }
+
+    private static int randomPort() {
+        return ThreadLocalRandom.current().nextInt(1000, 10_000);
+    }
+
     private Environment createPiaConnectionEnvironment() {
+        httpServer.resetAll();
         var environment = mock(Environment.class);
         when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(httpServer.baseUrl());
         when(environment.readEnv(API_HOST_ENV_KEY)).thenReturn(httpServer.baseUrl());
@@ -1301,7 +1321,7 @@ class ScopusHandlerTest {
     }
 
     private void startWiremockServer() {
-        httpServer = new WireMockServer(options().dynamicHttpsPort());
+        httpServer = getHttpServer();
         httpServer.start();
         serverUriJournal = URI.create(httpServer.baseUrl());
         serverUriPublisher = URI.create(httpServer.baseUrl());
