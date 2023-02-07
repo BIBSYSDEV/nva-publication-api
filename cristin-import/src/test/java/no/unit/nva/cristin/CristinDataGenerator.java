@@ -140,6 +140,7 @@ public final class CristinDataGenerator {
             case ENCYCLOPEDIA:
             case POPULAR_BOOK:
             case REFERENCE_MATERIAL:
+            case ACADEMIC_COMMENTARY:
                 return randomBook(category);
             case ANTHOLOGY:
                 return randomBookAnthology();
