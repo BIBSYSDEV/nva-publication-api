@@ -18,6 +18,7 @@ public enum CristinSecondaryCategory {
     NON_FICTION_BOOK("FAGBOK", "NON_FICTION_BOOK"),
     ENCYCLOPEDIA("LEKSIKON", "ENCYCLOPEDIA"),
     POPULAR_BOOK("POPVIT_BOK", "POPULAR_BOOK"),
+    ACADEMIC_COMMENTARY("KOMMENTARUTG", "ACADEMIC_COMMENTARY"),
     REFERENCE_MATERIAL("OPPSLAGSVERK", "REFERENCE_MATERIAL"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     FOREWORD("FORORD", "FOREWORD"),
@@ -84,7 +85,8 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory());
+               || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isFeatureArticle(CristinObject cristinObject) {
@@ -215,12 +217,14 @@ public enum CristinSecondaryCategory {
     }
 
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {
-        return Map.of(MONOGRAPH, BookMonographContentType.ACADEMIC_MONOGRAPH, POPULAR_BOOK,
-                      BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH, TEXTBOOK, BookMonographContentType.TEXTBOOK,
-                      ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA, NON_FICTION_BOOK,
-                      BookMonographContentType.NON_FICTION_MONOGRAPH, EXHIBITION_CATALOG,
-                      BookMonographContentType.EXHIBITION_CATALOG, REFERENCE_MATERIAL,
-                      BookMonographContentType.ENCYCLOPEDIA);
+        return Map.of(MONOGRAPH, BookMonographContentType.ACADEMIC_MONOGRAPH,
+                      POPULAR_BOOK, BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH,
+                      TEXTBOOK, BookMonographContentType.TEXTBOOK,
+                      ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
+                      NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
+                      EXHIBITION_CATALOG, BookMonographContentType.EXHIBITION_CATALOG,
+                      REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA,
+                      ACADEMIC_COMMENTARY, BookMonographContentType.ACADEMIC_MONOGRAPH);
     }
 
     private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
