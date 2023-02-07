@@ -33,7 +33,7 @@ import nva.commons.core.paths.UriWrapper;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributor {
-    
+
     public static final String NAME_DELIMITER = ", ";
     public static final String MISSING_ROLE_ERROR = "Affiliation without Role";
     @JsonProperty("personlopenr")
@@ -75,14 +75,15 @@ public class CristinContributor {
 
     private String constructFullName() {
         StringBuilder nameBuilder = new StringBuilder();
-        if (StringUtils.isNotBlank(getFamilyName())) {
-            nameBuilder.append(getFamilyName());
-        }
         if (StringUtils.isNotBlank(getGivenName())) {
-            nameBuilder.append(NAME_DELIMITER);
             nameBuilder.append(getGivenName());
         }
-        return StringUtils.isNotBlank(nameBuilder.toString()) ? nameBuilder.toString() : null;
+        if (StringUtils.isNotBlank(getFamilyName())) {
+            nameBuilder.append(StringUtils.SPACE);
+            nameBuilder.append(getFamilyName());
+        }
+
+        return StringUtils.isNotBlank(nameBuilder.toString().trim()) ? nameBuilder.toString().trim() : null;
     }
 
     private Role extractRoles() {
@@ -92,7 +93,7 @@ public class CristinContributor {
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .findFirst()
-                .orElseThrow(() -> new AffiliationWithoutRoleException());
+                .orElseThrow(AffiliationWithoutRoleException::new);
         return firstRole.toNvaRole();
     }
 

@@ -46,6 +46,7 @@ import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class CristinMapperTest extends AbstractCristinImportTest {
 
-    public static final String NAME_DELIMITER = ", ";
     public static final int NUMBER_OF_OBJECTS = 100;
     private List<CristinObject> cristinObjects;
 
@@ -498,7 +498,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private String formatNameAccordingToNvaPattern(CristinContributor cristinContributor) {
-        return cristinContributor.getFamilyName() + NAME_DELIMITER + cristinContributor.getGivenName();
+        return cristinContributor.getGivenName() + StringUtils.SPACE + cristinContributor.getFamilyName();
     }
 
     private CristinTitle mainTitle(List<CristinTitle> titles) {
