@@ -17,6 +17,7 @@ import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.model.Reference;
@@ -24,6 +25,9 @@ import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.media.MediaFormat;
+import no.unit.nva.model.contexttypes.media.MediaSubType;
+import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -46,15 +50,12 @@ public class ReferenceBuilder extends CristinMappingModule {
     }
 
     public Reference buildReference() {
-        PublicationInstanceBuilderImpl publicationInstanceBuilderImpl
-            = new PublicationInstanceBuilderImpl(cristinObject);
-        PublicationInstance<? extends Pages> publicationInstance
-            = publicationInstanceBuilderImpl.build();
-        PublicationContext publicationContext = attempt(this::buildPublicationContext)
-                                                    .orElseThrow(failure -> castToCorrectRuntimeException(
-                                                        failure.getException()));
-        return new Reference.Builder()
-                   .withPublicationInstance(publicationInstance)
+        PublicationInstanceBuilderImpl publicationInstanceBuilderImpl = new PublicationInstanceBuilderImpl(
+            cristinObject);
+        PublicationInstance<? extends Pages> publicationInstance = publicationInstanceBuilderImpl.build();
+        PublicationContext publicationContext = attempt(this::buildPublicationContext).orElseThrow(
+            failure -> castToCorrectRuntimeException(failure.getException()));
+        return new Reference.Builder().withPublicationInstance(publicationInstance)
                    .withPublishingContext(publicationContext)
                    .withDoi(extractDoi())
                    .build();
@@ -71,7 +72,7 @@ public class ReferenceBuilder extends CristinMappingModule {
     private static Config loadConfiguration() {
         return ConfigFactory.load(ConfigFactory.defaultApplication());
     }
-    
+
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
@@ -96,10 +97,16 @@ public class ReferenceBuilder extends CristinMappingModule {
     }
 
     private PublicationContext buildMediaContributionForPublicationContext() {
-        return new MediaContribution.Builder()
-                   .withFormat(new MediaFormatBuilder(cristinObject).build())
-                   .withMedium( new MediaSubTypeBuilder(cristinObject).build())
-                   .build();
+        return isWrittenInterview(cristinObject) ? new MediaContribution.Builder().withFormat(MediaFormat.TEXT)
+                                                       .withMedium(MediaSubType.create(MediaSubTypeEnum.JOURNAL))
+                                                       .build()
+                   : new MediaContribution.Builder().withFormat(new MediaFormatBuilder(cristinObject).build())
+                         .withMedium(new MediaSubTypeBuilder(cristinObject).build())
+                         .build();
+    }
+
+    private boolean isWrittenInterview(CristinObject cristinObject) {
+        return CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()

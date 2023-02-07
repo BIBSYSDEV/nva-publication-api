@@ -51,6 +51,7 @@ public enum CristinSecondaryCategory {
     INTERNET_EXHIBIT("UTST_WEB", "INTERNET_EXHIBIT"),
     PROGRAM_PARTICIPATION("PROGDELTAGELSE", "PROGRAM_PARTICIPATION"),
     INTERVIEW("INTERVJU", "INTERVIEW"),
+    WRITTEN_INTERVIEW("INTERVJUSKRIFTL", "WRITTEN INTERVIEW"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -143,7 +144,8 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isInterview(CristinObject cristinObject) {
-        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isProgramParticipation(CristinObject cristinObject) {
@@ -205,30 +207,28 @@ public enum CristinSecondaryCategory {
     }
 
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
-        return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
-                      POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
-                      ARTICLE, JournalArticleContentType.ACADEMIC_ARTICLE,
-                      ACADEMIC_REVIEW, JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW,
-                      SHORT_COMMUNICATION, JournalArticleContentType.ACADEMIC_ARTICLE);
+        return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE, POPULAR_ARTICLE,
+                      JournalArticleContentType.POPULAR_SCIENCE_ARTICLE, ARTICLE,
+                      JournalArticleContentType.ACADEMIC_ARTICLE, ACADEMIC_REVIEW,
+                      JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW, SHORT_COMMUNICATION,
+                      JournalArticleContentType.ACADEMIC_ARTICLE);
     }
 
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {
-        return Map.of(MONOGRAPH, BookMonographContentType.ACADEMIC_MONOGRAPH,
-                      POPULAR_BOOK, BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH,
-                      TEXTBOOK, BookMonographContentType.TEXTBOOK,
-                      ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
-                      NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
-                      EXHIBITION_CATALOG, BookMonographContentType.EXHIBITION_CATALOG,
-                      REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
+        return Map.of(MONOGRAPH, BookMonographContentType.ACADEMIC_MONOGRAPH, POPULAR_BOOK,
+                      BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH, TEXTBOOK, BookMonographContentType.TEXTBOOK,
+                      ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA, NON_FICTION_BOOK,
+                      BookMonographContentType.NON_FICTION_MONOGRAPH, EXHIBITION_CATALOG,
+                      BookMonographContentType.EXHIBITION_CATALOG, REFERENCE_MATERIAL,
+                      BookMonographContentType.ENCYCLOPEDIA);
     }
 
     private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
-        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
-                      POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
-                      CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
-                      FOREWORD, ChapterArticleContentType.INTRODUCTION,
-                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION,
-                      LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
+        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER, POPULAR_CHAPTER_ARTICLE,
+                      ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER, CHAPTER,
+                      ChapterArticleContentType.NON_FICTION_CHAPTER, FOREWORD, ChapterArticleContentType.INTRODUCTION,
+                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION, LEXICAL_IMPORT,
+                      ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
 
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {

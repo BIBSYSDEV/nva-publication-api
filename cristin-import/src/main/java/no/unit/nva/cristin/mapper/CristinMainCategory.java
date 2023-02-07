@@ -33,7 +33,8 @@ public enum CristinMainCategory {
     }
 
     public static boolean isJournal(CristinObject cristinObject) {
-        return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory());
+        return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
+               && !CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isReport(CristinObject cristinObject) {
@@ -49,7 +50,9 @@ public enum CristinMainCategory {
     }
 
     public static boolean isMediaContribution(CristinObject cristinObject) {
-        return CristinMainCategory.MEDIA_CONTRIBUTION.equals(cristinObject.getMainCategory());
+        return CristinMainCategory.MEDIA_CONTRIBUTION.equals(cristinObject.getMainCategory())
+               || CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
+                  && CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {
