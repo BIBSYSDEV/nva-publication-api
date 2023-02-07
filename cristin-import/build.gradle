@@ -80,7 +80,7 @@ test {
     environment "MAX_SLEEP_TIME", "1"
     environment "CREATE_CONTRIBUTOR_ID", "true"
     environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
-    environment "DOMAIN_NAME", "test.nva.aws.unit.no"
+    environment "DOMAIN_NAME", "api.test.nva.aws.unit.no"
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "EVENTS_BUCKET", "eventsBucket"
 }
