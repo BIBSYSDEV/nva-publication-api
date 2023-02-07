@@ -11,6 +11,7 @@ import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -96,9 +97,10 @@ public class ScopusConverter {
     public Publication generatePublication() {
         return new Publication.Builder()
                    .withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
-                   .withResourceOwner(new ResourceOwner("someUser@unit.no", URI.create("https://www.example.org")))
+                   .withResourceOwner(new ResourceOwner("kirTest@unit.no", URI.create("https://www.example.org")))
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
+                   .withModifiedDate(Instant.now())
                    .withStatus(PublicationStatus.DRAFT)
                    .build();
     }
