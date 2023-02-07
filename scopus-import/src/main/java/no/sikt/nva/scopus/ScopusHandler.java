@@ -38,7 +38,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     private static final String ERROR_SAVING_SCOPUS_PUBLICATION = "Error saving imported scopus publication object "
-                                                                  + "key: ";
+                                                                  + "key: {}";
     private static final int MAX_SLEEP_TIME = 100;
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
