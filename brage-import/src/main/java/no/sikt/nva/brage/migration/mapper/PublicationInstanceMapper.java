@@ -31,19 +31,25 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
+import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -139,11 +145,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {
-        return new ChapterArticle.Builder()
-                   .withPages(extractPages(record))
-                   .withPeerReviewed(false)
-                   .withContentType(ChapterArticleContentType.NON_FICTION_CHAPTER)
-                   .build();
+        return new NonFictionChapter(extractPages(record), false);
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic() {
@@ -156,11 +158,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificChapter(Record record) {
-        return new ChapterArticle.Builder()
-                   .withPages(extractPages(record))
-                   .withPeerReviewed(true)
-                   .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
-                   .build();
+        return new AcademicChapter(extractPages(record), true);
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record record) {
@@ -178,22 +176,11 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificArticle(Record record) {
-        return new JournalArticle.Builder()
-                   .withPages(extractPages(record))
-                   .withIssue(extractIssue(record))
-                   .withVolume(extractVolume(record))
-                   .withPeerReviewed(true)
-                   .withContent(JournalArticleContentType.ACADEMIC_ARTICLE)
-                   .build();
+        return new AcademicArticle(extractPages(record), true, extractVolume(record), extractIssue(record), null);
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificMonograph(Record record) {
-        return new BookMonograph.Builder()
-                   .withContentType(BookMonographContentType.ACADEMIC_MONOGRAPH)
-                   .withPages(extractMonographPages(record))
-                   .withPeerReviewed(true)
-                   .withOriginalResearch(false)
-                   .build();
+        return new AcademicMonograph(extractMonographPages(record), true);
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherStudentWork(Record record) {
@@ -216,10 +203,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBook(Record record) {
-        return new BookMonograph.Builder()
-                   .withContentType(BookMonographContentType.NON_FICTION_MONOGRAPH)
-                   .withPages(extractMonographPages(record))
-                   .build();
+        return new NonFictionMonograph(extractMonographPages(record), false);
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDataset(Record record) {
@@ -352,13 +336,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalArticle(Record record) {
-        return new JournalArticle.Builder()
-                   .withPages(extractPages(record))
-                   .withIssue(extractIssue(record))
-                   .withVolume(extractVolume(record))
-                   .withPeerReviewed(false)
-                   .withContent(JournalArticleContentType.PROFESSIONAL_ARTICLE)
-                   .build();
+        return new ProfessionalArticle(extractPages(record), false, extractVolume(record), extractIssue(record), null);
     }
 
     private static String extractVolume(Record record) {

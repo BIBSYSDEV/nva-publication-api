@@ -7,8 +7,8 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeade
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
@@ -93,13 +93,8 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
-        return new JournalArticle.Builder()
-                   .withContent(getCristinObject().getSecondaryCategory().toJournalArticleContentType())
-                   .withPages(numberOfPages)
-                   .withIssue(extractIssue())
-                   .withPeerReviewed(getCristinObject().isPeerReviewed())
-                   .withVolume(extractVolume())
-                   .build();
+        return new AcademicArticle(numberOfPages, getCristinObject().isPeerReviewed(), extractVolume(),
+                                   extractIssue(), null);
     }
 
     private String extractPagesBegin() {

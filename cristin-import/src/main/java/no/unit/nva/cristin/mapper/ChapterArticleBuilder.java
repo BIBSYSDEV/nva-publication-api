@@ -8,6 +8,8 @@ import no.unit.nva.model.pages.Range;
 
 public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
 
+    public static final boolean HARDCODED_ORIGINAL_RESEARCH = true;
+
     public ChapterArticleBuilder(CristinObject cristinObject) {
         super(cristinObject);
     }
@@ -15,11 +17,8 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
     @Override
     public PublicationInstance<? extends Pages> build() {
         if (isChapterArticle(getCristinObject())) {
-            return new ChapterArticle.Builder()
-                       .withContentType(getCristinObject().getSecondaryCategory().toChapterArticleContentType())
-                       .withPages(createChapterPages())
-                       .withPeerReviewed(getCristinObject().isPeerReviewed())
-                       .build();
+            return new ChapterArticle(createChapterPages(), getCristinObject().isPeerReviewed(),
+                                      HARDCODED_ORIGINAL_RESEARCH);
         } else {
             throw unknownSecondaryCategory();
         }

@@ -37,11 +37,7 @@ public class BookBuilder extends AbstractBookReportBuilder {
     }
 
     private BookMonograph createBookMonograph() {
-        return new BookMonograph.Builder()
-                   .withContentType(getCristinObject().getSecondaryCategory().toBookMonographContentType())
-                   .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
-                   .withPages(createMonographPages())
-                   .withPeerReviewed(getCristinObject().isPeerReviewed())
-                   .build();
+        return new BookMonograph(createMonographPages(), HARDCODED_BOOK_PEER_REVIEWED,
+                                 getCristinObject().isPeerReviewed());
     }
 }

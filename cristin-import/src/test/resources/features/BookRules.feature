@@ -18,8 +18,7 @@ Feature: Book conversion rules
   Textbook, Encyclopedia, Exhibition Catalog" is converted to NVA Resource type BookMonograph and correct sub-type
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "BookMonograph"
-    And the NVA BookMonograph Resource has a Content type of type "<contentType>"
+    Then the NVA Resource has a Publication Instance of type "<contentType>"
     Examples:
       | secondaryCategory | contentType             |
       | MONOGRAFI         | AcademicMonograph       |
