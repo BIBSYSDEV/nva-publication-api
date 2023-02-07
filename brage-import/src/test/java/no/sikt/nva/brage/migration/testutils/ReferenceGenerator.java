@@ -39,6 +39,7 @@ import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
+import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -65,7 +66,6 @@ import org.joda.time.DateTime;
 public final class ReferenceGenerator {
 
     public static final String CURRENT_YEAR = String.valueOf(DateTime.now().getYear());
-    public static final boolean HARDCODED_PEER_REVIEWED = false;
 
     public static Reference generateReference(Builder builder) {
         return Optional.ofNullable(builder)
@@ -235,12 +235,12 @@ public final class ReferenceGenerator {
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForScientificChapter(
         Builder builder) {
-        return new AcademicChapter(generateRange(builder), HARDCODED_PEER_REVIEWED);
+        return new AcademicChapter(generateRange(builder), true);
     }
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForChapter(
         Builder builder) {
-        return new AcademicChapter(generateRange(builder), HARDCODED_PEER_REVIEWED);
+        return new NonFictionChapter(generateRange(builder), false);
     }
 
     @NotNull
@@ -272,7 +272,7 @@ public final class ReferenceGenerator {
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForScientificArticle(
         Builder builder) {
-        return new AcademicArticle(generateRange(builder), HARDCODED_PEER_REVIEWED, null, null, null);
+        return new AcademicArticle(generateRange(builder), true, null, null, null);
     }
 
     private static PublicationContext generateUnconfirmedJournal(Builder builder) throws InvalidIssnException {
@@ -303,7 +303,7 @@ public final class ReferenceGenerator {
     }
 
     private static BookMonograph generatePublicationInstanceForScientificMonograph(Builder builder) {
-        return new AcademicMonograph(builder.getMonographPages(), HARDCODED_PEER_REVIEWED);
+        return new AcademicMonograph(builder.getMonographPages(), false);
     }
 
     private static PublicationContext generatePublicationContextForOtherStudentWork(Builder builder)
@@ -312,7 +312,7 @@ public final class ReferenceGenerator {
     }
 
     private static JournalArticle generatePublicationInstanceForJournalArticle(Builder builder) {
-        return new ProfessionalArticle(generateRange(builder), HARDCODED_PEER_REVIEWED, null,null, null);
+        return new ProfessionalArticle(generateRange(builder), false, null,null, null);
     }
 
     private static Publisher generatePublisher(Builder builder) {
@@ -400,7 +400,7 @@ public final class ReferenceGenerator {
         var monographPages = new MonographPages.Builder().withIllustrated(false)
                                    .withPages(builder.getPages().getPages())
                                    .build();
-        return new NonFictionMonograph(monographPages, HARDCODED_PEER_REVIEWED);
+        return new NonFictionMonograph(monographPages, false);
     }
 
     private static Degree generatePublicationContextForDegree(Builder builder)
