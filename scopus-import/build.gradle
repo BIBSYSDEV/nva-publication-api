@@ -43,8 +43,10 @@ test {
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
     environment "EVENTS_BUCKET", "NvaEventsBucket"
     environment "EVENTS_BUS", "NvaEventBus"
-    environment "PIA_REST_API", "localhost/sentralimport"
+    environment "PIA_REST_API", "someHost"
     environment "PIA_SECRETS_NAME", "someSecretName"
     environment "PIA_USERNAME_KEY", "someUserNameKey"
     environment "PIA_PASSWORD_KEY", "somePasswordNameKey"
+    environment "TABLE_NAME", "nonExistingTable"
+
 }

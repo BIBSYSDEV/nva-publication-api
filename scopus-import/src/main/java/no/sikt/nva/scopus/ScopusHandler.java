@@ -52,7 +52,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     @Override
     public Publication handleRequest(S3Event event, Context context) {
-        return attempt(() -> createPublication(event)).flatMap(this::persistInDatabase)
+        return attempt(() -> createPublication(event))
+                   .flatMap(this::persistInDatabase)
                    .orElseThrow(this::handleSavingError);
     }
 

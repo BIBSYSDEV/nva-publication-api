@@ -434,23 +434,13 @@ Resources:
           Parameters:
             Location: ./docs/openapi.yaml
 
-  ScopusHandlersRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
 
   ScopusBucketsAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
       PolicyName: !Sub ScopusBucketsAccessPolicy-${AWS::StackName}
       Roles:
-        - !Ref ScopusHandlersRole
+        - !Ref LambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -758,7 +748,7 @@ Resources:
       CodeUri: scopus-import
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Runtime: java11
-      Role: !GetAtt ScopusHandlersRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 5 # Throttled to slow down create publication requests from scopus files
       Environment:
         Variables:
@@ -1402,7 +1392,7 @@ Resources:
                     Bucket=zip_bucket if fname.endswith('.zip') else xml_bucket,
                     Key=f'unzipped/{fname}' if fname.endswith('.zip') else fname
                 )
-      Role: !GetAtt ScopusHandlersRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       Events:
         UnzipEvent:
           Type: S3
