@@ -745,7 +745,7 @@ Resources:
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 5 # Throttled to slow down create publication requests from scopus files
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           API_HOST: !Ref ApiDomain
