@@ -11,8 +11,9 @@ import no.unit.nva.cristin.mapper.CristinObject;
  * NVA entries.
  */
 public class CristinMappingModule {
-    
+
     private static final String NOT_DIGITS_OR_X_REGEX = "[^\\dxX]";
+    private static final String ONLYE_0_OR_DASHES_REGEX = "[0-]+";
 
     protected final CristinObject cristinObject;
 
@@ -41,6 +42,10 @@ public class CristinMappingModule {
     }
 
     private String cleanCristinIsbn(String isbn) {
-        return isNull(isbn) ? null : isbn.replaceAll(NOT_DIGITS_OR_X_REGEX, "");
+        return isNull(isbn) || isEmptyIsbn(isbn) ? null : isbn.replaceAll(NOT_DIGITS_OR_X_REGEX, "");
+    }
+
+    private boolean isEmptyIsbn(String isbn) {
+        return isbn.matches(ONLYE_0_OR_DASHES_REGEX);
     }
 }
