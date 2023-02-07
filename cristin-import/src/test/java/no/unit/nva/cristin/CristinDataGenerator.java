@@ -163,7 +163,8 @@ public final class CristinDataGenerator {
             case RESEARCH_REPORT:
                 return randomResearchReport();
             case DEGREE_PHD:
-                return randomDegreePhd();
+            case MAGISTER_THESIS:
+                return randomDegreePhd(category);
             case DEGREE_LICENTIATE:
                 return randomDegreeLicentiate();
             case DEGREE_MASTER:
@@ -436,8 +437,8 @@ public final class CristinDataGenerator {
         return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.RESEARCH_REPORT);
     }
 
-    private static CristinObject randomDegreePhd() {
-        return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.DEGREE_PHD);
+    private static CristinObject randomDegreePhd(CristinSecondaryCategory secondaryCategory) {
+        return createRandomReportWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     private static CristinObject randomDegreeMaster(CristinSecondaryCategory secondaryCategory) {

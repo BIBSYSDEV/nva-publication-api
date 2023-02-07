@@ -21,3 +21,8 @@ Feature:
       | 10-15      |
       | 123        |
       | some pages |
+
+  Scenario: Cristin Result "Magister thesis" is converted to "DegreePhd"
+    Given a valid Cristin Result with secondary category "MAGISTERAVH"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "DegreePhd"

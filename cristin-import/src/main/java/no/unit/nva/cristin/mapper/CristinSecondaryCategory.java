@@ -32,6 +32,7 @@ public enum CristinSecondaryCategory {
     ARTICLE("ARTIKKEL", "ARTICLE"),
     ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
     SHORT_COMMUNICATION("SHORTCOMM", "SHORT_COMMUNICATION"),
+    MAGISTER_THESIS("MAGISTERAVH", "MAGISTER_THESIS"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
     DEGREE_LICENTIATE("LISENSIATAVH", "DEGREE_LICENTIATE"),
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
@@ -121,7 +122,8 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isDegreePhd(CristinObject cristinObject) {
-        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.MAGISTER_THESIS.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isDegreeMaster(CristinObject cristinObject) {
