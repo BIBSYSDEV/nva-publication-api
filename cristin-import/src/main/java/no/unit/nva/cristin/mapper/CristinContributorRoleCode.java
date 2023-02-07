@@ -6,8 +6,14 @@ import java.util.Arrays;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedRoleException;
 
 public enum CristinContributorRoleCode {
+    ARCHITECT("ARKITEKT"),
+    ARTIST("KUNSTNER"),
+    COMPOSER("KOMPONIST"),
+    CONDUCTOR("DIRIGENT"),
     CREATOR("FORFATTER"),
+    CURATOR("KONSERVATOR"),
     EDITOR("REDAKT" + "\u00D8" + "R"), //REDAKTØR
+    ORGANIZER("ARRANGØR"),
     SUPERVISOR("VEILEDER"),
     PROGRAMME_PARTICIPANT("PROGRAMDELTAGER"),
     PROGRAMME_LEADER("PROGRAMLEDER"),
@@ -15,6 +21,7 @@ public enum CristinContributorRoleCode {
     JOURNALIST("JOURNALIST"),
     EDITORIAL_BOARD_MEMBER("REDAKSJONSKOM"),
     INTERVIEW_SUBJECT("INTERVJUOBJEKT"),
+    TRANSLATOR("OVERSETTER"),
     ACADEMIC_COORDINATOR("FAGLIG_ANSVARLIG");
 
     public static final String UNKNOWN_ROLE_ERROR = "Unmapped alias for roleCode: ";
