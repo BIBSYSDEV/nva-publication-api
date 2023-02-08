@@ -11,6 +11,7 @@ import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
+import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Chapter;
@@ -71,17 +72,22 @@ public class PublicationInstanceCreator {
                     return Optional.of(generateChapterArticle());
                 }
             case ED:
-                return Optional.of(new JournalLeader(extractVolume().orElse(null), extractIssue().orElse(null),
+                return Optional.of(new JournalLeader(extractVolume().orElse(null),
+                                                     extractIssue().orElse(null),
                                                      extractArticleNumber().orElse(null),
                                                      extractPages().orElse(null)));
             case ER:
-                return Optional.of(new JournalCorrigendum(extractVolume().orElse(null), extractIssue().orElse(null),
+                return Optional.of(new JournalCorrigendum(extractVolume().orElse(null),
+                                                          extractIssue().orElse(null),
                                                           extractArticleNumber().orElse(null),
-                                                          extractPages().orElse(null), null));
+                                                          extractPages().orElse(null),
+                                                          ScopusConstants.DUMMY_URI));
             case LE:
             case NO:
-                return Optional.of(new JournalLetter(extractVolume().orElse(null), extractIssue().orElse(null),
-                                                     extractArticleNumber().orElse(null), extractPages().orElse(null)));
+                return Optional.of(new JournalLetter(extractVolume().orElse(null),
+                                                     extractIssue().orElse(null),
+                                                     extractArticleNumber().orElse(null),
+                                                     extractPages().orElse(null)));
             case RE:
             case SH:
                 return Optional.of(new AcademicLiteratureReview(extractPages().orElse(null),
@@ -95,8 +101,8 @@ public class PublicationInstanceCreator {
 
     private AcademicArticle generateJournalArticle() {
         return new AcademicArticle(extractPages().orElse(null), extractVolume().orElse(null),
-                            extractIssue().orElse(null),
-                            extractArticleNumber().orElse(null));
+                                   extractIssue().orElse(null),
+                                   extractArticleNumber().orElse(null));
     }
 
     private AcademicChapter generateChapterArticle() {
