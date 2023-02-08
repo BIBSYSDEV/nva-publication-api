@@ -114,10 +114,10 @@ Feature: Mappings that hold for all types of Cristin Results
       | Have, Comma | Surname     |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a List of NVA Contributors:
-      | Name                 |
-      | Adams, John          |
-      | Loremius, C.J.B.     |
-      | Surname, Have, Comma |
+      | Name                |
+      | John Adams          |
+      | C.J.B. Loremius     |
+      | Have, Comma Surname |
 
   Scenario: The NVA Contributor sequence is the same as the Cristin Contributor Sequence
     Given that the Cristin Result has the Contributors with names and sequence:
@@ -127,10 +127,10 @@ Feature: Mappings that hold for all types of Cristin Results
       | ThirdGiven  | ThirdFamily  | 3              |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a List of NVA Contributors with the following sequences:
-      | Name                      | Ordinal Number |
-      | FirstFamily, FirstGiven   | 1              |
-      | SecondFamily, SecondGiven | 2              |
-      | ThirdFamily, ThirdGiven   | 3              |
+      | Name                     | Ordinal Number |
+      | FirstGiven FirstFamily   | 1              |
+      | SecondGiven SecondFamily | 2              |
+      | ThirdGiven ThirdFamily   | 3              |
 
   Scenario: Map returns NVA Resource with Contributors that have Affiliations With URIs
   created based on Cristin Contributor's Reference URI and Unit numbers.
@@ -147,10 +147,10 @@ Feature: Mappings that hold for all types of Cristin Results
 
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Contributors have the following names, sequences and affiliation URIs
-      | Name                      | Ordinal Number | Affiliation URI                              |
-      | FirstFamily, FirstGiven   | 1              | https://api.cristin.no/v2/units/194.66.32.15 |
-      | SecondFamily, SecondGiven | 2              | https://api.cristin.no/v2/units/194.66.32.15 |
-      | ThirdFamily, ThirdGiven   | 3              | https://api.cristin.no/v2/units/0.0.0.0      |
+      | Name                     | Ordinal Number | Affiliation URI                              |
+      | FirstGiven FirstFamily   | 1              | https://api.cristin.no/v2/units/194.66.32.15 |
+      | SecondGiven SecondFamily | 2              | https://api.cristin.no/v2/units/194.66.32.15 |
+      | ThirdGiven ThirdFamily   | 3              | https://api.cristin.no/v2/units/0.0.0.0      |
 
   Scenario Outline: Mapping of Cristin Contributor roles is done based on hard-coded rules described here.
     Given that the Cristin Result has a Contributor with role "<CristinRole>"

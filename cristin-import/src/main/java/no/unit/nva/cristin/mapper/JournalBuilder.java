@@ -6,6 +6,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalCorri
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeader;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
+import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
@@ -45,8 +46,8 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     @Override
-    protected CristinMainCategory getExpectedType() {
-        return CristinMainCategory.JOURNAL;
+    protected Set<CristinMainCategory> getExpectedType() {
+        return Set.of(CristinMainCategory.JOURNAL);
     }
 
     private PublicationInstance<? extends Pages> createFeatureArticle() {

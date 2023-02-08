@@ -2,6 +2,7 @@ package cucumber;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
@@ -262,6 +263,18 @@ public class BookFeatures {
     @And("the Cristin Result has an valid ISBN littered with special characters {string}")
     public void theCristinResultHasAnValidIsbnLitteredWithSpecialCharactersString(String isbn) {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(isbn);
+    }
+
+    @And("the Book Report has an ISBN field with value {string}")
+    public void theBookReportHasAnISBNFieldWithValue(String cristinIsbn) {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(cristinIsbn);
+    }
+
+    @Then("the NVA Resource has a PublicationContext with an empty ISBN list")
+    public void theNVAResourceHasAPublicationContextWithAnEmptyISBNList() {
+        Book bookContext = extractNvaBook();
+        var actualIsbnList = bookContext.getIsbnList();
+        assertThat(actualIsbnList, hasSize(0));
     }
 
     private Book extractNvaBook() {

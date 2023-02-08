@@ -38,13 +38,18 @@ import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResourceOwner;
 import nva.commons.core.paths.UriWrapper;
 
 public class ScopusConverter {
 
+    public static final URI HARDCODED_ID = URI.create("https://api.sandbox.nva.aws.unit"
+                                                      + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
@@ -90,8 +95,11 @@ public class ScopusConverter {
 
     public Publication generatePublication() {
         return new Publication.Builder()
+                   .withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
+                   .withResourceOwner(new ResourceOwner("someUser@unit.no", URI.create("https://www.example.org")))
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
+                   .withStatus(PublicationStatus.DRAFT)
                    .build();
     }
 

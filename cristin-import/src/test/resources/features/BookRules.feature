@@ -28,6 +28,7 @@ Feature: Book conversion rules
       | POPVIT_BOK        | PopularScienceMonograph |
       | OPPSLAGSVERK      | Encyclopedia            |
       | UTSTILLINGSKAT    | ExhibitionCatalog       |
+      | KOMMENTARUTG      | AcademicMonograph       |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
@@ -46,6 +47,17 @@ Feature: Book conversion rules
       | secondaryCategory |
       | MONOGRAFI         |
       | ANTOLOGI          |
+
+  Scenario Outline: ISBN values only containing "0" or combination with "-" should be mapped to null.
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
+    And that the Cristin Result has a non empty Book Report
+    And the Book Report has an ISBN field with value "<ISBN>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a PublicationContext with an empty ISBN list
+    Examples:
+      | ISBN              |
+      | 00000000000       |
+      | 000-0-0000-0000-0 |
 
 
   Scenario Outline: "Pages" value is copied as is.

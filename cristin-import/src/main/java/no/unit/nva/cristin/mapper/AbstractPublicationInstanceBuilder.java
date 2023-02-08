@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import java.util.Set;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
@@ -27,11 +28,11 @@ public abstract class AbstractPublicationInstanceBuilder {
 
     @JacocoGenerated
     protected final boolean isExpectedType(CristinObject cristinObject) {
-        return cristinObject.getMainCategory().equals(getExpectedType());
+        return getExpectedType().contains(cristinObject.getMainCategory());
     }
 
     @JacocoGenerated
-    protected abstract CristinMainCategory getExpectedType();
+    protected abstract Set<CristinMainCategory> getExpectedType();
 
     protected final CristinObject getCristinObject() {
         return this.cristinObject;

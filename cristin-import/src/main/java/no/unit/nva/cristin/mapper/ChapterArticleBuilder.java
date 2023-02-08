@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.EncyclopediaChapter;
@@ -36,8 +37,8 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
     }
     
     @Override
-    protected CristinMainCategory getExpectedType() {
-        return CristinMainCategory.CHAPTER;
+    protected Set<CristinMainCategory> getExpectedType() {
+        return Set.of(CristinMainCategory.CHAPTER);
     }
 
     protected Range createChapterPages() {

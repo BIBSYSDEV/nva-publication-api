@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferenceLe
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferencePoster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isLecture;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isOtherPresentation;
+import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.event.ConferenceLecture;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
@@ -36,8 +37,8 @@ public class EventBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     @Override
-    protected CristinMainCategory getExpectedType() {
-        return CristinMainCategory.EVENT;
+    protected Set<CristinMainCategory> getExpectedType() {
+        return Set.of(CristinMainCategory.EVENT);
     }
 
     private PublicationInstance<? extends Pages> createConferenceLecture() {

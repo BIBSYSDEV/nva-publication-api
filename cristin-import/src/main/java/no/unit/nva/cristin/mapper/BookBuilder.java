@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
+import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -45,14 +46,16 @@ public class BookBuilder extends AbstractBookReportBuilder {
             return new Encyclopedia(createMonographPages());
         } else if (CristinSecondaryCategory.EXHIBITION_CATALOG.equals(secondaryCategory)) {
             return new ExhibitionCatalog(createMonographPages());
+        } else if (CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(secondaryCategory)) {
+            return new AcademicMonograph(createMonographPages());
         } else {
             throw new UnsupportedOperationException("Unknown monograph type");
         }
     }
 
     @Override
-    protected CristinMainCategory getExpectedType() {
-        return CristinMainCategory.BOOK;
+    protected Set<CristinMainCategory> getExpectedType() {
+        return Set.of(CristinMainCategory.BOOK);
     }
 
     private BookAnthology createBookAnthology() {

@@ -18,6 +18,7 @@ public enum CristinSecondaryCategory {
     NON_FICTION_BOOK("FAGBOK", "NON_FICTION_BOOK"),
     ENCYCLOPEDIA("LEKSIKON", "ENCYCLOPEDIA"),
     POPULAR_BOOK("POPVIT_BOK", "POPULAR_BOOK"),
+    ACADEMIC_COMMENTARY("KOMMENTARUTG", "ACADEMIC_COMMENTARY"),
     REFERENCE_MATERIAL("OPPSLAGSVERK", "REFERENCE_MATERIAL"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     FOREWORD("FORORD", "FOREWORD"),
@@ -32,6 +33,7 @@ public enum CristinSecondaryCategory {
     ARTICLE("ARTIKKEL", "ARTICLE"),
     ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
     SHORT_COMMUNICATION("SHORTCOMM", "SHORT_COMMUNICATION"),
+    MAGISTER_THESIS("MAGISTERAVH", "MAGISTER_THESIS"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
     DEGREE_LICENTIATE("LISENSIATAVH", "DEGREE_LICENTIATE"),
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
@@ -51,6 +53,7 @@ public enum CristinSecondaryCategory {
     INTERNET_EXHIBIT("UTST_WEB", "INTERNET_EXHIBIT"),
     PROGRAM_PARTICIPATION("PROGDELTAGELSE", "PROGRAM_PARTICIPATION"),
     INTERVIEW("INTERVJU", "INTERVIEW"),
+    WRITTEN_INTERVIEW("INTERVJUSKRIFTL", "WRITTEN INTERVIEW"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -83,7 +86,8 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory());
+               || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isFeatureArticle(CristinObject cristinObject) {
@@ -120,7 +124,8 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isDegreePhd(CristinObject cristinObject) {
-        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.MAGISTER_THESIS.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isDegreeMaster(CristinObject cristinObject) {
@@ -134,7 +139,8 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isInterview(CristinObject cristinObject) {
-        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory())
+               || CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isProgramParticipation(CristinObject cristinObject) {
@@ -196,11 +202,11 @@ public enum CristinSecondaryCategory {
     }
 
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
-        return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
-                      POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
-                      ARTICLE, JournalArticleContentType.ACADEMIC_ARTICLE,
-                      ACADEMIC_REVIEW, JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW,
-                      SHORT_COMMUNICATION, JournalArticleContentType.ACADEMIC_ARTICLE);
+        return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE, POPULAR_ARTICLE,
+                      JournalArticleContentType.POPULAR_SCIENCE_ARTICLE, ARTICLE,
+                      JournalArticleContentType.ACADEMIC_ARTICLE, ACADEMIC_REVIEW,
+                      JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW, SHORT_COMMUNICATION,
+                      JournalArticleContentType.ACADEMIC_ARTICLE);
     }
 
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {
@@ -210,16 +216,16 @@ public enum CristinSecondaryCategory {
                       ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
                       NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
                       EXHIBITION_CATALOG, BookMonographContentType.EXHIBITION_CATALOG,
-                      REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
+                      REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA,
+                      ACADEMIC_COMMENTARY, BookMonographContentType.ACADEMIC_MONOGRAPH);
     }
 
     private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
-        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
-                      POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
-                      CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
-                      FOREWORD, ChapterArticleContentType.INTRODUCTION,
-                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION,
-                      LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
+        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER, POPULAR_CHAPTER_ARTICLE,
+                      ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER, CHAPTER,
+                      ChapterArticleContentType.NON_FICTION_CHAPTER, FOREWORD, ChapterArticleContentType.INTRODUCTION,
+                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION, LEXICAL_IMPORT,
+                      ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
 
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {
