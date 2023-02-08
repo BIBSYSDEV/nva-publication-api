@@ -23,7 +23,6 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
-import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import nva.commons.core.SingletonCollector;
 
@@ -170,8 +169,7 @@ public class BookFeatures {
                                              .getEntityDescription()
                                              .getReference()
                                              .getPublicationInstance();
-        PeerReviewedMonograph book = (PeerReviewedMonograph) context;
-        assertThat(book.getPages().getPages(), is(equalTo(expectedNumberOfPages)));
+        assertThat(context.getPages(), is(equalTo(expectedNumberOfPages)));
     }
 
     @Then("the NVA Resource has a npiSubjectHeading with value equal to {int}")
@@ -253,16 +251,6 @@ public class BookFeatures {
         URI seriesId = extractSeriesId();
         assertThat(seriesId.getPath(), containsString(nsdCode.toString()));
         assertThat(seriesId.getPath(), containsString(publicationYear.toString()));
-    }
-
-    @Then("the Book Report has a \"isPeerReviewed\" equal to True")
-    public void theBookReportHasAIsPeerReviewedEqualToTrue() {
-        PublicationInstance<?> context = scenarioContext.getNvaEntry()
-                                             .getEntityDescription()
-                                             .getReference()
-                                             .getPublicationInstance();
-        PeerReviewedMonograph book = (PeerReviewedMonograph) context;
-        assertThat(book.isPeerReviewed(), is(true));
     }
 
     @And("the Cristin Result has an valid ISBN littered with special characters {string}")

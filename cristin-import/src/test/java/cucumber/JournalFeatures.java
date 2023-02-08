@@ -472,16 +472,6 @@ public class JournalFeatures {
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
-    @Then("the Journal Article has a \"isPeerReviewed\" equal to True")
-    public void theJournalChapterArticleHasIsPeerReviewedAEqualToTrue() {
-        PublicationInstance<?> context = scenarioContext.getNvaEntry()
-                                             .getEntityDescription()
-                                             .getReference()
-                                             .getPublicationInstance();
-        JournalArticle journalArticle = (JournalArticle) context;
-        assertThat(journalArticle.isPeerReviewed(), is(true));
-    }
-
     private Journal extractJournal() {
         PublicationContext publicationContext = scenarioContext.getNvaEntry()
                                                     .getEntityDescription()

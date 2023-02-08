@@ -93,7 +93,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
-        return new AcademicArticle(numberOfPages, getCristinObject().isPeerReviewed(), extractVolume(),
+        return new AcademicArticle(numberOfPages, extractVolume(),
                                    extractIssue(), null);
     }
 

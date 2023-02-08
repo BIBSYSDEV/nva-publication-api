@@ -133,15 +133,6 @@ public enum CristinSecondaryCategory {
         return CristinSecondaryCategory.DEGREE_LICENTIATE.equals(cristinObject.getSecondaryCategory());
     }
 
-    public static boolean isChapterArticle(CristinObject cristinObject) {
-        return CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.FOREWORD.equals(cristinObject.getSecondaryCategory())
-               || CristinSecondaryCategory.INTRODUCTION.equals(cristinObject.getSecondaryCategory());
-    }
-
     public static boolean isInterview(CristinObject cristinObject) {
         return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }

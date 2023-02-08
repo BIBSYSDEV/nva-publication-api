@@ -134,9 +134,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferencePoster() {
-        var poster = new ConferencePoster();
-        poster.setPages(new NullPages());
-        return poster;
+        return new ConferencePoster();
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPlanOrBluePrint() {
@@ -145,7 +143,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {
-        return new NonFictionChapter(extractPages(record), false);
+        return new NonFictionChapter(extractPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic() {
@@ -158,7 +156,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificChapter(Record record) {
-        return new AcademicChapter(extractPages(record), true);
+        return new AcademicChapter(extractPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record record) {
@@ -170,40 +168,31 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReportWorkingPaper(Record record) {
-        return new ReportWorkingPaper.Builder()
-                   .withPages(extractMonographPages(record))
-                   .build();
+        return new ReportWorkingPaper(extractMonographPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificArticle(Record record) {
-        return new AcademicArticle(extractPages(record), true, extractVolume(record), extractIssue(record), null);
+        return new AcademicArticle(extractPages(record), extractVolume(record), extractIssue(record), null);
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificMonograph(Record record) {
-        return new AcademicMonograph(extractMonographPages(record), true);
+        return new AcademicMonograph(extractMonographPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherStudentWork(Record record) {
-        return new OtherStudentWork.Builder()
-                   .withPages(extractMonographPages(record))
-                   .withSubmittedDate(extractPublicationDate(record))
-                   .build();
+        return new OtherStudentWork(extractMonographPages(record), extractPublicationDate(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenResearchReport(Record record) {
-        return new ReportResearch.Builder()
-                   .withPages(extractMonographPages(record))
-                   .build();
+        return new ReportResearch(extractMonographPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReport(Record record) {
-        return new ReportBasic.Builder()
-                   .withPages(extractMonographPages(record))
-                   .build();
+        return new ReportBasic(extractMonographPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBook(Record record) {
-        return new NonFictionMonograph(extractMonographPages(record), false);
+        return new NonFictionMonograph(extractMonographPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDataset(Record record) {
@@ -284,24 +273,15 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMasterThesis(Record record) {
-        return new DegreeMaster.Builder()
-                   .withPages(extractMonographPages(record))
-                   .withSubmittedDate(extractPublicationDate(record))
-                   .build();
+        return new DegreeMaster(extractMonographPages(record), extractPublicationDate(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBachelorThesis(Record record) {
-        return new DegreeBachelor.Builder()
-                   .withPages(extractMonographPages(record))
-                   .withSubmittedDate(extractPublicationDate(record))
-                   .build();
+        return new DegreeBachelor(extractMonographPages(record), extractPublicationDate(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDoctoralThesis(Record record) {
-        return new DegreePhd.Builder()
-                   .withPages(extractMonographPages(record))
-                   .withSubmittedDate(extractPublicationDate(record))
-                   .build();
+        return new DegreePhd(extractMonographPages(record), extractPublicationDate(record));
     }
 
     private static MonographPages extractMonographPages(Record record) {
@@ -336,7 +316,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalArticle(Record record) {
-        return new ProfessionalArticle(extractPages(record), false, extractVolume(record), extractIssue(record), null);
+        return new ProfessionalArticle(extractPages(record), extractVolume(record), extractIssue(record), null);
     }
 
     private static String extractVolume(Record record) {

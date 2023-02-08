@@ -38,25 +38,19 @@ public class ReportBuilder extends AbstractBookReportBuilder {
     }
 
     private PublicationInstance<? extends Pages> createDegreeLicentiate() {
-        return new DegreeLicentiate.Builder()
-                   .withPages(createMonographPages())
-                   .build();
+        return new DegreeLicentiate(createMonographPages(), null);
     }
 
     private PublicationInstance<? extends Pages> createReportResearch() {
-        return new ReportResearch.Builder().build();
+        return new ReportResearch(createMonographPages());
     }
 
     private PublicationInstance<? extends Pages> createDegreePhd() {
-        return new DegreePhd.Builder()
-                   .withPages(createMonographPages())
-                   .build();
+        return new DegreePhd(createMonographPages(), null);
     }
 
     private PublicationInstance<? extends Pages> createDegreeMaster() {
-        return new DegreeMaster.Builder()
-                   .withPages(createMonographPages())
-                   .build();
+        return new DegreeMaster(createMonographPages(), null);
     }
 }
 
