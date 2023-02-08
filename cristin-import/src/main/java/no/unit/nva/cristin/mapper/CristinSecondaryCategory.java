@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import nva.commons.core.SingletonCollector;
 
@@ -185,22 +184,6 @@ public enum CristinSecondaryCategory {
         }
     }
 
-    public BookMonographContentType toBookMonographContentType() {
-        if (mapToBookMonographContentType.containsKey(this)) {
-            return mapToBookMonographContentType.get(this);
-        } else {
-            throw new IllegalStateException(conversionError(this, BookMonographContentType.class));
-        }
-    }
-
-    public ChapterArticleContentType toChapterArticleContentType() {
-        if (createMapToChapterContentType().containsKey(this)) {
-            return createMapToChapterContentType().get(this);
-        } else {
-            throw new IllegalStateException(conversionError(this, ChapterArticleContentType.class));
-        }
-    }
-
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
         return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE, POPULAR_ARTICLE,
                       JournalArticleContentType.POPULAR_SCIENCE_ARTICLE, ARTICLE,
@@ -218,14 +201,6 @@ public enum CristinSecondaryCategory {
                       EXHIBITION_CATALOG, BookMonographContentType.EXHIBITION_CATALOG,
                       REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA,
                       ACADEMIC_COMMENTARY, BookMonographContentType.ACADEMIC_MONOGRAPH);
-    }
-
-    private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
-        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER, POPULAR_CHAPTER_ARTICLE,
-                      ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER, CHAPTER,
-                      ChapterArticleContentType.NON_FICTION_CHAPTER, FOREWORD, ChapterArticleContentType.INTRODUCTION,
-                      INTRODUCTION, ChapterArticleContentType.INTRODUCTION, LEXICAL_IMPORT,
-                      ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
 
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {
