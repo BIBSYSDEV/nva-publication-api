@@ -24,6 +24,8 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.Range;
 import nva.commons.core.SingletonCollector;
 
 public class BookFeatures {
@@ -169,7 +171,11 @@ public class BookFeatures {
                                              .getEntityDescription()
                                              .getReference()
                                              .getPublicationInstance();
-        assertThat(context.getPages(), is(equalTo(expectedNumberOfPages)));
+        var rawPages = context.getPages();
+        var pages = rawPages instanceof MonographPages
+                        ? ((MonographPages) rawPages).getPages()
+                        : null;
+        assertThat(pages, is(equalTo(expectedNumberOfPages)));
     }
 
     @Then("the NVA Resource has a npiSubjectHeading with value equal to {int}")
