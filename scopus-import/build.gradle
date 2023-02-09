@@ -48,5 +48,5 @@ test {
     environment "PIA_USERNAME_KEY", "someUserNameKey"
     environment "PIA_PASSWORD_KEY", "somePasswordNameKey"
     environment "TABLE_NAME", "nonExistingTable"
-
+    environment "SCOPUS_IMPORT_BUCKET", "someBucket"
 }

@@ -5,11 +5,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
+import static no.sikt.nva.scopus.ScopusHandler.SUCCESS_BUCKET_PATH;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST_ENV_KEY;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_PASSWORD_KEY;
@@ -64,6 +69,7 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.Fault;
@@ -121,12 +127,14 @@ import no.sikt.nva.scopus.utils.FakeResourceServiceThrowingException;
 import no.sikt.nva.scopus.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.utils.PiaAuthorResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
@@ -550,6 +558,28 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldSaveErrorReportInS3ContainingTheOriginalFileName() throws IOException {
+        createEmptyPiaMock();
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
+        var s3Event = createNewScopusPublicationEvent();
+        Executable action = () -> scopusHandler.handleRequest(s3Event, CONTEXT);
+        var exception = assertThrows(UnsupportedSrcTypeException.class, action);
+        var actualReport = extractActualReportFromS3Client(s3Event, exception);
+        var input = actualReport.get("input").asText();
+        assertThat(input, is(equalTo(scopusData.toXml())));
+    }
+
+    @Test
+    void shouldSaveSuccessReportInS3() throws IOException {
+        createEmptyPiaMock();
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+        var s3Event = createNewScopusPublicationEvent();
+        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var report = extractSuccessReport(s3Event, publication);
+        assertThat(getScopusIdentifier(publication), is(equalTo(report)));
+    }
+
+    @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
@@ -559,10 +589,10 @@ class ScopusHandlerTest {
         scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_3, LANGUAGE_ENG);
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var expectedkeywords = List.of(HARDCODED_EXPECTED_KEYWORD_1, HARDCODED_EXPECTED_KEYWORD_2,
+        var expectedKeywords = List.of(HARDCODED_EXPECTED_KEYWORD_1, HARDCODED_EXPECTED_KEYWORD_2,
                                        HARDCODED_EXPECTED_KEYWORD_3);
         var actualPlaintextKeyWords = publication.getEntityDescription().getTags();
-        assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedkeywords.toArray()));
+        assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedKeywords.toArray()));
     }
 
     @Test
@@ -863,10 +893,10 @@ class ScopusHandlerTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = publication.getEntityDescription().getContributors();
         var authorList = actualContributors.stream()
-            .filter(contributor -> isAuthor(contributor, authorTypes)).collect(Collectors.toList());
+                             .filter(contributor -> isAuthor(contributor, authorTypes)).collect(Collectors.toList());
         authorList.forEach(
-                contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors,
-                                                                                cristinPersons));
+            contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors,
+                                                                            cristinPersons));
     }
 
     @Test
@@ -963,9 +993,28 @@ class ScopusHandlerTest {
         return Arguments.of(List.of(language), languageUri);
     }
 
+    private static String getScopusIdentifier(Publication publication) {
+        return publication.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(id -> "scopusIdentifier".equals(id.getSource()))
+                   .findFirst()
+                   .map(AdditionalIdentifier::getValue)
+                   .orElse(null);
+    }
+
+    private String extractSuccessReport(S3Event s3Event, Publication publication) {
+        UriWrapper handleReport =
+            UriWrapper.fromUri(SUCCESS_BUCKET_PATH)
+                .addChild(s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
+                .addChild(publication.getIdentifier().toString());
+        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+        return s3Driver.getFile(handleReport.toS3bucketPath());
+    }
+
     private Environment createPiaConnectionEnvironment(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var environment = mock(Environment.class);
-        when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl().replace(
+            "https://", ""));
         when(environment.readEnv(API_HOST_ENV_KEY)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         when(environment.readEnv(PIA_USERNAME_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
         when(environment.readEnv(PIA_PASSWORD_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
@@ -1380,6 +1429,23 @@ class ScopusHandlerTest {
                                         randomString());
         var schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
+    }
+
+    private JsonNode extractActualReportFromS3Client(
+        S3Event s3Event,
+        Exception exception) throws JsonProcessingException {
+        UriWrapper errorFileUri =
+            UriWrapper.fromUri(ERROR_BUCKET_PATH
+                               + PATH_SEPERATOR
+                               + s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT)
+                               + PATH_SEPERATOR
+                               + exception.getClass().getSimpleName()
+                               + PATH_SEPERATOR
+                               + UriWrapper.fromUri(s3Event.getRecords().get(0).getS3().getObject().getKey())
+                                     .getLastPathElement());
+        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        return JsonUtils.dtoObjectMapper.readTree(content);
     }
 
     private static class FakeS3ClientThrowingException extends FakeS3Client {
