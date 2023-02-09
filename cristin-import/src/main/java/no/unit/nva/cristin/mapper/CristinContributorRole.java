@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -24,7 +23,7 @@ public class CristinContributorRole {
 
     @JsonIgnore
     private static Map<CristinContributorRoleCode, Role> cristinRoleToNvaRoles = Map.ofEntries(
-        new AbstractMap.SimpleEntry<>(CristinContributorRoleCode.CREATOR, Role.CREATOR),
+        new SimpleEntry<>(CristinContributorRoleCode.CREATOR, Role.CREATOR),
         new SimpleEntry<>(CristinContributorRoleCode.EDITOR, Role.EDITOR),
         new SimpleEntry<>(CristinContributorRoleCode.SUPERVISOR, Role.SUPERVISOR),
         new SimpleEntry<>(CristinContributorRoleCode.PROGRAMME_PARTICIPANT, Role.PROGRAMME_PARTICIPANT),
@@ -49,6 +48,6 @@ public class CristinContributorRole {
     }
 
     public Role toNvaRole() {
-        return cristinRoleToNvaRoles.containsKey(roleCode) ? cristinRoleToNvaRoles.get(roleCode) : Role.OTHER;
+        return cristinRoleToNvaRoles.getOrDefault(roleCode, Role.OTHER);
     }
 }
