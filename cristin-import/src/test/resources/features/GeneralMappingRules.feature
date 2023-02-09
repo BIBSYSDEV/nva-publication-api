@@ -167,6 +167,13 @@ Feature: Mappings that hold for all types of Cristin Results
       | REDAKSJONSKOM    | EDITORIAL_BOARD_MEMBER |
       | INTERVJUOBJEKT   | INTERVIEW_SUBJECT      |
       | FAGLIG_ANSVARLIG | ACADEMIC_COORDINATOR   |
+      | KUNSTNER         | ARTIST                 |
+      | ARKITEKT         | ARCHITECT              |
+      | KOMPONIST        | COMPOSER               |
+      | OVERSETTER       | TRANSLATOR_ADAPTER     |
+      | ARRANGØR         | ORGANIZER              |
+      | KONSERVATOR      | CURATOR                |
+      | DIRIGENT         | CONDUCTOR              |
 
   Scenario: The abstract is copied from the the Cristin Result's title entry when there
   one title entry and it is annotated as original.

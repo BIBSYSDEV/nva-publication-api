@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
+import no.unit.nva.cristin.patcher.CristinPatcher;
 import no.unit.nva.cristin.patcher.exception.ParentPublicationException;
 import no.unit.nva.cristin.patcher.model.ParentAndChild;
 import no.unit.nva.events.handlers.EventHandler;
@@ -61,9 +62,12 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
                                        Context context) {
         validateEvent(event);
         var eventBody = readEventBody(input);
-        return attempt(() -> retrieveChildAndParentPublications(eventBody)).map(ParentAndChild::getChildPublication)
+        return attempt(() -> retrieveChildAndParentPublications(eventBody))
+                   .map(CristinPatcher::updateChildPublication)
+                   .map(ParentAndChild::getChildPublication)
                    .orElseThrow(fail -> castToCorrectRuntimeException(fail.getException()));
     }
+
 
     private ParentAndChild retrieveChildAndParentPublications(NvaPublicationPartOfCristinPublication eventBody)
         throws NotFoundException {
