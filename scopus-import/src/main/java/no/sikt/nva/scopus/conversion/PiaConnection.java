@@ -21,6 +21,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,10 @@ public class PiaConnection {
     public static final String PIA_USERNAME_KEY = "PIA_USERNAME_KEY";
     public static final String PIA_PASSWORD_KEY = "PIA_PASSWORD_KEY";
     public static final String PIA_SECRETS_NAME_ENV_KEY = "PIA_SECRETS_NAME";
+    public static final String PIA_AUTHORS_PATH = "/sentralimport/authors";
+    public static final String PIA_AUTHOR_ID_QUERY_PARAM = "author_id";
+    public static final String SCOPUS = "SCOPUS:";
+    public static final String HTTPS_SCHEME = "https";
     private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
@@ -101,16 +106,23 @@ public class PiaConnection {
     }
 
     private String getPiaJsonAsString(String scopusId) {
-        var baseUri = URI.create(piaHost);
-        var uri = UriWrapper.fromUri(baseUri)
-                      .addChild("sentralimport")
-                      .addChild("authors")
-                      .addQueryParameter("author_id", "SCOPUS:" + scopusId).getUri();
+        var uri = cosntructUri(scopusId);
+        logger.info("Pia Rest URI: {}", uri);
         return attempt(() -> getPiaResponse(uri))
                    .map(this::getBodyFromResponse)
                    .orElseThrow(fail ->
                                     logExceptionAndThrowRuntimeError(fail.getException(),
                                                                      COULD_NOT_GET_ERROR_MESSAGE + scopusId));
+    }
+
+    private URI cosntructUri(String scopusId) {
+        return attempt(() -> new URIBuilder()
+                                 .setHost(piaHost)
+                                 .setPath(PIA_AUTHORS_PATH)
+                                 .setParameter(PIA_AUTHOR_ID_QUERY_PARAM, SCOPUS + scopusId)
+                                 .setScheme(HTTPS_SCHEME)
+                                 .build())
+                   .orElseThrow();
     }
 
     private RuntimeException logExceptionAndThrowRuntimeError(Exception exception, String message) {
