@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeade
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
 import java.util.Set;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
@@ -110,7 +111,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         } else if (CristinSecondaryCategory.SHORT_COMMUNICATION.equals(secondaryCategory)) {
             return new AcademicArticle(numberOfPages, extractVolume(), extractIssue(), null);
         } else {
-            throw new UnsupportedOperationException("The journal article subtype is unknown");
+            throw new UnsupportedSecondaryCategoryException();
         }
     }
 
