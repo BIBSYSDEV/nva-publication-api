@@ -1251,7 +1251,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cristin-import
-      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
+      Handler: no.unit.nva.cristin.lambda.CristinPatchEventConsumer::handleRequest
       Runtime: java11
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
