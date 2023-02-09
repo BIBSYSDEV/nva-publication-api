@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
+import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.schemaorg.document.FramedSchemaOrgDocumentBuilder;
 import nva.commons.core.paths.UriWrapper;

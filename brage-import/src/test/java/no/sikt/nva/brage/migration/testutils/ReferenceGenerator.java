@@ -35,26 +35,27 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.book.BookMonographContentType;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
+import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
+import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.NullPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
@@ -219,33 +220,22 @@ public final class ReferenceGenerator {
     }
 
     private static ConferencePoster generatePublicationInstanceForConferencePoster() {
-        var poster = new ConferencePoster();
-        poster.setPages(new NullPages());
-        return poster;
+        return new ConferencePoster();
     }
 
     @NotNull
     private static OtherStudentWork generatePublicationInstanceForStudentPaper(Builder builder) {
-        return new OtherStudentWork.Builder().withPages(builder.getMonographPages())
-                   .withSubmittedDate(builder.getPublicationDateForPublication())
-                   .build();
+        return new OtherStudentWork(builder.getMonographPages(), builder.getPublicationDateForPublication());
     }
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForScientificChapter(
         Builder builder) {
-        return new ChapterArticle.Builder()
-                   .withPages(generateRange(builder))
-                   .withPeerReviewed(true)
-                   .withContentType(ChapterArticleContentType.ACADEMIC_CHAPTER)
-                   .build();
+        return new AcademicChapter(generateRange(builder));
     }
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForChapter(
         Builder builder) {
-        return new ChapterArticle.Builder()
-                   .withPages(generateRange(builder))
-                   .withContentType(ChapterArticleContentType.NON_FICTION_CHAPTER)
-                   .build();
+        return new NonFictionChapter(generateRange(builder));
     }
 
     @NotNull
@@ -272,14 +262,12 @@ public final class ReferenceGenerator {
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForReportWorkingPaper(
         Builder builder) {
-        return new ReportWorkingPaper.Builder().withPages(builder.getMonographPages()).build();
+        return new ReportWorkingPaper(builder.getMonographPages());
     }
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForScientificArticle(
         Builder builder) {
-        return new JournalArticle.Builder().withContent(JournalArticleContentType.ACADEMIC_ARTICLE)
-                   .withPeerReviewed(true)
-                   .withPages(generateRange(builder)).build();
+        return new AcademicArticle(generateRange(builder), null, null, null);
     }
 
     private static PublicationContext generateUnconfirmedJournal(Builder builder) throws InvalidIssnException {
@@ -310,11 +298,7 @@ public final class ReferenceGenerator {
     }
 
     private static BookMonograph generatePublicationInstanceForScientificMonograph(Builder builder) {
-        return new BookMonograph.Builder().withContentType(BookMonographContentType.ACADEMIC_MONOGRAPH)
-                   .withPeerReviewed(true)
-                   .withOriginalResearch(false)
-                   .withPages(builder.getMonographPages())
-                   .build();
+        return new AcademicMonograph(builder.getMonographPages());
     }
 
     private static PublicationContext generatePublicationContextForOtherStudentWork(Builder builder)
@@ -323,8 +307,7 @@ public final class ReferenceGenerator {
     }
 
     private static JournalArticle generatePublicationInstanceForJournalArticle(Builder builder) {
-        return new JournalArticle.Builder().withContent(JournalArticleContentType.PROFESSIONAL_ARTICLE)
-                   .withPages(generateRange(builder)).build();
+        return new ProfessionalArticle(generateRange(builder), null, null, null);
     }
 
     private static Publisher generatePublisher(Builder builder) {
@@ -367,38 +350,28 @@ public final class ReferenceGenerator {
     }
 
     private static DegreeBachelor generatePublicationInstanceForBachelorDegree(Builder builder) {
-        return new DegreeBachelor.Builder().withSubmittedDate(
-                builder.getPublicationDateForPublication())
-                   .withPages(builder.getMonographPages()).build();
+        return new DegreeBachelor(builder.getMonographPages(), builder.getPublicationDateForPublication());
     }
 
     private static DegreeMaster generatePublicationInstanceForMasterDegree(Builder builder) {
-        return new DegreeMaster.Builder().withSubmittedDate(
-                builder.getPublicationDateForPublication())
-                   .withPages(builder.getMonographPages()).build();
+        return new DegreeMaster(builder.getMonographPages(), builder.getPublicationDateForPublication());
     }
 
     private static DegreePhd generatePublicationInstanceForPhd(Builder builder) {
-        return new DegreePhd.Builder().withSubmittedDate(
-                builder.getPublicationDateForPublication())
-                   .withPages(builder.getMonographPages()).build();
+        return new DegreePhd(builder.getMonographPages(), builder.getPublicationDateForPublication());
     }
 
     private static ReportBasic generatePublicationInstanceForReport(Builder builder) {
-        return new ReportBasic.Builder()
-                   .withPages(
-                       new MonographPages.Builder()
-                           .withPages(builder.getPages().getPages())
-                           .withIllustrated(false).build())
-                   .build();
+        return new ReportBasic(
+            new MonographPages.Builder()
+                .withPages(builder.getPages().getPages())
+                .withIllustrated(false).build());
     }
 
     private static ReportResearch generatePublicationInstanceForResearchReport(Builder builder) {
-        return new ReportResearch.Builder()
-                   .withPages(new MonographPages.Builder()
+        return new ReportResearch(new MonographPages.Builder()
                                   .withPages(builder.getPages().getPages())
-                                  .withIllustrated(false).build())
-                   .build();
+                                  .withIllustrated(false).build());
     }
 
     private static Book generatePublicationContextForBook(Builder builder) throws InvalidIsbnException {
@@ -409,14 +382,10 @@ public final class ReferenceGenerator {
     }
 
     private static BookMonograph generatePublicationInstanceForBook(Builder builder) {
-        return new BookMonograph.Builder()
-                   .withPeerReviewed(false)
-                   .withOriginalResearch(false)
-                   .withContentType(BookMonographContentType.NON_FICTION_MONOGRAPH)
-                   .withPages(new MonographPages.Builder().withIllustrated(false)
-                                  .withPages(builder.getPages().getPages())
-                                  .build())
-                   .build();
+        var monographPages = new MonographPages.Builder().withIllustrated(false)
+                                 .withPages(builder.getPages().getPages())
+                                 .build();
+        return new NonFictionMonograph(monographPages);
     }
 
     private static Degree generatePublicationContextForDegree(Builder builder)
