@@ -1,5 +1,8 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.ORGANIZATION_PATH;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -9,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.model.Organization;
 import nva.commons.core.paths.UriWrapper;
 
@@ -25,7 +27,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonIgnoreProperties({"stednavn_opprinnelig", "avdelingsnavn_opprinnelig", "institusjonsnavn_opprinnelig",
     "stedkode_opprinnelig"})
 public class CristinContributorsAffiliation {
-    
+
     public static final String CRISTIN_UNITS_DELIMITER = ".";
     public static final String INSITITUTION_IDENTIFIER = "institusjonsnr";
     public static final String DEPARTMENT_IDENTIFIER = "avdnr";
@@ -62,7 +64,9 @@ public class CristinContributorsAffiliation {
                                                     departmentIdentifier.toString(),
                                                     subdepartmentIdentifier.toString(),
                                                     groupNumber.toString());
-        return UriWrapper.fromUri(MappingConstants.CRISTIN_ORG_URI)
+        return UriWrapper.fromUri(NVA_API_DOMAIN)
+                   .addChild(CRISTIN_PATH)
+                   .addChild(ORGANIZATION_PATH)
                    .addChild(affiliationCristinCode)
                    .getUri();
     }
