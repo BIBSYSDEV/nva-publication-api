@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.patcher;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import java.net.URI;
 import no.unit.nva.cristin.patcher.exception.PublicationInstanceMismatchException;
 import no.unit.nva.cristin.patcher.model.ParentAndChild;
@@ -43,6 +44,6 @@ public final class CristinPatcher {
     }
 
     private static URI createPartOfUri(Publication parentPublication) {
-        return UriWrapper.fromUri(NVA_API_DOMAIN + "/" + parentPublication.getIdentifier()).getUri();
+        return UriWrapper.fromUri(NVA_API_DOMAIN + PUBLICATION_PATH + "/" + parentPublication.getIdentifier()).getUri();
     }
 }

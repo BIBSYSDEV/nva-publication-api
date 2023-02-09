@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.INVALID_PAREN
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.SUBTOPIC;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.TOPIC;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -142,12 +143,12 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldSetParentPublicationIdentifierAsPartOfChildPublicationWhenSuccess() throws ApiGatewayException,
-                                                                                       IOException {
+                                                                                          IOException {
         var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
                                                                                                    ChapterArticle.class);
         var partOfCristinId = randomString();
         var parentPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId,
-                                                                                      BookAnthology.class);
+                                                                                                    BookAnthology.class);
         var expectedChildPartOfURI = createExpectedPartOfUri(parentPublication.getIdentifier());
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
                                                               partOfCristinId);
@@ -158,10 +159,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var actualChildPublication = getPublicationFromOutputStream(outputStream);
         assertThat(actualChildPublication.getEntityDescription().getReference().getPublicationContext(), hasProperty(
             "partOf", is(equalTo(expectedChildPartOfURI))));
-    }
-
-    private URI createExpectedPartOfUri(SortableIdentifier identifier) {
-        return UriWrapper.fromUri(NVA_API_DOMAIN + "/" + identifier).getUri();
     }
 
     @Test
@@ -193,6 +190,10 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Chapter) {
             publication.getEntityDescription().getReference().setPublicationContext(new Chapter.Builder().build());
         }
+    }
+
+    private URI createExpectedPartOfUri(SortableIdentifier identifier) {
+        return UriWrapper.fromUri(NVA_API_DOMAIN + PUBLICATION_PATH + "/" + identifier).getUri();
     }
 
     private Publication getPublicationFromOutputStream(ByteArrayOutputStream outputStream)
