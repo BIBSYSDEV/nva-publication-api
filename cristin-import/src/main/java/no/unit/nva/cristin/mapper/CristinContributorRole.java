@@ -1,6 +1,9 @@
 package no.unit.nva.cristin.mapper;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +20,27 @@ import no.unit.nva.model.Role;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributorRole {
-    
+
+    @JsonIgnore
+    private static Map<CristinContributorRoleCode, Role> cristinRoleToNvaRoles = Map.ofEntries(
+        new SimpleEntry<>(CristinContributorRoleCode.CREATOR, Role.CREATOR),
+        new SimpleEntry<>(CristinContributorRoleCode.EDITOR, Role.EDITOR),
+        new SimpleEntry<>(CristinContributorRoleCode.SUPERVISOR, Role.SUPERVISOR),
+        new SimpleEntry<>(CristinContributorRoleCode.PROGRAMME_PARTICIPANT, Role.PROGRAMME_PARTICIPANT),
+        new SimpleEntry<>(CristinContributorRoleCode.PROGRAMME_LEADER, Role.PROGRAMME_LEADER),
+        new SimpleEntry<>(CristinContributorRoleCode.RIGHTS_HOLDER, Role.RIGHTS_HOLDER),
+        new SimpleEntry<>(CristinContributorRoleCode.JOURNALIST, Role.JOURNALIST),
+        new SimpleEntry<>(CristinContributorRoleCode.EDITORIAL_BOARD_MEMBER, Role.EDITORIAL_BOARD_MEMBER),
+        new SimpleEntry<>(CristinContributorRoleCode.INTERVIEW_SUBJECT, Role.INTERVIEW_SUBJECT),
+        new SimpleEntry<>(CristinContributorRoleCode.ACADEMIC_COORDINATOR, Role.ACADEMIC_COORDINATOR),
+        new SimpleEntry<>(CristinContributorRoleCode.ARTIST, Role.ARTIST),
+        new SimpleEntry<>(CristinContributorRoleCode.ARCHITECT, Role.ARCHITECT),
+        new SimpleEntry<>(CristinContributorRoleCode.COMPOSER, Role.COMPOSER),
+        new SimpleEntry<>(CristinContributorRoleCode.CONDUCTOR, Role.CONDUCTOR),
+        new SimpleEntry<>(CristinContributorRoleCode.CURATOR, Role.CURATOR),
+        new SimpleEntry<>(CristinContributorRoleCode.ORGANIZER, Role.ORGANIZER),
+        new SimpleEntry<>(CristinContributorRoleCode.TRANSLATOR, Role.TRANSLATOR_ADAPTER));
+
     @JsonProperty("rollekode")
     private CristinContributorRoleCode roleCode;
 
@@ -25,28 +48,6 @@ public class CristinContributorRole {
     }
 
     public Role toNvaRole() {
-        if (CristinContributorRoleCode.CREATOR.equals(roleCode)) {
-            return Role.CREATOR;
-        } else if (CristinContributorRoleCode.EDITOR.equals(roleCode)) {
-            return Role.EDITOR;
-        } else if (CristinContributorRoleCode.SUPERVISOR.equals(roleCode)) {
-            return Role.SUPERVISOR;
-        } else if (CristinContributorRoleCode.PROGRAMME_PARTICIPANT.equals(roleCode)) {
-            return Role.PROGRAMME_PARTICIPANT;
-        } else if (CristinContributorRoleCode.PROGRAMME_LEADER.equals(roleCode)) {
-            return Role.PROGRAMME_LEADER;
-        } else if (CristinContributorRoleCode.RIGHTS_HOLDER.equals(roleCode)) {
-            return Role.RIGHTS_HOLDER;
-        } else if (CristinContributorRoleCode.JOURNALIST.equals(roleCode)) {
-            return Role.JOURNALIST;
-        } else if (CristinContributorRoleCode.EDITORIAL_BOARD_MEMBER.equals(roleCode)) {
-            return Role.EDITORIAL_BOARD_MEMBER;
-        } else if (CristinContributorRoleCode.INTERVIEW_SUBJECT.equals(roleCode)) {
-            return Role.INTERVIEW_SUBJECT;
-        } else if (CristinContributorRoleCode.ACADEMIC_COORDINATOR.equals(roleCode)) {
-            return Role.ACADEMIC_COORDINATOR;
-        } else {
-            return Role.OTHER;
-        }
+        return cristinRoleToNvaRoles.getOrDefault(roleCode, Role.OTHER);
     }
 }
