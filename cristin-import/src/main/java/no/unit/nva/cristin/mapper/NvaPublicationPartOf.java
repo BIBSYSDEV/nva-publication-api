@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 
 @Data
@@ -20,6 +21,8 @@ public class NvaPublicationPartOf {
 
     @JsonProperty
     private String cristinId;
+
+    private Publication parentPublication;
 
     @JacocoGenerated
     public NvaPublicationPartOf() {
