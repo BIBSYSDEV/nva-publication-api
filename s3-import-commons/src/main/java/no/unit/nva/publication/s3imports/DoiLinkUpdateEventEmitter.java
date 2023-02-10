@@ -17,13 +17,16 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
 
     public static final String DEFAULT_FILENAME = "results.csv";
     public static final String NEW_LINE_REGEX = "\n";
+    private static final Logger logger = LoggerFactory.getLogger(DoiLinkUpdateEventEmitter.class);
     private final S3Client s3Client;
     private final ResourceService resourceService;
 
@@ -50,7 +53,13 @@ public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
             .map(SortableIdentifier::new)
             .map(resourceService::getPublicationByIdentifier)
             .map(this::moveDoiToLinkField)
+            .map(this::logUpdatedPublication)
             .map(resourceService::updatePublication);
+    }
+
+    private Publication logUpdatedPublication(Publication publication) {
+        logger.info("Updated publication is: {}", publication.toString());
+        return publication;
     }
 
     private Publication moveDoiToLinkField(Publication publication) {
@@ -66,7 +75,9 @@ public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
 
     private String getFileContainingIdentifiers(EventReference eventReference) {
         S3Driver s3Driver = new S3Driver(s3Client, eventReference.extractBucketName());
-        return s3Driver.getFile(UnixPath.fromString(DEFAULT_FILENAME));
+        var fileLocation = UriWrapper.fromUri(eventReference.getUri()).addChild(DEFAULT_FILENAME).toS3bucketPath();
+        logger.info(fileLocation.toString());
+        return s3Driver.getFile(fileLocation);
     }
 
     private EventReference parseInput(InputStream input) {
