@@ -12,6 +12,10 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
+  ExternalCognitoAuthorizerArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: Reference to External Cognito UserPool for the stage
+    Default: ExternalCognitoAuthorizerArn
   CognitoAuthorizationUri:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/CognitoUri'
