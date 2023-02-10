@@ -1379,6 +1379,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
 
 
   ScopusUnzipperFunction:
