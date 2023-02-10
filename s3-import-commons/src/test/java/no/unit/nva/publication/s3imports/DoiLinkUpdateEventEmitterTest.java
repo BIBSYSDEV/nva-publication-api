@@ -71,6 +71,12 @@ public class DoiLinkUpdateEventEmitterTest extends ResourcesLocalTest {
             Collectors.toList()).toString().replaceAll("[\\(\\)\\[\\]\\{\\}\\,]", "");
     }
 
+    private static Publication moveDoiToNewField(Publication publication) {
+        publication.getEntityDescription().getReference().setDoi(publication.getDoi());
+        publication.setDoi(null);
+        return publication;
+    }
+
     private List<Publication> getUpdatedPublications(List<Publication> publicationsToModify) {
         return publicationsToModify.stream()
                    .map(Publication::getIdentifier)
@@ -91,7 +97,7 @@ public class DoiLinkUpdateEventEmitterTest extends ResourcesLocalTest {
 
     private List<Publication> createPublicationWithDoiValueInLinkField(List<Publication> publicationsToModify) {
         return publicationsToModify.stream()
-                   .map(publication -> publication.copy().withDoi(null).withLink(publication.getDoi()).build())
+                   .map(DoiLinkUpdateEventEmitterTest::moveDoiToNewField)
                    .collect(Collectors.toList());
     }
 

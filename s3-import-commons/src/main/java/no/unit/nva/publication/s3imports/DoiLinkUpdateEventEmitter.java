@@ -47,26 +47,22 @@ public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
             .forEach(this::moveDoiToLinkFieldForPublicationWithCorrespondingIdentifier);
     }
 
+//    private static Publication constructNewPublicationWithUpdatedReferenceDoi(Publication publication) {
+//
+//    }
+
     private void moveDoiToLinkFieldForPublicationWithCorrespondingIdentifier(String identifier) {
         attempt(() -> identifier.replaceAll(" ", StringUtils.EMPTY_STRING))
             .map(SortableIdentifier::new)
             .map(resourceService::getPublicationByIdentifier)
             .map(this::moveDoiToLinkField)
-            .map(this::logUpdatedPublication)
             .map(resourceService::updatePublication);
     }
 
-    private Publication logUpdatedPublication(Publication publication) {
-        logger.info("Updated publication is: {}", publication.toString());
-        return publication;
-    }
-
     private Publication moveDoiToLinkField(Publication publication) {
-        return publication.copy()
-                   .withDoi(null)
-                   .withLink(publication.getDoi())
-                   .build();
-    }
+        publication.getEntityDescription().getReference().setDoi(publication.getDoi());
+        publication.setDoi(null);
+        return publication;    }
 
     private List<String> extractIdentifiers(String string) {
         logger.info(string);
