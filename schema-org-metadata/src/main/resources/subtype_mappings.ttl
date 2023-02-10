@@ -23,7 +23,7 @@ nva:AcademicMonograph rdfs:subClassOf schema:Book .
 nva:Encyclopedia rdfs:subClassOf schema:Book .
 nva:ExhibitionCatalog rdfs:subClassOf schema:Book .
 nva:NonFictionMonograph rdfs:subClassOf schema:Book .
-nva:PopularScienceArticle rdfs:subClassOf schema:Book .
+nva:PopularScienceMonograph rdfs:subClassOf schema:Book .
 nva:Textbook rdfs:subClassOf schema:Book .
 nva:MovingPicture rdfs:subClassOf schema:Movie .
 nva:JournalInterview rdfs:subClassOf schema:ScholarlyArticle .
