@@ -70,12 +70,13 @@ public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
     }
 
     private List<String> extractIdentifiers(String string) {
+        logger.info(string);
         return Arrays.asList(string.split(NEW_LINE_REGEX));
     }
 
     private String getFileContainingIdentifiers(EventReference eventReference) {
         S3Driver s3Driver = new S3Driver(s3Client, eventReference.extractBucketName());
-        var fileLocation = UriWrapper.fromUri(eventReference.getUri() + "/" + DEFAULT_FILENAME).toS3bucketPath();
+        var fileLocation = UriWrapper.fromUri(DEFAULT_FILENAME).toS3bucketPath();
         logger.info(fileLocation.toString());
         return s3Driver.getFile(fileLocation);
     }
