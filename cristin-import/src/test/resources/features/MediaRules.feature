@@ -35,3 +35,11 @@ Feature: Rules that apply for Media
     When the Cristin Result is converted to an NVA Resource
     Then the NVA resource has a MediaContribution with medium "Journal"
     And the NVA resource has a MediaContribution with format "TEXT"
+
+
+  Scenario: Cristin restult with secondary category "PROGLEDELSE" is converted to NVA entry
+    Given a valid Cristin Result with secondary category "PROGLEDELSE"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA resource has a MediaContribution with medium "TV"
+    And the NVA resource has a MediaContribution with format "VIDEO"
+
