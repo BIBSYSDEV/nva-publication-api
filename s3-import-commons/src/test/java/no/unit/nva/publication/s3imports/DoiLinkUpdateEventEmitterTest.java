@@ -55,7 +55,8 @@ public class DoiLinkUpdateEventEmitterTest extends ResourcesLocalTest {
         var publicationsToModify = createPublications();
         var expectedPublications = createPublicationWithDoiValueInLinkField(publicationsToModify);
         expectedPublications.forEach(publication -> publication.setModifiedDate(null));
-        EventReference eventReference = new EventReference(null, null, URI.create("s3://nve-doi-to-update-bucket"));
+        EventReference eventReference = new EventReference(null, null, URI.create("s3://nve-doi-to-update-bucket"
+                                                                                  + "/results.csv"));
         InputStream inputStream = toInputStream(eventReference);
         handler.handleRequest(inputStream, outputStream, context);
         var updatedPublications = getUpdatedPublications(publicationsToModify);
@@ -106,7 +107,7 @@ public class DoiLinkUpdateEventEmitterTest extends ResourcesLocalTest {
                                .map(i -> persist(randomPublication()))
                                .collect(Collectors.toList());
         s3Client.putObject(
-            PutObjectRequest.builder().bucket("s3://nve-doi-to-update-bucket").key(DEFAULT_FILE_NAME).build(),
+            PutObjectRequest.builder().bucket("nve-doi-to-update-bucket").key(DEFAULT_FILE_NAME).build(),
             RequestBody.fromString(getPublicationInCSVFormat(publications)));
         return publications;
     }

@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
 
-    public static final String DEFAULT_FILENAME = "results.csv";
     public static final String NEW_LINE_REGEX = "\n";
     private static final Logger logger = LoggerFactory.getLogger(DoiLinkUpdateEventEmitter.class);
     private final S3Client s3Client;
@@ -76,7 +75,7 @@ public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
 
     private String getFileContainingIdentifiers(EventReference eventReference) {
         S3Driver s3Driver = new S3Driver(s3Client, eventReference.extractBucketName());
-        var fileLocation = UriWrapper.fromUri(DEFAULT_FILENAME).toS3bucketPath();
+        var fileLocation = UriWrapper.fromUri(eventReference.getUri()).toS3bucketPath();
         logger.info(fileLocation.toString());
         return s3Driver.getFile(fileLocation);
     }
