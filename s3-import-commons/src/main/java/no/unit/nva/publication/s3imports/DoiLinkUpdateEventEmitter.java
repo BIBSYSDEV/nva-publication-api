@@ -75,7 +75,7 @@ public class DoiLinkUpdateEventEmitter implements RequestStreamHandler {
 
     private String getFileContainingIdentifiers(EventReference eventReference) {
         S3Driver s3Driver = new S3Driver(s3Client, eventReference.extractBucketName());
-        var fileLocation = UriWrapper.fromUri(eventReference.getUri()).addChild(DEFAULT_FILENAME).toS3bucketPath();
+        var fileLocation = UriWrapper.fromUri(eventReference.getUri() + "/" + DEFAULT_FILENAME).toS3bucketPath();
         logger.info(fileLocation.toString());
         return s3Driver.getFile(fileLocation);
     }
