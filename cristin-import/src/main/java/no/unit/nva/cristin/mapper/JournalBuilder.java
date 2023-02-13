@@ -7,13 +7,17 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeade
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
 import java.util.Set;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
+import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 
@@ -94,13 +98,21 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
-        return new JournalArticle.Builder()
-                   .withContent(getCristinObject().getSecondaryCategory().toJournalArticleContentType())
-                   .withPages(numberOfPages)
-                   .withIssue(extractIssue())
-                   .withPeerReviewed(getCristinObject().isPeerReviewed())
-                   .withVolume(extractVolume())
-                   .build();
+
+        var secondaryCategory = getCristinObject().getSecondaryCategory();
+        if (CristinSecondaryCategory.JOURNAL_ARTICLE.equals(secondaryCategory)) {
+            return new ProfessionalArticle(numberOfPages, extractVolume(), extractIssue(), null);
+        } else if (CristinSecondaryCategory.POPULAR_ARTICLE.equals(secondaryCategory)) {
+            return new PopularScienceArticle(numberOfPages, extractVolume(), extractIssue(), null);
+        } else if (CristinSecondaryCategory.ARTICLE.equals(secondaryCategory)) {
+            return new AcademicArticle(numberOfPages, extractVolume(), extractIssue(), null);
+        } else if (CristinSecondaryCategory.ACADEMIC_REVIEW.equals(secondaryCategory)) {
+            return new AcademicLiteratureReview(numberOfPages, extractVolume(), extractIssue(), null);
+        } else if (CristinSecondaryCategory.SHORT_COMMUNICATION.equals(secondaryCategory)) {
+            return new AcademicArticle(numberOfPages, extractVolume(), extractIssue(), null);
+        } else {
+            throw new UnsupportedSecondaryCategoryException();
+        }
     }
 
     private String extractPagesBegin() {
