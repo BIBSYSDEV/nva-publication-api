@@ -94,9 +94,9 @@ Parameters:
   PiaRestUsernamePasswordKey:
     Type: String
     Default: "PiaRestPass"
-  DoiLinkToUpdateBucketName:
+  DoiToReferenceDoiUpdateBucketName:
     Type: String
-    Default: "nve-doi-to-update-bucket"
+    Default: "nve-doi-update-bucket"
     Description: Name of bucket for csv file imported from DynamoDb containing identifiers
 
 Conditions:
@@ -1366,12 +1366,12 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
-  DoiLinkUpdateButton:
+  DoiToReferenceDoiUpdateButton:
     Type: AWS::Serverless::Function
     Properties:
       Description: 'Accepts Json object with "uri" field pointing to a s3 bucket containing results.csv file.'
       CodeUri: s3-import-commons
-      Handler: no.unit.nva.publication.s3imports.DoiLinkUpdateEventEmitter::handleRequest
+      Handler: no.unit.nva.publication.s3imports.DoiToReferenceDoiUpdateEventEmitter::handleRequest
       Runtime: java11
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
@@ -1766,7 +1766,7 @@ Resources:
       AccessControl: Private
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
 
-  DoiLinkToUpdateBucket:
+  DoiToReferenceDoiUpdateBucket:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private

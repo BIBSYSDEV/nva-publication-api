@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -33,42 +34,50 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-public class DoiLinkUpdateEventEmitterTest extends ResourcesLocalTest {
 
+public class DoiToReferenceDoiUpdateEventEmitterTest extends ResourcesLocalTest {
     public static final String DEFAULT_FILE_NAME = "results.csv";
     private static final Context context = mock(Context.class);
-    private ByteArrayOutputStream outputStream;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
-    private DoiLinkUpdateEventEmitter handler;
+    private DoiToReferenceDoiUpdateEventEmitter handler;
 
     @BeforeEach
     public void init() {
         super.init();
         this.s3Client = new FakeS3Client();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.handler = new DoiLinkUpdateEventEmitter(s3Client, resourceService);
+        this.handler = new DoiToReferenceDoiUpdateEventEmitter(s3Client, resourceService);
     }
 
     @Test
     void shouldMoveDoiValueToLinkField() throws IOException, NotFoundException {
         var publicationsToModify = createPublications();
+        var eventReference = createEventReference(publicationsToModify);
+
+        var inputStream = toInputStream(eventReference);
+        handler.handleRequest(inputStream, new ByteArrayOutputStream(), context);
+        var updatedPublications = fetchUpdatedPublications(publicationsToModify);
+
         var expectedPublications = createPublicationWithDoiValueInLinkField(publicationsToModify);
-        expectedPublications.forEach(publication -> publication.setModifiedDate(null));
-        EventReference eventReference = new EventReference(null, null, URI.create("s3://nve-doi-to-update-bucket"
-                                                                                  + "/results.csv"));
-        InputStream inputStream = toInputStream(eventReference);
-        handler.handleRequest(inputStream, outputStream, context);
-        var updatedPublications = getUpdatedPublications(publicationsToModify);
-        updatedPublications.forEach(publication -> publication.setModifiedDate(null));
 
         assertThat(expectedPublications, (Every.everyItem(hasProperty("doi", is(equalTo(null))))));
         assertThat(expectedPublications, containsInAnyOrder(updatedPublications.toArray()));
     }
 
+    private EventReference createEventReference(List<Publication> publications) {
+        s3Client.putObject(
+            PutObjectRequest.builder().bucket("nve-doi-to-update-bucket").key(DEFAULT_FILE_NAME).build(),
+            RequestBody.fromString(getPublicationInCSVFormat(publications)));
+        return new EventReference(null, null, URI.create("s3://nve-doi-to-update-bucket"
+                                                         + "/results.csv"));
+    }
+
     private static String getPublicationInCSVFormat(List<Publication> publications) {
-        return publications.stream().map(p -> p.getIdentifier().toString() + "\n").collect(
-            Collectors.toList()).toString().replaceAll("[\\(\\)\\[\\]\\{\\}\\,]", "");
+        return publications.stream()
+                   .map(Publication::getIdentifier)
+                   .map(SortableIdentifier::toString)
+                   .collect(Collectors.joining("\n"));
     }
 
     private static Publication moveDoiToNewField(Publication publication) {
@@ -77,28 +86,27 @@ public class DoiLinkUpdateEventEmitterTest extends ResourcesLocalTest {
         return publication;
     }
 
-    private List<Publication> getUpdatedPublications(List<Publication> publicationsToModify) {
-        return publicationsToModify.stream()
-                   .map(Publication::getIdentifier)
-                   .map(identifier -> {
-                       try {
-                           return resourceService.getPublicationByIdentifier(identifier);
-                       } catch (nva.commons.apigateway.exceptions.NotFoundException e) {
-                           throw new RuntimeException(e);
-                       }
-                   }).map(p -> p.copy().build())
-                   .collect(Collectors.toList());
+    private List<Publication> fetchUpdatedPublications(List<Publication> publicationsToModify) {
+        var publications = publicationsToModify.stream()
+                               .map(Publication::getIdentifier)
+                               .map(identifier -> attempt(
+                                   () -> resourceService.getPublicationByIdentifier(identifier)).orElseThrow())
+                               .collect(Collectors.toList());
+        publications.forEach(publication -> publication.setModifiedDate(null));
+        return publications;
     }
 
     private Publication persist(Publication publication) {
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
     private List<Publication> createPublicationWithDoiValueInLinkField(List<Publication> publicationsToModify) {
-        return publicationsToModify.stream()
-                   .map(DoiLinkUpdateEventEmitterTest::moveDoiToNewField)
-                   .collect(Collectors.toList());
+        var publications = publicationsToModify.stream()
+                               .map(DoiToReferenceDoiUpdateEventEmitterTest::moveDoiToNewField)
+                               .collect(Collectors.toList());
+        publications.forEach(i -> i.setModifiedDate(null));
+        return publications;
     }
 
     private InputStream toInputStream(EventReference request) {
@@ -108,13 +116,9 @@ public class DoiLinkUpdateEventEmitterTest extends ResourcesLocalTest {
     }
 
     private List<Publication> createPublications() {
-        var publications = IntStream.range(0, 10)
-                               .boxed()
-                               .map(i -> persist(randomPublication()))
-                               .collect(Collectors.toList());
-        s3Client.putObject(
-            PutObjectRequest.builder().bucket("nve-doi-to-update-bucket").key(DEFAULT_FILE_NAME).build(),
-            RequestBody.fromString(getPublicationInCSVFormat(publications)));
-        return publications;
+        return IntStream.range(0, 10)
+                   .boxed()
+                   .map(i -> persist(randomPublication()))
+                   .collect(Collectors.toList());
     }
 }
