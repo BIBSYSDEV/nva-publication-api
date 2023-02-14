@@ -93,8 +93,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenSearchingForNvaPublicationByCristinIdentifierReturnsMoreThanOnePublication()
         throws ApiGatewayException, IOException {
-        var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
-                                                                                                   ChapterArticle.class);
+        var childPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                ChapterArticle.class);
         var partOfCristinId = randomString();
         persistSeveralPublicationsWithTheSameCristinId(partOfCristinId);
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
@@ -110,8 +111,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenSearchingForNvaPublicationByCristinIdentifierReturnsNoPublication()
         throws ApiGatewayException, IOException {
-        var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
-                                                                                                   ChapterArticle.class);
+        var childPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                ChapterArticle.class);
         var partOfCristinId = randomString();
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
                                                               partOfCristinId);
@@ -144,11 +146,13 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldSetParentPublicationIdentifierAsPartOfChildPublicationWhenSuccess() throws ApiGatewayException,
                                                                                           IOException {
-        var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
-                                                                                                   ChapterArticle.class);
+        var childPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                ChapterArticle.class);
         var partOfCristinId = randomString();
-        var parentPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId,
-                                                                                                    BookAnthology.class);
+        var parentPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId,
+                                                                                BookAnthology.class);
         var expectedChildPartOfURI = createExpectedPartOfUri(parentPublication.getIdentifier());
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
                                                               partOfCristinId);
@@ -164,8 +168,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenParentAndChildPublicationDoesNotMatch()
         throws ApiGatewayException, IOException {
-        var bookMonographChild = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
-                                                                                                     BookMonograph.class);
+        var bookMonographChild =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                BookMonograph.class);
         var partOfCristinId = randomString();
         var bookMonographParent =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, BookMonograph.class);

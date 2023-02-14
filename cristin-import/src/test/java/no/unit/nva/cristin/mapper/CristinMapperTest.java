@@ -3,7 +3,7 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -456,9 +456,8 @@ class CristinMapperTest extends AbstractCristinImportTest {
                              c.getSubdepartmentIdentifier(), c.getGroupNumber());
     }
 
-    //Hardcode Cristin ORG URIs for avoiding re-using the logic under test.
     private String addCristinOrgHostPrefix(String cristinAffiliationCode) {
-        return CRISTIN_ORG_URI.toString() + cristinAffiliationCode;
+        return NVA_API_DOMAIN + "/cristin/organization/" + cristinAffiliationCode;
     }
 
     private List<ContributionReference> extractContributions(Publication publication) {

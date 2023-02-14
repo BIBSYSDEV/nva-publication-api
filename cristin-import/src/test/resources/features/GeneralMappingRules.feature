@@ -147,10 +147,10 @@ Feature: Mappings that hold for all types of Cristin Results
 
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Contributors have the following names, sequences and affiliation URIs
-      | Name                     | Ordinal Number | Affiliation URI                              |
-      | FirstGiven FirstFamily   | 1              | https://api.cristin.no/v2/units/194.66.32.15 |
-      | SecondGiven SecondFamily | 2              | https://api.cristin.no/v2/units/194.66.32.15 |
-      | ThirdGiven ThirdFamily   | 3              | https://api.cristin.no/v2/units/0.0.0.0      |
+      | Name                     | Ordinal Number | Affiliation URI                                                    |
+      | FirstGiven FirstFamily   | 1              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
+      | SecondGiven SecondFamily | 2              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
+      | ThirdGiven ThirdFamily   | 3              | https://api.test.nva.aws.unit.no/cristin/organization/0.0.0.0      |
 
   Scenario Outline: Mapping of Cristin Contributor roles is done based on hard-coded rules described here.
     Given that the Cristin Result has a Contributor with role "<CristinRole>"
