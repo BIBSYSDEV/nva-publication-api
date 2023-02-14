@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -10,6 +11,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
+import javax.annotation.Nullable;
+import no.sikt.nva.scopus.conversion.model.cristin.Organization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
@@ -23,6 +26,7 @@ public class CristinConnection {
                                                                                       + "code: ";
     public static final String COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE = "could not extract cristin person";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
+    public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG = "Could not extract cristin organization";
     private final HttpClient httpClient;
 
     public CristinConnection(HttpClient httpClient) {
@@ -34,18 +38,36 @@ public class CristinConnection {
         this(HttpClient.newBuilder().build());
     }
 
-    public Optional<Person> getCristinPersonByCristinId(URI cristinId) {
+    public Optional<Person> getCristinPersonByCristinId(URI cristinPersonId) {
 
-        return Optional.ofNullable(attempt(() -> createRequest(cristinId))
+        return Optional.ofNullable(attempt(() -> createRequest(cristinPersonId))
                                        .map(this::getCristinResponse)
                                        .map(this::getBodyFromResponse)
                                        .map(this::getCristinPersonResponse)
-                                       .orElse(this::logFailureAndReturnNull));
+                                       .orElse(this::logFailureForPersonAndReturnNull));
+    }
+
+    public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {
+        return attempt(() -> createRequest(cristinOrgId))
+                   .map(this::getCristinResponse)
+                   .map(this::getBodyFromResponse)
+                   .map(this::convertToOrganization)
+                   .orElse(this::logFailureFetchingOrganizationAndReturnNull);
+    }
+
+    private Organization convertToOrganization(String body) throws JsonProcessingException {
+        return new ObjectMapper().readValue(body, Organization.class);
     }
 
     @SuppressWarnings("PMD.InvalidLogMessageFormat")
-    private Person logFailureAndReturnNull(Failure<Person> failure) {
+    private Person logFailureForPersonAndReturnNull(Failure<Person> failure) {
         logger.info(COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE, failure.getException());
+        return null;
+    }
+
+    @Nullable
+    private Organization logFailureFetchingOrganizationAndReturnNull(Failure<Organization> failure) {
+        logger.info(ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG, failure.getException());
         return null;
     }
 
