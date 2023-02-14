@@ -1,7 +1,9 @@
 package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PERSONS_URI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.PERSON_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -108,7 +110,12 @@ public class CristinContributor {
 
     private URI constructId() {
         return SHOULD_CREATE_CONTRIBUTOR_ID
-                   ? UriWrapper.fromUri(CRISTIN_PERSONS_URI).addChild(identifier.toString()).getUri()
+                   ?
+                   UriWrapper.fromUri(NVA_API_DOMAIN)
+                       .addChild(CRISTIN_PATH)
+                       .addChild(PERSON_PATH)
+                       .addChild(identifier.toString())
+                       .getUri()
                    : null;
     }
 }

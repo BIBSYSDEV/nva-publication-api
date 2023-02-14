@@ -5,11 +5,10 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     Given a valid Cristin Result with secondary category "ARTIKKEL_FAG"
 
 
-  Scenario Outline: Cristin Result of listed secondarycategory maps to NVA entry type "ChapterArticle" and correct sub-type.
+  Scenario Outline: Cristin Result of listed secondarycategory maps to NVA entry type "JournalArticle" and correct sub-type.
     Given a valid Cristin Result with secondary category "<secondarycategory>"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "JournalArticle"
-    And the NVA JournalArticle Resource has a Content type of type "<contentType>"
+    Then the NVA Resource has a Publication Instance of type "<contentType>"
     Examples:
       | secondarycategory | contentType              |
       | ARTIKKEL_FAG      | ProfessionalArticle      |
@@ -17,17 +16,6 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
       | SHORTCOMM         | AcademicArticle          |
       | ARTIKKEL_POP      | PopularScienceArticle    |
       | OVERSIKTSART      | AcademicLiteratureReview |
-
-  Scenario Outline: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
-    Given a valid Cristin Result with secondary category "<secondarycategory>"
-    And the Cristin Result has a value for the date when it was reported in NVI.
-    When the Cristin Result is converted to an NVA Resource
-    Then the Journal Article has a "isPeerReviewed" equal to True
-    Examples:
-      | secondarycategory |
-      | ARTIKKEL          |
-      | SHORTCOMM         |
-      | OVERSIKTSART      |
 
   Scenario: Map returns a Journal Article with printISSN copied from the Cristin Entrys's Journal Publication "issn" entry.
 

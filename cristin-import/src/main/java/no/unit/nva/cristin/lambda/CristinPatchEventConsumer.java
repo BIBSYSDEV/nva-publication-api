@@ -126,8 +126,8 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
             nvaPublicationPartOfCristinPublication.getPartOf().getCristinId());
         return attempt(() -> parentPublications
                                  .stream()
-                                 .collect(SingletonCollector.collect())).orElseThrow(
-            fail -> new ParentPublicationException(INVALID_PARENT_MESSAGE, fail.getException()));
+                                 .collect(SingletonCollector.collect()))
+                   .orElseThrow(fail -> new ParentPublicationException(INVALID_PARENT_MESSAGE, fail.getException()));
     }
 
     private NvaPublicationPartOfCristinPublication readEventBody(EventReference input) {

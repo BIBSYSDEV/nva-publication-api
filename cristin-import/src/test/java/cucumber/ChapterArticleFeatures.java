@@ -43,14 +43,4 @@ public class ChapterArticleFeatures {
             CristinBookOrReportPartMetadata.builder().build();
         this.scenarioContext.getCristinEntry().setBookOrReportPartMetadata(cristinBookOrReportPartMetadata);
     }
-
-    @Then("the Chapter Article has a \"isPeerReviewed\" equal to True")
-    public void theChapterArticleHasAIsPeerReviewedEqualToTrue() {
-        PublicationInstance<?> context = scenarioContext.getNvaEntry()
-                                             .getEntityDescription()
-                                             .getReference()
-                                             .getPublicationInstance();
-        ChapterArticle chapterArticle = (ChapterArticle) context;
-        assertThat(chapterArticle.isPeerReviewed(), is(true));
-    }
 }

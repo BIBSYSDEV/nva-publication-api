@@ -38,42 +38,6 @@ public class CristinResultTypeMappingFeatures {
         assertThat(publicationType, is(equalTo(type)));
     }
 
-    @Then("the NVA JournalArticle Resource has a Content type of type {string}")
-    public void theNvaJournalArticleResourceHasAContentTypeOfType(String expectedType) {
-        PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalArticle journalArticle = (JournalArticle) instance;
-        JournalArticleContentType contentType = journalArticle.getContentType();
-        String actuallType = contentType.getValue();
-        assertThat(actuallType, is(equalTo(expectedType)));
-    }
-
-    @Then("the NVA BookMonograph Resource has a Content type of type {string}")
-    public void theNvaBookMonographResourceHasAContentTypeOfType(String expectedType) {
-        PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        BookMonograph bookMonograph = (BookMonograph) instance;
-        BookMonographContentType contentType = bookMonograph.getContentType();
-        String actuallType = contentType.getValue();
-        assertThat(actuallType, is(equalTo(expectedType)));
-    }
-
-    @Then("the NVA ChapterArticle Resource has a Content type of type {string}")
-    public void theNvaChapterArticleResourceHasAContentTypeOfType(String expectedContentType) {
-        PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        ChapterArticle chapterArticle = (ChapterArticle) instance;
-        ChapterArticleContentType contentType = chapterArticle.getContentType();
-        String actualType = contentType.getValue();
-        assertThat(actualType, is(equalTo(expectedContentType)));
-    }
-
     @Given("the Cristin Result has a value for the date when it was reported in NVI.")
     public void theCristinResultHasAValueForTheDateWhenItWasReportedInNVI() {
         this.scenarioContext.getCristinEntry().setYearReported(2020);

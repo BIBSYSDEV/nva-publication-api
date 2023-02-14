@@ -7,21 +7,28 @@ CONSTRUCT {
   ?id a ?type ;
     schema:provider <https://sikt.no> ;
     schema:name ?name ;
-    schema:creator [
-      a schema:Person ;
-      schema:name ?contributor
-    ] .
+    schema:creator ?creator .
+    ?creator a schema:Person ;
+             schema:name ?contributor.
 
   <https://sikt.no> a schema:Organization ;
       schema:name "Sikt" .
 } WHERE {
-
+    {
     ?id a nva:Publication .
     ?id nva:entityDescription ?entityDescription .
     ?entityDescription nva:mainTitle ?name .
     ?entityDescription nva:reference/nva:publicationInstance/rdf:type/rdfs:subClassOf ?type .
 
-    OPTIONAL {
-        ?id nva:entityDescription/nva:contributor/nva:identity/nva:name ?contributor .
+    } UNION {
+
+    # This query optionally returns a value for creators. In order to force the removal of duplicate
+    # query solutions, we bind the blank node explicitly and return a grouped result.
+
+        SELECT ?creator ?contributor (SAMPLE(?uri) AS ?id) WHERE {
+            ?uri nva:entityDescription/nva:contributor/nva:identity/nva:name ?contributor .
+            FILTER(BOUND(?contributor))
+            BIND(BNODE() AS ?creator)
+        } GROUP BY ?contributor ?creator
     }
 }

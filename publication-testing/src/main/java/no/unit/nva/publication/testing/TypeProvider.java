@@ -3,8 +3,8 @@ package no.unit.nva.publication.testing;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -16,7 +16,7 @@ public final class TypeProvider {
     
     public static Stream<Class<?>> listSubTypes(Class<?> type) {
         var types = fetchDirectSubtypes(type);
-        var result = new ArrayList<Class<?>>();
+        var result = new HashSet<Class<?>>();
         var nestedTypes = new ArrayDeque<Type>(types);
         while (!nestedTypes.isEmpty()) {
             var currentType = nestedTypes.pop();

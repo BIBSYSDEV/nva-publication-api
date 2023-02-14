@@ -7,7 +7,7 @@ import no.unit.nva.model.contexttypes.media.MediaFormat;
 
 public class MediaFormatBuilder {
 
-    private final static Map<CristinMediumTypeCode, MediaFormat> cristinMediumTypeToNVaFormat =
+    private static final  Map<CristinMediumTypeCode, MediaFormat> cristinMediumTypeToNVaFormat =
         Map.of(CristinMediumTypeCode.JOURNAL, MediaFormat.TEXT,
                CristinMediumTypeCode.PROFESSIONAL_JOURNAL, MediaFormat.TEXT,
                CristinMediumTypeCode.NEWSPAPER, MediaFormat.TEXT,
