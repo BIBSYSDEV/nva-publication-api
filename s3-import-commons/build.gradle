@@ -1,12 +1,16 @@
 dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-commons")
+    implementation(libs.nva.datamodel.core) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
 
     implementation libs.nva.s3
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.eventhandlers
     implementation libs.nva.identifiers
+    implementation libs.nva.apigateway
 
     implementation libs.jackson.annotations
     implementation libs.jackson.databind
@@ -21,6 +25,7 @@ dependencies {
     implementation libs.aws.sdk2.s3
     implementation libs.aws.sdk2.regions
     implementation libs.aws.sdk2.httpClientApi
+    implementation libs.aws.sdk.dynamodb
 
     implementation libs.aws.ion
 
@@ -36,6 +41,7 @@ dependencies {
     testImplementation libs.logutils
     testImplementation libs.aws.sdk2.utils
     testImplementation libs.aws.sdk2.s3
+    testImplementation libs.bundles.testing
 
     compileOnly libs.nva.apigateway
     compileOnly libs.zalando
@@ -57,7 +63,7 @@ test {
     environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "EVENTS_BUCKET", "theEventsBucket"
-
+    environment "TABLE_NAME", "someTable"
 }
 
 
