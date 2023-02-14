@@ -189,6 +189,7 @@ public final class CristinDataGenerator {
             case INTERNET_EXHIBIT:
                 return randomEvent(category);
             case INTERVIEW:
+            case PROGRAM_MANAGEMENT:
                 return randomMedia(category);
             case PROGRAM_PARTICIPATION:
                 return randomTVOMedia(category);
