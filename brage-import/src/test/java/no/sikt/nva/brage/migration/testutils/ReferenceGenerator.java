@@ -78,78 +78,91 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForBook(builder))
                            .withPublicationInstance(generatePublicationInstanceForBook(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.MAP.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
                         new Map(builder.getDescriptionsForPublication(), builder.getMonographPages()))
                            .withPublishingContext(new GeographicalContent(generatePublisher(builder)))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.DATASET.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(getPublicationInstanceForDataset(builder))
                            .withPublishingContext(new ResearchData(generatePublisher(builder)))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.REPORT.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(generatePublicationInstanceForReport(builder))
                            .withPublishingContext(generatePublicationContextForReport(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.RESEARCH_REPORT.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(generatePublicationInstanceForResearchReport(builder))
                            .withPublishingContext(generatePublicationContextForReport(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.WORKING_PAPER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(generatePublicationInstanceForReportWorkingPaper(builder))
                            .withPublishingContext(generatePublicationContextForReport(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.BACHELOR_THESIS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForDegree(builder))
                            .withPublicationInstance(generatePublicationInstanceForBachelorDegree(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.MASTER_THESIS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForDegree(builder))
                            .withPublicationInstance(generatePublicationInstanceForMasterDegree(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.DOCTORAL_THESIS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForDegree(builder))
                            .withPublicationInstance(generatePublicationInstanceForPhd(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva()) && hasJournalId(builder)) {
                 return new Reference.Builder()
                            .withPublishingContext(generateJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.CHRONICLE.getValue().equals(builder.getType().getNva()) && hasJournalId(builder)) {
                 return new Reference.Builder()
                            .withPublishingContext(generateJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForFeatureArticle(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva()) && !hasJournalId(builder)) {
                 return new Reference.Builder()
                            .withPublishingContext(generateUnconfirmedJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForJournalArticle(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.SCIENTIFIC_ARTICLE.getValue().equals(builder.getType().getNva()) && hasJournalId(builder)) {
                 return new Reference.Builder()
                            .withPublishingContext(generateJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForScientificArticle(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.STUDENT_PAPER_OTHERS.getValue().equals(builder.getType().getNva())
@@ -157,60 +170,70 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForOtherStudentWork(builder))
                            .withPublicationInstance(generatePublicationInstanceForStudentPaper(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.SCIENTIFIC_MONOGRAPH.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForBook(builder))
                            .withPublicationInstance(generatePublicationInstanceForScientificMonograph(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.LECTURE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Event.Builder().build())
                            .withPublicationInstance(new Lecture())
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.CHAPTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Chapter())
                            .withPublicationInstance(generatePublicationInstanceForChapter(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.SCIENTIFIC_CHAPTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Chapter())
                            .withPublicationInstance(generatePublicationInstanceForScientificChapter(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.SCIENTIFIC_ARTICLE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Chapter())
                            .withPublicationInstance(generatePublicationInstanceForScientificArticle(builder))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.DESIGN_PRODUCT.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Artistic())
                            .withPublicationInstance(generatePublicationInstanceForDesignProduct())
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.RECORDING_MUSICAL.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Artistic())
                            .withPublicationInstance(new MusicPerformance(Collections.emptyList()))
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.PLAN_OR_BLUEPRINT.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Artistic())
                            .withPublicationInstance(generatePublicationInstanceForArchitecture())
+                           .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.CONFERENCE_POSTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublishingContext(new Event.Builder().build())
                            .withPublicationInstance(generatePublicationInstanceForConferencePoster())
+                           .withDoi(builder.getDoi())
                            .build();
             }
             return new Reference.Builder().build();
