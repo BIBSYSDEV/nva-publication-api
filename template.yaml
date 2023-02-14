@@ -1770,7 +1770,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
-      BucketName: !Sub "${DoiLinkToUpdateBucketName}-${AWS::AccountId}"
+      BucketName: !Sub "${DoiToReferenceDoiUpdateBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
           - Id: DeleteContentAfter3Days
