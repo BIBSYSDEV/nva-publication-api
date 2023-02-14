@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static no.unit.nva.cristin.patcher.exception.ExceptionHandling.castToCorrectRuntimeException;
 import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -16,11 +17,14 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.attempt.Failure;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -33,11 +37,11 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
     public static final String WRONG_SUBTOPIC_ERROR_TEMPLATE = "Unexpected subtopic: %s. Expected subtopic is: %s.";
 
     public static final String INVALID_PARENT_MESSAGE = "Could not retrieve a single valid parent publciation";
-
+    public static final String ERROR_PATCHING_CHILD_PUBLICATION = "Error patching child publication: ";
     private static final Clock CLOCK = Clock.systemDefaultZone();
-
     private static final Logger logger = LoggerFactory.getLogger(CristinPatchEventConsumer.class);
-
+    public static final String PATCH_ERRORS_PATH = "PATCH_ERRORS";
+    public static final String JSON = ".json";
     private final ResourceService resourceService;
     private final S3Client s3Client;
 
@@ -65,7 +69,39 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
         return attempt(() -> retrieveChildAndParentPublications(eventBody))
                    .map(CristinPatcher::updateChildPublication)
                    .map(ParentAndChild::getChildPublication)
-                   .orElseThrow(fail -> castToCorrectRuntimeException(fail.getException()));
+                   .orElseThrow(fail -> saveErrorReport(fail, input, eventBody));
+    }
+
+    private RuntimeException saveErrorReport(Failure<Publication> fail, EventReference input,
+                                             NvaPublicationPartOfCristinPublication eventBody) {
+        String publicationId = eventBody.getNvaPublicationIdentifier();
+        String errorMessage = ERROR_PATCHING_CHILD_PUBLICATION + publicationId;
+        logger.error(errorMessage, fail.getException());
+
+        saveReportToS3(fail, eventBody, input);
+
+        return castToCorrectRuntimeException(fail.getException());
+    }
+
+    private void saveReportToS3(Failure<Publication> fail, NvaPublicationPartOfCristinPublication eventBody,
+                                EventReference input) {
+        var errorFileUri = constructErrorFileUri(eventBody, fail.getException(), input);
+        var s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
+        var reportContent = ImportResult.reportFailure(eventBody, fail.getException());
+        attempt(() -> s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
+    }
+
+    private UriWrapper constructErrorFileUri(NvaPublicationPartOfCristinPublication event,
+                                             Exception exception, EventReference input) {
+        var fileUri = UriWrapper.fromUri(input.getUri());
+        var timestamp = input.getTimestamp();
+        var bucket = fileUri.getHost();
+        return bucket
+                   .addChild(PATCH_ERRORS_PATH)
+                   .addChild(timestampToString(timestamp))
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(fileUri.getPath())
+                   .addChild(event.getNvaPublicationIdentifier() + JSON);
     }
 
     private ParentAndChild retrieveChildAndParentPublications(NvaPublicationPartOfCristinPublication eventBody)
@@ -73,6 +109,8 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
 
         var childPublication = getChildPublication(eventBody);
         var parentPublication = getParentPublication(eventBody);
+        eventBody.setChildPublication(childPublication);
+        eventBody.getPartOf().setParentPublication(parentPublication);
         return new ParentAndChild(childPublication, parentPublication);
     }
 
