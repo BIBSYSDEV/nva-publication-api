@@ -63,9 +63,9 @@ public class CristinMapper extends CristinMappingModule {
         Publication publication = new Builder()
                                       .withAdditionalIdentifiers(extractAdditionalIdentifiers())
                                       .withEntityDescription(generateEntityDescription())
-                                      .withCreatedDate(extractEntryCreationDate())
+                                      .withCreatedDate(extractDate())
                                       .withModifiedDate(extractEntryLastModifiedDate())
-                                      .withPublishedDate(extractEntryCreationDate())
+                                      .withPublishedDate(extractDate())
                                       .withPublisher(extractOrganization())
                                       .withResourceOwner(new ResourceOwner(cristinObject.getPublicationOwner(),
                                                                            HARDCODED_OWNER_AFFILIATION))
@@ -105,13 +105,13 @@ public class CristinMapper extends CristinMappingModule {
         return new Organization.Builder().withId(customerId.getUri()).build();
     }
 
-    private Instant extractEntryCreationDate() {
+    private Instant extractDate() {
         return Optional.ofNullable(cristinObject.getEntryCreationDate())
                    .map(this::localDateToInstant)
-                   .orElseGet(() -> extractPublishedDate(cristinObject));
+                   .orElseGet(() -> extractPublishedDateOrConvertYearToInstant(cristinObject));
     }
 
-    private Instant extractPublishedDate(CristinObject cristinObject) {
+    private Instant extractPublishedDateOrConvertYearToInstant(CristinObject cristinObject) {
         return Optional.ofNullable(cristinObject.getEntryPublishedDate())
                    .map(this::localDateToInstant)
                    .orElseGet(() -> convertPublishedYearInstant(cristinObject));
@@ -133,7 +133,7 @@ public class CristinMapper extends CristinMappingModule {
     private Instant extractEntryLastModifiedDate() {
         return Optional.ofNullable(cristinObject.getEntryLastModifiedDate())
                    .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
-                   .orElseGet(this::extractEntryCreationDate);
+                   .orElseGet(this::extractDate);
     }
 
     private ZoneOffset zoneOffset() {
