@@ -11,7 +11,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import no.sikt.nva.scopus.conversion.model.cristin.Organization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.unit.nva.commons.json.JsonUtils;
@@ -24,9 +23,11 @@ public class CristinConnection {
 
     public static final String CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE = "cristin responded with status "
                                                                                       + "code: ";
-    public static final String COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE = "could not extract cristin person";
+    public static final String COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE = "Could not extract cristin person "
+                                                                                + "from cristin: {}";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
-    public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG = "Could not extract cristin organization";
+    public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG = "Could not extract cristin organization from "
+                                                                      + "cristin: {}";
     private final HttpClient httpClient;
 
     public CristinConnection(HttpClient httpClient) {
@@ -59,13 +60,11 @@ public class CristinConnection {
         return new ObjectMapper().readValue(body, Organization.class);
     }
 
-    @SuppressWarnings("PMD.InvalidLogMessageFormat")
     private Person logFailureForPersonAndReturnNull(Failure<Person> failure) {
         logger.info(COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE, failure.getException());
         return null;
     }
 
-    @Nullable
     private Organization logFailureFetchingOrganizationAndReturnNull(Failure<Organization> failure) {
         logger.info(ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG, failure.getException());
         return null;

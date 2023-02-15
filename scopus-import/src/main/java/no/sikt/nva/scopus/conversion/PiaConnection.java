@@ -50,7 +50,8 @@ public class PiaConnection {
     public static final String HTTPS_SCHEME = "https";
     public static final String ORGANIZATION = "organization";
     public static final String CRISTIN = "cristin";
-    public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG_ID = "Could not extract cristin id";
+    public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG_ID = "Could not extract cristin organization id "
+                                                                         + "from pia {}";
     private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
