@@ -232,9 +232,9 @@ class ScopusHandlerTest {
     @BeforeEach
     public void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
-        var secretsReader = new SecretsReader(fakeSecretsManagerClient);
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWORD_SECRET_KEY, randomString());
+        var secretsReader = new SecretsReader(fakeSecretsManagerClient);
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         var httpClient = WiremockHttpClient.create();
