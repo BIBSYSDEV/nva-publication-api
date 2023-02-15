@@ -19,6 +19,8 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,8 +51,9 @@ import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper extends CristinMappingModule {
-    
+
     public static final String EMPTY_STRING = "";
+    public static final int FIRST_DAY_OF_MONTH = 1;
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
@@ -104,8 +107,27 @@ public class CristinMapper extends CristinMappingModule {
 
     private Instant extractEntryCreationDate() {
         return Optional.ofNullable(cristinObject.getEntryCreationDate())
-                   .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
+                   .map(this::localDateToInstant)
+                   .orElseGet(() -> extractPublishedDate(cristinObject));
+    }
+
+    private Instant extractPublishedDate(CristinObject cristinObject) {
+        return Optional.ofNullable(cristinObject.getEntryPublishedDate())
+                   .map(this::localDateToInstant)
+                   .orElseGet(() -> convertPublishedYearInstant(cristinObject));
+    }
+
+    private Instant convertPublishedYearInstant(CristinObject cristinObject) {
+
+        return Optional.ofNullable(cristinObject.getPublicationYear())
+                   .map(year -> LocalDate.of(year, Month.JANUARY, FIRST_DAY_OF_MONTH)
+                                    .atStartOfDay()
+                                    .toInstant(zoneOffset()))
                    .orElse(null);
+    }
+
+    private Instant localDateToInstant(LocalDate localDate) {
+        return localDate.atStartOfDay().toInstant(zoneOffset());
     }
 
     private Instant extractEntryLastModifiedDate() {
