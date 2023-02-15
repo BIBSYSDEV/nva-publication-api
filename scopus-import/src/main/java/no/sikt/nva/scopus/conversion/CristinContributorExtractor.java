@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AuthorTp;
@@ -29,9 +30,11 @@ public final class CristinContributorExtractor {
     }
 
     public static Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
-                                                             PersonalnameType correspondencePerson) {
+                                                             PersonalnameType correspondencePerson,
+                                                             no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
         return new Contributor(generateContributorIdentityFromCristinPerson(person),
-                               generateOrganizationsFromCristinAffiliations(person.getAffiliations()), Role.CREATOR,
+                               generateOrganizationsFromCristinAffiliations(person.getAffiliations(), organization),
+                               Role.CREATOR,
                                getSequenceNumber(authorTp), isCorrespondingAuthor(authorTp, correspondencePerson));
     }
 
@@ -48,16 +51,43 @@ public final class CristinContributorExtractor {
         return identity;
     }
 
-    private static List<Organization> generateOrganizationsFromCristinAffiliations(Set<Affiliation> affiliations) {
-        return affiliations
-                   .stream()
-                   .map(affiliation ->
-                            new Organization
-                                    .Builder()
-                                .withId(affiliation.getOrganization())
-                                .withLabels(affiliation.getRole().getLabels())
-                                .build())
+    private static List<Organization> generateOrganizationsFromCristinAffiliations(Set<Affiliation> affiliations,
+                                                                                   no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+        var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations);
+        if (nonNull(organization)) {
+            organizations.add(createOrganizationFromAuthorGroupTpAffiliation(organization));
+            return organizations;
+        }
+        return organizations;
+    }
+
+    @NotNull
+    private static List<Organization> createOrganizationsFromCristinPersonAffiliations(Set<Affiliation> affiliations) {
+        return affiliations.stream()
+                   .map(CristinContributorExtractor::convertToOrganization)
                    .collect(Collectors.toList());
+    }
+
+    @NotNull
+    private static Organization convertToOrganization(Affiliation affiliation) {
+        return new Organization.Builder()
+                   .withId(affiliation.getOrganization())
+                   .withLabels(affiliation.getRole().getLabels())
+                   .build();
+    }
+
+    private static Organization createOrganizationFromAuthorGroupTpAffiliation(
+        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+        return Optional.ofNullable(organization)
+                   .map(CristinContributorExtractor::toOrganization)
+                   .orElse(null);
+    }
+
+    private static Organization toOrganization(no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+        return new Organization.Builder()
+                   .withId(organization.getId())
+                   .withLabels(organization.getLabels())
+                   .build();
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {

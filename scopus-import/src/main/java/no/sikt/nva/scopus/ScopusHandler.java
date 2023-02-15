@@ -37,12 +37,12 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     public static final String PATH_SEPERATOR = "/";
     public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
+    public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private static final String ERROR_SAVING_SCOPUS_PUBLICATION = "Error saving imported scopus publication object "
                                                                   + "key: {}";
     private static final int MAX_SLEEP_TIME = 100;
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
-    public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private final S3Client s3Client;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
@@ -64,8 +64,6 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     @Override
     public Publication handleRequest(S3Event event, Context context) {
-        logger.info("Number of records in event: {}", event.getRecords().size());
-        logger.info("Records: {}", event.getRecords().toString());
         return attempt(() -> createPublication(event))
                    .flatMap(this::persistInDatabase)
                    .map(publication -> storeSuccessReport(publication, event))
@@ -155,8 +153,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         var fileUri = UriWrapper.fromUri(extractObjectKey(event));
         var timestamp = timePath(event);
         return UriWrapper.fromUri(ERROR_BUCKET_PATH + PATH_SEPERATOR
-                                  + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName() +
-                                  PATH_SEPERATOR + fileUri.getLastPathElement());
+                                  + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName()
+                                  + PATH_SEPERATOR + fileUri.getLastPathElement());
     }
 
     private String timePath(S3Event event) {
