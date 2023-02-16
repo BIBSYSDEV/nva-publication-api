@@ -2,7 +2,6 @@ package cucumber;
 
 import static cucumber.utils.transformers.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
 import static cucumber.utils.transformers.CristinSourceTransformer.parseCristinSourceFromMap;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
@@ -29,7 +28,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -159,7 +157,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource has a Creation Date equal to {string}")
-    public void theNvaResourceHasACreationDateEqualTo(String expectedIsoInstant) {
+    public void ztheNvaResourceHasACreationDateEqualTo(String expectedIsoInstant) {
         Instant expectedInstant = Instant.parse(expectedIsoInstant);
         assertThat(scenarioContext.getNvaEntry().getCreatedDate(), is(equalTo(expectedInstant)));
     }
@@ -476,13 +474,6 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setSourceRecordIdentifier(sourceRecordIdentifier);
     }
 
-    @Given("that Cristin Result has a grant with properties:")
-    public void thatCristinResultHasAGrantWithProperties(String identifier, String sourceCode) {
-        scenarioContext.getCristinEntry().setCristinGrants(List.of(CristinGrant.builder()
-                                                                       .withIdentifier(identifier)
-                                                                       .withSourceCode(sourceCode).build()));
-    }
-
     @Then("the publication should have a Confirmed Nva funding with identifier equal to {string} and id equal to "
           + "{string}")
     public void thePublicationShouldHaveAConfirmedNvaFundingWithIdentifierEqualToAndIdEqualTo(String identifier,
@@ -494,26 +485,9 @@ public class GeneralMappingRules {
                                              hasProperty("id", equalTo(UriWrapper.fromUri(id).getUri()))));
     }
 
-    @Given("that Cristin Result has fundings with grantReference {string}")
-    public void thatCristinResultHasFundingsWithGrantReference(String grantReference) {
-        scenarioContext.getCristinEntry()
-            .setCristinGrants(List.of(CristinGrant.builder()
-                                          .withSourceCode(randomString())
-                                          .withIdentifier(randomString())
-                                          .withGrantReference(grantReference)
-                                          .build()));
-    }
-
     @Given("that Cristin Result has grants:")
     public void thatCristinResultHasGrants(List<CristinGrant> grants) {
         scenarioContext.getCristinEntry().setCristinGrants(grants);
-    }
-
-    @Then("the publication should have a NVA funding with labels:")
-    public void thePublicationShouldHaveANVAFundingWithLabels(Map<String, String> labels) {
-        var nvaFundings = scenarioContext.getNvaEntry().getFundings();
-        assertThat(nvaFundings, hasSize(1));
-        assertThat(nvaFundings.get(0).getLabels(), is(equalTo(labels)));
     }
 
     @Then("publication should have a nva Fundings:")

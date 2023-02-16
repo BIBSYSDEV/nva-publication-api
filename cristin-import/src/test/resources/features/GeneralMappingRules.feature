@@ -298,23 +298,15 @@ Feature: Mappings that hold for all types of Cristin Results
 
   Scenario: When CristinGrants year from and / or year to is present they are mapped.
     Given that Cristin Result has grants:
-      | finansieringslopenr | finansieringskildekode | arstall_fra | arstall_til |
-      | 619                 | EU                     | 2005        | 2006        |
-      | 3013                | KI                     |             |             |
+      | finansieringslopenr | finansieringskildekode | arstall_fra | arstall_til | finansieringsreferanse |
+      | 619                 | EU                     | 2005        | 2006        | SCP8-GA-2009-233969    |
+      | 3013                | KI                     |             |             | 456                    |
     When the Cristin Result is converted to an NVA Resource
     Then publication should have a nva Fundings:
-      | identifier | activeFrom           | activeTo             |
-      | 619        | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z |
-      | 3013       |                      |                      |
+      | identifier | activeFrom           | activeTo             | source                                                      | label               |
+      | 619        | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/eu | SCP8-GA-2009-233969 |
+      | 3013       |                      |                      | https://api.test.nva.aws.unit.no/cristin/funding-sources/ki | 456                 |
 
-  Scenario: Mapping cristin Funding should also generate nva Fundings with labels.
-    Given that Cristin Result has fundings with grantReference "SCP8-GA-2009-233969"
-    When the Cristin Result is converted to an NVA Resource
-    Then the publication should have a NVA funding with labels:
-      | language | label               |
-      | en       | SCP8-GA-2009-233969 |
-      | nb       | SCP8-GA-2009-233969 |
-      | nn       | SCP8-GA-2009-233969 |
 
 
 

@@ -66,6 +66,7 @@ public final class CristinDataGenerator {
     public static final String CRISTIN_SOURCES = "cristinSources";
     public static final String SOURCE_RECORD_IDENTIFIER = "sourceRecordIdentifier";
     public static final String SOURCE_CODE = "sourceCode";
+    public static final String CRISTIN_GRANTS = "cristinGrants";
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
     private static final int MIDDLE_INDEX_OF_ISSN_STRING = 4;
@@ -628,7 +629,7 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS, SOURCE_RECORD_IDENTIFIER,
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
-                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
+                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_GRANTS, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
 
         return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }

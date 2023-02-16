@@ -22,7 +22,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -43,13 +42,14 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.funding.Funding;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper extends CristinMappingModule {
-    
+
     public static final String EMPTY_STRING = "";
 
     public CristinMapper(CristinObject cristinObject) {
@@ -70,10 +70,20 @@ public class CristinMapper extends CristinMappingModule {
                                       .withLink(HARDCODED_SAMPLE_DOI)
                                       .withProjects(extractProjects())
                                       .withSubjects(generateNvaHrcsCategoriesAndActivities())
-                                      .withFundings(Collections.emptyList())
+                                      .withFundings(extractFundings())
                                       .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
+    }
+
+    private List<Funding> extractFundings() {
+        return Optional.ofNullable(cristinObject.getCristinGrants())
+                   .map(this::maptoNvaFunding).orElse(null);
+    }
+
+    private List<Funding> maptoNvaFunding(List<CristinGrant> grants) {
+        return grants.stream().map(CristinGrant::toNvaFunding)
+                   .collect(Collectors.toList());
     }
 
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
@@ -114,7 +124,7 @@ public class CristinMapper extends CristinMappingModule {
                    .orElseGet(this::extractEntryCreationDate);
     }
 
-    private ZoneOffset zoneOffset() {
+    public static ZoneOffset zoneOffset() {
         return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
