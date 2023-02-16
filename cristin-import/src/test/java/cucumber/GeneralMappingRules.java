@@ -2,8 +2,13 @@ package cucumber;
 
 import static cucumber.utils.transformers.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
 import static cucumber.utils.transformers.CristinSourceTransformer.parseCristinSourceFromMap;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -24,6 +29,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -32,6 +38,7 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinGrant;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTags;
@@ -42,7 +49,10 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.funding.ConfirmedFunding;
+import no.unit.nva.model.funding.Funding;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.paths.UriWrapper;
 
 public class GeneralMappingRules {
 
@@ -464,6 +474,59 @@ public class GeneralMappingRules {
     @And("the Cristin Result has sourceRecordIdentifier equal to {string}")
     public void theCristinResultHasSourceRecordIdentifierEqualTo(String sourceRecordIdentifier) {
         scenarioContext.getCristinEntry().setSourceRecordIdentifier(sourceRecordIdentifier);
+    }
+
+    @Given("that Cristin Result has a grant with properties:")
+    public void thatCristinResultHasAGrantWithProperties(String identifier, String sourceCode) {
+        scenarioContext.getCristinEntry().setCristinGrants(List.of(CristinGrant.builder()
+                                                                       .withIdentifier(identifier)
+                                                                       .withSourceCode(sourceCode).build()));
+    }
+
+    @Then("the publication should have a Confirmed Nva funding with identifier equal to {string} and id equal to "
+          + "{string}")
+    public void thePublicationShouldHaveAConfirmedNvaFundingWithIdentifierEqualToAndIdEqualTo(String identifier,
+                                                                                              String id) {
+        var nvaFundings = scenarioContext.getNvaEntry().getFundings();
+        assertThat(nvaFundings, hasSize(1));
+        assertThat(nvaFundings.get(0), allOf(is(instanceOf(ConfirmedFunding.class)),
+                                             hasProperty("identifier", equalTo(identifier)),
+                                             hasProperty("id", equalTo(UriWrapper.fromUri(id).getUri()))));
+    }
+
+    @Given("that Cristin Result has fundings with grantReference {string}")
+    public void thatCristinResultHasFundingsWithGrantReference(String grantReference) {
+        scenarioContext.getCristinEntry()
+            .setCristinGrants(List.of(CristinGrant.builder()
+                                          .withSourceCode(randomString())
+                                          .withIdentifier(randomString())
+                                          .withGrantReference(grantReference)
+                                          .build()));
+    }
+
+    @Given("that Cristin Result has grants:")
+    public void thatCristinResultHasGrants(List<CristinGrant> grants) {
+        scenarioContext.getCristinEntry().setCristinGrants(grants);
+    }
+
+    @Then("the publication should have a NVA funding with labels:")
+    public void thePublicationShouldHaveANVAFundingWithLabels(Map<String, String> labels) {
+        var nvaFundings = scenarioContext.getNvaEntry().getFundings();
+        assertThat(nvaFundings, hasSize(1));
+        assertThat(nvaFundings.get(0).getLabels(), is(equalTo(labels)));
+    }
+
+    @Then("publication should have a nva Fundings:")
+    public void publicationShouldHaveANvaFundings(List<Funding> fundings) {
+        var nvaFundings = scenarioContext.getNvaEntry().getFundings();
+        assertThat(nvaFundings, containsInAnyOrder(fundings.toArray()));
+    }
+
+    @Given("that Cristin Result has a grant with properties identifier {string} and sourceCode {string}:")
+    public void thatCristinResultHasAGrantWithPropertiesIdAndSourceCode(String identifier, String sourceCode) {
+        scenarioContext.getCristinEntry()
+            .setCristinGrants(
+                List.of(CristinGrant.builder().withIdentifier(identifier).withSourceCode(sourceCode).build()));
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,

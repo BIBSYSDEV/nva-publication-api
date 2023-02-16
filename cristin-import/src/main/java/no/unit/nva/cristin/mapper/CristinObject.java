@@ -88,6 +88,9 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("kildepostid")
     private String sourceRecordIdentifier;
 
+    @JsonProperty("finansiering_varbeid")
+    private List<CristinGrant> cristinGrants;
+
     private String publicationOwner;
 
     public CristinObject() {
