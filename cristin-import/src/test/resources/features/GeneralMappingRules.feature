@@ -290,7 +290,7 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
 
-  Scenario: Mapping cristin Funding with NFR should create nva Funding with id set bla.
+  Scenario: Mapping cristin Funding with NFR should create nva Funding with id set.
     Given that Cristin Result has a grant with properties identifier "3013" and sourceCode "NFR":
     When the Cristin Result is converted to an NVA Resource
     Then the publication should have a Confirmed Nva funding with identifier equal to "3013" and id equal to "https://api.test.nva.aws.unit.no/verified-funding/nfr/3013"
