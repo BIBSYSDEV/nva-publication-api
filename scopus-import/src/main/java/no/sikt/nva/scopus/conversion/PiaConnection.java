@@ -3,7 +3,6 @@ package no.sikt.nva.scopus.conversion;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
@@ -22,10 +21,10 @@ import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.pia.Affiliation;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
-import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +34,7 @@ import org.slf4j.LoggerFactory;
 public class PiaConnection {
 
     public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
-    public static final String ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR = "Could not extract cristin id";
+    public static final String ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR = "Could not extract cristin id from pia";
     public static final int FALSE_IN_PIA_INTEGER = 0;
     public static final String PIA_REST_API_ENV_KEY = "PIA_REST_API";
     public static final String API_HOST = "API_HOST";
@@ -48,10 +47,9 @@ public class PiaConnection {
     public static final String PIA_AFFILIATION_ID_QUERY_PARAM = "affiliation_id";
     public static final String SCOPUS = "SCOPUS:";
     public static final String HTTPS_SCHEME = "https";
-    public static final String ORGANIZATION = "organization";
-    public static final String CRISTIN = "cristin";
     public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG_ID = "Could not extract cristin organization id "
-                                                                         + "from pia {}";
+                                                                         + "from pia: ";
+    public static final String CRISTIN_ORGANIZATION_PATH = "cristin/organization/";
     private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
@@ -112,11 +110,12 @@ public class PiaConnection {
     }
 
     private URI createCristinUriFromCristinOrganization(Affiliation affiliation) {
-        return UriWrapper.fromUri(cristinProxyHost)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addChild(affiliation.getUnitIdentifier())
-                   .getUri();
+        return attempt(() -> new URIBuilder()
+                                 .setHost(cristinProxyHost)
+                                 .setPath(CRISTIN_ORGANIZATION_PATH + affiliation.getUnitIdentifier())
+                                 .setScheme(HTTPS_SCHEME)
+                                 .build())
+                   .orElseThrow();
     }
 
     private Affiliation selectOneAffiliation(List<Affiliation> affiliations) {
@@ -147,12 +146,16 @@ public class PiaConnection {
     }
 
     private List<Affiliation> convertToAffiliations(String body) throws JsonProcessingException {
-        return Arrays.asList(new ObjectMapper().readValue(body, Affiliation[].class));
+        return Arrays.asList(JsonUtils.dtoObjectMapper.readValue(body, Affiliation[].class));
     }
 
     private URI createCristinUriFromCristinNumber(int cristinNumber) {
-        return UriWrapper.fromUri(cristinProxyHost + CRISTIN_PERSON_PATH + cristinNumber)
-                   .getUri();
+        return attempt(() -> new URIBuilder()
+                                 .setHost(cristinProxyHost)
+                                 .setPath(CRISTIN_PERSON_PATH + cristinNumber)
+                                 .setScheme(HTTPS_SCHEME)
+                                 .build())
+                   .orElseThrow();
     }
 
     private HttpRequest createRequest(URI uri) {

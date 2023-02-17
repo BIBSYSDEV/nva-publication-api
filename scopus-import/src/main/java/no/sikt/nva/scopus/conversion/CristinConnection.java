@@ -24,10 +24,10 @@ public class CristinConnection {
     public static final String CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE = "cristin responded with status "
                                                                                       + "code: ";
     public static final String COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE = "Could not extract cristin person "
-                                                                                + "from cristin: {}";
+                                                                                + "from cristin: ";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG = "Could not extract cristin organization from "
-                                                                      + "cristin: {}";
+                                                                      + "cristin: ";
     private final HttpClient httpClient;
 
     public CristinConnection(HttpClient httpClient) {
@@ -79,6 +79,7 @@ public class CristinConnection {
             logger.info(CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE + response.statusCode());
             throw new RuntimeException();
         }
+        logger.info("Body : {}", response.body());
         return response.body();
     }
 
@@ -87,6 +88,7 @@ public class CristinConnection {
     }
 
     private HttpRequest createRequest(URI uri) {
+        logger.info("CristinOrg URI to call: {}", uri);
         return HttpRequest.newBuilder()
                    .uri(uri)
                    .GET()
