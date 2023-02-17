@@ -1247,7 +1247,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
-          SHOULD_CREATE_CONTRIBUTOR_ID: [!Equals [!Ref ApiDomain, 'api.nva.unit.no']]
+          SHOULD_CREATE_CONTRIBUTOR_ID: !Equals [!Ref ApiDomain, 'api.nva.unit.no']
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
