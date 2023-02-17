@@ -108,10 +108,10 @@ public class CristinMapper extends CristinMappingModule {
     private Instant extractDate() {
         return Optional.ofNullable(cristinObject.getEntryCreationDate())
                    .map(this::localDateToInstant)
-                   .orElseGet(() -> extractPublishedDateOrConvertYearToInstant(cristinObject));
+                   .orElseGet(() -> extractPublishedDate(cristinObject));
     }
 
-    private Instant extractPublishedDateOrConvertYearToInstant(CristinObject cristinObject) {
+    private Instant extractPublishedDate(CristinObject cristinObject) {
         return Optional.ofNullable(cristinObject.getEntryPublishedDate())
                    .map(this::localDateToInstant)
                    .orElseGet(() -> convertPublishedYearInstant(cristinObject));
@@ -120,10 +120,14 @@ public class CristinMapper extends CristinMappingModule {
     private Instant convertPublishedYearInstant(CristinObject cristinObject) {
 
         return Optional.ofNullable(cristinObject.getPublicationYear())
-                   .map(year -> LocalDate.of(year, Month.JANUARY, FIRST_DAY_OF_MONTH)
-                                    .atStartOfDay()
-                                    .toInstant(zoneOffset()))
+                   .map(this::yearToFirstDayOfYear)
                    .orElse(null);
+    }
+
+    private Instant yearToFirstDayOfYear(int year) {
+        return LocalDate.of(year, Month.JANUARY, FIRST_DAY_OF_MONTH)
+                   .atStartOfDay()
+                   .toInstant(zoneOffset());
     }
 
     private Instant localDateToInstant(LocalDate localDate) {
