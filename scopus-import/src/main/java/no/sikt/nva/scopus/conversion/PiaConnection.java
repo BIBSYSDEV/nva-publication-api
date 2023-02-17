@@ -3,7 +3,6 @@ package no.sikt.nva.scopus.conversion;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
@@ -22,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.pia.Affiliation;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -146,7 +146,7 @@ public class PiaConnection {
     }
 
     private List<Affiliation> convertToAffiliations(String body) throws JsonProcessingException {
-        return Arrays.asList(new ObjectMapper().readValue(body, Affiliation[].class));
+        return Arrays.asList(JsonUtils.dtoObjectMapper.readValue(body, Affiliation[].class));
     }
 
     private URI createCristinUriFromCristinNumber(int cristinNumber) {
