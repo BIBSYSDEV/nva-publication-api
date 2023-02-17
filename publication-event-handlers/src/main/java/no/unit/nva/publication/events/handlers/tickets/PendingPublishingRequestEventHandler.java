@@ -49,7 +49,6 @@ public class PendingPublishingRequestEventHandler
     private final TicketService ticketService;
     private final HttpClient httpClient;
     private final SecretsReader secretsReader;
-    public static final String COGNITO_TOKEN_ENDPOINT = "oauth2/token";
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     private final ResourceService resourceService;
@@ -84,13 +83,6 @@ public class PendingPublishingRequestEventHandler
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
 
         var credentials = fetchCredentials(this.secretsReader);
-        logger.info(
-            "Creating backend client with {} {} {}",
-            credentials.getCognitoAppClientId(),
-            credentials.getCognitoAppClientSecret().substring(0, 5),
-            credentials.getCognitoOAuthServerUri().toString()
-        );
-
         var backendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, credentials);
 
         if (customerAllowsPublishing(backendClient, publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
@@ -114,7 +106,7 @@ public class PendingPublishingRequestEventHandler
     }
 
     private static URI getCognitoTokenUrl() {
-        return UriWrapper.fromHost(BACKEND_CLIENT_AUTH_URL).addChild(COGNITO_TOKEN_ENDPOINT).getUri();
+        return UriWrapper.fromHost(BACKEND_CLIENT_AUTH_URL).getUri();
     }
 
     private void publishMetadata(PublishingRequestCase publishingRequest) {
