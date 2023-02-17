@@ -117,9 +117,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnFramedIndexDocumentFromResource(Class<?> instanceType)
         throws JsonProcessingException, NotFoundException {
 
-        Publication publication = PublicationGenerator.randomPublication(instanceType)
-            .copy().withEntityDescription(new EntityDescription()).build();
-        ;
+        Publication publication = PublicationGenerator.randomPublication(instanceType);
 
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);

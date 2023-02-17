@@ -34,7 +34,7 @@ jakarta = { strictly = '2.3.2' }
 karate-core = { strictly = '1.1.0' }
 karate-apache = { strictly = '0.9.6' }
 karate-junit5 = { strictly = '1.1.0' }
-jena = { strictly = '4.6.1'}
+jena = { strictly = '4.7.0'}
 jsonassert = { strictly = '1.5.1'}
 
 

@@ -1,19 +1,9 @@
 {
   "type": "Organization",
-  "@context": {
-    "@vocab": "https://bibsysdev.github.io/src/nva/ontology.ttl#",
-    "id": "@id",
-    "type": "@type",
-    "name": {
-      "@container": "@language"
-    },
-    "partOf":  {
-      "@container": "@set"
-    }
-  },
+  "@context": "https://bibsysdev.github.io/src/organization-context.json",
   "id": "https://api.test.nva.aws.unit.no/cristin/organization/224.60.1.0",
   "name": {
-    "nb": "Avdeling for økonomi, språk og samfunnsfag"
+    "nb": "Institutt for de keltiske språkene"
   },
   "partOf": [
   ]

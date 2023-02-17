@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -110,8 +111,9 @@ class ExpandedResourceTest {
                                                          publisherName);
 
         var expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
+        ExpandedResource expandedResource = fromPublication(mockUriRetriever, publication);
         var distinctTopLevelIds = extractDistinctTopLevelIds(
-            fromPublication(mockUriRetriever, publication).asJsonNode());
+            expandedResource.asJsonNode());
         assertThat(distinctTopLevelIds.size(), is(equalTo(1)));
         assertThat(distinctTopLevelIds.get(0).asText(), is(equalTo(expectedTopLevelUri.toString())));
     }
@@ -127,6 +129,7 @@ class ExpandedResourceTest {
         return topLevelAffiliations.stream()
             .map(node -> node.get("id"))
             .distinct()
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 

@@ -1,16 +1,6 @@
 {
   "type": "Organization",
-  "@context": {
-    "@vocab": "https://bibsysdev.github.io/src/nva/ontology.ttl#",
-    "id": "@id",
-    "type": "@type",
-    "name": {
-      "@container": "@language"
-    },
-    "hasPart": {
-      "@container": "@set"
-    }
-  },
+  "@context": "https://bibsysdev.github.io/src/organization-context.json",
   "id": "https://api.test.nva.aws.unit.no/cristin/organization/224.0.0.0",
   "name": {
     "en": "Østfold University College",
