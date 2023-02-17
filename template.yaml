@@ -98,10 +98,6 @@ Parameters:
     Type: String
     Default: "nve-doi-update-bucket"
     Description: Name of bucket for csv file imported from DynamoDb containing identifiers
-  CognitoAuthenticationDomain:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Description: Cognito auth URI for the stage
-    Default: CognitoAuthenticationDomain
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -1039,7 +1035,7 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthenticationDomain
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           TABLE_NAME: !Ref NvaResourcesTable
       Events:

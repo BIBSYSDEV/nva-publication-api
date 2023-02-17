@@ -84,6 +84,13 @@ public class PendingPublishingRequestEventHandler
         var publishingRequest = extractPublishingRequestCaseUpdate(updateEvent);
 
         var credentials = fetchCredentials(this.secretsReader);
+        logger.info(
+            "Creating backend client with {} {} {}",
+            credentials.getCognitoAppClientId(),
+            credentials.getCognitoAppClientSecret().substring(0, 5),
+            credentials.getCognitoOAuthServerUri().toString()
+        );
+
         var backendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, credentials);
 
         if (customerAllowsPublishing(backendClient, publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
