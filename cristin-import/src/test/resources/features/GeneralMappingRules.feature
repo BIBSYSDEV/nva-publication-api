@@ -58,6 +58,13 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
+  Scenario: When there is only one title present but not annotated as Original the NVA Resource gets the Cristin Title as Main Title.
+    Given the Cristin Result has an array of CristinTitles with values:
+      | Title Text         | Abstract Text         | Status Original | Language Code |
+      | This is some title | This is some abstract | N               | en            |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has an EntityDescription with mainTitle "This is some title"
+
 
   Scenario Outline: The language of the entry is set as Lexvo URI equivalent of the
   Cristin language code of the title annotated as ORIGINAL
