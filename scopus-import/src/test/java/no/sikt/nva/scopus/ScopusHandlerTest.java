@@ -55,7 +55,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -87,6 +86,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -913,31 +913,40 @@ class ScopusHandlerTest {
             .forEach(contributor -> hasBeenFetchedFromCristin(contributor, piaCristinIdAndAuthors.keySet()));
     }
 
-    private void constructTestAndGenerateResponses(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors) {
-        var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
-        var authorGroupTypes = keepOnlyAuthorGroups();
-        authorGroupTypes.forEach(authorGroupTp -> piaCristinAffiliationIdAndAuthors.put(randomString(), authorGroupTp));
-        authorGroupTypes.forEach(authorGroupTp -> generateResponsesForAuthors(piaCristinIdAndAuthors, authorGroupTp));
-        piaCristinAffiliationIdAndAuthors.forEach(
-            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
-                                                                                      authorGroupTp,
-                                                                                      cristinOrganizationId));
-    }
-
     @Test
     void shouldFetchOrganizationFromPiaAndCristinAndAttachToContributorAffiliationList()
         throws IOException {
-        var authorGroupTypes = keepOnlyAuthorGroups();
+        scopusData = generateScopusDataWithOneAffiliation();
+        var authorGroupTpList = new ArrayList<>(keepOnlyAuthorGroups());
         var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
-        authorGroupTypes.forEach(authorGroupTp -> piaCristinAffiliationIdAndAuthors.put(randomString(), authorGroupTp));
+        authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
         piaCristinAffiliationIdAndAuthors.forEach(
             (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
                                                                                       authorGroupTp,
                                                                                       cristinOrganizationId));
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
-        actualContributors.forEach(this::assertThatHasCristinOrganization);
+        var actualContributors =
+            publication.getEntityDescription().getContributors();
+
+        assertThatHasCristinOrganizations(actualContributors, piaCristinAffiliationIdAndAuthors);
+    }
+
+    @Test
+    void shouldNotAddCristinOrganizationFromAuthorGroupWhenNoResponseFromCristin()
+        throws IOException {
+        scopusData = generateScopusDataWithOneAffiliation();
+        var s3Event = createNewScopusPublicationEvent();
+        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributors =
+            publication.getEntityDescription().getContributors();
+
+        var affiliationIds = actualContributors.stream()
+                                 .map(Contributor::getAffiliations)
+                                 .flatMap(List::stream)
+                                 .filter(org -> nonNull(org.getId()))
+                                 .collect(Collectors.toList());
+        assertThat(affiliationIds, is(equalTo(Collections.emptyList())));
     }
 
     @Test
@@ -1051,19 +1060,52 @@ class ScopusHandlerTest {
                    .orElse(null);
     }
 
+    private static boolean hasCorrespondingName(AuthorTp author, Contributor contributor) {
+        return contributor.getIdentity()
+                   .getName()
+                   .equals(author.getPreferredName().getSurname()
+                           + NAME_DELIMITER
+                           + author.getPreferredName().getGivenName());
+    }
+
+    private static List<AuthorTp> extractOnlyCristinSearchableAuthors(HashMap<String, AuthorGroupTp> idAuthorGroupMap) {
+        return idAuthorGroupMap.values().stream()
+                   .map(AuthorGroupTp::getAuthorOrCollaboration)
+                   .flatMap(List::stream)
+                   .filter(author -> author instanceof AuthorTp)
+                   .map(author -> (AuthorTp) author)
+                   .collect(Collectors.toList());
+    }
+
+    @NotNull
+    private ScopusGenerator generateScopusDataWithOneAffiliation() {
+        return ScopusGenerator.createWithSpecifiedAffiliations(List.of(createAffiliation(List.of("Some Name"))));
+    }
+
+    private void constructTestAndGenerateResponses(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors) {
+        var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
+        var authorGroupTypes = keepOnlyAuthorGroups();
+        authorGroupTypes.forEach(authorGroupTp -> piaCristinAffiliationIdAndAuthors.put(randomString(), authorGroupTp));
+        authorGroupTypes.forEach(authorGroupTp -> generateResponsesForAuthors(piaCristinIdAndAuthors, authorGroupTp));
+        piaCristinAffiliationIdAndAuthors.forEach(
+            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
+                                                                                      authorGroupTp,
+                                                                                      cristinOrganizationId));
+    }
+
     private Integer toCristinIdentifier(URI contributorId) {
         return nonNull(contributorId)
                    ? Integer.parseInt(contributorId.toString().split("/")[3])
                    : null;
     }
 
-    private List<AuthorTp> generateResponsesForAuthors(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors,
-                                                       AuthorGroupTp authorGroupTp) {
-        return authorGroupTp.getAuthorOrCollaboration().stream()
-                   .filter(author -> author instanceof AuthorTp)
-                   .map(authorTp -> (AuthorTp) authorTp)
-                   .map(author -> attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author)).orElseThrow())
-                   .collect(Collectors.toList());
+    private void generateResponsesForAuthors(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors,
+                                             AuthorGroupTp authorGroupTp) {
+        authorGroupTp.getAuthorOrCollaboration().stream()
+            .filter(author -> author instanceof AuthorTp)
+            .map(authorTp -> (AuthorTp) authorTp)
+            .map(author -> attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author)).orElseThrow())
+            .collect(Collectors.toList());
     }
 
     private AuthorTp generatePersonResponse(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorTp authorTp)
@@ -1078,15 +1120,22 @@ class ScopusHandlerTest {
         return authorTp;
     }
 
-    private void assertThatHasCristinOrganization(Contributor contributor) {
-        var affiliations = contributor.getAffiliations().stream()
-                               .filter(this::hasCristinId)
-                               .collect(Collectors.toList());
-        assertFalse(affiliations.isEmpty());
+    private void assertThatHasCristinOrganizations(List<Contributor> contributors,
+                                                   HashMap<String, AuthorGroupTp> idAuthorGroupMap) {
+        var expectedAuthorsWithAffiliations = extractOnlyCristinSearchableAuthors(idAuthorGroupMap);
+        var cristinId = idAuthorGroupMap.keySet().iterator().next();
+        expectedAuthorsWithAffiliations.forEach(
+            author -> hasBeenConvertedToPublicationWithAffiliation(author, contributors, cristinId));
     }
 
-    private boolean hasCristinId(Organization organization) {
-        return nonNull(organization.getId()) && organization.getId().toString().contains("cristin/organization");
+    private void hasBeenConvertedToPublicationWithAffiliation(AuthorTp author, List<Contributor> contributors,
+                                                              String cristinId) {
+        var correspondingContributor = contributors.stream()
+                                           .filter(contributor -> hasCorrespondingName(author, contributor))
+                                           .findFirst()
+                                           .get();
+        assertThat(correspondingContributor.getAffiliations().get(0).getId().toString(),
+                   containsString("cristin/organization/" + cristinId));
     }
 
     private List<AuthorGroupTp> keepOnlyAuthorGroups() {
