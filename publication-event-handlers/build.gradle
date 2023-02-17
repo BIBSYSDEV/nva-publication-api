@@ -14,6 +14,7 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.secrets
     implementation libs.nva.apigateway
+    implementation libs.nva.auth
     implementation libs.nva.testutils // used in CreatePublishedPublicationsHandler
 
     implementation libs.aws.core
@@ -31,6 +32,7 @@ dependencies {
     implementation libs.aws.sdk2.auth
     implementation libs.aws.sdk2.regions
     implementation libs.aws.sdk2.core
+    implementation libs.aws.sdk2.secrets
     implementation libs.aws.apache.client
 
     implementation libs.jackson.annotations
@@ -61,4 +63,6 @@ test {
     environment "TABLE_NAME", "ResourcesTable"
     environment "AWS_REGION", "eu-west-1"
     environment "ID_NAMESPACE", "https://www.example.org/publication"
+    environment "BACKEND_CLIENT_AUTH_URL", "localhost"
+    environment "BACKEND_CLIENT_SECRET_NAME", "secret"
 }

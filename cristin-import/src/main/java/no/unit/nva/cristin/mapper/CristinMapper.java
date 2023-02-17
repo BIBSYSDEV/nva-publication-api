@@ -28,7 +28,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
@@ -43,6 +42,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.funding.Funding;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
@@ -190,28 +190,22 @@ public class CristinMapper extends CristinMappingModule {
         return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear().toString()).build();
     }
 
-    private String extractMainTitle() {
-        return extractCristinTitles()
-                   .filter(CristinTitle::isMainTitle)
+    private CristinTitle extractCristinMainTitle() {
+        var cristinTitles = cristinObject.getCristinTitles();
+        return cristinTitles.stream().filter(CristinTitle::isMainTitle)
                    .findFirst()
-                   .map(CristinTitle::getTitle)
-                   .orElseThrow();
+                   .orElseGet(() -> cristinTitles.stream().collect(SingletonCollector.collect()));
     }
 
-    private Stream<CristinTitle> extractCristinTitles() {
-        return Optional.ofNullable(cristinObject)
-                   .map(CristinObject::getCristinTitles)
-                   .stream()
-                   .flatMap(Collection::stream);
+    private String extractMainTitle() {
+        return extractCristinMainTitle().getTitle();
     }
 
     private URI extractLanguage() {
-        return extractCristinTitles()
-                   .filter(CristinTitle::isMainTitle)
-                   .findFirst()
-                   .map(CristinTitle::getLanguagecode)
-                   .map(LanguageMapper::toUri)
-                   .orElse(LanguageMapper.LEXVO_URI_UNDEFINED);
+        var cristinMainTitle = extractCristinMainTitle();
+        return nonNull(cristinMainTitle) && nonNull(cristinMainTitle.getLanguagecode())
+                   ? LanguageMapper.toUri(cristinMainTitle.getLanguagecode())
+                   : LanguageMapper.LEXVO_URI_UNDEFINED;
     }
 
     private Set<AdditionalIdentifier> extractAdditionalIdentifiers() {
@@ -288,11 +282,8 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private String extractAbstract() {
-        return extractCristinTitles()
-                   .filter(CristinTitle::isMainTitle)
-                   .findFirst()
-                   .map(CristinTitle::getAbstractText)
-                   .orElse(null);
+        var cristinMainTitle = extractCristinMainTitle();
+        return nonNull(cristinMainTitle) ? cristinMainTitle.getAbstractText() : null;
     }
 
     private List<String> extractTags() {
