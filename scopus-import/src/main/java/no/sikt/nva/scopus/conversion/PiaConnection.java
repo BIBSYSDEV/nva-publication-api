@@ -25,7 +25,6 @@ import no.sikt.nva.scopus.conversion.model.pia.Author;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
-import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.Nullable;
@@ -151,8 +150,12 @@ public class PiaConnection {
     }
 
     private URI createCristinUriFromCristinNumber(int cristinNumber) {
-        return UriWrapper.fromUri(cristinProxyHost + CRISTIN_PERSON_PATH + cristinNumber)
-                   .getUri();
+        return attempt(() -> new URIBuilder()
+                                 .setHost(cristinProxyHost)
+                                 .setPath(CRISTIN_PERSON_PATH + cristinNumber)
+                                 .setScheme(HTTPS_SCHEME)
+                                 .build())
+                   .orElseThrow();
     }
 
     private HttpRequest createRequest(URI uri) {
