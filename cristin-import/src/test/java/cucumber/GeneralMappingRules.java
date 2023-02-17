@@ -466,6 +466,27 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setSourceRecordIdentifier(sourceRecordIdentifier);
     }
 
+    @Given("that Cristin Result has created date equal to null")
+    public void thatCristinResultHasCreatedDateEqualToNull() {
+        scenarioContext.getCristinEntry().setEntryCreationDate(null);
+    }
+
+    @And("that the Cristin Result has published date equal to the local date {string}")
+    public void thatTheCristinResultHasPublishedDateEqualToTheLocalDate(String publishedDate) {
+        LocalDate localDate = LocalDate.parse(publishedDate);
+        scenarioContext.getCristinEntry().setEntryPublishedDate(localDate);
+    }
+
+    @And("that the cristin Result has published date equal to null")
+    public void thatTheCristinResultHasPublishedDateEqualToNull() {
+        scenarioContext.getCristinEntry().setEntryPublishedDate(null);
+    }
+
+    @And("that the Cristin Result has a year set to {string}")
+    public void thatTheCristinResultHasAYearSetTo(String year) {
+        scenarioContext.getCristinEntry().setPublicationYear(Integer.parseInt(year));
+    }
+
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
                                                     List<CristinContributor> contributors) {
         for (int contributorsIndex = 0; contributorsIndex < contributors.size(); contributorsIndex++) {
