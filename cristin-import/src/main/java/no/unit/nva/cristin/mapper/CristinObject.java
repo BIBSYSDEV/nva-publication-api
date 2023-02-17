@@ -28,7 +28,7 @@ import no.unit.nva.model.Publication;
 // to remove it from the exports
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
-    "dato_utgitt", "finansiering_varbeid", "type_produkt",
+    "finansiering_varbeid", "type_produkt",
     "kildepostid", "eierkode_opprettet", "arkivpost", "varbeid_url",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst", "h_dbh_forskres_publikasjon"})
@@ -49,6 +49,10 @@ public class CristinObject implements JsonSerializable {
     private Integer publicationYear;
     @JsonProperty("dato_opprettet")
     private LocalDate entryCreationDate;
+
+    @JsonProperty("dato_utgitt")
+    private LocalDate entryPublishedDate;
+
     @JsonProperty("dato_siste_endring")
     private LocalDate entryLastModifiedDate;
     @JsonProperty("arstall_rapportert")
