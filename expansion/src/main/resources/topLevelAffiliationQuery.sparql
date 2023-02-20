@@ -4,15 +4,9 @@
 PREFIX  organization: <https://bibsysdev.github.io/src/nva/ontology.ttl#>
 
 CONSTRUCT {
-  ?org a organization:Organization ;
-    organization:name ?org_name ;
-    organization:topLevelAffiliation ?top_org .
-  ?top_org a organization:Organization ;
-    organization:name ?top_org_name
+  ?org organization:topLevelOrganization ?top_org .
   } WHERE {
   ?org a organization:Organization ;
-    organization:name ?org_name ;
     organization:partOf* ?top_org .
-  ?top_org organization:name ?top_org_name .
     FILTER NOT EXISTS { ?top_org organization:partOf ?e } .
 }

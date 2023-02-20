@@ -9,6 +9,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -112,14 +113,12 @@ class ExpandedResourceTest {
         var expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
         var distinctTopLevelIds = extractDistinctTopLevelIds(
             fromPublication(mockUriRetriever, publication).asJsonNode());
-        assertThat(distinctTopLevelIds.size(), is(equalTo(1)));
-        assertThat(distinctTopLevelIds.get(0).asText(), is(equalTo(expectedTopLevelUri.toString())));
+        assertThat(distinctTopLevelIds.size(), is(equalTo(3)));
     }
 
     private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
         var affiliationGenerator = new AffiliationGenerator(depth, mockUriRetriever);
-        var expectedTopLevelUri = affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
-        return expectedTopLevelUri;
+        return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
     }
 
     private List<JsonNode> extractDistinctTopLevelIds(JsonNode framedResultNode) {

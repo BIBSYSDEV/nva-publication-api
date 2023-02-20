@@ -76,20 +76,15 @@
     "contributors": {
       "affiliations": {
         "type": "Organization",
-        "@context": {
-          "partOf": {
-            "@container": "@set"
-          },
-          "hasPart": {
-            "@container": "@set",
-            "@embed": "@always"
-          }
+        "@explicit": true,
+        "labels": {},
+        "name": {},
+        "topLevelOrganization": {
+          "type": "Organization",
+          "@explicit": true,
+          "labels": {},
+          "name": {}
         }
-      }
-    },
-    "reference": {
-      "publicationContext": {
-        "@embed": "@always"
       }
     }
   }
