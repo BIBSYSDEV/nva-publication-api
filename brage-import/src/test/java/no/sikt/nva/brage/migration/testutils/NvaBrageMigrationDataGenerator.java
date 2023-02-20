@@ -110,7 +110,6 @@ public class NvaBrageMigrationDataGenerator {
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
         return new Publication.Builder()
-                   .withDoi(builder.getDoi())
                    .withHandle(builder.getHandle())
                    .withEntityDescription(createEntityDescription(builder))
                    .withCreatedDate(convertPublishedDateToInstant(builder))
