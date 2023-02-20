@@ -79,7 +79,6 @@ public class CristinConnection {
             logger.info(CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE + response.statusCode());
             throw new RuntimeException();
         }
-        logger.info("Body : {}", response.body());
         return response.body();
     }
 
@@ -88,7 +87,6 @@ public class CristinConnection {
     }
 
     private HttpRequest createRequest(URI uri) {
-        logger.info("CristinOrg URI to call: {}", uri);
         return HttpRequest.newBuilder()
                    .uri(uri)
                    .GET()

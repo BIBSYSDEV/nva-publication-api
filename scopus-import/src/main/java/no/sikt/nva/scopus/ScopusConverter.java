@@ -45,6 +45,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
+import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
 public class ScopusConverter {
@@ -149,7 +150,17 @@ public class ScopusConverter {
     }
 
     private String extractMainAbstract() {
-        return getMainAbstract().flatMap(this::extractAbstractStringOrReturnNull).orElse(null);
+        return getMainAbstract()
+                   .flatMap(this::extractAbstractStringOrReturnNull)
+                   .map(this::trim)
+                   .orElse(null);
+    }
+
+    private String trim(String string) {
+        return Optional.ofNullable(string)
+                   .map(s -> s.replaceAll("\\n\\r", StringUtils.SPACE))
+                   .map(s -> s.replaceAll(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
+                   .orElse(null);
     }
 
     private Optional<String> returnNullInsteadOfEmptyString(String input) {
