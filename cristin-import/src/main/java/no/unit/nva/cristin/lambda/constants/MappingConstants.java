@@ -126,7 +126,7 @@ public final class MappingConstants {
 
     @JacocoGenerated
     private static boolean createCristinContributorId() {
-        return ENVIRONMENT.readEnvOpt("CREATE_CONTRIBUTOR_ID")
+        return ENVIRONMENT.readEnvOpt("SHOULD_CREATE_CONTRIBUTOR_ID")
                    .map(Boolean::parseBoolean)
                    .orElse(false);
     }
