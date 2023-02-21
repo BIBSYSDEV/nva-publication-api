@@ -18,11 +18,14 @@ import no.unit.nva.expansion.utils.UriRetriever;
 
 public class AffiliationGenerator {
 
+
     public static final String AFFILIATION_TEMPLATE = "framed-json/affiliation_template.json";
     public static final String ID_FIELD = "id";
     public static final String NAME_FIELD = "name";
     public static final String HAS_PART_FIELD = "hasPart";
     public static final String PART_OF_FIELD = "partOf";
+    private static final String CONTEXT = "https://bibsysdev.github.io/src/organization-context.json";
+    private static final String CONTEXT_FIELD = "@context";
     private final int depth;
     private final UriRetriever mockUriRetriever;
 
@@ -55,6 +58,7 @@ public class AffiliationGenerator {
         setName(affiliation, level);
         setHasPart(affiliation, hasPart);
         setPartOf(affiliation, partOf);
+        setContext(affiliation);
         mockExpansionOfAffiliations(uri, affiliation);
     }
 
@@ -68,6 +72,10 @@ public class AffiliationGenerator {
             stringFromResources(
                 Path.of(AffiliationGenerator.AFFILIATION_TEMPLATE)))
         ).orElseThrow();
+    }
+
+    private static JsonNode setContext(JsonNode json) {
+        return ((ObjectNode) json).put(CONTEXT_FIELD, CONTEXT);
     }
 
     private static JsonNode setId(JsonNode json, URI uri) {

@@ -9,7 +9,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -26,12 +25,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -97,7 +97,7 @@ class ExpandedResourceTest {
     @ParameterizedTest(name = "should return IndexDocument with correct topLevelAffiliation with referencing depth: "
                               + "{0}")
     @ValueSource(ints = {1, 2, 3, 6})
-    void shouldReturnIndexDocumentWithCorrectTopLevelAffiliation(int depth) throws Exception {
+    void shouldReturnIndexDocumentWithCorrectTopLevelOrganization(int depth) throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
         final URI seriesUri = extractSeriesUri(publication);
@@ -111,9 +111,33 @@ class ExpandedResourceTest {
                                                          publisherName);
 
         var expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
-        var distinctTopLevelIds = extractDistinctTopLevelIds(
-            fromPublication(mockUriRetriever, publication).asJsonNode());
-        assertThat(distinctTopLevelIds.size(), is(equalTo(3)));
+
+        ObjectNode framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+
+        var expectedTopLevelOrgs = new ArrayList<URI>();
+        expectedTopLevelOrgs.add(expectedTopLevelUri);
+        expectedTopLevelOrgs.addAll(extractAffiliationsUris(publication).stream()
+                                        .filter(aff -> !aff.equals(affiliationToBeExpandedId))
+                                        .collect(Collectors.toList()));
+
+        var distinctTopLevelIds = extractDistinctTopLevelIds(framedResultNode);
+
+        assertThat(distinctTopLevelIds.stream().sorted().collect(Collectors.toList()),
+                   is(equalTo(expectedTopLevelOrgs.stream().sorted().collect(Collectors.toList()))));
+
+        assertExplicitFieldsFromFraming(framedResultNode);
+    }
+
+    private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
+        framedResultNode.findValues("topLevelOrganization").forEach(
+            topOrg -> topOrg.fieldNames().forEachRemaining(
+                fieldName -> {
+                    assert (Objects.equals(fieldName, "id")
+                            || Objects.equals(fieldName, "name")
+                            || Objects.equals(fieldName, "type"));
+                }
+            )
+        );
     }
 
     private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
@@ -121,10 +145,10 @@ class ExpandedResourceTest {
         return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
     }
 
-    private List<JsonNode> extractDistinctTopLevelIds(JsonNode framedResultNode) {
-        var topLevelAffiliations = framedResultNode.findValues("topLevelAffiliation");
+    private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
+        var topLevelAffiliations = framedResultNode.findValues("topLevelOrganization");
         return topLevelAffiliations.stream()
-            .map(node -> node.get("id"))
+            .map(node -> URI.create(node.get("id").asText()))
             .distinct()
             .collect(Collectors.toList());
     }
