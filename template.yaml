@@ -750,6 +750,7 @@ Resources:
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
+      Timeout: 900
       Environment:
         Variables:
           API_HOST: !Ref ApiDomain
