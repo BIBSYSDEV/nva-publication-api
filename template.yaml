@@ -287,7 +287,6 @@ Resources:
 
   DeleteLambdaRole:
     Type: AWS::IAM::Role
-    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
     Properties:
       Path: /
       AssumeRolePolicyDocument:
@@ -358,7 +357,6 @@ Resources:
 
   S3DeleteAccessPermission:
     Type: AWS::IAM::Policy
-    Description: Needed by DeletePublicationEventConsumer
     Properties:
       PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
       Roles:
