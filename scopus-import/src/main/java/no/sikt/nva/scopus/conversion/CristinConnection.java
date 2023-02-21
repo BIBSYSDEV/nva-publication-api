@@ -15,7 +15,6 @@ import no.sikt.nva.scopus.conversion.model.cristin.Organization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,11 +22,7 @@ public class CristinConnection {
 
     public static final String CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE = "cristin responded with status "
                                                                                       + "code: ";
-    public static final String COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE = "Could not extract cristin person "
-                                                                                + "from cristin: ";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
-    public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG = "Could not extract cristin organization from "
-                                                                      + "cristin: ";
     private final HttpClient httpClient;
 
     public CristinConnection(HttpClient httpClient) {
@@ -45,7 +40,7 @@ public class CristinConnection {
                                        .map(this::getCristinResponse)
                                        .map(this::getBodyFromResponse)
                                        .map(this::getCristinPersonResponse)
-                                       .orElse(this::logFailureForPersonAndReturnNull));
+                                       .orElse(null));
     }
 
     public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {
@@ -53,21 +48,11 @@ public class CristinConnection {
                    .map(this::getCristinResponse)
                    .map(this::getBodyFromResponse)
                    .map(this::convertToOrganization)
-                   .orElse(this::logFailureFetchingOrganizationAndReturnNull);
+                   .orElse(null);
     }
 
     private Organization convertToOrganization(String body) throws JsonProcessingException {
         return new ObjectMapper().readValue(body, Organization.class);
-    }
-
-    private Person logFailureForPersonAndReturnNull(Failure<Person> failure) {
-        logger.info(COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE, failure.getException());
-        return null;
-    }
-
-    private Organization logFailureFetchingOrganizationAndReturnNull(Failure<Organization> failure) {
-        logger.info(ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG, failure.getException());
-        return null;
     }
 
     private Person getCristinPersonResponse(String json) throws JsonProcessingException {
@@ -79,7 +64,6 @@ public class CristinConnection {
             logger.info(CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE + response.statusCode());
             throw new RuntimeException();
         }
-        logger.info("Body : {}", response.body());
         return response.body();
     }
 
@@ -88,7 +72,6 @@ public class CristinConnection {
     }
 
     private HttpRequest createRequest(URI uri) {
-        logger.info("CristinOrg URI to call: {}", uri);
         return HttpRequest.newBuilder()
                    .uri(uri)
                    .GET()
