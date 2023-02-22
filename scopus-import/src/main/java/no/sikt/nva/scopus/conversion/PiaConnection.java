@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,7 +55,6 @@ public class PiaConnection {
     private final HttpClient httpClient;
     private final transient String piaAuthorization;
     private final String piaHost;
-
     private final String cristinProxyHost;
 
     public PiaConnection(HttpClient httpClient,
@@ -144,13 +144,15 @@ public class PiaConnection {
         return Arrays.asList(JsonUtils.dtoObjectMapper.readValue(body, Affiliation[].class));
     }
 
-    private URI createCristinUriFromCristinNumber(int cristinNumber) {
-        return attempt(() -> new URIBuilder()
-                                 .setHost(cristinProxyHost)
-                                 .setPath(CRISTIN_PERSON_PATH + cristinNumber)
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+    private URI createCristinUriFromCristinNumber(Integer cristinNumber) {
+        return isNull(cristinNumber)
+                   ? null
+                   : attempt(() -> new URIBuilder()
+                                       .setHost(cristinProxyHost)
+                                       .setPath(CRISTIN_PERSON_PATH + cristinNumber)
+                                       .setScheme(HTTPS_SCHEME)
+                                       .build())
+                         .orElseThrow();
     }
 
     private HttpRequest createRequest(URI uri) {
