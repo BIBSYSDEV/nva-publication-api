@@ -987,7 +987,7 @@ class ScopusHandlerTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(appender.getMessages(), containsString(PiaConnection.ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR));
+        assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
     }
 
     @Test
@@ -996,7 +996,7 @@ class ScopusHandlerTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(appender.getMessages(), containsString(PiaConnection.ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR));
+        assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
     }
 
     @Test

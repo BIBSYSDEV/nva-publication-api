@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 public class PiaConnection {
 
     public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
-    public static final String ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR = "Could not extract cristin id from pia";
     public static final int FALSE_IN_PIA_INTEGER = 0;
     public static final String PIA_REST_API_ENV_KEY = "PIA_REST_API";
     public static final String API_HOST = "API_HOST";
@@ -46,7 +45,7 @@ public class PiaConnection {
     public static final String SCOPUS = "SCOPUS:";
     public static final String HTTPS_SCHEME = "https";
     public static final String CRISTIN_ORGANIZATION_PATH = "cristin/organization/";
-    private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
+    public static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
     private static final String AUTHORIZATION = "Authorization";
@@ -79,14 +78,14 @@ public class PiaConnection {
                    .map(this::getCristinNumber)
                    .map(Optional::orElseThrow)
                    .map(this::createCristinUriFromCristinNumber)
-                   .orElse(null);
+                   .orElse(failure -> null);
     }
 
     public URI getCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
         return attempt(() -> fetchAffiliationList(scopusAffiliationIdentifier))
                    .map(this::selectOneAffiliation)
                    .map(this::createCristinUriFromCristinOrganization)
-                   .orElse(null);
+                   .orElse(failure -> null);
     }
 
     @JacocoGenerated

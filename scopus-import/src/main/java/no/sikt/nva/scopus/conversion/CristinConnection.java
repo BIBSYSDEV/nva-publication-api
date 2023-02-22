@@ -40,7 +40,7 @@ public class CristinConnection {
                                        .map(this::getCristinResponse)
                                        .map(this::getBodyFromResponse)
                                        .map(this::getCristinPersonResponse)
-                                       .orElse(null));
+                                       .orElse(failure -> null));
     }
 
     public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {
@@ -48,7 +48,7 @@ public class CristinConnection {
                    .map(this::getCristinResponse)
                    .map(this::getBodyFromResponse)
                    .map(this::convertToOrganization)
-                   .orElse(null);
+                   .orElse(failure -> null);
     }
 
     private Organization convertToOrganization(String body) throws JsonProcessingException {
