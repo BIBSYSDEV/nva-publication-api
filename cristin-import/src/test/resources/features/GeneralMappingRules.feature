@@ -313,6 +313,24 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
 
+  Scenario: Mapping cristin Funding with NFR should create nva Funding with id set.
+    Given that Cristin Result has a grant with properties identifier "3013" and sourceCode "NFR":
+    When the Cristin Result is converted to an NVA Resource
+    Then the publication should have a Confirmed Nva funding with identifier equal to "3013" and id equal to "https://api.test.nva.aws.unit.no/verified-funding/nfr/3013"
+
+
+  Scenario: When CristinGrants year from and / or year to is present they are mapped.
+    Given that Cristin Result has grants:
+      | finansieringslopenr | finansieringskildekode | arstall_fra | arstall_til | finansieringsreferanse |
+      | 619                 | EU                     | 2005        | 2006        | SCP8-GA-2009-233969    |
+      | 3013                | KI                     |             |             | 456                    |
+    When the Cristin Result is converted to an NVA Resource
+    Then publication should have a nva Fundings:
+      | identifier | activeFrom           | activeTo             | source                                                      | label               |
+      | 619        | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/EU | SCP8-GA-2009-233969 |
+      | 3013       |                      |                      | https://api.test.nva.aws.unit.no/cristin/funding-sources/KI | 456                 |
+
+
 
 
 
