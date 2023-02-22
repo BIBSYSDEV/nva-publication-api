@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,7 @@ import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@JacocoGenerated
 public class CristinConnection {
 
     public static final String CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE = "cristin responded with status "
@@ -35,20 +37,24 @@ public class CristinConnection {
     }
 
     public Optional<Person> getCristinPersonByCristinId(URI cristinPersonId) {
-
-        return Optional.ofNullable(attempt(() -> createRequest(cristinPersonId))
-                                       .map(this::getCristinResponse)
-                                       .map(this::getBodyFromResponse)
-                                       .map(this::getCristinPersonResponse)
-                                       .orElse(failure -> null));
+        return isNull(cristinPersonId)
+                   ? Optional.empty()
+                   : Optional.ofNullable(attempt(() -> createRequest(cristinPersonId))
+                                             .map(this::getCristinResponse)
+                                             .map(this::getBodyFromResponse)
+                                             .map(this::getCristinPersonResponse)
+                                             .orElse(failure -> null));
     }
 
+
     public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {
-        return attempt(() -> createRequest(cristinOrgId))
-                   .map(this::getCristinResponse)
-                   .map(this::getBodyFromResponse)
-                   .map(this::convertToOrganization)
-                   .orElse(failure -> null);
+        return isNull(cristinOrgId)
+                   ? null
+                   : attempt(() -> createRequest(cristinOrgId))
+                         .map(this::getCristinResponse)
+                         .map(this::getBodyFromResponse)
+                         .map(this::convertToOrganization)
+                         .orElse(failure -> null);
     }
 
     private Organization convertToOrganization(String body) throws JsonProcessingException {

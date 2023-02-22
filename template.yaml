@@ -749,7 +749,6 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
       Timeout: 900
-      MemorySize: 2048
       Environment:
         Variables:
           API_HOST: !Ref ApiDomain
@@ -1391,7 +1390,7 @@ Resources:
       Handler: index.lambda_handler
       Runtime: python3.8
       Timeout: 900
-      MemorySize: 10240
+      ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           XML_BUCKET_NAME: !Ref ScopusXmlBucket
