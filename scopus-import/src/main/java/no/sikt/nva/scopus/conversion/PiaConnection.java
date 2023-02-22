@@ -24,17 +24,14 @@ import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PiaConnection {
 
     public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
-    public static final String ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR = "Could not extract cristin id from pia";
     public static final int FALSE_IN_PIA_INTEGER = 0;
     public static final String PIA_REST_API_ENV_KEY = "PIA_REST_API";
     public static final String API_HOST = "API_HOST";
@@ -47,10 +44,8 @@ public class PiaConnection {
     public static final String PIA_AFFILIATION_ID_QUERY_PARAM = "affiliation_id";
     public static final String SCOPUS = "SCOPUS:";
     public static final String HTTPS_SCHEME = "https";
-    public static final String ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG_ID = "Could not extract cristin organization id "
-                                                                         + "from pia: ";
     public static final String CRISTIN_ORGANIZATION_PATH = "cristin/organization/";
-    private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
+    public static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
     private static final String AUTHORIZATION = "Authorization";
@@ -59,7 +54,6 @@ public class PiaConnection {
     private final HttpClient httpClient;
     private final transient String piaAuthorization;
     private final String piaHost;
-
     private final String cristinProxyHost;
 
     public PiaConnection(HttpClient httpClient,
@@ -83,14 +77,14 @@ public class PiaConnection {
                    .map(this::getCristinNumber)
                    .map(Optional::orElseThrow)
                    .map(this::createCristinUriFromCristinNumber)
-                   .orElse(this::logFailureFetchingCristinPersonAndReturnNull);
+                   .orElse(failure -> null);
     }
 
     public URI getCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
         return attempt(() -> fetchAffiliationList(scopusAffiliationIdentifier))
                    .map(this::selectOneAffiliation)
                    .map(this::createCristinUriFromCristinOrganization)
-                   .orElse(this::logFailureFetchingCristinOrganizationAndReturnNull);
+                   .orElse(failure -> null);
     }
 
     @JacocoGenerated
@@ -149,13 +143,13 @@ public class PiaConnection {
         return Arrays.asList(JsonUtils.dtoObjectMapper.readValue(body, Affiliation[].class));
     }
 
-    private URI createCristinUriFromCristinNumber(int cristinNumber) {
+    private URI createCristinUriFromCristinNumber(Integer cristinNumber) {
         return attempt(() -> new URIBuilder()
-                                 .setHost(cristinProxyHost)
-                                 .setPath(CRISTIN_PERSON_PATH + cristinNumber)
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+                                       .setHost(cristinProxyHost)
+                                       .setPath(CRISTIN_PERSON_PATH + cristinNumber)
+                                       .setScheme(HTTPS_SCHEME)
+                                       .build())
+                         .orElseThrow();
     }
 
     private HttpRequest createRequest(URI uri) {
@@ -229,17 +223,5 @@ public class PiaConnection {
 
     private boolean hasCristinId(Author author) {
         return author.getCristinId() != FALSE_IN_PIA_INTEGER;
-    }
-
-    @Nullable
-    private URI logFailureFetchingCristinPersonAndReturnNull(Failure<URI> failure) {
-        logger.info(ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR, failure.getException());
-        return null;
-    }
-
-    @Nullable
-    private URI logFailureFetchingCristinOrganizationAndReturnNull(Failure<URI> failure) {
-        logger.info(ERROR_MESSAGE_EXTRACTING_CRISTIN_ORG_ID, failure.getException());
-        return null;
     }
 }
