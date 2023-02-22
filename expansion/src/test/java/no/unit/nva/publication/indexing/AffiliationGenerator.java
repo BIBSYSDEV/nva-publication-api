@@ -18,12 +18,14 @@ import no.unit.nva.expansion.utils.UriRetriever;
 
 public class AffiliationGenerator {
 
-    public static final String TOP_LEVEL_TEMPLATE = "framed-json/affiliation_top.json";
-    public static final String MIDDLE_LEVEL_TEMPLATE = "framed-json/affiliation_middle.json";
-    public static final String BOTTOM_LEVEL_TEMPLATE = "framed-json/affiliation_bottom_template.json";
+
+    public static final String AFFILIATION_TEMPLATE = "framed-json/affiliation_template.json";
     public static final String ID_FIELD = "id";
+    public static final String NAME_FIELD = "name";
     public static final String HAS_PART_FIELD = "hasPart";
     public static final String PART_OF_FIELD = "partOf";
+    private static final String CONTEXT = "https://bibsysdev.github.io/src/organization-context.json";
+    private static final String CONTEXT_FIELD = "@context";
     private final int depth;
     private final UriRetriever mockUriRetriever;
 
@@ -38,23 +40,25 @@ public class AffiliationGenerator {
 
         for (int i = 0; i < depth - 1; i++) {
 
-            setOneAffiliation(currentLevelUri, lowerLevelId, upperLevelId);
+            setOneAffiliation(currentLevelUri, lowerLevelId, upperLevelId, i);
 
             lowerLevelId = List.of(currentLevelUri);
             currentLevelUri = upperLevelId.get(0);
             upperLevelId = List.of(randomUri());
         }
 
-        setOneAffiliation(currentLevelUri, lowerLevelId, List.of());
+        setOneAffiliation(currentLevelUri, lowerLevelId, List.of(), depth - 1);
 
         return currentLevelUri;
     }
 
-    private void setOneAffiliation(URI uri, List<URI> hasPart, List<URI> partOf) {
-        JsonNode affiliation = readFileAsJson(MIDDLE_LEVEL_TEMPLATE);
+    private void setOneAffiliation(URI uri, List<URI> hasPart, List<URI> partOf, int level) {
+        JsonNode affiliation = readFileAsJson();
         setId(affiliation, uri);
+        setName(affiliation, level);
         setHasPart(affiliation, hasPart);
         setPartOf(affiliation, partOf);
+        setContext(affiliation);
         mockExpansionOfAffiliations(uri, affiliation);
     }
 
@@ -63,13 +67,27 @@ public class AffiliationGenerator {
             .thenReturn(Optional.of(content.toString()));
     }
 
-    private static JsonNode readFileAsJson(String filename) {
-        String topLevelSample = stringFromResources(Path.of(filename));
-        return attempt(() -> objectMapper.readTree(topLevelSample)).orElseThrow();
+    private static JsonNode readFileAsJson() {
+        return attempt(() -> objectMapper.readTree(
+            stringFromResources(
+                Path.of(AffiliationGenerator.AFFILIATION_TEMPLATE)))
+        ).orElseThrow();
+    }
+
+    private static JsonNode setContext(JsonNode json) {
+        return ((ObjectNode) json).put(CONTEXT_FIELD, CONTEXT);
     }
 
     private static JsonNode setId(JsonNode json, URI uri) {
         return ((ObjectNode) json).put(ID_FIELD, uri.toString());
+    }
+
+    private static JsonNode setName(JsonNode json, int level) {
+        JsonNode node = attempt(() ->
+                objectMapper.readValue("{\"nb\": \"name from level: " + level + "\"}", JsonNode.class)
+        ).orElseThrow();
+        return ((ObjectNode) json).put("name", node);
+
     }
 
     private void setHasPart(JsonNode affiliation, List<URI> hasPartIds) {
@@ -78,25 +96,25 @@ public class AffiliationGenerator {
             return;
         }
 
-        JsonNode hasPartContent = readFileAsJson(BOTTOM_LEVEL_TEMPLATE);
+        JsonNode hasPartContent = readFileAsJson();
 
         ArrayNode hasPart = objectMapper.createArrayNode();
         hasPartIds.forEach(id -> hasPart.add(setId(hasPartContent, id)));
 
-        ((ObjectNode) affiliation).replace(HAS_PART_FIELD, hasPart);
+        ((ObjectNode) affiliation).set(HAS_PART_FIELD, hasPart);
     }
 
     private void setPartOf(JsonNode affiliation, List<URI> partOfIds) {
         if (partOfIds.isEmpty()) {
-            ((ObjectNode) affiliation).remove(HAS_PART_FIELD);
+            ((ObjectNode) affiliation).remove(PART_OF_FIELD);
             return;
         }
 
-        JsonNode partOfContent = readFileAsJson(TOP_LEVEL_TEMPLATE);
+        JsonNode partOfContent = readFileAsJson();
 
         ArrayNode partOf = objectMapper.createArrayNode();
         partOfIds.forEach(id -> partOf.add(setId(partOfContent, id)));
 
-        ((ObjectNode) affiliation).replace(PART_OF_FIELD, partOf);
+        ((ObjectNode) affiliation).set(PART_OF_FIELD, partOf);
     }
 }

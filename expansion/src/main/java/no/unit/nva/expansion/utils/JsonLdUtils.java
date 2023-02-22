@@ -19,7 +19,7 @@ public final class JsonLdUtils {
     private static JsonNode addContext(JsonNode root) {
         if (nonNull(root)) {
             ObjectNode context = objectMapper.createObjectNode();
-            context.put("@vocab", "https://bibsysdev.github.io/src/nva/ontology.ttl#");
+            context.put("@vocab", "https://nva.sikt.no/ontology/publication#");
             context.put("id", "@id");
             context.put("type", "@type");
             ObjectNode series = objectMapper.createObjectNode();

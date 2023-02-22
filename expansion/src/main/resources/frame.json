@@ -1,6 +1,6 @@
 {
   "@context": {
-    "@vocab": "https://bibsysdev.github.io/src/nva/ontology.ttl#",
+    "@vocab": "https://nva.sikt.no/ontology/publication#",
     "id": "@id",
     "type": "@type",
     "contributors": {
@@ -75,21 +75,16 @@
   "entityDescription": {
     "contributors": {
       "affiliations": {
+        "@explicit": true,
         "type": "Organization",
-        "@context": {
-          "partOf": {
-            "@container": "@set"
-          },
-          "hasPart": {
-            "@container": "@set",
-            "@embed": "@always"
-          }
+        "labels": {},
+        "name": {},
+        "topLevelOrganization": {
+          "@explicit": true,
+          "type": "Organization",
+          "labels": {},
+          "name": {}
         }
-      }
-    },
-    "reference": {
-      "publicationContext": {
-        "@embed": "@always"
       }
     }
   }
