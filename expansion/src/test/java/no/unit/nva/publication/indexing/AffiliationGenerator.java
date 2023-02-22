@@ -47,7 +47,7 @@ public class AffiliationGenerator {
             upperLevelId = List.of(randomUri());
         }
 
-        setOneAffiliation(currentLevelUri, lowerLevelId, List.of(), depth-1);
+        setOneAffiliation(currentLevelUri, lowerLevelId, List.of(), depth - 1);
 
         return currentLevelUri;
     }
