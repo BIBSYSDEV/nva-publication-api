@@ -75,15 +75,15 @@
   "entityDescription": {
     "contributors": {
       "affiliations": {
+        "@explicit": true,
         "type": "Organization",
-        "@context": {
-          "partOf": {
-            "@container": "@set"
-          },
-          "hasPart": {
-            "@container": "@set",
-            "@embed": "@always"
-          }
+        "labels": {},
+        "name": {},
+        "topLevelAffiliation": {
+          "@explicit": true,
+          "type": "Organization",
+          "labels": {},
+          "name": {}
         }
       }
     },
