@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -20,7 +19,6 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -40,7 +38,6 @@ public class ContributorExtractor {
     private final List<Contributor> contributors;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
-    private final Map<String, Person> cristinPersonIdentifiers;
 
     public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps,
                                 PiaConnection piaConnection, CristinConnection cristinConnection) {
@@ -49,7 +46,6 @@ public class ContributorExtractor {
         this.contributors = new ArrayList<>();
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
-        cristinPersonIdentifiers = new ConcurrentHashMap<>();
     }
 
     public List<Contributor> generateContributors() {
@@ -154,7 +150,8 @@ public class ContributorExtractor {
 
     private void generateContributor(AuthorTp author, AuthorGroupTp authorGroup,
                                      PersonalnameType correspondencePerson) {
-        Optional<Person> cristinPerson = extractCristinPerson(author.getAuid());
+        var cristinPersonUri = piaConnection.getCristinPersonIdentifier(author.getAuid());
+        var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinPersonUri);
         var cristinOrganizationUri = getCristinOrganizationUri(authorGroup);
         var cristinOrganization = cristinConnection.getCristinOrganizationByCristinId(cristinOrganizationUri);
         contributors.add(
@@ -165,17 +162,6 @@ public class ContributorExtractor {
                                                                                           cristinOrganization))
                 .orElseGet(() -> generateContributorFromAuthorTp(author, authorGroup, correspondencePerson,
                                                                  cristinOrganization)));
-    }
-
-    private Optional<Person> extractCristinPerson(String scopusIdentifier) {
-        if (cristinPersonIdentifiers.containsKey(scopusIdentifier)) {
-            return Optional.ofNullable(cristinPersonIdentifiers.get(scopusIdentifier));
-        } else {
-            var cristinPersonUri = piaConnection.getCristinPersonIdentifier(scopusIdentifier);
-            var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinPersonUri);
-            cristinPerson.ifPresent(person -> cristinPersonIdentifiers.put(scopusIdentifier, person));
-            return cristinPerson;
-        }
     }
 
     @Nullable

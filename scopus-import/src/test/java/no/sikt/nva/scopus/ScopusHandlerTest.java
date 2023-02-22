@@ -90,6 +90,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -882,7 +883,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReplaceContributorIdentityWithCristinData(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    void shouldReplaceContributorIdentityWithCristinData() throws IOException {
 
         var authorTypes = keepOnlyTheAuthors();
         var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
@@ -893,7 +894,6 @@ class ScopusHandlerTest {
             (cristinId, authorTp) -> generatePiaResponseAndCristinPersons(new PiaResponseGenerator(), authors,
                                                                           cristinPersons, cristinId, authorTp));
         var s3Event = createNewScopusPublicationEvent();
-        var mocks = wireMockRuntimeInfo.getWireMock().allStubMappings();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = publication.getEntityDescription().getContributors();
         var authorList = actualContributors.stream()
@@ -922,15 +922,50 @@ class ScopusHandlerTest {
         var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
         authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
         piaCristinAffiliationIdAndAuthors.forEach(
-            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
-                                                                                      authorGroupTp,
-                                                                                      cristinOrganizationId));
+            (cristinOrganizationId, authorGroupTp) -> generatePiaAndCristinAffiliationsResponse(new PiaResponseGenerator(),
+                                                                                                authorGroupTp,
+                                                                                                cristinOrganizationId));
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors =
             publication.getEntityDescription().getContributors();
-
         assertThatHasCristinOrganizations(actualContributors, piaCristinAffiliationIdAndAuthors);
+    }
+
+    @Test
+    void shouldReturnAffiliationWithLabelsOnlyWhenNoResponseFromPia() throws IOException {
+        scopusData = generateScopusDataWithOneAffiliation();
+        var authorGroupTpList = new ArrayList<>(keepOnlyAuthorGroups());
+        var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
+        authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
+        piaCristinAffiliationIdAndAuthors.forEach(
+            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
+                                                                                                authorGroupTp,
+                                                                                                cristinOrganizationId));
+        var s3Event = createNewScopusPublicationEvent();
+        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributors =
+            publication.getEntityDescription().getContributors();
+        actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
+    }
+
+    private void generatePiaAffiliationsResponse(PiaResponseGenerator piaResponseGenerator, AuthorGroupTp authorGroupTp,
+                                                 String cristinOrganizationId) {
+        var affiliationList = piaResponseGenerator.generateAffiliations(cristinOrganizationId);
+        createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
+    }
+
+    @Test
+    void shouldReturnAffiliationWithLabelsOnlyWhenNoResponseFromCristin() throws IOException {
+        scopusData = generateScopusDataWithOneAffiliation();
+        var authorGroupTpList = new ArrayList<>(keepOnlyAuthorGroups());
+        var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
+        authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
+        var s3Event = createNewScopusPublicationEvent();
+        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributors =
+            publication.getEntityDescription().getContributors();
+        actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
     }
 
     @Test
@@ -1018,6 +1053,11 @@ class ScopusHandlerTest {
         }
     }
 
+    private static void hasNoAffiliationWithId(Contributor contributor) {
+        contributor.getAffiliations().stream().filter(Objects::nonNull)
+            .forEach(affiliation -> assertThat(affiliation.getId(), is(equalTo(null))));
+    }
+
     private static List<Serializable> contentWithSupInftagsScopus14244261628() {
         // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
         return List.of("Non-factorizable contributions to B", generateInf("d"), generateSup("0"), " - D",
@@ -1089,9 +1129,9 @@ class ScopusHandlerTest {
         authorGroupTypes.forEach(authorGroupTp -> piaCristinAffiliationIdAndAuthors.put(randomString(), authorGroupTp));
         authorGroupTypes.forEach(authorGroupTp -> generateResponsesForAuthors(piaCristinIdAndAuthors, authorGroupTp));
         piaCristinAffiliationIdAndAuthors.forEach(
-            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
-                                                                                      authorGroupTp,
-                                                                                      cristinOrganizationId));
+            (cristinOrganizationId, authorGroupTp) -> generatePiaAndCristinAffiliationsResponse(new PiaResponseGenerator(),
+                                                                                                authorGroupTp,
+                                                                                                cristinOrganizationId));
     }
 
     private Integer toCristinIdentifier(URI contributorId) {
@@ -1196,8 +1236,8 @@ class ScopusHandlerTest {
         createPiaAuthorMock(authorList);
     }
 
-    private void generatePiaAffiliationsResponse(PiaResponseGenerator piaResponseGenerator, AuthorGroupTp authorGroupTp,
-                                                 String cristinOrganizationId) {
+    private void generatePiaAndCristinAffiliationsResponse(PiaResponseGenerator piaResponseGenerator, AuthorGroupTp authorGroupTp,
+                                                           String cristinOrganizationId) {
         var affiliationList = piaResponseGenerator.generateAffiliations(cristinOrganizationId);
         createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
         affiliationList.forEach(affiliation -> generateCristinOrganizationResponse(affiliation.getUnitIdentifier()));

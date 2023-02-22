@@ -19,11 +19,10 @@ import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@JacocoGenerated
 public class CristinConnection {
 
-    public static final String CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE = "cristin responded with status "
-                                                                                      + "code: ";
+    public static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
+    public static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     private final HttpClient httpClient;
 
@@ -41,20 +40,27 @@ public class CristinConnection {
                    ? Optional.empty()
                    : Optional.ofNullable(attempt(() -> createRequest(cristinPersonId))
                                              .map(this::getCristinResponse)
-                                             .map(this::getBodyFromResponse)
+                                             .map(this::getBodyFromPersonResponse)
                                              .map(this::getCristinPersonResponse)
                                              .orElse(failure -> null));
     }
-
 
     public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {
         return isNull(cristinOrgId)
                    ? null
                    : attempt(() -> createRequest(cristinOrgId))
                          .map(this::getCristinResponse)
-                         .map(this::getBodyFromResponse)
+                         .map(this::getBodyFromOrganizationResponse)
                          .map(this::convertToOrganization)
                          .orElse(failure -> null);
+    }
+
+    private String getBodyFromOrganizationResponse(HttpResponse<String> response) {
+        if (response.statusCode() != HttpURLConnection.HTTP_OK) {
+            logger.info(CRISTIN_ORGANIZATION_RESPONSE_ERROR + response.statusCode());
+            throw new RuntimeException();
+        }
+        return response.body();
     }
 
     private Organization convertToOrganization(String body) throws JsonProcessingException {
@@ -65,9 +71,9 @@ public class CristinConnection {
         return JsonUtils.singleLineObjectMapper.readValue(json, Person.class);
     }
 
-    private String getBodyFromResponse(HttpResponse<String> response) {
+    private String getBodyFromPersonResponse(HttpResponse<String> response) {
         if (response.statusCode() != HttpURLConnection.HTTP_OK) {
-            logger.info(CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE + response.statusCode());
+            logger.info(CRISTIN_PERSON_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
         }
         return response.body();
