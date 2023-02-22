@@ -81,10 +81,10 @@ public class CristinMapper extends CristinMappingModule {
 
     private List<Funding> extractFundings() {
         return Optional.ofNullable(cristinObject.getCristinGrants())
-                   .map(this::maptoNvaFunding).orElse(null);
+                   .map(this::mapToNvaFunding).orElse(null);
     }
 
-    private List<Funding> maptoNvaFunding(List<CristinGrant> grants) {
+    private List<Funding> mapToNvaFunding(List<CristinGrant> grants) {
         return grants.stream().map(CristinGrant::toNvaFunding)
                    .collect(Collectors.toList());
     }

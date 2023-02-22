@@ -2,6 +2,7 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.mapper.CristinMapper.zoneOffset;
+import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -75,7 +76,7 @@ public class CristinGrant {
         return UriWrapper.fromUri(NVA_API_DOMAIN)
                    .addChild(CRISTIN)
                    .addChild(FUNDING_SOURCES)
-                   .addChild(sourceCode.toLowerCase(Locale.ROOT))
+                   .addChild( urlEncode(sourceCode) )
                    .getUri();
     }
 

@@ -157,7 +157,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource has a Creation Date equal to {string}")
-    public void ztheNvaResourceHasACreationDateEqualTo(String expectedIsoInstant) {
+    public void theNvaResourceHasACreationDateEqualTo(String expectedIsoInstant) {
         Instant expectedInstant = Instant.parse(expectedIsoInstant);
         assertThat(scenarioContext.getNvaEntry().getCreatedDate(), is(equalTo(expectedInstant)));
     }
