@@ -103,8 +103,7 @@ public class ResourceService extends ServiceWithTransactions {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
-    //to be renamed to "createPublication"
-    public Publication resourceCallsCreatePublication(UserInstance userInstance, Publication inputData) {
+    public Publication createPublication(UserInstance userInstance, Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -116,14 +115,8 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
     
-    public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
-        Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setCreatedDate(inputData.getCreatedDate());
-        return insertResource(newResource);
-    }
-    
-    public Publication createPublicationFromImportedEntry(Publication inputData) {
+    //TODO rename  to createPublicationfromImportedEntry
+    public Publication resourceCallsCreatePublicationFromImportedEntry(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
@@ -131,6 +124,11 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(inputData.getModifiedDate());
         newResource.setStatus(PublicationStatus.PUBLISHED);
         return insertResource(newResource);
+    }
+    
+    @Deprecated
+    public Publication createPublicationFromImportedEntry(Publication inputData) {
+        return Resource.fromPublication(inputData).persistImportedEntry(this);
     }
     
     public Publication insertPreexistingPublication(Publication publication) {

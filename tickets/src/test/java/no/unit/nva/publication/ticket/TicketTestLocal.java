@@ -47,7 +47,8 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     protected Publication createAndPersistPublication(PublicationStatus status) {
         var publication = randomPublicationWithoutDoi();
         publication.setStatus(status);
-        return resourceService.createPublicationWithPredefinedCreationDate(publication);
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
     
     protected Publication createAndPersistDraftPublication()

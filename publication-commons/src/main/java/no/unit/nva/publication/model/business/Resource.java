@@ -133,7 +133,11 @@ public class Resource implements Entity {
     }
     
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance) {
-        return resourceService.resourceCallsCreatePublication(userInstance, this.toPublication());
+        return resourceService.createPublication(userInstance, this.toPublication());
+    }
+    
+    public Publication persistImportedEntry(ResourceService resourceService) {
+        return resourceService.resourceCallsCreatePublicationFromImportedEntry(this.toPublication());
     }
     
     public Owner getResourceOwner() {
