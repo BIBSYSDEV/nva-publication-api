@@ -747,7 +747,7 @@ Resources:
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
+      ReservedConcurrentExecutions: 50
       Timeout: 900
       Environment:
         Variables:
