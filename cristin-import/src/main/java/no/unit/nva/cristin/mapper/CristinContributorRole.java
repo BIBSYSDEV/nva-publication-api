@@ -37,8 +37,10 @@ public class CristinContributorRole {
         new SimpleEntry<>(CristinContributorRoleCode.ARCHITECT, Role.ARCHITECT),
         new SimpleEntry<>(CristinContributorRoleCode.COMPOSER, Role.COMPOSER),
         new SimpleEntry<>(CristinContributorRoleCode.CONDUCTOR, Role.CONDUCTOR),
+        new SimpleEntry<>(CristinContributorRoleCode.CONTRIBUTOR, Role.OTHER),
         new SimpleEntry<>(CristinContributorRoleCode.CURATOR, Role.CURATOR),
         new SimpleEntry<>(CristinContributorRoleCode.ORGANIZER, Role.ORGANIZER),
+        new SimpleEntry<>(CristinContributorRoleCode.PERFORMER, Role.ARTIST),
         new SimpleEntry<>(CristinContributorRoleCode.TRANSLATOR, Role.TRANSLATOR_ADAPTER));
 
     @JsonProperty("rollekode")
