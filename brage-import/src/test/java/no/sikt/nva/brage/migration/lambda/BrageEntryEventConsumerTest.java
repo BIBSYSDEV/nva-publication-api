@@ -53,8 +53,6 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
-import no.sikt.nva.brage.migration.testutils.FakeResourceService;
-import no.sikt.nva.brage.migration.testutils.FakeResourceServiceThrowingException;
 import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
 import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
@@ -134,6 +132,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
     public static final String FILENAME = "filename";
     public static final String HARD_CODED_CRISTIN_IDENTIFIER = "12345";
+    public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
     private static final Type TYPE_REPORT_WORKING_PAPER = new Type(List.of(NvaType.WORKING_PAPER.getValue()),
                                                                    NvaType.WORKING_PAPER.getValue());
     private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()),
@@ -184,11 +183,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withResourceContent(createResourceContent())
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                                  .build();
-        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
-        var file = new java.io.File("src/test/resources/testFile.txt");
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
-        var expectedPublication = createPublicationWithAssociatedArtifacts(brageGenerator.getNvaPublication(),
-                                                                           createCorrespondingAssociatedArtifacts());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
     }
@@ -312,8 +307,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        actualPublication.setIdentifier(FakeResourceService.SORTABLE_IDENTIFIER);
-        assertThat(actualPublication, is(equalTo(brageGenerator.getNvaPublication())));
+        assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
     }
 
     @Test
@@ -626,22 +620,22 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistPublicationInDatabase() throws IOException {
+    void shouldPersistPublicationInDatabase() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withPublishedDate(null)
                                  .withType(TYPE_BOOK)
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        //        assertThat(resourceService.getPublicationsThatHasBeenCreatedByImportedEntry(), hasSize(1));
-        //        assertThat(resourceService.getPublicationsThatHasBeenCreatedByImportedEntry(), contains
-        //        (actualPublication));
+        assertThatPublicationsMatch(
+            resourceService.getPublicationByIdentifier(actualPublication.getIdentifier()),
+            brageGenerator.getNvaPublication());
     }
 
     @Test
     void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
         throws IOException {
-        var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException();
+        var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException);
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withPublishedDate(null)
@@ -649,8 +643,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
-        assertThat(fakeResourceServiceThrowingException.getAttemptsToSavePublication(),
-                   is(equalTo(BrageEntryEventConsumer.MAX_EFFORTS + 1)));
     }
 
     @Test
@@ -695,8 +687,20 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void throwErrorWhenMandatoryFieldsAreMissing() throws IOException {
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withType(TYPE_BOOK)
+                                                 .withIsbn(randomIsbn10())
+                                                 .withNullHandle()
+                                                 .build();
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        assertThrows(MissingFieldsException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
     void shouldSaveErrorReportInS3ContainingTheOriginalInputData() throws IOException {
-        this.handler = new BrageEntryEventConsumer(s3Client, new FakeResourceServiceThrowingException());
+        resourceService = resourceServiceThrowingExceptionWhenSavingResource();
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                                  .withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
@@ -710,17 +714,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
         assertThat(actualErrorReportBrageRecord,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
-    }
-
-    @Test
-    void throwErrorWhenMandatoryFieldsAreMissing() throws IOException {
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withType(TYPE_BOOK)
-                                                 .withIsbn(randomIsbn10())
-                                                 .withNullHandle()
-                                                 .build();
-        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
-        assertThrows(MissingFieldsException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
     @Test
@@ -754,6 +747,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                     throw new RuntimeException(e);
                 }
             });
+    }
+
+    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
+        return new ResourceService(client, Clock.systemDefaultZone()) {
+            @Override
+            public Publication createPublicationFromImportedEntry(Publication publication) {
+                throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
+            }
+        };
     }
 
     private void assertThatPublicationsMatch(Publication actualPublication,

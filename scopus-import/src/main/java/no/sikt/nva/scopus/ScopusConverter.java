@@ -98,7 +98,7 @@ public class ScopusConverter {
     public Publication generatePublication() {
         return new Publication.Builder()
                    .withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
-                   .withResourceOwner(new ResourceOwner("duplicatesV9@unit.no", URI.create("https://www.example.org")))
+                   .withResourceOwner(new ResourceOwner("concurrencyT@unit.no", URI.create("https://www.example.org")))
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
                    .withModifiedDate(Instant.now())
