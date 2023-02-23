@@ -128,6 +128,34 @@ class ExpandedResourceTest {
         assertExplicitFieldsFromFraming(framedResultNode);
     }
 
+    @Test
+    void shouldNotCreateTopLevelOrgForBlankNodes() throws Exception {
+
+        final Publication publication = randomBookWithConfirmedPublisher();
+        final URI seriesUri = extractSeriesUri(publication);
+        final URI publisherUri = extractPublisherUri(publication);
+        final URI affiliationToBeExpandedId = extractAffiliationsUris(publication).get(0);
+        final String publisherName = randomString();
+        final String seriesName = randomString();
+
+        final UriRetriever mockUriRetriever = mock(UriRetriever.class);
+        addPublicationChannelPublisherToMockUriRetriever(mockUriRetriever, seriesUri, seriesName, publisherUri,
+                                                         publisherName);
+
+        publication.getEntityDescription().getContributors().get(0).getAffiliations().get(0).setId(null);
+
+        ObjectNode framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+
+        var affiliations = framedResultNode.findValues("affiliations").get(0);
+        affiliations.forEach(
+            aff -> {
+                if (!aff.has("id")) {
+                    assertThat(aff.has("topLevelOrganization"), is(equalTo(false)));
+                }
+            }
+        );
+    }
+
     private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
         framedResultNode.findValues("topLevelOrganization").forEach(
             topOrg -> topOrg.fieldNames().forEachRemaining(
