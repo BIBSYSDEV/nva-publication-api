@@ -83,6 +83,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,7 +114,6 @@ import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
@@ -126,8 +126,6 @@ import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.utils.ContentWrapper;
 import no.sikt.nva.scopus.utils.CristinGenerator;
-import no.sikt.nva.scopus.utils.FakeResourceService;
-import no.sikt.nva.scopus.utils.FakeResourceServiceThrowingException;
 import no.sikt.nva.scopus.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.utils.PiaResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
@@ -152,6 +150,8 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -179,7 +179,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 @WireMockTest(httpsEnabled = true)
-class ScopusHandlerTest {
+class ScopusHandlerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = mock(Context.class);
     public static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
@@ -195,6 +195,7 @@ class ScopusHandlerTest {
     public static final String LANGUAGE_ENG = "eng";
     public static final URI TEMPORARY_HARDCODED_PUBLISHER_URI = URI.create(
         "https://api.nva.unit.no/publication-channels/publisher/11111/2018");
+    public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
     private static final URI TEMPORARY_HARDCODE_SERIES_URI = URI.create(
         "https://api.nva.unit.no/publication-channels/journal/1111/2019");
     private static final URI TEMPORARY_HARDCODE_JOURNAL_URI = URI.create(
@@ -219,7 +220,7 @@ class ScopusHandlerTest {
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
-    private FakeResourceService resourceService;
+    private ResourceService resourceService;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
@@ -232,6 +233,7 @@ class ScopusHandlerTest {
 
     @BeforeEach
     public void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        super.init();
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWORD_SECRET_KEY, randomString());
@@ -242,7 +244,7 @@ class ScopusHandlerTest {
         var piaEnvironment = createPiaConnectionEnvironment(wireMockRuntimeInfo);
         piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
         cristinConnection = new CristinConnection(httpClient);
-        resourceService = new FakeResourceService();
+        resourceService = new ResourceService(client, Clock.systemDefaultZone());
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService);
         scopusData = new ScopusGenerator();
     }
@@ -922,9 +924,10 @@ class ScopusHandlerTest {
         var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
         authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
         piaCristinAffiliationIdAndAuthors.forEach(
-            (cristinOrganizationId, authorGroupTp) -> generatePiaAndCristinAffiliationsResponse(new PiaResponseGenerator(),
-                                                                                                authorGroupTp,
-                                                                                                cristinOrganizationId));
+            (cristinOrganizationId, authorGroupTp) -> generatePiaAndCristinAffiliationsResponse(
+                new PiaResponseGenerator(),
+                authorGroupTp,
+                cristinOrganizationId));
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors =
@@ -940,19 +943,13 @@ class ScopusHandlerTest {
         authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
         piaCristinAffiliationIdAndAuthors.forEach(
             (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
-                                                                                                authorGroupTp,
-                                                                                                cristinOrganizationId));
+                                                                                      authorGroupTp,
+                                                                                      cristinOrganizationId));
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors =
             publication.getEntityDescription().getContributors();
         actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
-    }
-
-    private void generatePiaAffiliationsResponse(PiaResponseGenerator piaResponseGenerator, AuthorGroupTp authorGroupTp,
-                                                 String cristinOrganizationId) {
-        var affiliationList = piaResponseGenerator.generateAffiliations(cristinOrganizationId);
-        createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
     }
 
     @Test
@@ -1037,13 +1034,11 @@ class ScopusHandlerTest {
     @Test
     void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
         throws IOException {
-        var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException();
+        var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         var s3Event = createNewScopusPublicationEvent();
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
                                         fakeResourceServiceThrowingException);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
-        assertThat(fakeResourceServiceThrowingException.getAttemptsToSavePublication(),
-                   is(Matchers.equalTo(BrageEntryEventConsumer.MAX_EFFORTS + 1)));
     }
 
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {
@@ -1118,6 +1113,21 @@ class ScopusHandlerTest {
                    .collect(Collectors.toList());
     }
 
+    private void generatePiaAffiliationsResponse(PiaResponseGenerator piaResponseGenerator, AuthorGroupTp authorGroupTp,
+                                                 String cristinOrganizationId) {
+        var affiliationList = piaResponseGenerator.generateAffiliations(cristinOrganizationId);
+        createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
+    }
+
+    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
+        return new ResourceService(client, Clock.systemDefaultZone()) {
+            @Override
+            public Publication createPublicationFromImportedEntry(Publication publication) {
+                throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
+            }
+        };
+    }
+
     @NotNull
     private ScopusGenerator generateScopusDataWithOneAffiliation() {
         return ScopusGenerator.createWithSpecifiedAffiliations(List.of(createAffiliation(List.of("Some Name"))));
@@ -1129,9 +1139,10 @@ class ScopusHandlerTest {
         authorGroupTypes.forEach(authorGroupTp -> piaCristinAffiliationIdAndAuthors.put(randomString(), authorGroupTp));
         authorGroupTypes.forEach(authorGroupTp -> generateResponsesForAuthors(piaCristinIdAndAuthors, authorGroupTp));
         piaCristinAffiliationIdAndAuthors.forEach(
-            (cristinOrganizationId, authorGroupTp) -> generatePiaAndCristinAffiliationsResponse(new PiaResponseGenerator(),
-                                                                                                authorGroupTp,
-                                                                                                cristinOrganizationId));
+            (cristinOrganizationId, authorGroupTp) -> generatePiaAndCristinAffiliationsResponse(
+                new PiaResponseGenerator(),
+                authorGroupTp,
+                cristinOrganizationId));
     }
 
     private Integer toCristinIdentifier(URI contributorId) {
@@ -1236,7 +1247,8 @@ class ScopusHandlerTest {
         createPiaAuthorMock(authorList);
     }
 
-    private void generatePiaAndCristinAffiliationsResponse(PiaResponseGenerator piaResponseGenerator, AuthorGroupTp authorGroupTp,
+    private void generatePiaAndCristinAffiliationsResponse(PiaResponseGenerator piaResponseGenerator,
+                                                           AuthorGroupTp authorGroupTp,
                                                            String cristinOrganizationId) {
         var affiliationList = piaResponseGenerator.generateAffiliations(cristinOrganizationId);
         createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
