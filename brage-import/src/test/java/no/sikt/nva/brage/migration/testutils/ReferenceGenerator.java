@@ -30,10 +30,8 @@ import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
-import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
-import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -263,13 +261,13 @@ public final class ReferenceGenerator {
 
     @NotNull
     private static ArtisticDesign generatePublicationInstanceForDesignProduct() {
-        return new ArtisticDesign(ArtisticDesignSubtype.create(
-            ArtisticDesignSubtypeEnum.OTHER), null, Collections.emptyList());
+        return new ArtisticDesign(ArtisticDesignSubtype.createOther(
+            null), null, Collections.emptyList());
     }
 
     @NotNull
     private static Architecture generatePublicationInstanceForArchitecture() {
-        return new Architecture(ArchitectureSubtype.create(ArchitectureSubtypeEnum.OTHER), null,
+        return new Architecture(ArchitectureSubtype.createOther(null), null,
                                 Collections.emptyList());
     }
 

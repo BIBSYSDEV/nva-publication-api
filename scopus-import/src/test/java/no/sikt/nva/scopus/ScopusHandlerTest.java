@@ -83,6 +83,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,7 +127,6 @@ import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.utils.ContentWrapper;
 import no.sikt.nva.scopus.utils.CristinGenerator;
-import no.sikt.nva.scopus.utils.FakeResourceService;
 import no.sikt.nva.scopus.utils.FakeResourceServiceThrowingException;
 import no.sikt.nva.scopus.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.utils.PiaResponseGenerator;
@@ -152,6 +152,8 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -179,7 +181,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 @WireMockTest(httpsEnabled = true)
-class ScopusHandlerTest {
+class ScopusHandlerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = mock(Context.class);
     public static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
@@ -219,7 +221,7 @@ class ScopusHandlerTest {
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
-    private FakeResourceService resourceService;
+    private ResourceService resourceService;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
@@ -232,6 +234,7 @@ class ScopusHandlerTest {
 
     @BeforeEach
     public void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        super.init();
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWORD_SECRET_KEY, randomString());
@@ -242,7 +245,7 @@ class ScopusHandlerTest {
         var piaEnvironment = createPiaConnectionEnvironment(wireMockRuntimeInfo);
         piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
         cristinConnection = new CristinConnection(httpClient);
-        resourceService = new FakeResourceService();
+        resourceService = new ResourceService(client, Clock.systemDefaultZone());
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService);
         scopusData = new ScopusGenerator();
     }
