@@ -197,6 +197,10 @@ Feature: Mappings that hold for all types of Cristin Results
       | ARRANGØR         | ORGANIZER              |
       | KONSERVATOR      | CURATOR                |
       | DIRIGENT         | CONDUCTOR              |
+      | UTØVER           | ARTIST                 |
+      | BIDRAGSYTER      | OTHER                  |
+      | EIER             | OTHER                  |
+      | PROGRAMMERER     | OTHER                  |
 
   Scenario: The abstract is copied from the the Cristin Result's title entry when there
   one title entry and it is annotated as original.

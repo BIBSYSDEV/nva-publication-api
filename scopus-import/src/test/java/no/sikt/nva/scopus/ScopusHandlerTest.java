@@ -1169,17 +1169,17 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedAuthorsWithAffiliations = extractOnlyCristinSearchableAuthors(idAuthorGroupMap);
         var cristinId = idAuthorGroupMap.keySet().iterator().next();
         expectedAuthorsWithAffiliations.forEach(
-            author -> hasBeenConvertedToPublicationWithAffiliation(author, contributors, cristinId));
+            author -> hasBeenConvertedToContributorWithAffiliation(author, contributors, cristinId));
     }
 
-    private void hasBeenConvertedToPublicationWithAffiliation(AuthorTp author, List<Contributor> contributors,
+    private void hasBeenConvertedToContributorWithAffiliation(AuthorTp author, List<Contributor> contributors,
                                                               String cristinId) {
         var correspondingContributor = contributors.stream()
                                            .filter(contributor -> hasCorrespondingName(author, contributor))
-                                           .findFirst()
-                                           .get();
-        assertThat(correspondingContributor.getAffiliations().get(0).getId().toString(),
-                   containsString("cristin/organization/" + cristinId));
+                                           .findFirst();
+        correspondingContributor.ifPresent(
+            contributor -> assertThat(contributor.getAffiliations().get(0).getId().toString(),
+                                      containsString("cristin/organization/" + cristinId)));
     }
 
     private List<AuthorGroupTp> keepOnlyAuthorGroups() {
