@@ -7,106 +7,140 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.funding.Funding;
 
+@SuppressWarnings("PMD.TooManyFields")
 public final class ResourceBuilder {
-    
-    private final Resource resource;
-    
-    protected ResourceBuilder() {
-        resource = new Resource();
+
+    private SortableIdentifier identifier;
+    private PublicationStatus status;
+    private Owner resourceOwner;
+    private Organization publisher;
+    private Instant createdDate;
+    private Instant modifiedDate;
+    private Instant publishedDate;
+    private Instant indexedDate;
+    private URI link;
+    private AssociatedArtifactList associatedArtifacts;
+    private List<ResearchProject> projects;
+    private EntityDescription entityDescription;
+    private URI doi;
+    private URI handle;
+    private Set<AdditionalIdentifier> additionalIdentifiers;
+    private List<URI> subjects;
+    private List<Funding> fundings;
+
+    ResourceBuilder() {
     }
-    
+
     public ResourceBuilder withIdentifier(SortableIdentifier identifier) {
-        resource.setIdentifier(identifier);
+        this.identifier = identifier;
         return this;
     }
-    
+
     public ResourceBuilder withStatus(PublicationStatus status) {
-        resource.setStatus(status);
+        this.status = status;
         return this;
     }
-    
+
     public ResourceBuilder withResourceOwner(Owner resourceOwner) {
-        resource.setResourceOwner(resourceOwner);
+        this.resourceOwner = resourceOwner;
         return this;
     }
-    
+
     public ResourceBuilder withPublisher(Organization publisher) {
-        resource.setPublisher(publisher);
+        this.publisher = publisher;
         return this;
     }
-    
+
     public ResourceBuilder withCreatedDate(Instant createdDate) {
-        resource.setCreatedDate(createdDate);
+        this.createdDate = createdDate;
         return this;
     }
-    
+
     public ResourceBuilder withModifiedDate(Instant modifiedDate) {
-        resource.setModifiedDate(modifiedDate);
+        this.modifiedDate = modifiedDate;
         return this;
     }
-    
+
     public ResourceBuilder withPublishedDate(Instant publishedDate) {
-        resource.setPublishedDate(publishedDate);
+        this.publishedDate = publishedDate;
         return this;
     }
-    
+
     public ResourceBuilder withIndexedDate(Instant indexedDate) {
-        resource.setIndexedDate(indexedDate);
+        this.indexedDate = indexedDate;
         return this;
     }
-    
+
     public ResourceBuilder withLink(URI link) {
-        resource.setLink(link);
+        this.link = link;
         return this;
     }
-    
+
     public ResourceBuilder withAssociatedArtifactsList(AssociatedArtifactList associatedArtifacts) {
-        resource.setAssociatedArtifacts(associatedArtifacts);
+        this.associatedArtifacts = new AssociatedArtifactList(associatedArtifacts);
         return this;
     }
-    
+
     public ResourceBuilder withProjects(List<ResearchProject> projects) {
-        resource.setProjects(projects);
+        this.projects = projects;
         return this;
     }
-    
+
     public ResourceBuilder withEntityDescription(EntityDescription entityDescription) {
-        resource.setEntityDescription(entityDescription);
+        this.entityDescription = entityDescription;
         return this;
     }
-    
+
     public ResourceBuilder withDoi(URI doi) {
-        resource.setDoi(doi);
+        this.doi = doi;
         return this;
     }
-    
+
     public ResourceBuilder withHandle(URI handle) {
-        resource.setHandle(handle);
+        this.handle = handle;
         return this;
     }
-    
+
     public ResourceBuilder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
-        resource.setAdditionalIdentifiers(additionalIdentifiers);
+        this.additionalIdentifiers = additionalIdentifiers;
         return this;
     }
-    
+
     public ResourceBuilder withSubjects(List<URI> subjects) {
-        resource.setSubjects(subjects);
+        this.subjects = subjects;
         return this;
     }
 
     public ResourceBuilder withFundings(List<Funding> fundings) {
-        resource.setFundings(fundings);
+        this.fundings = fundings;
         return this;
     }
 
     public Resource build() {
+        Resource resource = new Resource();
+        resource.setIdentifier(identifier);
+        resource.setStatus(status);
+        resource.setResourceOwner(resourceOwner);
+        resource.setPublisher(publisher);
+        resource.setCreatedDate(createdDate);
+        resource.setModifiedDate(modifiedDate);
+        resource.setPublishedDate(publishedDate);
+        resource.setIndexedDate(indexedDate);
+        resource.setLink(link);
+        resource.setAssociatedArtifacts(associatedArtifacts);
+        resource.setProjects(projects);
+        resource.setEntityDescription(entityDescription);
+        resource.setDoi(doi);
+        resource.setHandle(handle);
+        resource.setAdditionalIdentifiers(additionalIdentifiers);
+        resource.setSubjects(subjects);
+        resource.setFundings(fundings);
         return resource;
     }
 }
