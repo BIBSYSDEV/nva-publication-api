@@ -3,8 +3,6 @@ package no.unit.nva.publication.model.business;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
@@ -59,9 +57,9 @@ class ResourceTest {
         Resource resource = sampleResource(publicationInstanceType);
         Resource copy = resource.copy().build();
         copy.setLink(randomUri());
-        copy.getEntityDescription().setDescription(randomString());
-        copy.getEntityDescription().getReference().setDoi(randomDoi());
         assertThat(resource, not(is(equalTo(copy))));
+        Diff diff = javers.compare(resource, copy);
+        assertThat(diff.prettyPrint(), diff.getChanges().size(), is(1));
     }
 
     @ParameterizedTest(name = "to DTO returns DTO without loss of information: {0}")
