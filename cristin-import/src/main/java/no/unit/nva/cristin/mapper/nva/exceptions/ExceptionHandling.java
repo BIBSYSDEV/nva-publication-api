@@ -22,9 +22,6 @@ public final class ExceptionHandling {
         if (exception instanceof InvalidIsbnException) {
             return new InvalidIsbnRuntimeException(exception);
         }
-        if (exception instanceof MissingContributorsException) {
-            return (MissingContributorsException) exception;
-        }
         if (exception instanceof HrcsException) {
             return (HrcsException) exception;
         }

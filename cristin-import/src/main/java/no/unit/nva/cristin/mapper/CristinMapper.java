@@ -8,6 +8,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
@@ -32,7 +33,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
-import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -57,6 +57,10 @@ public class CristinMapper extends CristinMappingModule {
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
+    }
+
+    public static ZoneOffset zoneOffset() {
+        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
     public Publication generatePublication() {
@@ -91,8 +95,13 @@ public class CristinMapper extends CristinMappingModule {
 
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         try {
-            assertThat(publication,
-                       doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+            if (publication.getEntityDescription().getContributors().isEmpty()) {
+                assertThat(publication,
+                           doesNotHaveEmptyValuesIgnoringFields(IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY));
+            }else {
+                assertThat(publication,
+                           doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+            }
         } catch (Error error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
@@ -150,10 +159,6 @@ public class CristinMapper extends CristinMappingModule {
                    .orElseGet(this::extractDate);
     }
 
-    public static ZoneOffset zoneOffset() {
-        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
-    }
-
     private EntityDescription generateEntityDescription() {
         return new EntityDescription.Builder()
                    .withLanguage(extractLanguage())
@@ -168,10 +173,8 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private List<Contributor> extractContributors() {
-        if (isNull(cristinObject.getContributors())) {
-            throw new MissingContributorsException();
-        }
-        return cristinObject.getContributors()
+        return Optional.ofNullable(cristinObject.getContributors())
+                   .orElse(List.of())
                    .stream()
                    .map(attempt(CristinContributor::toNvaContributor))
                    .map(Try::orElseThrow)

@@ -45,7 +45,6 @@ import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
-import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
@@ -303,14 +302,13 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void handlerThrowsMissingContributorsRuntimeExceptionWhenTheCristinObjectHasNoContributors()
+    void handlerDoesNotThrowsExceptionRuntimeExceptionWhenTheCristinObjectHasNoContributors()
         throws IOException {
         var cristinObjectWithoutContributors = CristinDataGenerator.objectWithoutContributors();
         var eventBody = createEventBody(cristinObjectWithoutContributors);
         var eventReference = createEventReference(eventBody);
         Executable action = () -> handler.handleRequest(eventReference, outputStream, CONTEXT);
-
-        assertThrows(MissingContributorsException.class, action);
+        assertDoesNotThrow(action);
     }
 
     @Test
