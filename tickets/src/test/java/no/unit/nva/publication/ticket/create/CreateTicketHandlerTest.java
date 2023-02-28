@@ -1,8 +1,8 @@
 package no.unit.nva.publication.ticket.create;
 
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
-import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
@@ -83,7 +83,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(input, output, CONTEXT);
         
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_SEE_OTHER)));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         
         var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
         
@@ -231,7 +231,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(firstRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
 
         var createdTicket = fetchTicket(response).copy();
 
@@ -240,7 +240,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(secondRequest, output, CONTEXT);
         var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
+        assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_CREATED)));
 
         var existingTicket = fetchTicket(secondResponse);
         assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
