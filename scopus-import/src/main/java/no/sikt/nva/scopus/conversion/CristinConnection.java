@@ -24,6 +24,7 @@ public class CristinConnection {
     public static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
     public static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
+    public static final String QUERY_PARAM_DEPTH_NONE = "?depth=none";
     private final HttpClient httpClient;
 
     public CristinConnection(HttpClient httpClient) {
@@ -48,7 +49,7 @@ public class CristinConnection {
     public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {
         return isNull(cristinOrgId)
                    ? null
-                   : attempt(() -> createRequest(cristinOrgId))
+                   : attempt(() -> createOrganizationRequest(cristinOrgId))
                          .map(this::getCristinResponse)
                          .map(this::getBodyFromOrganizationResponse)
                          .map(this::convertToOrganization)
@@ -86,6 +87,14 @@ public class CristinConnection {
     private HttpRequest createRequest(URI uri) {
         return HttpRequest.newBuilder()
                    .uri(uri)
+                   .GET()
+                   .build();
+    }
+
+    private HttpRequest createOrganizationRequest(URI uri) {
+        var organizationUri = URI.create(uri + QUERY_PARAM_DEPTH_NONE);
+        return HttpRequest.newBuilder()
+                   .uri(organizationUri)
                    .GET()
                    .build();
     }
