@@ -2,10 +2,8 @@ package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OWNER_AFFILIATION;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.SIKT_AFFILIATION_IDENTIFIER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.SIKT_OWNER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
@@ -60,6 +58,7 @@ public class CristinMapper extends CristinMappingModule {
     public static final ResourceOwner SIKT_OWNER = createSiktOwner();
     public static final String EMPTY_STRING = "";
     public static final int FIRST_DAY_OF_MONTH = 1;
+    public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
@@ -97,36 +96,43 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private ResourceOwner extractResourceOwner() {
-        if (isNull(cristinObject.getCristinLocales()) && isNull(cristinObject.getOwnerCodeCreated())) {
-            return SIKT_OWNER;
-        }
-        if (isNull(cristinObject.getCristinLocales())) {
-            if ("CRIS".equalsIgnoreCase(cristinObject.getOwnerCodeCreated()) || "UNIT".equalsIgnoreCase(
-                cristinObject.getOwnerCodeCreated())) {
-                return SIKT_OWNER;
-            }
+        if (shouldUseOwnerCodeCreated()) {
             return new ResourceOwner(craftOwnerFromOwnerCodeCreated(), craftAffiliationFromOwnerCode());
         }
-        if (nonNull(cristinObject.getOwnerCodeCreated())) {
-            var matchingCristinLocale =
-                cristinObject.getCristinLocales()
-                    .stream()
-                    .filter(
-                        cristinLocale -> cristinLocale.getOwnerCode()
-                                             .equalsIgnoreCase(cristinObject.getOwnerCodeCreated()))
-                    .findFirst();
-            if (matchingCristinLocale.isPresent()) {
-                return matchingCristinLocale.get().toResourceOwner();
-            } else {
-                return cristinObject.getCristinLocales()
-                           .stream()
-                           .findFirst()
-                           .map(CristinLocale::toResourceOwner)
-                           .orElse(SIKT_OWNER);
-            }
+        if (cristinLocalesContainsCristinOwnerCodeCreated()) {
+            return bestMatchingResourceOwner();
         }
+        return Optional.ofNullable(cristinObject.getCristinLocales())
+                   .flatMap(list -> list.stream().findFirst())
+                   .map(CristinLocale::toResourceOwner)
+                   .orElse(SIKT_OWNER);
+    }
 
-        return SIKT_OWNER;
+    private boolean shouldUseOwnerCodeCreated() {
+        return (isNull(cristinObject.getCristinLocales()) || cristinObject.getCristinLocales().isEmpty())
+               && nonNull(cristinObject.getOwnerCodeCreated())
+               && !CRISTIN_INSTITUTION_CODE.equalsIgnoreCase(cristinObject.getOwnerCodeCreated())
+               && !"UNIT".equalsIgnoreCase(
+            cristinObject.getOwnerCodeCreated());
+    }
+
+    private ResourceOwner bestMatchingResourceOwner() {
+        return cristinObject.getCristinLocales()
+                   .stream()
+                   .filter(
+                       cristinLocale ->
+                           cristinLocale.getOwnerCode().equalsIgnoreCase(cristinObject.getOwnerCodeCreated()))
+                   .collect(SingletonCollector.collect())
+                   .toResourceOwner();
+    }
+
+    private boolean cristinLocalesContainsCristinOwnerCodeCreated() {
+        return nonNull(cristinObject.getCristinLocales())
+               && nonNull(cristinObject.getOwnerCodeCreated())
+               && cristinObject.getCristinLocales()
+                      .stream()
+                      .anyMatch(cristinLocale ->
+                                    cristinLocale.getOwnerCode().equalsIgnoreCase(cristinObject.getOwnerCodeCreated()));
     }
 
     private URI craftAffiliationFromOwnerCode() {

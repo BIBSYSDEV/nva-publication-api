@@ -7,10 +7,6 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.EVENT_SUBTOPI
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -41,6 +37,8 @@ import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
+import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
@@ -48,12 +46,9 @@ import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
-import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
-import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -174,8 +169,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         handler.handleRequest(eventReference, outputStream, CONTEXT);
 
-        var userInstance = createExpectedPublicationOwner();
-        var actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
+        var actualPublication = fetchPublicationDirectlyFromDatabase(cristinObject.getId().toString());
         var expectedPublication = cristinObject.toPublication();
         injectValuesThatAreCreatedWhenSavingInDynamo(actualPublication, expectedPublication);
 
@@ -507,8 +501,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         expectedPublication.setPublishedDate(actualPublication.getPublishedDate());
     }
 
-    private Publication fetchPublicationDirectlyFromDatabase(UserInstance userInstance) {
-        return resourceService.getPublicationsByOwner(userInstance)
+    private Publication fetchPublicationDirectlyFromDatabase(String cristinIdentifier) {
+        return resourceService.getPublicationsByCristinIdentifier(cristinIdentifier)
                    .stream()
                    .collect(SingletonCollector.collect());
     }
@@ -565,10 +559,5 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
             }
         };
-    }
-
-    private UserInstance createExpectedPublicationOwner() {
-        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
-        return UserInstance.create(HARDCODED_PUBLICATIONS_OWNER, customerId.getUri());
     }
 }

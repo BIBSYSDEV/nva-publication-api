@@ -368,6 +368,14 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
 
+  Scenario: When eierkode_opprettet is used as resourceOwner if vitenskapeligarbeid_lokal is a empty list.
+    Given that Cristin Result has eierkode_opprett "NTNU"
+    And the cristin has institusjonsnr_opprettet equal to "34502", and avdnr, undavdnr and gruppenr equal to "0"
+    And the Cristin Result has vitenskapeligarbeid_lokal:
+      | eierkode | institusjonsnr | avdnr | undavdnr | gruppenr |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
+
   Scenario Outline: if eierkode_opprettet is certain codes, then fallback Sikt owner should be applied.
     Given that Cristin Result has eierkode_opprett "<eierkode_opprettet>"
     When the Cristin Result is converted to an NVA Resource
