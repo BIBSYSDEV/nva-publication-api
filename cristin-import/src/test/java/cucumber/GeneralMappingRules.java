@@ -38,6 +38,7 @@ import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
 import no.unit.nva.cristin.mapper.CristinGrant;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
+import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
@@ -522,6 +523,35 @@ public class GeneralMappingRules {
     @And("that the Cristin Result has a year set to {string}")
     public void thatTheCristinResultHasAYearSetTo(String year) {
         scenarioContext.getCristinEntry().setPublicationYear(Integer.parseInt(year));
+    }
+
+    @Given("that Cristin Result has eierkode_opprett {string}")
+    public void thatCristinResultHasEierkode_opprett(String eierkode_opprettet) {
+        scenarioContext.getCristinEntry().setOwnerCodeCreated(eierkode_opprettet);
+    }
+
+    @And("the Cristin Result has vitenskapeligarbeid_lokal:")
+    public void theCristinResultHasVitenskapeligarbeid_lokal(List<CristinLocale> cristinLocales) {
+        scenarioContext.getCristinEntry().setCristinLocales(cristinLocales);
+    }
+
+    @Then("the NVA Resource should have a owner {string} and ownerAffiliation: {string}")
+    public void theNVAResourceShouldHaveAOwnerAndOwnerAffiliation(String owner, String ownerAffiliation) {
+        var resourceOwner = scenarioContext.getNvaEntry().getResourceOwner();
+        assertThat(resourceOwner, allOf(hasProperty("owner", equalTo(owner)),
+                                        hasProperty("ownerAffiliation",
+                                                    equalTo(UriWrapper.fromUri(ownerAffiliation).getUri()))));
+    }
+
+    @And("the cristin has institusjonsnr_opprettet equal to {string}, and avdnr, undavdnr and gruppenr equal to "
+         + "{string}")
+    public void theCristinHasInstitusjonsnr_opprettetEqualToAndAvdnrUndavdnrAndGruppenrEqualTo(
+        String institutionIdentifierCreated,
+        String partsIdentifier) {
+        scenarioContext.getCristinEntry().setInstitutionIdentifierCreated(institutionIdentifierCreated);
+        scenarioContext.getCristinEntry().setDepartmentIdentifierCreated(partsIdentifier);
+        scenarioContext.getCristinEntry().setSubDepartmendIdentifierCreated(partsIdentifier);
+        scenarioContext.getCristinEntry().setGroupIdentifierCreated(partsIdentifier);
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,

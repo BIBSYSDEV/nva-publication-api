@@ -4,6 +4,8 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OWNER_AFFILIATION;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.SIKT_AFFILIATION_IDENTIFIER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.SIKT_OWNER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
@@ -12,6 +14,8 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMA
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_CATEGORY_URI;
+import static no.unit.nva.cristin.mapper.CristinLocale.CRISTIN;
+import static no.unit.nva.cristin.mapper.CristinLocale.ORGANIZATION;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
@@ -30,6 +34,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
@@ -52,11 +57,24 @@ import nva.commons.core.paths.UriWrapper;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper extends CristinMappingModule {
 
+    public static final ResourceOwner SIKT_OWNER = createSiktOwner();
     public static final String EMPTY_STRING = "";
     public static final int FIRST_DAY_OF_MONTH = 1;
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
+    }
+
+    public static ResourceOwner createSiktOwner() {
+        return new ResourceOwner(HardcodedValues.SIKT_OWNER, UriWrapper.fromUri(NVA_API_DOMAIN)
+                                                                 .addChild(CRISTIN)
+                                                                 .addChild(ORGANIZATION)
+                                                                 .addChild(SIKT_AFFILIATION_IDENTIFIER)
+                                                                 .getUri());
+    }
+
+    public static ZoneOffset zoneOffset() {
+        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
     public Publication generatePublication() {
@@ -67,8 +85,7 @@ public class CristinMapper extends CristinMappingModule {
                                       .withModifiedDate(extractEntryLastModifiedDate())
                                       .withPublishedDate(extractDate())
                                       .withPublisher(extractOrganization())
-                                      .withResourceOwner(new ResourceOwner(cristinObject.getPublicationOwner(),
-                                                                           HARDCODED_OWNER_AFFILIATION))
+                                      .withResourceOwner(extractResourceOwner())
                                       .withStatus(PublicationStatus.PUBLISHED)
                                       .withLink(HARDCODED_SAMPLE_DOI)
                                       .withProjects(extractProjects())
@@ -77,6 +94,61 @@ public class CristinMapper extends CristinMappingModule {
                                       .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
+    }
+
+    private ResourceOwner extractResourceOwner() {
+        if (isNull(cristinObject.getCristinLocales()) && isNull(cristinObject.getOwnerCodeCreated())) {
+            return SIKT_OWNER;
+        }
+        if (isNull(cristinObject.getCristinLocales())) {
+            if ("CRIS".equalsIgnoreCase(cristinObject.getOwnerCodeCreated()) || "UNIT".equalsIgnoreCase(
+                cristinObject.getOwnerCodeCreated())) {
+                return SIKT_OWNER;
+            }
+            return new ResourceOwner(craftOwnerFromOwnerCodeCreated(), craftAffiliationFromOwnerCode());
+        }
+        if (nonNull(cristinObject.getOwnerCodeCreated())) {
+            var matchingCristinLocale =
+                cristinObject.getCristinLocales()
+                    .stream()
+                    .filter(
+                        cristinLocale -> cristinLocale.getOwnerCode()
+                                             .equalsIgnoreCase(cristinObject.getOwnerCodeCreated()))
+                    .findFirst();
+            if (matchingCristinLocale.isPresent()) {
+                return matchingCristinLocale.get().toResourceOwner();
+            } else {
+                return cristinObject.getCristinLocales()
+                           .stream()
+                           .findFirst()
+                           .map(CristinLocale::toResourceOwner)
+                           .orElse(SIKT_OWNER);
+            }
+        }
+
+        return SIKT_OWNER;
+    }
+
+    private URI craftAffiliationFromOwnerCode() {
+        return UriWrapper.fromUri(NVA_API_DOMAIN)
+                   .addChild(CRISTIN)
+                   .addChild(ORGANIZATION)
+                   .addChild(craftAffiliationIdentifier())
+                   .getUri();
+    }
+
+    private String craftOwnerFromOwnerCodeCreated() {
+        return cristinObject.getOwnerCodeCreated().toLowerCase(Locale.ROOT) + "@" + craftAffiliationIdentifier();
+    }
+
+    private String craftAffiliationIdentifier() {
+        return cristinObject.getInstitutionIdentifierCreated()
+               + "."
+               + cristinObject.getDepartmentIdentifierCreated()
+               + "."
+               + cristinObject.getSubDepartmendIdentifierCreated()
+               + "."
+               + cristinObject.getGroupIdentifierCreated();
     }
 
     private List<Funding> extractFundings() {
@@ -148,10 +220,6 @@ public class CristinMapper extends CristinMappingModule {
         return Optional.ofNullable(cristinObject.getEntryLastModifiedDate())
                    .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
                    .orElseGet(this::extractDate);
-    }
-
-    public static ZoneOffset zoneOffset() {
-        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
     private EntityDescription generateEntityDescription() {
