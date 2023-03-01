@@ -172,6 +172,12 @@ paths:
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       responses:
+        '200':
+          description: OK, doi is already reserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doi'
         '201':
           description: OK
           content:
