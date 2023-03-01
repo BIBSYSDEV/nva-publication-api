@@ -1201,6 +1201,26 @@ Resources:
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
 
+  ReserveDoiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/doi
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+
   CristinEntriesEventEmitter:
     Type: AWS::Serverless::Function
     Properties:
