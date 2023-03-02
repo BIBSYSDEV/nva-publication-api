@@ -42,10 +42,10 @@ public class CristinGrant {
     public static final String NORWEGIAN_BOKMAAL_ISO_639_1 = "nb";
     public static final String NORWEGIAN_NYNORSK_ISO_639_1 = "nn";
     public static final int FIRST_DAY_OF_MONTH = 1;
-    private static final String NFR_SOURCE_CODE = "NFR";
-    private static final String VERIFIED_FUNDING_PATH = "verified-funding";
     public static final String CRISTIN = "cristin";
     public static final String FUNDING_SOURCES = "funding-sources";
+    private static final String NFR_SOURCE_CODE = "NFR";
+    private static final String VERIFIED_FUNDING_PATH = "verified-funding";
     @JsonProperty(IDENTIFIER_FIELD)
     private String identifier;
 
@@ -76,7 +76,7 @@ public class CristinGrant {
         return UriWrapper.fromUri(NVA_API_DOMAIN)
                    .addChild(CRISTIN)
                    .addChild(FUNDING_SOURCES)
-                   .addChild( urlEncode(sourceCode) )
+                   .addChild(urlEncode(sourceCode))
                    .getUri();
     }
 
