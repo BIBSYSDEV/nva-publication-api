@@ -14,7 +14,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import no.unit.nva.expansion.utils.UriRetriever;
+import no.unit.nva.publication.external.services.UriRetriever;
 
 public class AffiliationGenerator {
 
