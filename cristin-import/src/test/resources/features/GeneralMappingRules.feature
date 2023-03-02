@@ -388,3 +388,12 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario: if neither eierkode_opprettet nor vitenskapeligarbeid_lokal can be used as resource owner, then Sikt is used as owner
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource should have a owner "sikt@20754.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/20754.0.0.0"
+
+  Scenario: when vitenskapeligarbeid_lokal with eierkode equal to certain codes should be skipped
+    Given the Cristin Result has vitenskapeligarbeid_lokal:
+      | eierkode | institusjonsnr | avdnr | undavdnr | gruppenr |
+      | CRIS     | 1235           | 0     | 0        | 0        |
+      | UNIT     | 1234           | 0     | 0        | 0        |
+      | NTNU     | 34502          | 0     | 0        | 0        |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
