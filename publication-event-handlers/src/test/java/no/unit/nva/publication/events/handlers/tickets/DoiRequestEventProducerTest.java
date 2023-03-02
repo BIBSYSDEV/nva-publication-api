@@ -2,7 +2,10 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.CUSTOMER_ID;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DELETE_DRAFT_DOI_EVENT_TOPIC;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DOI;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.PUBLICATION_ID;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.REQUEST_DRAFT_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -147,8 +150,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var expectedPublicationId = inferExpectedPublicationId(publication);
         var expectedCustomerId = extractExpectedCustomerId(publication);
         assertThat(actual, allOf(
-            hasProperty("publicationId", equalTo(expectedPublicationId)),
-            hasProperty("customerId", equalTo(expectedCustomerId)))
+            hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
+            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
 
@@ -167,8 +170,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var expectedPublicationId = inferExpectedPublicationId(publication);
         var expectedCustomerId = extractExpectedCustomerId(publication);
         assertThat(actual, allOf(
-            hasProperty("publicationId", equalTo(expectedPublicationId)),
-            hasProperty("customerId", equalTo(expectedCustomerId)))
+            hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
+            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
 
@@ -186,8 +189,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var expectedPublicationId = inferExpectedPublicationId(publication);
         var expectedCustomerId = extractExpectedCustomerId(publication);
         assertThat(actual, allOf(
-            hasProperty("publicationId", equalTo(expectedPublicationId)),
-            hasProperty("customerId", equalTo(expectedCustomerId)))
+            hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
+            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
 
@@ -230,7 +233,6 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var event = createEvent(oldDoiRequest, newDoiRequest);
         handler.handleRequest(event, outputStream, context);
         var actual = outputToPublicationHolder(outputStream);
-
         assertThat(actual.getTopic(), is(equalTo(REQUEST_DRAFT_DOI_EVENT_TOPIC)));
     }
 
@@ -261,6 +263,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getTopic(), is(equalTo(DELETE_DRAFT_DOI_EVENT_TOPIC)));
+        assertThat(actual, hasProperty(DOI, equalTo(publication.getDoi())));
     }
 
     private URI extractExpectedCustomerId(Publication publication) {
