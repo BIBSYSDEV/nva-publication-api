@@ -29,9 +29,9 @@ import no.unit.nva.model.Publication;
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "finansiering_varbeid", "type_produkt",
-    "kildepostid", "eierkode_opprettet", "arkivpost", "varbeid_url",
+    "kildepostid", "arkivpost", "varbeid_url",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst", "h_dbh_forskres_publikasjon"})
+    "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
 
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
@@ -85,6 +85,24 @@ public class CristinObject implements JsonSerializable {
 
     @JsonProperty("varbeid_kilde")
     private List<CristinSource> cristinSources;
+
+    @JsonProperty("eierkode_opprettet")
+    private String ownerCodeCreated;
+
+    @JsonProperty("vitenskapeligarbeid_lokal")
+    private List<CristinLocale> cristinLocales;
+
+    @JsonProperty("institusjonsnr_opprettet")
+    private String institutionIdentifierCreated;
+
+    @JsonProperty("avdnr_opprettet")
+    private String departmentIdentifierCreated;
+
+    @JsonProperty("undavdnr_opprettet")
+    private String subDepartmendIdentifierCreated;
+
+    @JsonProperty("gruppenr_opprettet")
+    private String groupIdentifierCreated;
 
     @JsonProperty("kildekode")
     private String sourceCode;
