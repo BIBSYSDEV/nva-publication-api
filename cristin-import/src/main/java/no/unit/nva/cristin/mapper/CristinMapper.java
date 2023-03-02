@@ -24,6 +24,7 @@ import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -164,6 +165,7 @@ public class CristinMapper extends CristinMappingModule {
                    .withNpiSubjectHeading(extractNpiSubjectHeading())
                    .withAbstract(extractAbstract())
                    .withTags(extractTags())
+                   .withAlternativeAbstracts(Collections.emptyMap())
                    .build();
     }
 

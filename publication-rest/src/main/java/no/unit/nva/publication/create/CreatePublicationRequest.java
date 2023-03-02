@@ -28,6 +28,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
     private List<Funding> fundings;
+    private String rightsHolder;
 
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
@@ -37,6 +38,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         createPublicationRequest.setSubjects(publication.getSubjects());
         createPublicationRequest.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
         createPublicationRequest.setFundings(publication.getFundings());
+        createPublicationRequest.setRightsHolder(publication.getRightsHolder());
         return createPublicationRequest;
     }
     
@@ -56,6 +58,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         publication.setSubjects(getSubjects());
         publication.setAdditionalIdentifiers(getAdditionalIdentifiers());
         publication.setFundings(getFundings());
+        publication.setRightsHolder(getRightsHolder());
         return publication;
     }
     
@@ -119,25 +122,33 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         this.fundings = fundings;
     }
 
+    public void setRightsHolder(String rightsHolder) {
+        this.rightsHolder = rightsHolder;
+    }
+
+    public String getRightsHolder() {
+        return rightsHolder;
+    }
+
     @Override
     @JacocoGenerated
     public JsonNode getContext() {
         return context;
     }
-    
+
     @JacocoGenerated
     @Override
     public void setContext(JsonNode context) {
         this.context = context;
     }
-    
+
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getAssociatedArtifacts(), getContext(), getProjects(), getSubjects(),
             getAdditionalIdentifiers());
     }
-    
+
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
@@ -155,4 +166,5 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getSubjects(), that.getSubjects())
                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
     }
+
 }

@@ -33,6 +33,7 @@ public final class ResourceBuilder {
     private Set<AdditionalIdentifier> additionalIdentifiers;
     private List<URI> subjects;
     private List<Funding> fundings;
+    private String rightsHolder;
 
     ResourceBuilder() {
     }
@@ -122,6 +123,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withRightsHolder(String rightsHolder) {
+        this.rightsHolder = rightsHolder;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -141,6 +147,7 @@ public final class ResourceBuilder {
         resource.setAdditionalIdentifiers(additionalIdentifiers);
         resource.setSubjects(subjects);
         resource.setFundings(fundings);
+        resource.setRightsHolder(rightsHolder);
         return resource;
     }
 }

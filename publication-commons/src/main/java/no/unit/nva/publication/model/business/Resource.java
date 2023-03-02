@@ -73,6 +73,8 @@ public class Resource implements Entity {
     private List<URI> subjects;
     @JsonProperty
     private List<Funding> fundings;
+    @JsonProperty
+    private String rightsHolder;
     
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
@@ -125,6 +127,7 @@ public class Resource implements Entity {
                    .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
                    .withSubjects(publication.getSubjects())
                    .withFundings(publication.getFundings())
+                   .withRightsHolder(publication.getRightsHolder())
                    .build();
     }
     
@@ -186,6 +189,7 @@ public class Resource implements Entity {
                    .withAssociatedArtifacts(calculateArtifacts(this))
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
+                   .withRightsHolder(getRightsHolder())
                    .build();
     }
     
@@ -339,7 +343,8 @@ public class Resource implements Entity {
                    .withHandle(getHandle())
                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
                    .withSubjects(getSubjects())
-                   .withFundings(getFundings());
+                   .withFundings(getFundings())
+                   .withRightsHolder(getRightsHolder());
     }
     
     public List<URI> getSubjects() {
@@ -356,6 +361,14 @@ public class Resource implements Entity {
 
     public void setFundings(List<Funding> fundings) {
         this.fundings = fundings;
+    }
+
+    public String getRightsHolder() {
+        return rightsHolder;
+    }
+
+    public void setRightsHolder(String rightsHolder) {
+        this.rightsHolder = rightsHolder;
     }
 
     /**

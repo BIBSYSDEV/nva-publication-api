@@ -1,7 +1,13 @@
 package no.unit.nva.schemaorg;
 
+import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jsonldjava.core.JsonLdOptions;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
@@ -18,14 +24,6 @@ import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 
 public final class SchemaOrgDocument {
 
