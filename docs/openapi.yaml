@@ -167,7 +167,7 @@ paths:
             format: uuid
           required: true
           example:
-            doi: '135f2cf8-b816-11ed-afa1-0242ac120002'
+            doi: '10.3848/135f2cf8-b816-11ed-afa1-0242ac120002'
           description: UUID identifier of the Publication to fetch.
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
