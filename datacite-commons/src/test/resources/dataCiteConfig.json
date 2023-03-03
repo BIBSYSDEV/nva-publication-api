@@ -1,0 +1,9 @@
+[
+  {
+    "customerId": "https://api.test.nva.aws.unit.no/customer/0baf8fcb-b18d-4c09-88bb-956b4f659103",
+    "customerDoiPrefix": "10.00000",
+    "dataCiteMdsClientUrl": "mds.test.datacite.org",
+    "dataCiteMdsClientUsername": "SOME.USERNAME",
+    "dataCiteMdsClientPassword": "SOME.PASSWORD"
+  }
+]

@@ -4,10 +4,29 @@ dependencies {
     implementation libs.nva.doi.partner.data
     implementation libs.nva.core
     implementation libs.nva.identifiers
-    implementation libs.bundles.logging
+    implementation libs.nva.apigateway
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation libs.nva.secrets
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+    implementation project(path: ':publication-commons')
 
+    implementation libs.bundles.logging
+
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.lambda.java.core
+    implementation libs.aws.sdk2.secrets
+
+
+    testImplementation project(":publication-testing")
     testImplementation libs.bundles.testing
+    testImplementation libs.wiremock
+}
+
+
+test {
+    environment "TABLE_NAME", "ResourcesTable"
+    environment "AWS_REGION", "eu-west-1"
 }
