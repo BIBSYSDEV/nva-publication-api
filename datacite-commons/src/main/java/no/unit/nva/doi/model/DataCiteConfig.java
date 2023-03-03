@@ -1,4 +1,4 @@
-package no.unit.nva.doi.config;
+package no.unit.nva.doi.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,25 +7,21 @@ import java.net.URI;
 public class DataCiteConfig {
 
     @JsonProperty("customerId")
-    private URI customerId;
+    private final URI customerId;
     @JsonProperty("customerDoiPrefix")
-    private String customerDoiPrefix;
-    @JsonProperty("dataCiteMdsClientUrl")
-    private String dataCiteMdsClientUrl;
+    private final String customerDoiPrefix;
     @JsonProperty("dataCiteMdsClientUsername")
-    private String dataCiteMdsClientUsername;
+    private final String dataCiteMdsClientUsername;
     @JsonProperty("dataCiteMdsClientPassword")
-    private String dataCiteMdsClientPassword;
+    private final String dataCiteMdsClientPassword;
 
     @JsonCreator
     public DataCiteConfig(@JsonProperty("customerId") URI customerId,
                           @JsonProperty("customerDoiPrefix") String customerDoiPrefix,
-                          @JsonProperty("dataCiteMdsClientUrl") String dataCiteMdsClientUrl,
                           @JsonProperty("dataCiteMdsClientUsername") String dataCiteMdsClientUsername,
                           @JsonProperty("dataCiteMdsClientPassword") String dataCiteMdsClientPassword) {
         this.customerId = customerId;
         this.customerDoiPrefix = customerDoiPrefix;
-        this.dataCiteMdsClientUrl = dataCiteMdsClientUrl;
         this.dataCiteMdsClientUsername = dataCiteMdsClientUsername;
         this.dataCiteMdsClientPassword = dataCiteMdsClientPassword;
     }
@@ -34,14 +30,10 @@ public class DataCiteConfig {
     public URI getCustomerId() {
         return customerId;
     }
+
     @JsonProperty("customerDoiPrefix")
     public String getCustomerDoiPrefix() {
         return customerDoiPrefix;
-    }
-
-    @JsonProperty("dataCiteMdsClientUrl")
-    public String getDataCiteMdsClientUrl() {
-        return dataCiteMdsClientUrl;
     }
 
     @JsonProperty("dataCiteMdsClientUsername")

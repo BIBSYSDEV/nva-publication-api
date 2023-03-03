@@ -29,4 +29,6 @@ dependencies {
 test {
     environment "TABLE_NAME", "ResourcesTable"
     environment "AWS_REGION", "eu-west-1"
+    environment "DATACITE_REST_HOST", "https://dataciteHost.com"
+    environment "DOI_HOST", "doiHost"
 }
