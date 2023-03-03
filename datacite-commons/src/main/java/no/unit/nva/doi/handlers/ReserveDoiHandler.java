@@ -144,11 +144,11 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
     }
 
     private URI constructUri(DataCiteConfig customerConfig) {
-        String dataciteRestHost = this.environment.readEnv(DATACITE_REST_HOST);
-        return URI.create(dataciteRestHost + "/"
-                          + DOI_PATH + "/"
-                          + customerConfig.getCustomerDoiPrefix() + "/"
-                          + publication.getIdentifier().toString());
+        return UriWrapper.fromUri(environment.readEnv(DATACITE_REST_HOST))
+                   .addChild(DOI_PATH)
+                   .addChild(customerConfig.getCustomerDoiPrefix())
+                   .addChild(publication.getIdentifier().toString())
+                   .getUri();
     }
 
     private DataCiteConfig getConfig() throws UnauthorizedException {
