@@ -1,15 +1,19 @@
 package no.unit.nva.publication.fetch;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAGE;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
+import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAGE;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_GONE;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
@@ -30,30 +34,40 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
+import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -62,6 +76,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
 
+@WireMockTest(httpsEnabled = true)
 class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private static final String TEXT_ANY = "text/*";
     private static final String TEXT_HTML = "text/html";
@@ -78,9 +93,10 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     public static final String DATACITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite"
                                                                + ".org/schema/kernel-4\">";
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
+    public static final String PUBLISHER_NAME = "publisher name";
     private ResourceService publicationService;
     private Context context;
-
+    private UriRetriever uriRetriever;
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
     private Environment environment;
@@ -98,7 +114,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
-        fetchPublicationHandler = new FetchPublicationHandler(publicationService, environment);
+        this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
+        fetchPublicationHandler = new FetchPublicationHandler(publicationService, uriRetriever, environment);
     }
 
     // TODO: replace test with tests that assert unauth/non-owner/non-curator users do not receive unpublished files
@@ -130,11 +147,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnOkResponseWithDataCiteXmlBodyOnValidInput() throws IOException, ApiGatewayException {
-        var createdPublication = createPublication();
+    void shouldReturnOkResponseWithDataCiteXmlBodyOnValidInput(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException,
+                                                                                            ApiGatewayException {
+        var createdPublication = createPublicationWithPublisher(wireMockRuntimeInfo);
         var publicationIdentifier = createdPublication.getIdentifier().toString();
 
         var headers = Map.of(HttpHeaders.ACCEPT, MediaTypes.APPLICATION_DATACITE_XML.toString());
+        createCustomerMock(createdPublication.getPublisher());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers), output, context);
         var gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
@@ -142,6 +161,20 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(MediaTypes.APPLICATION_DATACITE_XML.toString(), gatewayResponse.getHeaders().get(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertTrue(gatewayResponse.getBody().contains(DATACITE_XML_RESOURCE_ELEMENT));
+    }
+
+    private Publication createPublicationWithPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication();
+        publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        SortableIdentifier publicationIdentifier =
+            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        return new Organization.Builder().withId(
+            URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + randomUUID())).build();
     }
 
     // TODO: Extend beyond JournalArticle
@@ -237,7 +270,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
             .when(serviceThrowingException)
             .getPublicationByIdentifier(any(SortableIdentifier.class));
 
-        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException, uriRetriever, environment);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
 
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -323,5 +356,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private void createCustomerMock(Organization organization) {
+        var customer = new Customer(organization.getId(), PUBLISHER_NAME);
+        var response = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(customer)).orElseThrow();
+        var id = UriWrapper.fromUri(organization.getId()).getLastPathElement();
+        stubFor(WireMock.get(urlPathEqualTo("/customer/" + id))
+                    .willReturn(WireMock.ok().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
     }
 }
