@@ -13,8 +13,6 @@ import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
-import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -68,7 +66,7 @@ public class PublicationInstanceCreator {
             case CP:
                 if (isJournal()) {
                     return Optional.of(generateJournalArticle());
-                } else if (isChapter()) {
+                } else {
                     return Optional.of(generateChapterArticle());
                 }
             case ED:
@@ -172,10 +170,6 @@ public class PublicationInstanceCreator {
 
     private boolean isJournal() {
         return publicationContext instanceof Journal || publicationContext instanceof UnconfirmedJournal;
-    }
-
-    private boolean isChapter() {
-        return publicationContext instanceof Chapter || publicationContext instanceof BookSeries;
     }
 
     private Optional<CitationtypeAtt> getCitationTypeCode() {

@@ -122,10 +122,12 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         this.fundings = fundings;
     }
 
+    @Override
     public void setRightsHolder(String rightsHolder) {
         this.rightsHolder = rightsHolder;
     }
 
+    @Override
     public String getRightsHolder() {
         return rightsHolder;
     }

@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -27,6 +26,8 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.funding.Funding;
+import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -34,10 +35,10 @@ import no.unit.nva.publication.service.impl.ResourceService;
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements Entity {
-    
+
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
-    
+
     @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty
@@ -58,7 +59,7 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private AssociatedArtifactList associatedArtifacts;
-    
+
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -72,27 +73,27 @@ public class Resource implements Entity {
     @JsonProperty
     private List<URI> subjects;
     @JsonProperty
-    private List<Funding> fundings;
+    private FundingList fundings;
     @JsonProperty
     private String rightsHolder;
-    
+
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
-            resourceIdentifier);
+                             resourceIdentifier);
     }
-    
+
     public static Resource resourceQueryObject(SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
-    
+
     public static Resource fetchForElevatedUserQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
         return Resource.builder().withIdentifier(resourceIdentifier)
                    .withPublisher(new Organization.Builder().withId(customerId).build())
                    .build();
     }
-    
+
     public static Resource emptyResource(User username,
                                          URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
@@ -102,11 +103,11 @@ public class Resource implements Entity {
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
-    
+
     public static Resource fromPublication(Publication publication) {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
     }
-    
+
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
@@ -130,46 +131,46 @@ public class Resource implements Entity {
                    .withRightsHolder(publication.getRightsHolder())
                    .build();
     }
-    
+
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
     }
-    
+
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance) {
         return resourceService.resourceCallsCreatePublication(userInstance, this.toPublication());
     }
-    
+
     public Owner getResourceOwner() {
         return resourceOwner;
     }
-    
+
     public void setResourceOwner(Owner resourceOwner) {
         this.resourceOwner = resourceOwner;
     }
-    
+
     public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
         return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
     }
-    
+
     public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
     }
-    
+
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-    
+
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-    
+
     @Override
     public Publication toPublication(ResourceService resourceService) {
         return toPublication();
     }
-    
+
     public Publication toPublication() {
         return new Publication.Builder()
                    .withIdentifier(getIdentifier())
@@ -192,139 +193,139 @@ public class Resource implements Entity {
                    .withRightsHolder(getRightsHolder())
                    .build();
     }
-    
+
     private ResourceOwner extractResourceOwner() {
         return Optional.ofNullable(getResourceOwner()).map(Owner::toResourceOwner).orElse(null);
     }
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public Instant getCreatedDate() {
         return createdDate;
     }
-    
+
     @Override
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-    
+
     @Override
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-    
+
     @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
-    
+
     @JsonIgnore
     @Override
     public User getOwner() {
         return getResourceOwner().getUser();
     }
-    
+
     @Override
     @JsonIgnore
     public URI getCustomerId() {
         return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
     }
-    
+
     @Override
     public Dao toDao() {
         return new ResourceDao(this);
     }
-    
+
     @Override
     public String getStatusString() {
         return nonNull(getStatus()) ? getStatus().toString() : null;
     }
-    
+
     public PublicationStatus getStatus() {
         return status;
     }
-    
+
     public void setStatus(PublicationStatus status) {
         this.status = status;
         this.associatedArtifacts = calculateArtifacts(this);
     }
-    
+
     public Organization getPublisher() {
         return publisher;
     }
-    
+
     public void setPublisher(Organization publisher) {
         this.publisher = publisher;
     }
-    
+
     public Instant getPublishedDate() {
         return publishedDate;
     }
-    
+
     public void setPublishedDate(Instant publishedDate) {
         this.publishedDate = publishedDate;
     }
-    
+
     public Instant getIndexedDate() {
         return indexedDate;
     }
-    
+
     public void setIndexedDate(Instant indexedDate) {
         this.indexedDate = indexedDate;
     }
-    
+
     public URI getLink() {
         return link;
     }
-    
+
     public void setLink(URI link) {
         this.link = link;
     }
-    
+
     public AssociatedArtifactList getAssociatedArtifacts() {
         return associatedArtifacts;
     }
-    
+
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
     }
-    
+
     public List<ResearchProject> getProjects() {
         return nonNull(projects) ? projects : Collections.emptyList();
     }
-    
+
     public void setProjects(List<ResearchProject> projects) {
         this.projects = projects;
     }
-    
+
     public EntityDescription getEntityDescription() {
         return entityDescription;
     }
-    
+
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }
-    
+
     public URI getDoi() {
         return doi;
     }
-    
+
     public void setDoi(URI doi) {
         this.doi = doi;
     }
-    
+
     public URI getHandle() {
         return handle;
     }
-    
+
     public void setHandle(URI handle) {
         this.handle = handle;
     }
-    
+
     public ResourceBuilder copy() {
         return Resource.builder()
                    .withIdentifier(getIdentifier())
@@ -346,11 +347,11 @@ public class Resource implements Entity {
                    .withFundings(getFundings())
                    .withRightsHolder(getRightsHolder());
     }
-    
+
     public List<URI> getSubjects() {
         return nonNull(subjects) ? subjects : Collections.emptyList();
     }
-    
+
     public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
     }
@@ -360,7 +361,7 @@ public class Resource implements Entity {
     }
 
     public void setFundings(List<Funding> fundings) {
-        this.fundings = fundings;
+        this.fundings = new FundingList(fundings);
     }
 
     public String getRightsHolder() {
@@ -379,11 +380,11 @@ public class Resource implements Entity {
     @Override
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
-            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
-            getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects(),
-            getAssociatedArtifacts());
+                            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
+                            getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
+                            getSubjects(), getFundings(), getAssociatedArtifacts());
     }
-    
+
     /**
      * It compares two Resources ignoring the row version.
      *
@@ -414,13 +415,14 @@ public class Resource implements Entity {
                && Objects.equals(getHandle(), resource.getHandle())
                && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
                && Objects.equals(getAssociatedArtifacts(), resource.getAssociatedArtifacts())
+               && Objects.equals(getFundings(), resource.getFundings())
                && Objects.equals(getSubjects(), resource.getSubjects());
     }
-    
+
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
         return resourceService.fetchAllTicketsForResource(this);
     }
-    
+
     private static AssociatedArtifactList calculateArtifacts(Publication publication) {
         var artifactsList = Optional.ofNullable(publication.getAssociatedArtifacts())
                                 .stream()
@@ -428,7 +430,7 @@ public class Resource implements Entity {
                                 .collect(Collectors.toList());
         return new AssociatedArtifactList(artifactsList);
     }
-    
+
     private static AssociatedArtifactList calculateArtifacts(Resource resource) {
         var artifactsList = Optional.ofNullable(resource.getAssociatedArtifacts())
                                 .stream()
@@ -436,12 +438,12 @@ public class Resource implements Entity {
                                 .collect(Collectors.toList());
         return new AssociatedArtifactList(artifactsList);
     }
-    
+
     private static Stream<AssociatedArtifact> calculateArtifacts(AssociatedArtifactList arts,
                                                                  PublicationStatus publicationStatus) {
         return arts.stream().map(artifact -> convertArtifact(artifact, publicationStatus));
     }
-    
+
     private static AssociatedArtifact convertArtifact(AssociatedArtifact artifact,
                                                       PublicationStatus publicationStatus) {
         if (artifactIsAFile(artifact)) {
@@ -451,7 +453,7 @@ public class Resource implements Entity {
             return artifact;
         }
     }
-    
+
     private static AssociatedArtifact convertFile(File file, PublicationStatus publicationStatus) {
         if (isPublishableFile(file) && shouldNotYetGetPublished(publicationStatus)) {
             return file.toUnpublishedFile();
@@ -463,19 +465,19 @@ public class Resource implements Entity {
             throw new IllegalStateException("Missing conversion rule for file");
         }
     }
-    
+
     private static boolean artifactIsAFile(AssociatedArtifact artifact) {
         return artifact instanceof File;
     }
-    
+
     private static boolean shouldBePublished(PublicationStatus publicationStatus) {
         return PublicationStatus.PUBLISHED.equals(publicationStatus);
     }
-    
+
     private static boolean shouldNotYetGetPublished(PublicationStatus publicationStatus) {
         return !PublicationStatus.PUBLISHED.equals(publicationStatus);
     }
-    
+
     private static boolean isPublishableFile(File artifact) {
         return !(artifact instanceof AdministrativeAgreement) && !artifact.isAdministrativeAgreement();
     }
