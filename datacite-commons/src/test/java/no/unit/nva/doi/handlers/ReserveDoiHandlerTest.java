@@ -5,12 +5,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
-import static no.unit.nva.doi.handlers.ReserveDoiHandler.API_HOST;
+import static no.unit.nva.doi.DataCiteReserveDoiClient.DOI_REGISTRAR;
+import static no.unit.nva.doi.ReserveDoiRequestValidator.DOI_ALREADY_EXISTS_ERROR_MESSAGE;
+import static no.unit.nva.doi.ReserveDoiRequestValidator.NOT_DRAFT_STATUS_ERROR_MESSAGE;
+import static no.unit.nva.doi.ReserveDoiRequestValidator.UNSUPPORTED_ROLE_ERROR_MESSAGE;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.BAD_RESPONSE_ERROR_MESSAGE;
-import static no.unit.nva.doi.handlers.ReserveDoiHandler.DOI_ALREADY_EXISTS_ERROR_MESSAGE;
-import static no.unit.nva.doi.handlers.ReserveDoiHandler.DOI_REGISTRAR;
-import static no.unit.nva.doi.handlers.ReserveDoiHandler.NOT_DRAFT_STATUS_ERROR_MESSAGE;
-import static no.unit.nva.doi.handlers.ReserveDoiHandler.UNSUPPORTED_ROLE_ERROR_MESSAGE;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -33,6 +32,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.doi.DataCiteReserveDoiClient;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -44,6 +44,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -62,9 +63,6 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     public static final String OWNER = "owner";
     public static final String NOT_FOUND_MESSAGE = "Publication not found: ";
     public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
-    private static final String DOIS_PATH_PREFIX = "/dois";
-    private static final String MDS_PASSWORD = "somePassword";
-    private static final String MDS_USERNAME = "someUsername";
     private final Environment environment = mock(Environment.class);
     private Context context;
     private ByteArrayOutputStream output;
@@ -75,11 +73,13 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
         super.init();
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv(API_HOST)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        handler = new ReserveDoiHandler(resourceService, WiremockHttpClient.create(), environment);
+        DataCiteReserveDoiClient reserveDoiClient = new DataCiteReserveDoiClient(WiremockHttpClient.create(),
+                                                                                 environment);
+        handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
     }
 
     @Test
@@ -221,8 +221,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     private void mockReserveDoiFailedResponse() {
-        stubFor(post(urlPathEqualTo(DOIS_PATH_PREFIX))
-                    .withBasicAuth(MDS_USERNAME, MDS_PASSWORD)
+        stubFor(post(urlPathEqualTo(RandomDataGenerator.randomUri().getPath()))
                     .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_FORBIDDEN)
                                     .withBody(EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE)));
     }
