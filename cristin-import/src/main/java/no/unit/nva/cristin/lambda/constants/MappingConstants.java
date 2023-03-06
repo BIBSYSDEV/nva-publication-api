@@ -15,6 +15,9 @@ public final class MappingConstants {
     public static final Set<String>
         IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
 
+    public static final Set<String> IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY =
+        readAllIngnoredAndPossiblyEmptyFieldsAndAddContributorsToList();
+
     public static final String NVA_API_DOMAIN = "https://" + readDomainName();
 
     public static final String CRISTIN_PATH = "cristin";
@@ -117,6 +120,12 @@ public final class MappingConstants {
     private static Set<String> readAllIngnoredAndPossiblyEmptyFields() {
         Set<String> result = new HashSet<>(Set.copyOf(IoUtils.linesfromResource(Path.of(ignoredFieldsFile()))));
         result.addAll(Set.copyOf(IoUtils.linesfromResource(Path.of("possiblyEmptyFields.txt"))));
+        return result;
+    }
+
+    private static Set<String> readAllIngnoredAndPossiblyEmptyFieldsAndAddContributorsToList() {
+        var result = readAllIngnoredAndPossiblyEmptyFields();
+        result.add("entityDescription.contributors");
         return result;
     }
 

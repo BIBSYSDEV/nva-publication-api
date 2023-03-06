@@ -15,6 +15,9 @@ public final class HardcodedValues {
     //RESEARCH_PROJECT
     public static final String HARDCODED_RESEARCH_PROJECT_NAME = "Some project name";
 
+    public static final String SIKT_OWNER = "sikt@20754.0.0.0";
+    public static final String SIKT_AFFILIATION_IDENTIFIER = "20754.0.0.0";
+
     private HardcodedValues() {
 
     }

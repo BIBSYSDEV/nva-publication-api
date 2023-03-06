@@ -1412,7 +1412,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private void mockCristinOrganization(String cristinId, String organization) {
-        stubFor(WireMock.get(urlPathEqualTo("/cristin/organization/" + cristinId))
+        stubFor(WireMock.get(urlPathEqualTo("/cristin/organization/" + cristinId ))
                     .willReturn(aResponse().withBody(organization).withStatus(HttpURLConnection.HTTP_OK)));
     }
 
