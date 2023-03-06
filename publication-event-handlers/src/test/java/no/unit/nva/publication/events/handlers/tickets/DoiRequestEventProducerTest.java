@@ -290,7 +290,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     private Publication createPublicationWithAllRequiredFieldsSetToFaulty() {
         var publication = randomPublication();
-        publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
+        publication.setStatus(PublicationStatus.DRAFT);
         publication.getEntityDescription().setMainTitle(StringUtils.EMPTY_STRING);
         publication.getEntityDescription().getDate().setYear(null);
         publication.getEntityDescription().getReference().setPublicationInstance(null);
