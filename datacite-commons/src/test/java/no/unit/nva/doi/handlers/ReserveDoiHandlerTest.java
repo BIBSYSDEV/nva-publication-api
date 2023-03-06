@@ -5,10 +5,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static no.unit.nva.doi.handlers.ReserveDoiHandler.APPLICATION_VND_API_JSON;
+import static no.unit.nva.doi.handlers.ReserveDoiHandler.API_HOST;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.BAD_RESPONSE_ERROR_MESSAGE;
-import static no.unit.nva.doi.handlers.ReserveDoiHandler.DATACITE_CONFIG_ERROR;
+import static no.unit.nva.doi.handlers.ReserveDoiHandler.DOI_ALREADY_EXISTS_ERROR_MESSAGE;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.NOT_DRAFT_STATUS_ERROR_MESSAGE;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.UNSUPPORTED_ROLE_ERROR_MESSAGE;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
@@ -29,13 +28,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -43,14 +40,12 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.ioutils.IoUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,36 +59,25 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     public static final String NOT_OWNER = "notOwner";
     public static final String OWNER = "owner";
     public static final String NOT_FOUND_MESSAGE = "Publication not found: ";
-    public static final String DATACITE_SECRET_NAME = "dataCiteCustomerSecrets";
-    public static final String DATACITE_SECRET_KEY = "dataCiteCustomerSecrets";
-    public static final String DATACITE_CONFIG = IoUtils.stringFromResources(Path.of("dataCiteConfig.json"));
     public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
     private static final String DOIS_PATH_PREFIX = "/dois";
     private static final String MDS_PASSWORD = "somePassword";
     private static final String MDS_USERNAME = "someUsername";
-    public static final URI CUSTOMER_URI_FROM_CONFIG = URI.create("https://api.test.nva.aws.unit"
-                                                                  + ".no/customer/0baf8fcb-b18d-4c09-88bb"
-                                                                  + "-956b4f659103");
-    public static final String CUSTOMER_DOI_PREFIX = "/10.0000";
-    public static final String DATA_CITE_RESPONSE_JSON = "dataCiteDraftDoiResponse.json";
-    public static final String DATACITE_REST_HOST = "DATACITE_REST_HOST";
+    private final Environment environment = mock(Environment.class);
     private Context context;
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
     private ReserveDoiHandler handler;
-    private final Environment environment = mock(Environment.class);
 
     @BeforeEach
     public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
         super.init();
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv(DATACITE_REST_HOST)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        when(environment.readEnv(API_HOST)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        FakeSecretsManagerClient fakeSecretsManagerClient = new FakeSecretsManagerClient();
-        fakeSecretsManagerClient.putSecret(DATACITE_SECRET_NAME, DATACITE_SECRET_KEY, DATACITE_CONFIG);
-        handler = new ReserveDoiHandler(resourceService, fakeSecretsManagerClient, WiremockHttpClient.create(), environment);
+        handler = new ReserveDoiHandler(resourceService, WiremockHttpClient.create(), environment);
     }
 
     @Test
@@ -107,8 +91,19 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnBadMethodExceptionWhenPublicationAlreadyHasDoi() throws IOException, ApiGatewayException {
+        var publication = createPersistedDraftPublicationWithDoi();
+        var request = generateRequestWithOwner(publication, OWNER);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertEquals(HttpURLConnection.HTTP_BAD_METHOD, response.getStatusCode());
+        assertThat(response.getBodyObject(Problem.class).getDetail(),
+                   is(equalTo(DOI_ALREADY_EXISTS_ERROR_MESSAGE)));
+    }
+
+    @Test
     void shouldThrowUnauthorizedExceptionWhenUserIsNotAnOwner() throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublicationWithOwner();
+        var publication = createPersistedDraftPublication();
         var request = generateRequestWithOwner(publication, NOT_OWNER);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -127,21 +122,19 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
                    is(equalTo(NOT_FOUND_MESSAGE + publication.getIdentifier())));
     }
 
-    @Test
-    void shouldThrowUnauthorizedExceptionWhenUsersInstitutionHasNoDataciteConfig()
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublicationWithOwner();
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(DATACITE_CONFIG_ERROR)));
+    private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException {
+        Publication publication = PublicationGenerator.randomPublication();
+        publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        SortableIdentifier publicationIdentifier =
+            Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
+        return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 
     @Test
-    void shouldReturnBadResponseWhenBadResponseFromDatacite()
+    void shouldReturnBadResponseWhenBadResponseFromDoiRegistrar()
         throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublicationWithConfig();
+        var publication = createPersistedDraftPublication();
         var request = generateRequestWithOwner(publication, OWNER);
         mockReserveDoiFailedResponse();
         handler.handleRequest(request, output, context);
@@ -151,38 +144,33 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnDoiSuccessfully() throws IOException, NotFoundException {
-        var publication = createPersistedDraftPublicationWithConfig();
-        var expectedDoi = "https://doiHost/10.0000/" + publication.getIdentifier();
+    void shouldReturnDoiSuccessfully(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, ApiGatewayException {
+        var publication = createPersistedDraftPublication();
+        var expectedDoi = URI.create("https://doiHost/10.0000/" + publication.getIdentifier());
         var request = generateRequestWithOwner(publication, OWNER);
-        var responseJson = IoUtils.stringFromResources(Path.of(DATA_CITE_RESPONSE_JSON))
-                               .replace("@@IDENTIFIER@@", publication.getIdentifier().toString());
+        var responseJson = JsonUtils.dtoObjectMapper.writeValueAsString(new DoiResponse(expectedDoi));
         mockReserveDoiResponse(responseJson, publication);
+        var s = wireMockRuntimeInfo.getWireMock().allStubMappings();
+
         handler.handleRequest(request, output, context);
+        var updatedPublication = resourceService.getPublication(publication);
         var response = GatewayResponse.fromOutputStream(output, DoiResponse.class);
         assertEquals(HttpURLConnection.HTTP_CREATED, response.getStatusCode());
+        assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
         var actualDoi = response.getBodyObject(DoiResponse.class);
         assertThat(actualDoi.getDoi(), is(equalTo(expectedDoi)));
     }
 
-    private Publication createPersistedDraftPublicationWithConfig() throws NotFoundException {
-        Publication publication = PublicationGenerator.randomPublication();
-        publication.setPublisher(new Builder().withId(CUSTOMER_URI_FROM_CONFIG).build());
-        publication.setResourceOwner(new ResourceOwner(OWNER, randomUri()));
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
-    }
-
     private Publication createNotPersistedDraftPublication() {
         Publication publication = PublicationGenerator.randomPublication();
+        publication.setDoi(null);
         publication.setResourceOwner(new ResourceOwner(NOT_OWNER, randomUri()));
         return publication;
     }
 
-    private Publication createPersistedDraftPublicationWithOwner() throws ApiGatewayException {
+    private Publication createPersistedDraftPublication() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
+        publication.setDoi(null);
         publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
@@ -192,6 +180,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
 
     private Publication createPersistedPublishedPublication() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
+        publication.setDoi(null);
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
@@ -223,9 +212,8 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     private void mockReserveDoiResponse(String getDoiResponseJson, Publication publication) {
-        stubFor(post(urlPathEqualTo(DOIS_PATH_PREFIX + CUSTOMER_DOI_PREFIX + "/" + publication.getIdentifier()))
+        stubFor(post(urlPathEqualTo("/reserve/doi/" + publication.getIdentifier()))
                     .willReturn(WireMock.ok()
-                                    .withHeader(CONTENT_TYPE, APPLICATION_VND_API_JSON)
                                     .withStatus(HttpURLConnection.HTTP_OK)
                                     .withBody(getDoiResponseJson)));
     }

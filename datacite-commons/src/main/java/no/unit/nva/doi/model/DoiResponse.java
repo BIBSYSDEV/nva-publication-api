@@ -4,19 +4,20 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName("Doi")
 public class DoiResponse {
 
-    private final String doi;
+    private final URI doi;
 
     @JsonCreator
-    public DoiResponse(@JsonProperty("doi") String doi) {
+    public DoiResponse(@JsonProperty("doi") URI doi) {
         this.doi = doi;
     }
 
-    public String getDoi() {
+    public URI getDoi() {
         return doi;
     }
 }
