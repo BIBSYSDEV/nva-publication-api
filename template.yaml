@@ -94,10 +94,6 @@ Parameters:
   PiaRestUsernamePasswordKey:
     Type: String
     Default: "PiaRestPass"
-  DoiToReferenceDoiUpdateBucketName:
-    Type: String
-    Default: "nve-doi-update-bucket"
-    Description: Name of bucket for csv file imported from DynamoDb containing identifiers
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -1769,14 +1765,3 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
-
-  DoiToReferenceDoiUpdateBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: Private
-      BucketName: !Sub "${DoiToReferenceDoiUpdateBucketName}-${AWS::AccountId}"
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteContentAfter3Days
-            Status: Enabled
-            ExpirationInDays: 3
