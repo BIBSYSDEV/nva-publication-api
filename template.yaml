@@ -1584,7 +1584,7 @@ Resources:
             }
         }
       DatabaseName: !Ref    CristinImportDatabase
-      Description: Crawler that crawls the s3 bucket of the crcristin patch errors
+      Description: Crawler that crawls the s3 bucket of the cristin patch errors
       Name: CristinPatchErrorCrawler
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
