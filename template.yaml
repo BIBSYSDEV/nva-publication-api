@@ -1569,6 +1569,31 @@ Resources:
             Exclusions: [ '*.error' ]
 
 
+  CristinPatchErrorsCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Configuration: >
+        {
+            "Version":1.0,
+            "Grouping":{
+              "TableLevelConfiguration":6
+            }
+        }
+      DatabaseName: !Ref    CristinImportDatabase
+      Description: Crawler that crawls the s3 bucket of the cristin patch errors
+      Name: CristinPatchErrorCrawler
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !GetAtt CristinCrawlerRole.Arn
+      SchemaChangePolicy:
+        DeleteBehavior: DELETE_FROM_DATABASE
+        UpdateBehavior: UPDATE_IN_DATABASE
+      Targets:
+        S3Targets:
+          - Path: !Sub 's3://cristin-import-884807050265/PATCH_ERRORS/2023-02-17T15:06:19.291467Z'
+            Exclusions: [ '*.error' ]
+
+
 
   ImportQuery:
     Type: AWS::Athena::NamedQuery
