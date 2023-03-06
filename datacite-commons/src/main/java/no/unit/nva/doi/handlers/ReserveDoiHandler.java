@@ -36,9 +36,8 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
                                                                   + "doi";
     public static final String UNSUPPORTED_ROLE_ERROR_MESSAGE = "Only owner can reserve a doi";
     public static final String BAD_RESPONSE_ERROR_MESSAGE = "Bad response from DataCite";
+    public static final String DOI_REGISTRAR = "doi-registrar";
     protected static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String DOI = "doi";
-    public static final String RESERVE = "reserve";
     private final ResourceService resourceService;
     private final HttpClient httpClient;
     private Publication publication;
@@ -114,9 +113,7 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
 
     private URI constructUri() {
         return UriWrapper.fromUri(environment.readEnv(API_HOST))
-                   .addChild(RESERVE)
-                   .addChild(DOI)
-                   .addChild(publication.getIdentifier().toString())
+                   .addChild(DOI_REGISTRAR)
                    .getUri();
     }
 

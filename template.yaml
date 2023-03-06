@@ -98,12 +98,6 @@ Parameters:
     Type: String
     Default: "nve-doi-update-bucket"
     Description: Name of bucket for csv file imported from DynamoDb containing identifiers
-  CustomerSecretsSecretName:
-    Type: String
-    Default: dataCiteCustomerSecrets
-  CustomerSecretsSecretKey:
-    Type: String
-    Default: dataCiteCustomerSecrets
   DoiHost:
     Type: String
 
@@ -1401,10 +1395,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          CUSTOMER_SECRETS_SECRET_KEY: !Ref CustomerSecretsSecretKey
-          CUSTOMER_SECRETS_SECRET_NAME: !Ref CustomerSecretsSecretName
-          DATACITE_REST_HOST: !Ref DataCiteRestHost
-          DOI_HOST: !Ref DoiHost
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:

@@ -7,7 +7,6 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.json
-    implementation libs.nva.secrets
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
@@ -17,7 +16,6 @@ dependencies {
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core
-    implementation libs.aws.sdk2.secrets
 
 
     testImplementation project(":publication-testing")
@@ -29,7 +27,5 @@ dependencies {
 test {
     environment "TABLE_NAME", "ResourcesTable"
     environment "AWS_REGION", "eu-west-1"
-    environment "DATACITE_REST_HOST", "https://dataciteHost.com"
-    environment "DOI_HOST", "doiHost"
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
 }

@@ -8,9 +8,11 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.API_HOST;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.BAD_RESPONSE_ERROR_MESSAGE;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.DOI_ALREADY_EXISTS_ERROR_MESSAGE;
+import static no.unit.nva.doi.handlers.ReserveDoiHandler.DOI_REGISTRAR;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.NOT_DRAFT_STATUS_ERROR_MESSAGE;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.UNSUPPORTED_ROLE_ERROR_MESSAGE;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -122,15 +124,6 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
                    is(equalTo(NOT_FOUND_MESSAGE + publication.getIdentifier())));
     }
 
-    private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException {
-        Publication publication = PublicationGenerator.randomPublication();
-        publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
-    }
-
     @Test
     void shouldReturnBadResponseWhenBadResponseFromDoiRegistrar()
         throws ApiGatewayException, IOException {
@@ -144,21 +137,32 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnDoiSuccessfully(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, ApiGatewayException {
+    void shouldReturnDoiSuccessfully() throws IOException, ApiGatewayException {
         var publication = createPersistedDraftPublication();
-        var expectedDoi = URI.create("https://doiHost/10.0000/" + publication.getIdentifier());
+        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var request = generateRequestWithOwner(publication, OWNER);
-        var responseJson = JsonUtils.dtoObjectMapper.writeValueAsString(new DoiResponse(expectedDoi));
-        mockReserveDoiResponse(responseJson, publication);
-        var s = wireMockRuntimeInfo.getWireMock().allStubMappings();
-
+        mockReserveDoiResponse(createResponse(expectedDoi.toString()));
         handler.handleRequest(request, output, context);
         var updatedPublication = resourceService.getPublication(publication);
+
+        assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
         var response = GatewayResponse.fromOutputStream(output, DoiResponse.class);
         assertEquals(HttpURLConnection.HTTP_CREATED, response.getStatusCode());
-        assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
         var actualDoi = response.getBodyObject(DoiResponse.class);
         assertThat(actualDoi.getDoi(), is(equalTo(expectedDoi)));
+    }
+
+    private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
+        return JsonUtils.dtoObjectMapper.writeValueAsString(new DoiResponse(URI.create(expectedDoiPrefix)));
+    }
+
+    private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException {
+        Publication publication = PublicationGenerator.randomPublication();
+        publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        SortableIdentifier publicationIdentifier =
+            Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
+        return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 
     private Publication createNotPersistedDraftPublication() {
@@ -211,10 +215,8 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private void mockReserveDoiResponse(String getDoiResponseJson, Publication publication) {
-        stubFor(post(urlPathEqualTo("/reserve/doi/" + publication.getIdentifier()))
-                    .willReturn(WireMock.ok()
-                                    .withStatus(HttpURLConnection.HTTP_OK)
+    private void mockReserveDoiResponse(String getDoiResponseJson) {
+        stubFor(post(urlPathEqualTo("/" + DOI_REGISTRAR)).willReturn(WireMock.ok().withStatus(HttpURLConnection.HTTP_OK)
                                     .withBody(getDoiResponseJson)));
     }
 
