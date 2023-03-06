@@ -17,7 +17,7 @@ public final class DatabaseConstants {
     public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_NAME = "ByTypeCustomerStatus";
     public static final String BY_CUSTOMER_RESOURCE_INDEX_NAME = "ByCustomerResource";
     public static final String BY_TYPE_AND_IDENTIFIER_INDEX_NAME = "ResourcesByIdentifier";
-    public static final String RESOURCE_BY_CRISTIN_ID_INDEX_NAME = "ResourceByCristinIdentifier";
+    public static final String RESOURCE_BY_CRISTIN_ID_INDEX_NAME = "ResourceByCristinId";
     public static final String PRIMARY_KEY_PARTITION_KEY_NAME = "PK0";
     public static final String PRIMARY_KEY_SORT_KEY_NAME = "SK0";
     public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME = "PK1";

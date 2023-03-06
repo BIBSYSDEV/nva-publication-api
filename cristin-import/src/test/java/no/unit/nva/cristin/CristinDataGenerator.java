@@ -66,6 +66,14 @@ public final class CristinDataGenerator {
     public static final String CRISTIN_SOURCES = "cristinSources";
     public static final String SOURCE_RECORD_IDENTIFIER = "sourceRecordIdentifier";
     public static final String SOURCE_CODE = "sourceCode";
+    public static final String CRISTIN_GRANTS = "cristinGrants";
+    public static final String SUB_DEPARTMEND_IDENTIFIER_CREATED = "subDepartmendIdentifierCreated";
+    public static final String OWNER_CODE_CREATED = "ownerCodeCreated";
+    public static final String INSTITUTION_IDENTIFIER_CREATED = "institutionIdentifierCreated";
+    public static final String GROUP_IDENTIFIER_CREATED = "groupIdentifierCreated";
+    public static final String DEPARTMENT_IDENTIFIER_CREATED = "departmentIdentifierCreated";
+    public static final String CRISTIN_LOCALES = "cristinLocales";
+    private static final String ENTRY_PUBLISHED_DATE = "entryPublishedDate";
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
     private static final int MIDDLE_INDEX_OF_ISSN_STRING = 4;
@@ -189,6 +197,7 @@ public final class CristinDataGenerator {
             case INTERNET_EXHIBIT:
                 return randomEvent(category);
             case INTERVIEW:
+            case PROGRAM_MANAGEMENT:
                 return randomMedia(category);
             case PROGRAM_PARTICIPATION:
                 return randomTVOMedia(category);
@@ -624,10 +633,13 @@ public final class CristinDataGenerator {
 
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
-            Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS, SOURCE_RECORD_IDENTIFIER,
+            Set.of(PUBLICATION_OWNER_FIELD, ENTRY_PUBLISHED_DATE, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
+                   SOURCE_RECORD_IDENTIFIER, SUB_DEPARTMEND_IDENTIFIER_CREATED, OWNER_CODE_CREATED,
+                   INSTITUTION_IDENTIFIER_CREATED, GROUP_IDENTIFIER_CREATED, DEPARTMENT_IDENTIFIER_CREATED,
+                   CRISTIN_LOCALES,
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
-                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
+                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_GRANTS, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
 
         return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }

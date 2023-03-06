@@ -58,6 +58,13 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
+  Scenario: When there is only one title present but not annotated as Original the NVA Resource gets the Cristin Title as Main Title.
+    Given the Cristin Result has an array of CristinTitles with values:
+      | Title Text         | Abstract Text         | Status Original | Language Code |
+      | This is some title | This is some abstract | N               | en            |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has an EntityDescription with mainTitle "This is some title"
+
 
   Scenario Outline: The language of the entry is set as Lexvo URI equivalent of the
   Cristin language code of the title annotated as ORIGINAL
@@ -106,6 +113,22 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Modified Date equal to "2011-12-03T00:00:00Z"
 
+  Scenario: If the NVA Resource Creation Date is missing but the published Date is set, the Nva Publication will have a createdDate and publishedDate
+    Given that Cristin Result has created date equal to null
+    And that the Cristin Result has published date equal to the local date "2001-05-31"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Creation Date equal to "2001-05-31T00:00:00Z"
+    And the NVA Resource has a Published Date equal to "2001-05-31T00:00:00Z"
+
+  Scenario: If the NVA Resource is both missing Creation Date and published date, The cristinYear will be used
+    Given that Cristin Result has created date equal to null
+    And that the cristin Result has published date equal to null
+    And that the Cristin Result has a year set to "2001"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Creation Date equal to "2001-01-01T00:00:00Z"
+    And the NVA Resource has a Published Date equal to "2001-01-01T00:00:00Z"
+
+
   Scenario: The NVA Contributor names are concatenations of Cristin's Cristin First and Family names.
     Given that the Cristin Result has Contributors with names:
       | Given Name  | Family Name |
@@ -147,10 +170,10 @@ Feature: Mappings that hold for all types of Cristin Results
 
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Contributors have the following names, sequences and affiliation URIs
-      | Name                     | Ordinal Number | Affiliation URI                              |
-      | FirstGiven FirstFamily   | 1              | https://api.cristin.no/v2/units/194.66.32.15 |
-      | SecondGiven SecondFamily | 2              | https://api.cristin.no/v2/units/194.66.32.15 |
-      | ThirdGiven ThirdFamily   | 3              | https://api.cristin.no/v2/units/0.0.0.0      |
+      | Name                     | Ordinal Number | Affiliation URI                                                    |
+      | FirstGiven FirstFamily   | 1              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
+      | SecondGiven SecondFamily | 2              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
+      | ThirdGiven ThirdFamily   | 3              | https://api.test.nva.aws.unit.no/cristin/organization/0.0.0.0      |
 
   Scenario Outline: Mapping of Cristin Contributor roles is done based on hard-coded rules described here.
     Given that the Cristin Result has a Contributor with role "<CristinRole>"
@@ -167,6 +190,17 @@ Feature: Mappings that hold for all types of Cristin Results
       | REDAKSJONSKOM    | EDITORIAL_BOARD_MEMBER |
       | INTERVJUOBJEKT   | INTERVIEW_SUBJECT      |
       | FAGLIG_ANSVARLIG | ACADEMIC_COORDINATOR   |
+      | KUNSTNER         | ARTIST                 |
+      | ARKITEKT         | ARCHITECT              |
+      | KOMPONIST        | COMPOSER               |
+      | OVERSETTER       | TRANSLATOR_ADAPTER     |
+      | ARRANGØR         | ORGANIZER              |
+      | KONSERVATOR      | CURATOR                |
+      | DIRIGENT         | CONDUCTOR              |
+      | UTØVER           | ARTIST                 |
+      | BIDRAGSYTER      | OTHER                  |
+      | EIER             | OTHER                  |
+      | PROGRAMMERER     | OTHER                  |
 
   Scenario: The abstract is copied from the the Cristin Result's title entry when there
   one title entry and it is annotated as original.
@@ -283,13 +317,83 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
 
+  Scenario: Mapping cristin Funding with NFR should create nva Funding with id set.
+    Given that Cristin Result has a grant with properties identifier "3013" and sourceCode "NFR":
+    When the Cristin Result is converted to an NVA Resource
+    Then the publication should have a Confirmed Nva funding with identifier equal to "3013" and id equal to "https://api.test.nva.aws.unit.no/verified-funding/nfr/3013"
 
 
+  Scenario: When CristinGrants year from and / or year to is present they are mapped.
+    Given that Cristin Result has grants:
+      | finansieringslopenr | finansieringskildekode | arstall_fra | arstall_til | finansieringsreferanse |
+      | 619                 | EU                     | 2005        | 2006        | SCP8-GA-2009-233969    |
+      | 3013                | KI                     |             |             | 456                    |
+    When the Cristin Result is converted to an NVA Resource
+    Then publication should have a nva Fundings:
+      | identifier | activeFrom           | activeTo             | source                                                      | label               |
+      | 619        | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/EU | SCP8-GA-2009-233969 |
+      | 3013       |                      |                      | https://api.test.nva.aws.unit.no/cristin/funding-sources/KI | 456                 |
 
 
+  Scenario: When a eierkode_opprettet matches one of the vitenskapeligarbeid_lokal, the institution is used as owner
+    Given that Cristin Result has eierkode_opprett "FHI"
+    And the Cristin Result has vitenskapeligarbeid_lokal:
+      | eierkode | institusjonsnr | avdnr | undavdnr | gruppenr |
+      | NTNU     | 34502          | 0     | 0        | 0        |
+      | FHI      | 7502           | 0     | 0        | 0        |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "fhi@7502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/7502.0.0.0"
 
 
+  Scenario: When eierkode_opprettet is missing, one of the vitenskapeligarbeid_lokal is used for resource owner
+    Given the Cristin Result has vitenskapeligarbeid_lokal:
+      | eierkode | institusjonsnr | avdnr | undavdnr | gruppenr |
+      | NTNU     | 34502          | 0     | 0        | 0        |
+      | FHI      | 7502           | 0     | 0        | 0        |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
 
+  Scenario: When eierkode_opprettet does not match one of the vitenskapeligarbeid_lokal, the first vitenskapeligarbeid_lokal is used as resource owner
+    Given that Cristin Result has eierkode_opprett "UIO"
+    And the Cristin Result has vitenskapeligarbeid_lokal:
+      | eierkode | institusjonsnr | avdnr | undavdnr | gruppenr |
+      | NTNU     | 34502          | 0     | 0        | 0        |
+      | FHI      | 7502           | 0     | 0        | 0        |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
 
+  Scenario: When eierkode_opprettet is used as resourceOwner if vitenskapeligarbeid_lokal is missing.
+    Given that Cristin Result has eierkode_opprett "NTNU"
+    And the cristin has institusjonsnr_opprettet equal to "34502", and avdnr, undavdnr and gruppenr equal to "0"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
 
+  Scenario: When eierkode_opprettet is used as resourceOwner if vitenskapeligarbeid_lokal is a empty list.
+    Given that Cristin Result has eierkode_opprett "NTNU"
+    And the cristin has institusjonsnr_opprettet equal to "34502", and avdnr, undavdnr and gruppenr equal to "0"
+    And the Cristin Result has vitenskapeligarbeid_lokal:
+      | eierkode | institusjonsnr | avdnr | undavdnr | gruppenr |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
 
+  Scenario Outline: if eierkode_opprettet is certain codes, then fallback Sikt owner should be applied.
+    Given that Cristin Result has eierkode_opprett "<eierkode_opprettet>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "sikt@20754.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/20754.0.0.0"
+    Examples:
+      | eierkode_opprettet |
+      | CRIS               |
+      | UNIT               |
+
+  Scenario: if neither eierkode_opprettet nor vitenskapeligarbeid_lokal can be used as resource owner, then Sikt is used as owner
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "sikt@20754.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/20754.0.0.0"
+
+  Scenario: when vitenskapeligarbeid_lokal with eierkode equal to certain codes should be skipped
+    Given the Cristin Result has vitenskapeligarbeid_lokal:
+      | eierkode | institusjonsnr | avdnr | undavdnr | gruppenr |
+      | CRIS     | 1235           | 0     | 0        | 0        |
+      | UNIT     | 1234           | 0     | 0        | 0        |
+      | NTNU     | 34502          | 0     | 0        | 0        |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"

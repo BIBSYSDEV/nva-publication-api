@@ -5,9 +5,15 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.identifiers
     implementation libs.bundles.logging
+    implementation libs.nva.apigateway
+    implementation libs.nva.json
+    implementation libs.nva.core
+    implementation libs.jackson.databind
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+    implementation project(path: ':publication-commons')
 
     testImplementation libs.bundles.testing
+    testImplementation libs.wiremock
 }

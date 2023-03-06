@@ -283,7 +283,6 @@ Resources:
 
   DeleteLambdaRole:
     Type: AWS::IAM::Role
-    Description: 'Role used by DeletePublicationEventConsumer that needs permission to delete object in s3 in addition to the regular LambdaRole'
     Properties:
       Path: /
       AssumeRolePolicyDocument:
@@ -354,7 +353,6 @@ Resources:
 
   S3DeleteAccessPermission:
     Type: AWS::IAM::Policy
-    Description: Needed by DeletePublicationEventConsumer
     Properties:
       PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
       Roles:
@@ -745,7 +743,8 @@ Resources:
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
+      ReservedConcurrentExecutions: 50
+      Timeout: 900
       Environment:
         Variables:
           API_HOST: !Ref ApiDomain
@@ -1031,6 +1030,8 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
@@ -1237,6 +1238,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
+          SHOULD_CREATE_CONTRIBUTOR_ID: false
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1251,7 +1253,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cristin-import
-      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
+      Handler: no.unit.nva.cristin.lambda.CristinPatchEventConsumer::handleRequest
       Runtime: java11
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
@@ -1362,12 +1364,29 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
+  DoiToReferenceDoiUpdateButton:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: 'Accepts Json object with "uri" field pointing to a s3 bucket containing results.csv file.'
+      CodeUri: s3-import-commons
+      Handler: no.unit.nva.publication.s3imports.DoiToReferenceDoiUpdateEventEmitter::handleRequest
+      Runtime: java11
+      Timeout: 900 # 15 min timeout
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref NvaResourcesTable
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+
 
   ScopusUnzipperFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.lambda_handler
       Runtime: python3.8
+      Timeout: 900
+      ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           XML_BUCKET_NAME: !Ref ScopusXmlBucket

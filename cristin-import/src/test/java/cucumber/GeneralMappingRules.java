@@ -3,7 +3,11 @@ package cucumber;
 import static cucumber.utils.transformers.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
 import static cucumber.utils.transformers.CristinSourceTransformer.parseCristinSourceFromMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -32,7 +36,9 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinGrant;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
+import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
@@ -42,7 +48,10 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.funding.ConfirmedFunding;
+import no.unit.nva.model.funding.Funding;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.paths.UriWrapper;
 
 public class GeneralMappingRules {
 
@@ -464,6 +473,85 @@ public class GeneralMappingRules {
     @And("the Cristin Result has sourceRecordIdentifier equal to {string}")
     public void theCristinResultHasSourceRecordIdentifierEqualTo(String sourceRecordIdentifier) {
         scenarioContext.getCristinEntry().setSourceRecordIdentifier(sourceRecordIdentifier);
+    }
+
+    @Then("the publication should have a Confirmed Nva funding with identifier equal to {string} and id equal to "
+          + "{string}")
+    public void thePublicationShouldHaveAConfirmedNvaFundingWithIdentifierEqualToAndIdEqualTo(String identifier,
+                                                                                              String id) {
+        var nvaFundings = scenarioContext.getNvaEntry().getFundings();
+        assertThat(nvaFundings, hasSize(1));
+        assertThat(nvaFundings.get(0), allOf(is(instanceOf(ConfirmedFunding.class)),
+                                             hasProperty("identifier", equalTo(identifier)),
+                                             hasProperty("id", equalTo(UriWrapper.fromUri(id).getUri()))));
+    }
+
+    @Given("that Cristin Result has grants:")
+    public void thatCristinResultHasGrants(List<CristinGrant> grants) {
+        scenarioContext.getCristinEntry().setCristinGrants(grants);
+    }
+
+    @Then("publication should have a nva Fundings:")
+    public void publicationShouldHaveANvaFundings(List<Funding> fundings) {
+        var nvaFundings = scenarioContext.getNvaEntry().getFundings();
+        assertThat(nvaFundings, containsInAnyOrder(fundings.toArray()));
+    }
+
+    @Given("that Cristin Result has a grant with properties identifier {string} and sourceCode {string}:")
+    public void thatCristinResultHasAGrantWithPropertiesIdAndSourceCode(String identifier, String sourceCode) {
+        scenarioContext.getCristinEntry()
+            .setCristinGrants(
+                List.of(CristinGrant.builder().withIdentifier(identifier).withSourceCode(sourceCode).build()));
+    }
+
+    @Given("that Cristin Result has created date equal to null")
+    public void thatCristinResultHasCreatedDateEqualToNull() {
+        scenarioContext.getCristinEntry().setEntryCreationDate(null);
+    }
+
+    @And("that the Cristin Result has published date equal to the local date {string}")
+    public void thatTheCristinResultHasPublishedDateEqualToTheLocalDate(String publishedDate) {
+        LocalDate localDate = LocalDate.parse(publishedDate);
+        scenarioContext.getCristinEntry().setEntryPublishedDate(localDate);
+    }
+
+    @And("that the cristin Result has published date equal to null")
+    public void thatTheCristinResultHasPublishedDateEqualToNull() {
+        scenarioContext.getCristinEntry().setEntryPublishedDate(null);
+    }
+
+    @And("that the Cristin Result has a year set to {string}")
+    public void thatTheCristinResultHasAYearSetTo(String year) {
+        scenarioContext.getCristinEntry().setPublicationYear(Integer.parseInt(year));
+    }
+
+    @Given("that Cristin Result has eierkode_opprett {string}")
+    public void thatCristinResultHasEierkode_opprett(String eierkode_opprettet) {
+        scenarioContext.getCristinEntry().setOwnerCodeCreated(eierkode_opprettet);
+    }
+
+    @And("the Cristin Result has vitenskapeligarbeid_lokal:")
+    public void theCristinResultHasVitenskapeligarbeid_lokal(List<CristinLocale> cristinLocales) {
+        scenarioContext.getCristinEntry().setCristinLocales(cristinLocales);
+    }
+
+    @Then("the NVA Resource should have a owner {string} and ownerAffiliation: {string}")
+    public void theNVAResourceShouldHaveAOwnerAndOwnerAffiliation(String owner, String ownerAffiliation) {
+        var resourceOwner = scenarioContext.getNvaEntry().getResourceOwner();
+        assertThat(resourceOwner, allOf(hasProperty("owner", equalTo(owner)),
+                                        hasProperty("ownerAffiliation",
+                                                    equalTo(UriWrapper.fromUri(ownerAffiliation).getUri()))));
+    }
+
+    @And("the cristin has institusjonsnr_opprettet equal to {string}, and avdnr, undavdnr and gruppenr equal to "
+         + "{string}")
+    public void theCristinHasInstitusjonsnr_opprettetEqualToAndAvdnrUndavdnrAndGruppenrEqualTo(
+        String institutionIdentifierCreated,
+        String partsIdentifier) {
+        scenarioContext.getCristinEntry().setInstitutionIdentifierCreated(institutionIdentifierCreated);
+        scenarioContext.getCristinEntry().setDepartmentIdentifierCreated(partsIdentifier);
+        scenarioContext.getCristinEntry().setSubDepartmendIdentifierCreated(partsIdentifier);
+        scenarioContext.getCristinEntry().setGroupIdentifierCreated(partsIdentifier);
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,

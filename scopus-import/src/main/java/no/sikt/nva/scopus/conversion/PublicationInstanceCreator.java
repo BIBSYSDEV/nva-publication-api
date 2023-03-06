@@ -19,11 +19,10 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
@@ -63,7 +62,7 @@ public class PublicationInstanceCreator {
             case AR:
                 return Optional.of(generateJournalArticle());
             case BK:
-                return Optional.of(new BookMonograph());
+                return Optional.of(new AcademicMonograph(null));
             case CH:
                 return Optional.of(generateChapterArticle());
             case CP:
@@ -73,68 +72,41 @@ public class PublicationInstanceCreator {
                     return Optional.of(generateChapterArticle());
                 }
             case ED:
-                return Optional.of(generateJournalLeader());
+                return Optional.of(new JournalLeader(extractVolume().orElse(null),
+                                                     extractIssue().orElse(null),
+                                                     extractArticleNumber().orElse(null),
+                                                     extractPages().orElse(null)));
             case ER:
-                return Optional.of(generateJournalCorrigendum());
+                return Optional.of(new JournalCorrigendum(extractVolume().orElse(null),
+                                                          extractIssue().orElse(null),
+                                                          extractArticleNumber().orElse(null),
+                                                          extractPages().orElse(null),
+                                                          ScopusConstants.DUMMY_URI));
             case LE:
             case NO:
-                return Optional.of(generateJournalLetter());
+                return Optional.of(new JournalLetter(extractVolume().orElse(null),
+                                                     extractIssue().orElse(null),
+                                                     extractArticleNumber().orElse(null),
+                                                     extractPages().orElse(null)));
             case RE:
             case SH:
-                return Optional.of(generateJournalArticle(JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW));
+                return Optional.of(new AcademicLiteratureReview(extractPages().orElse(null),
+                                                                extractVolume().orElse(null),
+                                                                extractIssue().orElse(null),
+                                                                extractArticleNumber().orElse(null)));
             default:
                 return Optional.empty();
         }
     }
 
-    private JournalArticle generateJournalArticle(JournalArticleContentType contentType) {
-        JournalArticle journalArticle = generateJournalArticle();
-        journalArticle.setContentType(contentType);
-        return journalArticle;
+    private AcademicArticle generateJournalArticle() {
+        return new AcademicArticle(extractPages().orElse(null), extractVolume().orElse(null),
+                                   extractIssue().orElse(null),
+                                   extractArticleNumber().orElse(null));
     }
 
-    private JournalArticle generateJournalArticle() {
-        JournalArticle.Builder builder = new JournalArticle.Builder();
-        extractPages().ifPresent(builder::withPages);
-        extractVolume().ifPresent(builder::withVolume);
-        extractIssue().ifPresent(builder::withIssue);
-        extractArticleNumber().ifPresent(builder::withArticleNumber);
-        return builder.build();
-    }
-
-    private JournalLeader generateJournalLeader() {
-        JournalLeader.Builder builder = new JournalLeader.Builder();
-        extractPages().ifPresent(builder::withPages);
-        extractVolume().ifPresent(builder::withVolume);
-        extractIssue().ifPresent(builder::withIssue);
-        extractArticleNumber().ifPresent(builder::withArticleNumber);
-        return builder.build();
-    }
-
-    private JournalCorrigendum generateJournalCorrigendum() {
-        JournalCorrigendum.Builder builder = new JournalCorrigendum.Builder();
-        extractPages().ifPresent(builder::withPages);
-        extractVolume().ifPresent(builder::withVolume);
-        extractIssue().ifPresent(builder::withIssue);
-        extractArticleNumber().ifPresent(builder::withArticleNumber);
-        builder.withCorrigendumFor(ScopusConstants.DUMMY_URI);
-        return builder.build();
-    }
-
-    private JournalLetter generateJournalLetter() {
-        JournalLetter.Builder builder = new JournalLetter.Builder();
-        extractPages().ifPresent(builder::withPages);
-        extractVolume().ifPresent(builder::withVolume);
-        extractIssue().ifPresent(builder::withIssue);
-        extractArticleNumber().ifPresent(builder::withArticleNumber);
-        return builder.build();
-    }
-
-    private ChapterArticle generateChapterArticle() {
-        ChapterArticle chapterArticle = new ChapterArticle();
-        extractPages().ifPresent(chapterArticle::setPages);
-        chapterArticle.setContentType(ChapterArticleContentType.ACADEMIC_CHAPTER);
-        return chapterArticle;
+    private AcademicChapter generateChapterArticle() {
+        return new AcademicChapter(extractPages().orElse(null));
     }
 
     private Optional<Range> extractPages() {

@@ -36,7 +36,6 @@ import no.sikt.nva.brage.migration.record.Series;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -110,13 +109,11 @@ public class NvaBrageMigrationDataGenerator {
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
         return new Publication.Builder()
-                   .withDoi(builder.getDoi())
                    .withHandle(builder.getHandle())
                    .withEntityDescription(createEntityDescription(builder))
                    .withCreatedDate(convertPublishedDateToInstant(builder))
                    .withPublishedDate(convertPublishedDateToInstant(builder))
                    .withStatus(PublicationStatus.PUBLISHED)
-                   .withIdentifier(FakeResourceService.SORTABLE_IDENTIFIER)
                    .withPublisher(new Organization.Builder().withId(builder.getCustomer().getId()).build())
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
                    .withResourceOwner(getResourceOwnerIfPresent(builder))
@@ -225,7 +222,6 @@ public class NvaBrageMigrationDataGenerator {
         private Customer customer;
         private Organization organization;
         private List<AssociatedArtifact> associatedArtifacts;
-        private SortableIdentifier identifier;
         private String publisherId;
         private String journalId;
         private String seriesId;
@@ -328,11 +324,6 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withResourceOwner(ResourceOwner resourceOwner) {
             this.resourceOwner = resourceOwner;
-            return this;
-        }
-
-        public Builder withIdentifier(SortableIdentifier identifier) {
-            this.identifier = identifier;
             return this;
         }
 

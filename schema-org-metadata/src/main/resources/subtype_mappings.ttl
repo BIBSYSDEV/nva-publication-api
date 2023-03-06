@@ -3,6 +3,13 @@
 @prefix schema: <https://schema.org/> .
 
 nva:JournalArticle rdfs:subClassOf schema:ScholarlyArticle .
+nva:AcademicArticle rdfs:subClassOf schema:ScholarlyArticle .
+nva:AcademicLiteratureReview rdfs:subClassOf schema:ScholarlyArticle .
+nva:CaseReport rdfs:subClassOf schema:ScholarlyArticle .
+nva:StudyProtocol rdfs:subClassOf schema:ScholarlyArticle .
+nva:ProfessionalArticle rdfs:subClassOf schema:ScholarlyArticle .
+nva:PopularScienceArticle rdfs:subClassOf schema:ScholarlyArticle .
+
 nva:ArtisticDesign rdfs:subClassOf schema:CreativeWork .
 nva:JournalIssue rdfs:subClassOf schema:PublicationIssue . # needs partOf relation
 nva:ConferenceAbstract rdfs:subClassOf schema:PresentationDigitalDocument .
@@ -12,6 +19,12 @@ nva:JournalCorrigendum rdfs:subClassOf schema:ScholarlyArticle . # needs genre?
 nva:ReportBookOfAbstract rdfs:subClassOf schema:Report .
 nva:MediaPodcast rdfs:subClassOf schema:PodcastEpisode .
 nva:BookMonograph rdfs:subClassOf schema:Book .
+nva:AcademicMonograph rdfs:subClassOf schema:Book .
+nva:Encyclopedia rdfs:subClassOf schema:Book .
+nva:ExhibitionCatalog rdfs:subClassOf schema:Book .
+nva:NonFictionMonograph rdfs:subClassOf schema:Book .
+nva:PopularScienceMonograph rdfs:subClassOf schema:Book .
+nva:Textbook rdfs:subClassOf schema:Book .
 nva:MovingPicture rdfs:subClassOf schema:Movie .
 nva:JournalInterview rdfs:subClassOf schema:ScholarlyArticle .
 nva:FeatureArticle rdfs:subClassOf schema:ScholarlyArticle .
@@ -23,6 +36,13 @@ nva:JournalLeader rdfs:subClassOf schema:ScholarlyArticle .
 nva:MediaInterview rdfs:subClassOf schema:NewsArticle .
 nva:ConferencePoster rdfs:subClassOf schema:PresentationDigitalDocument .
 nva:ChapterArticle rdfs:subClassOf schema:Chapter .
+nva:AcademicChapter rdfs:subClassOf schema:Chapter .
+nva:EncyclopediaChapter rdfs:subClassOf schema:Chapter .
+nva:ExhibitionCatalogChapter rdfs:subClassOf schema:Chapter .
+nva:Introduction rdfs:subClassOf schema:Chapter .
+nva:NonFictionChapter rdfs:subClassOf schema:Chapter .
+nva:PopularScienceChapter rdfs:subClassOf schema:Chapter .
+nva:TextbookChapter rdfs:subClassOf schema:Chapter .
 nva:Lecture rdfs:subClassOf schema:PresentationDigitalDocument .
 nva:VisualArts rdfs:subClassOf schema:VisualArtwork .
 nva:ReportResearch rdfs:subClassOf schema:Report .

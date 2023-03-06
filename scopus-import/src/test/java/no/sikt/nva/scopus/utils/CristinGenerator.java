@@ -11,13 +11,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
+import no.sikt.nva.scopus.conversion.model.cristin.Organization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.Role;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.paths.UriWrapper;
 
-public class CristinPersonGenerator {
+public class CristinGenerator {
 
     private static final int MAX_NUMBER_OF_AFFILIATIONS = 10;
 
@@ -30,8 +31,16 @@ public class CristinPersonGenerator {
                    .build();
     }
 
-    public static String convertToJson(Person person) throws JsonProcessingException {
+    public static Organization generateCristinOrganization(URI cristinId) {
+        return new Organization(cristinId, randomLabels());
+    }
+
+    public static String convertPersonToJson(Person person) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.writeValueAsString(person);
+    }
+
+    public static String convertOrganizationToJson(Organization organization) throws JsonProcessingException {
+        return JsonUtils.dtoObjectMapper.writeValueAsString(organization);
     }
 
     private static Set<Affiliation> generateAffiliations() {

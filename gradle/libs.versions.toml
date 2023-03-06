@@ -2,7 +2,7 @@
 
 
 nva = { strictly = '1.27.2' }
-nvaDatamodel = { strictly = '0.19.29' }
+nvaDatamodel = { strictly = '0.19.33' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
 jackson = { strictly = '2.14.1' }
 awsSdk = { strictly = '1.12.369' }
@@ -43,6 +43,7 @@ nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' 
 nva-json = { group = 'com.github.bibsysdev', name = 'json', version.ref = 'nva' }
 nva-identifiers = { group = 'com.github.bibsysdev', name = 'identifiers', version.ref = 'nva' }
 nva-s3 = { group = 'com.github.bibsysdev', name = 's3', version.ref = 'nva' }
+nva-auth = { group = 'com.github.bibsysdev', name = 'auth', version.ref = 'nva' }
 nva-apigateway = { group = 'com.github.bibsysdev', name = 'apigateway', version.ref = 'nva' }
 nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', version.ref = 'nva' }
 nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }

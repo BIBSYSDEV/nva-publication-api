@@ -28,10 +28,10 @@ import no.unit.nva.model.Publication;
 // to remove it from the exports
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
-    "dato_utgitt", "finansiering_varbeid", "type_produkt",
-    "kildepostid", "eierkode_opprettet", "arkivpost", "varbeid_url",
+    "finansiering_varbeid", "type_produkt",
+    "kildepostid", "arkivpost", "varbeid_url",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst", "h_dbh_forskres_publikasjon"})
+    "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
 
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
@@ -49,6 +49,10 @@ public class CristinObject implements JsonSerializable {
     private Integer publicationYear;
     @JsonProperty("dato_opprettet")
     private LocalDate entryCreationDate;
+
+    @JsonProperty("dato_utgitt")
+    private LocalDate entryPublishedDate;
+
     @JsonProperty("dato_siste_endring")
     private LocalDate entryLastModifiedDate;
     @JsonProperty("arstall_rapportert")
@@ -82,11 +86,32 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("varbeid_kilde")
     private List<CristinSource> cristinSources;
 
+    @JsonProperty("eierkode_opprettet")
+    private String ownerCodeCreated;
+
+    @JsonProperty("vitenskapeligarbeid_lokal")
+    private List<CristinLocale> cristinLocales;
+
+    @JsonProperty("institusjonsnr_opprettet")
+    private String institutionIdentifierCreated;
+
+    @JsonProperty("avdnr_opprettet")
+    private String departmentIdentifierCreated;
+
+    @JsonProperty("undavdnr_opprettet")
+    private String subDepartmendIdentifierCreated;
+
+    @JsonProperty("gruppenr_opprettet")
+    private String groupIdentifierCreated;
+
     @JsonProperty("kildekode")
     private String sourceCode;
 
     @JsonProperty("kildepostid")
     private String sourceRecordIdentifier;
+
+    @JsonProperty("finansiering_varbeid")
+    private List<CristinGrant> cristinGrants;
 
     private String publicationOwner;
 

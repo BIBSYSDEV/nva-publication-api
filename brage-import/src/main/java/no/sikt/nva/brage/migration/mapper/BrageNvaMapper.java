@@ -63,7 +63,6 @@ public final class BrageNvaMapper {
     public static Publication toNvaPublication(Record record)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var publication = new Publication.Builder()
-                              .withDoi(extractDoi(record))
                               .withHandle(extractHandle(record))
                               .withEntityDescription(extractEntityDescription(record))
                               .withCreatedDate(extractPublishedDate(record))
@@ -186,10 +185,6 @@ public final class BrageNvaMapper {
         return brageRecord.getId();
     }
 
-    private static URI extractDoi(Record brageRecord) {
-        return brageRecord.getDoi();
-    }
-
     private static EntityDescription extractEntityDescription(Record record)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new EntityDescription.Builder()
@@ -236,7 +231,12 @@ public final class BrageNvaMapper {
         return new Reference.Builder()
                    .withPublishingContext(PublicationContextMapper.buildPublicationContext(record))
                    .withPublicationInstance(PublicationInstanceMapper.buildPublicationInstance(record))
+                   .withDoi(extractDoi(record))
                    .build();
+    }
+
+    private static URI extractDoi(Record record) {
+        return record.getDoi();
     }
 
     private static List<String> extractTags(Record record) {

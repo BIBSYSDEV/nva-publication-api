@@ -1,18 +1,13 @@
 #Constructs an organization with a topLevelAffiliation field determined by recursively looking in
 #the orgs partOf-field until an org isn't part of another org.
 
-PREFIX  organization: <https://bibsysdev.github.io/src/nva/ontology.ttl#>
+PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
 
 CONSTRUCT {
-  ?org a organization:Organization ;
-    organization:name ?org_name ;
-    organization:topLevelAffiliation ?top_org .
-  ?top_org a organization:Organization ;
-    organization:name ?top_org_name
+  ?org nva:topLevelOrganization ?top_org .
   } WHERE {
-  ?org a organization:Organization ;
-    organization:name ?org_name ;
-    organization:partOf* ?top_org .
-  ?top_org organization:name ?top_org_name .
-    FILTER NOT EXISTS { ?top_org organization:partOf ?e } .
+  ?affiliation nva:affiliations ?org .
+  ?org nva:partOf* ?top_org .
+    FILTER NOT EXISTS { ?top_org nva:partOf ?e } .
+    FILTER ( strstarts(str(?org), "http") ) .
 }

@@ -1,18 +1,27 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.INVALID_PARENT_MESSAGE;
+import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.PATCH_ERRORS_PATH;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.SUBTOPIC;
 import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.TOPIC;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,14 +35,20 @@ import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.patcher.exception.NotFoundException;
 import no.unit.nva.cristin.patcher.exception.ParentPublicationException;
+import no.unit.nva.cristin.patcher.exception.PublicationInstanceMismatchException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -41,6 +56,8 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -72,7 +89,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenChildPublicationCannotBeRetrieved() throws ApiGatewayException, IOException {
         var partOfCristinId = randomString();
         var childPublicationIdentifier = SortableIdentifier.next();
-        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId);
+        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, BookAnthology.class);
         var partOfEventReference = createPartOfEventReference(childPublicationIdentifier.toString(), partOfCristinId);
         var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
         var eventReference = createInputEventForFile(fileUri);
@@ -84,7 +101,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenSearchingForNvaPublicationByCristinIdentifierReturnsMoreThanOnePublication()
         throws ApiGatewayException, IOException {
-        var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString());
+        var childPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                ChapterArticle.class);
         var partOfCristinId = randomString();
         persistSeveralPublicationsWithTheSameCristinId(partOfCristinId);
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
@@ -100,7 +119,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenSearchingForNvaPublicationByCristinIdentifierReturnsNoPublication()
         throws ApiGatewayException, IOException {
-        var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString());
+        var childPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                ChapterArticle.class);
         var partOfCristinId = randomString();
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
                                                               partOfCristinId);
@@ -131,10 +152,16 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnChildPublicationWhenSuccess() throws ApiGatewayException, IOException {
-        var childPublication = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString());
+    void shouldSetParentPublicationIdentifierAsPartOfChildPublicationWhenSuccess() throws ApiGatewayException,
+                                                                                          IOException {
+        var childPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                ChapterArticle.class);
         var partOfCristinId = randomString();
-        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId);
+        var parentPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId,
+                                                                                BookAnthology.class);
+        var expectedChildPartOfURI = createExpectedPartOfUri(parentPublication.getIdentifier());
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
                                                               partOfCristinId);
         var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
@@ -142,8 +169,54 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var input = toInputStream(eventReference);
         handler.handleRequest(input, outputStream, CONTEXT);
         var actualChildPublication = getPublicationFromOutputStream(outputStream);
-        assertThat(actualChildPublication, is(equalTo(childPublication)));
+        assertThat(actualChildPublication.getEntityDescription().getReference().getPublicationContext(), hasProperty(
+            "partOf", is(equalTo(expectedChildPartOfURI))));
     }
+
+    @Test
+    void shouldThrowExceptionWhenParentAndChildPublicationDoesNotMatch()
+        throws ApiGatewayException, IOException {
+        var bookMonographChild =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                BookMonograph.class);
+        var partOfCristinId = randomString();
+        var bookMonographParent =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, BookMonograph.class);
+        var partOfEventReference = createPartOfEventReference(bookMonographChild.getIdentifier().toString(),
+                                                              partOfCristinId);
+        var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
+        var eventReference = createInputEventForFile(fileUri);
+        var input = toInputStream(eventReference);
+        assertThrows(PublicationInstanceMismatchException.class,
+                     () -> handler.handleRequest(input, outputStream, CONTEXT));
+    }
+
+    @Test
+    void shouldSaveErrorReportInS3ContainingParentAndChildPublicationWhenRetrievingWasSuccessfulButUpdatingFailed()
+        throws IOException, ApiGatewayException {
+
+        var bookMonographChild = createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                                     BookMonograph.class);
+        var partOfCristinId = randomString();
+        var bookMonographParent =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, BookMonograph.class);
+        var partOfEventReference = createPartOfEventReference(bookMonographChild.getIdentifier().toString(),
+                                                              partOfCristinId);
+        var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
+        var eventReference = createInputEventForFile(fileUri);
+        var input = toInputStream(eventReference);
+
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+        var thrownException = assertThrows(PublicationInstanceMismatchException.class,
+                                           action);
+
+        var actualReport = extractActualReportFromS3Client(eventReference.getDetail(), thrownException,
+                                                           bookMonographChild.getIdentifier().toString());
+        assertThat(actualReport.getInput().getChildPublication(), is(Matchers.equalTo(bookMonographChild)));
+        assertThat(actualReport.getInput().getPartOf().getParentPublication(),
+                   is(Matchers.equalTo(bookMonographParent)));
+    }
+
 
     private static AwsEventBridgeEvent<EventReference> createEventWithInvalidTopic(URI fileUri) {
         var eventReference = new EventReference(randomString(), SUBTOPIC, fileUri);
@@ -153,6 +226,40 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         return request;
     }
 
+    private static void removePartOfInPublicationContext(Publication publication) {
+        if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Chapter) {
+            publication.getEntityDescription().getReference().setPublicationContext(new Chapter.Builder().build());
+        }
+    }
+
+    private ImportResult<NvaPublicationPartOfCristinPublication> extractActualReportFromS3Client(
+        EventReference eventBody,
+        Exception exception, String childPublicationIdentifier) throws JsonProcessingException {
+        UriWrapper errorFileUri = constructErrorFileUri(eventBody, exception, childPublicationIdentifier);
+        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
+        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        return eventHandlerObjectMapper.readValue(content, new TypeReference<>() {
+        });
+    }
+
+    private UriWrapper constructErrorFileUri(EventReference eventBody,
+                                                 Exception exception, String childPublicationIdentifier) {
+
+        String errorReportFilename = childPublicationIdentifier + JSON;
+        UriWrapper inputFile = UriWrapper.fromUri(eventBody.getUri());
+        Instant timestamp = eventBody.getTimestamp();
+        UriWrapper bucket = inputFile.getHost();
+        return bucket.addChild(PATCH_ERRORS_PATH)
+                   .addChild(timestampToString(timestamp))
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(inputFile.getPath())
+                   .addChild(errorReportFilename);
+    }
+
+    private URI createExpectedPartOfUri(SortableIdentifier identifier) {
+        return UriWrapper.fromUri(NVA_API_DOMAIN + PUBLICATION_PATH + "/" + identifier).getUri();
+    }
+
     private Publication getPublicationFromOutputStream(ByteArrayOutputStream outputStream)
         throws IOException {
         var byteArrayInputStream = new ByteArrayInputStream(outputStream.toByteArray());
@@ -160,8 +267,8 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     private void persistSeveralPublicationsWithTheSameCristinId(String cristinId) throws ApiGatewayException {
-        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId);
-        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId);
+        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId, BookAnthology.class);
+        createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(cristinId, BookAnthology.class);
     }
 
     private String createPartOfEventReference(String childPublicationId, String partOfCristinId) {
@@ -172,10 +279,12 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         return partOf.toJsonString();
     }
 
-    private Publication createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(String cristinId)
+    private Publication createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(String cristinId,
+                                                                                            Class<?> publicationInstanceClass)
         throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication();
+        Publication publication = PublicationGenerator.randomPublication(publicationInstanceClass);
         publication.setAdditionalIdentifiers(createAdditionalIdentifiersWithCristinId(cristinId));
+        removePartOfInPublicationContext(publication);
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier = Resource.fromPublication(publication)
                                                        .persistNew(resourceService, userInstance)

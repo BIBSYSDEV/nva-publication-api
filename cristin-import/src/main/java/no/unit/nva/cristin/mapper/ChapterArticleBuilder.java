@@ -1,9 +1,12 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isChapterArticle;
 import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
+import no.unit.nva.model.instancetypes.chapter.EncyclopediaChapter;
+import no.unit.nva.model.instancetypes.chapter.Introduction;
+import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
+import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 
@@ -15,12 +18,19 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
 
     @Override
     public PublicationInstance<? extends Pages> build() {
-        if (isChapterArticle(getCristinObject())) {
-            return new ChapterArticle.Builder()
-                       .withContentType(getCristinObject().getSecondaryCategory().toChapterArticleContentType())
-                       .withPages(createChapterPages())
-                       .withPeerReviewed(getCristinObject().isPeerReviewed())
-                       .build();
+
+        CristinSecondaryCategory secondaryCategory = getCristinObject().getSecondaryCategory();
+        if (CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(secondaryCategory)) {
+            return new AcademicChapter(createChapterPages());
+        } else if (CristinSecondaryCategory.CHAPTER.equals(secondaryCategory)) {
+            return new NonFictionChapter(createChapterPages());
+        } else if (CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(secondaryCategory)) {
+            return new PopularScienceChapter(createChapterPages());
+        } else if (CristinSecondaryCategory.LEXICAL_IMPORT.equals(secondaryCategory)) {
+            return new EncyclopediaChapter(createChapterPages());
+        } else if (CristinSecondaryCategory.FOREWORD.equals(secondaryCategory)
+                   || CristinSecondaryCategory.INTRODUCTION.equals(secondaryCategory)) {
+            return new Introduction(createChapterPages());
         } else {
             throw unknownSecondaryCategory();
         }

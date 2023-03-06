@@ -78,7 +78,7 @@ test {
         includeEngines 'junit-vintage'
     }
     environment "MAX_SLEEP_TIME", "1"
-    environment "CREATE_CONTRIBUTOR_ID", "true"
+    environment "SHOULD_CREATE_CONTRIBUTOR_ID", "true"
     environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
     environment "DOMAIN_NAME", "api.test.nva.aws.unit.no"
     environment "EVENT_BUS_NAME", "eventBusName"
