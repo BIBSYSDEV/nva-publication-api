@@ -55,6 +55,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -136,7 +137,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @Test
     void handlerCreatesUpdateDoiEventWhenPublicationHasAFindableDoi()
         throws IOException {
-        var publication = randomPublication();
+        var publication = randomPublishedPublication();
         var updatedPublication = updateTitle(publication);
         var event = createEvent(Resource.fromPublication(publication),
                                 Resource.fromPublication(updatedPublication));
@@ -264,6 +265,44 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
         assertThat(actual.getTopic(), is(equalTo(DELETE_DRAFT_DOI_EVENT_TOPIC)));
         assertThat(actual, hasProperty(DOI, equalTo(publication.getDoi())));
+    }
+
+    @Test
+    void shouldNotEmitEventForPublicationMissingRequiredFields() throws IOException {
+        var publication = createPublicationWithAllRequiredFieldsSetToFaulty();
+        var updatedPublication = updateDescription(publication);
+        var event = createEvent(Resource.fromPublication(publication),
+                                Resource.fromPublication(updatedPublication));
+        this.httpClient = new FakeHttpClient<>(findableDoiResponse());
+        this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
+
+        handler.handleRequest(event, outputStream, context);
+        var actual = outputToPublicationHolder(outputStream);
+
+        assertThat(actual, is(equalTo(EMPTY_EVENT)));
+    }
+
+    private Publication updateDescription(Publication publication) {
+        var publicationUpdate = publication.copy().build();
+        publicationUpdate.getEntityDescription().setDescription(randomString());
+        return publicationUpdate;
+    }
+
+    private Publication createPublicationWithAllRequiredFieldsSetToFaulty() {
+        var publication = randomPublication();
+        publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
+        publication.getEntityDescription().setMainTitle(StringUtils.EMPTY_STRING);
+        publication.getEntityDescription().getDate().setYear(null);
+        publication.getEntityDescription().getReference().setPublicationInstance(null);
+        publication.setPublisher(null);
+        publication.setModifiedDate(null);
+        return publication;
+    }
+
+    private Publication randomPublishedPublication() {
+        var publication = randomPublication();
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        return publication;
     }
 
     private URI extractExpectedCustomerId(Publication publication) {

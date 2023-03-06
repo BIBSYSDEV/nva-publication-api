@@ -75,11 +75,16 @@ public class DoiRequestEventProducer
                    ? propagateEvent(eventBody)
                    : EMPTY_EVENT;
     }
-    
+
+    private static String readDomainName() {
+        return new Environment().readEnv("DOMAIN_NAME");
+    }
+
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
         var newEntry = input.getNewData();
-        
-        if (newEntry instanceof Resource) {
+
+        if (newEntry instanceof Resource && DoiResourceRequirements.publicationSatisfiesDoiRequirements(
+            (Resource) newEntry)) {
             return createDoiMetadataUpdateEvent((Resource) newEntry);
         }
         if (newEntry instanceof DoiRequest) {
@@ -91,7 +96,8 @@ public class DoiRequestEventProducer
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(DoiRequest oldEntry, DoiRequest newEntry) {
         if (isFirstDoiRequest(oldEntry, newEntry)) {
             return DoiMetadataUpdateEvent.createNewDoiEvent(newEntry, resourceService);
-        } else if (isDoiRequestApproval(oldEntry, newEntry)) {
+        } else if (isDoiRequestApproval(oldEntry, newEntry)
+                   && DoiResourceRequirements.publicationSatisfiesDoiRequirements(newEntry, resourceService)) {
             return createEventForMakingDoiFindable(newEntry);
         } else if (isDoiRequestRejection(oldEntry, newEntry)) {
             return DoiMetadataUpdateEvent.createDeleteDraftDoiEvent(newEntry, resourceService);
@@ -227,9 +233,5 @@ public class DoiRequestEventProducer
     
     private DoiRegistrarEntryFields extractInfoFromOldInstance(Publication oldPublication) {
         return nonNull(oldPublication) ? DoiRegistrarEntryFields.fromPublication(oldPublication) : null;
-    }
-
-    private static String readDomainName() {
-        return new Environment().readEnv("DOMAIN_NAME");
     }
 }
