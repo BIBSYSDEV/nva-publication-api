@@ -45,7 +45,6 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.funding.ConfirmedFunding;
@@ -405,7 +404,7 @@ public class GeneralMappingRules {
         List<URI> actualUriList = scenarioContext.getNvaEntry()
                                       .getProjects()
                                       .stream()
-                                      .map(Project::getId)
+                                      .map(ResearchProject::getId)
                                       .collect(Collectors.toList());
         assertThat(actualUriList, is(equalTo(expectedUriList)));
     }

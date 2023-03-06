@@ -13,6 +13,7 @@ nva:PopularScienceArticle rdfs:subClassOf schema:ScholarlyArticle .
 nva:ArtisticDesign rdfs:subClassOf schema:CreativeWork .
 nva:JournalIssue rdfs:subClassOf schema:PublicationIssue . # needs partOf relation
 nva:ConferenceAbstract rdfs:subClassOf schema:PresentationDigitalDocument .
+nva:ConferenceReport rdfs:subClassOf schema:Report .
 nva:ChapterInReport rdfs:subClassOf schema:Chapter . # Probably needs data about the container in "schema:partOf"
 nva:DataSet rdfs:subClassOf schema:Dataset .
 nva:JournalCorrigendum rdfs:subClassOf schema:ScholarlyArticle . # needs genre?

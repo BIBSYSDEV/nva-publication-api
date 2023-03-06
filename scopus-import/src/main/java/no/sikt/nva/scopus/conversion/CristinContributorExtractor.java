@@ -29,9 +29,12 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
-                                                             PersonalnameType correspondencePerson,
-                                                             no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    public static Contributor generateContributorFromCristin(
+        Person person,
+        AuthorTp authorTp,
+        PersonalnameType correspondencePerson,
+        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+
         return new Contributor(generateContributorIdentityFromCristinPerson(person),
                                generateOrganizationsFromCristinAffiliations(person.getAffiliations(), organization),
                                Role.CREATOR,
@@ -51,8 +54,10 @@ public final class CristinContributorExtractor {
         return identity;
     }
 
-    private static List<Organization> generateOrganizationsFromCristinAffiliations(Set<Affiliation> affiliations,
-                                                                                   no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    private static List<Organization> generateOrganizationsFromCristinAffiliations(
+        Set<Affiliation> affiliations,
+        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+
         var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations);
         if (nonNull(organization)) {
             organizations.add(createOrganizationFromAuthorGroupTpAffiliation(organization));

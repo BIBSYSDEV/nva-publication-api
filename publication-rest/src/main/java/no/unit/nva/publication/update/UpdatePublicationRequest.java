@@ -29,6 +29,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     private List<ResearchProject> projects;
     private List<URI> subjects;
     private List<Funding> fundings;
+    private String rightsHolder;
     
     public Publication generatePublicationUpdate(Publication existingPublication) {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
@@ -41,6 +42,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
                    .withProjects(this.projects)
                    .withSubjects(this.subjects)
                    .withFundings(this.fundings)
+                   .withRightsHolder(this.rightsHolder)
                    .build();
     }
     
@@ -126,6 +128,18 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     @JacocoGenerated
     public void setFundings(List<Funding> fundings) {
         this.fundings = fundings;
+    }
+
+    @Override
+    @JacocoGenerated
+    public String getRightsHolder() {
+        return rightsHolder;
+    }
+
+    @Override
+    @JacocoGenerated
+    public void setRightsHolder(String rightsHolder) {
+        this.rightsHolder = rightsHolder;
     }
 
     @Override
