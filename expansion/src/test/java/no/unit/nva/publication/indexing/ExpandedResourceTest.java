@@ -25,15 +25,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -157,33 +157,6 @@ class ExpandedResourceTest {
         );
     }
 
-    private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
-        framedResultNode.findValues("topLevelOrganization").forEach(
-            topOrg -> topOrg.fieldNames().forEachRemaining(
-                fieldName -> {
-                    assert (Objects.equals(fieldName, "id")
-                            || Objects.equals(fieldName, "name")
-                            || Objects.equals(fieldName, "type"));
-                }
-            )
-        );
-    }
-
-    private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
-        var affiliationGenerator = new AffiliationGenerator(depth, mockUriRetriever);
-        return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
-    }
-
-    private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
-        var topLevelAffiliations = framedResultNode.findValues("topLevelOrganization");
-        return topLevelAffiliations.stream()
-            .flatMap(arrayNode -> StreamSupport.stream(arrayNode.spliterator(), false))
-            .map(node -> node.get("id").asText())
-            .map(URI::create)
-            .distinct()
-            .collect(Collectors.toList());
-    }
-
     @ParameterizedTest(name = "should return properly framed document with id based on Id-namespace and resource "
                               + "identifier. Instance type:{0}")
     @MethodSource("publicationInstanceProvider")
@@ -280,6 +253,41 @@ class ExpandedResourceTest {
         assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
     }
 
+
+    private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
+        var node = framedResultNode.at("/topLevelOrganization");
+        StreamSupport.stream(node.spliterator(), false)
+            .flatMap(ExpandedResourceTest::getaVoid)
+            .forEach(ExpandedResourceTest::assertAllFieldsAreValid);
+    }
+
+    private static Stream<String> getaVoid(JsonNode topOrg) {
+        var spliterator = Spliterators.spliteratorUnknownSize(topOrg.fieldNames(), Spliterator.ORDERED);
+        return StreamSupport.stream(spliterator, false);
+    }
+
+    private static void assertAllFieldsAreValid(String fieldName) {
+        assert (Objects.equals(fieldName, "id")
+                || Objects.equals(fieldName, "name")
+                || Objects.equals(fieldName, "labels")
+                || Objects.equals(fieldName, "type")
+                || Objects.equals(fieldName, "hasPart"));
+    }
+
+    private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
+        var affiliationGenerator = new AffiliationGenerator(depth, mockUriRetriever);
+        return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
+    }
+
+    private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
+        var topLevelAffiliations = framedResultNode.at("/topLevelOrganization");
+        return StreamSupport.stream(topLevelAffiliations.spliterator(), false)
+                   .map(node -> node.get("id").asText())
+                   .map(URI::create)
+                   .distinct()
+                   .collect(Collectors.toList());
+    }
+
     private Publication createPublicationWithEmptyAffiliations() {
         var publication = PublicationGenerator.randomPublication();
         publication.setStatus(PUBLISHED);
@@ -289,12 +297,6 @@ class ExpandedResourceTest {
             .collect(Collectors.toList());
         entityDescription.setContributors(contributors);
         return publication;
-    }
-
-    private static Contributor createContributorsWithNoAffiliations(Contributor contributor) {
-        return new Contributor(contributor.getIdentity(), Collections.emptyList(),
-                               contributor.getRole(), contributor.getSequence(),
-                               contributor.isCorrespondingAuthor());
     }
 
     private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {

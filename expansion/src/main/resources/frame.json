@@ -1,6 +1,7 @@
 {
   "@context": {
     "@vocab": "https://nva.sikt.no/ontology/publication#",
+    "hasPart": "https://bibsysdev.github.io/src/organization-ontology.ttl#hasPart",
     "id": "@id",
     "type": "@type",
     "contributors": {
@@ -68,6 +69,9 @@
       "@container": "@set"
     },
     "messages": {
+      "@container": "@set"
+    },
+    "topLevelOrganization": {
       "@container": "@set"
     }
   },
