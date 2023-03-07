@@ -173,6 +173,17 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
+    private ScopusGenerator(AffiliationTp affiliation) {
+        this.shouldReturnAuthorTyp = true;
+        this.languages = createRandomLanguages();
+        this.doi = randomDoi();
+        this.sourcetypeAtt = SourcetypeAtt.J;
+        this.abstractsTp = randomAbstracts();
+        this.affiliations = List.of(affiliation);
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
+        this.document = randomDocument();
+    }
+
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
         this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
@@ -210,6 +221,11 @@ public final class ScopusGenerator {
     public static ScopusGenerator createWithSpecifiedAffiliations(List<AffiliationTp> affiliations) {
         return new ScopusGenerator(affiliations);
     }
+
+    public static ScopusGenerator createWithAuthorGroupWithAuthorTpOnly(AffiliationTp affiliationTp) {
+        return new ScopusGenerator(affiliationTp);
+    }
+
 
     public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
         return new ScopusGenerator(citationtypeAtt);
