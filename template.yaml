@@ -1403,7 +1403,7 @@ Resources:
           Type: Api
           Properties:
             Path: /{publicationIdentifier}/doi
-            Method: get
+            Method: post
             RestApiId: !Ref NvaPublicationApi
 
 

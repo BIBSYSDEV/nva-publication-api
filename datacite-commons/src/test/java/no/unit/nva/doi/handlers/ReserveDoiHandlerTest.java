@@ -5,9 +5,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CREATED;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_USE_PROXY;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.DOI_ALREADY_EXISTS_ERROR_MESSAGE;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.NOT_DRAFT_STATUS_ERROR_MESSAGE;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.UNSUPPORTED_ROLE_ERROR_MESSAGE;
@@ -146,13 +148,43 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnBadResponseFromDataCiteWhenStatusCode500AndOver()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedDraftPublication();
+        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_GATEWAY_TIMEOUT));
+        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+        var request = generateRequestWithOwner(publication, OWNER);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
+        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
+    }
+
+    @Test
+    void shouldReturnBadResponseFromDataCiteWhenStatusCode400AndOver()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedDraftPublication();
+        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_FORBIDDEN));
+        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+        var request = generateRequestWithOwner(publication, OWNER);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
+        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
+    }
+
+    @Test
     void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated()
         throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
-        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi));
+        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_USE_PROXY));
         var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient,environment);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
 
@@ -167,7 +199,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(expectedDoi));
         var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient,environment);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
 
@@ -179,12 +211,8 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         assertThat(actualDoi.getDoi(), is(equalTo(expectedDoi)));
     }
 
-    private FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
-        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
-    }
-
-    private static FakeHttpResponse<String> doiBadResponse(URI expectedDoi) throws JsonProcessingException {
-        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_BAD_REQUEST);
+    private static FakeHttpResponse<String> doiBadResponse(URI expectedDoi, int code) throws JsonProcessingException {
+        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), code);
     }
 
     private static FakeHttpResponse<String> tokenResponse() {
@@ -193,6 +221,10 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
 
     private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.writeValueAsString(new DoiResponse(URI.create(expectedDoiPrefix)));
+    }
+
+    private FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
+        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
     }
 
     private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException {

@@ -52,16 +52,16 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
                    .orElseThrow(failure -> new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE));
     }
 
+    private Publication fetchPublication(RequestInfo requestInfo) throws ApiGatewayException {
+        return resourceService.getPublicationByIdentifier(RequestUtil.getIdentifier(requestInfo));
+    }
+
     private DoiResponse updatePublicationWithDoi(Publication publication, URI doi) {
         var updatedPublication = publication.copy()
                                      .withDoi(doi)
                                      .build();
         resourceService.updatePublication(updatedPublication);
         return new DoiResponse(doi);
-    }
-
-    private Publication fetchPublication(RequestInfo requestInfo) throws ApiGatewayException {
-        return resourceService.getPublicationByIdentifier(RequestUtil.getIdentifier(requestInfo));
     }
 
     @Override
