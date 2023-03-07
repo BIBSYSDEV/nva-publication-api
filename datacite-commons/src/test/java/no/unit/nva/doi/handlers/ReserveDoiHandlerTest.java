@@ -1,14 +1,13 @@
 package no.unit.nva.doi.handlers;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.doi.DataCiteReserveDoiClient.DOI_REGISTRAR;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.DOI_ALREADY_EXISTS_ERROR_MESSAGE;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.NOT_DRAFT_STATUS_ERROR_MESSAGE;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.UNSUPPORTED_ROLE_ERROR_MESSAGE;
@@ -24,7 +23,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
@@ -90,7 +88,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
                                                             environment);
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        handler = new ReserveDoiHandler(resourceService, secretsManagerClient, reserveDoiClient, environment);
+        handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
     }
 
     @Test
@@ -148,12 +146,28 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedDraftPublication();
+        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi));
+        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient,environment);
+        var request = generateRequestWithOwner(publication, OWNER);
+        handler.handleRequest(request, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
+        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
+    }
+
+    @Test
     void shouldReturnDoiSuccessfully() throws IOException, ApiGatewayException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(expectedDoi));
         var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
-        this.handler = new ReserveDoiHandler(resourceService, secretsManagerClient, reserveDoiClient,environment);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient,environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
 
@@ -165,8 +179,12 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         assertThat(actualDoi.getDoi(), is(equalTo(expectedDoi)));
     }
 
-    private static FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
+    private FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
         return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
+    }
+
+    private static FakeHttpResponse<String> doiBadResponse(URI expectedDoi) throws JsonProcessingException {
+        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_BAD_REQUEST);
     }
 
     private static FakeHttpResponse<String> tokenResponse() {
@@ -236,20 +254,9 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private void mockReserveDoiResponse(String getDoiResponseJson) {
-        stubFor(post(urlPathEqualTo("/" + DOI_REGISTRAR)).willReturn(WireMock.ok().withStatus(HttpURLConnection.HTTP_OK)
-                                    .withBody(getDoiResponseJson)));
-    }
-
     private void mockReserveDoiFailedResponse() {
         stubFor(post(urlPathEqualTo(RandomDataGenerator.randomUri().getPath()))
                     .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_FORBIDDEN)
                                     .withBody(EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE)));
-    }
-
-    private static void mockTokenResponse() {
-        stubFor(get(urlPathEqualTo("/oauth2/toke"))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK)
-                                    .withBody("{ \"access_token\" : \"Bearer token\"}")));
     }
 }

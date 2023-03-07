@@ -33,8 +33,8 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
     public static final String API_HOST = "API_HOST";
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
-    private final HttpClient httpClient;
     private final Environment environment;
+    private final HttpClient httpClient;
     private final SecretsReader secretsReader;
 
 
@@ -55,7 +55,7 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
     }
 
     private HttpResponse<String> validateResponse(HttpResponse<String> response) throws BadGatewayException {
-        if(HttpURLConnection.HTTP_CREATED == response.statusCode()) {
+         if(HttpURLConnection.HTTP_CREATED == response.statusCode()) {
             return response;
         } else {
             throw new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE);

@@ -1393,6 +1393,8 @@ Resources:
       Runtime: java11
       Environment:
         Variables:
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
