@@ -3,8 +3,6 @@ package no.unit.nva.doi;
 import static java.util.Objects.nonNull;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.RequestUtil;
-import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -19,27 +17,26 @@ public final class ReserveDoiRequestValidator {
     private ReserveDoiRequestValidator() {
     }
 
-    public static void validateRequest(RequestInfo requestInfo, Publication publication) throws ApiGatewayException {
-        validateReserveDoiRequest(requestInfo, publication);
+    public static void validateRequest(String owner, Publication publication) throws ApiGatewayException {
+        validateReserveDoiRequest(owner, publication);
     }
 
-    private static boolean userIsNotOwnerOfPublication(RequestInfo requestInfo, Publication publication)
-        throws ApiGatewayException {
-        return !RequestUtil.getOwner(requestInfo).equals(publication.getResourceOwner().getOwner());
+    private static boolean userIsNotOwnerOfPublication(String owner, Publication publication) {
+        return !owner.equals(publication.getResourceOwner().getOwner());
     }
 
     private static boolean isNotADraft(Publication publication) {
         return !PublicationStatus.DRAFT.equals(publication.getStatus());
     }
 
-    private static void validateReserveDoiRequest(RequestInfo requestInfo, Publication publication) throws ApiGatewayException {
+    private static void validateReserveDoiRequest(String owner, Publication publication) throws ApiGatewayException {
         if (alreadyHasDoi(publication)) {
             throw new BadMethodException(DOI_ALREADY_EXISTS_ERROR_MESSAGE);
         }
         if (isNotADraft(publication)) {
             throw new BadMethodException(NOT_DRAFT_STATUS_ERROR_MESSAGE);
         }
-        if (userIsNotOwnerOfPublication(requestInfo, publication)) {
+        if (userIsNotOwnerOfPublication(owner, publication)) {
             throw new UnauthorizedException(UNSUPPORTED_ROLE_ERROR_MESSAGE);
         }
     }

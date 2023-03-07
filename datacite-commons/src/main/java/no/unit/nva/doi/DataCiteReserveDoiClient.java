@@ -52,8 +52,7 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
 
     @Override
     public URI generateDoi(Publication publication) {
-        return attempt(this::constructUri)
-                   .map(uri -> sendRequest(uri, publication))
+        return attempt(() -> sendRequest(publication))
                    .map(this::validateResponse)
                    .map(this::convertResponseToDoi)
                    .orElseThrow();
@@ -65,11 +64,11 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
                    .getUri();
     }
 
-    private HttpResponse<String> sendRequest(URI uri, Publication publication) throws IOException,
-                                                                                      InterruptedException {
+    private HttpResponse<String> sendRequest(Publication publication) throws IOException,
+                                                                             InterruptedException {
         var request = HttpRequest.newBuilder()
                           .POST(withBody(publication))
-                          .uri(uri);
+                          .uri(constructUri());
         var authorizedBackendClient = getAuthorizedBackendClient();
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }

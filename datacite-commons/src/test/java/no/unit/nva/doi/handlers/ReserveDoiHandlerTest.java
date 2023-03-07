@@ -96,7 +96,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowBadMethodExceptionWhenPublicationIsNotADraft() throws ApiGatewayException, IOException {
         var publication = createPersistedPublishedPublication();
-        var request = generateRequest(publication);
+        var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertEquals(HttpURLConnection.HTTP_BAD_METHOD, response.getStatusCode());
@@ -256,22 +256,12 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     private Publication createPersistedPublishedPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         publication.setDoi(null);
+        publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
         resourceService.publishPublication(userInstance, publicationIdentifier);
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
-    }
-
-    private InputStream generateRequest(Publication publication) throws JsonProcessingException {
-        Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString(),
-                                                    DOI, DOI);
-        return new HandlerRequestBuilder<InputStream>(JsonUtils.dtoObjectMapper)
-                   .withHeaders(headers)
-                   .withPathParameters(pathParameters)
-                   .withCurrentCustomer(publication.getPublisher().getId())
-                   .build();
     }
 
     private InputStream generateRequestWithOwner(Publication publication, String owner) throws JsonProcessingException {
