@@ -30,8 +30,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
@@ -64,6 +64,7 @@ class ExpandedResourceTest {
         "/entityDescription/reference/publicationContext/publisher/name";
     public static final String SERIES_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/series/name";
+    public static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
 
     private UriRetriever uriRetriever;
 
@@ -257,21 +258,17 @@ class ExpandedResourceTest {
     private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
         var node = framedResultNode.at("/topLevelOrganization");
         StreamSupport.stream(node.spliterator(), false)
-            .flatMap(ExpandedResourceTest::getaVoid)
-            .forEach(ExpandedResourceTest::assertAllFieldsAreValid);
+            .flatMap(ExpandedResourceTest::getFieldNameStream)
+            .forEach(ExpandedResourceTest::assertFieldNameIsMemberOfAcceptableFieldNames);
     }
 
-    private static Stream<String> getaVoid(JsonNode topOrg) {
+    private static Stream<String> getFieldNameStream(JsonNode topOrg) {
         var spliterator = Spliterators.spliteratorUnknownSize(topOrg.fieldNames(), Spliterator.ORDERED);
         return StreamSupport.stream(spliterator, false);
     }
 
-    private static void assertAllFieldsAreValid(String fieldName) {
-        assert (Objects.equals(fieldName, "id")
-                || Objects.equals(fieldName, "name")
-                || Objects.equals(fieldName, "labels")
-                || Objects.equals(fieldName, "type")
-                || Objects.equals(fieldName, "hasPart"));
+    private static void assertFieldNameIsMemberOfAcceptableFieldNames(String fieldName) {
+        assert ACCEPTABLE_FIELD_NAMES.contains(fieldName);
     }
 
     private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
