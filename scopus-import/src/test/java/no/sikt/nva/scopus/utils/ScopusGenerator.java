@@ -173,17 +173,6 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
-    private ScopusGenerator(AffiliationTp affiliation) {
-        this.shouldReturnAuthorTyp = true;
-        this.languages = createRandomLanguages();
-        this.doi = randomDoi();
-        this.sourcetypeAtt = SourcetypeAtt.J;
-        this.abstractsTp = randomAbstracts();
-        this.affiliations = List.of(affiliation);
-        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
-        this.document = randomDocument();
-    }
-
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
         this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
@@ -206,6 +195,55 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
+    public ScopusGenerator(AuthorGroupTp authorGroup) {
+        this.shouldReturnAuthorTyp = true;
+        this.languages = createRandomLanguages();
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
+        this.doi = randomDoi();
+        this.sourcetypeAtt = SourcetypeAtt.J;
+        this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
+        this.document = randomDocumentWithAuthorGroup(authorGroup);
+    }
+
+    private DocTp randomDocumentWithAuthorGroup(AuthorGroupTp authorGroup) {
+        DocTp docTp = new DocTp();
+        docTp.setItem(itemWithAuthorGroup(authorGroup));
+        docTp.setMeta(randomMetaTp());
+        assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
+        return docTp;
+    }
+
+    private ItemTp itemWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+        var item = new ItemTp();
+        item.setItem(randomOriginalItemWithAuthorGroup(authorGroupTp));
+        return item;
+    }
+
+    private OrigItemTp randomOriginalItemWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+        var item = new OrigItemTp();
+        item.setBibrecord(randomBibRecordWithAuthorGroup(authorGroupTp));
+        item.setProcessInfo(randomProcessInfo());
+        return item;
+    }
+
+    private BibrecordTp randomBibRecordWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+        var bibRecord = new BibrecordTp();
+        bibRecord.setItemInfo(randomItemInfo());
+        bibRecord.setHead(randomHeadTpWithAuthorGroup(authorGroupTp));
+        return bibRecord;
+    }
+
+    private HeadTp randomHeadTpWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+            var head = new HeadTp();
+            head.getAuthorGroup().add(authorGroupTp);
+            head.setCitationTitle(randomCitationTitle());
+            head.setAbstracts(abstractsTp);
+            head.setCitationInfo(randomCitationInfo());
+            head.setSource(randomSource());
+            return head;
+    }
+
     public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
         return new ScopusGenerator(abstractsTp);
     }
@@ -222,10 +260,9 @@ public final class ScopusGenerator {
         return new ScopusGenerator(affiliations);
     }
 
-    public static ScopusGenerator createWithAuthorGroupWithAuthorTpOnly(AffiliationTp affiliationTp) {
-        return new ScopusGenerator(affiliationTp);
+    public static ScopusGenerator createWithOneAuthorGroupAndAffiliation(AuthorGroupTp authorGroup) {
+        return new ScopusGenerator(authorGroup);
     }
-
 
     public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
         return new ScopusGenerator(citationtypeAtt);
@@ -488,7 +525,7 @@ public final class ScopusGenerator {
         return collaborationTp;
     }
 
-    private AuthorTp randomAuthorTp() {
+    public AuthorTp randomAuthorTp() {
         var authorTp = new AuthorTp();
         authorTp.setOrcid(randomOrcid());
         authorTp.setAuid(randomString());

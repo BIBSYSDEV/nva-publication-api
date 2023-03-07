@@ -50,7 +50,7 @@ public class PiaResponseGenerator {
                    .collect(Collectors.toList());
     }
 
-    private Affiliation generateAffiliation(String cristinId) {
+    public Affiliation generateAffiliation(String cristinId) {
         return new Builder()
                    .withInstitution(cristinId)
                    .withUnit(cristinId)
