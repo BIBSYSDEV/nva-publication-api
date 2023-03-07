@@ -1,10 +1,13 @@
 package no.unit.nva.doi.handlers;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
+import static java.net.HttpURLConnection.HTTP_CREATED;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.doi.DataCiteReserveDoiClient.DOI_REGISTRAR;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.DOI_ALREADY_EXISTS_ERROR_MESSAGE;
 import static no.unit.nva.doi.ReserveDoiRequestValidator.NOT_DRAFT_STATUS_ERROR_MESSAGE;
@@ -34,14 +37,17 @@ import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.DataCiteReserveDoiClient;
 import no.unit.nva.doi.model.DoiResponse;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.FakeHttpResponse;
+import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -63,10 +69,12 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     public static final String OWNER = "owner";
     public static final String NOT_FOUND_MESSAGE = "Publication not found: ";
     public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
+    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
     private final Environment environment = mock(Environment.class);
     private Context context;
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
+    private FakeSecretsManagerClient secretsManagerClient;
     private ReserveDoiHandler handler;
 
     @BeforeEach
@@ -77,9 +85,12 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        DataCiteReserveDoiClient reserveDoiClient = new DataCiteReserveDoiClient(WiremockHttpClient.create(),
-                                                                                 environment);
-        handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+        secretsManagerClient = new FakeSecretsManagerClient();
+        var reserveDoiClient = new DataCiteReserveDoiClient(WiremockHttpClient.create(), secretsManagerClient,
+                                                            environment);
+        var credentials = new BackendClientCredentials("id", "secret");
+        secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
+        handler = new ReserveDoiHandler(resourceService, secretsManagerClient, reserveDoiClient, environment);
     }
 
     @Test
@@ -140,11 +151,13 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     void shouldReturnDoiSuccessfully() throws IOException, ApiGatewayException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+        var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(expectedDoi));
+        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        this.handler = new ReserveDoiHandler(resourceService, secretsManagerClient, reserveDoiClient,environment);
         var request = generateRequestWithOwner(publication, OWNER);
-        mockReserveDoiResponse(createResponse(expectedDoi.toString()));
         handler.handleRequest(request, output, context);
-        var updatedPublication = resourceService.getPublication(publication);
 
+        var updatedPublication = resourceService.getPublication(publication);
         assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
         var response = GatewayResponse.fromOutputStream(output, DoiResponse.class);
         assertEquals(HttpURLConnection.HTTP_CREATED, response.getStatusCode());
@@ -152,41 +165,49 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         assertThat(actualDoi.getDoi(), is(equalTo(expectedDoi)));
     }
 
+    private static FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
+        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
+    }
+
+    private static FakeHttpResponse<String> tokenResponse() {
+        return FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK);
+    }
+
     private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.writeValueAsString(new DoiResponse(URI.create(expectedDoiPrefix)));
     }
 
     private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException {
-        Publication publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication();
         publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 
     private Publication createNotPersistedDraftPublication() {
-        Publication publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication();
         publication.setDoi(null);
         publication.setResourceOwner(new ResourceOwner(NOT_OWNER, randomUri()));
         return publication;
     }
 
     private Publication createPersistedDraftPublication() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication();
         publication.setDoi(null);
         publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 
     private Publication createPersistedPublishedPublication() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication();
         publication.setDoi(null);
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
         resourceService.publishPublication(userInstance, publicationIdentifier);
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
@@ -224,5 +245,11 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         stubFor(post(urlPathEqualTo(RandomDataGenerator.randomUri().getPath()))
                     .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_FORBIDDEN)
                                     .withBody(EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE)));
+    }
+
+    private static void mockTokenResponse() {
+        stubFor(get(urlPathEqualTo("/oauth2/toke"))
+                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_OK)
+                                    .withBody("{ \"access_token\" : \"Bearer token\"}")));
     }
 }

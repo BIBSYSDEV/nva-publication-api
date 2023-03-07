@@ -17,6 +17,8 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.secrets.SecretsReader;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
 
@@ -28,13 +30,17 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
     @JacocoGenerated
     public ReserveDoiHandler() {
         this(ResourceService.defaultService(),
-             new DataCiteReserveDoiClient(getDefaultHttpClient(), new Environment()), new Environment());
+             SecretsReader.defaultSecretsManagerClient(),
+             new DataCiteReserveDoiClient(getDefaultHttpClient(),SecretsReader.defaultSecretsManagerClient(),
+                                          new Environment()),
+             new Environment());
     }
 
-    public ReserveDoiHandler(ResourceService resourceService,
+    public ReserveDoiHandler(ResourceService resourceService, SecretsManagerClient secretsManagerClient,
                              DataCiteReserveDoiClient reserveDoiClient, Environment environment) {
         super(Void.class, environment);
         this.resourceService = resourceService;
+        new SecretsReader(secretsManagerClient);
         this.reserveDoiClient = reserveDoiClient;
     }
 
