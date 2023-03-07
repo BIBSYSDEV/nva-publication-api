@@ -76,14 +76,13 @@
     "contributors": {
       "affiliations": {
         "@explicit": true,
+        "@embed": "@always",
         "type": "Organization",
-        "labels": {},
-        "name": {},
-        "topLevelOrganization": {
-          "@explicit": true,
-          "type": "Organization",
-          "labels": {},
-          "name": {}
+        "labels": {
+          "@embed": "@always"
+        },
+        "name": {
+          "@embed": "@always"
         }
       }
     }

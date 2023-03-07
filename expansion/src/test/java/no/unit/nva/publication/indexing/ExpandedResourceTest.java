@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
@@ -35,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -134,7 +136,6 @@ class ExpandedResourceTest {
         final Publication publication = randomBookWithConfirmedPublisher();
         final URI seriesUri = extractSeriesUri(publication);
         final URI publisherUri = extractPublisherUri(publication);
-        final URI affiliationToBeExpandedId = extractAffiliationsUris(publication).get(0);
         final String publisherName = randomString();
         final String seriesName = randomString();
 
@@ -176,7 +177,9 @@ class ExpandedResourceTest {
     private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
         var topLevelAffiliations = framedResultNode.findValues("topLevelOrganization");
         return topLevelAffiliations.stream()
-            .map(node -> URI.create(node.get("id").asText()))
+            .flatMap(arrayNode -> StreamSupport.stream(arrayNode.spliterator(), false))
+            .map(node -> node.get("id").asText())
+            .map(URI::create)
             .distinct()
             .collect(Collectors.toList());
     }
