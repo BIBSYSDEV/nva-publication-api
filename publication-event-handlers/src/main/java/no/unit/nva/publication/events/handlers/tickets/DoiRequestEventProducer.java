@@ -28,6 +28,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -40,6 +41,7 @@ public class DoiRequestEventProducer
     public static final Duration MIN_INTERVAL_FOR_REREQUESTING_A_DOI = Duration.ofSeconds(10);
     public static final String DOI_REQUEST_HAS_NO_IDENTIFIER = "DoiRequest has no identifier";
     public static final String HEAD = "HEAD";
+    public static final String NVA_API_DOMAIN = "https://" + readDomainName();
     public static final DoiMetadataUpdateEvent EMPTY_EVENT = DoiMetadataUpdateEvent.empty();
     protected static final Integer HTTP_FOUND = 302;
     private static final String HANDLER_DOES_NOT_DEAL_WITH_DELETIONS = "Handler does not deal with deletions";
@@ -225,5 +227,9 @@ public class DoiRequestEventProducer
     
     private DoiRegistrarEntryFields extractInfoFromOldInstance(Publication oldPublication) {
         return nonNull(oldPublication) ? DoiRegistrarEntryFields.fromPublication(oldPublication) : null;
+    }
+
+    private static String readDomainName() {
+        return new Environment().readEnv("DOMAIN_NAME");
     }
 }

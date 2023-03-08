@@ -20,6 +20,9 @@ entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading
 entityDescription.reference.doi
+entityDescription.alternativeAbstracts
+
 subjects
 projects
 fundings
+rightsHolder

@@ -5,6 +5,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import java.util.Arrays;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -58,7 +59,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     
     @Override
     protected Integer getSuccessStatusCode(TicketDto input, Void output) {
-        return HttpURLConnection.HTTP_SEE_OTHER;
+        return HttpURLConnection.HTTP_CREATED;
     }
     
     private static String createTicketLocation(SortableIdentifier publicationIdentifier, TicketEntry createdTicket) {
@@ -109,7 +110,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     private ApiGatewayException loggingFailureReporter(Exception exception) {
-        logger.error("Request failed: {}", exception.getStackTrace());
+        logger.error("Request failed: {}", Arrays.toString(exception.getStackTrace()));
         return new ForbiddenException();
     }
 }

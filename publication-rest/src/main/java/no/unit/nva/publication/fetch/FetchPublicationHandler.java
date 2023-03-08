@@ -27,6 +27,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
@@ -46,16 +47,17 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
     private final ResourceService resourceService;
+    private final UriRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
 
     @JacocoGenerated
     public FetchPublicationHandler() {
-        this(AmazonDynamoDBClientBuilder.defaultClient());
+        this(AmazonDynamoDBClientBuilder.defaultClient(), new UriRetriever());
     }
 
     @JacocoGenerated
-    public FetchPublicationHandler(AmazonDynamoDB client) {
-        this(defaultResourceService(client), new Environment());
+    public FetchPublicationHandler(AmazonDynamoDB client, UriRetriever uriRetriever) {
+        this(defaultResourceService(client), uriRetriever, new Environment());
     }
 
     /**
@@ -64,8 +66,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
      * @param resourceService publicationService
      * @param environment     environment
      */
-    public FetchPublicationHandler(ResourceService resourceService, Environment environment) {
+    public FetchPublicationHandler(ResourceService resourceService, UriRetriever uriRetriever,
+                                   Environment environment) {
         super(Void.class, environment);
+        this.uriRetriever = uriRetriever;
         this.resourceService = resourceService;
     }
 
@@ -153,7 +157,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createDataCiteMetadata(Publication publication) {
-        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication);
+        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication, uriRetriever);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
     }
 
