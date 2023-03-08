@@ -1426,7 +1426,7 @@ Resources:
 
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
-  # https://stackoverflow.com/questions/41423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
+  # https://stackoverflow.com/questions/Ba1423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
   #====================================================================================================================#
 
   ApiGatewayCreateDeploymentLambdaRole:
