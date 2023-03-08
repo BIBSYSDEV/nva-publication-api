@@ -156,6 +156,60 @@ paths:
                 items:
                   $ref: '#/components/schemas/Publication'
 
+  /{publicationIdentifier}/doi:
+    post:
+      summary: Reserves doi for draft publication
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          schema:
+            type: string
+            format: uuid
+          required: true
+          example:
+            doi: '10.3848/135f2cf8-b816-11ed-afa1-0242ac120002'
+          description: UUID identifier of the Publication to fetch.
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      responses:
+        '200':
+          description: OK, doi is already reserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doi'
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doi'
+        '401':
+          description: Unauthorized, no config found for users customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '404':
+          description: Publication not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '405':
+          description: Operation is not allowed, publication is not a draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '502':
+          description: Bad response from Datacite
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+
   /{publicationIdentifier}/ticket:
     parameters:
       - in: path
@@ -442,6 +496,11 @@ components:
             - DoiRequest
             - PublishingRequest
             - GeneralSupportCase
+    Doi:
+      type: object
+      properties:
+        doi:
+          type: string
     Ticket:
       type: object
       properties:
