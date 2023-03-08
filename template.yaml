@@ -1379,6 +1379,27 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
 
+  ReserveDoiHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: datacite-commons
+      Handler: no.unit.nva.doi.handlers.ReserveDoiHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/doi
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
 
   ScopusUnzipperFunction:
     Type: AWS::Serverless::Function

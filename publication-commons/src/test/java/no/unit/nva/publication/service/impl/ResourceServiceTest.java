@@ -120,6 +120,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     public static final String SOME_STRING = "someValue";
     public static final String MAIN_TITLE_FIELD = "mainTitle";
     public static final String ANOTHER_TITLE = "anotherTitle";
+    public static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
+                                                                              + " does not have a field"
+                                                                              + MAIN_TITLE_FIELD;
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final int BIG_PAGE = 10;
     public static final URI UNIMPORTANT_AFFILIATION = null;
@@ -1222,30 +1225,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication updateResourceTitle(Publication resource) {
-        var originalEntityDescription = resource.getEntityDescription();
-        var newEntityDescription = new EntityDescription.Builder()
-                                       .withMainTitle(UPDATED_TITLE)
-                                       .withAbstract(originalEntityDescription.getAbstract())
-                                       .withAlternativeAbstracts(originalEntityDescription.getAlternativeAbstracts())
-                                       .withAlternativeTitles(originalEntityDescription.getAlternativeTitles())
-                                       .withContributors(originalEntityDescription.getContributors())
-                                       .withDate(originalEntityDescription.getDate())
-                                       .withDescription(originalEntityDescription.getDescription())
-                                       .withLanguage(originalEntityDescription.getLanguage())
-                                       .withMetadataSource(originalEntityDescription.getMetadataSource())
-                                       .withNpiSubjectHeading(originalEntityDescription.getNpiSubjectHeading())
-                                       .withReference(originalEntityDescription.getReference())
-                                       .withTags(originalEntityDescription.getTags())
-                                       .build();
-        assertThatNewEntityDescriptionDiffersOnlyInTitle(originalEntityDescription, newEntityDescription);
+        EntityDescription newEntityDescription = new EntityDescription.Builder().withMainTitle(UPDATED_TITLE).build();
+        
+        assertThatNewEntityDescriptionDiffersOnlyInTitle(resource.getEntityDescription(), newEntityDescription);
         return resource.copy().withEntityDescription(newEntityDescription).build();
     }
 
     private void assertThatNewEntityDescriptionDiffersOnlyInTitle(EntityDescription oldEntityDescription,
                                                                   EntityDescription newEntityDescription) {
+        String mainTitleFieldName = fetchMainTitleFieldName();
         Diff diff = JAVERS.compare(oldEntityDescription, newEntityDescription);
-
-        assertThat(diff.getChanges().size(), is(equalTo(1)));
+        int mainTitleChanges = diff.getPropertyChanges(mainTitleFieldName).size();
+        assertThat(mainTitleChanges, is(equalTo(1)));
+    }
+    
+    private String fetchMainTitleFieldName() {
+        return attempt(() -> EntityDescription.class.getDeclaredField(MAIN_TITLE_FIELD).getName()).orElseThrow(
+            fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
     }
 
     private void assertThatResourceDoesNotExist(Publication sampleResource) {

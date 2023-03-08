@@ -73,7 +73,7 @@ public class Resource implements Entity {
     @JsonProperty
     private List<URI> subjects;
     @JsonProperty
-    private FundingList fundings;
+    private List<Funding> fundings;
     @JsonProperty
     private String rightsHolder;
 
