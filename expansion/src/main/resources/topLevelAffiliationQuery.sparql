@@ -4,8 +4,9 @@
 PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
 
 CONSTRUCT {
-  ?org nva:topLevelOrganization ?top_org .
+  ?publication nva:topLevelOrganization ?top_org .
   } WHERE {
+  ?publication a nva:Publication .
   ?affiliation nva:affiliations ?org .
   ?org nva:partOf* ?top_org .
     FILTER NOT EXISTS { ?top_org nva:partOf ?e } .

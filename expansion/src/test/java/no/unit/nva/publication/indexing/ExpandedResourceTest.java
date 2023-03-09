@@ -29,12 +29,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -62,6 +64,7 @@ class ExpandedResourceTest {
         "/entityDescription/reference/publicationContext/publisher/name";
     public static final String SERIES_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/series/name";
+    public static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
 
     private UriRetriever uriRetriever;
 
@@ -134,7 +137,6 @@ class ExpandedResourceTest {
         final Publication publication = randomBookWithConfirmedPublisher();
         final URI seriesUri = extractSeriesUri(publication);
         final URI publisherUri = extractPublisherUri(publication);
-        final URI affiliationToBeExpandedId = extractAffiliationsUris(publication).get(0);
         final String publisherName = randomString();
         final String seriesName = randomString();
 
@@ -154,31 +156,6 @@ class ExpandedResourceTest {
                 }
             }
         );
-    }
-
-    private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
-        framedResultNode.findValues("topLevelOrganization").forEach(
-            topOrg -> topOrg.fieldNames().forEachRemaining(
-                fieldName -> {
-                    assert (Objects.equals(fieldName, "id")
-                            || Objects.equals(fieldName, "name")
-                            || Objects.equals(fieldName, "type"));
-                }
-            )
-        );
-    }
-
-    private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
-        var affiliationGenerator = new AffiliationGenerator(depth, mockUriRetriever);
-        return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
-    }
-
-    private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
-        var topLevelAffiliations = framedResultNode.findValues("topLevelOrganization");
-        return topLevelAffiliations.stream()
-            .map(node -> URI.create(node.get("id").asText()))
-            .distinct()
-            .collect(Collectors.toList());
     }
 
     @ParameterizedTest(name = "should return properly framed document with id based on Id-namespace and resource "
@@ -277,6 +254,37 @@ class ExpandedResourceTest {
         assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
     }
 
+
+    private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
+        var node = framedResultNode.at("/topLevelOrganization");
+        StreamSupport.stream(node.spliterator(), false)
+            .flatMap(ExpandedResourceTest::getFieldNameStream)
+            .forEach(ExpandedResourceTest::assertFieldNameIsMemberOfAcceptableFieldNames);
+    }
+
+    private static Stream<String> getFieldNameStream(JsonNode topOrg) {
+        var spliterator = Spliterators.spliteratorUnknownSize(topOrg.fieldNames(), Spliterator.ORDERED);
+        return StreamSupport.stream(spliterator, false);
+    }
+
+    private static void assertFieldNameIsMemberOfAcceptableFieldNames(String fieldName) {
+        assert ACCEPTABLE_FIELD_NAMES.contains(fieldName);
+    }
+
+    private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
+        var affiliationGenerator = new AffiliationGenerator(depth, mockUriRetriever);
+        return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
+    }
+
+    private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
+        var topLevelAffiliations = framedResultNode.at("/topLevelOrganization");
+        return StreamSupport.stream(topLevelAffiliations.spliterator(), false)
+                   .map(node -> node.get("id").asText())
+                   .map(URI::create)
+                   .distinct()
+                   .collect(Collectors.toList());
+    }
+
     private Publication createPublicationWithEmptyAffiliations() {
         var publication = PublicationGenerator.randomPublication();
         publication.setStatus(PUBLISHED);
@@ -286,12 +294,6 @@ class ExpandedResourceTest {
             .collect(Collectors.toList());
         entityDescription.setContributors(contributors);
         return publication;
-    }
-
-    private static Contributor createContributorsWithNoAffiliations(Contributor contributor) {
-        return new Contributor(contributor.getIdentity(), Collections.emptyList(),
-                               contributor.getRole(), contributor.getSequence(),
-                               contributor.isCorrespondingAuthor());
     }
 
     private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {

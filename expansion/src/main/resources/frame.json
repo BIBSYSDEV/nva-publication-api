@@ -1,6 +1,7 @@
 {
   "@context": {
     "@vocab": "https://nva.sikt.no/ontology/publication#",
+    "hasPart": "https://bibsysdev.github.io/src/organization-ontology.ttl#hasPart",
     "id": "@id",
     "type": "@type",
     "contributors": {
@@ -69,6 +70,9 @@
     },
     "messages": {
       "@container": "@set"
+    },
+    "topLevelOrganization": {
+      "@container": "@set"
     }
   },
   "@type": "Publication",
@@ -76,14 +80,13 @@
     "contributors": {
       "affiliations": {
         "@explicit": true,
+        "@embed": "@always",
         "type": "Organization",
-        "labels": {},
-        "name": {},
-        "topLevelOrganization": {
-          "@explicit": true,
-          "type": "Organization",
-          "labels": {},
-          "name": {}
+        "labels": {
+          "@embed": "@always"
+        },
+        "name": {
+          "@embed": "@always"
         }
       }
     }
