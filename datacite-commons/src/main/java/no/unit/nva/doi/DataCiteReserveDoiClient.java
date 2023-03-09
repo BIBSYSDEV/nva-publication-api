@@ -52,6 +52,7 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
 
     @Override
     public URI generateDoi(Publication publication) {
+        logger.info("Attempting to send request");
         return attempt(() -> sendRequest(publication))
                    .map(this::validateResponse)
                    .map(this::convertResponseToDoi)
@@ -59,9 +60,8 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
     }
 
     private URI constructUri() {
-        return UriWrapper.fromUri(environment.readEnv(API_HOST))
-                   .addChild(DOI_REGISTRAR)
-                   .getUri();
+        logger.info("constructing uri");
+        return URI.create("https://" + environment.readEnv(API_HOST) + "/" + DOI_REGISTRAR);
     }
 
     private HttpResponse<String> sendRequest(Publication publication) throws IOException,
@@ -103,8 +103,10 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
     }
 
     private static BodyPublisher withBody(Publication publication) throws JsonProcessingException {
+        logger.info("Building boyd");
         var doiRequest = new ReserveDoiRequest(publication.getPublisher().getId());
         var body = JsonUtils.dtoObjectMapper.writeValueAsString(doiRequest);
+        logger.info("body is ready");
         return BodyPublishers.ofString(body);
     }
 
