@@ -69,11 +69,15 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
         var request = HttpRequest.newBuilder()
                           .POST(withBody(publication))
                           .uri(constructUri());
+        logger.info("Request to send: {}", request.build().uri());
         var authorizedBackendClient = getAuthorizedBackendClient();
+        logger.info("Authorized client initialized");
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
     private HttpResponse<String> validateResponse(HttpResponse<String> response) throws BadGatewayException {
+        logger.info("Response from DataCite {}", response.body());
+        logger.info("Status code from DataCite {}", response.statusCode());
         if (HttpURLConnection.HTTP_CREATED == response.statusCode()) {
             return response;
         } else {
@@ -94,6 +98,7 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
 
     public URI convertResponseToDoi(HttpResponse<String> response) throws JsonProcessingException {
         var doiResponse = JsonUtils.dtoObjectMapper.readValue(response.body(), DoiResponse.class);
+        logger.info("Doi from response: {}", doiResponse.getDoi());
         return doiResponse.getDoi();
     }
 
