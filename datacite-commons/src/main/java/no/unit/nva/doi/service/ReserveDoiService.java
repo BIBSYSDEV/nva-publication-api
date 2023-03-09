@@ -11,12 +11,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ReserveDoiService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ReserveDoiService.class);
     private final ResourceService resourceService;
     private final DataCiteReserveDoiClient reserveDoiClient;
 
@@ -28,7 +25,6 @@ public class ReserveDoiService {
     public DoiResponse reserve(String owner, SortableIdentifier publicationIdentifier) throws ApiGatewayException {
         var publication = fetchPublication(publicationIdentifier);
         ReserveDoiRequestValidator.validateRequest(owner, publication);
-        logger.info("Reserve doi request for publication: {}", publicationIdentifier);
         return attempt(() -> reserveDoiClient.generateDoi(publication))
                    .map(doi -> updatePublicationWithDoi(publication, doi))
                    .orElseThrow(failure -> new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE));
@@ -42,7 +38,6 @@ public class ReserveDoiService {
         var updatedPublication = publication.copy()
                                      .withDoi(doi)
                                      .build();
-        logger.info("Draft doi is: {}", doi);
         resourceService.updatePublication(updatedPublication);
         return new DoiResponse(doi);
     }

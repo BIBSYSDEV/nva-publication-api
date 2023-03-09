@@ -52,16 +52,27 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
 
     @Override
     public URI generateDoi(Publication publication) {
-        logger.info("Attempting to send request");
         return attempt(() -> sendRequest(publication))
                    .map(this::validateResponse)
                    .map(this::convertResponseToDoi)
                    .orElseThrow();
     }
 
+    public URI convertResponseToDoi(HttpResponse<String> response) throws JsonProcessingException {
+        var doiResponse = JsonUtils.dtoObjectMapper.readValue(response.body(), DoiResponse.class);
+        return doiResponse.getDoi();
+    }
+
+    private static BodyPublisher withBody(Publication publication) throws JsonProcessingException {
+        var doiRequest = new ReserveDoiRequest(publication.getPublisher().getId());
+        var body = JsonUtils.dtoObjectMapper.writeValueAsString(doiRequest);
+        return BodyPublishers.ofString(body);
+    }
+
     private URI constructUri() {
-        logger.info("constructing uri");
-        return URI.create("https://" + environment.readEnv(API_HOST) + "/" + DOI_REGISTRAR);
+        return UriWrapper.fromHost(environment.readEnv(API_HOST))
+                   .addChild(DOI_REGISTRAR)
+                   .getUri();
     }
 
     private HttpResponse<String> sendRequest(Publication publication) throws IOException,
@@ -69,15 +80,11 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
         var request = HttpRequest.newBuilder()
                           .POST(withBody(publication))
                           .uri(constructUri());
-        logger.info("Request to send: {}", request.build().uri());
         var authorizedBackendClient = getAuthorizedBackendClient();
-        logger.info("Authorized client initialized");
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
     private HttpResponse<String> validateResponse(HttpResponse<String> response) throws BadGatewayException {
-        logger.info("Response from DataCite {}", response.body());
-        logger.info("Status code from DataCite {}", response.statusCode());
         if (HttpURLConnection.HTTP_CREATED == response.statusCode()) {
             return response;
         } else {
@@ -94,20 +101,6 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
         if (statusCode > HttpURLConnection.HTTP_BAD_REQUEST) {
             logger.error(DATA_CITE_CONFIGURATION_ERROR, statusCode);
         }
-    }
-
-    public URI convertResponseToDoi(HttpResponse<String> response) throws JsonProcessingException {
-        var doiResponse = JsonUtils.dtoObjectMapper.readValue(response.body(), DoiResponse.class);
-        logger.info("Doi from response: {}", doiResponse.getDoi());
-        return doiResponse.getDoi();
-    }
-
-    private static BodyPublisher withBody(Publication publication) throws JsonProcessingException {
-        logger.info("Building boyd");
-        var doiRequest = new ReserveDoiRequest(publication.getPublisher().getId());
-        var body = JsonUtils.dtoObjectMapper.writeValueAsString(doiRequest);
-        logger.info("body is ready");
-        return BodyPublishers.ofString(body);
     }
 
     private AuthorizedBackendClient getAuthorizedBackendClient() {
