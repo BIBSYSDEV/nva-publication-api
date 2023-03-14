@@ -1,5 +1,6 @@
 package no.unit.nva.doi;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.doi.LandingPageUtil.LANDING_PAGE_UTIL;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
@@ -17,9 +18,11 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.transformer.dto.AlternateIdentifierDto;
 import no.unit.nva.transformer.dto.CreatorDto;
 import no.unit.nva.transformer.dto.DataCiteMetadataDto;
 import no.unit.nva.transformer.dto.IdentifierDto;
+import no.unit.nva.transformer.dto.IdentifierType;
 import no.unit.nva.transformer.dto.PublisherDto;
 import no.unit.nva.transformer.dto.ResourceTypeDto;
 import no.unit.nva.transformer.dto.TitleDto;
@@ -47,11 +50,25 @@ public final class DataCiteMetadataDtoMapper {
         return new DataCiteMetadataDto.Builder()
                    .withCreator(toCreatorDtoList(extractContributors(publication)))
                    .withIdentifier(toIdentifierDto(publication))
+                   .withAlternateIdentifiers(extractAlternateIdentifiers(publication))
                    .withPublicationYear(extractPublicationYear(publication))
                    .withPublisher(extractPublisher(publication, uriRetriever))
                    .withTitle(extractTitle(publication))
                    .withResourceType(toResourceTypeDto(publication))
                    .build();
+    }
+
+    private static List<AlternateIdentifierDto> extractAlternateIdentifiers(Publication publication) {
+        return nonNull(publication) && nonNull(publication.getDoi()) ?
+                   createAlternateIdentifierFromPublicationIdentifier(publication) : null;
+    }
+
+    private static List<AlternateIdentifierDto> createAlternateIdentifierFromPublicationIdentifier(
+        Publication publication) {
+        return List.of(new AlternateIdentifierDto.Builder()
+                           .withValue(LANDING_PAGE_UTIL.constructResourceUri(publication.getIdentifier().toString())
+                                          .toString())
+                           .build());
     }
 
     private static List<Contributor> extractContributors(Publication publication) {
@@ -119,13 +136,26 @@ public final class DataCiteMetadataDtoMapper {
     }
 
     private static IdentifierDto toIdentifierDto(Publication publication) {
+        return nonNull(publication) && nonNull(publication.getDoi())
+                   ? createIdentifierDtoFromDoi(publication.getDoi())
+                   : getIdentifierDtoFromPublicationIdentifier(publication);
+    }
+
+    private static IdentifierDto getIdentifierDtoFromPublicationIdentifier(Publication publication) {
         return Optional.of(publication)
                    .map(Publication::getIdentifier)
                    .map(SortableIdentifier::toString)
                    .map(LANDING_PAGE_UTIL::constructResourceUri)
                    .map(URI::toString)
-                   .map(uriString -> new IdentifierDto.Builder().withValue(uriString).build())
+                   .map(uriString -> new IdentifierDto.Builder()
+                                         .withType(IdentifierType.URL)
+                                         .withValue(uriString)
+                                         .build())
                    .orElse(null);
+    }
+
+    private static IdentifierDto createIdentifierDtoFromDoi(URI doi) {
+        return new IdentifierDto.Builder().withType(IdentifierType.DOI).withValue(doi.toString()).build();
     }
 
     private static List<CreatorDto> toCreatorDtoList(List<Contributor> contributors) {
