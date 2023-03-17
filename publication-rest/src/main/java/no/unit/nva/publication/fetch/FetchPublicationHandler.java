@@ -6,6 +6,7 @@ import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.net.MediaType.XHTML_UTF_8;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -27,7 +28,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
@@ -44,19 +46,24 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String GONE_MESSAGE = "Permanently deleted";
+    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
     private final ResourceService resourceService;
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
 
     @JacocoGenerated
     public FetchPublicationHandler() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(), new UriRetriever());
+        this(AmazonDynamoDBClientBuilder.defaultClient(),
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
+                                               BACKEND_CLIENT_SECRET_NAME));
     }
 
     @JacocoGenerated
-    public FetchPublicationHandler(AmazonDynamoDB client, UriRetriever uriRetriever) {
+    public FetchPublicationHandler(AmazonDynamoDB client,
+                                   RawContentRetriever uriRetriever) {
         this(defaultResourceService(client), uriRetriever, new Environment());
     }
 
@@ -66,7 +73,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
      * @param resourceService publicationService
      * @param environment     environment
      */
-    public FetchPublicationHandler(ResourceService resourceService, UriRetriever uriRetriever,
+    public FetchPublicationHandler(ResourceService resourceService,
+                                   RawContentRetriever uriRetriever,
                                    Environment environment) {
         super(Void.class, environment);
         this.uriRetriever = uriRetriever;

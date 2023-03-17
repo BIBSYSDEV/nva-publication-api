@@ -481,6 +481,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:

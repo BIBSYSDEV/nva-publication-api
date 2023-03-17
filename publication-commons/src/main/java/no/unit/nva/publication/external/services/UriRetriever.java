@@ -11,7 +11,7 @@ import java.util.Optional;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
-public class UriRetriever {
+public class UriRetriever implements RawContentRetriever {
 
     public static final String ACCEPT = "Accept";
     private final HttpClient httpClient;
@@ -24,6 +24,7 @@ public class UriRetriever {
         this.httpClient = httpClient;
     }
 
+    @Override
     public Optional<String> getRawContent(URI uri, String mediaType) {
         return attempt(() -> httpClient.send(createHttpRequest(uri, mediaType),
             BodyHandlers.ofString(StandardCharsets.UTF_8)))
