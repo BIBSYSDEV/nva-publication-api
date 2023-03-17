@@ -9,6 +9,8 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
+    implementation libs.nva.auth
+    implementation libs.nva.secrets
 
 
     implementation(libs.nva.datamodel.core) {
@@ -17,12 +19,14 @@ dependencies {
 
     implementation libs.aws.java.sdk.core
     implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk2.secrets
 
     implementation libs.jackson.databind
     implementation libs.jackson.annotations
     implementation libs.jackson.datatype.jsr310
     implementation libs.guava
     implementation libs.zalando
+
 
     runtimeOnly libs.jackson.core
     runtimeOnly libs.jackson.datatype.jdk8

@@ -17,7 +17,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.transformer.dto.AlternateIdentifierDto;
 import no.unit.nva.transformer.dto.CreatorDto;
 import no.unit.nva.transformer.dto.DataCiteMetadataDto;
@@ -46,7 +46,7 @@ public final class DataCiteMetadataDtoMapper {
      * @param publication publication
      * @return DataCiteMetadataDto
      */
-    public static DataCiteMetadataDto fromPublication(Publication publication, UriRetriever uriRetriever) {
+    public static DataCiteMetadataDto fromPublication(Publication publication, RawContentRetriever uriRetriever) {
         return new DataCiteMetadataDto.Builder()
                    .withCreator(toCreatorDtoList(extractContributors(publication)))
                    .withIdentifier(toIdentifierDto(publication))
@@ -59,8 +59,9 @@ public final class DataCiteMetadataDtoMapper {
     }
 
     private static List<AlternateIdentifierDto> extractAlternateIdentifiers(Publication publication) {
-        return nonNull(publication) && nonNull(publication.getDoi()) ?
-                   createAlternateIdentifierFromPublicationIdentifier(publication) : null;
+        return nonNull(publication) && nonNull(publication.getDoi())
+                   ? createAlternateIdentifierFromPublicationIdentifier(publication)
+                   : null;
     }
 
     private static List<AlternateIdentifierDto> createAlternateIdentifierFromPublicationIdentifier(
@@ -111,7 +112,7 @@ public final class DataCiteMetadataDtoMapper {
                    .map(Publication::getEntityDescription);
     }
 
-    private static PublisherDto extractPublisher(Publication publication, UriRetriever uriRetriever) {
+    private static PublisherDto extractPublisher(Publication publication, RawContentRetriever uriRetriever) {
         return Optional.of(publication)
                    .map(Publication::getPublisher)
                    .map(Organization::getId)
@@ -120,7 +121,7 @@ public final class DataCiteMetadataDtoMapper {
                    .orElse(null);
     }
 
-    private static String toName(URI id, UriRetriever uriRetriever) {
+    private static String toName(URI id, RawContentRetriever uriRetriever) {
         return Optional.of(uriRetriever)
                    .flatMap(retriever -> retriever.getRawContent(id, APPLICATION_LD_JSON))
                    .map(DataCiteMetadataDtoMapper::toCustomerName)
