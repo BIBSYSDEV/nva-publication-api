@@ -1,11 +1,13 @@
 package no.unit.nva.publication.events.bodies;
 
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NVA_API_DOMAIN;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -61,14 +63,6 @@ public class DoiMetadataUpdateEvent {
         URI customerId = extractCustomerId(newEntry);
         URI doi = extractDoi(newEntry);
         return new DoiMetadataUpdateEvent(UPDATE_DOI_EVENT_TOPIC, publicationId, customerId, newEntry, doi);
-    }
-
-    public static DoiMetadataUpdateEvent createNewDoiEvent(DoiRequest newEntry, ResourceService resourceService) {
-        var publication = newEntry.toPublication(resourceService);
-        URI publicationId = inferPublicationId(publication);
-        URI customerId = extractCustomerId(publication);
-        URI doi = extractDoi(publication);
-        return new DoiMetadataUpdateEvent(REQUEST_DRAFT_DOI_EVENT_TOPIC, publicationId, customerId, publication, doi);
     }
 
     public static DoiMetadataUpdateEvent createDeleteDraftDoiEvent(DoiRequest doiRequest,
@@ -129,6 +123,10 @@ public class DoiMetadataUpdateEvent {
     @JacocoGenerated
     public Publication getItem() {
         return item;
+    }
+
+    public String toJsonString() {
+        return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(this)).orElseThrow();
     }
 
     private static URI extractDoi(Publication newEntry) {

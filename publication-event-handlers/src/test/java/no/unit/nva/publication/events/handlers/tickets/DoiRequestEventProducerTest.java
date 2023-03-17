@@ -6,7 +6,6 @@ import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.CUSTO
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DELETE_DRAFT_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DOI;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.PUBLICATION_ID;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.REQUEST_DRAFT_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.DOI_REQUEST_HAS_NO_IDENTIFIER;
@@ -175,26 +174,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
             hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
-
-    @Test
-    void shouldCreateNewDoiEventWhenPublicationHasNoDoiAndADraftDoiHasBeenRequested()
-        throws IOException,
-               ApiGatewayException {
-        var publication = persistPublicationWithoutDoi();
-        var draftRequest = DoiRequest.fromPublication(publication);
-        var event = createEvent(null, draftRequest);
-
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getTopic(), is(equalTo(REQUEST_DRAFT_DOI_EVENT_TOPIC)));
-        var expectedPublicationId = inferExpectedPublicationId(publication);
-        var expectedCustomerId = extractExpectedCustomerId(publication);
-        assertThat(actual, allOf(
-            hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
-            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
-        );
-    }
-
+    
     @Test
     void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
@@ -221,20 +201,6 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
-    }
-
-    @Test
-    void shouldSendRequestForDraftingADoiWhenThereHasBeenAnOldPreviousDoiRequestButNoDoiHasBeenCreated()
-        throws ApiGatewayException, IOException {
-        var publication = persistPublicationWithoutDoi();
-        var oldDoiRequest = DoiRequest.fromPublication(publication);
-        var longEnoughIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.plusMinutes(1);
-        oldDoiRequest.setModifiedDate(oldDoiRequest.getModifiedDate().minus(longEnoughIntervalForRerequesting));
-        var newDoiRequest = DoiRequest.fromPublication(publication);
-        var event = createEvent(oldDoiRequest, newDoiRequest);
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getTopic(), is(equalTo(REQUEST_DRAFT_DOI_EVENT_TOPIC)));
     }
 
     @Test
