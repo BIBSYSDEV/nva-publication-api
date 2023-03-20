@@ -75,7 +75,7 @@ public class DoiRequest extends TicketEntry {
     
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(SortableIdentifier.next());
-        doiRequest.setStatus(TicketStatus.PENDING);
+        doiRequest.setStatus(TicketStatus.NEW);
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
@@ -88,7 +88,7 @@ public class DoiRequest extends TicketEntry {
     
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(doiRequestIdentifier);
-        doiRequest.setStatus(TicketStatus.PENDING);
+        doiRequest.setStatus(TicketStatus.NEW);
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.validate();

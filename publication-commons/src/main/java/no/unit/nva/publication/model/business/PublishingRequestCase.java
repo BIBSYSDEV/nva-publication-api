@@ -61,7 +61,7 @@ public class PublishingRequestCase extends TicketEntry {
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
-        openingCaseObject.setStatus(TicketStatus.PENDING);
+        openingCaseObject.setStatus(TicketStatus.NEW);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
         return openingCaseObject;

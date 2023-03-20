@@ -3,7 +3,9 @@ package no.unit.nva.publication.model.business;
 import static java.util.Collections.emptySet;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.CLOSED_STATUS;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.COMPLETED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.NEW_STATUS;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.PENDING_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.REJECTED_STATUS;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
@@ -13,9 +15,11 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
 public enum TicketStatus {
+    NEW(NEW_STATUS, "NEW"),
     PENDING(PENDING_STATUS, "REQUESTED"),
     COMPLETED(COMPLETED_STATUS, "APPROVED"),
-    CLOSED(CLOSED_STATUS, "REJECTED");
+    CLOSED(CLOSED_STATUS, "CLOSED"),
+    REJECTED(REJECTED_STATUS, "REJECTED");
     
     public static final String ERROR_MESSAGE_NOT_ALLOWED_TO_CHANGE_STATUS_FROM_S_TO_S =
         "Not allowed to change status from %s to %s";
@@ -97,10 +101,12 @@ public enum TicketStatus {
     }
     
     public static class TicketStatusConstants {
-        
+
+        public  static  final String NEW_STATUS = "New";
         public static final String PENDING_STATUS = "Pending";
         public static final String COMPLETED_STATUS = "Completed";
         public static final String CLOSED_STATUS = "Closed";
+        public static  final String REJECTED_STATUS= "Rejected";
         public static final String READ_STATUS = "Read";
         public static final String UNREAD_STATUS = "Unread";
         
