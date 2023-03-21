@@ -152,19 +152,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
     
     @Test
-    void shouldNotAllowDoiRequestTicketCreationWhenPublicationHasExistingDoiProducedByNvaOrLegacySystem()
-        throws IOException {
-        var publication = createPersistedPublicationWithDoi();
-        assertThat(publication.getDoi(), is(not(nullValue())));
-        var owner = UserInstance.fromPublication(publication);
-        var requestBody = constructDto(DoiRequest.class);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
-    }
-    
-    @Test
     void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsPublished()
         throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
@@ -288,12 +275,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
         return publication;
-    }
-    
-    private Publication createPersistedPublicationWithDoi() {
-        var publication = randomPublication();
-        return Resource.fromPublication(publication).persistNew(resourceService,
-            UserInstance.fromPublication(publication));
     }
     
     private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)

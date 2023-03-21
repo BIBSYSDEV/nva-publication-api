@@ -1,8 +1,10 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -16,17 +18,21 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +44,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     public static final String RESOURCE_LACKS_REQUIRED_DATA = "Resource does not have required data to be "
                                                               + "published: ";
     private ResourceService resourceService;
+    private TicketService ticketService;
     private AcceptedPublishingRequestEventHandler handler;
     private ByteArrayOutputStream outputStream;
     private S3Driver s3Driver;
@@ -46,9 +53,10 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(client);
         var s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, randomString());
-        handler = new AcceptedPublishingRequestEventHandler(resourceService, s3Client);
+        handler = new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         outputStream = new ByteArrayOutputStream();
     }
     
@@ -62,7 +70,44 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
-    
+
+    @Test
+    void shouldCreateDoiRequestTicketWhenPublicationWithDraftDoiIsPublished() throws IOException, NotFoundException {
+        var publication = createDraftPublicationWithDoi();
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var ticket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                                   publication.getIdentifier(),
+                                                                   DoiRequest.class);
+        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(ticket.get().getStatus(), is(equalTo(TicketStatus.PENDING)));
+    }
+
+    @Test
+    void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists() throws NotFoundException, IOException {
+        var publication = createDraftPublicationWithDoi();
+        var existingTicket = createDoiRequestTicket(publication);
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var actualTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                                   publication.getIdentifier(),
+                                                                   DoiRequest.class);
+        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(existingTicket.getIdentifier(), is(equalTo(actualTicket.get().getIdentifier())));
+        assertThat(actualTicket.get().getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    private DoiRequest createDoiRequestTicket(Publication publication) {
+        return attempt(() -> ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class))
+            .orElseThrow();
+    }
+
     @Test
     void shouldNotPublishPublicationWhenPublishingRequestIsStillNotApproved() throws ApiGatewayException, IOException {
         var publication = createPublication();
@@ -89,7 +134,16 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
         assertThat(logger.getMessages(), containsString(RESOURCE_LACKS_REQUIRED_DATA));
     }
-    
+
+    private Publication createDraftPublicationWithDoi() {
+        var publication = randomPublication().copy()
+                              .withStatus(PublicationStatus.DRAFT)
+                              .withDoi(randomDoi())
+                              .build();
+        return Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+    }
+
     private InputStream createEvent(TicketEntry pendingPublishingRequest,
                                     TicketEntry approvedPublishingRequest) throws IOException {
         var sampleEvent = eventBody(pendingPublishingRequest, approvedPublishingRequest);
