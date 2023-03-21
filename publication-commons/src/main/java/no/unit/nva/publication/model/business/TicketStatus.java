@@ -25,6 +25,7 @@ public enum TicketStatus {
         "Not allowed to change status from %s to %s";
     public static final String INVALID_DOI_REQUEST_STATUS_ERROR = "Invalid DoiRequest status. Valid values:  ";
     public static final String SEPARATOR = ",";
+    static final Set<TicketStatus> validStatusChangeForNew = Set.of(PENDING,COMPLETED, CLOSED);
     static final Set<TicketStatus> validStatusChangeForRejected = Set.of(COMPLETED);
     static final Set<TicketStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED);
     static final Set<TicketStatus> validDefaultStatusChanges = emptySet();
@@ -91,6 +92,8 @@ public enum TicketStatus {
     
     private Set<TicketStatus> getValidTransitions(TicketStatus fromRequestStatus) {
         switch (fromRequestStatus) {
+            case NEW:
+                return validStatusChangeForNew;
             case PENDING:
                 return validStatusChangeForRequested;
             case CLOSED:

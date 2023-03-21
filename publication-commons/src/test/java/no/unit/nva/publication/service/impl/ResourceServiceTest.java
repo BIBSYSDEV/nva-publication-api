@@ -1111,7 +1111,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withIdentifier(initialDoiRequest.getIdentifier())
                    .withCreatedDate(initialDoiRequest.getCreatedDate())
                    .withModifiedDate(updatedDoiRequest.getModifiedDate())
-                   .withStatus(TicketStatus.PENDING)
+                   .withStatus(TicketStatus.NEW)
                    .withResourceStatus(publicationUpdate.getStatus())
                    .withPublicationDetails(PublicationDetails.create(publicationUpdate))
                    .withViewedBy(initialDoiRequest.getViewedBy())

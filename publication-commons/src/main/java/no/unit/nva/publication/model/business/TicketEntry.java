@@ -147,9 +147,9 @@ public abstract class TicketEntry implements Entity {
     }
     
     public void validateClosingRequirements() throws ApiGatewayException {
-        if (!getStatus().equals(TicketStatus.PENDING)) {
+        if (!getStatus().equals(TicketStatus.NEW)) {
             var errorMessage = String.format("Cannot close a ticket that has any other status than %s",
-                TicketStatus.PENDING);
+                TicketStatus.NEW);
             throw new BadRequestException(errorMessage);
         }
     }

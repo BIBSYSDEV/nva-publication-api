@@ -709,7 +709,7 @@ class TicketServiceTest extends ResourcesLocalTest {
                    .withPublicationDetails(PublicationDetails.create(emptyPublication))
                    .withOwner(new User(emptyPublication.getResourceOwner().getOwner()))
                    .withCustomerId(emptyPublication.getPublisher().getId())
-                   .withStatus(TicketStatus.PENDING)
+                   .withStatus(TicketStatus.NEW)
                    .withResourceStatus(DRAFT)
                    .withCreatedDate(actualDoiRequest.getCreatedDate())
                    .withModifiedDate(actualDoiRequest.getModifiedDate())
