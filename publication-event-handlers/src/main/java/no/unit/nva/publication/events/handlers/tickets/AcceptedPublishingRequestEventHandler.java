@@ -60,9 +60,9 @@ public class AcceptedPublishingRequestEventHandler
         if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus())) {
             var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
             var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
-            createDoiRequestIfNeeded(publication);
             attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
                 .orElse(fail -> logError(fail.getException()));
+            createDoiRequestIfNeeded(publication);
         }
         return null;
     }
