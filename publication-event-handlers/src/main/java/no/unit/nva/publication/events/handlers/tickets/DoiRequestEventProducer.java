@@ -123,13 +123,13 @@ public class DoiRequestEventProducer
     }
 
     private boolean isDoiRequestApproval(DoiRequest oldEntry, DoiRequest newEntry) {
-        var oldEntryIsNotApproved = matchStatus(oldEntry, TicketStatus.PENDING);
+        var oldEntryIsNotApproved = matchStatus(oldEntry, TicketStatus.NEW);
         var newEntryIsApproved = matchStatus(newEntry, TicketStatus.COMPLETED);
         return oldEntryIsNotApproved && newEntryIsApproved;
     }
 
     private boolean isDoiRequestRejection(DoiRequest oldEntry, DoiRequest newEntry) {
-        var oldEntryIsPending = matchStatus(oldEntry, TicketStatus.PENDING);
+        var oldEntryIsPending = matchStatus(oldEntry, TicketStatus.NEW);
         var newEntryIsRejected = matchStatus(newEntry, TicketStatus.CLOSED);
         return oldEntryIsPending && newEntryIsRejected;
     }

@@ -115,7 +115,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                                                 secretsReader, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.NEW)));
     }
     
     @Test
@@ -133,7 +133,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.NEW)));
         assertThat(logger.getMessages(), containsString(identityServiceResponse.body()));
     }
     
@@ -159,7 +159,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                                                 secretsReader, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.NEW)));
         var resource = resourceService.getResourceByIdentifier(publishingRequest.getResourceIdentifier());
         assertThat(resource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED_METADATA)));
         assertThatFilesAreUnpublished(resource);
