@@ -171,14 +171,11 @@ public class DoiRequest extends TicketEntry {
     public void setOwner(User owner) {
         this.owner = owner;
     }
-    
+
     @Override
     public void validateCreationRequirements(Publication publication) throws ConflictException {
         if (publicationDoesNotHaveAnExpectedStatus(publication)) {
             throw new ConflictException(String.format(WRONG_PUBLICATION_STATUS_ERROR, ACCEPTABLE_PUBLICATION_STATUSES));
-        }
-        if (publicationHasNvaDoi(publication)) {
-            throw new ConflictException("Publication has NVA issued DOI");
         }
         validateCompletionRequirements(publication);
     }
@@ -266,10 +263,6 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner());
-    }
-    
-    private boolean publicationHasNvaDoi(Publication publication) {
-        return nonNull(publication.getDoi());
     }
     
     private boolean attemptingToCreateFindableDoiForNonPublishedPublication(Publication publication) {
