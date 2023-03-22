@@ -145,11 +145,27 @@ public abstract class TicketEntry implements Entity {
         updated.setModifiedDate(Instant.now());
         return updated;
     }
-    
+
+    public TicketEntry pending (Publication publication) {
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.PENDING);
+        updated.validateCompletionRequirements(publication);
+        updated.setModifiedDate(Instant.now());
+        return updated;
+    }
+
+    public TicketEntry rejected(Publication publication) {
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.REJECTED);
+        updated.validateCompletionRequirements(publication);
+        updated.setModifiedDate(Instant.now());
+        return updated;
+    }
+
     public void validateClosingRequirements() throws ApiGatewayException {
-        if (!getStatus().equals(TicketStatus.NEW)) {
+        if (!getStatus().equals(TicketStatus.PENDING)) {
             var errorMessage = String.format("Cannot close a ticket that has any other status than %s",
-                TicketStatus.NEW);
+                TicketStatus.PENDING);
             throw new BadRequestException(errorMessage);
         }
     }

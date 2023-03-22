@@ -92,10 +92,14 @@ public class TicketService extends ServiceWithTransactions {
     public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus)
         throws ApiGatewayException {
         switch (ticketStatus) {
+            case PENDING:
+                return pendingTicket(ticketEntry);
             case COMPLETED:
                 return completeTicket(ticketEntry);
             case CLOSED:
                 return closeTicket(ticketEntry);
+            case REJECTED:
+                return rejectTicket(ticketEntry);
             default:
                 throw new BadRequestException("Cannot update to status " + ticketStatus);
         }
@@ -150,7 +154,39 @@ public class TicketService extends ServiceWithTransactions {
     public void updateTicket(TicketEntry ticketEntry) {
         ticketEntry.toDao().updateExistingEntry(getClient());
     }
-    
+
+
+    protected TicketEntry pendingTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket =
+            attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
+                .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
+                .orElseThrow(fail -> notFoundException());
+
+        var completed = attempt(() -> existingTicket.pending(publication))
+            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+
+        var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
+        getClient().putItem(putItemRequest);
+        return completed;
+    }
+
+
+    protected TicketEntry rejectTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket =
+            attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
+                .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
+                .orElseThrow(fail -> notFoundException());
+
+        var completed = attempt(() -> existingTicket.rejected(publication))
+            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+
+        var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
+        getClient().putItem(putItemRequest);
+        return completed;
+    }
+
     protected TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
         var existingTicket =

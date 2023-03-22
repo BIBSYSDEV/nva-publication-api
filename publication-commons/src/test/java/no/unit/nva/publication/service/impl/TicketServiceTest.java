@@ -14,6 +14,7 @@ import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -359,7 +360,8 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldCloseTicketWhenTicketIsPendingAndRequestedActionIsToCloseTheTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var pendingTicket = createPersistedTicket(publication, ticketType);
+        var newTicket = createPersistedTicket(publication, ticketType);
+        var pendingTicket = ticketService.updateTicketStatus(newTicket, PENDING);
         ticketService.updateTicketStatus(pendingTicket, CLOSED);
         var completedTicket = ticketService.fetchTicket(pendingTicket);
         assertThat(completedTicket.getStatus(), is(equalTo(CLOSED)));
