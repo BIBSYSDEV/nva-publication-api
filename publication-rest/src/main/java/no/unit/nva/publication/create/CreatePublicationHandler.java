@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -34,16 +35,18 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
     private final ResourceService publicationService;
     private final String apiHost;
-    
+    private final IdentityServiceClient identityServiceClient;
+
     /**
      * Default constructor for CreatePublicationHandler.
      */
     @JacocoGenerated
     public CreatePublicationHandler() {
         this(new ResourceService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                Clock.systemDefaultZone()),
-            new Environment());
+                 AmazonDynamoDBClientBuilder.defaultClient(),
+                 Clock.systemDefaultZone()),
+             new Environment(),
+             IdentityServiceClient.prepare());
     }
     
     /**
@@ -53,10 +56,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
      * @param environment        environment
      */
     public CreatePublicationHandler(ResourceService publicationService,
-                                    Environment environment) {
+                                    Environment environment,
+                                    IdentityServiceClient identityServiceClient) {
         super(CreatePublicationRequest.class, environment);
         this.publicationService = publicationService;
         this.apiHost = environment.readEnv(API_HOST);
+        this.identityServiceClient = identityServiceClient;
     }
     
     @Override
@@ -82,14 +87,33 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected URI getLocation(SortableIdentifier identifier) {
         return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
     }
-    
-    private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws UnauthorizedException {
-        var resourceOwner = createResourceOwner(requestInfo);
+
+    private UserInstance createUserInstanceForExternalClientUser(RequestInfo requestInfo) throws UnauthorizedException {
+        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
+                         .map( clientId ->  identityServiceClient.getExternalClient(clientId))
+                         .orElseThrow(fail -> new UnauthorizedException());
+
+        var resourceOwner = new ResourceOwner(
+            client.getActingUser(),
+            client.getCristinUrgUri()
+        );
+
+        return UserInstance.create(resourceOwner, client.getCustomerUri());
+    }
+
+    private UserInstance createUserInstanceForInternalUser(RequestInfo requestInfo) throws UnauthorizedException {
+        var resourceOwner = createInternalResourceOwner(requestInfo);
         var customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(resourceOwner, customerId);
     }
+
+    private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws UnauthorizedException {
+        return requestInfo.clientIsThirdParty() ?
+                   createUserInstanceForExternalClientUser(requestInfo)
+                   : createUserInstanceForInternalUser(requestInfo);
+    }
     
-    private ResourceOwner createResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
+    private ResourceOwner createInternalResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(() -> requestInfo.getTopLevelOrgCristinId().orElseThrow())
                    .map(topLevelOrgCristinId -> new ResourceOwner(requestInfo.getNvaUsername(), topLevelOrgCristinId))
                    .orElseThrow(fail -> new UnauthorizedException());

@@ -10,6 +10,7 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
+    implementation libs.nva.clients
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
@@ -51,5 +52,8 @@ test {
     environment "BACKEND_CLIENT_AUTH_URL", "localhost"
     environment "BACKEND_CLIENT_SECRET_NAME", "secret"
     environment "TABLE_NAME", "ResourcesTable"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
+    environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
+    environment "API_HOST", "https://api-host.example.com"
 }
 
