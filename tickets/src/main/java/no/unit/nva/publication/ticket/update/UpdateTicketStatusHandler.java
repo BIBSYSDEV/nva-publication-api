@@ -49,7 +49,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
             throw new ForbiddenException();
         }
         if (ticket instanceof DoiRequest) {
-            doiTicketSideEffects(input, ticket, requestInfo);
+            doiTicketSideEffects(input, requestInfo);
         }
         ticketService.updateTicketStatus(ticket, input.getStatus());
         return null;
@@ -74,7 +74,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
     }
 
-    private void doiTicketSideEffects(TicketDto input, TicketEntry ticket, final RequestInfo requestInfo)
+    private void doiTicketSideEffects(TicketDto input, final RequestInfo requestInfo)
         throws NotFoundException, BadMethodException {
         if (TicketStatus.COMPLETED.equals(input.getStatus())) {
             var publication = getPublication(requestInfo);
