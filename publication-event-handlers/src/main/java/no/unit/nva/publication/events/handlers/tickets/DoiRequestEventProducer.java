@@ -18,6 +18,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.doi.requirements.DoiResourceRequirements;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
@@ -91,7 +92,7 @@ public class DoiRequestEventProducer
         var newEntry = input.getNewData();
 
         if (newEntry instanceof Resource && DoiResourceRequirements.publicationSatisfiesDoiRequirements(
-            (Resource) newEntry)) {
+            ((Resource) newEntry).toPublication())) {
             return createDoiMetadataUpdateEvent((Resource) newEntry);
         }
         if (newEntry instanceof DoiRequest) {
@@ -102,7 +103,8 @@ public class DoiRequestEventProducer
 
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(DoiRequest oldEntry, DoiRequest newEntry) {
         if (isDoiRequestApproval(newEntry)
-            && DoiResourceRequirements.publicationSatisfiesDoiRequirements(newEntry, resourceService)) {
+            && DoiResourceRequirements.publicationSatisfiesDoiRequirements(
+            newEntry.toPublication(resourceService))) {
             return createEventForMakingDoiFindable(newEntry);
         } else if (isDoiRequestRejection(oldEntry, newEntry)) {
             return DoiMetadataUpdateEvent.createDeleteDraftDoiEvent(newEntry, resourceService);
