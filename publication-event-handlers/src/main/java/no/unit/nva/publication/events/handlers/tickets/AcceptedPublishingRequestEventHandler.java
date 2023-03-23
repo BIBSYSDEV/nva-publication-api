@@ -16,11 +16,13 @@ import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
@@ -75,10 +77,14 @@ public class AcceptedPublishingRequestEventHandler
 
     private void createDoiRequestIfNeeded(Publication publication) {
         if(hasDoi(publication) && !doiRequestExists(publication)) {
-            var doiRequest = DoiRequest.fromPublication(publication);
-            attempt(() -> ticketService.createTicket(doiRequest, DoiRequest.class)).orElseThrow();
+            attempt(() -> createAndPersistDoiRequestForPublication(publication)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
         }
+    }
+
+    private TicketEntry createAndPersistDoiRequestForPublication(Publication publication) throws ApiGatewayException {
+        return DoiRequest.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next)
+                   .persistNewTicket(ticketService);
     }
 
     private boolean doiRequestExists(Publication publication) {
