@@ -1,7 +1,7 @@
 [versions]
 
 
-nva = { strictly = '1.27.6' }
+nva = { strictly = '1.27.10' }
 nvaDatamodel = { strictly = '0.19.38' }
 nvaDoiPartnerData = { strictly = '0.5.0' }
 jackson = { strictly = '2.14.1' }
@@ -47,6 +47,7 @@ nva-auth = { group = 'com.github.bibsysdev', name = 'auth', version.ref = 'nva' 
 nva-apigateway = { group = 'com.github.bibsysdev', name = 'apigateway', version.ref = 'nva' }
 nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', version.ref = 'nva' }
 nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
+nva-clients = { group = "com.github.bibsysdev", name = "clients", version.ref = "nva" }
 logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
 
 nva-datamodel-core = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
