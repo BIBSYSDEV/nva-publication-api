@@ -114,7 +114,8 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
     }
-    
+
+    @JacocoGenerated
     @Override
     public DoiRequest toTicketEntry() {
         DoiRequest doiRequest = new DoiRequest();

@@ -7,12 +7,13 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -21,12 +22,9 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.attempt.Try;
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -35,8 +33,9 @@ class TicketDtoTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
 
-    public static Stream<Arguments> ticketTypeProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
+    public static Stream<Class<?>> publishingAndGeneralSupportTicketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+                   .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class);
     }
 
     @BeforeEach
@@ -48,7 +47,7 @@ class TicketDtoTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "ticketType:{0}")
     @DisplayName("should include all publication summary fields")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldIncludeAllPublicationSummaryFields(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = draftPublicationWithoutDoi();
         var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);

@@ -103,6 +103,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
+
+    public static Stream<Class<?>> publishingAndGeneralSupportTicketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+                   .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class);
+    }
     
     public static Stream<Class<?>> uniqueTicketsProvider() {
         return Stream.of(DoiRequest.class, PublishingRequestCase.class);
@@ -491,7 +496,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should mark ticket as Unread for owner")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType)
@@ -503,7 +508,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should mark ticket as Read for owner")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
@@ -515,7 +520,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should mark ticket as read for curator")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType)
@@ -527,7 +532,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should mark ticket as unread for curator")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType)
@@ -628,11 +633,20 @@ class TicketServiceTest extends ResourcesLocalTest {
                                  .collect(Collectors.toList());
         assertThat(fetchedTickets, is(empty()));
     }
-    
+
+    @Test
+    void shouldReturnBadRequestWhenUpdatingWithUnsupportedStatus() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var fetchedTickets = createAllTypesOfTickets(publication);
+        Executable action = () -> ticketService.updateTicketStatus(fetchedTickets.get(0), TicketStatus.PENDING);
+        assertThrows(BadRequestException.class, action);
+    }
+
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {
         return ticketTypeProvider()
                    .map(type -> (Class<? extends TicketEntry>) type)
-                   .map(type -> TicketEntry.requestNewTicket(publication, type))
+                   .filter(type -> !type.equals(DoiRequest.class))
+                   .map(type -> attempt(() -> TicketEntry.requestNewTicket(publication, type)).orElseThrow())
                    .map(attempt(ticket -> ticket.persistNewTicket(ticketService)))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());

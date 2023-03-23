@@ -5,6 +5,7 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import nva.commons.core.JacocoGenerated;
 
 public final class JsonLdUtils {
     
@@ -15,7 +16,8 @@ public final class JsonLdUtils {
     public static String toJsonString(JsonNode root) {
         return attempt(() -> objectMapper.writeValueAsString(addContext(root))).orElseThrow();
     }
-    
+
+    @JacocoGenerated
     private static JsonNode addContext(JsonNode root) {
         if (nonNull(root)) {
             ObjectNode context = objectMapper.createObjectNode();

@@ -4,6 +4,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -46,6 +47,7 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static GeneralSupportRequest createGeneralSupportRequest(Publication publication) {
-        return (GeneralSupportRequest) TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
+        return attempt(() -> (GeneralSupportRequest) TicketEntry.requestNewTicket(publication,
+                                                                                  GeneralSupportRequest.class)).orElseThrow();
     }
 }

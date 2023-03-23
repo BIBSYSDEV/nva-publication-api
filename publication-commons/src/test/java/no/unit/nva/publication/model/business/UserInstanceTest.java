@@ -8,9 +8,11 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +36,9 @@ class UserInstanceTest {
     }
     
     @Test
-    void shouldReturnUserInstanceFromMessage() {
-        Publication publication = PublicationGenerator.randomPublication();
+    void shouldReturnUserInstanceFromMessage() throws BadRequestException {
+        Publication publication = PublicationGenerator.randomPublication().copy()
+                                      .withStatus(PublicationStatus.PUBLISHED).build();
         var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         var userInstance = UserInstance.fromMessage(message);

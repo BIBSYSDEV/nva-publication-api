@@ -70,7 +70,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest(name = " ticket type: {0}")
     @DisplayName("should  return not found when publication identifier exists, but ticket identifier does not "
                  + "correspond to a ticket of that publication")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldReturnNotFoundWhenPublicationIdentifierExistsButTicketIdentifierDoesCorrespondToPublication(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
@@ -85,7 +85,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = " ticket type: {0}")
     @DisplayName("should  return not found when user is not the owner of the associated publication")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldReturnNotFoundWhenUserIsNotTheOwnerOfTheAssociatedPublication(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
@@ -189,7 +189,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should return publication title with the ticket")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldReturnPublicationTitleWithTheTicket(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();

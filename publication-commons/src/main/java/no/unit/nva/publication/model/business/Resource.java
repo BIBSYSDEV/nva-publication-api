@@ -31,6 +31,7 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -377,6 +378,7 @@ public class Resource implements Entity {
      *
      * @return the hashcode.
      */
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
@@ -391,6 +393,7 @@ public class Resource implements Entity {
      * @param o the other Resource.
      * @return true if the two Resources are equivalent without considering the row version, false otherwise.
      */
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {

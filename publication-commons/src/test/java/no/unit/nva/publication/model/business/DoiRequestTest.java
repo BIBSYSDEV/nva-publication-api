@@ -8,6 +8,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.time.ZoneId;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +66,14 @@ class DoiRequestTest {
         DoiRequest updatedDoiRequest = doiRequest.update(updatedResource);
         assertThat(updatedDoiRequest.getPublicationDetails().getTitle(), is(equalTo(newTitle)));
     }
-    
+
+    @Test
+    void doiRequestConvertsToPublication() {
+        var doiRequest = new DoiRequest();
+        var publication = doiRequest.toPublication(new ResourceService(AmazonDynamoDBClient.builder().build(),
+                                                      Clock.systemDefaultZone()));
+        assertThat(publication, is(nullValue()));
+    }
     @Test
     void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());

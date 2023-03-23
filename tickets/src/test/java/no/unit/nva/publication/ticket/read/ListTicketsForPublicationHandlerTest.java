@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -44,16 +46,25 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnAllTicketsForPublicationWhenUserIsThePublicationOwner() throws IOException {
         var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+        var tickets = createTicketsOfTypesPublishingAndGeneralSupport(publication);
         var request = ownerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
         assertThatResponseContainsExpectedTickets(tickets);
     }
-    
+
+    @Test
+    void shouldReturnDoiRequestTicketForPublication() throws IOException {
+        var publication = createAndPersistPublication(PublicationStatus.PUBLISHED);
+        var tickets = createDoiRequestTicket(publication);
+        var request = ownerRequestsTicketsForPublication(publication);
+        handler.handleRequest(request, output, CONTEXT);
+        assertThatResponseContainsExpectedTickets(tickets);
+    }
+
     @Test
     void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser() throws IOException {
         var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+        var tickets = createTicketsOfTypesPublishingAndGeneralSupport(publication);
         var request = nonOwnerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
@@ -63,7 +74,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnAllTicketsForPublicationWhenUserIsElevatedUser() throws IOException {
         var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+        var tickets = createTicketsOfTypesPublishingAndGeneralSupport(publication);
         var request = elevatedUserRequestsTicketsForPublication(publication);
     
         handler.handleRequest(request, output, CONTEXT);
@@ -73,7 +84,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnForbiddenWhenUserIsElevatedUserOfAlienOrganization() throws IOException {
         var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+        var tickets = createTicketsOfTypesPublishingAndGeneralSupport(publication);
         var request = elevatedUserOfAlienOrgRequestsTicketsForPublication(publication);
         
         handler.handleRequest(request, output, CONTEXT);
@@ -137,13 +148,21 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualTicketIdentifiers, containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));
     }
-    
-    private List<TicketEntry> createTicketsOfAllTypes(Publication publication) {
+
+    private List<TicketEntry> createTicketsOfTypesPublishingAndGeneralSupport(Publication publication) {
         return ticketTypeProvider()
                    .map(type -> (Class<? extends TicketEntry>) type)
-                   .map(type -> TicketEntry.requestNewTicket(publication, type))
+                   .filter(type -> !type.equals(DoiRequest.class))
+                   .map(type -> attempt(() -> TicketEntry.requestNewTicket(publication, type)).orElseThrow())
                    .map(attempt(unpersistedTicket -> unpersistedTicket.persistNewTicket(ticketService)))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
+    }
+
+    private List<TicketEntry> createDoiRequestTicket(Publication publication) {
+        var ticket = attempt(() -> TicketEntry.requestNewTicket(publication, DoiRequest.class))
+                                    .map(ticketEntry -> ticketEntry.persistNewTicket(ticketService))
+                                    .orElseThrow();
+        return Collections.singletonList(ticket);
     }
 }

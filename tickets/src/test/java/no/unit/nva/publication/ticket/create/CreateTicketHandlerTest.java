@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -62,6 +63,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
     }
+
+    public static Stream<Arguments> publishingAndGeneralSupportTicketEntryProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+                   .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class)
+                   .map(Arguments::of);
+    }
     
     @BeforeEach
     public void setup() {
@@ -72,7 +79,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest(name = "ticketType")
     @DisplayName("should persist ticket when publication exists, user is publication owner and "
                  + "publication meets ticket creation criteria")
-    @MethodSource("ticketEntryProvider")
+    @MethodSource("publishingAndGeneralSupportTicketEntryProvider")
     void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
         Class<? extends TicketEntry> ticketType) throws IOException, ApiGatewayException {
         
@@ -178,7 +185,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticketType:{0}")
     @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
-    @MethodSource("ticketEntryProvider")
+    @MethodSource("publishingAndGeneralSupportTicketEntryProvider")
     void shouldMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
@@ -193,7 +200,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticketType:{0}")
     @DisplayName("should mark ticket as Unread for the Curators when publication owner creates new ticket")
-    @MethodSource("ticketEntryProvider")
+    @MethodSource("publishingAndGeneralSupportTicketEntryProvider")
     void shouldMarkTicketAsUnReadForTheCuratorsWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
@@ -211,7 +218,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldUpdateExistingDoiRequestWhenNewDoiIsRequestedButUnfulfilledDoiRequestAlreadyExists()
         throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
+        var publication = createAndPersistPublication(PublicationStatus.PUBLISHED);
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(DoiRequest.class);
         

@@ -15,7 +15,9 @@ import java.time.Period;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
@@ -40,11 +42,12 @@ class MessageServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private UserInstance owner;
     private TicketService ticketService;
-    
-    public static Stream<Class<?>> ticketTypeProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class);
+
+    public static Stream<Class<?>> publishingAndGeneralSupportTicketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+                   .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class);
     }
-    
+
     @BeforeEach
     public void initialize() {
         super.init();
@@ -57,7 +60,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should persist message with reference to a ticket")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldPersistMessageWithReferenceToATicket(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = createDraftPublication(owner);
@@ -70,7 +73,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     
     @Test
     void shouldSetRecipientAsOwnerWhenSenderIsNotOwner() throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
+        var publication = createPublishedPublication(owner);
         var ticket = TicketEntry
                          .requestNewTicket(publication, DoiRequest.class)
                          .persistNewTicket(ticketService);
@@ -81,11 +84,11 @@ class MessageServiceTest extends ResourcesLocalTest {
                                    .orElseThrow();
         assertThat(retrievedMessage.getRecipient(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
     }
-    
+
     //TODO: discuss with product owner what the actual requirements are here.
     @Test
     void shouldSetRecipientAsSupportServiceWhenSenderIsOwner() throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
+        var publication = createPublishedPublication(owner);
         var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class)
                          .persistNewTicket(ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
@@ -106,6 +109,12 @@ class MessageServiceTest extends ResourcesLocalTest {
     private Publication createDraftPublication(UserInstance owner) {
         var publication = createUnpersistedPublication(owner);
         return Resource.fromPublication(publication).persistNew(resourceService, owner);
+    }
+
+    private Publication createPublishedPublication(UserInstance owner) throws ApiGatewayException {
+        var publication= Resource.fromPublication(createUnpersistedPublication(owner)).persistNew(resourceService, owner);
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        return resourceService.getPublication(publication);
     }
     
     private Clock mockClock() {

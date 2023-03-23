@@ -1,14 +1,31 @@
 package no.unit.nva.expansion.model;
 
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.stream.Stream;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublicationDetails;
@@ -29,27 +46,11 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.skyscreamer.jsonassert.JSONAssert;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ExpandedDataEntryTest extends ResourcesLocalTest {
 
@@ -117,12 +118,21 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Expanded DOI request should have type DoiRequest for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
-        var publication = createPublicationWithoutDoi(instanceType);
+        var publication = createPublishedPublicationWithoutDoi(instanceType);
         var doiRequest = createDoiRequest(publication);
         var expandedResource =
                 ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
         assertThat(json.get(TYPE).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
+    }
+
+    private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType) throws ApiGatewayException {
+        var publication = randomPublicationWithoutDoi(instanceType);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+        resourceService.publishPublication(UserInstance.fromPublication(publication),
+                                           persistedPublication.getIdentifier());
+        return resourceService.getPublication(persistedPublication);
     }
 
     @ParameterizedTest(name = "should return identifier using a non serializable method:{0}")
@@ -139,6 +149,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         assertThat(identifier, is(equalTo(expectedIdentifier)));
     }
 
+    @Test
+    void shouldReturnUnsupportedOperationExceptionWhenTicketIsOfUnsupportedType()  {
+        var publication = randomPublication();
+        Executable action = () -> TicketEntry.createNewTicket(publication, null, SortableIdentifier::next);
+        assertThrows(UnsupportedOperationException.class, action);
+    }
+
     private static ExpandedDoiRequest randomDoiRequest(Publication publication,
                                                        ResourceExpansionService resourceExpansionService,
                                                        ResourceService resourceService,
@@ -146,7 +163,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                        TicketService ticketService)
             throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
-        var doiRequest = (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class)
+        resourceService.publishPublication(userInstance, publication.getIdentifier());
+        var publishedPublication = resourceService.getPublication(publication);
+        var doiRequest = (DoiRequest) TicketEntry.requestNewTicket(publishedPublication, DoiRequest.class)
                 .persistNewTicket(ticketService);
         messageService.createMessage(doiRequest, userInstance, randomString());
         return attempt(() -> ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService,

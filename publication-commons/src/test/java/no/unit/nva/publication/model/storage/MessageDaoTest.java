@@ -1,9 +1,9 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.publication.model.storage.DaoTest.draftPublicationWithoutDoi;
-import static no.unit.nva.publication.model.storage.DaoUtils.randomTicketType;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -12,10 +12,15 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.net.URI;
 import java.time.Clock;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -23,6 +28,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +58,7 @@ class MessageDaoTest extends ResourcesLocalTest {
         var retrievedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
         assertThat(retrievedMessage, is(equalTo(message)));
     }
-    
+
     @Test
     void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey() throws ApiGatewayException {
         var message = insertSampleMessageInDatabase();
@@ -79,15 +85,32 @@ class MessageDaoTest extends ResourcesLocalTest {
     
     private Message insertSampleMessageInDatabase() throws ApiGatewayException {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        var sample = draftPublicationWithoutDoi()
+        var sample = publishedPublicationWithoutDoi()
                          .copy()
                          .withResourceOwner(RANDOM_RESOURCE_OWNER)
                          .withPublisher(publisher)
                          .build();
+        var userInstance = UserInstance.fromPublication(sample);
         var publication = Resource.fromPublication(sample)
-                              .persistNew(resourceService, UserInstance.fromPublication(sample));
-        var ticket = TicketEntry.requestNewTicket(publication, randomTicketType())
+                              .persistNew(resourceService, userInstance);
+        var publishedPublication = resourceService.getPublication(publication);
+        var ticket = TicketEntry.requestNewTicket(publishedPublication, publishingAndGeneralSupportTicketTypeProvider())
                          .persistNewTicket(ticketService);
         return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+    }
+
+
+    public static Class<? extends TicketEntry> publishingAndGeneralSupportTicketTypeProvider() {
+        return (Class<? extends TicketEntry>)
+                   randomElement(TypeProvider.listSubTypes(TicketEntry.class)
+                                     .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class)
+                                     .collect(Collectors.toList()));
+    }
+
+    public static Publication publishedPublicationWithoutDoi() {
+        return randomPublication().copy()
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withDoi(null)
+                   .build();
     }
 }

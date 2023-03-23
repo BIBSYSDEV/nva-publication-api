@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -28,6 +30,11 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
+    }
+
+    public static Stream<Class<?>> publishingAndGeneralSupportTicketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+                   .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class);
     }
     
     public void init() {
@@ -62,7 +69,9 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     }
     
     protected TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        return createPersistedTicket(createAndPersistDraftPublication(), ticketType);
+        return DoiRequest.class == ticketType
+            ? createPersistedTicket(createAndPersistPublication(PublicationStatus.PUBLISHED), ticketType)
+            : createPersistedTicket(createAndPersistDraftPublication(), ticketType);
     }
     
     protected TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)

@@ -48,8 +48,6 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     
     public static Stream<Arguments> ticketAndBadStatusProvider() {
         return Stream.of(
-            Arguments.of(DoiRequest.class, PublicationStatus.DRAFT),
-            Arguments.of(DoiRequest.class, PublicationStatus.DRAFT_FOR_DELETION),
             Arguments.of(PublishingRequestCase.class, PublicationStatus.DRAFT_FOR_DELETION));
     }
     

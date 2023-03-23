@@ -856,7 +856,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws ApiGatewayException {
-        var samplePublication = createPersistedPublicationWithoutDoi();
+        var samplePublication = createPublishedResource();
         var sampleTicket = TicketEntry.requestNewTicket(samplePublication, DoiRequest.class)
                                .persistNewTicket(ticketService);
 
@@ -974,6 +974,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
         var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
         assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
+    }
+
+    @Test
+    void shouldReturnUnsupportedOperationWhenUpdatingPublicationWithUnsupportedStatus() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi(resourceService, randomPublication().copy()
+                                                                      .withStatus(PublicationStatus.DELETED)
+                                                                      .build());
+        var userInstance = UserInstance.fromPublication(publication);
+        resourceService.updatePublishedStatusToDeleted(publication.getIdentifier());
+        Executable action = () -> resourceService.publishPublication(userInstance, publication.getIdentifier());
+        assertThrows(UnsupportedOperationException.class, action);
+
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.TicketTestLocal;
@@ -56,7 +58,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should mark ticket as read for owner when user is ticket owner and marks it as read")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsReadFoOwnerWhenUserIsTicketOwnerAndMarksItAsRead(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
@@ -79,7 +81,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should mark ticket as unread for owner when user is ticket owner and marks it as unread")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsUnreadForOwnerWhenUserIsTicketOwnerAndMarksItAsUnread(
         Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
@@ -99,7 +101,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should mark ticket as Read for all Curators when user is curator and marks it as read")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsReadForAllCuratorsWhenUserIsCuratorAndMarksItAsRead(
         Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
@@ -121,7 +123,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should mark ticket as Unread for all Curators when user is curator and marks it as unread")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsUnreadForAllCuratorsWhenUserIsCuratorAndMarksItAsUnread(
         Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
@@ -146,7 +148,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     void shouldNotProvideAnyInformationAboutTheExistenceOfATicketWhenAnAlienUserTriesToModifyTicket()
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+        var ticket = persistTicket(publication, publishingAndGeneralSupportTicketType());
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
@@ -162,7 +164,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator() throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+        var ticket = persistTicket(publication, publishingAndGeneralSupportTicketType());
         SortableIdentifier wrongPublicationIdentifier = SortableIdentifier.next();
         var httpRequest = curatorAttemptsToMarkExistingTicketConnectedToWrongPublication(ticket,
             wrongPublicationIdentifier);
@@ -174,7 +176,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner() throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+        var ticket = persistTicket(publication, publishingAndGeneralSupportTicketType());
         SortableIdentifier wrongPublicationIdentifier = SortableIdentifier.next();
         var httpRequest = ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(ticket,
             wrongPublicationIdentifier);
@@ -201,7 +203,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         "{\"type\": \"UpdateViewStatusRequest\", \"viewedStatus\": \"\"}"})
     void shouldReturnBadRequestWhenBodyIsEmpty(String requestBody) throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+        var ticket = persistTicket(publication, publishingAndGeneralSupportTicketType());
         var httpRequest = requestWithEmptyBody(ticket, requestBody);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -293,6 +295,13 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     private Class<? extends TicketEntry> randomTicketType() {
         var types = TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList());
+        return (Class<? extends TicketEntry>) randomElement(types);
+    }
+
+    private Class<? extends TicketEntry> publishingAndGeneralSupportTicketType() {
+        var types = TypeProvider.listSubTypes(TicketEntry.class)
+                        .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class)
+                        .collect(Collectors.toList());
         return (Class<? extends TicketEntry>) randomElement(types);
     }
     

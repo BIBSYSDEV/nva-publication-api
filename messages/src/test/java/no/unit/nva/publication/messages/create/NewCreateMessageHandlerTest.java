@@ -28,7 +28,9 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
@@ -49,7 +51,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class NewCreateMessageHandlerTest extends ResourcesLocalTest {
@@ -59,9 +60,10 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     private NewCreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
-    
-    public static Stream<Arguments> ticketTypeProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
+
+    public static Stream<Class<?>> publishingAndGeneralSupportTicketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+                   .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class);
     }
     
     @BeforeEach
@@ -141,7 +143,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "ticketType:{0}")
     @DisplayName("should mark ticket as unread for Publication Owner and mark and as read for curators"
                  + "when curator sends a message")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsUnreadForPublicationOwnerWhenCuratorSendsAMessage(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var publication = draftPublicationWithoutDoi();
@@ -159,7 +161,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "ticketType:{0}")
     @DisplayName("should mark ticket as unread for Curator and read for Publication Owner "
                  + "when Publication Owner sends a Message")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("publishingAndGeneralSupportTicketTypeProvider")
     void shouldMarkTicketAsUnreadForCuratorAndReadForPublicationOwnerWhenOwnerSendsAMessage(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
         var publication = draftPublicationWithoutDoi();
@@ -260,7 +262,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
-        return createTicket(publication, randomTicketType());
+        return createTicket(publication, publishingAndGeneralSupportTicketType());
     }
     
     private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
@@ -271,6 +273,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @SuppressWarnings("unchecked")
     private Class<? extends TicketEntry> randomTicketType() {
         var types = TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList());
+        return (Class<? extends TicketEntry>) randomElement(types);
+    }
+
+    private Class<? extends TicketEntry> publishingAndGeneralSupportTicketType() {
+        var types = TypeProvider.listSubTypes(TicketEntry.class)
+                        .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class)
+                        .collect(Collectors.toList());
         return (Class<? extends TicketEntry>) randomElement(types);
     }
 }

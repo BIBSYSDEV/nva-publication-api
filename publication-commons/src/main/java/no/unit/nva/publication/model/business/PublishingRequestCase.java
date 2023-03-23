@@ -93,10 +93,10 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     public void validateCreationRequirements(Publication publication)
         throws ConflictException {
-        if (PublicationStatus.PUBLISHED == publication.getStatus()) {
+        if (PublicationStatus.PUBLISHED.equals(publication.getStatus())) {
             throw new ConflictException(ALREADY_PUBLISHED_ERROR);
         }
-        if (PublicationStatus.DRAFT_FOR_DELETION == publication.getStatus()) {
+        if (PublicationStatus.DRAFT_FOR_DELETION.equals(publication.getStatus())) {
             throw new ConflictException(MARKED_FOR_DELETION_ERROR);
         }
         assertThatPublicationHasMinimumMandatoryFields(publication);

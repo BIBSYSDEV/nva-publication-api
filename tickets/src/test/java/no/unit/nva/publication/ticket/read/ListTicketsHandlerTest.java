@@ -24,6 +24,8 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -64,7 +66,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnAllPendingTicketsOfUser() throws IOException {
         var user = randomResourcesOwner();
-        var expectedTickets = generateTickets(user).map(this::constructDto).collect(Collectors.toList());
+         var expectedTickets = generateTickets(user).map(this::constructDto).collect(Collectors.toList());
         var request = buildHttpRequest(user);
         handler.handleRequest(request, outputStream, CONTEXT);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketCollection.class);
@@ -101,10 +103,11 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
                    .boxed()
                    .map(ignored -> persistDraftPublicationWithoutDoi(owner))
                    .flatMap(this::createTicketEntriesForPublication);
+
     }
     
     private Stream<TicketEntry> createTicketEntriesForPublication(Publication publication) {
-        return ticketTypes()
+        return publishingAndGeneralSupportTicketTypeProvider()
                    .map(attempt(ticketType -> constructTicketWithMessages(ticketType, publication)))
                    .map(Try::orElseThrow);
     }
@@ -142,8 +145,9 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     private void curatorSendsMessage(TicketEntry ticketEntry, UserInstance someCurator) {
         messageService.createMessage(ticketEntry, someCurator, randomString());
     }
-    
-    private Stream<Class<?>> ticketTypes() {
-        return TypeProvider.listSubTypes(TicketEntry.class);
+
+    public static Stream<Class<?>> publishingAndGeneralSupportTicketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+                   .filter(type -> type == PublishingRequestCase.class || type == GeneralSupportRequest.class);
     }
 }
