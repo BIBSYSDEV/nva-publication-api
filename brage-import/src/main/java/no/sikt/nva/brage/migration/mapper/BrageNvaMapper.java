@@ -71,6 +71,7 @@ public final class BrageNvaMapper {
                               .withAssociatedArtifacts(extractAssociatedArtifacts(record))
                               .withResourceOwner(extractResourceOwner(record))
                               .withAdditionalIdentifiers(extractCristinIdentifier(record))
+                              .withRightsHolder(record.getRightsholder())
                               .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
