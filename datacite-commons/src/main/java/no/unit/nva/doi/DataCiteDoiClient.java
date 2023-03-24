@@ -1,0 +1,158 @@
+package no.unit.nva.doi;
+
+import static no.unit.nva.doi.handlers.ReserveDoiHandler.BAD_RESPONSE_ERROR_MESSAGE;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import no.unit.nva.auth.AuthorizedBackendClient;
+import no.unit.nva.auth.CognitoCredentials;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.doi.model.DoiResponse;
+import no.unit.nva.doi.model.FindableDoiRequest;
+import no.unit.nva.doi.model.ReserveDoiRequest;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.BackendClientCredentials;
+import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.paths.UriWrapper;
+import nva.commons.secrets.SecretsReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+
+public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiClient {
+
+    public static final String DOI_REGISTRAR = "doi-registrar";
+    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
+    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final String DATACITE_BAD_RESPONSE_ERROR_MESSAGE = "Bad response from DataCite, DataCite responded "
+                                                                     + "with status code: {}";
+    public static final String DATA_CITE_CONFIGURATION_ERROR = "Configuration error from DataCite: {}";
+    public static final String FINDABLE = "findable";
+    private static final Logger logger = LoggerFactory.getLogger(DataCiteDoiClient.class);
+    private final AuthorizedBackendClient authorizedBackendClient;
+
+    private final String apiHost;
+
+    public DataCiteDoiClient(HttpClient httpClient, SecretsManagerClient secretsManagerClient,
+                             String apiHost) {
+        this.apiHost = apiHost;
+        var credentials = fetchCredentials(new SecretsReader(secretsManagerClient));
+        this.authorizedBackendClient = getAuthorizedBackendClient(httpClient, credentials);
+    }
+
+    @Override
+    public URI generateDraftDoi(Publication publication) {
+        return attempt(() -> sendDraftRequest(publication))
+                   .map(this::validateResponse)
+                   .map(this::convertResponseToDoi)
+                   .orElseThrow();
+    }
+
+    @Override
+    public URI createFindableDoi(Publication publication) {
+        return attempt(() -> sendFindableDoiRequest(publication))
+                   .map(this::validateResponse)
+                   .map(this::convertResponseToDoi)
+                   .orElseThrow();
+    }
+
+    private static BodyPublisher withDraftDoiRequestBody(Publication publication) throws JsonProcessingException {
+        var doiRequest = new ReserveDoiRequest(publication.getPublisher().getId());
+        var body = JsonUtils.dtoObjectMapper.writeValueAsString(doiRequest);
+        return BodyPublishers.ofString(body);
+    }
+
+    private static AuthorizedBackendClient getAuthorizedBackendClient(HttpClient httpClient,
+                                                                      CognitoCredentials cognitoCredentials) {
+        return AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials);
+    }
+
+    private static CognitoCredentials fetchCredentials(SecretsReader secretsReader) {
+        var credentials = secretsReader.fetchClassSecret(BACKEND_CLIENT_SECRET_NAME, BackendClientCredentials.class);
+        var uri = UriWrapper.fromHost(BACKEND_CLIENT_AUTH_URL).getUri();
+        return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
+    }
+
+    private URI convertResponseToDoi(HttpResponse<String> response) throws JsonProcessingException {
+        var doiResponse = JsonUtils.dtoObjectMapper.readValue(response.body(), DoiResponse.class);
+        return doiResponse.getDoi();
+    }
+
+    private HttpResponse<String> sendFindableDoiRequest(Publication publication)
+        throws IOException, InterruptedException, BadRequestException {
+        var request = HttpRequest.newBuilder()
+                          .POST(withFindableRequestBody(publication))
+                          .uri(constructFindableDoiUri());
+        return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
+    }
+
+    private URI constructFindableDoiUri() {
+        return UriWrapper.fromHost(apiHost)
+                   .addChild(DOI_REGISTRAR)
+                   .addChild(FINDABLE)
+                   .getUri();
+    }
+
+    private BodyPublisher withFindableRequestBody(Publication publication) throws BadRequestException {
+        var doiRequest =
+            new FindableDoiRequest.Builder()
+                .withDoi(publication.getDoi())
+                .withCustomerId(Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null))
+                .withPublicationId(inferPublicationId(publication))
+                .build();
+        return BodyPublishers.ofString(doiRequest.toJsonString());
+    }
+
+    private URI inferPublicationId(Publication publication) {
+        return UriWrapper.fromUri(apiHost)
+                   .addChild("publication")
+                   .addChild(publication.getIdentifier().toString())
+                   .getUri();
+    }
+
+    private URI constructUri() {
+        return UriWrapper.fromHost(apiHost)
+                   .addChild(DOI_REGISTRAR)
+                   .getUri();
+    }
+
+    private HttpResponse<String> sendDraftRequest(Publication publication) throws IOException,
+                                                                                  InterruptedException {
+        var request = HttpRequest.newBuilder()
+                          .POST(withDraftDoiRequestBody(publication))
+                          .uri(constructUri());
+        return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
+    }
+
+    private HttpResponse<String> validateResponse(HttpResponse<String> response) throws BadGatewayException {
+        if (HttpURLConnection.HTTP_CREATED == response.statusCode()) {
+            return response;
+        } else {
+            logErrorMessage(response);
+            throw new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE);
+        }
+    }
+
+    private void logErrorMessage(HttpResponse<String> response) {
+        var statusCode = response.statusCode();
+        if (statusCode > HttpURLConnection.HTTP_INTERNAL_ERROR) {
+            logger.error(DATACITE_BAD_RESPONSE_ERROR_MESSAGE, statusCode);
+        }
+        if (statusCode > HttpURLConnection.HTTP_BAD_REQUEST) {
+            logger.error(DATA_CITE_CONFIGURATION_ERROR, statusCode);
+        }
+    }
+}
