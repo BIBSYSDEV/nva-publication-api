@@ -35,7 +35,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.doi.DataCiteReserveDoiClient;
+import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -80,16 +80,16 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
         super.init();
+        secretsManagerClient = new FakeSecretsManagerClient();
+        var credentials = new BackendClientCredentials("id", "secret");
+        secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        secretsManagerClient = new FakeSecretsManagerClient();
-        var reserveDoiClient = new DataCiteReserveDoiClient(WiremockHttpClient.create(), secretsManagerClient,
-                                                            environment);
-        var credentials = new BackendClientCredentials("id", "secret");
-        secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
+        var reserveDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient,
+                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
         handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
     }
 
@@ -148,12 +148,12 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadResponseFromDataCiteWhenStatusCode500AndOver()
+    void shouldReturnBadResponseFromDataCiteWhenStatusCode500AndOver(WireMockRuntimeInfo wireMockRuntimeInfo)
         throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_GATEWAY_TIMEOUT));
-        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
@@ -163,12 +163,12 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadResponseFromDataCiteWhenStatusCode400AndOver()
+    void shouldReturnBadResponseFromDataCiteWhenStatusCode400AndOver(WireMockRuntimeInfo wireMockRuntimeInfo)
         throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_FORBIDDEN));
-        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
@@ -178,12 +178,12 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated()
+    void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated(WireMockRuntimeInfo wireMockRuntimeInfo)
         throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_USE_PROXY));
-        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
@@ -194,11 +194,11 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnDoiSuccessfully() throws IOException, ApiGatewayException {
+    void shouldReturnDoiSuccessfully(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, ApiGatewayException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(expectedDoi));
-        var reserveDoiClient = new DataCiteReserveDoiClient(httpClient, secretsManagerClient, environment);
+        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
@@ -272,7 +272,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
                    .withHeaders(headers)
                    .withPathParameters(pathParameters)
                    .withCurrentCustomer(publication.getPublisher().getId())
-                   .withNvaUsername(owner)
+                   .withUserName(owner)
                    .build();
     }
 
