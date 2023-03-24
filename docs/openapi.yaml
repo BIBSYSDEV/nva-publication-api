@@ -318,6 +318,12 @@ paths:
             application/json:
               schema:
                 $ref: "/components/schemas/Problem"
+        405:
+          description: Operation not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
         409:
           description: Conflict
           content:
