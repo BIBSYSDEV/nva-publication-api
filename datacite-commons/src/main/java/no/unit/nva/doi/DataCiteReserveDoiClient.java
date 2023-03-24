@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 public class DataCiteReserveDoiClient implements ReserveDoiClient {
 
     public static final String DOI_REGISTRAR = "doi-registrar";
+    public static final String DRAFT = "draft";
     public static final String API_HOST = "API_HOST";
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
@@ -72,6 +73,7 @@ public class DataCiteReserveDoiClient implements ReserveDoiClient {
     private URI constructUri() {
         return UriWrapper.fromHost(environment.readEnv(API_HOST))
                    .addChild(DOI_REGISTRAR)
+                   .addChild(DRAFT)
                    .getUri();
     }
 
