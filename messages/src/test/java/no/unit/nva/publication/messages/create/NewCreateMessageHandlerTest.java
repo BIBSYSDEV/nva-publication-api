@@ -7,14 +7,12 @@ import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
-import static publication.test.TicketTestUtils.createPublication;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,7 +21,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
-import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -35,7 +32,6 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -43,7 +39,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
-import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -69,11 +64,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         this.context = new FakeContext();
     }
 
-    @Test
-    public void shouldCreateMessageReferencingTicketForPublicationOwnerWithNonSpecificCuratorAsRecipientWhenUserIsTheOwner()
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldCreateMessageReferencingTicketForPublicationOwnerWithNonSpecificCuratorAsRecipientWhenUserIsTheOwner(Class<? extends TicketEntry> ticketType,
+                                                                                                                    PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createPublication(PublicationStatus.DRAFT, resourceService);
-        var ticket = createTicket(publication);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var user = UserInstance.fromTicket(ticket);
         var expectedText = randomString();
         var request = createNewMessageRequestForNonElevatedUser(publication, ticket, user, expectedText);
@@ -86,11 +83,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                  SUPPORT_SERVICE_CORRESPONDENT);
     }
 
-    @Test
-    public void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator()
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    public void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(Class<? extends TicketEntry> ticketType,
+                                                                                                            PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createPublication(PublicationStatus.DRAFT, resourceService);
-        var ticket = createTicket(publication);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var user = randomUserInstance(ticket.getCustomerId());
         var request = createNewMessageRequestForNonElevatedUser(publication, ticket, user, randomString());
         handler.handleRequest(request, output, context);
@@ -98,11 +97,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
-    @Test
-    public void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator()
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    public void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator(Class<? extends TicketEntry> ticketType,
+                                                                                                                   PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createPublication(PublicationStatus.DRAFT, resourceService);
-        var ticket = createTicket(publication);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
@@ -117,11 +118,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                  expectedRecipient);
     }
 
-    @Test
-    public void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution()
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    public void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
+                                                                             PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPublication(PublicationStatus.DRAFT, resourceService);
-        var ticket = createTicket(publication);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), randomUri());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
@@ -139,8 +142,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                              PublicationStatus status)
         throws ApiGatewayException, IOException {
 
-        var publication = createPublication(status, resourceService);
-        var ticket = TicketTestUtils.createTicket(publication, ticketType, ticketService);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
         var sender = UserInstance.create("NOT_EXPECTED", publication.getPublisher().getId());
@@ -158,8 +161,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     void shouldMarkTicketAsUnreadForCuratorAndReadForPublicationOwnerWhenOwnerSendsAMessage(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException,
                                                                                             IOException {
-        var publication = TicketTestUtils.createPublication(status, resourceService);
-        var ticket = TicketTestUtils.createTicket(publication, ticketType, ticketService);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
@@ -216,7 +219,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                    .addChild(actualMessage.getIdentifier().toString())
                    .toString();
     }
-    
+
     private InputStream createNewMessageRequestForNonElevatedUser(Publication publication,
                                                                   TicketEntry ticket,
                                                                   UserInstance userInstance,
@@ -246,20 +249,5 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var request = new CreateMessageRequest();
         request.setMessage(message);
         return request;
-    }
-    
-    private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
-        return createTicket(publication, randomTicketType());
-    }
-    
-    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
-    }
-    
-    @SuppressWarnings("unchecked")
-    private Class<? extends TicketEntry> randomTicketType() {
-        var types = TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList());
-        return (Class<? extends TicketEntry>) randomElement(types);
     }
 }

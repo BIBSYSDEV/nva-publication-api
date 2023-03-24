@@ -109,6 +109,8 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.MethodSource;
+import publication.test.TicketTestUtils;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -854,15 +856,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
     }
 
-    @Test
-    void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws ApiGatewayException {
-        var samplePublication = createPersistedPublicationWithoutDoi();
-        var sampleTicket = TicketEntry.requestNewTicket(samplePublication, DoiRequest.class)
-                               .persistNewTicket(ticketService);
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldScanEntriesInDatabaseAfterSpecifiedMarker(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
-        var userInstance = UserInstance.fromPublication(samplePublication);
+        var userInstance = UserInstance.fromPublication(publication);
 
-        var sampleMessage = messageService.createMessage(sampleTicket, userInstance, randomString());
+        var sampleMessage = messageService.createMessage(ticket, userInstance, randomString());
 
         var firstListingResult = fetchFirstDataEntry();
         var identifierInFirstScan = extractIdentifierFromFirstScanResult(firstListingResult);
@@ -874,7 +876,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                             .collect(Collectors.toList());
 
         var expectedIdentifiers = new ArrayList<>(
-            List.of(samplePublication.getIdentifier(), sampleTicket.getIdentifier(), sampleMessage.getIdentifier()));
+            List.of(publication.getIdentifier(), ticket.getIdentifier(), sampleMessage.getIdentifier()));
         expectedIdentifiers.remove(identifierInFirstScan);
         assertThat(identifiersFromSecondScan,
                    containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));

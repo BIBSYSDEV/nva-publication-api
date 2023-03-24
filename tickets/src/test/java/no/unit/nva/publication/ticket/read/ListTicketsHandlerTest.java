@@ -1,6 +1,5 @@
 package no.unit.nva.publication.ticket.read;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -20,26 +19,22 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import publication.test.TicketTestUtils;
 
 class ListTicketsHandlerTest extends ResourcesLocalTest {
     
@@ -60,11 +55,13 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         this.handler = new ListTicketsHandler(ticketService);
         this.outputStream = new ByteArrayOutputStream();
     }
-    
-    @Test
-    void shouldReturnAllPendingTicketsOfUser() throws IOException {
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnAllPendingTicketsOfUser(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException {
         var user = randomResourcesOwner();
-        var expectedTickets = generateTickets(user).map(this::constructDto).collect(Collectors.toList());
+        var expectedTickets =
+            generateTickets(ticketType, status, user).map(this::constructDto).collect(Collectors.toList());
         var request = buildHttpRequest(user);
         handler.handleRequest(request, outputStream, CONTEXT);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketCollection.class);
@@ -72,11 +69,13 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
         assertThat(body.getTickets(), containsInAnyOrder(expectedTickets.toArray(TicketDto[]::new)));
     }
-    
-    @Test
-    void shouldReturnEmptyListWhenUserHasNoTickets() throws IOException {
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnEmptyListWhenUserHasNoTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws IOException, ApiGatewayException {
         var user = randomResourcesOwner();
-        persistDraftPublicationWithoutDoi(user);
+        TicketTestUtils.createPersistedPublication(status, resourceService);
         var request = buildHttpRequest(user);
         handler.handleRequest(request, outputStream, CONTEXT);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketCollection.class);
@@ -96,54 +95,17 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
                    .build();
     }
     
-    private Stream<TicketEntry> generateTickets(UserInstance owner) {
+    private Stream<TicketEntry> generateTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status,
+                                                UserInstance owner) {
         return IntStream.range(0, SMALL_PUBLICATIONS_NUMBER)
                    .boxed()
-                   .map(ignored -> persistDraftPublicationWithoutDoi(owner))
-                   .flatMap(this::createTicketEntriesForPublication);
-    }
-    
-    private Stream<TicketEntry> createTicketEntriesForPublication(Publication publication) {
-        return ticketTypes()
-                   .map(attempt(ticketType -> constructTicketWithMessages(ticketType, publication)))
-                   .map(Try::orElseThrow);
-    }
-    
-    private Publication persistDraftPublicationWithoutDoi(UserInstance owner) {
-        var publication = randomPublication().copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withPublisher(new Organization.Builder().withId(owner.getOrganizationUri()).build())
-                              .withResourceOwner(new ResourceOwner(owner.getUsername(), null))
-                              .withDoi(null)
-                              .build();
-        return Resource.fromPublication(publication).persistNew(resourceService,
-            UserInstance.fromPublication(publication));
+                   .map(ignored -> attempt(() -> TicketTestUtils.createPublicationWithOwner(status, owner, resourceService)).orElseThrow())
+                   .map(publication -> attempt(() -> TicketTestUtils.createPersistedTicket(publication, ticketType,
+                                                                                ticketService)).orElseThrow());
     }
     
     private TicketDto constructDto(TicketEntry ticketEntry) {
         var messages = ticketEntry.fetchMessages(ticketService);
         return TicketDto.fromTicket(ticketEntry, messages);
-    }
-    
-    private TicketEntry constructTicketWithMessages(Class<?> ticketType, Publication publication)
-        throws ApiGatewayException {
-        var ticket = TicketEntry.requestNewTicket(publication, (Class<? extends TicketEntry>) ticketType)
-                         .persistNewTicket(ticketService);
-        var someCurator = UserInstance.create(randomString(), ticket.getCustomerId());
-        ownerSendsMessage(ticket);
-        curatorSendsMessage(ticket, someCurator);
-        return ticketService.fetchTicket(ticket);
-    }
-    
-    private void ownerSendsMessage(TicketEntry ticket) {
-        messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
-    }
-    
-    private void curatorSendsMessage(TicketEntry ticketEntry, UserInstance someCurator) {
-        messageService.createMessage(ticketEntry, someCurator, randomString());
-    }
-    
-    private Stream<Class<?>> ticketTypes() {
-        return TypeProvider.listSubTypes(TicketEntry.class);
     }
 }

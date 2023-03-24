@@ -1,8 +1,10 @@
 package publication.test;
 
 import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -13,6 +15,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.params.provider.Arguments;
 
 public final class TicketTestUtils {
@@ -23,7 +26,10 @@ public final class TicketTestUtils {
                          Arguments.of(GeneralSupportRequest.class, PublicationStatus.DRAFT));
     }
 
-    public static Publication createPublication(PublicationStatus status, ResourceService resourceService)
+    public static Publication createNonPersistedPublication(PublicationStatus status) {
+        return randomPublicationWithStatus(status);
+    }
+    public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatus(status);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
@@ -31,9 +37,29 @@ public final class TicketTestUtils {
         if(PublicationStatus.PUBLISHED.equals(status)) {
             resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
                                                              persistedPublication.getIdentifier());
-        }
         return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
     }
+
+    public static Publication createPublicationWithOwner(PublicationStatus status,
+                                                         UserInstance owner,
+                                                         ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithStatus(status).copy()
+                              .withResourceOwner(new ResourceOwner(owner.getUsername(), null))
+                              .build();
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    owner);
+        if(PublicationStatus.PUBLISHED.equals(status)) {
+            resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
+                                               persistedPublication.getIdentifier());
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
+
 
     private static Publication randomPublicationWithStatus(PublicationStatus status) {
         return PublicationGenerator.randomPublication().copy()
@@ -42,9 +68,14 @@ public final class TicketTestUtils {
                    .build();
     }
 
-    public static TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType,
-                                     TicketService ticketService)
+    public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
+                                                    TicketService ticketService)
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+    }
+
+    public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+        throws ConflictException {
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
     }
 }

@@ -34,6 +34,7 @@ dependencies {
     runtimeOnly libs.jackson.module.parameter.names
     implementation libs.bundles.logging
 
+    testImplementation project(path: ':tickets-test')
     testImplementation libs.bundles.testing
     testImplementation project(":publication-testing")
 }

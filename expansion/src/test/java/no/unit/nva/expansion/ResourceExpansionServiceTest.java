@@ -25,12 +25,13 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -51,6 +52,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import publication.test.TicketTestUtils;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
@@ -72,23 +74,26 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         initializeServices();
     }
 
-    @Test
-    void shouldReturnExpandedTicketContainingTheOrganizationIdOfTheOwnersAffiliationAsIs()
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnExpandedTicketContainingTheOrganizationIdOfTheOwnersAffiliationAsIs(Class<? extends TicketEntry> ticketType,
+                                                                                         PublicationStatus status)
         throws Exception {
-        var publication = persistDraftPublicationWithoutDoi();
-        var ticket = createTicket(publication, DoiRequest.class);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var userAffiliation = publication.getResourceOwner().getOwnerAffiliation();
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         assertThat(userAffiliation, is(in(expandedTicket.getOrganizationIds())));
     }
 
-    @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should copy all publicly visible fields from Ticket to ExpandedTicket")
-    @MethodSource("ticketTypeProvider")
-    void shouldCopyAllPubliclyVisibleFieldsFromTicketToExpandedTicket(Class<? extends TicketEntry> ticketType)
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldCopyAllPubliclyVisibleFieldsFromTicketToExpandedTicket(Class<? extends TicketEntry> ticketType,
+                                                                      PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
-        var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var regeneratedTicket = expandedTicket.toTicketEntry();
 
@@ -98,13 +103,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
 
-    @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should update associated Ticket when a Message is created")
-    @MethodSource("ticketTypeProvider")
-    void shouldExpandAssociatedTicketWhenMessageIsCreated(Class<? extends TicketEntry> ticketType)
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldExpandAssociatedTicketWhenMessageIsCreated(Class<? extends TicketEntry> ticketType,
+                                                          PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
-        var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
@@ -119,7 +125,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         Publication publication = PublicationGenerator.randomPublication(instanceType)
             .copy().withEntityDescription(new EntityDescription()).build();
-        ;
 
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -160,13 +165,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getMessages(), contains(messageThatWillLeadToTicketExpansion));
     }
 
-    @ParameterizedTest(name = "should add resource title to expanded ticket:{0}")
-    @MethodSource("ticketTypeProvider")
-    void shouldAddResourceTitleToExpandedTicket(Class<? extends TicketEntry> ticketType)
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldAddResourceTitleToExpandedTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
 
-        var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication , ticketType, ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
 
         var expectedTitle = publication.getEntityDescription().getMainTitle();
@@ -180,12 +185,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                      () -> expansionService.expandEntry(unsupportedImplementation));
     }
 
-    @ParameterizedTest(name = "should get all organizationIds for affiliations:{0}")
-    @MethodSource("ticketTypeProvider")
-    void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType)
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
-        var publication = persistDraftPublicationWithoutDoi();
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication , ticketType, ticketService);
 
         var expectedOrgIds = Set.of(publication.getResourceOwner().getOwnerAffiliation());
         var orgIds = expansionService.getOrganizationIds(ticket);
@@ -218,8 +223,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Class<? extends TicketEntry> someOtherTicketType(Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>) ticketTypeProvider().filter(type -> !ticketType.equals(type))
+    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(Class<? extends TicketEntry> ticketType) {
+        return (Class<? extends TicketEntry>) ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(
+                DoiRequest.class))
             .findAny().orElseThrow();
     }
 
@@ -233,16 +239,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
             .persistNewTicket(ticketService);
         var firstUnexpectedMessage = messageService.createMessage(differentTicketSameType, owner, randomString());
-        var differentTicketType = someOtherTicketType(ticketType);
+        var differentTicketType = someOtherTicketTypeBesidesDoiRequest(ticketType);
         var differentTicketDifferentType =
             TicketEntry.requestNewTicket(publication, differentTicketType).persistNewTicket(ticketService);
         var secondUnexpectedMessage = messageService.createMessage(differentTicketDifferentType, owner, randomString());
         return new ArrayList<>(List.of(firstUnexpectedMessage, secondUnexpectedMessage));
-    }
-
-    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
     }
 
     private void initializeServices() {

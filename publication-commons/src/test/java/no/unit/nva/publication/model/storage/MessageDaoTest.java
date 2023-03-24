@@ -1,7 +1,5 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.publication.model.storage.DaoTest.draftPublicationWithoutDoi;
-import static no.unit.nva.publication.model.storage.DaoUtils.randomTicketType;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -14,9 +12,9 @@ import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -26,6 +24,9 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import publication.test.TicketTestUtils;
 
 class MessageDaoTest extends ResourcesLocalTest {
     
@@ -45,17 +46,19 @@ class MessageDaoTest extends ResourcesLocalTest {
         this.messageService = new MessageService(client);
         this.ticketService = new TicketService(client);
     }
-    
-    @Test
-    void shouldBeRetrievableByIdentifier() throws ApiGatewayException {
-        var message = insertSampleMessageInDatabase();
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldBeRetrievableByIdentifier(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var message = insertSampleMessageInDatabase(ticketType, status);
         var retrievedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
         assertThat(retrievedMessage, is(equalTo(message)));
     }
-    
-    @Test
-    void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey() throws ApiGatewayException {
-        var message = insertSampleMessageInDatabase();
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var message = insertSampleMessageInDatabase(ticketType, status);
         var queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
         var retrievedMessage = fetchMessageFromDatabase(queryObject);
         
@@ -77,17 +80,12 @@ class MessageDaoTest extends ResourcesLocalTest {
                    .orElseThrow();
     }
     
-    private Message insertSampleMessageInDatabase() throws ApiGatewayException {
+    private Message insertSampleMessageInDatabase(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws ApiGatewayException {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        var sample = draftPublicationWithoutDoi()
-                         .copy()
-                         .withResourceOwner(RANDOM_RESOURCE_OWNER)
-                         .withPublisher(publisher)
-                         .build();
-        var publication = Resource.fromPublication(sample)
-                              .persistNew(resourceService, UserInstance.fromPublication(sample));
-        var ticket = TicketEntry.requestNewTicket(publication, randomTicketType())
-                         .persistNewTicket(ticketService);
+        var publication = TicketTestUtils.createPublicationWithOwner(status, UserInstance.create(RANDOM_RESOURCE_OWNER,
+                                                                                         publisher.getId()), resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
     }
 }

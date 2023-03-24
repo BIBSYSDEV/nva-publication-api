@@ -3,7 +3,6 @@ package no.unit.nva.publication.ticket.read;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
@@ -12,11 +11,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -27,9 +24,11 @@ import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
-import nva.commons.core.attempt.Try;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import publication.test.TicketTestUtils;
 
 class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     
@@ -40,40 +39,48 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         super.init();
         this.handler = new ListTicketsForPublicationHandler(resourceService);
     }
-    
-    @Test
-    void shouldReturnAllTicketsForPublicationWhenUserIsThePublicationOwner() throws IOException {
-        var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnAllTicketsForPublicationWhenUserIsThePublicationOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = ownerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
-        assertThatResponseContainsExpectedTickets(tickets);
+        assertThatResponseContainsExpectedTickets(ticket);
     }
-    
-    @Test
-    void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser() throws IOException {
-        var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = nonOwnerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
-    
-    @Test
-    void shouldReturnAllTicketsForPublicationWhenUserIsElevatedUser() throws IOException {
-        var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnAllTicketsForPublicationWhenUserIsElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = elevatedUserRequestsTicketsForPublication(publication);
     
         handler.handleRequest(request, output, CONTEXT);
-        assertThatResponseContainsExpectedTickets(tickets);
+        assertThatResponseContainsExpectedTickets(ticket);
     }
-    
-    @Test
-    void shouldReturnForbiddenWhenUserIsElevatedUserOfAlienOrganization() throws IOException {
-        var publication = createAndPersistPublication(PublicationStatus.DRAFT);
-        var tickets = createTicketsOfAllTypes(publication);
+
+    @ParameterizedTest
+    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnForbiddenWhenUserIsElevatedUserOfAlienOrganization(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = elevatedUserOfAlienOrgRequestsTicketsForPublication(publication);
         
         handler.handleRequest(request, output, CONTEXT);
@@ -125,7 +132,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
     
-    private void assertThatResponseContainsExpectedTickets(List<TicketEntry> tickets) throws JsonProcessingException {
+    private void assertThatResponseContainsExpectedTickets(TicketEntry ticket) throws JsonProcessingException {
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         var body = response.getBodyObject(TicketCollection.class);
         var actualTicketIdentifiers = body.getTickets()
@@ -133,17 +140,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                                           .map(TicketDto::toTicket)
                                           .map(Entity::getIdentifier)
                                           .collect(Collectors.toList());
-        var expectedIdentifiers = tickets.stream().map(TicketEntry::getIdentifier).collect(Collectors.toList());
+        var expectedIdentifiers = ticket.getIdentifier();
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
-        assertThat(actualTicketIdentifiers, containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));
-    }
-    
-    private List<TicketEntry> createTicketsOfAllTypes(Publication publication) {
-        return ticketTypeProvider()
-                   .map(type -> (Class<? extends TicketEntry>) type)
-                   .map(type -> TicketEntry.requestNewTicket(publication, type))
-                   .map(attempt(unpersistedTicket -> unpersistedTicket.persistNewTicket(ticketService)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+        assertThat(actualTicketIdentifiers, containsInAnyOrder(expectedIdentifiers));
     }
 }
