@@ -1,0 +1,25 @@
+
+dependencies {
+    implementation(project(':publication-commons'))
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation libs.nva.apigateway
+    implementation libs.nva.identifiers
+    implementation libs.nva.secrets
+    implementation libs.nva.datamodel.core
+    implementation libs.nva.datamodel.testutils
+    implementation libs.jsonld
+    implementation libs.guava
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.bundles.jena
+    implementation libs.junit.jupiter.params
+    testImplementation(project(':publication-testing'))
+    testImplementation libs.nva.testutils
+    testImplementation libs.bundles.testing
+    testImplementation libs.jsonassert
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
