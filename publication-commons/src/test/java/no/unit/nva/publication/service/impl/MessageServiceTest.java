@@ -52,7 +52,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldPersistMessageWithReferenceToATicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
-        var publication = TicketTestUtils.createPublicationWithOwner(status, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var message = publicationOwnerSendsMessage(ticket, randomString());
         var persistedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
@@ -63,7 +63,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldSetRecipientAsOwnerWhenSenderIsNotOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPublicationWithOwner(status, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
         var message =
@@ -77,7 +77,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldSetRecipientAsSupportServiceWhenSenderIsOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPublicationWithOwner(status, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
         var retrievedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());

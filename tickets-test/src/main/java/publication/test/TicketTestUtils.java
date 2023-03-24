@@ -29,43 +29,37 @@ public final class TicketTestUtils {
     public static Publication createNonPersistedPublication(PublicationStatus status) {
         return randomPublicationWithStatus(status);
     }
+
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatus(status);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                 UserInstance.fromPublication(publication));
-        if(PublicationStatus.PUBLISHED.equals(status)) {
-            resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                                             persistedPublication.getIdentifier());
-        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        }
-        return persistedPublication;
-    }
-
-    public static Publication createPublicationWithOwner(PublicationStatus status,
-                                                         UserInstance owner,
-                                                         ResourceService resourceService)
-        throws ApiGatewayException {
-        var publication = randomPublicationWithStatus(status).copy()
-                              .withResourceOwner(new ResourceOwner(owner.getUsername(), null))
-                              .build();
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    owner);
-        if(PublicationStatus.PUBLISHED.equals(status)) {
-            resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                               persistedPublication.getIdentifier());
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (PublicationStatus.PUBLISHED.equals(status)) {
+            publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
         return persistedPublication;
     }
 
+    public static Publication createPersistedPublicationWithOwner(PublicationStatus status,
+                                                                  UserInstance owner,
+                                                                  ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithStatusAndOwner(status, owner);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, owner);
+        if (PublicationStatus.PUBLISHED.equals(status)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
 
-
-    private static Publication randomPublicationWithStatus(PublicationStatus status) {
-        return PublicationGenerator.randomPublication().copy()
-                   .withDoi(null)
-                   .withStatus(status)
-                   .build();
+    private static void publishPublication(ResourceService resourceService, Publication persistedPublication)
+        throws ApiGatewayException {
+        resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
+                                           persistedPublication.getIdentifier());
     }
 
     public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
@@ -77,5 +71,18 @@ public final class TicketTestUtils {
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+    }
+
+    private static Publication randomPublicationWithStatusAndOwner(PublicationStatus status, UserInstance owner) {
+        return randomPublicationWithStatus(status).copy()
+                   .withResourceOwner(new ResourceOwner(owner.getUsername(), null))
+                   .build();
+    }
+
+    private static Publication randomPublicationWithStatus(PublicationStatus status) {
+        return PublicationGenerator.randomPublication().copy()
+                   .withDoi(null)
+                   .withStatus(status)
+                   .build();
     }
 }

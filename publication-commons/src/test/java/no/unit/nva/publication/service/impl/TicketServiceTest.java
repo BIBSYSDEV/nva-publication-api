@@ -495,7 +495,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPublicationWithOwner(status, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         ticket.markUnreadByOwner().persistUpdate(ticketService);
@@ -505,7 +505,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPublicationWithOwner(status, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
@@ -516,7 +516,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPublicationWithOwner(status, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
         ticket.markReadForCurators().persistUpdate(ticketService);
@@ -526,7 +526,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPublicationWithOwner(status, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));

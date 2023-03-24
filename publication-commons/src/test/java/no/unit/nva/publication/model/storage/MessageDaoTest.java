@@ -83,8 +83,8 @@ class MessageDaoTest extends ResourcesLocalTest {
     private Message insertSampleMessageInDatabase(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        var publication = TicketTestUtils.createPublicationWithOwner(status, UserInstance.create(RANDOM_RESOURCE_OWNER,
-                                                                                         publisher.getId()), resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, UserInstance.create(RANDOM_RESOURCE_OWNER,
+                                                                                                          publisher.getId()), resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
     }

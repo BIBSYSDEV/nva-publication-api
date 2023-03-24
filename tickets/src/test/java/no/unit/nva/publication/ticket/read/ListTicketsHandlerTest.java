@@ -99,7 +99,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
                                                 UserInstance owner) {
         return IntStream.range(0, SMALL_PUBLICATIONS_NUMBER)
                    .boxed()
-                   .map(ignored -> attempt(() -> TicketTestUtils.createPublicationWithOwner(status, owner, resourceService)).orElseThrow())
+                   .map(ignored -> attempt(() -> TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService)).orElseThrow())
                    .map(publication -> attempt(() -> TicketTestUtils.createPersistedTicket(publication, ticketType,
                                                                                 ticketService)).orElseThrow());
     }
