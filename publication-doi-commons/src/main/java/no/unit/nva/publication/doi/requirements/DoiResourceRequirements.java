@@ -11,7 +11,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
-@JacocoGenerated
 public final class DoiResourceRequirements {
 
     @JacocoGenerated
@@ -31,6 +30,7 @@ public final class DoiResourceRequirements {
     private static boolean mandatoryFieldsAreNotNull(Publication publication) {
         return nonNull(publication.getIdentifier())
                && nonNull(publication.getPublisher())
+               && nonNull(publication.getPublisher().getId())
                && nonNull(publication.getModifiedDate())
                && hasAMainTitle(publication)
                && hasAnInstanceType(publication)
