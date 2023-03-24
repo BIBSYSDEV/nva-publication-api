@@ -2,6 +2,9 @@ package no.unit.nva.publication.ticket.update;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import java.net.http.HttpClient;
+import no.unit.nva.doi.CreateFindableDoiClient;
+import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.requirements.DoiResourceRequirements;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -18,7 +21,9 @@ import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.secrets.SecretsReader;
 
 public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
 
@@ -27,16 +32,22 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     private final TicketService ticketService;
     private final ResourceService resourceService;
 
+    private final CreateFindableDoiClient doiClient;
+
     @JacocoGenerated
     public UpdateTicketStatusHandler() {
         this(TicketService.defaultService(),
-             ResourceService.defaultService());
+             ResourceService.defaultService(), new DataCiteDoiClient(HttpClient.newHttpClient(),
+                                                                     SecretsReader.defaultSecretsManagerClient(),
+                                                                     new Environment().readEnv("API_HOST")));
     }
 
-    public UpdateTicketStatusHandler(TicketService ticketService, ResourceService resourceService) {
+    public UpdateTicketStatusHandler(TicketService ticketService, ResourceService resourceService,
+                                     CreateFindableDoiClient doiClient) {
         super(TicketDto.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
+        this.doiClient = doiClient;
     }
 
     @Override

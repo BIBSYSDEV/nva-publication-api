@@ -57,7 +57,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService);
+        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService, new FakeDoiClient());
     }
 
     @Test

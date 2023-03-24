@@ -691,6 +691,9 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          API_HOST: !Ref ApiDomain
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
