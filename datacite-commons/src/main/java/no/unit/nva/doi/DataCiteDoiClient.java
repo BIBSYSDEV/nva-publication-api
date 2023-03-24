@@ -43,15 +43,16 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
     public static final String DATA_CITE_CONFIGURATION_ERROR = "Configuration error from DataCite: {}";
     public static final String FINDABLE = "findable";
     private static final Logger logger = LoggerFactory.getLogger(DataCiteDoiClient.class);
-    private final AuthorizedBackendClient authorizedBackendClient;
 
     private final String apiHost;
+    private final HttpClient httpClient;
+    private final SecretsReader secretsReader;
 
     public DataCiteDoiClient(HttpClient httpClient, SecretsManagerClient secretsManagerClient,
                              String apiHost) {
+        this.httpClient = httpClient;
+        this.secretsReader = new SecretsReader(secretsManagerClient);
         this.apiHost = apiHost;
-        var credentials = fetchCredentials(new SecretsReader(secretsManagerClient));
-        this.authorizedBackendClient = getAuthorizedBackendClient(httpClient, credentials);
     }
 
     @Override
@@ -76,12 +77,11 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
         return BodyPublishers.ofString(body);
     }
 
-    private static AuthorizedBackendClient getAuthorizedBackendClient(HttpClient httpClient,
-                                                                      CognitoCredentials cognitoCredentials) {
+    private AuthorizedBackendClient getAuthorizedBackendClient(CognitoCredentials cognitoCredentials) {
         return AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials);
     }
 
-    private static CognitoCredentials fetchCredentials(SecretsReader secretsReader) {
+    private CognitoCredentials fetchCredentials() {
         var credentials = secretsReader.fetchClassSecret(BACKEND_CLIENT_SECRET_NAME, BackendClientCredentials.class);
         var uri = UriWrapper.fromHost(BACKEND_CLIENT_AUTH_URL).getUri();
         return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
@@ -97,6 +97,7 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
         var request = HttpRequest.newBuilder()
                           .POST(withFindableRequestBody(publication))
                           .uri(constructFindableDoiUri());
+        var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
@@ -136,6 +137,7 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
         var request = HttpRequest.newBuilder()
                           .POST(withDraftDoiRequestBody(publication))
                           .uri(constructUri());
+        var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
