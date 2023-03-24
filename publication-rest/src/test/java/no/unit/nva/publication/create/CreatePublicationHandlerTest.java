@@ -1,9 +1,12 @@
 package no.unit.nva.publication.create;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -13,6 +16,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -28,6 +32,8 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.clients.GetExternalClientResponse;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -37,6 +43,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
@@ -59,18 +66,29 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private Context context;
     private Publication samplePublication;
     private URI topLevelCristinOrgId;
+
+    private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    private GetExternalClientResponse getExternalClientResponse;
     
     /**
      * Setting up test environment.
      */
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws NotFoundException {
         super.init();
-        Environment environmentMock = mock(Environment.class);
+        getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID, "someone@123", randomUri(),
+                                                                      randomUri());
+        var environmentMock = mock(Environment.class);
+        var identityServiceClient = mock(IdentityServiceClient.class);
+
+
+        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
+
         ResourceService resourceService = new ResourceService(client, CLOCK);
-        handler = new CreatePublicationHandler(resourceService, environmentMock);
+        handler = new CreatePublicationHandler(resourceService, environmentMock, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         samplePublication = randomPublication();
@@ -114,6 +132,25 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
+
+    @Test
+    void requestToHandlerReturnsExternalClientDetailsWhenCalledWithThirdPartyCredentials() throws Exception {
+        var request = createEmptyPublicationRequest();
+        InputStream inputStream = requestFromExternalClient(request);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+
+        var expectedOwner = getExternalClientResponse.getActingUser();
+        var expectedOwnerAffiliation = getExternalClientResponse.getCristinUrgUri();
+        var expectedPublisherId = getExternalClientResponse.getCustomerUri();
+
+        assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(expectedOwner)));
+        assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(expectedOwnerAffiliation)));
+        assertThat(publicationResponse.getPublisher().getId(), is(equalTo(expectedPublisherId)));
+    }
     
     @Test
     void requestToHandlerReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
@@ -154,6 +191,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
         var event = requestWithoutUsername(createEmptyPublicationRequest());
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenRequestIsFromExternalClientAndClientIdIsMissing() throws IOException {
+        var event = requestFromExternalClientWithoutClientId(createEmptyPublicationRequest());
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
@@ -264,6 +309,23 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                 .withTopLevelCristinOrgId(topLevelCristinOrgId)
                 .withBody(request)
                 .build();
+    }
+
+    private InputStream requestFromExternalClient(CreatePublicationRequest request) throws JsonProcessingException {
+        return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withBody(request)
+                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .build();
+    }
+
+    private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request) throws JsonProcessingException {
+        return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withBody(request)
+                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .build();
     }
 
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {

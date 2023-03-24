@@ -118,6 +118,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
                    .withResourceOwner(getResourceOwnerIfPresent(builder))
                    .withAdditionalIdentifiers(generateCristinIdentifier(builder))
+                   .withRightsHolder(builder.getRightsHolder())
                    .build();
     }
 
@@ -148,6 +149,7 @@ public class NvaBrageMigrationDataGenerator {
         record.setPublication(builder.getPublication());
         record.setPublishedDate(builder.getPublishedDate());
         record.setCristinId(builder.getCristinIdentifier());
+        record.setRightsHolder(builder.getRightsHolder());
         return record;
     }
 
@@ -231,7 +233,16 @@ public class NvaBrageMigrationDataGenerator {
         private String seriesTitle;
         private no.sikt.nva.brage.migration.record.Publication publication;
         private String cristinIdentifier;
+        private String rightsHolder;
 
+        public String getRightsHolder() {
+            return rightsHolder;
+        }
+
+        public Builder withRightsHolder(String rightsHolder) {
+            this.rightsHolder = rightsHolder;
+            return this;
+        }
         public String getCristinIdentifier() {
             return cristinIdentifier;
         }
@@ -569,6 +580,9 @@ public class NvaBrageMigrationDataGenerator {
             }
             if (isNull(issnList)) {
                 issnList = List.of(randomIssn(), randomIssn());
+            }
+            if(isNull(rightsHolder)) {
+                rightsHolder = randomString();
             }
             if (isNull(publication)) {
                 publication = createPublication();

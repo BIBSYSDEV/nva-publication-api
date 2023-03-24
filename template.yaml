@@ -15,6 +15,14 @@ Parameters:
   CognitoAuthorizationUri:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/CognitoUri'
+  ExternalCognitoAuthorizerArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: Reference to ARN of ExternalUsers UserPool
+    Default: ExternalCognitoAuthorizerArn
+  ExternalCognitoAuthorizerUrl:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: Reference to URL for ExternalUsers UserPool
+    Default: ExternalCognitoAuthorizerUrl
   ApiDomain:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: The Api domain
@@ -455,6 +463,9 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
+          API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
