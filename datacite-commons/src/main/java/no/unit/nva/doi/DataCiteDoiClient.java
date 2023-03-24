@@ -125,7 +125,7 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
                    .getUri();
     }
 
-    private URI constructUri() {
+    private URI constructDraftDoiUri() {
         return UriWrapper.fromHost(apiHost)
                    .addChild(DOI_REGISTRAR)
                    .addChild(DRAFT)
@@ -136,7 +136,7 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
                                                                                   InterruptedException {
         var request = HttpRequest.newBuilder()
                           .POST(withDraftDoiRequestBody(publication))
-                          .uri(constructUri());
+                          .uri(constructDraftDoiUri());
         var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
