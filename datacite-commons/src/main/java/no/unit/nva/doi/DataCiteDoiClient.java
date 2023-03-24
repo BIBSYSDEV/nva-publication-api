@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiClient {
 
     public static final String DOI_REGISTRAR = "doi-registrar";
+    public static final String DRAFT = "draft";
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String DATACITE_BAD_RESPONSE_ERROR_MESSAGE = "Bad response from DataCite, DataCite responded "
@@ -126,6 +127,7 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
     private URI constructUri() {
         return UriWrapper.fromHost(apiHost)
                    .addChild(DOI_REGISTRAR)
+                   .addChild(DRAFT)
                    .getUri();
     }
 
