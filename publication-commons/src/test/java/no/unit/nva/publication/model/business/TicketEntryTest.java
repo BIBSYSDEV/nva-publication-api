@@ -7,14 +7,14 @@ import no.unit.nva.model.PublicationStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class TicketEntryTest {
     
 
     @ParameterizedTest
     @DisplayName("should request a new ticket ")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldRequestNewTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status) {
         var publication = TicketTestUtils.createNonPersistedPublication(status);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);

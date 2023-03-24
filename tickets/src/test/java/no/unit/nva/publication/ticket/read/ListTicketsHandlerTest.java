@@ -34,7 +34,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class ListTicketsHandlerTest extends ResourcesLocalTest {
     
@@ -57,7 +57,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnAllPendingTicketsOfUser(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException {
         var user = randomResourcesOwner();
         var expectedTickets =
@@ -71,7 +71,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnEmptyListWhenUserHasNoTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
         var user = randomResourcesOwner();

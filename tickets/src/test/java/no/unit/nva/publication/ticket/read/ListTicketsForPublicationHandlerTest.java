@@ -28,7 +28,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     
@@ -41,7 +41,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnAllTicketsForPublicationWhenUserIsThePublicationOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -52,7 +52,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -64,7 +64,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnAllTicketsForPublicationWhenUserIsElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -76,7 +76,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenWhenUserIsElevatedUserOfAlienOrganization(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);

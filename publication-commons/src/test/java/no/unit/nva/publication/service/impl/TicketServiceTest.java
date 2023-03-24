@@ -90,7 +90,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class TicketServiceTest extends ResourcesLocalTest {
     
@@ -493,7 +493,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -503,7 +503,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -514,7 +514,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -524,7 +524,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);

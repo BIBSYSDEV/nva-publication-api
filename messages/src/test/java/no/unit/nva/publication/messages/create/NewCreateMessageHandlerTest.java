@@ -43,7 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
@@ -65,7 +65,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldCreateMessageReferencingTicketForPublicationOwnerWithNonSpecificCuratorAsRecipientWhenUserIsTheOwner(Class<? extends TicketEntry> ticketType,
                                                                                                                     PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -84,7 +84,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     public void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(Class<? extends TicketEntry> ticketType,
                                                                                                             PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -98,7 +98,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     public void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator(Class<? extends TicketEntry> ticketType,
                                                                                                                    PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -119,7 +119,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     public void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
                                                                              PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -137,7 +137,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest
     @DisplayName("should mark ticket as unread for Publication Owner and mark and as read for curators"
                  + "when curator sends a message")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForPublicationOwnerWhenCuratorSendsAMessage(Class<? extends TicketEntry> ticketType,
                                                                              PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -157,7 +157,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest
     @DisplayName("should mark ticket as unread for Curator and read for Publication Owner "
                  + "when Publication Owner sends a Message")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForCuratorAndReadForPublicationOwnerWhenOwnerSendsAMessage(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException,
                                                                                             IOException {

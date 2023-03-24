@@ -110,7 +110,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -857,7 +857,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);

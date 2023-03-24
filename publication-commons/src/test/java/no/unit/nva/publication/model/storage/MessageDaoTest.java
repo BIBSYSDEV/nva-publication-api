@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class MessageDaoTest extends ResourcesLocalTest {
     
@@ -48,7 +48,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldBeRetrievableByIdentifier(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var message = insertSampleMessageInDatabase(ticketType, status);
         var retrievedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
@@ -56,7 +56,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var message = insertSampleMessageInDatabase(ticketType, status);
         var queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());

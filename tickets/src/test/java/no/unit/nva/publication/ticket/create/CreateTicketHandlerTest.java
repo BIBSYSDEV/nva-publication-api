@@ -54,7 +54,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class CreateTicketHandlerTest extends TicketTestLocal {
     
@@ -73,7 +73,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @DisplayName("should persist ticket when publication exists, user is publication owner and "
                  + "publication meets ticket creation criteria")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
 
@@ -109,7 +109,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should not allow users to create tickets for publications they do not own")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotAllowUsersToCreateTicketsForPublicationsTheyDoNotOwn(Class<? extends TicketEntry> ticketType,
                                                                        PublicationStatus status)
         throws IOException, ApiGatewayException {
@@ -126,7 +126,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @DisplayName("should not allow users to create tickets for publications belonging to different organization"
                  + "than the one they are currently logged in to")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotAllowUsersToCreateTicketsForPublicationsBelongingToDifferentOrgThanTheOneTheyAreLoggedInTo(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
@@ -142,7 +142,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should not allow anonymous users to create tickets")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotAllowAnonymousUsersToCreateTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -180,7 +180,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -195,7 +195,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should mark ticket as Unread for the Curators when publication owner creates new ticket")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnReadForTheCuratorsWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);

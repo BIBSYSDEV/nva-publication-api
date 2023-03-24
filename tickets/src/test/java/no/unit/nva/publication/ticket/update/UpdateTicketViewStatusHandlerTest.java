@@ -40,7 +40,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
@@ -54,7 +54,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should mark ticket as read for owner when user is ticket owner and marks it as read")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadFoOwnerWhenUserIsTicketOwnerAndMarksItAsRead(Class<? extends TicketEntry> ticketType,
                                                                             PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -78,7 +78,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should mark ticket as unread for owner when user is ticket owner and marks it as unread")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForOwnerWhenUserIsTicketOwnerAndMarksItAsUnread(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -98,7 +98,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should mark ticket as Read for all Curators when user is curator and marks it as read")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForAllCuratorsWhenUserIsCuratorAndMarksItAsRead(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -120,7 +120,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should mark ticket as Unread for all Curators when user is curator and marks it as unread")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForAllCuratorsWhenUserIsCuratorAndMarksItAsUnread(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -142,7 +142,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotProvideAnyInformationAboutTheExistenceOfATicketWhenAnAlienUserTriesToModifyTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -160,7 +160,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -173,7 +173,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -186,7 +186,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenWhenTicketDoesNotExistAndUserIsNotElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);

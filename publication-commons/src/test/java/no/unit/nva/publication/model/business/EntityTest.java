@@ -16,7 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class EntityTest extends ResourcesLocalTest {
     
@@ -31,7 +31,7 @@ class EntityTest extends ResourcesLocalTest {
     
     @ParameterizedTest
     @DisplayName("should return referenced stored publication when entity is referencing a publication ")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnReferencedStoredPublicationWhenEntityIsReferencingAPublication(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);

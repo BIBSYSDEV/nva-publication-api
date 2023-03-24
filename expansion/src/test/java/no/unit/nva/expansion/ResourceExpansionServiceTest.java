@@ -52,7 +52,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
@@ -75,7 +75,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnExpandedTicketContainingTheOrganizationIdOfTheOwnersAffiliationAsIs(Class<? extends TicketEntry> ticketType,
                                                                                          PublicationStatus status)
         throws Exception {
@@ -88,7 +88,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @DisplayName("should copy all publicly visible fields from Ticket to ExpandedTicket")
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldCopyAllPubliclyVisibleFieldsFromTicketToExpandedTicket(Class<? extends TicketEntry> ticketType,
                                                                       PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
@@ -105,7 +105,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @DisplayName("should update associated Ticket when a Message is created")
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldExpandAssociatedTicketWhenMessageIsCreated(Class<? extends TicketEntry> ticketType,
                                                           PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
@@ -166,7 +166,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldAddResourceTitleToExpandedTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
 
@@ -186,7 +186,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);

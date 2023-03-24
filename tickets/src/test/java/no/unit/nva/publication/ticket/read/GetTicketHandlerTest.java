@@ -39,7 +39,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class GetTicketHandlerTest extends TicketTestLocal {
     
@@ -56,7 +56,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @DisplayName("should return ticket when client is owner of associated publication "
                  + "and therefore of the ticket")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnTicketWhenClientIsOwnerOfAssociatedPublicationAndThereforeOfTheTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -73,7 +73,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @DisplayName("should  return not found when publication identifier exists, but ticket identifier does not "
                  + "correspond to a ticket of that publication")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnNotFoundWhenPublicationIdentifierExistsButTicketIdentifierDoesCorrespondToPublication(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -88,7 +88,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should  return not found when user is not the owner of the associated publication")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnNotFoundWhenUserIsNotTheOwnerOfTheAssociatedPublication(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -101,7 +101,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should return ticket when curator is requester")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnTicketWhenCuratorIsRequester(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -117,7 +117,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should return Not Found when requester is curator of wrong institution")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnTicketWhenRequesterIsCuratorOfWrongInstitution(Class<? extends TicketEntry> ticketType,
                                                                     PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -131,7 +131,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should return Not Found when requester is the wrong type of elevated user")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnNotFoundWhenRequestIsTheWrongTypeOfElevatedUser(Class<? extends TicketEntry> ticketType,
                                                                      PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -148,7 +148,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should return ticket with messages when ticket has messages")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnTicketWithMessagesWhenTicketHasMessages(Class<? extends TicketEntry> ticketType,
                                                              PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -168,7 +168,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should return viewed by owner when ticket is new ")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnViewedByOwnerWhenTicketIsNew(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -182,7 +182,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should mark ticket as Unread for the publication owner when ticket is marked as unread")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForThePublicationOwnerWhenTicketIsMarkedAsUnread(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -198,7 +198,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest
     @DisplayName("should return publication title with the ticket")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnPublicationTitleWithTheTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);

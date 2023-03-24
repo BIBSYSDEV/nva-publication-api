@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     
@@ -107,7 +107,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should return a Bad Request response when attempting to re-open a ticket.")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedTicket(Class<? extends TicketEntry> ticketType,
                                                                            PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -125,7 +125,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     
     @ParameterizedTest(name = "ticket type: {0} with status {1}")
     @DisplayName("should return a Bad Request when attempting to complete incompletable ticket cases")
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnBadRequestWhenAttemptingToCompleteIncompletableTicketCases(Class<? extends TicketEntry> ticketType,
                                                                                 PublicationStatus publicationStatus)
         throws ApiGatewayException, IOException {

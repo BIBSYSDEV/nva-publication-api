@@ -16,7 +16,7 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UserInstanceTest {
     
@@ -38,7 +38,7 @@ class UserInstanceTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnUserInstanceFromMessage(Class<? extends TicketEntry> ticketType, PublicationStatus status) {
         var publication = TicketTestUtils.createNonPersistedPublication(status);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import publication.test.TicketTestUtils;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
@@ -49,7 +49,7 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     @DisplayName("should persist message with reference to a ticket")
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldPersistMessageWithReferenceToATicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
@@ -61,7 +61,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldSetRecipientAsOwnerWhenSenderIsNotOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -75,7 +75,7 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     //TODO: discuss with product owner what the actual requirements are here.
     @ParameterizedTest
-    @MethodSource("publication.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldSetRecipientAsSupportServiceWhenSenderIsOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);

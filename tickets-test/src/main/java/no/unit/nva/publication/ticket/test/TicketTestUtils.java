@@ -1,4 +1,4 @@
-package publication.test;
+package no.unit.nva.publication.ticket.test;
 
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
