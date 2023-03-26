@@ -27,12 +27,15 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.secrets.SecretsReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
 
     public static final String PUBLICATION_WITH_IDENTIFIER_S_DOES_NOT_SATISFY_DOI_REQUIREMENTS
         = "Publication with identifier  %s, does not satisfy DOI requirements";
     public static final String COULD_NOT_CREATE_FINDABLE_DOI = "Could not create findable doi";
+    private static final Logger logger = LoggerFactory.getLogger(UpdateTicketStatusHandler.class);
     private final TicketService ticketService;
     private final ResourceService resourceService;
 
@@ -96,7 +99,8 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         }
     }
 
-    private void findableDoiTicketSideEffects(RequestInfo requestInfo) throws NotFoundException, BadMethodException, BadGatewayException {
+    private void findableDoiTicketSideEffects(RequestInfo requestInfo)
+        throws NotFoundException, BadMethodException, BadGatewayException {
         var publication = getPublication(requestInfo);
         publicationSatisfiesDoiRequirements(publication);
         createFindableDoiAndPersistDoiOnPublication(publication);
@@ -107,6 +111,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
             var doi = doiClient.createFindableDoi(publication);
             updatePublication(publication, doi);
         } catch (Exception e) {
+            logger.error("Creating findable doi failed with exception: {}", e);
             throw new BadGatewayException(COULD_NOT_CREATE_FINDABLE_DOI);
         }
     }
