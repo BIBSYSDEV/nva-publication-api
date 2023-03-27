@@ -120,7 +120,8 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
     }
 
     private URI inferPublicationId(Publication publication) {
-        return UriWrapper.fromUri(apiHost)
+        logger.info("apiHost: {}", apiHost);
+        return UriWrapper.fromUri("https://" + apiHost)
                    .addChild("publication")
                    .addChild(publication.getIdentifier().toString())
                    .getUri();
