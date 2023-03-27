@@ -115,6 +115,7 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
                 .withCustomerId(Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null))
                 .withPublicationId(inferPublicationId(publication))
                 .build();
+        logger.info("DoiRequest: {}", doiRequest.toJsonString());
         return BodyPublishers.ofString(doiRequest.toJsonString());
     }
 
