@@ -1,6 +1,7 @@
 package no.unit.nva.publication.ticket.update;
 
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -9,6 +10,8 @@ import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -57,13 +60,14 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService);
+        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService, new FakeDoiClient());
     }
 
     @Test
     void shouldCompletePendingDoiRequestWhenUserIsCuratorAndPublicationIsPublished()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
+        assertThat(publication.getDoi(), is(nullValue()));
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         var completedTicket = ticket.complete(publication);
         var request = authorizedUserCompletesTicket(completedTicket);
@@ -72,7 +76,27 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
         var actualTicket = ticketService.fetchTicket(ticket);
         assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
+        var modifiedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        assertThat(modifiedPublication.getDoi(), is(	notNullValue()));
     }
+
+    @Test
+    void shouldCompletePendingDoiRequestWithoutChangingAlreadyExistingDoi()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistAndPublishPublicationWithDoi();
+        assertThat(publication.getDoi(), is(notNullValue()));
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var completedTicket = ticket.complete(publication);
+        var request = authorizedUserCompletesTicket(completedTicket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+        var actualTicket = ticketService.fetchTicket(ticket);
+        assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
+        var publicationInDatabase = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        assertThat(publicationInDatabase.getDoi(), is(	equalTo(publication.getDoi())));
+    }
+
 
     @Test
     void shouldReturnErrorForDoiTicketCompletedForPublicaitonNotSatisfyingDoiRequirement()
@@ -84,6 +108,20 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_METHOD)));
+    }
+
+    @Test
+    void shouldReturnErrorForDoiTicketCompletedWhenDoiClientRespondsWithError()
+        throws ApiGatewayException, IOException {
+        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService,
+                                                     new FakeDoiClientThrowingException());
+        var publication = createPersistAndPublishPublication();
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var completedTicket = ticket.complete(publication);
+        var request = authorizedUserCompletesTicket(completedTicket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
     }
 
     @Test
