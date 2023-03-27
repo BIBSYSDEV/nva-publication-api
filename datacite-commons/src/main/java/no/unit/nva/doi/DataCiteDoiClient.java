@@ -43,6 +43,7 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
     public static final String DATA_CITE_CONFIGURATION_ERROR = "Configuration error from DataCite: {}";
     public static final String FINDABLE = "findable";
     private static final Logger logger = LoggerFactory.getLogger(DataCiteDoiClient.class);
+    public static final String PUBLICATION = "publication";
 
     private final String apiHost;
     private final HttpClient httpClient;
@@ -120,9 +121,8 @@ public class DataCiteDoiClient implements ReserveDoiClient, CreateFindableDoiCli
     }
 
     private URI inferPublicationId(Publication publication) {
-        logger.info("apiHost: {}", apiHost);
-        return UriWrapper.fromUri("https://" + apiHost)
-                   .addChild("publication")
+        return UriWrapper.fromHost(apiHost)
+                   .addChild(PUBLICATION)
                    .addChild(publication.getIdentifier().toString())
                    .getUri();
     }
