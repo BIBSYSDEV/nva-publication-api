@@ -3,6 +3,7 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -15,6 +16,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -29,7 +31,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 public abstract class TicketEntry implements Entity {
     
     public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
-    
+    public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED =
+        "Can not create DoiRequest ticket for unpublished publication, use draft doi flow instead.";
     public static final String VIEWED_BY_FIELD = "viewedBy";
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR =
         "Ticket without reference to publication";
@@ -54,7 +57,7 @@ public abstract class TicketEntry implements Entity {
     
     public static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
-            return DoiRequest.fromPublication(publication);
+            return attempt(() -> requestDoiRequestTicket(publication)).orElseThrow();
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return createOpeningCaseObject(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
@@ -62,7 +65,19 @@ public abstract class TicketEntry implements Entity {
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
-    
+
+    private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
+        if(isPublished(publication)) {
+            return DoiRequest.fromPublication(publication);
+        } else {
+            throw new BadRequestException(DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED);
+        }
+    }
+
+    private static boolean isPublished(Publication publication) {
+        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+    }
+
     public static <T extends TicketEntry> T createQueryObject(URI customerId, SortableIdentifier resourceIdentifier,
                                                               Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {

@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -53,7 +54,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
-
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class CreateTicketHandlerTest extends TicketTestLocal {
     
@@ -69,14 +70,14 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         this.handler = new CreateTicketHandler(ticketService, resourceService);
     }
     
-    @ParameterizedTest(name = "ticketType")
+    @ParameterizedTest
     @DisplayName("should persist ticket when publication exists, user is publication owner and "
                  + "publication meets ticket creation criteria")
-    @MethodSource("ticketEntryProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
-        Class<? extends TicketEntry> ticketType) throws IOException, ApiGatewayException {
-        
-        var publication = createAndPersistDraftPublication();
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
+
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
         var owner = UserInstance.fromPublication(publication);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
@@ -106,12 +107,13 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
     
-    @ParameterizedTest(name = "ticket type: {0}")
+    @ParameterizedTest
     @DisplayName("should not allow users to create tickets for publications they do not own")
-    @MethodSource("ticketEntryProvider")
-    void shouldNotAllowUsersToCreateTicketsForPublicationsTheyDoNotOwn(Class<? extends TicketEntry> ticketType)
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldNotAllowUsersToCreateTicketsForPublicationsTheyDoNotOwn(Class<? extends TicketEntry> ticketType,
+                                                                       PublicationStatus status)
         throws IOException, ApiGatewayException {
-        var publication = createPersistedDraftPublication();
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
@@ -121,14 +123,14 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
     
-    @ParameterizedTest(name = "ticket type: {0}")
+    @ParameterizedTest
     @DisplayName("should not allow users to create tickets for publications belonging to different organization"
                  + "than the one they are currently logged in to")
-    @MethodSource("ticketEntryProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotAllowUsersToCreateTicketsForPublicationsBelongingToDifferentOrgThanTheOneTheyAreLoggedInTo(
-        Class<? extends TicketEntry> ticketType)
+        Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
-        var publication = createPersistedDraftPublication();
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
         var user = UserInstance.create(publication.getResourceOwner().getOwner(), randomUri());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
@@ -138,12 +140,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
     
-    @ParameterizedTest(name = "ticket type: {0}")
+    @ParameterizedTest
     @DisplayName("should not allow anonymous users to create tickets")
-    @MethodSource("ticketEntryProvider")
-    void shouldNotAllowAnonymousUsersToCreateTickets(Class<? extends TicketEntry> ticketType)
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldNotAllowAnonymousUsersToCreateTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
-        var publication = createPersistedDraftPublication();
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
         var input = createAnonymousHttpTicketCreationRequest(requestBody, publication);
         handler.handleRequest(input, output, CONTEXT);
@@ -154,7 +156,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsPublished()
         throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
+        var publication = createPersistedPublishedPublication();
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(PublishingRequestCase.class);
@@ -176,12 +178,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
     }
     
-    @ParameterizedTest(name = "ticketType:{0}")
+    @ParameterizedTest
     @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
-    @MethodSource("ticketEntryProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
-        Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(ticketType);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
@@ -191,12 +193,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
     }
     
-    @ParameterizedTest(name = "ticketType:{0}")
+    @ParameterizedTest
     @DisplayName("should mark ticket as Unread for the Curators when publication owner creates new ticket")
-    @MethodSource("ticketEntryProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnReadForTheCuratorsWhenPublicationOwnerCreatesNewTicket(
-        Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(ticketType);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
@@ -211,7 +213,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldUpdateExistingDoiRequestWhenNewDoiIsRequestedButUnfulfilledDoiRequestAlreadyExists()
         throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
+        var publication = createPersistedPublishedPublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(DoiRequest.class);
         
@@ -303,11 +305,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throw new RuntimeException("Unrecognized ticket type");
     }
     
-    private Publication createPersistedDraftPublication() throws ApiGatewayException {
+    private Publication createPersistedPublishedPublication() throws ApiGatewayException {
         var publication = randomPublication();
         publication.setDoi(null); // for creating DoiRequests
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         return resourceService.getPublication(publication);
     }
     

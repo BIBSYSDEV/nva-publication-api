@@ -1,3 +1,4 @@
+
 dependencies {
     implementation(project(':publication-commons'))
     implementation libs.nva.core
@@ -11,23 +12,14 @@ dependencies {
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb
     implementation libs.bundles.jena
-
+    implementation libs.junit.jupiter.params
     testImplementation(project(':publication-testing'))
-    testImplementation project(path: ':tickets-test')
     testImplementation libs.nva.testutils
     testImplementation libs.bundles.testing
     testImplementation libs.jsonassert
-
-
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 test {
-    environment "IDENTITY_SERVICE_SECRET_NAME", "secretName"
-    environment "IDENTITY_SERVICE_SECRET_KEY", "secretKey"
-    environment "API_HOST", "api.dev.nva.aws.unit.no"
-    environment "AWS_REGION", "eu-west-1"
-    environment "ID_NAMESPACE", "https://www.example.org/publication"
-
-    // Disable remote context loading for JsonLd
-    System.setProperty("com.github.jsonldjava.disallowRemoteContextLoading", "true")
+    useJUnitPlatform()
 }

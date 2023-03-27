@@ -44,6 +44,7 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,10 +85,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class TicketServiceTest extends ResourcesLocalTest {
     
@@ -488,50 +491,43 @@ class TicketServiceTest extends ResourcesLocalTest {
         var actualTickets = ticketService.fetchTicketsForUser(owner).collect(Collectors.toList());
         assertThat(actualTickets, containsInAnyOrder(expectedTickets.toArray(TicketEntry[]::new)));
     }
-    
-    @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should mark ticket as Unread for owner")
-    @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
-                         .persistNewTicket(ticketService);
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
     }
-    
-    @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should mark ticket as Read for owner")
-    @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
         ticket.markReadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
     }
-    
-    @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should mark ticket as read for curator")
-    @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
-                         .persistNewTicket(ticketService);
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
     }
-    
-    @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should mark ticket as unread for curator")
-    @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
-                         .persistNewTicket(ticketService);
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
         ticket.markUnreadForCurators().persistUpdate(ticketService);
@@ -630,12 +626,13 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
     
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {
-        return ticketTypeProvider()
-                   .map(type -> (Class<? extends TicketEntry>) type)
-                   .map(type -> TicketEntry.requestNewTicket(publication, type))
-                   .map(attempt(ticket -> ticket.persistNewTicket(ticketService)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+        return TicketTestUtils.ticketTypeAndPublicationStatusProvider()
+            .map(Arguments::get)
+            .filter(argument -> Arrays.asList(argument).get(1) == publication.getStatus())
+            .map(arg -> TicketEntry.requestNewTicket(publication, (Class<? extends TicketEntry>) Arrays.asList(arg).get(0)))
+            .map(attempt(ticket -> ticket.persistNewTicket(ticketService)))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
     
     private Publication updatePublicationTile(Publication publication) {

@@ -19,14 +19,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
-import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -42,20 +40,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
     private UpdateTicketStatusHandler handler;
 
-    public static Stream<Arguments> ticketAndBadStatusProvider() {
-        return Stream.of(
-            Arguments.of(DoiRequest.class, PublicationStatus.DRAFT),
-            Arguments.of(DoiRequest.class, PublicationStatus.DRAFT_FOR_DELETION),
-            Arguments.of(PublishingRequestCase.class, PublicationStatus.DRAFT_FOR_DELETION));
-    }
 
     @BeforeEach
     public void setup() {
@@ -99,9 +91,11 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
 
     @Test
-    void shouldReturnErrorForDoiTicketCompletedForPublicaitonNotSatisfyingDoiRequirement()
+    void shouldReturnErrorForDoiTicketCompletedForPublicationNotSatisfyingDoiRequirement()
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        publication.getEntityDescription().setMainTitle(null);
+        resourceService.updatePublication(publication.copy().withEntityDescription(publication.getEntityDescription()).build());
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         ticket.setStatus(COMPLETED);
         var request = authorizedUserCompletesTicket(ticket);
@@ -166,11 +160,12 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should return a Bad Request response when attempting to re-open a ticket.")
-    @MethodSource("ticketTypeProvider")
-    void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedTicket(Class<? extends TicketEntry> ticketType)
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedTicket(Class<? extends TicketEntry> ticketType,
+                                                                           PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createPublicationForTicket(ticketType);
-        var ticket = createPersistedTicket(publication, ticketType);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticketService.updateTicketStatus(ticket, COMPLETED);
         ticket.setStatus(TicketStatus.PENDING);
         var request = authorizedUserCompletesTicket(ticket);
@@ -183,12 +178,12 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest(name = "ticket type: {0} with status {1}")
     @DisplayName("should return a Bad Request when attempting to complete incompletable ticket cases")
-    @MethodSource("ticketAndBadStatusProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnBadRequestWhenAttemptingToCompleteIncompletableTicketCases(Class<? extends TicketEntry> ticketType,
                                                                                 PublicationStatus publicationStatus)
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = createPersistedTicket(publication, ticketType);
+        var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         updatePublicationStatus(publication, publicationStatus);
 
         var request = authorizedUserCompletesTicket(ticket);
