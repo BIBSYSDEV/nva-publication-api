@@ -330,6 +330,12 @@ paths:
             application/json:
               schema:
                 $ref: "/components/schemas/Problem"
+        502:
+          description: Bad gateway
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
