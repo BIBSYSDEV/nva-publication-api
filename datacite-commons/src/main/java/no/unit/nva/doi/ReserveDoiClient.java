@@ -5,6 +5,6 @@ import no.unit.nva.model.Publication;
 
 public interface ReserveDoiClient {
 
-    URI generateDoi(Publication publication);
+    URI generateDraftDoi(Publication publication);
 
 }

@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation project(":publication-commons")
+    implementation project(":publication-doi-commons")
 
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
@@ -43,4 +44,5 @@ test {
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "https://example.com"
     environment "ALLOWED_ORIGIN", "*"
+    environment "TABLE_NAME", "some-table-name"
 }

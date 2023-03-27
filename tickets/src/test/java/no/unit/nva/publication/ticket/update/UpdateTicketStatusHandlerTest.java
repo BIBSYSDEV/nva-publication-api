@@ -1,6 +1,7 @@
 package no.unit.nva.publication.ticket.update;
 
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
+import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -41,16 +42,16 @@ import org.zalando.problem.Problem;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
-    
+
     private UpdateTicketStatusHandler handler;
 
     
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new UpdateTicketStatusHandler(ticketService);
+        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService);
     }
-    
+
     @Test
     void shouldCompletePendingDoiRequestWhenUserIsCuratorAndPublicationIsPublished()
         throws ApiGatewayException, IOException {
@@ -64,7 +65,21 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var actualTicket = ticketService.fetchTicket(ticket);
         assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
     }
-    
+
+    @Test
+    void shouldReturnErrorForDoiTicketCompletedForPublicationNotSatisfyingDoiRequirement()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        publication.getEntityDescription().setMainTitle(null);
+        resourceService.updatePublication(publication.copy().withEntityDescription(publication.getEntityDescription()).build());
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        ticket.setStatus(COMPLETED);
+        var request = authorizedUserCompletesTicket(ticket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_METHOD)));
+    }
+
     @Test
     void shouldReturnForbiddenWhenRequestingUserIsNotCurator() throws IOException, ApiGatewayException {
         var publication = createPersistAndPublishPublication();
@@ -79,7 +94,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
+
     @Test
     void shouldReturnForbiddenWhenRequestingUserIsCuratorAtOtherCustomerThanCurrentPublisher()
         throws ApiGatewayException, IOException {
@@ -92,7 +107,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
+
     @Test
     void shouldReturnAcceptedWhenCompletingAnAlreadyCompletedDoiRequestTicket()
         throws ApiGatewayException, IOException {
@@ -104,7 +119,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
     }
-    
+
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should return a Bad Request response when attempting to re-open a ticket.")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -122,7 +137,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         assertThat(actualTicket.getStatus(), is(equalTo(COMPLETED)));
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
-    
+
     @ParameterizedTest(name = "ticket type: {0} with status {1}")
     @DisplayName("should return a Bad Request when attempting to complete incompletable ticket cases")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -132,24 +147,13 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         updatePublicationStatus(publication, publicationStatus);
-    
+
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
-    
-    private Publication updatePublicationStatus(Publication publication, PublicationStatus newPublicationStatus)
-        throws ApiGatewayException {
-        if (PublicationStatus.PUBLISHED.equals(newPublicationStatus)) {
-            resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        } else if (PublicationStatus.DRAFT_FOR_DELETION.equals(newPublicationStatus)) {
-            resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
-                publication.getIdentifier());
-        }
-        return resourceService.getPublication(publication);
-    }
-    
+
     @Test
     void shouldReturnNotFoundWhenSupplyingMalformedTicketIdentifier()
         throws IOException {
@@ -158,7 +162,18 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
-    
+
+    private Publication updatePublicationStatus(Publication publication, PublicationStatus newPublicationStatus)
+        throws ApiGatewayException {
+        if (PublicationStatus.PUBLISHED.equals(newPublicationStatus)) {
+            resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        } else if (PublicationStatus.DRAFT_FOR_DELETION.equals(newPublicationStatus)) {
+            resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
+                                                       publication.getIdentifier());
+        }
+        return resourceService.getPublication(publication);
+    }
+
     private InputStream authorizedUserInputMalformedIdentifier(String publicationIdentifier, String ticketIdentifier)
         throws JsonProcessingException {
         URI customer = randomUri();
@@ -167,15 +182,15 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
                    .withAccessRights(customer, AccessRight.APPROVE_DOI_REQUEST.toString())
                    .withCustomerId(customer)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
-                       publicationIdentifier,
-                       TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticketIdentifier))
+                                              publicationIdentifier,
+                                              TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticketIdentifier))
                    .build();
     }
-    
+
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
         return createCompleteTicketHttpRequest(ticket, AccessRight.APPROVE_DOI_REQUEST, ticket.getCustomerId());
     }
-    
+
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket,
                                                         AccessRight accessRight,
                                                         URI customer) throws JsonProcessingException {
@@ -184,8 +199,9 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
                    .withAccessRights(customer, accessRight.toString())
                    .withCustomerId(customer)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
-                       ticket.extractPublicationIdentifier().toString(),
-                       TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString()))
+                                              ticket.extractPublicationIdentifier().toString(),
+                                              TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
+                                              ticket.getIdentifier().toString()))
                    .build();
     }
 }

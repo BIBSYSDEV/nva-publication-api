@@ -13,7 +13,12 @@ paths:
             schema:
               $ref: '#/components/schemas/Publication'
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend', 'aws.cognito.signin.user.admin' ]
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/publication-upsert'
+        ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
@@ -313,6 +318,12 @@ paths:
             application/json:
               schema:
                 $ref: "/components/schemas/Problem"
+        405:
+          description: Operation not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
         409:
           description: Conflict
           content:
@@ -557,5 +568,5 @@ components:
       x-amazon-apigateway-authorizer:
         type: cognito_user_pools
         providerARNs:
-          - Ref:
-              CognitoAuthorizerArn
+          - Ref: CognitoAuthorizerArn
+          - Ref: ExternalCognitoAuthorizerArn
