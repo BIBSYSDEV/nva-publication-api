@@ -64,6 +64,7 @@ public final class BrageNvaMapper {
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var publication = new Publication.Builder()
                               .withHandle(extractHandle(record))
+                              .withLink(extractLink(record))
                               .withEntityDescription(extractEntityDescription(record))
                               .withCreatedDate(extractPublishedDate(record))
                               .withPublishedDate(extractPublishedDate(record))
@@ -75,6 +76,10 @@ public final class BrageNvaMapper {
                               .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
+    }
+
+    private static URI extractLink(Record record) {
+        return record.getLink();
     }
 
     public static String extractDescription(Record record) {
