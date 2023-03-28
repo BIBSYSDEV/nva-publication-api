@@ -320,7 +320,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request) throws JsonProcessingException {
+    private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request)
+        throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withBody(request)

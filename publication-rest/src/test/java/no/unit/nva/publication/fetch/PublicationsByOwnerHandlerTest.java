@@ -4,6 +4,9 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -19,12 +22,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.List;
+import no.unit.nva.clients.GetExternalClientResponse;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,18 +44,28 @@ public class PublicationsByOwnerHandlerTest {
     
     private ByteArrayOutputStream output;
     private PublicationsByOwnerHandler publicationsByOwnerHandler;
+    private GetExternalClientResponse getExternalClientResponse;
+    private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws NotFoundException {
         var environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
         
         resourceService = mock(ResourceService.class);
         context = mock(Context.class);
+
+        getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
+                                                                  "someone@123",
+                                                                  randomUri(),
+                                                                  randomUri());
+        var identityServiceClient = mock(IdentityServiceClient.class);
+        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
-            new PublicationsByOwnerHandler(resourceService, environment);
+            new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient);
     }
     
     @Test
@@ -75,6 +92,23 @@ public class PublicationsByOwnerHandlerTest {
         publicationsByOwnerHandler.handleRequest(input, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Void.class);
         assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
+    }
+
+    @Test
+    void returnsOkWhenIssuedByExternalClient() throws IOException {
+        when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
+            .thenReturn(publicationSummaries());
+
+        InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
+                                .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                                .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                                .build();
+        publicationsByOwnerHandler.handleRequest(input, output, context);
+
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationsByOwnerResponse.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
     
     private List<Publication> publicationSummaries() {
