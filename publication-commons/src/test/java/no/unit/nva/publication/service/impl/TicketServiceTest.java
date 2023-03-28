@@ -14,6 +14,7 @@ import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -616,6 +617,13 @@ class TicketServiceTest extends ResourcesLocalTest {
         var fetchedTickets = Resource.fromPublication(publication).fetchAllTickets(resourceService)
                                  .collect(Collectors.toList());
         assertThat(fetchedTickets, is(empty()));
+    }
+
+    @Test
+    void shouldThrowBadRequestExceptionWhenTryingToCompleteDoiReqeuestForDraftPublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        assertThrows(BadRequestException.class, ()-> ticketService.updateTicketStatus(ticket, PENDING));
     }
 
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {
