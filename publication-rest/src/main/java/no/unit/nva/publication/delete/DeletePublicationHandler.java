@@ -1,19 +1,18 @@
 package no.unit.nva.publication.delete;
 
-import static nva.commons.core.attempt.Try.attempt;
+import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
+import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -54,27 +53,10 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         return null;
     }
 
-    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws UnauthorizedException {
-        if (requestInfo.clientIsThirdParty()) {
-            return createUserInstanceForExternalClientUser(requestInfo);
-        } else {
-            var owner = requestInfo.getNvaUsername();
-            var customerId = requestInfo.getCurrentCustomer();
-            return UserInstance.create(owner, customerId);
-        }
-    }
-
-    private UserInstance createUserInstanceForExternalClientUser(RequestInfo requestInfo) throws UnauthorizedException {
-        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
-                         .map(clientId -> identityServiceClient.getExternalClient(clientId))
-                         .orElseThrow(fail -> new UnauthorizedException());
-
-        var resourceOwner = new ResourceOwner(
-            client.getActingUser(),
-            client.getCristinUrgUri()
-        );
-
-        return UserInstance.create(resourceOwner, client.getCustomerUri());
+    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
+        return requestInfo.clientIsThirdParty()
+                   ? createExternalUserInstance(requestInfo, identityServiceClient)
+                   : createInternalUserInstance(requestInfo);
     }
     
     @Override
