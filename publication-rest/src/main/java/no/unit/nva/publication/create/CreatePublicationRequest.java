@@ -147,8 +147,12 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getEntityDescription(), getAssociatedArtifacts(), getContext(), getProjects(), getSubjects(),
-            getAdditionalIdentifiers());
+        return Objects.hash(getEntityDescription(),
+                            getAssociatedArtifacts(),
+                            getContext(),
+                            getProjects(),
+                            getSubjects(),
+                            getAdditionalIdentifiers());
     }
 
     @JacocoGenerated

@@ -70,7 +70,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                                Context context) throws ApiGatewayException {
         logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
         
-        UserInstance userInstance = createUserInstanceFromLoginInformation(requestInfo);
+        var userInstance = createUserInstanceFromLoginInformation(requestInfo);
         var newPublication = Optional.ofNullable(input)
                                  .map(CreatePublicationRequest::toPublication)
                                  .orElseGet(Publication::new);
@@ -88,8 +88,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected URI getLocation(SortableIdentifier identifier) {
         return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
     }
-
-
 
     private UserInstance createUserInstanceForInternalUser(RequestInfo requestInfo) throws UnauthorizedException {
         var resourceOwner = createInternalResourceOwner(requestInfo);
