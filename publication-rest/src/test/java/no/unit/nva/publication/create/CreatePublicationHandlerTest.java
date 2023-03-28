@@ -313,7 +313,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream requestFromExternalClient(CreatePublicationRequest request) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
@@ -323,7 +322,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .build();

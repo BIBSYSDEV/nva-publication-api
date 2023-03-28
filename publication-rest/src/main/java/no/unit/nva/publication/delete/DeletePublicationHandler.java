@@ -1,16 +1,19 @@
 package no.unit.nva.publication.delete;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
 import java.time.Clock;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -18,13 +21,14 @@ import org.apache.http.HttpStatus;
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     
     private final ResourceService resourceService;
+    private final IdentityServiceClient identityServiceClient;
     
     /**
      * Default constructor for DeletePublicationHandler.
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(defaultService(), new Environment());
+        this(defaultService(), new Environment(), IdentityServiceClient.prepare());
     }
     
     /**
@@ -33,21 +37,44 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      * @param resourceService resourceService
      * @param environment     environment
      */
-    public DeletePublicationHandler(ResourceService resourceService, Environment environment) {
+    public DeletePublicationHandler(ResourceService resourceService,
+                                    Environment environment,
+                                    IdentityServiceClient identityServiceClient) {
         super(Void.class, environment);
         this.resourceService = resourceService;
+        this.identityServiceClient = identityServiceClient;
     }
-    
+
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        String owner = requestInfo.getNvaUsername();
-        URI customerId = requestInfo.getCurrentCustomer();
-        UserInstance userInstance = UserInstance.create(owner, customerId);
+        var userInstance = createUserInstanceFromRequest(requestInfo);
         
         resourceService.markPublicationForDeletion(userInstance, identifier);
-        
         return null;
+    }
+
+    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws UnauthorizedException {
+        if (requestInfo.clientIsThirdParty()) {
+            return createUserInstanceForExternalClientUser(requestInfo);
+        } else {
+            var owner = requestInfo.getNvaUsername();
+            var customerId = requestInfo.getCurrentCustomer();
+            return UserInstance.create(owner, customerId);
+        }
+    }
+
+    private UserInstance createUserInstanceForExternalClientUser(RequestInfo requestInfo) throws UnauthorizedException {
+        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
+                         .map(clientId -> identityServiceClient.getExternalClient(clientId))
+                         .orElseThrow(fail -> new UnauthorizedException());
+
+        var resourceOwner = new ResourceOwner(
+            client.getActingUser(),
+            client.getCristinUrgUri()
+        );
+
+        return UserInstance.create(resourceOwner, client.getCustomerUri());
     }
     
     @Override
