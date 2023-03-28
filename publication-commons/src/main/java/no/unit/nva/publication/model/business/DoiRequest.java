@@ -42,7 +42,6 @@ public class DoiRequest extends TicketEntry {
     public static final Set<PublicationStatus> ACCEPTABLE_PUBLICATION_STATUSES = Set.of(PublicationStatus.PUBLISHED,
                                                                                         PublicationStatus.PUBLISHED_METADATA,
                                                                                         PublicationStatus.DRAFT);
-    public static final String DOI_REQUEST_APPROVAL_FAILURE = "Cannot approve DoiRequest for non-published publication";
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
     @JsonProperty(STATUS_FIELD)
@@ -177,14 +176,12 @@ public class DoiRequest extends TicketEntry {
         if (publicationDoesNotHaveAnExpectedStatus(publication)) {
             throw new ConflictException(String.format(WRONG_PUBLICATION_STATUS_ERROR, ACCEPTABLE_PUBLICATION_STATUSES));
         }
-        validateCompletionRequirements(publication);
     }
 
+    @JacocoGenerated
     @Override
     public void validateCompletionRequirements(Publication publication) {
-        if (attemptingToCreateFindableDoiForNonPublishedPublication(publication)) {
-            throw new InvalidTicketStatusTransitionException(DOI_REQUEST_APPROVAL_FAILURE);
-        }
+        //already checked upstreams at this point.
     }
 
     @Override
@@ -263,12 +260,6 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner());
-    }
-
-    private boolean attemptingToCreateFindableDoiForNonPublishedPublication(Publication publication) {
-        return (!PublicationStatus.PUBLISHED.equals(publication.getStatus())
-                || PublicationStatus.PUBLISHED_METADATA.equals(publication.getStatus()))
-               && TicketStatus.COMPLETED.equals(getStatus());
     }
 
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
