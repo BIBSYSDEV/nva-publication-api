@@ -72,6 +72,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -90,7 +91,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class TicketServiceTest extends ResourcesLocalTest {
 
@@ -124,7 +124,7 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Publication status: {0}")
     @DisplayName("should create Doi Request when Publication is eligible")
-    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED"}, mode = Mode.INCLUDE)
+    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED", "PUBLISHED_METADATA"}, mode = Mode.INCLUDE)
     void shouldCreateDoiRequestWhenPublicationIsEligible(PublicationStatus status) throws ApiGatewayException {
         var publication = persistPublication(owner, status);
         publication = resourceService.getPublicationByIdentifier(publication.getIdentifier());

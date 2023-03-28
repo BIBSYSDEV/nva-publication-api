@@ -22,6 +22,7 @@ public final class TicketTestUtils {
 
     public static Stream<Arguments> ticketTypeAndPublicationStatusProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, PublicationStatus.PUBLISHED),
+                         Arguments.of(DoiRequest.class, PublicationStatus.PUBLISHED_METADATA),
                          Arguments.of(PublishingRequestCase.class, PublicationStatus.DRAFT),
                          Arguments.of(GeneralSupportRequest.class, PublicationStatus.DRAFT));
     }
@@ -49,7 +50,7 @@ public final class TicketTestUtils {
         throws ApiGatewayException {
         var publication = randomPublicationWithStatusAndOwner(status, owner);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, owner);
-        if (PublicationStatus.PUBLISHED.equals(status)) {
+        if (PublicationStatus.PUBLISHED.equals(status) || PublicationStatus.PUBLISHED_METADATA.equals(status)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
