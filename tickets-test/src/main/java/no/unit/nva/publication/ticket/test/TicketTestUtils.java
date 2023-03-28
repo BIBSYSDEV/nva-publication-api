@@ -36,7 +36,7 @@ public final class TicketTestUtils {
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
-        if (PublicationStatus.PUBLISHED.equals(status)) {
+        if (PublicationStatus.PUBLISHED.equals(status) || PublicationStatus.PUBLISHED_METADATA.equals(status)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
@@ -56,12 +56,6 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
-    private static void publishPublication(ResourceService resourceService, Publication persistedPublication)
-        throws ApiGatewayException {
-        resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                           persistedPublication.getIdentifier());
-    }
-
     public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
@@ -71,6 +65,12 @@ public final class TicketTestUtils {
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+    }
+
+    private static void publishPublication(ResourceService resourceService, Publication persistedPublication)
+        throws ApiGatewayException {
+        resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
+                                           persistedPublication.getIdentifier());
     }
 
     private static Publication randomPublicationWithStatusAndOwner(PublicationStatus status, UserInstance owner) {

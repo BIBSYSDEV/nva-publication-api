@@ -91,6 +91,22 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThatLocationHeaderHasExpectedFormat(publication, location);
         assertThatLocationHeaderPointsToCreatedTicket(location);
     }
+
+    @Test
+    void shouldBePossibleToCreateDoiTicketForPublicationWithPublishedMetadataOnly()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED_METADATA,
+                                                                     resourceService);
+        var requestBody = constructDto(DoiRequest.class);
+        var owner = UserInstance.fromPublication(publication);
+        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+        handler.handleRequest(input, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
+        assertThatLocationHeaderHasExpectedFormat(publication, location);
+        assertThatLocationHeaderPointsToCreatedTicket(location);
+    }
     
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should should not allow creating a ticket for non existing publication")
