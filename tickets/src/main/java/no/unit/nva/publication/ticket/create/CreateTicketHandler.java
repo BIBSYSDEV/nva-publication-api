@@ -16,10 +16,12 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -27,41 +29,41 @@ import org.slf4j.LoggerFactory;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
 
-    private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
     public static final String LOCATION_HEADER = "Location";
+    private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
     private final TicketService ticketService;
     private final ResourceService resourceService;
-    
+
     @JacocoGenerated
     public CreateTicketHandler() {
         this(TicketService.defaultService(), ResourceService.defaultService());
     }
-    
+
     public CreateTicketHandler(TicketService ticketService, ResourceService resourceService) {
         super(TicketDto.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
     }
-    
+
     @Override
     protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var publicationIdentifier = new SortableIdentifier(requestInfo.getPathParameter("publicationIdentifier"));
         var user = UserInstance.fromRequestInfo(requestInfo);
-        var publication = fetchPublication(publicationIdentifier, user);
+        var publication = fetchPublication(publicationIdentifier, user, requestInfo);
         var newTicket = TicketEntry.requestNewTicket(publication, input.ticketType());
         var createdTicket = persistTicket(newTicket);
         var ticketLocation = createTicketLocation(publicationIdentifier, createdTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
-    
+
         return null;
     }
-    
+
     @Override
     protected Integer getSuccessStatusCode(TicketDto input, Void output) {
         return HttpURLConnection.HTTP_CREATED;
     }
-    
+
     private static String createTicketLocation(SortableIdentifier publicationIdentifier, TicketEntry createdTicket) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(PUBLICATION_PATH)
@@ -71,12 +73,17 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
                    .getUri()
                    .toString();
     }
-    
+
+    private boolean userIsAuthorized(RequestInfo requestInfo) {
+        return (requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
+                || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString()));
+    }
+
     private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
         return attempt(() -> newTicket.persistNewTicket(ticketService))
                    .orElse(fail -> handleCreationException(fail.getException(), newTicket));
     }
-    
+
     private TicketEntry handleCreationException(Exception exception, TicketEntry newTicket) throws ApiGatewayException {
         if (exception instanceof TransactionFailedException) {
             return updateAlreadyExistingTicket(newTicket);
@@ -89,7 +96,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         }
         throw new RuntimeException(exception);
     }
-    
+
     private TicketEntry updateAlreadyExistingTicket(TicketEntry newTicket) {
         var customerId = newTicket.getCustomerId();
         var resourceIdentifier = newTicket.extractPublicationIdentifier();
@@ -97,16 +104,26 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
                    .map(this::updateTicket)
                    .orElseThrow();
     }
-    
+
     private TicketEntry updateTicket(TicketEntry ticket) {
         ticket.persistUpdate(ticketService);
         return ticket;
     }
-    
-    private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user)
+
+    private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user,
+                                         RequestInfo requestInfo)
         throws ApiGatewayException {
         return attempt(() -> resourceService.getPublication(user, publicationIdentifier))
+                   .or(() -> fetchPublicationForPriveliegedUser(publicationIdentifier, requestInfo))
                    .orElseThrow(fail -> loggingFailureReporter(fail.getException()));
+    }
+
+    private Publication fetchPublicationForPriveliegedUser(SortableIdentifier publicationIdentifier,
+                                                           RequestInfo requestInfo) throws ApiGatewayException {
+        if (!userIsAuthorized(requestInfo)) {
+            throw new ForbiddenException();
+        }
+        return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 
     private ApiGatewayException loggingFailureReporter(Exception exception) {
