@@ -87,7 +87,12 @@ paths:
     put:
       summary: Update Publication for Identifier
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/publication-read'
+        ]
       requestBody:
         required: true
         content:
