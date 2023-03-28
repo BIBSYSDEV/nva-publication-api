@@ -158,8 +158,7 @@ public class TicketService extends ServiceWithTransactions {
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
                 .orElseThrow(fail -> notFoundException());
         
-        var completed = attempt(() -> existingTicket.complete(publication))
-                            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+        var completed = existingTicket.complete(publication);
         
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
         getClient().putItem(putItemRequest);
@@ -186,10 +185,6 @@ public class TicketService extends ServiceWithTransactions {
     private TicketEntry fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(TicketEntry ticketEntry) {
         return fetchTicketByResourceIdentifier(ticketEntry.getCustomerId(),
             ticketEntry.extractPublicationIdentifier(), ticketEntry.getClass()).orElseThrow();
-    }
-    
-    private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
-        return new BadRequestException(exception.getMessage(), exception);
     }
     
     private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) throws ForbiddenException {
