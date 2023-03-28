@@ -70,8 +70,8 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
     }
 
     private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws ApiGatewayException {
-        return requestInfo.clientIsThirdParty() ?
-                   createExternalUserInstance(requestInfo, identityServiceClient)
+        return requestInfo.clientIsThirdParty()
+                   ? createExternalUserInstance(requestInfo, identityServiceClient)
                    : createInternalUserInstance(requestInfo);
     }
     
