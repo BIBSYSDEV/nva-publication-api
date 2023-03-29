@@ -5,9 +5,12 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -74,9 +77,21 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
                    .toString();
     }
 
-    private boolean userIsAuthorized(RequestInfo requestInfo) {
+    private static URI getPublisherId(Publication publication) {
+        return Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null);
+    }
+
+    private boolean userIsAuthorized(RequestInfo requestInfo, Publication publication) throws UnauthorizedException {
         return (requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-                || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString()));
+                || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString()))
+               && isUserFromSameCustomerAsPublication(requestInfo, publication);
+    }
+
+    private boolean isUserFromSameCustomerAsPublication(RequestInfo requestInfo, Publication publication)
+        throws UnauthorizedException {
+        return Optional.ofNullable(requestInfo.getCurrentCustomer())
+                   .map(customer -> customer.equals(getPublisherId(publication)))
+                   .orElse(false);
     }
 
     private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
@@ -114,16 +129,17 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
                                          RequestInfo requestInfo)
         throws ApiGatewayException {
         return attempt(() -> resourceService.getPublication(user, publicationIdentifier))
-                   .or(() -> fetchPublicationForPriveliegedUser(publicationIdentifier, requestInfo))
+                   .or(() -> fetchPublicationForPrivilegedUser(publicationIdentifier, requestInfo))
                    .orElseThrow(fail -> loggingFailureReporter(fail.getException()));
     }
 
-    private Publication fetchPublicationForPriveliegedUser(SortableIdentifier publicationIdentifier,
-                                                           RequestInfo requestInfo) throws ApiGatewayException {
-        if (!userIsAuthorized(requestInfo)) {
+    private Publication fetchPublicationForPrivilegedUser(SortableIdentifier publicationIdentifier,
+                                                          RequestInfo requestInfo) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        if (!userIsAuthorized(requestInfo, publication)) {
             throw new ForbiddenException();
         }
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
+        return publication;
     }
 
     private ApiGatewayException loggingFailureReporter(Exception exception) {

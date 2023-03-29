@@ -266,9 +266,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldAllowUserWithDoiRequestApprovalAccessRight() throws ApiGatewayException, IOException {
         var publication = createPersistedPublishedPublication();
-        var customerId = randomUri();
+        var publicationOwner = publication.getPublisher().getId();
         var requestBody = constructDto(DoiRequest.class);
-        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, customerId, AccessRight.APPROVE_DOI_REQUEST);
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner, AccessRight.APPROVE_DOI_REQUEST);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -277,13 +277,28 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldAllowUserWithDoiRequestRejectionAccessRight() throws ApiGatewayException, IOException {
         var publication = createPersistedPublishedPublication();
+        var publicationOwner = publication.getPublisher().getId();
+        var requestBody = constructDto(DoiRequest.class);
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner,
+                                                                             AccessRight.REJECT_DOI_REQUEST);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldNotAllowUserWithDoiRequestToCreateTicketForPublicationFromAnotherInstitution()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedPublishedPublication();
         var customerId = randomUri();
+        assertThat(customerId, is(not(equalTo(publication.getPublisher().getId()))));
         var requestBody = constructDto(DoiRequest.class);
         var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, customerId,
                                                                              AccessRight.REJECT_DOI_REQUEST);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+
     }
 
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
