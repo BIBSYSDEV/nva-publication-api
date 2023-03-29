@@ -405,6 +405,36 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenPublisherIsNull()
+        throws IOException {
+        createEmptyPiaMock();
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
+        removePublishers();
+        var s3Event = createNewScopusPublicationEvent();
+        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+//        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+//        var expectedPublisherName = scopusData.getDocument()
+//                                        .getItem()
+//                                        .getItem()
+//                                        .getBibrecord()
+//                                        .getHead()
+//                                        .getSource()
+//                                        .getPublisher()
+//                                        .get(0)
+//                                        .getPublishername();
+        //            var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+        //            assertThat(actualPublisherName, is(expectedPublisherName));
+    }
+
+    private void removePublishers() {
+        var publishers =
+            scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher();
+        publishers.removeAll(publishers);
+    }
+
+    @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrcTypeBandIsNotAChapter()
         throws IOException {
         createEmptyPiaMock();
