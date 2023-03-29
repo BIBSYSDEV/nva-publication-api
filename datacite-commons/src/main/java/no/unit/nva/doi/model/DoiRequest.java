@@ -7,7 +7,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
-public class FindableDoiRequest implements JsonSerializable {
+public class DoiRequest implements JsonSerializable {
 
     @JsonProperty("publicationId")
     private final URI publicationId;
@@ -16,9 +16,9 @@ public class FindableDoiRequest implements JsonSerializable {
     @JsonProperty("doi")
     private final URI doi;
 
-    public FindableDoiRequest(@JsonProperty("publicationId") URI publicationId,
-                              @JsonProperty("customerId") URI customerId,
-                              @JsonProperty("doi") URI doi) {
+    public DoiRequest(@JsonProperty("publicationId") URI publicationId,
+                      @JsonProperty("customerId") URI customerId,
+                      @JsonProperty("doi") URI doi) {
         this.doi = doi;
         this.customerId = customerId;
         this.publicationId = publicationId;
@@ -52,10 +52,10 @@ public class FindableDoiRequest implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof FindableDoiRequest)) {
+        if (!(o instanceof DoiRequest)) {
             return false;
         }
-        FindableDoiRequest that = (FindableDoiRequest) o;
+        DoiRequest that = (DoiRequest) o;
         return Objects.equals(getPublicationId(), that.getPublicationId()) && Objects.equals(
             getCustomerId(), that.getCustomerId()) && Objects.equals(getDoi(), that.getDoi());
     }
@@ -81,8 +81,8 @@ public class FindableDoiRequest implements JsonSerializable {
             return this;
         }
 
-        public FindableDoiRequest build() throws BadRequestException {
-            return new FindableDoiRequest(publicationId, customerId, doi);
+        public DoiRequest build() throws BadRequestException {
+            return new DoiRequest(publicationId, customerId, doi);
         }
     }
 }
