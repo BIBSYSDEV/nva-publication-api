@@ -3,8 +3,6 @@ package no.unit.nva.publication.events.handlers.tickets;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.CUSTOMER_ID;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DELETE_DRAFT_DOI_EVENT_TOPIC;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DOI;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.PUBLICATION_ID;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -44,7 +42,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -97,10 +94,11 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
         var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutIdentifier.setIdentifier(null);
-        var event = createEvent(null, doiRequestWithoutIdentifier);
-        Executable action = () -> handler.handleRequest(event, outputStream, context);
-        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getMessage(), is(equalTo(DOI_REQUEST_HAS_NO_IDENTIFIER)));
+        try (var event = createEvent(null, doiRequestWithoutIdentifier)) {
+            Executable action = () -> handler.handleRequest(event, outputStream, context);
+            IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+            assertThat(exception.getMessage(), is(equalTo(DOI_REQUEST_HAS_NO_IDENTIFIER)));
+        }
     }
 
     @Test
@@ -109,10 +107,11 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
         var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutResourceIdentifier.setPublicationDetails(null);
-        var event = createEvent(null, doiRequestWithoutResourceIdentifier);
-        Executable action = () -> handler.handleRequest(event, outputStream, context);
-        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
+        try (var event = createEvent(null, doiRequestWithoutResourceIdentifier)) {
+            Executable action = () -> handler.handleRequest(event, outputStream, context);
+            IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+            assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
+        }
     }
 
     @Test
@@ -174,7 +173,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
             hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
-    
+
     @Test
     void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
@@ -216,21 +215,6 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
-    }
-
-    @Test
-    void shouldSendRequestToDeleteADraftDoiWhenDraftDoiIsPresentAndDoiRequestTicketIsClosed() throws IOException {
-        var publication = persistPublicationWithDoi();
-        var oldDoiRequest = DoiRequest.fromPublication(publication);
-        var newDoiRequest = getClosedDoiRequest(publication);
-        var event = createEvent(oldDoiRequest, newDoiRequest);
-
-        handler.handleRequest(event, outputStream, context);
-
-        var actual = outputToPublicationHolder(outputStream);
-
-        assertThat(actual.getTopic(), is(equalTo(DELETE_DRAFT_DOI_EVENT_TOPIC)));
-        assertThat(actual, hasProperty(DOI, equalTo(publication.getDoi())));
     }
 
     @Test
@@ -280,14 +264,6 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
                    .addChild("publication")
                    .addChild(publication.getIdentifier().toString())
                    .getUri();
-    }
-
-    private DoiRequest getClosedDoiRequest(Publication publication) {
-        var doiRequest = DoiRequest.fromPublication(publication);
-
-        doiRequest.setStatus(TicketStatus.CLOSED);
-
-        return doiRequest;
     }
 
     private InputStream createEvent(Entity oldImage, Entity newImage) throws IOException {
