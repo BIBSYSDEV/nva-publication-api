@@ -32,6 +32,7 @@ import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
@@ -72,7 +73,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateDoiRequestTicketWhenPublicationWithDraftDoiIsPublished() throws IOException, NotFoundException {
+    void shouldCreateDoiRequestTicketWhenPublicationWithDraftDoiIsPublished()
+        throws IOException, NotFoundException, BadRequestException {
         var publication = createDraftPublicationWithDoi();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
@@ -87,7 +89,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists() throws NotFoundException, IOException {
+    void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
+        throws NotFoundException, IOException, BadRequestException {
         var publication = createDraftPublicationWithDoi();
         var existingTicket = createDoiRequestTicket(publication);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
@@ -135,7 +138,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString(RESOURCE_LACKS_REQUIRED_DATA));
     }
 
-    private Publication createDraftPublicationWithDoi() {
+    private Publication createDraftPublicationWithDoi() throws BadRequestException {
         var publication = randomPublication().copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withDoi(randomDoi())
@@ -162,7 +165,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                    .toJsonString();
     }
     
-    private Publication createUnpublishablePublication() {
+    private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
         return Resource.fromPublication(publication).persistNew(resourceService,
@@ -174,7 +177,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return pendingPublishingRequest;
     }
     
-    private Publication createPublication() {
+    private Publication createPublication() throws BadRequestException {
         var publication = randomPublication();
         return Resource.fromPublication(publication).persistNew(resourceService,
             UserInstance.fromPublication(publication));

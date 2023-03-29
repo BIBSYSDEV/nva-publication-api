@@ -19,6 +19,7 @@ import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public abstract class TicketTestLocal extends ResourcesLocalTest {
@@ -63,7 +64,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         return createAndPersistPublicationAndThenActOnIt(this::publish);
     }
 
-    protected Publication createPersistAndPublishPublicationWithDoi() throws NotFoundException {
+    protected Publication createPersistAndPublishPublicationWithDoi() throws NotFoundException, BadRequestException {
         return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
     }
     
@@ -106,7 +107,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     }
 
     private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
-        throws NotFoundException {
+        throws NotFoundException, BadRequestException {
         var publication = randomPublication();
         publication.setDoi(RandomDataGenerator.randomDoi());
         var userInstance = UserInstance.fromPublication(publication);
