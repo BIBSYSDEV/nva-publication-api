@@ -18,6 +18,9 @@ public class UserInstance implements JsonSerializable {
     private final URI organizationUri;
     private final User user;
     private final URI topLevelOrgCristinId;
+    @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
+
+    private boolean isExternalClient;
     
     protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId) {
         this.user = new User(userIdentifier);
@@ -36,7 +39,17 @@ public class UserInstance implements JsonSerializable {
     public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
         return new UserInstance(resourceOwner.getOwner(), organizationUri, resourceOwner.getOwnerAffiliation());
     }
-    
+
+    public static UserInstance createMachineUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
+        var userInstance = create(resourceOwner, topLevelOrgCristinId);
+        userInstance.isExternalClient = true;
+        return userInstance;
+    }
+
+    public boolean isExternalClient() {
+        return this.isExternalClient;
+    }
+
     public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
         var userName = requestInfo.getNvaUsername();
         var customerId = requestInfo.getCurrentCustomer();
