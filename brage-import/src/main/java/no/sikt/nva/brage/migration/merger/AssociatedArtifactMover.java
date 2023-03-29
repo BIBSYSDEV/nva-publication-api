@@ -11,6 +11,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
+import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -49,21 +50,28 @@ public class AssociatedArtifactMover {
 
         try {
             var file = (File) associatedArtifact;
-            var objectKey = file.getIdentifier().toString();
-            var objectKeyPath = getObjectKeyPath();
+            var keyName = file.getIdentifier().toString();
             var sourceBucket = getSourceBucket();
-            logger.info("sourceBucket: {}", sourceBucket);
-            logger.info("Nva resource storage bucket: {}", persistedStorageBucket);
-            logger.info("sourceKey {}", objectKeyPath + objectKey);
-            logger.info("destinationKey {}", objectKey);
+            var sourcePath = UnixPath.fromString(getRecordObjectKey());
+
+            var sourceKey = sourcePath.getParent().isPresent()
+                                ? sourcePath.getParent().get().addChild(keyName).toString()
+                                : keyName;
+
+            logger.info("COPY {} -> {}/{} to {}/{}",
+                        file.getName(),
+                        sourceBucket,
+                        sourceKey,
+                        persistedStorageBucket,
+                        keyName);
             var copyObjRequest = CopyObjectRequest.builder()
                                      .sourceBucket(sourceBucket)
+                                     .sourceKey(sourceKey)
                                      .destinationBucket(persistedStorageBucket)
-                                     .sourceKey(objectKeyPath + objectKey)
-                                     .destinationKey(objectKey)
+                                     .destinationKey(keyName)
                                      .build();
             s3Client.copyObject(copyObjRequest);
-            return extractMimeTypeAndSize(file, objectKey);
+            return extractMimeTypeAndSize(file, keyName);
         } catch (Exception e) {
             throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE, e);
         }
@@ -97,16 +105,6 @@ public class AssociatedArtifactMover {
         return s3Event.getRecords().get(0).getS3().getBucket().getName();
     }
 
-    private String getObjectKeyPath() {
-        var recordObjectKey = getRecordObjectKey();
-        Path path = Paths.get(recordObjectKey);
-        var directory = path.getParent();
-        if (Objects.nonNull(directory)) {
-            return directory + "/";
-        } else {
-            return StringUtils.EMPTY_STRING;
-        }
-    }
 
     private String getRecordObjectKey() {
         return s3Event.getRecords().get(0).getS3().getObject().getKey();

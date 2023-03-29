@@ -11,11 +11,13 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.events.handlers.tickets.identityservice.PublicationWorkflow;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -133,6 +135,7 @@ public abstract class TicketDto implements JsonSerializable {
         private URI id;
         private List<MessageDto> messages;
         private ViewedBy viewedBy;
+        private PublicationWorkflow workflow;
         private PublicationSummary publicationSummary;
         
         private Builder() {
@@ -167,12 +170,18 @@ public abstract class TicketDto implements JsonSerializable {
             this.messages = messages;
             return this;
         }
-        
+
         public Builder withPublicationSummary(PublicationSummary publicationSummary) {
             this.publicationSummary = publicationSummary;
             return this;
         }
-        
+
+        public Builder withPublicationWorkflow(PublicationWorkflow workflow) {
+            this.workflow = workflow;
+            return this;
+        }
+
+
         public TicketDto build(Class<? extends TicketEntry> ticketType) {
             
             if (DoiRequest.class.equals(ticketType)) {
@@ -205,7 +214,8 @@ public abstract class TicketDto implements JsonSerializable {
                 publicationSummary,
                 id,
                 messages,
-                viewedBy);
+                viewedBy,
+                workflow);
         }
         
         private DoiRequestDto createDoiRequestDto() {

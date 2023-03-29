@@ -13,7 +13,7 @@ public enum CristinContributorRoleCode {
     CONTRIBUTOR("BIDRAGSYTER"),
     CREATOR("FORFATTER"),
     CURATOR("KONSERVATOR"),
-    EDITOR("REDAKT" + "\u00D8" + "R"), //REDAKTØR
+    EDITOR("REDAKTØR"),
     ORGANIZER("ARRANGØR"),
     OWNER("EIER"),
     SUPERVISOR("VEILEDER"),

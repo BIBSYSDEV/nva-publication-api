@@ -664,22 +664,25 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldCopyAssociatedArtifactsToResourceStorage() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withPublishedDate(null)
-                                 .withResourceContent(createResourceContent())
-                                 .withType(TYPE_BOOK)
-                                 .build();
-        var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(brageGenerator.getBrageRecord()
-        );
-        var objectKey = UUID;
-        var expectedDopyObjRequest = CopyObjectRequest.builder()
-                                         .sourceBucket(INPUT_BUCKET_NAME)
-                                         .destinationBucket(
-                                             new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
-                                         .sourceKey("my/path/" + objectKey)
-                                         .destinationKey(objectKey.toString())
-                                         .build();
+        var brageGenerator =
+            new NvaBrageMigrationDataGenerator.Builder()
+                .withPublishedDate(null)
+                .withResourceContent(createResourceContent())
+                .withType(TYPE_BOOK)
+                .build();
+        var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(brageGenerator.getBrageRecord());
+        var objectKey = UUID.toString();
+        var key = UnixPath.of("my", "path", objectKey ).toString();
+        var expectedDopyObjRequest =
+            CopyObjectRequest.builder()
+                .sourceBucket(INPUT_BUCKET_NAME)
+                .destinationBucket(new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
+                .sourceKey(key)
+                .destinationKey(key)
+                .build();
+
         handler.handleRequest(s3Event, CONTEXT);
+
         var fakeS3cClientWithCopyObjectSupport = (FakeS3cClientWithCopyObjectSupport) s3Client;
         var actualCopyObjectRequests = fakeS3cClientWithCopyObjectSupport.getCopyObjectRequestList();
         assertThat(actualCopyObjectRequests, hasSize(1));
@@ -952,16 +955,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private ResourceContent createResourceContent() {
-        var file = new ContentFile(FILENAME,
-                                   BundleType.ORIGINAL,
-                                   "description",
-                                   UUID,
-                                   new License("someLicense",
-                                               new NvaLicense(LICENSE_IDENTIFIER, Map.of(NORWEGIAN_BOKMAAL,
-                                                                                         LICENSE_IDENTIFIER.getValue()))),
-                                   EMBARGO_DATE);
-
-        return new ResourceContent(Collections.singletonList(file));
+        var license = new License(
+            "someLicense",
+            new NvaLicense(LICENSE_IDENTIFIER, Map.of(NORWEGIAN_BOKMAAL, LICENSE_IDENTIFIER.getValue()))
+        );
+        var file =
+            new ContentFile(FILENAME, BundleType.ORIGINAL, "description", UUID, license, EMBARGO_DATE);
+        return
+            new ResourceContent(Collections.singletonList(file));
     }
 
     private List<AssociatedArtifact> createCorrespondingAssociatedArtifacts() {
@@ -993,7 +994,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record) throws IOException {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
-        var uri = s3Driver.insertFile(UnixPath.of("my/path/some.json"), recordAsJson);
+        var filename = record.getContentBundle().getContentFiles().get(0).getIdentifier() + ".json";
+        var uri = s3Driver.insertFile(UnixPath.of("my", "path", filename), recordAsJson);
         return createS3Event(uri);
     }
 
@@ -1006,15 +1008,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
-        var eventNotification = new S3EventNotificationRecord(randomString(),
-                                                              randomString(),
-                                                              randomString(),
-                                                              randomDate(),
-                                                              randomString(),
-                                                              EMPTY_REQUEST_PARAMETERS,
-                                                              EMPTY_RESPONSE_ELEMENTS,
-                                                              createS3Entity(expectedObjectKey),
-                                                              EMPTY_USER_IDENTITY);
+        var eventNotification = new S3EventNotificationRecord(
+            randomString(),
+            randomString(),
+            randomString(),
+            randomDate(),
+            randomString(),
+            EMPTY_REQUEST_PARAMETERS,
+            EMPTY_RESPONSE_ELEMENTS,
+            createS3Entity(expectedObjectKey),
+            EMPTY_USER_IDENTITY);
         return new S3Event(List.of(eventNotification));
     }
 
@@ -1024,14 +1027,13 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private S3Entity createS3Entity(String expectedObjectKey) {
         var bucket = new S3BucketEntity(INPUT_BUCKET_NAME, EMPTY_USER_IDENTITY, randomString());
-        var object = new S3ObjectEntity(expectedObjectKey,
-                                        SOME_FILE_SIZE,
-                                        randomString(),
-                                        randomString(),
-                                        randomString());
+        var object = new S3ObjectEntity(
+            expectedObjectKey,
+            SOME_FILE_SIZE,
+            randomString(),
+            randomString(),
+            randomString());
         var schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
 }
-
-

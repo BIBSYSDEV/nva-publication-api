@@ -1,16 +1,16 @@
 package no.unit.nva.publication.ticket;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.beans.ConstructorProperties;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.events.handlers.tickets.identityservice.PublicationWorkflow;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -24,40 +24,35 @@ import nva.commons.core.JacocoGenerated;
 public class PublishingRequestDto extends TicketDto {
     
     public static final String TYPE = "PublishingRequest";
-    
-    public static final String STATUS_FIELD = "status";
-    public static final String CREATED_DATE_FIELD = "createdDate";
-    public static final String MODIFIED_DATE_FIELD = "modifiedDate";
-    public static final String IDENTIFIER_FIELD = "identifier";
-    public static final String ID_FIELD = "id";
-    
-    @JsonProperty(CREATED_DATE_FIELD)
+
     private final Instant createdDate;
-    @JsonProperty(MODIFIED_DATE_FIELD)
     private final Instant modifiedDate;
-    @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
-    @JsonProperty(ID_FIELD)
     private final URI id;
-    
-    @JsonCreator
-    public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
-                                @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
-                                @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
-                                @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                                @JsonProperty(PUBLICATION_FIELD) PublicationSummary publicationSummary,
-                                @JsonProperty(ID_FIELD) URI id,
-                                @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                                @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
-        super(status, messages, viewedBy, publicationSummary);
+    private final PublicationWorkflow workflow;
+
+
+    @ConstructorProperties({"status","createdDate","modifiedDate","identifier","publication","id",
+        "messages","viewedBy", "publicationWorkflow"})
+    public PublishingRequestDto(TicketStatus status,
+                                Instant createdDate,
+                                Instant modifiedDate,
+                                SortableIdentifier identifier,
+                                PublicationSummary publication,
+                                URI id,
+                                List<MessageDto> messages,
+                                Set<User> viewedBy,
+                                PublicationWorkflow publicationWorkflow) {
+        super(status, messages, viewedBy, publication);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
         this.id = id;
+        this.workflow = publicationWorkflow;
     }
     
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null);
+        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null);
     }
     
     public Instant getCreatedDate() {
@@ -71,7 +66,11 @@ public class PublishingRequestDto extends TicketDto {
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-    
+
+    public PublicationWorkflow getWorkflow() {
+        return workflow;
+    }
+
     @Override
     public Class<? extends TicketEntry> ticketType() {
         return PublishingRequestCase.class;
@@ -93,7 +92,7 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationSummary().getPublicationId(), id, getMessages());
+            getPublicationSummary().getPublicationId(), id, getMessages(), getWorkflow());
     }
     
     @Override
@@ -113,6 +112,7 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getPublicationSummary().getPublicationId(),
             that.getPublicationSummary().getPublicationId())
                && Objects.equals(id, that.id)
+               && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getMessages(), that.getMessages());
     }
 }

@@ -21,6 +21,8 @@ dependencies {
     implementation libs.guava
     implementation libs.zalando
     implementation libs.bundles.logging
+    implementation project(path: ':publication-event-handlers')
+    implementation project(path: ':publication-event-handlers')
 
     runtimeOnly libs.jackson.core
 
