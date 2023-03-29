@@ -5,9 +5,11 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import com.google.gson.Gson;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.sikt.nva.scopus.conversion.model.pia.Affiliation;
 import no.sikt.nva.scopus.conversion.model.pia.Affiliation.Builder;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
@@ -24,7 +26,7 @@ public class PiaResponseGenerator {
     }
 
     public static String convertAffiliationsToJson(List<Affiliation> affiliations) {
-        return  attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(affiliations)).orElseThrow();
+        return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(affiliations)).orElseThrow();
     }
 
     public List<Author> generateAuthors(String scopusId, int cristinId) {
@@ -45,8 +47,21 @@ public class PiaResponseGenerator {
     }
 
     public List<Affiliation> generateAffiliations(String cristinId) {
-        return IntStream.range(0, randomInteger(20)).boxed()
-                   .map(i -> generateAffiliation(cristinId))
+        var affiliationsWithoutNullValues = IntStream.range(0, randomInteger(20)).boxed()
+                                                .map(i -> generateAffiliation(cristinId)).collect(Collectors.toList());
+        var affiliationsWithoutUnit = IntStream.range(0, randomInteger(20))
+                                          .boxed()
+                                          .map(i -> generateAffiliationWithoutUnit(cristinId))
+                                          .collect(Collectors.toList());
+        var affiliationsWithoutCount = IntStream.range(0, randomInteger(20))
+                                           .boxed()
+                                           .map(i -> generateAffiliationWithoutCount(cristinId))
+                                           .collect(Collectors.toList());
+        var affiliationsWithoutId = IntStream.range(0, randomInteger(20)).boxed()
+                                        .map(i -> generateAffiliationWithoutId(cristinId)).collect(Collectors.toList());
+        return Stream.of(affiliationsWithoutNullValues, affiliationsWithoutCount, affiliationsWithoutUnit,
+                         affiliationsWithoutId)
+                   .flatMap(Collection::stream)
                    .collect(Collectors.toList());
     }
 
@@ -54,6 +69,30 @@ public class PiaResponseGenerator {
         return new Builder()
                    .withInstitution(cristinId)
                    .withUnit(cristinId)
+                   .withCount(String.valueOf(randomInteger(1000)))
+                   .build();
+    }
+
+    public Affiliation generateAffiliationWithoutCount(String cristinId) {
+        return new Builder()
+                   .withInstitution(cristinId)
+                   .withUnit(cristinId)
+                   .withCount(null)
+                   .build();
+    }
+
+    public Affiliation generateAffiliationWithoutId(String cristinId) {
+        return new Builder()
+                   .withInstitution(null)
+                   .withUnit(cristinId)
+                   .withCount(String.valueOf(randomInteger(1000)))
+                   .build();
+    }
+
+    public Affiliation generateAffiliationWithoutUnit(String cristinId) {
+        return new Builder()
+                   .withInstitution(cristinId)
+                   .withUnit(null)
                    .withCount(String.valueOf(randomInteger(1000)))
                    .build();
     }
