@@ -10,7 +10,7 @@ public class FakeDoiClient implements DoiClient {
 
     @Override
     public URI generateDraftDoi(Publication publication) {
-        return null;
+        throw new IllegalArgumentException("Method is not used yet");
     }
 
     @Override

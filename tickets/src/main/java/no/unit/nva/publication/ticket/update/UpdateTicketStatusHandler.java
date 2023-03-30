@@ -105,8 +105,8 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
 
     private void deleteDoiTicketSideEffects(Publication publication) {
         doiClient.deleteDraftDoi(publication);
-        var publicationToUpdate = publication.copy().withDoi(null).build();
-        resourceService.updatePublication(publicationToUpdate);
+        publication.setDoi(null);
+        resourceService.updatePublication(publication);
     }
 
     private void findableDoiTicketSideEffects(RequestInfo requestInfo)
