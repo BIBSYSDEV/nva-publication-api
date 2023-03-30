@@ -65,7 +65,7 @@ public final class RequestUtil {
             client.getCristinUrgUri()
         );
 
-        return UserInstance.createMachineUser(resourceOwner, client.getCustomerUri());
+        return UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
     }
 
     public static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {

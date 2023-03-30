@@ -76,7 +76,7 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 20;
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-    public static final String NOT_PUBLISHABLE = "Publication is not publiashable. Check main title and doi";
+    public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;

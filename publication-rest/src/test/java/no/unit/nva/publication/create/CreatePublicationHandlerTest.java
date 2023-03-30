@@ -130,7 +130,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestContainsEmptyResource() throws Exception {
         var request = createEmptyPublicationRequest();
-        InputStream inputStream = createPublicationRequest(request);
+        var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
         
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
@@ -140,10 +140,10 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void requestToHandlerWithStatusPublishedFromAnRegularUserShouldPersistDocumentAsDraft() throws Exception {
+    void shouldPersistDraftWhenRegularUserAttemptsToPersistPublicationWithStatusPublished() throws Exception {
         var request = createEmptyPublicationRequest();
         request.setStatus(PublicationStatus.PUBLISHED);
-        InputStream inputStream = createPublicationRequest(request);
+        var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
@@ -155,13 +155,13 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "requestToHandlerWithStatusFromAnExternalClientShouldPersistDocumentWithSameStatus with"
                               + " status: \"{0}\"")
     @ValueSource(strings = {"DRAFT", "PUBLISHED"})
-    void requestToHandlerWithStatusFromAnExternalClientShouldPersistDocumentWithSameStatus(String statusString)
+    void shouldPersistProvidedStatusWhenMachineUserPersistsPublicationWithAnyStatus(String statusString)
         throws Exception {
         var status = PublicationStatus.valueOf(statusString);
         var request = createEmptyPublicationRequest();
         request.setStatus(status);
         request.setEntityDescription(randomPublishableEntityDescription());
-        InputStream inputStream = requestFromExternalClient(request);
+        var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
@@ -171,11 +171,11 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowBadRequestWhenAnExternalClientTriesToCreatePublishedDocumentWithoutTitleAndDoiRef()
+    void shouldReturnBadRequestWhenAnExternalClientTriesToCreatePublishedDocumentWithoutTitleAndDoiRef()
         throws Exception {
         var request = createEmptyPublicationRequest();
         request.setStatus(PublicationStatus.PUBLISHED);
-        InputStream inputStream = requestFromExternalClient(request);
+        var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -185,9 +185,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void requestToHandlerReturnsExternalClientDetailsWhenCalledWithThirdPartyCredentials() throws Exception {
+    void shouldReturnsExternalClientDetailsWhenCalledWithThirdPartyCredentials() throws Exception {
         var request = createEmptyPublicationRequest();
-        InputStream inputStream = requestFromExternalClient(request);
+        var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
@@ -204,7 +204,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void requestToHandlerReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
+    void shouldReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
         var associatedArtifactsInPublication = randomPublication().getAssociatedArtifacts();
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);

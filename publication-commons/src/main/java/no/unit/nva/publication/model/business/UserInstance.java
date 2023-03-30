@@ -40,7 +40,7 @@ public class UserInstance implements JsonSerializable {
         return new UserInstance(resourceOwner.getOwner(), organizationUri, resourceOwner.getOwnerAffiliation());
     }
 
-    public static UserInstance createMachineUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
+    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
         var userInstance = create(resourceOwner, topLevelOrgCristinId);
         userInstance.isExternalClient = true;
         return userInstance;
