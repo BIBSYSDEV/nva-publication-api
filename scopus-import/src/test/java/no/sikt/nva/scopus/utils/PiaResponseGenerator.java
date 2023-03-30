@@ -15,6 +15,7 @@ import no.sikt.nva.scopus.conversion.model.pia.Affiliation.Builder;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.sikt.nva.scopus.conversion.model.pia.Publication;
 import no.unit.nva.commons.json.JsonUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class PiaResponseGenerator {
 
@@ -68,15 +69,20 @@ public class PiaResponseGenerator {
     public Affiliation generateAffiliation(String cristinId) {
         return new Builder()
                    .withInstitution(cristinId)
-                   .withUnit(cristinId)
+                   .withUnit(createUnitId(cristinId))
                    .withCount(String.valueOf(randomInteger(1000)))
                    .build();
+    }
+
+    @NotNull
+    private static String createUnitId(String cristinId) {
+        return cristinId + "." + randomInteger() + "." + randomInteger();
     }
 
     public Affiliation generateAffiliationWithoutCount(String cristinId) {
         return new Builder()
                    .withInstitution(cristinId)
-                   .withUnit(cristinId)
+                   .withUnit(createUnitId(cristinId))
                    .withCount(null)
                    .build();
     }
@@ -84,7 +90,7 @@ public class PiaResponseGenerator {
     public Affiliation generateAffiliationWithoutId(String cristinId) {
         return new Builder()
                    .withInstitution(null)
-                   .withUnit(cristinId)
+                   .withUnit(createUnitId(cristinId))
                    .withCount(String.valueOf(randomInteger(1000)))
                    .build();
     }
