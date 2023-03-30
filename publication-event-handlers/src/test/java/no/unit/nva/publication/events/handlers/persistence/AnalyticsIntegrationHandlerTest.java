@@ -43,6 +43,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -153,7 +154,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
     }
     
-    private Publication insertSamplePublication() {
+    private Publication insertSamplePublication() throws BadRequestException {
         var samplePublication = PublicationGenerator.randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = Resource.fromPublication(samplePublication).persistNew(resourceService, userInstance);

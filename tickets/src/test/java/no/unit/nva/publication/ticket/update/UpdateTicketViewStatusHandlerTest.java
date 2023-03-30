@@ -10,7 +10,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.TICKET_PATH;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -22,27 +21,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
-import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
     
@@ -54,13 +52,14 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         this.handler = new UpdateTicketViewStatusHandler(ticketService);
     }
     
-    @ParameterizedTest(name = "ticket type: {0}")
+    @ParameterizedTest
     @DisplayName("should mark ticket as read for owner when user is ticket owner and marks it as read")
-    @MethodSource("ticketTypeProvider")
-    void shouldMarkTicketAsReadFoOwnerWhenUserIsTicketOwnerAndMarksItAsRead(Class<? extends TicketEntry> ticketType)
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldMarkTicketAsReadFoOwnerWhenUserIsTicketOwnerAndMarksItAsRead(Class<? extends TicketEntry> ticketType,
+                                                                            PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, ticketType);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
         
@@ -77,14 +76,14 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
     }
     
-    @ParameterizedTest(name = "ticket type: {0}")
+    @ParameterizedTest
     @DisplayName("should mark ticket as unread for owner when user is ticket owner and marks it as unread")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForOwnerWhenUserIsTicketOwnerAndMarksItAsUnread(
-        Class<? extends TicketEntry> ticketType)
+        Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, ticketType);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         
         var httpRequest = createOwnerMarksTicket(publication, ticket, ViewStatus.UNREAD);
@@ -97,14 +96,14 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         assertThat(updatedTicket.getViewedBy(), not(hasItem(ticket.getOwner())));
     }
     
-    @ParameterizedTest(name = "ticket type: {0}")
+    @ParameterizedTest
     @DisplayName("should mark ticket as Read for all Curators when user is curator and marks it as read")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForAllCuratorsWhenUserIsCuratorAndMarksItAsRead(
-        Class<? extends TicketEntry> ticketType)
+        Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, ticketType);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
         
@@ -119,14 +118,14 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         assertThat(updatedTicket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
     }
     
-    @ParameterizedTest(name = "ticket type: {0}")
+    @ParameterizedTest
     @DisplayName("should mark ticket as Unread for all Curators when user is curator and marks it as unread")
-    @MethodSource("ticketTypeProvider")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForAllCuratorsWhenUserIsCuratorAndMarksItAsUnread(
-        Class<? extends TicketEntry> ticketType)
+        Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, ticketType);
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
@@ -141,28 +140,30 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(updatedTicket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
     }
-    
-    @Test
-    void shouldNotProvideAnyInformationAboutTheExistenceOfATicketWhenAnAlienUserTriesToModifyTicket()
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldNotProvideAnyInformationAboutTheExistenceOfATicketWhenAnAlienUserTriesToModifyTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
         
-        var httpRequest = alienCuratorMarksTicket(publication, ticket, ViewStatus.UNREAD);
+        var httpRequest = alienCuratorMarksTicket(publication, ticket);
         handler.handleRequest(httpRequest, output, CONTEXT);
         
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
         assertThatTicketIsUnchanged(ticket);
     }
-    
-    @Test
-    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator() throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         SortableIdentifier wrongPublicationIdentifier = SortableIdentifier.next();
         var httpRequest = curatorAttemptsToMarkExistingTicketConnectedToWrongPublication(ticket,
             wrongPublicationIdentifier);
@@ -170,11 +171,12 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
-    @Test
-    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner() throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         SortableIdentifier wrongPublicationIdentifier = SortableIdentifier.next();
         var httpRequest = ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(ticket,
             wrongPublicationIdentifier);
@@ -182,11 +184,12 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
-    @Test
-    void shouldReturnForbiddenWhenTicketDoesNotExistAndUserIsNotElevatedUser() throws ApiGatewayException, IOException {
-        var publication = createAndPersistDraftPublication();
-        var ticket = unpersistedTicket(publication);
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnForbiddenWhenTicketDoesNotExistAndUserIsNotElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
         var httpRequest = ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(ticket,
             publication.getIdentifier());
         handler.handleRequest(httpRequest, output, CONTEXT);
@@ -201,7 +204,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         "{\"type\": \"UpdateViewStatusRequest\", \"viewedStatus\": \"\"}"})
     void shouldReturnBadRequestWhenBodyIsEmpty(String requestBody) throws ApiGatewayException, IOException {
         var publication = createAndPersistDraftPublication();
-        var ticket = persistTicket(publication, randomTicketType());
+        var ticket = persistTicket(publication, PublishingRequestCase.class);
         var httpRequest = requestWithEmptyBody(ticket, requestBody);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -254,10 +257,6 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
                    .build();
     }
     
-    private TicketEntry unpersistedTicket(Publication publication) throws ConflictException {
-        return TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next);
-    }
-    
     private InputStream requestWithEmptyBody(TicketEntry ticket, String requestBody) throws JsonProcessingException {
         return new HandlerRequestBuilder<String>(JsonUtils.dtoObjectMapper)
                    .withBody(requestBody)
@@ -291,14 +290,9 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
                    .build();
     }
     
-    private Class<? extends TicketEntry> randomTicketType() {
-        var types = TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList());
-        return (Class<? extends TicketEntry>) randomElement(types);
-    }
-    
-    private InputStream alienCuratorMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus)
+    private InputStream alienCuratorMarksTicket(Publication publication, TicketEntry ticket)
         throws JsonProcessingException, BadRequestException {
-        return elevatedUserMarksTicket(publication, ticket, viewStatus, randomUri());
+        return elevatedUserMarksTicket(publication, ticket, ViewStatus.UNREAD, randomUri());
     }
     
     private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus)

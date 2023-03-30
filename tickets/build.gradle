@@ -5,15 +5,18 @@ plugins {
 dependencies {
     implementation project(":publication-commons")
     implementation project(":publication-doi-commons")
+    implementation project(":datacite-commons")
 
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
+    implementation libs.nva.secrets
     implementation libs.nva.core
     implementation libs.nva.json
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
     implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk2.secrets
 
     implementation libs.jackson.annotations
     implementation libs.jackson.databind
@@ -30,6 +33,7 @@ dependencies {
     testImplementation libs.jackson.core
     testImplementation project(':publication-testing')
     testImplementation libs.nva.testutils
+    testImplementation project(path: ':tickets-test')
     testImplementation(libs.javafaker) {
         because('For generating test data in tests. Another alternative is jfairy')
     }
@@ -46,4 +50,5 @@ test {
     environment "COGNITO_HOST", "https://example.com"
     environment "ALLOWED_ORIGIN", "*"
     environment "TABLE_NAME", "some-table-name"
+    environment "API_HOST", "https://example.com"
 }

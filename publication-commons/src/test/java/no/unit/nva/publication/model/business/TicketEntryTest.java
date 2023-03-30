@@ -1,26 +1,22 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import java.util.stream.Stream;
-import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.model.PublicationStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class TicketEntryTest {
     
-    public static Stream<Class<?>> ticketTypeProv() {
-        return TypeProvider.listSubTypes(TicketEntry.class);
-    }
-    
-    @ParameterizedTest(name = "ticket type:{0}")
+
+    @ParameterizedTest
     @DisplayName("should request a new ticket ")
-    @MethodSource("ticketTypeProv")
-    void shouldRequestNewTicket(Class<? extends TicketEntry> ticketType) {
-        var publication = randomPublication();
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldRequestNewTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status) {
+        var publication = TicketTestUtils.createNonPersistedPublication(status);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         var actualUserInstance = UserInstance.fromTicket(ticket);
         var expectedUserInstance =

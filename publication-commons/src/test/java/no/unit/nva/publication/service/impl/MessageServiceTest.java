@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -12,22 +11,18 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
-import java.util.stream.Stream;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
@@ -40,11 +35,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private UserInstance owner;
     private TicketService ticketService;
-    
-    public static Stream<Class<?>> ticketTypeProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class);
-    }
-    
+
     @BeforeEach
     public void initialize() {
         super.init();
@@ -55,25 +46,25 @@ class MessageServiceTest extends ResourcesLocalTest {
         owner = randomUserInstance();
     }
     
-    @ParameterizedTest(name = "ticket type:{0}")
+
     @DisplayName("should persist message with reference to a ticket")
-    @MethodSource("ticketTypeProvider")
-    void shouldPersistMessageWithReferenceToATicket(Class<? extends TicketEntry> ticketType)
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldPersistMessageWithReferenceToATicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
-        var ticket = createTicket(publication, ticketType);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var message = publicationOwnerSendsMessage(ticket, randomString());
         var persistedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
         assertThat(persistedMessage.getTicketIdentifier(), is(equalTo(ticket.getIdentifier())));
         assertThat(persistedMessage.getText(), is(equalTo(message.getText())));
     }
-    
-    @Test
-    void shouldSetRecipientAsOwnerWhenSenderIsNotOwner() throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
-        var ticket = TicketEntry
-                         .requestNewTicket(publication, DoiRequest.class)
-                         .persistNewTicket(ticketService);
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldSetRecipientAsOwnerWhenSenderIsNotOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
         var message =
             messageService.createMessage(ticket, sender, randomString());
@@ -81,31 +72,21 @@ class MessageServiceTest extends ResourcesLocalTest {
                                    .orElseThrow();
         assertThat(retrievedMessage.getRecipient(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
     }
-    
+
     //TODO: discuss with product owner what the actual requirements are here.
-    @Test
-    void shouldSetRecipientAsSupportServiceWhenSenderIsOwner() throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
-        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class)
-                         .persistNewTicket(ticketService);
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldSetRecipientAsSupportServiceWhenSenderIsOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
         var retrievedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
         assertThat(retrievedMessage.getRecipient(), is(equalTo(SUPPORT_SERVICE_CORRESPONDENT)));
     }
-    
+
     private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
         var userInfo = UserInstance.fromTicket(ticket);
         return messageService.createMessage(ticket, userInfo, messageText);
-    }
-    
-    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
-    }
-    
-    private Publication createDraftPublication(UserInstance owner) {
-        var publication = createUnpersistedPublication(owner);
-        return Resource.fromPublication(publication).persistNew(resourceService, owner);
     }
     
     private Clock mockClock() {

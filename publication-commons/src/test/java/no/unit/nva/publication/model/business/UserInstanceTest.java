@@ -8,11 +8,15 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UserInstanceTest {
     
@@ -32,11 +36,12 @@ class UserInstanceTest {
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
-    
-    @Test
-    void shouldReturnUserInstanceFromMessage() {
-        Publication publication = PublicationGenerator.randomPublication();
-        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnUserInstanceFromMessage(Class<? extends TicketEntry> ticketType, PublicationStatus status) {
+        var publication = TicketTestUtils.createNonPersistedPublication(status);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         var userInstance = UserInstance.fromMessage(message);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));

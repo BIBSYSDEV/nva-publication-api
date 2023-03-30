@@ -1,9 +1,11 @@
 package no.unit.nva.publication.delete;
 
+import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
+import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
 import java.time.Clock;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -18,13 +20,14 @@ import org.apache.http.HttpStatus;
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     
     private final ResourceService resourceService;
+    private final IdentityServiceClient identityServiceClient;
     
     /**
      * Default constructor for DeletePublicationHandler.
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(defaultService(), new Environment());
+        this(defaultService(), new Environment(), IdentityServiceClient.prepare());
     }
     
     /**
@@ -33,21 +36,27 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      * @param resourceService resourceService
      * @param environment     environment
      */
-    public DeletePublicationHandler(ResourceService resourceService, Environment environment) {
+    public DeletePublicationHandler(ResourceService resourceService,
+                                    Environment environment,
+                                    IdentityServiceClient identityServiceClient) {
         super(Void.class, environment);
         this.resourceService = resourceService;
+        this.identityServiceClient = identityServiceClient;
     }
-    
+
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        String owner = requestInfo.getNvaUsername();
-        URI customerId = requestInfo.getCurrentCustomer();
-        UserInstance userInstance = UserInstance.create(owner, customerId);
+        var userInstance = createUserInstanceFromRequest(requestInfo);
         
         resourceService.markPublicationForDeletion(userInstance, identifier);
-        
         return null;
+    }
+
+    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
+        return requestInfo.clientIsThirdParty()
+                   ? createExternalUserInstance(requestInfo, identityServiceClient)
+                   : createInternalUserInstance(requestInfo);
     }
     
     @Override

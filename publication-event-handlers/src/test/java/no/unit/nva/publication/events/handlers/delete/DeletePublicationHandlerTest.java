@@ -18,6 +18,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +73,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         return resourceService.getPublication(resource);
     }
 
-    private Publication createPersistedPublicationWithoutDoi() {
+    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));

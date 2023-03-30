@@ -17,7 +17,10 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 
 public abstract class TicketTestLocal extends ResourcesLocalTest {
     
@@ -60,6 +63,10 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         throws ApiGatewayException {
         return createAndPersistPublicationAndThenActOnIt(this::publish);
     }
+
+    protected Publication createPersistAndPublishPublicationWithDoi() throws NotFoundException, BadRequestException {
+        return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
+    }
     
     protected TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         return createPersistedTicket(createAndPersistDraftPublication(), ticketType);
@@ -93,6 +100,16 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)
         throws ApiGatewayException {
         var publication = randomPublicationWithoutDoi();
+        var userInstance = UserInstance.fromPublication(publication);
+        var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        action.accept(storedResult);
+        return resourceService.getPublication(storedResult);
+    }
+
+    private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
+        throws NotFoundException, BadRequestException {
+        var publication = randomPublication();
+        publication.setDoi(RandomDataGenerator.randomDoi());
         var userInstance = UserInstance.fromPublication(publication);
         var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         action.accept(storedResult);

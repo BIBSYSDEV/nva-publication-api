@@ -122,6 +122,8 @@ Globals:
         API_SCHEME: 'https'
         ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
         EVENTS_BUCKET: !Ref NvaEventsBucketsName
+        BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+        EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
     Architectures:
       - arm64
 
@@ -463,9 +465,6 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
-          EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
-          API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -686,11 +685,14 @@ Resources:
       CodeUri: tickets
       Handler: no.unit.nva.publication.ticket.update.UpdateTicketStatusHandler::handleRequest
       Runtime: java11
-      Timeout: 10
+      Timeout: 30
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          API_HOST: !Ref ApiDomain
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
