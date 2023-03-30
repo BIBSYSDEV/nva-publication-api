@@ -1,6 +1,7 @@
 package no.unit.nva.doi;
 
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -33,7 +34,6 @@ import org.junit.jupiter.api.Test;
 public class DataCiteDoiClientTest {
 
     public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
-    public static final String EMPTY_RESPONSE_BODY = "[]";
     private final Environment environment = mock(Environment.class);
     private FakeSecretsManagerClient secretsManagerClient;
     private DataCiteDoiClient dataCiteDoiClient;
@@ -75,6 +75,14 @@ public class DataCiteDoiClientTest {
     }
 
     @Test
+    void shouldThrowExceptionWhenBadMethodFromDoiClient(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        var publication = PublicationGenerator.randomPublication();
+        var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadMethodResponse());
+        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+        assertThrows(RuntimeException.class, () -> doiClient.deleteDraftDoi(publication));
+    }
+
+    @Test
     void shouldReturnStatusCodeAcceptedOnSuccessfulDeleteDoi() {
         var publication = PublicationGenerator.randomPublication();
         var doiClient = mock(DataCiteDoiClient.class);
@@ -91,7 +99,11 @@ public class DataCiteDoiClientTest {
     }
 
     private FakeHttpResponse<String> deleteDoiBadResponse() {
-        return FakeHttpResponse.create(EMPTY_RESPONSE_BODY, HTTP_BAD_GATEWAY);
+        return FakeHttpResponse.create(null, HTTP_BAD_GATEWAY);
+    }
+
+    private FakeHttpResponse<String> deleteDoiBadMethodResponse() {
+        return FakeHttpResponse.create(null, HTTP_BAD_METHOD);
     }
 
     private FakeHttpResponse<String> findableDoiResponse(URI expectedDoi) throws JsonProcessingException {

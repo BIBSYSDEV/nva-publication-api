@@ -44,6 +44,7 @@ public class DataCiteDoiClient implements DoiClient {
     public static final String FINDABLE = "findable";
     public static final String PUBLICATION = "publication";
     public static final String DELETE = "delete";
+    public static final String NOT_ALLOWED_TO_DELETE_FINDABLE_DOI = "Not allowed to delete findable doi {}";
     private static final Logger logger = LoggerFactory.getLogger(DataCiteDoiClient.class);
     private final String apiHost;
     private final HttpClient httpClient;
@@ -75,7 +76,7 @@ public class DataCiteDoiClient implements DoiClient {
     @Override
     public void deleteDraftDoi(Publication publication) {
         attempt(() -> sendDeleteDraftDoiRequest(publication))
-            .map(this::validateResponseStatusCode)
+            .map(this::validateDeleteResponse)
             .orElseThrow();
     }
 
@@ -85,13 +86,24 @@ public class DataCiteDoiClient implements DoiClient {
         return BodyPublishers.ofString(body);
     }
 
-    private HttpResponse<String> validateResponseStatusCode(HttpResponse<String> response) throws BadGatewayException {
+    private static String getDoiSuffix(URI doi) {
+        return doi.getPath().split("/")[2];
+    }
+
+    private static String getDoiPrefix(URI doi) {
+        return doi.getPath().split("/")[1];
+    }
+
+    private HttpResponse<String> validateDeleteResponse(HttpResponse<String> response) throws BadGatewayException {
         if (HttpURLConnection.HTTP_ACCEPTED == response.statusCode()) {
             return response;
+        }
+        if (HttpURLConnection.HTTP_BAD_METHOD == response.statusCode()) {
+            logger.error(NOT_ALLOWED_TO_DELETE_FINDABLE_DOI, response.statusCode());
         } else {
             logErrorMessage(response);
-            throw new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE);
         }
+        throw new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE);
     }
 
     private AuthorizedBackendClient getAuthorizedBackendClient(CognitoCredentials cognitoCredentials) {
@@ -128,10 +140,10 @@ public class DataCiteDoiClient implements DoiClient {
     }
 
     private HttpResponse<String> sendDeleteDraftDoiRequest(Publication publication)
-        throws BadRequestException, IOException, InterruptedException {
+        throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
-                          .POST(withDoiRequestBody(publication))
-                          .uri(constructDeleteDraftDoiUri());
+                          .DELETE()
+                          .uri(constructDeleteDraftDoiUri(publication.getDoi()));
         var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
@@ -143,10 +155,12 @@ public class DataCiteDoiClient implements DoiClient {
                    .getUri();
     }
 
-    private URI constructDeleteDraftDoiUri() {
+    private URI constructDeleteDraftDoiUri(URI doi) {
         return UriWrapper.fromHost(apiHost)
                    .addChild(DOI_REGISTRAR)
                    .addChild(DELETE)
+                   .addChild(getDoiPrefix(doi))
+                   .addChild(getDoiSuffix(doi))
                    .getUri();
     }
 
