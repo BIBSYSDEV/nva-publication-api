@@ -39,6 +39,7 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String MESSAGES_FIELD = "messages";
     public static final String VIEWED_BY = "viewedBy";
     public static final String PUBLICATION_FIELD = "publication";
+    public static final String ASSIGNEE_FIELD = "assignee";
     @JsonProperty(PUBLICATION_FIELD)
     private final PublicationSummary publicationSummary;
     @JsonProperty(STATUS_FIELD)
