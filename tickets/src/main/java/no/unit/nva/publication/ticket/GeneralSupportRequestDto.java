@@ -95,7 +95,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getId(), getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationSummary().getPublicationId(), getMessages());
+            getPublicationSummary().getPublicationId(), getMessages(), getAssignee());
     }
     
     @Override
@@ -115,6 +115,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getPublicationSummary().getPublicationId(),
             that.getPublicationSummary().getPublicationId())
-               && Objects.equals(getMessages(), that.getMessages());
+               && Objects.equals(getMessages(), that.getMessages())
+               && Objects.equals(getAssignee(), that.getAssignee());
     }
 }
