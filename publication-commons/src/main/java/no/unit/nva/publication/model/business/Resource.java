@@ -31,6 +31,7 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.BadRequestException;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -136,8 +137,9 @@ public class Resource implements Entity {
         return new ResourceBuilder();
     }
 
-    public Publication persistNew(ResourceService resourceService, UserInstance userInstance) {
-        return resourceService.resourceCallsCreatePublication(userInstance, this.toPublication());
+    public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
+        throws BadRequestException {
+        return resourceService.createPublication(userInstance, this.toPublication());
     }
 
     public Owner getResourceOwner() {

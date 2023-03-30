@@ -23,6 +23,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,7 +109,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         return (PublishingRequestDao) publishingRequestCase.toDao();
     }
     
-    private Publication createPublication() {
+    private Publication createPublication() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);

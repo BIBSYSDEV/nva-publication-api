@@ -100,35 +100,50 @@ public final class CristinContributorExtractor {
     }
 
     private static String determineContributorName(Person person) {
-        return getLastName(person)
-               + NAME_DELIMITER
-               + getFirstName(person);
+        return constructName(person);
     }
 
-    @NotNull
+    private static String constructName(Person person) {
+        var firstName = getFirstName(person);
+        var lastName = getLastName(person);
+        if (firstName.isEmpty() && lastName.isEmpty()) {
+            return StringUtils.EMPTY_STRING;
+        }
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            return firstName + lastName;
+        }
+        return lastName + NAME_DELIMITER + firstName;
+    }
+
     private static String getFirstName(Person person) {
         return person.getNames().stream()
                    .filter(CristinContributorExtractor::isFirstName).findFirst().map(
                 TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
     }
 
-    @NotNull
     private static String getLastName(Person person) {
         return person.getNames().stream().filter(CristinContributorExtractor::isSurname).findFirst()
                    .map(TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
     }
 
     private static boolean isFirstName(TypedValue typedValue) {
-        return nonNull(typedValue) && FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
+        return FIRST_NAME_CRISTIN_FIELD_NAME.equals(getType(typedValue));
+    }
+
+    private static String getType(TypedValue typedValue) {
+        return Optional.ofNullable(typedValue).map(TypedValue::getType).orElse(null);
     }
 
     private static boolean isSurname(TypedValue nameType) {
-        return nonNull(nameType) && LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
+        return LAST_NAME_CRISTIN_FIELD_NAME.equals(getType(nameType));
     }
 
     private static boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
-        return nonNull(correspondencePerson)
-               && author.getIndexedName().equals(correspondencePerson.getIndexedName());
+        return author.getIndexedName().equals(getIndexedName(correspondencePerson));
+    }
+
+    private static String getIndexedName(PersonalnameType correspondencePerson) {
+        return Optional.ofNullable(correspondencePerson).map(PersonalnameType::getIndexedName).orElse(null);
     }
 
     private static boolean isOrcid(TypedValue identifier) {

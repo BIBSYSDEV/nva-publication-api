@@ -688,8 +688,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         return attempt(() -> createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService))
                    .orElseThrow();
     }
-
-    private Publication persistEmptyPublication(UserInstance owner) {
+    
+    private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException {
         var publication = new Publication.Builder().withResourceOwner(
                 new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
                               .withPublisher(createOrganization(owner.getOrganizationUri()))

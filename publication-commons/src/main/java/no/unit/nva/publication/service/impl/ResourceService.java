@@ -76,6 +76,7 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 20;
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+    public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -103,8 +104,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
     
-    //to be renamed to "createPublication"
-    public Publication resourceCallsCreatePublication(UserInstance userInstance, Publication inputData) {
+    public Publication createPublication(UserInstance userInstance, Publication inputData)
+        throws BadRequestException {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -112,8 +113,22 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
-        newResource.setStatus(PublicationStatus.DRAFT);
+        setStatusOnNewPublication(userInstance, inputData, newResource);
         return insertResource(newResource);
+    }
+
+    public void setStatusOnNewPublication(UserInstance userInstance,
+                                          Publication fromPublication,
+                                          Resource toResource) throws BadRequestException {
+        var status = userInstance.isExternalClient()
+                         ? Optional.ofNullable(fromPublication.getStatus()).orElse(PublicationStatus.DRAFT)
+                         : PublicationStatus.DRAFT;
+
+        if (status == PublicationStatus.PUBLISHED && !fromPublication.isPublishable()) {
+            throw new BadRequestException(NOT_PUBLISHABLE);
+        }
+
+        toResource.setStatus(status);
     }
     
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {

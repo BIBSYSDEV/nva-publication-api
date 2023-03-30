@@ -216,8 +216,8 @@ public class PublicationContextCreator {
     }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
-        var publisherName = findPublisherName();
-        return !publisherName.isEmpty() ? Optional.of(new Publisher(TEMPORARY_HARDCODED_PUBLISHER_URI))
+        return !findPublisherName().isEmpty()
+                   ? Optional.of(new Publisher(TEMPORARY_HARDCODED_PUBLISHER_URI))
                    : Optional.empty();
     }
 

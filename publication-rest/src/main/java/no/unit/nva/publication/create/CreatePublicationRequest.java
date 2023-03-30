@@ -12,6 +12,7 @@ import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
@@ -29,6 +30,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private Set<AdditionalIdentifier> additionalIdentifiers;
     private List<Funding> fundings;
     private String rightsHolder;
+    private PublicationStatus status;
 
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
@@ -39,6 +41,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         createPublicationRequest.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
         createPublicationRequest.setFundings(publication.getFundings());
         createPublicationRequest.setRightsHolder(publication.getRightsHolder());
+        createPublicationRequest.setStatus(publication.getStatus());
         return createPublicationRequest;
     }
     
@@ -59,9 +62,10 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         publication.setAdditionalIdentifiers(getAdditionalIdentifiers());
         publication.setFundings(getFundings());
         publication.setRightsHolder(getRightsHolder());
+        publication.setStatus(getStatus());
         return publication;
     }
-    
+
     @JacocoGenerated
     @Override
     public EntityDescription getEntityDescription() {
@@ -145,6 +149,16 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     }
 
     @JacocoGenerated
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    @JacocoGenerated
+    public void setStatus(PublicationStatus status) {
+        this.status = status;
+    }
+
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(),
@@ -152,7 +166,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                             getContext(),
                             getProjects(),
                             getSubjects(),
-                            getAdditionalIdentifiers());
+                            getAdditionalIdentifiers(),
+                            getStatus());
     }
 
     @JacocoGenerated
@@ -170,7 +185,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
                && Objects.equals(getSubjects(), that.getSubjects())
-               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
+               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
+               && Objects.equals(getStatus(), that.getStatus());
     }
 
 }

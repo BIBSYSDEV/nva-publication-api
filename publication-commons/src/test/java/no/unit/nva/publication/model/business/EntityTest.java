@@ -11,6 +11,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,14 +42,14 @@ class EntityTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldReturnEquivalentPublicationWhenEntityIsInternalRepresentationOfPublication() {
+    void shouldReturnEquivalentPublicationWhenEntityIsInternalRepresentationOfPublication() throws BadRequestException {
         var publication = createDraftPublicationWithoutDoi();
         var resource = Resource.fromPublication(publication);
         var regeneratedPublication = resource.toPublication(SHOULD_NOT_USE_RESOURCE_SERVICE);
         assertThat(regeneratedPublication, is(equalTo(publication)));
     }
     
-    private Publication createDraftPublicationWithoutDoi() {
+    private Publication createDraftPublicationWithoutDoi() throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).withStatus(DRAFT).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
             UserInstance.fromPublication(publication));
