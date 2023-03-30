@@ -3,6 +3,7 @@ package no.unit.nva.doi;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.BAD_RESPONSE_ERROR_MESSAGE;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static nva.commons.core.attempt.Try.attempt;
+import static software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -46,6 +47,7 @@ public class DataCiteDoiClient implements DoiClient {
     public static final String DELETE = "delete";
     public static final String NOT_ALLOWED_TO_DELETE_FINDABLE_DOI = "Not allowed to delete findable doi {}";
     private static final Logger logger = LoggerFactory.getLogger(DataCiteDoiClient.class);
+    public static final String CUSTOMER_ID = "customerId";
     private final String apiHost;
     private final HttpClient httpClient;
     private final SecretsReader secretsReader;
@@ -143,7 +145,7 @@ public class DataCiteDoiClient implements DoiClient {
         throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
                           .DELETE()
-                          .uri(constructDeleteDraftDoiUri(publication.getDoi()));
+                          .uri(constructDeleteDraftDoiUri(publication));
         var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
@@ -155,13 +157,18 @@ public class DataCiteDoiClient implements DoiClient {
                    .getUri();
     }
 
-    private URI constructDeleteDraftDoiUri(URI doi) {
+    private URI constructDeleteDraftDoiUri(Publication publication) {
         return UriWrapper.fromHost(apiHost)
                    .addChild(DOI_REGISTRAR)
                    .addChild(DELETE)
-                   .addChild(getDoiPrefix(doi))
-                   .addChild(getDoiSuffix(doi))
+                   .addChild(getDoiPrefix(publication.getDoi()))
+                   .addChild(getDoiSuffix(publication.getDoi()))
+                   .addQueryParameter(CUSTOMER_ID, encodeCustomer(publication))
                    .getUri();
+    }
+
+    private static String encodeCustomer(Publication publication) {
+        return urlEncode(String.valueOf(publication.getPublisher().getId()));
     }
 
     private BodyPublisher withDoiRequestBody(Publication publication) throws BadRequestException {
