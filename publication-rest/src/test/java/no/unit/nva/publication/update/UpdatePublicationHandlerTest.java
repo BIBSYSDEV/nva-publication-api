@@ -53,6 +53,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.logutils.LogUtils;
@@ -128,7 +129,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException {
+    void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException, BadRequestException {
         publication = PublicationGenerator.publicationWithoutIdentifier();
         Publication savedPublication = createSamplePublication();
 
@@ -256,7 +257,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerThrowsNotFoundWhenExternalClientTriesToUpdateResourcesCreatedByOthers() throws IOException {
+    void handlerThrowsNotFoundWhenExternalClientTriesToUpdateResourcesCreatedByOthers()
+        throws IOException, BadRequestException {
         Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
 
@@ -283,7 +285,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
     
-    private Publication createSamplePublication() {
+    private Publication createSamplePublication() throws BadRequestException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }

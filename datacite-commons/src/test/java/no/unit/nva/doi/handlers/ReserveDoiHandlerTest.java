@@ -53,6 +53,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
@@ -227,7 +228,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
     }
 
-    private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException {
+    private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException, BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
         var userInstance = UserInstance.fromPublication(publication);

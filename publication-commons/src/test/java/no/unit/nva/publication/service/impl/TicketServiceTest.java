@@ -689,7 +689,7 @@ class TicketServiceTest extends ResourcesLocalTest {
                    .orElseThrow();
     }
     
-    private Publication persistEmptyPublication(UserInstance owner) {
+    private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException {
         var publication = new Publication.Builder().withResourceOwner(
                 new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
                               .withPublisher(createOrganization(owner.getOrganizationUri()))
