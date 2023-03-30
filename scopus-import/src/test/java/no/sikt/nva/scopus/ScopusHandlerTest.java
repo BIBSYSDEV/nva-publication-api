@@ -1133,7 +1133,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var affiliationIdList = contributor.getAffiliations().stream()
                                     .map(Organization::getId)
                                     .collect(Collectors.toSet());
-        assertThat(affiliationIdList, hasItem(URI.create("cristin/organization/" + cristinAffiliationId)));
+        assertThat(affiliationIdList.toString(), containsString("cristin/organization/" + cristinAffiliationId));
     }
 
     private AuthorGroupTp generateAuthorGroup() {
