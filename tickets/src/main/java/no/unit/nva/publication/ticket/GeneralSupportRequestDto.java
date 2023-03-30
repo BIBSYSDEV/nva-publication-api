@@ -44,8 +44,9 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(PUBLICATION_FIELD) PublicationSummary publicationSummary,
                                     @JsonProperty(ID_FIELD) URI id,
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                                    @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
-        super(status, messages, viewedBy, publicationSummary);
+                                    @JsonProperty(VIEWED_BY) Set<User> viewedBy,
+                                    @JsonProperty(ASSIGNEE_FIELD) User assignee) {
+        super(status, messages, viewedBy, publicationSummary, assignee);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -53,7 +54,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     }
     
     public static GeneralSupportRequestDto empty() {
-        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null);
+        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null);
     }
     
     public URI getId() {

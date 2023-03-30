@@ -47,8 +47,9 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(PUBLICATION_FIELD) PublicationSummary publicationSummary,
                          @JsonProperty(ID_FIELD) URI id,
                          @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                         @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
-        super(status, messages, viewedBy, publicationSummary);
+                         @JsonProperty(VIEWED_BY) Set<User> viewedBy,
+                         @JsonProperty(ASSIGNEE_FIELD) User assignee) {
+        super(status, messages, viewedBy, publicationSummary, assignee);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -56,7 +57,7 @@ public class DoiRequestDto extends TicketDto {
     }
     
     public static TicketDto empty() {
-        return new DoiRequestDto(null, null, null, null, null, null, null, null);
+        return new DoiRequestDto(null, null, null, null, null, null, null, null, null);
     }
     
     public Instant getCreatedDate() {
