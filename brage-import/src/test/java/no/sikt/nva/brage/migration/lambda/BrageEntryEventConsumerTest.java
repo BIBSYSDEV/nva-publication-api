@@ -671,14 +671,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                 .withType(TYPE_BOOK)
                 .build();
         var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(brageGenerator.getBrageRecord());
-        var objectKey = UUID.toString();
-        var key = UnixPath.of("my", "path", objectKey ).toString();
+        var uuidKey = UUID.toString();
+        var uuidKeyWithPath = UnixPath.of("my", "path", uuidKey).toString();
         var expectedDopyObjRequest =
             CopyObjectRequest.builder()
                 .sourceBucket(INPUT_BUCKET_NAME)
                 .destinationBucket(new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
-                .sourceKey(key)
-                .destinationKey(key)
+                .sourceKey(uuidKeyWithPath)
+                .destinationKey(uuidKey)
                 .build();
 
         handler.handleRequest(s3Event, CONTEXT);
