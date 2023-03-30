@@ -5,8 +5,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
-import no.unit.nva.doi.CreateFindableDoiClient;
 import no.unit.nva.doi.DataCiteDoiClient;
+import no.unit.nva.doi.DoiClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.requirements.DoiResourceRequirements;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -39,7 +39,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     private final TicketService ticketService;
     private final ResourceService resourceService;
 
-    private final CreateFindableDoiClient doiClient;
+    private final DoiClient doiClient;
 
     @JacocoGenerated
     public UpdateTicketStatusHandler() {
@@ -50,7 +50,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     }
 
     public UpdateTicketStatusHandler(TicketService ticketService, ResourceService resourceService,
-                                     CreateFindableDoiClient doiClient) {
+                                     DoiClient doiClient) {
         super(TicketDto.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
@@ -94,9 +94,19 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
 
     private void doiTicketSideEffects(TicketDto input, final RequestInfo requestInfo)
         throws NotFoundException, BadMethodException, BadGatewayException {
-        if (TicketStatus.COMPLETED.equals(input.getStatus())) {
+        var status = input.getStatus();
+        if (TicketStatus.COMPLETED.equals(status)) {
             findableDoiTicketSideEffects(requestInfo);
         }
+        if (TicketStatus.CLOSED.equals(status)) {
+            deleteDoiTicketSideEffects(getPublication(requestInfo));
+        }
+    }
+
+    private void deleteDoiTicketSideEffects(Publication publication) {
+        doiClient.deleteDraftDoi(publication);
+        publication.setDoi(null);
+        resourceService.updatePublication(publication);
     }
 
     private void findableDoiTicketSideEffects(RequestInfo requestInfo)

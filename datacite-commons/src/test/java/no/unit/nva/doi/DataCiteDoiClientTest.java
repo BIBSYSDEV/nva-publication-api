@@ -1,5 +1,7 @@
 package no.unit.nva.doi;
 
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -8,6 +10,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -56,10 +60,34 @@ public class DataCiteDoiClientTest {
         throws JsonProcessingException {
         var publication = PublicationGenerator.randomPublication();
         var doi = RandomDataGenerator.randomDoi();
-        var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(doi));
+        var httpClient = new FakeHttpClient<>(tokenResponse(), findableDoiResponse(doi));
         var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
         var actualDoi = doiClient.createFindableDoi(publication);
         assertThat(actualDoi, is(equalTo(doi)));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenBadResponseFromDoiClient(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        var publication = PublicationGenerator.randomPublication();
+        var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadResponse());
+        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+        assertThrows(RuntimeException.class, () -> doiClient.deleteDraftDoi(publication));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenBadMethodFromDoiClient(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        var publication = PublicationGenerator.randomPublication();
+        var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadMethodResponse());
+        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+        assertThrows(RuntimeException.class, () -> doiClient.deleteDraftDoi(publication));
+    }
+
+    @Test
+    void shouldReturnStatusCodeAcceptedOnSuccessfulDeleteDoi() {
+        var publication = PublicationGenerator.randomPublication();
+        var doiClient = mock(DataCiteDoiClient.class);
+        doiClient.deleteDraftDoi(publication);
+        verify(doiClient, times(1)).deleteDraftDoi(publication);
     }
 
     private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
@@ -70,7 +98,15 @@ public class DataCiteDoiClientTest {
         return FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK);
     }
 
-    private FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
+    private FakeHttpResponse<String> deleteDoiBadResponse() {
+        return FakeHttpResponse.create(null, HTTP_BAD_GATEWAY);
+    }
+
+    private FakeHttpResponse<String> deleteDoiBadMethodResponse() {
+        return FakeHttpResponse.create(null, HTTP_BAD_METHOD);
+    }
+
+    private FakeHttpResponse<String> findableDoiResponse(URI expectedDoi) throws JsonProcessingException {
         return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
     }
 }

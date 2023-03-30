@@ -50,7 +50,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -65,24 +64,21 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
-    
+
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
         restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
-    
+
     public static final String SOME_MESSAGE = "SomeMessage";
     public static final String SOME_CURATOR = "some@curator";
-    
-    private ResourceService publicationService;
-    private Context context;
-    
-    private ByteArrayOutputStream output;
-    private UpdatePublicationHandler updatePublicationHandler;
-    
-    private Publication publication;
-    private Environment environment;
-    private GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
+    private ResourceService publicationService;
+    private Context context;
+    private ByteArrayOutputStream output;
+    private UpdatePublicationHandler updatePublicationHandler;
+    private Publication publication;
+    private Environment environment;
     private IdentityServiceClient identityServiceClient;
 
     /**
@@ -91,41 +87,41 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() throws NotFoundException {
         super.init();
-        
+
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        
+
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         context = mock(Context.class);
 
         identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
-        
+
         output = new ByteArrayOutputStream();
         updatePublicationHandler =
             new UpdatePublicationHandler(publicationService, environment, identityServiceClient);
         publication = createPublication();
     }
-    
+
     @Test
     void handlerUpdatesPublicationWhenInputIsValidAndUserIsResourceOwner()
         throws IOException, ApiGatewayException {
         publication = PublicationGenerator.publicationWithoutIdentifier();
         Publication savedPublication = createSamplePublication();
-        
+
         Publication publicationUpdate = updateTitle(savedPublication);
-        
+
         InputStream inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
-        
+
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        
+
         assertThat(body.getEntityDescription().getMainTitle(),
-            is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+                   is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
 
     @Test
@@ -151,7 +147,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
-    
+
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
     void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
@@ -161,14 +157,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(IDENTIFIER_IS_NOT_A_VALID_UUID));
     }
-    
+
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, environment, identityServiceClient);
-        
+
         Publication savedPublication = createSamplePublication();
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -177,7 +173,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(getProblemDetail(gatewayResponse), containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
-    
+
     @Test
     @DisplayName("handler logs error details on unexpected exception")
     void handlerLogsErrorDetailsOnUnexpectedException()
@@ -186,72 +182,72 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, environment, identityServiceClient);
         Publication savedPublication = createSamplePublication();
-        
+
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
     }
-    
+
     @Test
     void handlerReturnsBadRequestWhenIdentifierInPathDiffersFromIdentifierInBody() throws IOException {
-        
+
         SortableIdentifier someOtherIdentifier = SortableIdentifier.next();
-        
+
         InputStream event = ownerUpdatesOwnPublication(someOtherIdentifier, publication);
-        
+
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
         Problem problem = gatewayResponse.getBodyObject(Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
         assertThat(problem.getDetail(), containsString(UpdatePublicationHandler.IDENTIFIER_MISMATCH_ERROR_MESSAGE));
     }
-    
+
     @Test
     @DisplayName("Handler returns NotFound response when resource does not exist")
     void handlerReturnsNotFoundResponseWhenResourceDoesNotExist() throws IOException {
         InputStream event = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
-        
+
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), is(equalTo(RESOURCE_NOT_FOUND_MESSAGE)));
     }
-    
+
     @Test
     void handlerUpdatesResourceWhenInputIsValidAndUserHasRightToEditAnyResourceInOwnInstitution()
         throws ApiGatewayException, IOException {
         Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
-        
+
         InputStream event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
-        
+
         Publication updatedPublication =
             publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
-        
+
         //inject modified date to the input object because modified date is not available before the actual update.
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
-        
+
         String expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
         String actualTitle = updatedPublication.getEntityDescription().getMainTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
-        
+
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
-    
+
     @Test
     void handlerThrowsExceptionWhenInputIsValidUserHasRightToEditAnyResourceInOwnInstButEditsResourceInOtherInst()
         throws ApiGatewayException, IOException {
         Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
-        
+
         InputStream event = userUpdatesPublicationOfOtherInstitution(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         Problem problem = response.getBodyObject(Problem.class);
-        
+
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
         assertThat(problem.getDetail(), is(equalTo("Unauthorized")));
     }
@@ -276,7 +272,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
         assertThat(problem.getDetail(), is(equalTo(RESOURCE_NOT_FOUND_MESSAGE)));
     }
-    
+
     @Test
     void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
         var event = requestWithoutUsername(randomPublication());
@@ -284,12 +280,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
-    
+
     private Publication createSamplePublication() throws BadRequestException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
-    
+
     private InputStream requestWithoutUsername(Publication publicationUpdate)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
@@ -299,7 +295,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(publicationUpdate)
                    .build();
     }
-    
+
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
@@ -312,7 +308,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withNvaUsername(SOME_CURATOR)
                    .build();
     }
-    
+
     private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
@@ -330,7 +326,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                    Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
-        
+
         var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withNvaUsername(publicationUpdate.getResourceOwner().getOwner())
@@ -341,7 +337,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream externalClientUpdatesPublication(SortableIdentifier publicationIdentifier,
-                                                            Publication publicationUpdate)
+                                                         Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
 
@@ -358,11 +354,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         update.getEntityDescription().setMainTitle(randomString());
         return update;
     }
-    
+
     private TestAppender createAppenderForLogMonitoring() {
         return LogUtils.getTestingAppenderForRootLogger();
     }
-    
+
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
         return new ResourceService(client, Clock.systemDefaultZone()) {
             @Override
@@ -371,28 +367,28 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             }
         };
     }
-    
+
     private HandlerRequestBuilder<Publication> generateInputStreamMissingPathParameters() throws IOException {
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withBody(createPublication())
                    .withHeaders(generateHeaders());
     }
-    
+
     private Map<String, String> generateHeaders() {
         Map<String, String> headers = new ConcurrentHashMap<>();
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         return headers;
     }
-    
+
     private Publication createPublication() {
         return PublicationGenerator.publicationWithIdentifier();
     }
-    
+
     private GatewayResponse<Problem> toGatewayResponseProblem() throws JsonProcessingException {
         return restApiMapper.readValue(output.toString(),
-            PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE);
+                                       PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE);
     }
-    
+
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
         return gatewayResponse.getBodyObject(Problem.class).getDetail();
     }
