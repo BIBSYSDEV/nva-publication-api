@@ -41,6 +41,7 @@ import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -60,6 +61,7 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class CreateTicketHandlerTest extends TicketTestLocal {
 
+    public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     private CreateTicketHandler handler;
 
     public static Stream<Arguments> ticketEntryProvider() {
@@ -266,6 +268,45 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(appender.getMessages(), containsString("Request failed:"));
     }
 
+
+    @Test
+    void shouldAllowUserWithDoiRequestApprovalAccessRight() throws ApiGatewayException, IOException {
+        var publication = createPersistedPublishedPublication();
+        var publicationOwner = publication.getPublisher().getId();
+        var requestBody = constructDto(DoiRequest.class);
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner, AccessRight.APPROVE_DOI_REQUEST);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldAllowUserWithDoiRequestRejectionAccessRight() throws ApiGatewayException, IOException {
+        var publication = createPersistedPublishedPublication();
+        var publicationOwner = publication.getPublisher().getId();
+        var requestBody = constructDto(DoiRequest.class);
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner,
+                                                                             AccessRight.REJECT_DOI_REQUEST);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldNotAllowUserWithDoiRequestToCreateTicketForPublicationFromAnotherInstitution()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedPublishedPublication();
+        var customerId = randomUri();
+        assertThat(customerId, is(not(equalTo(publication.getPublisher().getId()))));
+        var requestBody = constructDto(DoiRequest.class);
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, customerId,
+                                                                             AccessRight.REJECT_DOI_REQUEST);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+
+    }
+
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
         return new SortableIdentifier(UriWrapper.fromUri(location).getLastPathElement());
     }
@@ -291,6 +332,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
+
 
     private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication().copy().withEntityDescription(null).build();
@@ -340,9 +382,23 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
-                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
-                   .withNvaUsername(userCredentials.getUsername())
-                   .withCustomerId(userCredentials.getOrganizationUri())
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                   .withUserName(userCredentials.getUsername())
+                   .withCurrentCustomer(userCredentials.getOrganizationUri())
+                   .build();
+    }
+
+    private InputStream createHttpTicketCreationRequestWithApprovedAccessRight(TicketDto ticketDto,
+                                                                               Publication publication,
+                                                                               URI customerId,
+                                                                               AccessRight accessRight)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+                   .withBody(ticketDto)
+                   .withAccessRights(customerId, accessRight.toString())
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                   .withUserName(randomString())
+                   .withCurrentCustomer(customerId)
                    .build();
     }
 
@@ -351,7 +407,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
-                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .build();
     }
 }
