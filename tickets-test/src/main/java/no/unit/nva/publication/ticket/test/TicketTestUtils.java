@@ -25,8 +25,8 @@ import org.junit.jupiter.params.provider.Arguments;
 
 public final class TicketTestUtils {
 
-    private static final Set<PublicationStatus> validPublishedPublicationStatus = Set.of(PUBLISHED,
-                                                                                         PUBLISHED_METADATA);
+    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED,
+                                                                            PUBLISHED_METADATA);
 
     public static Stream<Arguments> ticketTypeAndPublicationStatusProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, PUBLISHED),
@@ -45,7 +45,7 @@ public final class TicketTestUtils {
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
-        if (validPublishedPublicationStatus.contains(publication.getStatus())) {
+        if (isPublished(publication)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
@@ -95,6 +95,10 @@ public final class TicketTestUtils {
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+    }
+
+    private static boolean isPublished(Publication publication) {
+        return PUBLISHED_STATUSES.contains(publication.getStatus());
     }
 
     private static void publishPublication(ResourceService resourceService, Publication persistedPublication)
