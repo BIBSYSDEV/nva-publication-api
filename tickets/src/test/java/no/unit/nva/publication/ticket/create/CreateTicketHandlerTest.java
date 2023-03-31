@@ -68,7 +68,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new CreateTicketHandler(ticketService, resourceService);
+        this.handler = new CreateTicketHandler(ticketService, resourceService, httpClient, secretsReader);
     }
     
     @ParameterizedTest

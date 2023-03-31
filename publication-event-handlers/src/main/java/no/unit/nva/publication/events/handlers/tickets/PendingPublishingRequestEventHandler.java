@@ -97,7 +97,7 @@ public class PendingPublishingRequestEventHandler
         return null;
     }
 
-    protected static CognitoCredentials fetchCredentials(SecretsReader secretsReader) {
+    public static CognitoCredentials fetchCredentials(SecretsReader secretsReader) {
         var credentials
             = secretsReader.fetchClassSecret(BACKEND_CLIENT_SECRET_NAME, BackendClientCredentials.class);
         var uri = getCognitoTokenUrl();

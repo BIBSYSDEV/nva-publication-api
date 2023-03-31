@@ -65,7 +65,7 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
 
-        openingCaseObject.setPublicationWorkflow();
+//        openingCaseObject.setPublicationWorkflow();
         return openingCaseObject;
     }
     

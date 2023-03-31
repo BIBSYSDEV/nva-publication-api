@@ -47,28 +47,24 @@ public class AssociatedArtifactMover {
 
         try {
             var file = (File) associatedArtifact;
-            var keyName = file.getIdentifier().toString();
+            var uuidKey = file.getIdentifier().toString();
             var sourceBucket = getSourceBucket();
             var sourcePath = UnixPath.fromString(getRecordObjectKey());
-
             var sourceKey = sourcePath.getParent().isPresent()
-                                ? sourcePath.getParent().get().addChild(keyName).toString()
-                                : keyName;
+                                ? sourcePath.getParent().get().addChild(uuidKey).toString()
+                                : uuidKey;
 
-            logger.info("COPY {} -> {}/{} to {}/{}",
-                        file.getName(),
-                        sourceBucket,
-                        sourceKey,
-                        persistedStorageBucket,
-                        keyName);
-            var copyObjRequest = CopyObjectRequest.builder()
-                                     .sourceBucket(sourceBucket)
-                                     .sourceKey(sourceKey)
-                                     .destinationBucket(persistedStorageBucket)
-                                     .destinationKey(keyName)
-                                     .build();
+            logger.info("COPY -> {}/{} to {}/{}", sourceBucket, sourceKey, persistedStorageBucket, uuidKey);
+            var copyObjRequest =
+                CopyObjectRequest
+                    .builder()
+                    .sourceBucket(sourceBucket)
+                    .sourceKey(sourceKey)
+                    .destinationBucket(persistedStorageBucket)
+                    .destinationKey(uuidKey)
+                    .build();
             s3Client.copyObject(copyObjRequest);
-            return extractMimeTypeAndSize(file, keyName);
+            return extractMimeTypeAndSize(file, uuidKey);
         } catch (Exception e) {
             throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE, e);
         }
