@@ -66,9 +66,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldCreateMessageReferencingTicketForPublicationOwnerWithNonSpecificCuratorAsRecipientWhenUserIsTheOwner(Class<? extends TicketEntry> ticketType,
-                                                                                                                    PublicationStatus status)
-        throws ApiGatewayException, IOException {
+    void shouldCreateMessageReferencingTicketForPublicationOwnerWithNonSpecificCuratorAsRecipientWhenUserIsTheOwner(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var user = UserInstance.fromTicket(ticket);
@@ -85,9 +84,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    public void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(Class<? extends TicketEntry> ticketType,
-                                                                                                            PublicationStatus status)
-        throws ApiGatewayException, IOException {
+    public void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var user = randomUserInstance(ticket.getCustomerId());
@@ -99,9 +97,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    public void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator(Class<? extends TicketEntry> ticketType,
-                                                                                                                   PublicationStatus status)
-        throws ApiGatewayException, IOException {
+    public void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
@@ -120,8 +117,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    public void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
-                                                                             PublicationStatus status)
+    public void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);

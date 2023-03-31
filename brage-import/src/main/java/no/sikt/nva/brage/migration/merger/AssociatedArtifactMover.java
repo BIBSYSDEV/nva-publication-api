@@ -1,22 +1,19 @@
 package no.sikt.nva.brage.migration.merger;
 
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import nva.commons.core.Environment;
-import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+
+import java.util.stream.Collectors;
 
 public class AssociatedArtifactMover {
 
