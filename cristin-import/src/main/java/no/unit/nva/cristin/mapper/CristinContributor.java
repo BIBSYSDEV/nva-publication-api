@@ -75,6 +75,23 @@ public class CristinContributor {
                    .build();
     }
 
+    public Contributor toNvaContributorWithSequence(int sequenceNumber) {
+
+        String fullName = constructFullName();
+        Identity identity = new Identity.Builder()
+                                .withName(fullName)
+                                .withId(constructId())
+                                .build();
+
+        return new Contributor.Builder()
+                   .withIdentity(identity)
+                   .withCorrespondingAuthor(false)
+                   .withAffiliations(extractAffiliations())
+                   .withRole(extractRoles())
+                   .withSequence(sequenceNumber)
+                   .build();
+    }
+
     private String constructFullName() {
         StringBuilder nameBuilder = new StringBuilder();
         if (StringUtils.isNotBlank(getGivenName())) {

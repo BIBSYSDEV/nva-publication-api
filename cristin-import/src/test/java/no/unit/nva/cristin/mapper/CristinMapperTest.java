@@ -17,6 +17,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
 import java.nio.file.Path;
@@ -25,6 +26,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -281,6 +283,17 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
+    void shouldMapCristinContributorsWithoutSequenceNumberToNvaContributorsWithUniqueSequenceNumber() {
+        var singleCristinObject = cristinObjectWithcontributorsWithoutSequenceNumber(getSingleCristinObject());
+        List<Contributor> actualContributors = singleCristinObject.toPublication().getEntityDescription().getContributors();
+        List<Integer> actualSequenceNumbers = actualContributors.stream()
+                                    .map(Contributor::getSequence)
+                                    .collect(Collectors.toList());
+        assertEquals(actualContributors.size(), new HashSet<>(actualSequenceNumbers).size());
+
+    }
+
+    @Test
     void mapReturnsResourceWhereNvaContributorSequenceIsEqualToCristinContributorSequence() {
 
         Set<ContributionReference> expectedContributions = cristinObjects.stream()
@@ -436,6 +449,16 @@ class CristinMapperTest extends AbstractCristinImportTest {
     void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {
         //re-use the test for the author's name
         mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
+    }
+
+    private CristinObject getSingleCristinObject() {
+        return cristinObjects(1).collect(Collectors.toList()).get(0);
+    }
+
+    private CristinObject cristinObjectWithcontributorsWithoutSequenceNumber(CristinObject cristinObject) {
+        cristinObject.getContributors()
+            .forEach(contributor -> contributor.setContributorOrder(0));
+        return cristinObject;
     }
 
     private AdditionalIdentifier createExspectedAdditionalIdentifier(CristinSource cristinSource) {

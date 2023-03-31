@@ -232,12 +232,15 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private List<Contributor> extractContributors() {
-        return Optional.ofNullable(cristinObject.getContributors())
+        var c = Optional.ofNullable(cristinObject.getContributors())
+                    .map();
+        var contributors = Optional.ofNullable(cristinObject.getContributors())
                    .orElse(List.of())
                    .stream()
-                   .map(attempt(CristinContributor::toNvaContributor))
+                   .map(attempt(CristinContributor -> CristinContributor.toNvaContributorWithSequence()))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
+
     }
 
     private List<URI> generateNvaHrcsCategoriesAndActivities() {
