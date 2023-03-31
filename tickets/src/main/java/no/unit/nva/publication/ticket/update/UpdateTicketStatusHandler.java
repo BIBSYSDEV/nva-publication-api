@@ -1,6 +1,7 @@
 package no.unit.nva.publication.ticket.update;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -98,7 +99,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         if (TicketStatus.COMPLETED.equals(status)) {
             findableDoiTicketSideEffects(requestInfo);
         }
-        if (TicketStatus.CLOSED.equals(status)) {
+        if (TicketStatus.CLOSED.equals(status) && hasDoi(getPublication(requestInfo))) {
             deleteDoiTicketSideEffects(getPublication(requestInfo));
         }
     }
@@ -107,6 +108,10 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         doiClient.deleteDraftDoi(publication);
         publication.setDoi(null);
         resourceService.updatePublication(publication);
+    }
+
+    private boolean hasDoi(Publication publication) {
+        return nonNull(publication.getDoi());
     }
 
     private void findableDoiTicketSideEffects(RequestInfo requestInfo)
