@@ -8,7 +8,6 @@ import java.net.http.HttpClient;
 import no.unit.nva.doi.CreateFindableDoiClient;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.doi.requirements.DoiResourceRequirements;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -130,7 +129,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
 
     private void publicationSatisfiesDoiRequirements(Publication publication)
         throws BadMethodException {
-        if (!DoiResourceRequirements.publicationSatisfiesDoiRequirements(publication)) {
+        if (!publication.satisfiesFindableDoiRequirements()) {
             throw new BadMethodException(
                 String.format(PUBLICATION_WITH_IDENTIFIER_S_DOES_NOT_SATISFY_DOI_REQUIREMENTS,
                               publication.getIdentifier()));
