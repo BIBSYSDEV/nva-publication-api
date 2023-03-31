@@ -18,7 +18,6 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.doi.requirements.DoiResourceRequirements;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
@@ -91,8 +90,7 @@ public class DoiRequestEventProducer
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
         var newEntry = input.getNewData();
 
-        if (newEntry instanceof Resource && DoiResourceRequirements.publicationSatisfiesDoiRequirements(
-            ((Resource) newEntry).toPublication())) {
+        if (newEntry instanceof Resource && ((Resource) newEntry).toPublication().satisfiesFindableDoiRequirements()) {
             return createDoiMetadataUpdateEvent((Resource) newEntry);
         }
         if (newEntry instanceof DoiRequest) {
@@ -103,8 +101,7 @@ public class DoiRequestEventProducer
 
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent( DoiRequest newEntry) {
         if (isDoiRequestApproval(newEntry)
-            && DoiResourceRequirements.publicationSatisfiesDoiRequirements(
-            newEntry.toPublication(resourceService))) {
+            && newEntry.toPublication(resourceService).satisfiesFindableDoiRequirements()) {
             return createEventForMakingDoiFindable(newEntry);
         }
         return EMPTY_EVENT;

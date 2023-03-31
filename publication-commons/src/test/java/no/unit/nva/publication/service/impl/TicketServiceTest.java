@@ -124,7 +124,7 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Publication status: {0}")
     @DisplayName("should create Doi Request when Publication is eligible")
-    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED"}, mode = Mode.INCLUDE)
+    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED", "PUBLISHED_METADATA"}, mode = Mode.INCLUDE)
     void shouldCreateDoiRequestWhenPublicationIsEligible(PublicationStatus status) throws ApiGatewayException {
         var publication = persistPublication(owner, status);
         publication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -304,12 +304,14 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(actualTicketEntry, is(equalTo(expectedTicketEntry)));
     }
 
+
     @Test
     void shouldThrowBadRequestExceptionWhenTryingToCompleteDoiReqeuestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(ticket, COMPLETED));
     }
+
 
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve eventually consistent ticket")
@@ -625,6 +627,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(fetchedTickets, is(empty()));
     }
 
+
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {
         return TicketTestUtils.ticketTypeAndPublicationStatusProvider()
             .map(Arguments::get)
@@ -688,8 +691,9 @@ class TicketServiceTest extends ResourcesLocalTest {
         return attempt(() -> createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService))
                    .orElseThrow();
     }
-    
+
     private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException {
+
         var publication = new Publication.Builder().withResourceOwner(
                 new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
                               .withPublisher(createOrganization(owner.getOrganizationUri()))
