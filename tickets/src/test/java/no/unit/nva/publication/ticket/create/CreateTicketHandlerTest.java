@@ -61,6 +61,7 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class CreateTicketHandlerTest extends TicketTestLocal {
 
+    public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     private CreateTicketHandler handler;
 
     public static Stream<Arguments> ticketEntryProvider() {
@@ -381,7 +382,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
-                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
                    .build();
@@ -395,7 +396,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
                    .withAccessRights(customerId, accessRight.toString())
-                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(randomString())
                    .withCurrentCustomer(customerId)
                    .build();
@@ -406,7 +407,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
-                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .build();
     }
 }

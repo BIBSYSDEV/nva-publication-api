@@ -81,13 +81,16 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         return Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null);
     }
 
-    private boolean userIsAuthorized(RequestInfo requestInfo, Publication publication) throws UnauthorizedException {
-        return (requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-                || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString()))
-               && isUserFromSameCustomerAsPublication(requestInfo, publication);
+    private static boolean hasValidAccessRights(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
+               || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString());
     }
 
-    private boolean isUserFromSameCustomerAsPublication(RequestInfo requestInfo, Publication publication)
+    private boolean userIsAuthorized(RequestInfo requestInfo, Publication publication) throws UnauthorizedException {
+        return hasValidAccessRights(requestInfo) && matchingCustomer(requestInfo, publication);
+    }
+
+    private boolean matchingCustomer(RequestInfo requestInfo, Publication publication)
         throws UnauthorizedException {
         return Optional.ofNullable(requestInfo.getCurrentCustomer())
                    .map(customer -> customer.equals(getPublisherId(publication)))
