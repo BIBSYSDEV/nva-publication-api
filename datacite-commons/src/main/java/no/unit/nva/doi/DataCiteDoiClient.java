@@ -44,7 +44,6 @@ public class DataCiteDoiClient implements DoiClient {
     public static final String DATA_CITE_CONFIGURATION_ERROR = "Configuration error from DataCite: {}";
     public static final String FINDABLE = "findable";
     public static final String PUBLICATION = "publication";
-    public static final String DELETE = "delete";
     public static final String NOT_ALLOWED_TO_DELETE_FINDABLE_DOI = "Not allowed to delete findable doi {}";
     private static final Logger logger = LoggerFactory.getLogger(DataCiteDoiClient.class);
     public static final String CUSTOMER_ID = "customerId";
@@ -160,7 +159,7 @@ public class DataCiteDoiClient implements DoiClient {
     private URI constructDeleteDraftDoiUri(Publication publication) {
         return UriWrapper.fromHost(apiHost)
                    .addChild(DOI_REGISTRAR)
-                   .addChild(DELETE)
+                   .addChild(DRAFT)
                    .addChild(getDoiPrefix(publication.getDoi()))
                    .addChild(getDoiSuffix(publication.getDoi()))
                    .addQueryParameter(CUSTOMER_ID, encodeCustomer(publication))
