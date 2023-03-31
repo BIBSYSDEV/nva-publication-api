@@ -1,10 +1,12 @@
 package no.unit.nva.publication.update;
 
+import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.AccessRight;
@@ -26,6 +28,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private final ResourceService resourceService;
+    private final IdentityServiceClient identityServiceClient;
     
     /**
      * Default constructor for MainHandler.
@@ -35,7 +38,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         this(new ResourceService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
                 Clock.systemDefaultZone()),
-            new Environment());
+            new Environment(),
+             IdentityServiceClient.prepare());
     }
     
     /**
@@ -45,9 +49,11 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
      * @param environment     environment
      */
     public UpdatePublicationHandler(ResourceService resourceService,
-                                    Environment environment) {
+                                    Environment environment,
+                                    IdentityServiceClient identityServiceClient) {
         super(UpdatePublicationRequest.class, environment);
         this.resourceService = resourceService;
+        this.identityServiceClient = identityServiceClient;
     }
     
     @Override
@@ -69,11 +75,17 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     
     private Publication fetchExistingPublication(RequestInfo requestInfo,
                                                  SortableIdentifier identifierInPath) throws ApiGatewayException {
-        UserInstance userInstance = extractUserInstance(requestInfo);
+        UserInstance userInstance = createUserInstanceFromRequest(requestInfo);
         
         return userCanEditOtherPeoplesPublications(requestInfo)
                    ? fetchPublicationForPrivilegedUser(identifierInPath, userInstance)
                    : fetchPublicationForPublicationOwner(identifierInPath, userInstance);
+    }
+
+    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
+        return requestInfo.clientIsThirdParty()
+                   ? createExternalUserInstance(requestInfo, identityServiceClient)
+                   : extractUserInstance(requestInfo);
     }
     
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
@@ -106,9 +118,9 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
     
     private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
-        
+
         var accessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString();
-        return requestInfo.userIsAuthorized(accessRight);
+        return !requestInfo.clientIsThirdParty() && requestInfo.userIsAuthorized(accessRight);
     }
     
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)

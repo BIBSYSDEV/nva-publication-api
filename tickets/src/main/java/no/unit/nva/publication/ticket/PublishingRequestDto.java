@@ -48,8 +48,9 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(PUBLICATION_FIELD) PublicationSummary publicationSummary,
                                 @JsonProperty(ID_FIELD) URI id,
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                                @JsonProperty(VIEWED_BY) Set<User> viewedBy) {
-        super(status, messages, viewedBy, publicationSummary);
+                                @JsonProperty(VIEWED_BY) Set<User> viewedBy,
+                                @JsonProperty(ASSIGNEE_FIELD) User assignee) {
+        super(status, messages, viewedBy, publicationSummary, assignee);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -57,7 +58,7 @@ public class PublishingRequestDto extends TicketDto {
     }
     
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null);
+        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null);
     }
     
     public Instant getCreatedDate() {
@@ -93,7 +94,7 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationSummary().getPublicationId(), id, getMessages());
+            getPublicationSummary().getPublicationId(), id, getMessages(), getAssignee());
     }
     
     @Override
@@ -113,6 +114,7 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getPublicationSummary().getPublicationId(),
             that.getPublicationSummary().getPublicationId())
                && Objects.equals(id, that.id)
-               && Objects.equals(getMessages(), that.getMessages());
+               && Objects.equals(getMessages(), that.getMessages())
+               && Objects.equals(getAssignee(), that.getAssignee());
     }
 }

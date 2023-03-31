@@ -40,6 +40,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
@@ -85,7 +86,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Expanded resource should not loose information for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
-            throws JsonProcessingException, JSONException {
+        throws JsonProcessingException, JSONException, BadRequestException {
         var publication = createPublicationWithoutDoi(instanceType);
 
         var expandedResource = fromPublication(uriRetriever, publication);
@@ -165,7 +166,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
     }
 
-    private Publication createPublicationWithoutDoi(Class<?> instanceType) {
+    private Publication createPublicationWithoutDoi(Class<?> instanceType) throws BadRequestException {
         var publication = randomPublicationWithoutDoi(instanceType);
         return Resource.fromPublication(publication).persistNew(resourceService,
                 UserInstance.fromPublication(publication));
@@ -257,7 +258,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     ticketService);
         }
 
-        private static Publication createPublication(ResourceService resourceService) {
+        private static Publication createPublication(ResourceService resourceService) throws BadRequestException {
             var publication = randomPublicationWithoutDoi();
             publication = Resource.fromPublication(publication)
                     .persistNew(resourceService, UserInstance.fromPublication(publication));

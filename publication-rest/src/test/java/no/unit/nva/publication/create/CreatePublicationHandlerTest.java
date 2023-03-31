@@ -4,6 +4,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
+import static no.unit.nva.publication.service.impl.ResourceService.NOT_PUBLISHABLE;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
@@ -35,13 +36,16 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -50,6 +54,8 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
 
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
@@ -124,7 +130,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestContainsEmptyResource() throws Exception {
         var request = createEmptyPublicationRequest();
-        InputStream inputStream = createPublicationRequest(request);
+        var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
         
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
@@ -134,9 +140,54 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void requestToHandlerReturnsExternalClientDetailsWhenCalledWithThirdPartyCredentials() throws Exception {
+    void shouldPersistDraftWhenRegularUserAttemptsToPersistPublicationWithStatusPublished() throws Exception {
         var request = createEmptyPublicationRequest();
-        InputStream inputStream = requestFromExternalClient(request);
+        request.setStatus(PublicationStatus.PUBLISHED);
+        var inputStream = createPublicationRequest(request);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        assertThat(publicationResponse.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+    }
+
+    @ParameterizedTest(name = "requestToHandlerWithStatusFromAnExternalClientShouldPersistDocumentWithSameStatus with"
+                              + " status: \"{0}\"")
+    @ValueSource(strings = {"DRAFT", "PUBLISHED"})
+    void shouldPersistProvidedStatusWhenMachineUserPersistsPublicationWithAnyStatus(String statusString)
+        throws Exception {
+        var status = PublicationStatus.valueOf(statusString);
+        var request = createEmptyPublicationRequest();
+        request.setStatus(status);
+        request.setEntityDescription(randomPublishableEntityDescription());
+        var inputStream = requestFromExternalClient(request);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        assertThat(publicationResponse.getStatus(), is(equalTo(status)));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenAnExternalClientTriesToCreatePublishedDocumentWithoutTitleAndDoiRef()
+        throws Exception {
+        var request = createEmptyPublicationRequest();
+        request.setStatus(PublicationStatus.PUBLISHED);
+        var inputStream = requestFromExternalClient(request);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        var body = actual.getBodyObject(Problem.class);
+        assertThat(body.getDetail(), is(equalTo(NOT_PUBLISHABLE)));
+    }
+
+    @Test
+    void shouldReturnsExternalClientDetailsWhenCalledWithThirdPartyCredentials() throws Exception {
+        var request = createEmptyPublicationRequest();
+        var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
@@ -153,7 +204,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void requestToHandlerReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
+    void shouldReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
         var associatedArtifactsInPublication = randomPublication().getAssociatedArtifacts();
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
@@ -313,16 +364,15 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream requestFromExternalClient(CreatePublicationRequest request) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
                    .build();
     }
 
-    private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request) throws JsonProcessingException {
+    private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request)
+        throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .build();
@@ -333,6 +383,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
                    .withCustomerId(testOrgId)
                    .withBody(request)
+                   .build();
+    }
+
+    private EntityDescription randomPublishableEntityDescription() {
+        return new EntityDescription.Builder()
+                   .withMainTitle(RandomDataGenerator.randomString())
+                   .withReference(
+                       new Reference.Builder().withDoi(RandomDataGenerator.randomDoi()).build())
                    .build();
     }
 }

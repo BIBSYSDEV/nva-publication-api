@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.test;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -44,6 +45,20 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
+    public static Publication createPersistedPublicationWithDoi(PublicationStatus status,
+                                                                ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithStatusAndDoi(status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (PublicationStatus.PUBLISHED.equals(status)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
     public static Publication createPersistedPublicationWithOwner(PublicationStatus status,
                                                                   UserInstance owner,
                                                                   ResourceService resourceService)
@@ -61,6 +76,13 @@ public final class TicketTestUtils {
                                                     TicketService ticketService)
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+    }
+
+    public static TicketEntry createClosedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
+                                                    TicketService ticketService)
+        throws ApiGatewayException {
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService).close();
     }
 
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
@@ -83,6 +105,13 @@ public final class TicketTestUtils {
     private static Publication randomPublicationWithStatus(PublicationStatus status) {
         return PublicationGenerator.randomPublication().copy()
                    .withDoi(null)
+                   .withStatus(status)
+                   .build();
+    }
+
+    private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {
+        return PublicationGenerator.randomPublication().copy()
+                   .withDoi(randomDoi())
                    .withStatus(status)
                    .build();
     }

@@ -43,6 +43,7 @@ import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
@@ -184,7 +185,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
     
     @Test
-    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable() throws IOException {
+    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable()
+        throws IOException, BadRequestException {
         var publication = createUnpublishablePublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(PublishingRequestCase.class);
@@ -288,7 +290,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
     
-    private Publication createUnpublishablePublication() {
+    private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication().copy().withEntityDescription(null).build();
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));

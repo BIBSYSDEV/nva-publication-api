@@ -153,7 +153,8 @@ class GetTicketHandlerTest extends TicketTestLocal {
                                                              PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);        var sender = UserInstance.fromTicket(ticket);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = UserInstance.fromTicket(ticket);
         var expectedMessage = messageService.createMessage(ticket, sender, randomString());
         
         var request = createHttpRequest(ticket).build();
@@ -172,7 +173,8 @@ class GetTicketHandlerTest extends TicketTestLocal {
     void shouldReturnViewedByOwnerWhenTicketIsNew(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);          var request = createHttpRequest(ticket).build();
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var request = createHttpRequest(ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
@@ -186,7 +188,8 @@ class GetTicketHandlerTest extends TicketTestLocal {
     void shouldMarkTicketAsUnreadForThePublicationOwnerWhenTicketIsMarkedAsUnread(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);          ticket.markUnreadByOwner().persistUpdate(ticketService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.markUnreadByOwner().persistUpdate(ticketService);
         var updatedTicket = ticket.fetch(ticketService);
         assertThatPersistedTicketsIsMarkedAsUnreadForTheOwner(updatedTicket);
         var request = createHttpRequest(ticket).build();

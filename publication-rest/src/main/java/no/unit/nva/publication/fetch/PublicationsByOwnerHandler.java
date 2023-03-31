@@ -1,12 +1,13 @@
 package no.unit.nva.publication.fetch;
 
+import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
+import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -23,13 +24,15 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
     
     private static final Logger logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
     private final ResourceService resourceService;
-    
+    private final IdentityServiceClient identityServiceClient;
+
     @JacocoGenerated
     public PublicationsByOwnerHandler() {
         this(new ResourceService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
                 Clock.systemDefaultZone()),
-            new Environment());
+             new Environment(),
+             IdentityServiceClient.prepare());
     }
     
     /**
@@ -38,21 +41,24 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
      * @param environment environment
      */
     public PublicationsByOwnerHandler(ResourceService resourceService,
-                                      Environment environment) {
+                                      Environment environment,
+                                      IdentityServiceClient identityServiceClient) {
         super(Void.class, environment);
         this.resourceService = resourceService;
+        this.identityServiceClient = identityServiceClient;
     }
     
     @Override
     protected PublicationsByOwnerResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        
-        String owner = RequestUtil.getOwner(requestInfo);
-        URI customerId = requestInfo.getCurrentCustomer();
-        UserInstance userInstance = UserInstance.create(owner, customerId);
-        logger.info(String.format("Requested publications for owner with feideId=%s and publisher with customerId=%s",
-            owner,
-            customerId));
+
+        var userInstance = createUserInstanceFromLoginInformation(requestInfo);
+
+        logger.info(String.format("Requested publications for owner with username/feideId=%s and publisher with "
+                                  + "customerId=%s",
+            userInstance.getUsername(),
+            userInstance.getOrganizationUri())
+        );
         
         List<PublicationSummary> publicationsByOwner;
         publicationsByOwner = resourceService.getPublicationsByOwner(userInstance)
@@ -61,6 +67,12 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
                                   .collect(Collectors.toList());
         
         return new PublicationsByOwnerResponse(publicationsByOwner);
+    }
+
+    private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws ApiGatewayException {
+        return requestInfo.clientIsThirdParty()
+                   ? createExternalUserInstance(requestInfo, identityServiceClient)
+                   : createInternalUserInstance(requestInfo);
     }
     
     @Override
