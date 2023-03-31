@@ -228,7 +228,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists() {
+    void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
+        throws BadRequestException {
         final Publication sampleResource = randomPublication();
         final Publication collidingResource = sampleResource.copy()
                                                   .withPublisher(anotherPublisher())
@@ -247,7 +248,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier() {
+    void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier() throws BadRequestException {
         final Publication sampleResource = publicationWithIdentifier();
         final Publication anotherResource = publicationWithIdentifier();
 
@@ -256,7 +257,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() {
+    void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() throws BadRequestException {
         Publication publication = publicationWithoutIdentifier();
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
 
@@ -342,7 +343,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() {
+    void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws BadRequestException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
         resourceUpdate.setResourceOwner(new ResourceOwner(ANOTHER_OWNER, UNIMPORTANT_AFFILIATION));
@@ -350,7 +351,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey() {
+    void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey() throws BadRequestException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -359,7 +360,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey() {
+    void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey() throws BadRequestException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -605,7 +606,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle() {
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle() throws BadRequestException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().setMainTitle(null);
         Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
@@ -619,7 +620,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkNoFilesAndNoDoi() {
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkNoFilesAndNoDoi()
+        throws BadRequestException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(null);
         sampleResource.getEntityDescription().getReference().setDoi(null);
@@ -689,7 +691,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createResourceReturnsNewIdentifierWhenResourceIsCreated() {
+    void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws BadRequestException {
         Publication sampleResource = randomPublication();
         Publication savedResource = createPersistedPublicationWithDoi(resourceService, sampleResource);
         assertThat(savedResource.getIdentifier(), is(not(equalTo(sampleResource.getIdentifier()))));
@@ -769,7 +771,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist() {
+    void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist() throws BadRequestException {
         Publication resource = createPersistedPublicationWithoutDoi();
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
@@ -797,7 +799,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() {
+    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() throws BadRequestException {
         Publication publication = createPersistedPublicationWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
@@ -883,7 +885,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource() {
+    void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource()
+        throws BadRequestException {
 
         var samplePublication = createUnpublishablePublication();
         var userInstance = UserInstance.fromPublication(samplePublication);
@@ -894,7 +897,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSaveDraftPublicationWithAssociatedFilesAsUnpublished() {
+    void shouldSaveDraftPublicationWithAssociatedFilesAsUnpublished() throws BadRequestException {
         var publication = draftPublicationWithoutDoiAndAllTypesOfFiles();
         var persisted = Resource.fromPublication(publication)
                             .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -1024,28 +1027,29 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return randomPublication().copy().withStatus(DRAFT);
     }
 
-    private Publication createPersistedPublicationWithoutDoi() {
+    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
 
-    private Publication createPersistedPublicationWithoutDoi(Publication publication) {
+    private Publication createPersistedPublicationWithoutDoi(Publication publication) throws BadRequestException {
         var withoutDoi = publication.copy().withDoi(null).build();
         return Resource.fromPublication(withoutDoi).persistNew(resourceService,
                                                                UserInstance.fromPublication(withoutDoi));
     }
 
-    private Publication createPersistedPublicationWithDoi(ResourceService resourceService, Publication sampleResource) {
+    private Publication createPersistedPublicationWithDoi(ResourceService resourceService, Publication sampleResource)
+        throws BadRequestException {
         return Resource.fromPublication(sampleResource).persistNew(resourceService,
                                                                    UserInstance.fromPublication(sampleResource));
     }
 
-    private Publication createPersistedPublicationWithDoi() {
+    private Publication createPersistedPublicationWithDoi() throws BadRequestException {
         return createPersistedPublicationWithDoi(resourceService, randomPublication());
     }
 
-    private Publication createUnpublishablePublication() {
+    private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
         return Resource.fromPublication(publication).persistNew(resourceService,

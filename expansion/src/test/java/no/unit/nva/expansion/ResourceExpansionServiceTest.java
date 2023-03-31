@@ -45,6 +45,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -254,7 +255,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
-    private Publication persistDraftPublicationWithoutDoi() {
+    private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
         var publication =
             randomPublication().copy()
                 .withDoi(null)

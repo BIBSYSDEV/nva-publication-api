@@ -37,6 +37,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.apache.http.HttpStatus;
@@ -72,7 +73,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException {
+    void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, BadRequestException {
         
         Publication publication = createPublication();
     
@@ -91,7 +92,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal() throws IOException {
+    void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal() throws IOException,
+                                                                                        BadRequestException {
         Publication createdPublication = createPublicationWithExternalOwner();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
@@ -166,7 +168,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublicationAndCalledIsExternalClient() throws IOException {
+    void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublicationAndCalledIsExternalClient()
+        throws IOException, BadRequestException {
         Publication createdPublication = createPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
@@ -186,7 +189,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handleRequestReturnsUnauthorizedWhenCallerIsMissingClientId() throws IOException, NotFoundException {
+    void handleRequestReturnsUnauthorizedWhenCallerIsMissingClientId()
+        throws IOException, NotFoundException, BadRequestException {
         prepareIdentityServiceClientForNotFound();
         Publication createdPublication = createPublication();
 
@@ -246,14 +250,14 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
     }
     
-    private Publication createPublication() {
+    private Publication createPublication() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance =
             UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
 
-    private Publication createPublicationWithExternalOwner() {
+    private Publication createPublicationWithExternalOwner() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         var owner = new ResourceOwner(
             getExternalClientResponse.getActingUser(),

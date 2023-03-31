@@ -51,6 +51,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -116,7 +117,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
-        throws IOException {
+        throws IOException, BadRequestException {
         //Given a publication has a public Doi
         var publication = persistPublicationWithDoi();
         var publicationUpdate = updateTitle(publication);
@@ -192,7 +193,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws IOException {
+        throws IOException, BadRequestException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);
@@ -279,7 +280,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return new DataEntryUpdateEvent(randomString(), draftRequest, approvedRequest);
     }
 
-    private Publication persistPublicationWithDoi() {
+    private Publication persistPublicationWithDoi() throws BadRequestException {
         return persistPublication(randomPublication());
     }
 
@@ -314,7 +315,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return DoiRequest.fromPublication(publication);
     }
 
-    private Publication persistPublication(Publication publication) {
+    private Publication persistPublication(Publication publication) throws BadRequestException {
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }

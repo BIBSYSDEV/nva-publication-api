@@ -21,6 +21,7 @@ dependencies {
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core
     implementation libs.aws.sdk2.secrets
+    implementation libs.aws.sdk2.httpClientApi
 
     testImplementation project(":publication-testing")
     testImplementation libs.bundles.testing

@@ -91,7 +91,7 @@ paths:
           'https://api.nva.unit.no/scopes/backend',
           'https://api.nva.unit.no/scopes/frontend',
           'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-read'
+          'https://api.nva.unit.no/scopes/third-party/publication-upsert'
         ]
       requestBody:
         required: true

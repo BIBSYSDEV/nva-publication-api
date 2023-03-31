@@ -57,7 +57,7 @@ public final class RequestUtil {
                                                           IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
         var client = attempt(() -> requestInfo.getClientId().orElseThrow())
-                         .map(clientId -> identityServiceClient.getExternalClient(clientId))
+                         .map(identityServiceClient::getExternalClient)
                          .orElseThrow(fail -> new UnauthorizedException());
 
         var resourceOwner = new ResourceOwner(
@@ -65,7 +65,7 @@ public final class RequestUtil {
             client.getCristinUrgUri()
         );
 
-        return UserInstance.create(resourceOwner, client.getCustomerUri());
+        return UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
     }
 
     public static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
