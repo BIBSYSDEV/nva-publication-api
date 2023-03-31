@@ -44,6 +44,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
@@ -53,6 +54,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -93,10 +95,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThatLocationHeaderPointsToCreatedTicket(location);
     }
 
-    @Test
-    void shouldBePossibleToCreateDoiTicketForPublicationWithPublishedMetadataOnly()
+    @ParameterizedTest(name = "should be possible to create DoiTicket for published publication")
+    @EnumSource(value = PublicationStatus.class, names = {"PUBLISHED", "PUBLISHED_METADATA"})
+    void shouldBePossibleToCreateDoiTicketForPublishedPublication(PublicationStatus publicationStatus)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED_METADATA,
+        var publication = TicketTestUtils.createPersistedPublication(publicationStatus,
                                                                      resourceService);
         var requestBody = constructDto(DoiRequest.class);
         var owner = UserInstance.fromPublication(publication);
@@ -185,7 +188,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable() throws IOException {
+    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable()
+        throws IOException, BadRequestException {
         var publication = createUnpublishablePublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(PublishingRequestCase.class);
@@ -263,6 +267,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(appender.getMessages(), containsString("Request failed:"));
     }
 
+
     @Test
     void shouldAllowUserWithDoiRequestApprovalAccessRight() throws ApiGatewayException, IOException {
         var publication = createPersistedPublishedPublication();
@@ -321,15 +326,14 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .orElseThrow();
     }
 
-
-
     private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
 
-    private Publication createUnpublishablePublication() {
+
+    private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication().copy().withEntityDescription(null).build();
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));

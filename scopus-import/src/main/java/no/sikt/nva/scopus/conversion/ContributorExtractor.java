@@ -187,9 +187,7 @@ public class ContributorExtractor {
 
     private Optional<Organization> generateAffiliationFromCristinOrganization(
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
-        return isNull(organization)
-                   ? Optional.empty()
-                   : Optional.of(new Organization.Builder()
+        return Optional.of(new Organization.Builder()
                                      .withId(organization.getId())
                                      .withLabels(organization.getLabels())
                                      .build());

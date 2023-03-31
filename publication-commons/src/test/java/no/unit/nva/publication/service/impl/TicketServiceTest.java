@@ -14,7 +14,6 @@ import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
-import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -304,6 +303,15 @@ class TicketServiceTest extends ResourcesLocalTest {
 
         assertThat(actualTicketEntry, is(equalTo(expectedTicketEntry)));
     }
+
+
+    @Test
+    void shouldThrowBadRequestExceptionWhenTryingToCompleteDoiReqeuestForDraftPublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(ticket, COMPLETED));
+    }
+
 
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve eventually consistent ticket")
@@ -619,12 +627,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(fetchedTickets, is(empty()));
     }
 
-    @Test
-    void shouldThrowBadRequestExceptionWhenTryingToCompleteDoiReqeuestForDraftPublication() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
-        assertThrows(BadRequestException.class, ()-> ticketService.updateTicketStatus(ticket, PENDING));
-    }
 
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {
         return TicketTestUtils.ticketTypeAndPublicationStatusProvider()
@@ -690,7 +692,8 @@ class TicketServiceTest extends ResourcesLocalTest {
                    .orElseThrow();
     }
 
-    private Publication persistEmptyPublication(UserInstance owner) {
+    private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException {
+
         var publication = new Publication.Builder().withResourceOwner(
                 new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
                               .withPublisher(createOrganization(owner.getOrganizationUri()))

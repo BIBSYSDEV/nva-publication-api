@@ -1,5 +1,10 @@
 package no.unit.nva.publication.ticket.test;
 
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -20,11 +25,14 @@ import org.junit.jupiter.params.provider.Arguments;
 
 public final class TicketTestUtils {
 
+    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED,
+                                                                            PUBLISHED_METADATA);
+
     public static Stream<Arguments> ticketTypeAndPublicationStatusProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class, PublicationStatus.PUBLISHED),
-                         Arguments.of(DoiRequest.class, PublicationStatus.PUBLISHED_METADATA),
-                         Arguments.of(PublishingRequestCase.class, PublicationStatus.DRAFT),
-                         Arguments.of(GeneralSupportRequest.class, PublicationStatus.DRAFT));
+        return Stream.of(Arguments.of(DoiRequest.class, PUBLISHED),
+                         Arguments.of(DoiRequest.class, PUBLISHED_METADATA),
+                         Arguments.of(PublishingRequestCase.class, DRAFT),
+                         Arguments.of(GeneralSupportRequest.class, DRAFT));
     }
 
     public static Publication createNonPersistedPublication(PublicationStatus status) {
@@ -37,7 +45,21 @@ public final class TicketTestUtils {
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
-        if (PublicationStatus.PUBLISHED.equals(status) || PublicationStatus.PUBLISHED_METADATA.equals(status)) {
+        if (isPublished(publication)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
+    public static Publication createPersistedPublicationWithDoi(PublicationStatus status,
+                                                                ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithStatusAndDoi(status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (PUBLISHED.equals(status)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
@@ -50,7 +72,7 @@ public final class TicketTestUtils {
         throws ApiGatewayException {
         var publication = randomPublicationWithStatusAndOwner(status, owner);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, owner);
-        if (PublicationStatus.PUBLISHED.equals(status) || PublicationStatus.PUBLISHED_METADATA.equals(status)) {
+        if (PUBLISHED.equals(status) || PUBLISHED_METADATA.equals(status)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
@@ -63,9 +85,20 @@ public final class TicketTestUtils {
         return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
     }
 
+    public static TicketEntry createClosedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
+                                                 TicketService ticketService)
+        throws ApiGatewayException {
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .persistNewTicket(ticketService).close();
+    }
+
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+    }
+
+    private static boolean isPublished(Publication publication) {
+        return PUBLISHED_STATUSES.contains(publication.getStatus());
     }
 
     private static void publishPublication(ResourceService resourceService, Publication persistedPublication)
@@ -83,6 +116,13 @@ public final class TicketTestUtils {
     private static Publication randomPublicationWithStatus(PublicationStatus status) {
         return PublicationGenerator.randomPublication().copy()
                    .withDoi(null)
+                   .withStatus(status)
+                   .build();
+    }
+
+    private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {
+        return PublicationGenerator.randomPublication().copy()
+                   .withDoi(randomDoi())
                    .withStatus(status)
                    .build();
     }

@@ -1,7 +1,11 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
+import java.net.URI;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -47,5 +51,26 @@ public final class RequestUtil {
     @SuppressWarnings("PMD.InvalidLogMessageFormat")
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
         return attempt(requestInfo::getNvaUsername).orElseThrow(fail -> new UnauthorizedException());
+    }
+
+    public static UserInstance createExternalUserInstance(RequestInfo requestInfo,
+                                                          IdentityServiceClient identityServiceClient)
+        throws UnauthorizedException {
+        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
+                         .map(identityServiceClient::getExternalClient)
+                         .orElseThrow(fail -> new UnauthorizedException());
+
+        var resourceOwner = new ResourceOwner(
+            client.getActingUser(),
+            client.getCristinUrgUri()
+        );
+
+        return UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
+    }
+
+    public static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
+        String owner = RequestUtil.getOwner(requestInfo);
+        URI customerId = requestInfo.getCurrentCustomer();
+        return UserInstance.create(owner, customerId);
     }
 }

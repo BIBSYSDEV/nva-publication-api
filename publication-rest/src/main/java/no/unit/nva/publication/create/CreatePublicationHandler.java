@@ -14,6 +14,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -69,7 +70,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                                Context context) throws ApiGatewayException {
         logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
         
-        UserInstance userInstance = createUserInstanceFromLoginInformation(requestInfo);
+        var userInstance = createUserInstanceFromLoginInformation(requestInfo);
         var newPublication = Optional.ofNullable(input)
                                  .map(CreatePublicationRequest::toPublication)
                                  .orElseGet(Publication::new);
@@ -88,28 +89,16 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
     }
 
-    private UserInstance createUserInstanceForExternalClientUser(RequestInfo requestInfo) throws UnauthorizedException {
-        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
-                         .map( clientId ->  identityServiceClient.getExternalClient(clientId))
-                         .orElseThrow(fail -> new UnauthorizedException());
-
-        var resourceOwner = new ResourceOwner(
-            client.getActingUser(),
-            client.getCristinUrgUri()
-        );
-
-        return UserInstance.create(resourceOwner, client.getCustomerUri());
-    }
-
     private UserInstance createUserInstanceForInternalUser(RequestInfo requestInfo) throws UnauthorizedException {
         var resourceOwner = createInternalResourceOwner(requestInfo);
+
         var customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(resourceOwner, customerId);
     }
 
     private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws UnauthorizedException {
-        return requestInfo.clientIsThirdParty() ?
-                   createUserInstanceForExternalClientUser(requestInfo)
+        return requestInfo.clientIsThirdParty()
+                   ? RequestUtil.createExternalUserInstance(requestInfo, identityServiceClient)
                    : createUserInstanceForInternalUser(requestInfo);
     }
     

@@ -9,7 +9,7 @@ import java.util.Objects;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import nva.commons.core.JacocoGenerated;
 
-@JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "cristinId", "doi", "publishedDate",
+@JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
     "publisherAuthority",
     "rightsholder",
     "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date", "language", "publication",
@@ -23,6 +23,7 @@ public class Record {
     private Customer customer;
     private URI id;
     private URI doi;
+    private URI link;
     private Type type;
     private PublisherAuthority publisherAuthority;
     private String rightsholder;
@@ -36,8 +37,18 @@ public class Record {
     private String brageLocation;
     private List<ErrorDetails> errors;
     private List<WarningDetails> warnings;
-
     public Record() {
+    }
+
+    @JacocoGenerated
+    @JsonProperty("link")
+    public URI getLink() {
+        return link;
+    }
+
+    @JacocoGenerated
+    public void setLink(URI link) {
+        this.link = link;
     }
 
     @JacocoGenerated

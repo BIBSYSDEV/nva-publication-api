@@ -11,6 +11,7 @@ dependencies {
     implementation libs.nva.identifiers
     implementation libs.nva.auth
     implementation libs.nva.secrets
+    implementation libs.nva.clients
 
 
     implementation(libs.nva.datamodel.core) {
@@ -44,6 +45,8 @@ test {
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "http://example.org"
     environment "RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES", "5"
+    environment "BACKEND_CLIENT_AUTH_URL", "localhost"
+    environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
 }
 
 

@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
@@ -36,6 +38,7 @@ public abstract class TicketEntry implements Entity {
     public static final String VIEWED_BY_FIELD = "viewedBy";
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR =
         "Ticket without reference to publication";
+    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(PUBLICATION_DETAILS_FIELD)
@@ -222,20 +225,11 @@ public abstract class TicketEntry implements Entity {
     }
 
     private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
-        if (isPublishedOrPublishedMetada(publication)) {
+        if (isPublished(publication)) {
             return DoiRequest.fromPublication(publication);
         } else {
             throw new BadRequestException(DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED);
         }
-    }
-
-    private static boolean isPublishedOrPublishedMetada(Publication publication) {
-        //apparently writing return PublicationStatus.PUBLISHED.equals(publication.getStatus()) || PublicationStatus
-        // .PUBLISHED_METADATA.equals(publication.getStatus()) makes jacoco think it's 4 different paths.
-        if (PublicationStatus.PUBLISHED.equals(publication.getStatus())) {
-            return true;
-        }
-        return PublicationStatus.PUBLISHED_METADATA.equals(publication.getStatus());
     }
 
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
@@ -275,6 +269,10 @@ public abstract class TicketEntry implements Entity {
         var entry = createOpeningCaseObject(publication);
         setServiceControlledFields(entry, identifierProvider);
         return entry;
+    }
+
+    private static boolean isPublished(Publication publication) {
+        return PUBLISHED_STATUSES.contains(publication.getStatus());
     }
 
     public static final class Constants {

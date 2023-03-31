@@ -10,15 +10,12 @@ import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 public class DoiMetadataUpdateEvent {
 
     public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
-    public static final String DELETE_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.DeleteDraftRequest";
     public static final String TOPIC = "topic";
     public static final String PUBLICATION_ID = "publicationId";
     public static final String CUSTOMER_ID = "customerId";
@@ -55,15 +52,6 @@ public class DoiMetadataUpdateEvent {
         URI customerId = extractCustomerId(newEntry);
         URI doi = extractDoi(newEntry);
         return new DoiMetadataUpdateEvent(UPDATE_DOI_EVENT_TOPIC, publicationId, customerId, doi);
-    }
-
-    public static DoiMetadataUpdateEvent createDeleteDraftDoiEvent(DoiRequest doiRequest,
-                                                                   ResourceService resourceService) {
-        var publication = doiRequest.toPublication(resourceService);
-        URI publicationId = inferPublicationId(publication);
-        URI customerId = extractCustomerId(publication);
-        URI doi = extractDoi(publication);
-        return new DoiMetadataUpdateEvent(DELETE_DRAFT_DOI_EVENT_TOPIC, publicationId, customerId, doi);
     }
 
     public static DoiMetadataUpdateEvent empty() {

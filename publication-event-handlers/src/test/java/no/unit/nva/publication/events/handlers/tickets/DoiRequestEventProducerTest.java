@@ -3,8 +3,6 @@ package no.unit.nva.publication.events.handlers.tickets;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.CUSTOMER_ID;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DELETE_DRAFT_DOI_EVENT_TOPIC;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.DOI;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.PUBLICATION_ID;
 import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -44,7 +42,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -54,6 +51,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -97,10 +95,11 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
         var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutIdentifier.setIdentifier(null);
-        var event = createEvent(null, doiRequestWithoutIdentifier);
-        Executable action = () -> handler.handleRequest(event, outputStream, context);
-        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getMessage(), is(equalTo(DOI_REQUEST_HAS_NO_IDENTIFIER)));
+        try (var event = createEvent(null, doiRequestWithoutIdentifier)) {
+            Executable action = () -> handler.handleRequest(event, outputStream, context);
+            IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+            assertThat(exception.getMessage(), is(equalTo(DOI_REQUEST_HAS_NO_IDENTIFIER)));
+        }
     }
 
     @Test
@@ -109,15 +108,16 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
         var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutResourceIdentifier.setPublicationDetails(null);
-        var event = createEvent(null, doiRequestWithoutResourceIdentifier);
-        Executable action = () -> handler.handleRequest(event, outputStream, context);
-        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
+        try (var event = createEvent(null, doiRequestWithoutResourceIdentifier)) {
+            Executable action = () -> handler.handleRequest(event, outputStream, context);
+            IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+            assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
+        }
     }
 
     @Test
     void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
-        throws IOException {
+        throws IOException, BadRequestException {
         //Given a publication has a public Doi
         var publication = persistPublicationWithDoi();
         var publicationUpdate = updateTitle(publication);
@@ -174,7 +174,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
             hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
-    
+
     @Test
     void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
@@ -193,7 +193,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws IOException {
+        throws IOException, BadRequestException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);
@@ -216,21 +216,6 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
-    }
-
-    @Test
-    void shouldSendRequestToDeleteADraftDoiWhenDraftDoiIsPresentAndDoiRequestTicketIsClosed() throws IOException {
-        var publication = persistPublicationWithDoi();
-        var oldDoiRequest = DoiRequest.fromPublication(publication);
-        var newDoiRequest = getClosedDoiRequest(publication);
-        var event = createEvent(oldDoiRequest, newDoiRequest);
-
-        handler.handleRequest(event, outputStream, context);
-
-        var actual = outputToPublicationHolder(outputStream);
-
-        assertThat(actual.getTopic(), is(equalTo(DELETE_DRAFT_DOI_EVENT_TOPIC)));
-        assertThat(actual, hasProperty(DOI, equalTo(publication.getDoi())));
     }
 
     @Test
@@ -282,14 +267,6 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
                    .getUri();
     }
 
-    private DoiRequest getClosedDoiRequest(Publication publication) {
-        var doiRequest = DoiRequest.fromPublication(publication);
-
-        doiRequest.setStatus(TicketStatus.CLOSED);
-
-        return doiRequest;
-    }
-
     private InputStream createEvent(Entity oldImage, Entity newImage) throws IOException {
         var dataEntry = createDataEntry(oldImage, newImage);
         var s3driver = new S3Driver(s3Client, "ignored");
@@ -303,7 +280,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return new DataEntryUpdateEvent(randomString(), draftRequest, approvedRequest);
     }
 
-    private Publication persistPublicationWithDoi() {
+    private Publication persistPublicationWithDoi() throws BadRequestException {
         return persistPublication(randomPublication());
     }
 
@@ -338,7 +315,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return DoiRequest.fromPublication(publication);
     }
 
-    private Publication persistPublication(Publication publication) {
+    private Publication persistPublication(Publication publication) throws BadRequestException {
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }

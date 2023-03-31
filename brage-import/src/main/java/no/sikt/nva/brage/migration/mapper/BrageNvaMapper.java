@@ -7,6 +7,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -83,6 +85,20 @@ public final class BrageNvaMapper {
                    .orElse(null);
     }
 
+    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record record) {
+        var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(record));
+        associatedArtifacts.add(extractAssociatedLink(record));
+        return associatedArtifacts.stream()
+                   .filter(Objects::nonNull)
+                   .collect(Collectors.toList());
+    }
+
+    private static AssociatedLink extractAssociatedLink(Record record) {
+        return nonNull(record.getLink())
+                   ? new AssociatedLink(record.getLink(), null, null)
+                   : null;
+    }
+
     private static Set<AdditionalIdentifier> extractCristinIdentifier(Record record) {
         if (isNull(record.getCristinId())) {
             return Set.of();
@@ -121,11 +137,11 @@ public final class BrageNvaMapper {
         return new ResourceOwner(resourceOwner.getOwner(), resourceOwner.getOwnerAffiliation());
     }
 
-    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record record) {
+    private static List<AssociatedArtifact> extractAssociatedFiles(Record record) {
         return Optional.ofNullable(record.getContentBundle())
                    .map(ResourceContent::getContentFiles)
                    .map(list -> convertFilesToAssociatedArtifact(list, record))
-                   .orElse(null);
+                   .orElse(Collections.emptyList());
     }
 
     private static List<AssociatedArtifact> convertFilesToAssociatedArtifact(List<ContentFile> files, Record record) {

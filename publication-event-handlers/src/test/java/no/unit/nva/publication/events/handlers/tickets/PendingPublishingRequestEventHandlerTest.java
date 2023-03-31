@@ -44,6 +44,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -211,7 +212,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return resourceServiceMock;
     }
 
-    private Publication createUnpublishablePublication() {
+    private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
         return Resource.fromPublication(publication).persistNew(resourceService,
@@ -301,7 +302,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
     
-    private Publication createPublication() {
+    private Publication createPublication() throws BadRequestException {
         var publication = randomPublication();
         publication.setStatus(PublicationStatus.DRAFT);
         publication.setPublisher(new Organization.Builder().withId(CUSTOMER_ID).build());

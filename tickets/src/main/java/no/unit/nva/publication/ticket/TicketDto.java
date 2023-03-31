@@ -39,6 +39,7 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String MESSAGES_FIELD = "messages";
     public static final String VIEWED_BY = "viewedBy";
     public static final String PUBLICATION_FIELD = "publication";
+    public static final String ASSIGNEE_FIELD = "assignee";
     @JsonProperty(PUBLICATION_FIELD)
     private final PublicationSummary publicationSummary;
     @JsonProperty(STATUS_FIELD)
@@ -47,26 +48,30 @@ public abstract class TicketDto implements JsonSerializable {
     private final Set<User> viewedBy;
     @JsonProperty(MESSAGES_FIELD)
     private final List<MessageDto> messages;
+    @JsonProperty(ASSIGNEE_FIELD)
+    private final User assignee;
     
     protected TicketDto(TicketStatus status,
                         List<MessageDto> messages,
                         Set<User> viewedBy,
-                        PublicationSummary publicationSummary) {
+                        PublicationSummary publicationSummary,
+                        User assignee) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
         this.publicationSummary = publicationSummary;
+        this.assignee = assignee;
     }
     
     public static TicketDto fromTicket(TicketEntry ticket) {
-        return fromTicket(ticket, Collections.emptyList());
+        return fromTicket(ticket, Collections.emptyList(), null);
     }
     
-    public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages) {
-        return create(ticket, messages);
+    public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages, User assignee) {
+        return create(ticket, messages, assignee);
     }
     
-    public static TicketDto create(TicketEntry ticket, Collection<Message> messages) {
+    public static TicketDto create(TicketEntry ticket, Collection<Message> messages, User assignee) {
         var messageDtos = messages.stream()
                               .map(MessageDto::fromMessage)
                               .collect(Collectors.toList());
@@ -79,6 +84,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationSummary(createPublicationSummary(ticket))
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
+                   .withAssignee(assignee)
                    .build(ticket.getClass());
     }
     
@@ -96,7 +102,11 @@ public abstract class TicketDto implements JsonSerializable {
     public PublicationSummary getPublicationSummary() {
         return publicationSummary;
     }
-    
+
+    public User getAssignee() {
+        return assignee;
+    }
+
     public abstract Class<? extends TicketEntry> ticketType();
     
     public abstract TicketEntry toTicket();
@@ -134,6 +144,7 @@ public abstract class TicketDto implements JsonSerializable {
         private List<MessageDto> messages;
         private ViewedBy viewedBy;
         private PublicationSummary publicationSummary;
+        private User assignee;
         
         private Builder() {
         }
@@ -167,6 +178,11 @@ public abstract class TicketDto implements JsonSerializable {
             this.messages = messages;
             return this;
         }
+
+        public Builder withAssignee(User assignee) {
+            this.assignee = assignee;
+            return this;
+        }
         
         public Builder withPublicationSummary(PublicationSummary publicationSummary) {
             this.publicationSummary = publicationSummary;
@@ -187,7 +203,8 @@ public abstract class TicketDto implements JsonSerializable {
                     publicationSummary,
                     id,
                     messages,
-                    viewedBy);
+                    viewedBy,
+                    assignee);
             }
             throw new RuntimeException("Unsupported type");
         }
@@ -205,7 +222,8 @@ public abstract class TicketDto implements JsonSerializable {
                 publicationSummary,
                 id,
                 messages,
-                viewedBy);
+                viewedBy,
+                assignee);
         }
         
         private DoiRequestDto createDoiRequestDto() {
@@ -216,7 +234,8 @@ public abstract class TicketDto implements JsonSerializable {
                 publicationSummary,
                 id,
                 messages,
-                viewedBy);
+                viewedBy,
+                assignee);
         }
     }
 }

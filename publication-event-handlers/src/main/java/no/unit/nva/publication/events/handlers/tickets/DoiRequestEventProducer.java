@@ -18,7 +18,6 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.doi.requirements.DoiResourceRequirements;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
@@ -91,23 +90,19 @@ public class DoiRequestEventProducer
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
         var newEntry = input.getNewData();
 
-        if (newEntry instanceof Resource && DoiResourceRequirements.publicationSatisfiesDoiRequirements(
-            ((Resource) newEntry).toPublication())) {
+        if (newEntry instanceof Resource && ((Resource) newEntry).toPublication().satisfiesFindableDoiRequirements()) {
             return createDoiMetadataUpdateEvent((Resource) newEntry);
         }
         if (newEntry instanceof DoiRequest) {
-            return createDoiMetadataUpdateEvent((DoiRequest) input.getOldData(), (DoiRequest) newEntry);
+            return createDoiMetadataUpdateEvent((DoiRequest) newEntry);
         }
         return EMPTY_EVENT;
     }
 
-    private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(DoiRequest oldEntry, DoiRequest newEntry) {
+    private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent( DoiRequest newEntry) {
         if (isDoiRequestApproval(newEntry)
-            && DoiResourceRequirements.publicationSatisfiesDoiRequirements(
-            newEntry.toPublication(resourceService))) {
+            && newEntry.toPublication(resourceService).satisfiesFindableDoiRequirements()) {
             return createEventForMakingDoiFindable(newEntry);
-        } else if (isDoiRequestRejection(oldEntry, newEntry)) {
-            return DoiMetadataUpdateEvent.createDeleteDraftDoiEvent(newEntry, resourceService);
         }
         return EMPTY_EVENT;
     }
@@ -126,12 +121,6 @@ public class DoiRequestEventProducer
 
     private boolean isDoiRequestApproval(DoiRequest newEntry) {
         return matchStatus(newEntry, TicketStatus.COMPLETED);
-    }
-
-    private boolean isDoiRequestRejection(DoiRequest oldEntry, DoiRequest newEntry) {
-        var oldEntryIsPending = matchStatus(oldEntry, TicketStatus.PENDING);
-        var newEntryIsRejected = matchStatus(newEntry, TicketStatus.CLOSED);
-        return oldEntryIsPending && newEntryIsRejected;
     }
 
     private Boolean matchStatus(DoiRequest oldEntry, TicketStatus approved) {

@@ -3,7 +3,7 @@ package no.sikt.nva.brage.migration.testutils.type;
 import static java.util.Map.entry;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.brage.migration.record.ErrorDetails.Error.MANY_UNMAPPABLE_TYPES;
+import static no.sikt.nva.brage.migration.record.ErrorDetails.Error.MULTIPLE_UNMAPPABLE_TYPES;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +68,7 @@ public final class TypeMapper {
         } else {
             for (BrageType type : brageTypes) {
                 if (hasValidType(type.toString())) {
-                    logger.error(String.valueOf(new ErrorDetails(MANY_UNMAPPABLE_TYPES, inputTypes)));
+                    logger.error(String.valueOf(new ErrorDetails(MULTIPLE_UNMAPPABLE_TYPES, inputTypes)));
                     return TYPE_MAP.get(Collections.singleton(type)).getValue();
                 } else {
                     return null;

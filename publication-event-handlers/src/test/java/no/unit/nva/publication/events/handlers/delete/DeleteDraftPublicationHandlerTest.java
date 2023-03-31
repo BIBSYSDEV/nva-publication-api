@@ -19,6 +19,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,7 +93,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         return new ByteArrayInputStream(event.getBytes());
     }
     
-    private Publication insertPublicationWithStatus(PublicationStatus status) {
+    private Publication insertPublicationWithStatus(PublicationStatus status) throws BadRequestException {
         Publication publicationToCreate = publicationWithoutIdentifier().copy()
                                               .withDoi(null)
                                               .build();
