@@ -53,24 +53,25 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class CreateTicketHandlerTest extends TicketTestLocal {
-    
+
     private CreateTicketHandler handler;
-    
+
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
     }
-    
+
     @BeforeEach
     public void setup() {
         super.init();
         this.handler = new CreateTicketHandler(ticketService, resourceService);
     }
-    
+
     @ParameterizedTest
     @DisplayName("should persist ticket when publication exists, user is publication owner and "
                  + "publication meets ticket creation criteria")
@@ -83,20 +84,21 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var owner = UserInstance.fromPublication(publication);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        
+
         var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
-        
+
         assertThatLocationHeaderHasExpectedFormat(publication, location);
         assertThatLocationHeaderPointsToCreatedTicket(location);
     }
 
-    @Test
-    void shouldBePossibleToCreateDoiTicketForPublicationWithPublishedMetadataOnly()
+    @ParameterizedTest(name = "should be possible to create DoiTicket for published publication")
+    @EnumSource(value = PublicationStatus.class, names = {"PUBLISHED", "PUBLISHED_METADATA"})
+    void shouldBePossibleToCreateDoiTicketForPublishedPublication(PublicationStatus publicationStatus)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED_METADATA,
+        var publication = TicketTestUtils.createPersistedPublication(publicationStatus,
                                                                      resourceService);
         var requestBody = constructDto(DoiRequest.class);
         var owner = UserInstance.fromPublication(publication);
@@ -108,7 +110,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThatLocationHeaderHasExpectedFormat(publication, location);
         assertThatLocationHeaderPointsToCreatedTicket(location);
     }
-    
+
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should should not allow creating a ticket for non existing publication")
     @MethodSource("ticketEntryProvider")
@@ -119,11 +121,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var owner = UserInstance.fromPublication(publication);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should not allow users to create tickets for publications they do not own")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -135,11 +137,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
         handler.handleRequest(input, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should not allow users to create tickets for publications belonging to different organization"
                  + "than the one they are currently logged in to")
@@ -152,11 +154,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var user = UserInstance.create(publication.getResourceOwner().getOwner(), randomUri());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
         handler.handleRequest(input, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should not allow anonymous users to create tickets")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -169,7 +171,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
-    
+
     @Test
     void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsPublished()
         throws ApiGatewayException, IOException {
@@ -179,11 +181,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var requestBody = constructDto(PublishingRequestCase.class);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(input, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
     }
-    
+
     @Test
     void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable()
         throws IOException, BadRequestException {
@@ -195,7 +197,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -210,7 +212,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         TicketEntry ticket = fetchTicket(response);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should mark ticket as Unread for the Curators when publication owner creates new ticket")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -225,7 +227,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         TicketEntry ticket = fetchTicket(response);
         assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
     }
-    
+
     @DisplayName("should update existing DoiRequest when new DOI is requested but a DoiRequest that has not been "
                  + "fulfilled already exists")
     @Test
@@ -234,7 +236,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistedPublishedPublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(DoiRequest.class);
-        
+
         var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(firstRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -263,18 +265,18 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(input, output, CONTEXT);
         assertThat(appender.getMessages(), containsString("Request failed:"));
     }
-    
+
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
         return new SortableIdentifier(UriWrapper.fromUri(location).getLastPathElement());
     }
-    
+
     private static void assertThatLocationHeaderHasExpectedFormat(Publication publication, URI location) {
         var ticketIdentifier = extractTicketIdentifierFromLocation(location);
         var publicationIdentifier = extractPublicationIdentifierFromLocation(location);
         assertThat(publicationIdentifier, is(equalTo(publication.getIdentifier())));
         assertThat(ticketIdentifier, is(not(nullValue())));
     }
-    
+
     private static SortableIdentifier extractPublicationIdentifierFromLocation(URI location) {
         return UriWrapper.fromUri(location)
                    .getParent()
@@ -283,20 +285,20 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .map(SortableIdentifier::new)
                    .orElseThrow();
     }
-    
+
     private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
-    
+
     private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication().copy().withEntityDescription(null).build();
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
         return publication;
     }
-    
+
     private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)
         throws NotFoundException {
         var publication = fetchPublication(ticketUri);
@@ -305,12 +307,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(ticket.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(ticket.getIdentifier(), is(equalTo(ticketIdentifier)));
     }
-    
+
     private Publication fetchPublication(URI ticketUri) throws NotFoundException {
         var publicationIdentifier = extractPublicationIdentifierFromLocation(ticketUri);
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
-    
+
     private TicketDto constructDto(Class<? extends TicketEntry> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequestDto.empty();
@@ -319,10 +321,10 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequestDto.empty();
         }
-        
+
         throw new RuntimeException("Unrecognized ticket type");
     }
-    
+
     private Publication createPersistedPublishedPublication() throws ApiGatewayException {
         var publication = randomPublication();
         publication.setDoi(null); // for creating DoiRequests
@@ -331,7 +333,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         return resourceService.getPublication(publication);
     }
-    
+
     private InputStream createHttpTicketCreationRequest(TicketDto ticketDto,
                                                         Publication publication,
                                                         UserInstance userCredentials)
@@ -343,7 +345,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withCustomerId(userCredentials.getOrganizationUri())
                    .build();
     }
-    
+
     private InputStream createAnonymousHttpTicketCreationRequest(TicketDto ticketDto,
                                                                  Publication publication)
         throws JsonProcessingException {
