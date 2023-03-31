@@ -42,6 +42,7 @@ public class DoiRequest extends TicketEntry {
     public static final Set<PublicationStatus> ACCEPTABLE_PUBLICATION_STATUSES = Set.of(PublicationStatus.PUBLISHED,
                                                                                         PublicationStatus.PUBLISHED_METADATA,
                                                                                         PublicationStatus.DRAFT);
+    public static final String DOI_REQUEST_APPROVAL_FAILURE = "Cannot approve DoiRequest for non-published publication";
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
     @JsonProperty(STATUS_FIELD)
@@ -181,7 +182,9 @@ public class DoiRequest extends TicketEntry {
     @JacocoGenerated
     @Override
     public void validateCompletionRequirements(Publication publication) {
-        //already checked upstreams at this point.
+        if(!publication.satisfiesFindableDoiRequirements()) {
+            throw new InvalidTicketStatusTransitionException(DOI_REQUEST_APPROVAL_FAILURE);
+        }
     }
 
     @Override
