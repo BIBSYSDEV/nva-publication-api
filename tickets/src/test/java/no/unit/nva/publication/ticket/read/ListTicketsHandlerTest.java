@@ -106,6 +106,6 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     
     private TicketDto constructDto(TicketEntry ticketEntry) {
         var messages = ticketEntry.fetchMessages(ticketService);
-        return TicketDto.fromTicket(ticketEntry, messages);
+        return TicketDto.fromTicket(ticketEntry, messages, null);
     }
 }
