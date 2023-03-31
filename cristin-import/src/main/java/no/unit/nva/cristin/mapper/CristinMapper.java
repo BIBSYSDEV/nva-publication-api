@@ -49,7 +49,7 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects", "PMD.ForLoopCanBeForeach"})
 public class CristinMapper extends CristinMappingModule {
 
     public static final String EMPTY_STRING = "";
@@ -232,15 +232,27 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private List<Contributor> extractContributors() {
-        var c = Optional.ofNullable(cristinObject.getContributors())
-                    .map();
-        var contributors = Optional.ofNullable(cristinObject.getContributors())
-                   .orElse(List.of())
-                   .stream()
-                   .map(attempt(CristinContributor -> CristinContributor.toNvaContributorWithSequence()))
+        var contributors = Optional.ofNullable(cristinObject.getContributors());
+        return contributors.isPresent()
+                   ? contributorsWithUpdatedSequenceNumbers(contributors.get())
+                   : Collections.emptyList();
+    }
+
+    private List<Contributor> contributorsWithUpdatedSequenceNumbers(List<CristinContributor> cristinContributors) {
+        addContributorNumberIfMissing(cristinContributors);
+        return cristinContributors.stream()
+                   .map(attempt(CristinContributor::toNvaContributor))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
+    }
 
+    private static void addContributorNumberIfMissing(List<CristinContributor> cristinContributors) {
+        Collections.sort(new ArrayList<>(cristinContributors));
+        for (int i = 0; i < cristinContributors.size(); i++) {
+            if(isNull(cristinContributors.get(i).getContributorOrder())) {
+                cristinContributors.get(i).setContributorOrder(cristinContributors.get(i - 1).getContributorOrder() + 1);
+            }
+        }
     }
 
     private List<URI> generateNvaHrcsCategoriesAndActivities() {

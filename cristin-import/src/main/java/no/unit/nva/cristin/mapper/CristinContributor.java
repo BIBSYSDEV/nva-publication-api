@@ -34,7 +34,7 @@ import nva.commons.core.paths.UriWrapper;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class CristinContributor {
+public class CristinContributor implements Comparable<CristinContributor> {
 
     public static final String NAME_DELIMITER = ", ";
     public static final String MISSING_ROLE_ERROR = "Affiliation without Role";
@@ -75,21 +75,23 @@ public class CristinContributor {
                    .build();
     }
 
-    public Contributor toNvaContributorWithSequence(int sequenceNumber) {
+    public void setContributorOrder(Integer orderNumber) {
+        this.contributorOrder = orderNumber;
+    }
 
-        String fullName = constructFullName();
-        Identity identity = new Identity.Builder()
-                                .withName(fullName)
-                                .withId(constructId())
-                                .build();
-
-        return new Contributor.Builder()
-                   .withIdentity(identity)
-                   .withCorrespondingAuthor(false)
-                   .withAffiliations(extractAffiliations())
-                   .withRole(extractRoles())
-                   .withSequence(sequenceNumber)
-                   .build();
+    @Override
+    public int compareTo(CristinContributor contributor) {
+        if (isNull(contributor.getContributorOrder()) && isNull(this.getContributorOrder())) {
+            return 0;
+        }
+        if (isNull(contributor.getContributorOrder())) {
+            return -1;
+        }
+        if (isNull(this.getContributorOrder())) {
+            return 1;
+        } else {
+            return this.contributorOrder.compareTo(contributor.getContributorOrder());
+        }
     }
 
     private String constructFullName() {

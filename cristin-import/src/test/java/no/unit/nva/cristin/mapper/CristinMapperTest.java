@@ -17,7 +17,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
 import java.nio.file.Path;
@@ -25,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -284,13 +284,15 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     void shouldMapCristinContributorsWithoutSequenceNumberToNvaContributorsWithUniqueSequenceNumber() {
-        var singleCristinObject = cristinObjectWithcontributorsWithoutSequenceNumber(getSingleCristinObject());
+        var singleCristinObject = cristinObjectWithSomeContributorsWithoutSequenceNumber(getSingleCristinObject());
         List<Contributor> actualContributors = singleCristinObject.toPublication().getEntityDescription().getContributors();
         List<Integer> actualSequenceNumbers = actualContributors.stream()
                                     .map(Contributor::getSequence)
                                     .collect(Collectors.toList());
-        assertEquals(actualContributors.size(), new HashSet<>(actualSequenceNumbers).size());
-
+        var sequenceNumberSet = new HashSet<>(actualSequenceNumbers);
+        assertThat(actualContributors.size(), is(equalTo(sequenceNumberSet.size())));
+        assertThat(actualSequenceNumbers, is(equalTo(new ArrayList<>(sequenceNumberSet))));
+        assertThat(actualContributors, not(hasItem(nullValue())));
     }
 
     @Test
@@ -455,9 +457,8 @@ class CristinMapperTest extends AbstractCristinImportTest {
         return cristinObjects(1).collect(Collectors.toList()).get(0);
     }
 
-    private CristinObject cristinObjectWithcontributorsWithoutSequenceNumber(CristinObject cristinObject) {
-        cristinObject.getContributors()
-            .forEach(contributor -> contributor.setContributorOrder(0));
+    private CristinObject cristinObjectWithSomeContributorsWithoutSequenceNumber(CristinObject cristinObject) {
+        cristinObject.getContributors().get(cristinObject.getContributors().size() - 1).setContributorOrder(null);
         return cristinObject;
     }
 
