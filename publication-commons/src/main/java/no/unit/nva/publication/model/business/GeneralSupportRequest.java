@@ -121,7 +121,12 @@ public class GeneralSupportRequest extends TicketEntry {
     public URI getCustomerId() {
         return this.customerId;
     }
-    
+
+    @Override
+    public PublicationWorkflow getWorkflow() {
+        return PublicationWorkflow.UNSET;
+    }
+
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }

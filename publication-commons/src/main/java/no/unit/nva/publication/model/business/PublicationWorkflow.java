@@ -1,14 +1,15 @@
-package no.unit.nva.publication.events.handlers.tickets.identityservice;
+package no.unit.nva.publication.model.business;
 
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import nva.commons.core.SingletonCollector;
 
 public enum PublicationWorkflow {
-    
+    UNSET("null"),
     REGISTRATOR_PUBLISHES_METADATA_ONLY("RegistratorPublishesMetadataOnly"),
     REGISTRATOR_PUBLISHES_METADATA_AND_FILES("RegistratorPublishesMetadataAndFiles"),
     REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES("RegistratorRequiresApprovalForMetadataAndFiles");
@@ -40,5 +41,15 @@ public enum PublicationWorkflow {
                               .map(PublicationWorkflow::toString)
                               .collect(joining(DELIMITER));
         return new IllegalArgumentException(format(ERROR_MESSAGE_TEMPLATE, value, validValues));
+    }
+
+    @JsonIgnore
+    public Boolean registratorsAllowedToPublishDataAndMetadata() {
+        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(this);
+    }
+
+    @JsonIgnore
+    public Boolean registratorsAllowedToPublishMetadata() {
+        return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(this);
     }
 }

@@ -13,10 +13,7 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(PublishingRequestDao.TYPE)
@@ -25,7 +22,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "c";
     public static final String TYPE = "PublishingRequestCase";
-    
+
     @JacocoGenerated
     public PublishingRequestDao() {
         super();
@@ -78,7 +75,11 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
                        publishingRequestInsertionEntry,
                        publishingRequestUniquenessEntry);
     }
-    
+
+    public PublicationWorkflow getPublicationWorkflow() {
+        return  getData().getWorkflow();
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {

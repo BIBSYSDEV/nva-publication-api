@@ -251,7 +251,8 @@ class DaoTest extends ResourcesLocalTest {
             startsWith("SK"),
             startsWith("data"),
             startsWith("type"),
-            startsWith("version")))
+            startsWith("version"),
+            startsWith("publicationWorkflow")))
         );
     }
     

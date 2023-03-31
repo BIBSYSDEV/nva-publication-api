@@ -11,13 +11,12 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.events.handlers.tickets.identityservice.PublicationWorkflow;
+import no.unit.nva.publication.model.business.PublicationWorkflow;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -81,6 +80,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationSummary(createPublicationSummary(ticket))
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
+                   .withPublicationWorkflow(ticket.getWorkflow())
                    .build(ticket.getClass());
     }
     
@@ -212,7 +212,6 @@ public abstract class TicketDto implements JsonSerializable {
                 modifiedDate,
                 identifier,
                 publicationSummary,
-                id,
                 messages,
                 viewedBy,
                 workflow);

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.external.services;
 
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.IOException;
 import java.net.URI;
@@ -49,6 +50,16 @@ public class AuthorizedBackendUriRetriever implements RawContentRetriever {
              new SecretsReader(),
              backendClientAuthUrl,
              backendClientSecretName);
+    }
+
+    @Override
+    public <T> Optional<T> getDto(URI uri, Class<T> valueType) {
+        var request = HttpRequest.newBuilder(uri).GET();
+        var responseBodyHandler = BodyHandlers.ofString(StandardCharsets.UTF_8);
+        return attempt(this::getAuthorizedBackendClient)
+                .map(backendClient -> backendClient.send(request, responseBodyHandler))
+                .map(response -> dtoObjectMapper.readValue(response.body(), valueType))
+                .toOptional();
     }
 
     @Override

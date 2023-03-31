@@ -11,13 +11,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -45,7 +39,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     private Set<User> viewedBy;
     @JsonProperty(PUBLICATION_FIELD)
     private PublicationSummary publication;
-    
+
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
                                            ResourceExpansionService expansionService,

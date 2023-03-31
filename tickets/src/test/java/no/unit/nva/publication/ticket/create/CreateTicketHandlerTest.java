@@ -5,6 +5,7 @@ import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -16,6 +17,10 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,23 +28,24 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.GeneralSupportRequestDto;
 import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
+import no.unit.nva.stubs.FakeSecretsManagerClient;
+import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -48,6 +54,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
+import nva.commons.secrets.SecretsReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,9 +65,11 @@ import org.zalando.problem.Problem;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class CreateTicketHandlerTest extends TicketTestLocal {
-    
+
     private CreateTicketHandler handler;
-    
+    private UriRetriever uriRetriever;
+
+
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
     }
@@ -68,7 +77,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new CreateTicketHandler(ticketService, resourceService, httpClient, secretsReader);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.handler = new CreateTicketHandler(ticketService, resourceService,uriRetriever);
     }
     
     @ParameterizedTest
@@ -78,6 +88,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
 
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
         var owner = UserInstance.fromPublication(publication);
@@ -157,6 +169,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsPublished()
         throws ApiGatewayException, IOException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
         var publication = createPersistedPublishedPublication();
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var owner = UserInstance.fromPublication(publication);
@@ -171,6 +185,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable()
         throws IOException, BadRequestException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
         var publication = createUnpublishablePublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(PublishingRequestCase.class);
@@ -185,6 +201,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
+
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(ticketType);
@@ -200,6 +219,10 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnReadForTheCuratorsWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
+
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(ticketType);
@@ -269,8 +292,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
     
     private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
-        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
-                                                          .getLastPathElement());
+        var ticketIdentifier = new SortableIdentifier(
+                UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER)).getLastPathElement()
+        );
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
     

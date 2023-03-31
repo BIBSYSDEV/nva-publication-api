@@ -238,6 +238,11 @@ public class Resource implements Entity {
     }
 
     @Override
+    public PublicationWorkflow getWorkflow() {
+        return PublicationWorkflow.UNSET;
+    }
+
+    @Override
     public Dao toDao() {
         return new ResourceDao(this);
     }

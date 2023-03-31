@@ -6,7 +6,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import no.unit.nva.publication.events.handlers.tickets.identityservice.PublicationWorkflow;
+import no.unit.nva.publication.model.business.PublicationWorkflow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;

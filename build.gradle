@@ -24,6 +24,8 @@ subprojects {
     }
 
     test {
+        environment "BACKEND_CLIENT_AUTH_URL", "localhost"
+        environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
         dependsOn copyNativeDeps
         systemProperty "java.library.path", 'build/dynamodb-local'
     }

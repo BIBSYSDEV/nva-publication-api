@@ -1,18 +1,8 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -22,6 +12,13 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.Objects;
+
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.*;
+import static nva.commons.core.attempt.Try.attempt;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestCase.TYPE)
@@ -51,7 +48,8 @@ public class PublishingRequestCase extends TicketEntry {
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
-    
+    private PublicationWorkflow workflow;
+
     public PublishingRequestCase() {
         super();
     }
@@ -64,11 +62,11 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
-
-//        openingCaseObject.setPublicationWorkflow();
+        openingCaseObject.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
         return openingCaseObject;
     }
-    
+
+
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
                                                           SortableIdentifier publicationIdentifier,
                                                           SortableIdentifier publishingRequestIdentifier) {
@@ -124,6 +122,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setOwner(this.getOwner());
         copy.setViewedBy(this.getViewedBy());
         copy.setPublicationDetails(this.getPublicationDetails());
+        copy.setWorkflow(this.getWorkflow());
         return copy;
     }
     
@@ -205,12 +204,21 @@ public class PublishingRequestCase extends TicketEntry {
     public void setOwner(User owner) {
         this.owner = owner;
     }
-    
+
+    public void setWorkflow(PublicationWorkflow workflow) {
+        this.workflow = workflow;
+    }
+
+    public PublicationWorkflow getWorkflow() {
+        return workflow;
+    }
+
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
-            getCreatedDate());
+            getCreatedDate(),getWorkflow());
     }
     
     @Override
@@ -227,7 +235,8 @@ public class PublishingRequestCase extends TicketEntry {
                && getStatus() == that.getStatus()
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+                && Objects.equals(getModifiedDate(), that.getModifiedDate())
+                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getCreatedDate(), that.getCreatedDate());
     }
     
@@ -248,4 +257,5 @@ public class PublishingRequestCase extends TicketEntry {
         throws InvalidPublicationException {
         throw new InvalidPublicationException(RESOURCE_LACKS_REQUIRED_DATA + resource.getIdentifier().toString());
     }
+
 }

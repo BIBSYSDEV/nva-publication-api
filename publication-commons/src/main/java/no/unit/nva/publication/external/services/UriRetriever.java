@@ -1,5 +1,6 @@
 package no.unit.nva.publication.external.services;
 
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -31,6 +32,15 @@ public class UriRetriever implements RawContentRetriever {
                    .map(HttpResponse::body)
                    .toOptional();
     }
+
+    @Override
+    public <T> Optional<T> getDto(URI uri, Class<T> valueType) {
+        var request = HttpRequest.newBuilder(uri).build();
+        var responseBodyHandler = BodyHandlers.ofString(StandardCharsets.UTF_8);
+
+        return attempt(() -> httpClient.send(request, responseBodyHandler))
+                .map(response -> dtoObjectMapper.readValue(response.body(), valueType))
+                .toOptional();    }
 
     private static HttpClient newHttpClient() {
         return HttpClient.newHttpClient();

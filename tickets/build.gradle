@@ -12,7 +12,6 @@ dependencies {
     implementation libs.nva.secrets
     implementation libs.nva.core
     implementation libs.nva.json
-    implementation libs.nva.auth
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
@@ -25,8 +24,6 @@ dependencies {
     implementation libs.guava
     implementation libs.zalando
     implementation libs.bundles.logging
-    implementation project(path: ':publication-event-handlers')
-    implementation project(path: ':publication-event-handlers')
 
     runtimeOnly libs.jackson.core
 

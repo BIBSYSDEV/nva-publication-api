@@ -175,7 +175,12 @@ public class Message implements Entity, JsonSerializable {
     public URI getCustomerId() {
         return customerId;
     }
-    
+
+    @Override
+    public PublicationWorkflow getWorkflow() {
+        return PublicationWorkflow.UNSET;
+    }
+
     @Override
     public Dao toDao() {
         return new MessageDao(this);

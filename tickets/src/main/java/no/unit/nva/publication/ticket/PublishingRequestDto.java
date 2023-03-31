@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.events.handlers.tickets.identityservice.PublicationWorkflow;
+import no.unit.nva.publication.model.business.PublicationWorkflow;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -22,24 +22,20 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestDto.TYPE)
 public class PublishingRequestDto extends TicketDto {
-    
     public static final String TYPE = "PublishingRequest";
 
     private final Instant createdDate;
     private final Instant modifiedDate;
     private final SortableIdentifier identifier;
-    private final URI id;
     private final PublicationWorkflow workflow;
 
-
-    @ConstructorProperties({"status","createdDate","modifiedDate","identifier","publication","id",
-        "messages","viewedBy", "publicationWorkflow"})
+    @ConstructorProperties({"status","createdDate","modifiedDate","identifier","publication","messages",
+            "viewedBy", "publicationWorkflow"})
     public PublishingRequestDto(TicketStatus status,
                                 Instant createdDate,
                                 Instant modifiedDate,
                                 SortableIdentifier identifier,
                                 PublicationSummary publication,
-                                URI id,
                                 List<MessageDto> messages,
                                 Set<User> viewedBy,
                                 PublicationWorkflow publicationWorkflow) {
@@ -47,12 +43,11 @@ public class PublishingRequestDto extends TicketDto {
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
-        this.id = id;
         this.workflow = publicationWorkflow;
     }
     
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null);
+        return new PublishingRequestDto(null, null, null, null, null, null, null, PublicationWorkflow.UNSET);
     }
     
     public Instant getCreatedDate() {
@@ -85,6 +80,7 @@ public class PublishingRequestDto extends TicketDto {
         ticket.setIdentifier(getIdentifier());
         ticket.setPublicationDetails(PublicationDetails.create(getPublicationSummary()));
         ticket.setViewedBy(getViewedBy());
+        ticket.setWorkflow(getWorkflow());
         return ticket;
     }
     
@@ -92,7 +88,7 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationSummary().getPublicationId(), id, getMessages(), getWorkflow());
+            getPublicationSummary().getPublicationId(), getMessages(), getWorkflow());
     }
     
     @Override
@@ -111,7 +107,6 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getPublicationSummary().getPublicationId(),
             that.getPublicationSummary().getPublicationId())
-               && Objects.equals(id, that.id)
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getMessages(), that.getMessages());
     }

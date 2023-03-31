@@ -12,12 +12,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -36,6 +31,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private User owner;
     private Instant modifiedDate;
     private Instant createdDate;
+    private PublicationWorkflow workflow;
     
     public ExpandedPublishingRequest() {
         super();
@@ -50,6 +46,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
         var messages = publishingRequestCase.fetchMessages(ticketService);
+
         return createRequest(publishingRequestCase, publication, organizationIds, messages);
     }
     
@@ -79,9 +76,18 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         publishingRequest.setModifiedDate(this.getModifiedDate());
         publishingRequest.setCreatedDate(this.getCreatedDate());
         publishingRequest.setStatus(this.getStatus());
+        publishingRequest.setWorkflow(this.getWorkflow());
         return publishingRequest;
     }
-    
+
+    public PublicationWorkflow getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(PublicationWorkflow workflow) {
+        this.workflow = workflow;
+    }
+
     @Override
     public TicketStatus getStatus() {
         return status;
@@ -143,6 +149,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setOwner(dataEntry.getOwner());
         entry.setMessages(messages);
         entry.setViewedBy(dataEntry.getViewedBy());
+        entry.setWorkflow(dataEntry.getWorkflow());
         return entry;
     }
     
