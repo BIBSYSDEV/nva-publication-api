@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMA
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -26,6 +27,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -284,15 +286,41 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     void shouldMapCristinContributorsWithoutSequenceNumberToNvaContributorsWithUniqueSequenceNumber() {
-        var singleCristinObject = cristinObjectWithSomeContributorsWithoutSequenceNumber(getSingleCristinObject());
-        List<Contributor> actualContributors = singleCristinObject.toPublication().getEntityDescription().getContributors();
-        List<Integer> actualSequenceNumbers = actualContributors.stream()
-                                    .map(Contributor::getSequence)
-                                    .collect(Collectors.toList());
-        var sequenceNumberSet = new HashSet<>(actualSequenceNumbers);
+        var singleCristinObject = cristinObjectWithSomeContributorsWithoutSeqNumber(getSingleCristinObject());
+        List<Contributor> actualContributors = getContributors(singleCristinObject);
+        List<Integer> actualSequenceNumbers = getSequnceNumberList(actualContributors);
+        var sequenceNumberSet = getSequenceNumberSet(actualSequenceNumbers);
         assertThat(actualContributors.size(), is(equalTo(sequenceNumberSet.size())));
         assertThat(actualSequenceNumbers, is(equalTo(new ArrayList<>(sequenceNumberSet))));
         assertThat(actualContributors, not(hasItem(nullValue())));
+    }
+
+    @Test
+    void shouldMapCristinContributorsWhenEveryContributorIsMissingSequenceNumber() {
+        var singleCristinObject = cristinObjectWhereEveryContributorIsMissingSeqNumber(getSingleCristinObject());
+        List<Contributor> actualContributors = getContributors(singleCristinObject);
+        List<Integer> actualSequenceNumbers = getSequnceNumberList(actualContributors);
+        var sequenceNumberSet = getSequenceNumberSet(actualSequenceNumbers);
+        assertThat(actualContributors.size(), is(equalTo(sequenceNumberSet.size())));
+        assertThat(actualSequenceNumbers, is(equalTo(new ArrayList<>(sequenceNumberSet))));
+        assertThat(actualContributors, not(hasItem(nullValue())));
+    }
+
+    @Test
+    void generatedSequenceNumberShouldBeLargerThatAllExistentSequenceNumbers() {
+        var singleCristinObject = cristinObjectTwoContributors(getSingleCristinObject());
+        List<Contributor> actualContributors = getContributors(singleCristinObject);
+        List<Integer> actualSequenceNumbers = getSequnceNumberList(actualContributors);
+        assertThat(actualSequenceNumbers, contains(1,2));
+    }
+
+    private CristinObject cristinObjectTwoContributors(CristinObject singleCristinObject) {
+        var contributor = singleCristinObject.getContributors().get(0);
+        var firstContributor = contributor.copy().withContributorOrder(1).build();
+        var secondContributor = contributor.copy().withContributorOrder(null).build();
+        singleCristinObject.getContributors().removeAll(singleCristinObject.getContributors());
+        singleCristinObject.setContributors(List.of(firstContributor, secondContributor));
+        return singleCristinObject;
     }
 
     @Test
@@ -371,9 +399,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         Role expectedNvaRole = Role.lookup(nvaRole);
         CristinObject objectWithEditor = createObjectWithRoleCode(actualCristinRole);
 
-        Optional<Contributor> contributor = objectWithEditor.toPublication()
-                                                .getEntityDescription()
-                                                .getContributors()
+        Optional<Contributor> contributor = getContributors(objectWithEditor)
                                                 .stream()
                                                 .filter(c -> c.getRole().equals(expectedNvaRole))
                                                 .findAny();
@@ -453,12 +479,37 @@ class CristinMapperTest extends AbstractCristinImportTest {
         mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
     }
 
+    private static List<Contributor> getContributors(CristinObject singleCristinObject) {
+        return singleCristinObject.toPublication()
+                   .getEntityDescription()
+                   .getContributors();
+    }
+
+    private static List<Integer> getSequnceNumberList(List<Contributor> actualContributors) {
+        return actualContributors.stream()
+                   .map(Contributor::getSequence)
+                   .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
+                   .collect(Collectors.toList());
+    }
+
+    private static List<Integer> getSequenceNumberSet(List<Integer> actualSequenceNumbers) {
+        return new HashSet<>(actualSequenceNumbers).stream()
+                   .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
+                   .collect(Collectors.toList());
+    }
+
     private CristinObject getSingleCristinObject() {
         return cristinObjects(1).collect(Collectors.toList()).get(0);
     }
 
-    private CristinObject cristinObjectWithSomeContributorsWithoutSequenceNumber(CristinObject cristinObject) {
+    private CristinObject cristinObjectWithSomeContributorsWithoutSeqNumber(CristinObject cristinObject) {
         cristinObject.getContributors().get(cristinObject.getContributors().size() - 1).setContributorOrder(null);
+        cristinObject.getContributors().get(0).setContributorOrder(null);
+        return cristinObject;
+    }
+
+    private CristinObject cristinObjectWhereEveryContributorIsMissingSeqNumber(CristinObject cristinObject) {
+        cristinObject.getContributors().forEach(cristinContributor -> cristinContributor.setContributorOrder(null));
         return cristinObject;
     }
 
