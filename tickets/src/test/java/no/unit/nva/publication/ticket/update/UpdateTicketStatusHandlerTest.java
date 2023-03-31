@@ -1,5 +1,8 @@
 package no.unit.nva.publication.ticket.update;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
@@ -16,6 +19,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -126,13 +130,28 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         this.handler = new UpdateTicketStatusHandler(ticketService, resourceService,
                                                      new FakeDoiClientThrowingException());
-        var publication = createPersistAndPublishPublication();
+        var publication = TicketTestUtils.createPersistedPublicationWithDoi(
+            PublicationStatus.PUBLISHED, resourceService);
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         var completedTicket = ticket.close();
+        mockBadResponseFromDoiRegistrar(publication.getDoi());
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+    }
+
+    private void mockBadResponseFromDoiRegistrar(URI doi) {
+        stubFor(WireMock.get(urlPathEqualTo("/draft/" + doiPrefix(doi) + "/" + doiSuffix(doi)))
+                    .willReturn(aResponse().withBody("[]").withStatus(HTTP_BAD_GATEWAY)));
+    }
+
+    private String doiSuffix(URI doi) {
+        return doi.getPath().split("/")[2];
+    }
+
+    private String doiPrefix(URI doi) {
+        return doi.getPath().split("/")[1];
     }
 
     @Test
