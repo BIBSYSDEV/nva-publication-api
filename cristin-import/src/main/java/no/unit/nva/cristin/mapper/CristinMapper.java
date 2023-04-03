@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
@@ -79,7 +78,6 @@ public class CristinMapper extends CristinMappingModule {
                                       .withPublisher(extractOrganization())
                                       .withResourceOwner(extractResourceOwner())
                                       .withStatus(PublicationStatus.PUBLISHED)
-                                      .withLink(HARDCODED_SAMPLE_DOI)
                                       .withProjects(extractProjects())
                                       .withSubjects(generateNvaHrcsCategoriesAndActivities())
                                       .withFundings(extractFundings())

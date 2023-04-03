@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -377,18 +376,6 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
         assertThat(actualPublicationDates,
                    containsInAnyOrder(expectedPublicationDates.toArray(PublicationDate[]::new)));
-    }
-
-    @Test
-    void mapReturnsPublicationWithHardcodedLink() {
-        Set<URI> actualLicenseIdentifiers = cristinObjects.stream()
-                                                .map(CristinObject::toPublication)
-                                                .map(Publication::getLink)
-                                                .collect(Collectors.toSet());
-
-        Set<URI> expectedLinks = Set.of(HARDCODED_SAMPLE_DOI);
-
-        assertThat(actualLicenseIdentifiers, is(equalTo(expectedLinks)));
     }
 
     @ParameterizedTest(name = "map returns NVA role {1} when Cristin role is {0}")

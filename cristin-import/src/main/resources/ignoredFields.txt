@@ -4,6 +4,7 @@ associatedArtifacts
 handle
 identifier
 indexedDate
+link
 doiRequest
 publisher.labels
 entityDescription.contributors.affiliations.labels
