@@ -173,9 +173,10 @@ public class ContributorExtractor {
                    .orElse(null);
     }
 
-    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
-                                                        PersonalnameType correspondencePerson,
-                                                        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    private Contributor generateContributorFromAuthorTp(
+        AuthorTp author, AuthorGroupTp authorGroup,
+        PersonalnameType correspondencePerson,
+        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
         var identity = generateContributorIdentityFromAuthorTp(author);
         var affiliation = generateAffiliation(organization, authorGroup);
         return new Contributor(identity,
@@ -188,9 +189,9 @@ public class ContributorExtractor {
     private Optional<Organization> generateAffiliationFromCristinOrganization(
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
         return Optional.of(new Organization.Builder()
-                                     .withId(organization.getId())
-                                     .withLabels(organization.getLabels())
-                                     .build());
+                               .withId(organization.getId())
+                               .withLabels(organization.getLabels())
+                               .build());
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,

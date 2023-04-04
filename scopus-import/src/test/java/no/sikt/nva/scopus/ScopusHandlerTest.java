@@ -414,18 +414,18 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
-//        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
-//        var expectedPublisherName = scopusData.getDocument()
-//                                        .getItem()
-//                                        .getItem()
-//                                        .getBibrecord()
-//                                        .getHead()
-//                                        .getSource()
-//                                        .getPublisher()
-//                                        .get(0)
-//                                        .getPublishername();
-        //            var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
-        //            assertThat(actualPublisherName, is(expectedPublisherName));
+        //      var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+        //      var expectedPublisherName = scopusData.getDocument()
+        //                                        .getItem()
+        //                                        .getItem()
+        //                                        .getBibrecord()
+        //                                        .getHead()
+        //                                        .getSource()
+        //                                        .getPublisher()
+        //                                        .get(0)
+        //                                        .getPublishername();
+        //      var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+        //      assertThat(actualPublisherName, is(expectedPublisherName));
     }
 
     private void removePublishers() {

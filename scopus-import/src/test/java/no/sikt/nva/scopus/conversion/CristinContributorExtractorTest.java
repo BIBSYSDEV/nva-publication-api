@@ -45,7 +45,8 @@ public class CristinContributorExtractorTest {
     @Test
     void shouldReturnContributorWhichIsCorrespondingAuthorWhenIndexedNameEqualsCorrespondencePersonIndexedName() {
         var person = new Person(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
-        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(), correspondencePerson(), null);
+        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(),
+                                                                                     correspondencePerson(), null);
         assertThat(contributor.isCorrespondingAuthor(), is(true));
     }
 
