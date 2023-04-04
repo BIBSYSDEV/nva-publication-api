@@ -84,22 +84,22 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
-    private int minimumSequenceNumber;
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
-    private final DocTp document;
-    private final AbstractsTp abstractsTp;
     private static final String ISSN_DELIMINETER = "-";
-    private final URI doi;
-    private CitationtypeAtt citationtypeAtt;
-    private final SourcetypeAtt sourcetypeAtt;
     private static final String NORWAY_COUNTRY_CODE = "nor";
     private static final String NORWAY = "norway";
+    private final DocTp document;
+    private final AbstractsTp abstractsTp;
+    private final URI doi;
+    private final SourcetypeAtt sourcetypeAtt;
     private final List<AffiliationTp> affiliations;
     private final ContentWrapper contentWithSupAndInf;
     private final LanguagesWrapper languages;
+    private int minimumSequenceNumber;
+    private CitationtypeAtt citationtypeAtt;
     private boolean shouldReturnAuthorTyp;
 
     public ScopusGenerator() {
@@ -206,44 +206,6 @@ public final class ScopusGenerator {
         this.document = randomDocumentWithAuthorGroup(authorGroup);
     }
 
-    private DocTp randomDocumentWithAuthorGroup(AuthorGroupTp authorGroup) {
-        DocTp docTp = new DocTp();
-        docTp.setItem(itemWithAuthorGroup(authorGroup));
-        docTp.setMeta(randomMetaTp());
-        assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
-        return docTp;
-    }
-
-    private ItemTp itemWithAuthorGroup(AuthorGroupTp authorGroupTp) {
-        var item = new ItemTp();
-        item.setItem(randomOriginalItemWithAuthorGroup(authorGroupTp));
-        return item;
-    }
-
-    private OrigItemTp randomOriginalItemWithAuthorGroup(AuthorGroupTp authorGroupTp) {
-        var item = new OrigItemTp();
-        item.setBibrecord(randomBibRecordWithAuthorGroup(authorGroupTp));
-        item.setProcessInfo(randomProcessInfo());
-        return item;
-    }
-
-    private BibrecordTp randomBibRecordWithAuthorGroup(AuthorGroupTp authorGroupTp) {
-        var bibRecord = new BibrecordTp();
-        bibRecord.setItemInfo(randomItemInfo());
-        bibRecord.setHead(randomHeadTpWithAuthorGroup(authorGroupTp));
-        return bibRecord;
-    }
-
-    private HeadTp randomHeadTpWithAuthorGroup(AuthorGroupTp authorGroupTp) {
-            var head = new HeadTp();
-            head.getAuthorGroup().add(authorGroupTp);
-            head.setCitationTitle(randomCitationTitle());
-            head.setAbstracts(abstractsTp);
-            head.setCitationInfo(randomCitationInfo());
-            head.setSource(randomSource());
-            return head;
-    }
-
     public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
         return new ScopusGenerator(abstractsTp);
     }
@@ -276,6 +238,10 @@ public final class ScopusGenerator {
         return new ScopusGenerator(languages);
     }
 
+    public static Integer randomYear() {
+        return 1 + randomInteger(currentYear());
+    }
+
     public DocTp randomDocument() {
         DocTp docTp = new DocTp();
         docTp.setItem(randomItemTp());
@@ -294,31 +260,95 @@ public final class ScopusGenerator {
         return xmlWriter.toString();
     }
 
-    private MetaTp randomMetaTp() {
-        var meta = new MetaTp();
-        meta.setDoi(randomScopusDoi());
-        meta.setSrctype(sourcetypeAtt.value());
-        meta.setEid(randomString());
-        return meta;
+    public AuthorTp randomAuthorTp() {
+        var authorTp = new AuthorTp();
+        authorTp.setOrcid(randomOrcid());
+        authorTp.setAuid(randomString());
+        authorTp.setSeq(generateSequenceNumber());
+        PersonalnameType personalnameType = randomPersonalnameType();
+        authorTp.setPreferredName(personalnameType);
+        authorTp.setIndexedName(personalnameType.getIndexedName());
+        authorTp.setGivenName(personalnameType.getGivenName());
+        authorTp.setSurname(personalnameType.getSurname());
+        return authorTp;
     }
 
-    private String randomScopusDoi() {
-        return nonNull(doi)
-                   ? UriWrapper.fromUri(doi).getPath().removeRoot().toString()
-                   : null;
+    public void setCorrespondence(AuthorTp authorTp) {
+        var correspondenceTp = createCorrespondenceTp(authorTp);
+        document.getItem().getItem().getBibrecord().getHead().getCorrespondence().add(correspondenceTp);
     }
 
-    private ItemTp randomItemTp() {
-        var item = new ItemTp();
-        item.setItem(randomOriginalItem());
-        return item;
+    public void addIssn(String issn, String type) {
+        IssnTp issnTp = new IssnTp();
+        issnTp.setContent(issn);
+        issnTp.setType(type);
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
     }
 
-    private OrigItemTp randomOriginalItem() {
-        var item = new OrigItemTp();
-        item.setBibrecord(randomBibRecord());
-        item.setProcessInfo(randomProcessInfo());
-        return item;
+    public void addIsbn(String isbn, String length) {
+        IsbnTp isbnTp = new IsbnTp();
+        isbnTp.setContent(isbn);
+        isbnTp.setLength(length);
+        if (randomBoolean()) {
+            isbnTp.setType(ScopusConstants.ISSN_TYPE_ELECTRONIC);
+        }
+        if (randomBoolean()) {
+            isbnTp.setType(ScopusConstants.ISSN_TYPE_PRINT);
+        }
+        isbnTp.setLevel("Volume");
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp);
+    }
+
+    public void clearIssn() {
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().clear();
+    }
+
+    public void addAuthorKeyword(String keyword, String language) {
+        AuthorKeywordTp authorKeywordTp = new AuthorKeywordTp();
+        authorKeywordTp.setLang(language);
+        authorKeywordTp.getContent().add(keyword);
+        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
+            .add(authorKeywordTp);
+    }
+
+    public void clearAuthorKeywords() {
+        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
+            .clear();
+    }
+
+    public void setPublicationYear(String year) {
+        document.getMeta().setPubYear(year);
+    }
+
+    public void setPublicationDate(String year, String month, String day) {
+        document.getItem().getItem().getProcessInfo().getDateSort().setDay(day);
+        document.getItem().getItem().getProcessInfo().getDateSort().setMonth(month);
+        document.getItem().getItem().getProcessInfo().getDateSort().setYear(year);
+    }
+
+    public void setPublishername(String publisherName) {
+        document.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+            .setPublishername(publisherName);
+    }
+
+    public void setSrcType(SourcetypeAtt sourcetypeAtt) {
+        document.getMeta().setSrctype(sourcetypeAtt.value());
+    }
+
+    public void setJournalInfo(String volume, String issue, String pages) {
+        ObjectFactory factory = new ObjectFactory();
+        VolissTp volissTp = factory.createVolissTp();
+        volissTp.setVolume(volume);
+        volissTp.setIssue(issue);
+        JAXBElement<VolissTp> volisspagTpVoliss = factory.createVolisspagTpVoliss(volissTp);
+        VolisspagTp volisspagTp = factory.createVolisspagTp();
+        volisspagTp.getContent().add(volisspagTpVoliss);
+        PagerangeTp pagerangeTp = factory.createPagerangeTp();
+        JAXBElement<PagerangeTp> volisspagTpPagerange = factory.createVolisspagTpPagerange(pagerangeTp);
+        pagerangeTp.setFirst("0");
+        pagerangeTp.setLast(pages);
+        volisspagTp.getContent().add(volisspagTpPagerange);
+        document.getItem().getItem().getBibrecord().getHead().getSource().setVolisspag(volisspagTp);
     }
 
     private static ProcessInfo randomProcessInfo() {
@@ -334,10 +364,6 @@ public final class ScopusGenerator {
         date.setMonth(randomMonth().toString());
         date.setYear(randomYear().toString());
         return date;
-    }
-
-    public static Integer randomYear() {
-        return 1 + randomInteger(currentYear());
     }
 
     private static int currentYear() {
@@ -356,24 +382,6 @@ public final class ScopusGenerator {
         var calendar = (GregorianCalendar) GregorianCalendar.getInstance(TimeZone.getDefault());
         calendar.setTimeInMillis(randomInstant().toEpochMilli());
         return attempt(() -> DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar)).orElseThrow();
-    }
-
-    private BibrecordTp randomBibRecord() {
-        var bibRecord = new BibrecordTp();
-        bibRecord.setItemInfo(randomItemInfo());
-        bibRecord.setHead(randomHeadTp());
-        return bibRecord;
-    }
-
-    private HeadTp randomHeadTp() {
-        List<?> authorsAndCollaborations = randomAuthorOrCollaborations();
-        var head = new HeadTp();
-        head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
-        head.setCitationTitle(randomCitationTitle());
-        head.setAbstracts(abstractsTp);
-        head.setCitationInfo(randomCitationInfo());
-        head.setSource(randomSource());
-        return head;
     }
 
     private static SourcetitleTp randomSourceTitle() {
@@ -421,21 +429,6 @@ public final class ScopusGenerator {
         return publisher;
     }
 
-    private Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
-        return affiliations
-            .stream()
-            .map(affiliationTp -> randomAuthorGroup(authorsAndCollaborations, affiliationTp))
-            .collect(Collectors.toList());
-    }
-
-    private List<?> randomAuthorOrCollaborations() {
-        final int maxNumbersOfAuthors = 50;
-        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 2)
-            .boxed()
-            .map(index -> randomAuthorOrCollaboration())
-            .collect(Collectors.toList());
-    }
-
     private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations, AffiliationTp affiliationTp) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
@@ -456,14 +449,6 @@ public final class ScopusGenerator {
         return affiliationTp;
     }
 
-    private List<AffiliationTp> randomAffiliations() {
-        final int maxNumberOfAuthorGroups = 50;
-        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
-            .boxed()
-            .map(ignored -> randomAffiliation())
-            .collect(Collectors.toList());
-    }
-
     private static String randomCountry() {
         return randomBoolean() ? NORWAY : randomString();
     }
@@ -477,9 +462,9 @@ public final class ScopusGenerator {
         //which is a lie, found scopus xmls with 4 organizations.
         int maxNumberOfOrganizations = 5;
         return IntStream.range(0, randomInteger(maxNumberOfOrganizations) + 1)
-            .boxed()
-            .map(ignored -> randomOrganization())
-            .collect(Collectors.toList());
+                   .boxed()
+                   .map(ignored -> randomOrganization())
+                   .collect(Collectors.toList());
     }
 
     private static OrganizationTp randomOrganization() {
@@ -495,20 +480,6 @@ public final class ScopusGenerator {
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
 
-    private Object randomAuthorOrCollaboration() {
-        shouldReturnAuthorTyp = !shouldReturnAuthorTyp;
-        return shouldReturnAuthorTyp
-                   ? randomAuthorTp()
-                   : randomCollaborationTp();
-    }
-
-    private String generateSequenceNumber() {
-        final var maxGapInSequenceNumber = 200;
-        var sequenceNumber = getMinimumSequenceNumber() + randomInteger(maxGapInSequenceNumber) + 1;
-        setMinimumSequenceNumber(sequenceNumber);
-        return Integer.toString(sequenceNumber);
-    }
-
     private static String randomOrcid() {
         var shouldCreateOrcid = randomBoolean();
         return shouldCreateOrcid ? randomPotentialOrcidUriString() : null;
@@ -518,82 +489,12 @@ public final class ScopusGenerator {
         return randomBoolean() ? ORCID_DOMAIN_URL + randomString() : randomString();
     }
 
-    private CollaborationTp randomCollaborationTp() {
-        var collaborationTp = new CollaborationTp();
-        collaborationTp.setIndexedName(randomString());
-        collaborationTp.setSeq(generateSequenceNumber());
-        return collaborationTp;
-    }
-
-    public AuthorTp randomAuthorTp() {
-        var authorTp = new AuthorTp();
-        authorTp.setOrcid(randomOrcid());
-        authorTp.setAuid(randomString());
-        authorTp.setSeq(generateSequenceNumber());
-        PersonalnameType personalnameType = randomPersonalnameType();
-        authorTp.setPreferredName(personalnameType);
-        authorTp.setIndexedName(personalnameType.getIndexedName());
-        authorTp.setGivenName(personalnameType.getGivenName());
-        authorTp.setSurname(personalnameType.getSurname());
-        return authorTp;
-    }
-
-    private CorrespondenceTp createCorrespondenceTp(AuthorTp authorTp) {
-        var correspondenceTp = new CorrespondenceTp();
-        correspondenceTp.setPerson(createPersonalnameType(authorTp));
-        return correspondenceTp;
-    }
-
-    private PersonalnameType createPersonalnameType(AuthorTp authorTp) {
-        var personalnameType = new PersonalnameType();
-        personalnameType.setIndexedName(authorTp.getIndexedName());
-        personalnameType.setGivenName(authorTp.getGivenName());
-        personalnameType.setSurname(authorTp.getSurname());
-        return personalnameType;
-    }
-
     private static PersonalnameType randomPersonalnameType() {
         var personalNameType = new PersonalnameType();
         personalNameType.setIndexedName(randomString());
         personalNameType.setGivenName(randomString());
         personalNameType.setSurname(randomString());
         return personalNameType;
-    }
-
-    private CitationInfoTp randomCitationInfo() {
-        var citationInfo = new CitationInfoTp();
-        citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
-        citationInfo.getCitationType().add(createCitationType());
-        if (nonNull(languages.getLanguages())) {
-            citationInfo.getCitationLanguage().addAll(generateCitationLanguages());
-        }
-        return citationInfo;
-    }
-
-    private Collection<? extends CitationLanguageTp> generateCitationLanguages() {
-        return languages.getLanguages().stream().map(this::generateCitationLanguage).collect(Collectors.toList());
-    }
-
-    private CitationLanguageTp generateCitationLanguage(Language language) {
-        var citationLanguageTp = new CitationLanguageTp();
-        citationLanguageTp.setLanguage(language.getEng());
-        citationLanguageTp.setLang(language.getIso6393Code());
-        return citationLanguageTp;
-    }
-
-    private CitationTypeTp createCitationType() {
-        var citationType = new CitationTypeTp();
-        citationType.setCode(createCitationTypeAtt());
-        return citationType;
-    }
-
-    private CitationtypeAtt createCitationTypeAtt() {
-        return nonNull(citationtypeAtt) ? citationtypeAtt : randomSupportedCitationType();
-    }
-
-    //TODO: enrich method when we are supporting more citationTypes
-    private CitationtypeAtt randomSupportedCitationType() {
-        return CitationtypeAtt.AR;
     }
 
     private static AuthorKeywordsTp randomAuthorKeywordsTp() {
@@ -644,36 +545,6 @@ public final class ScopusGenerator {
 
     private static YesnoAtt randomYesOrNo() {
         return randomElement(YesnoAtt.values());
-    }
-
-    private CitationTitleTp randomCitationTitle() {
-        var citationTitle = new CitationTitleTp();
-        citationTitle.getShortTitle().addAll(randomShortTitles());
-        citationTitle.getTitletext().add(randomOriginalTitle());
-        citationTitle.getTitletext().addAll(randomNonOriginalTitles());
-        return citationTitle;
-    }
-
-    private Collection<? extends TitletextTp> randomNonOriginalTitles() {
-        return smallStream().map(ignored -> randomNonOriginalTitle()).collect(Collectors.toList());
-    }
-
-    private TitletextTp randomOriginalTitle() {
-        return randomTitle(YesnoAtt.Y);
-    }
-
-    private TitletextTp randomNonOriginalTitle() {
-        return randomTitle(YesnoAtt.N);
-    }
-
-    private TitletextTp randomTitle(YesnoAtt n) {
-        var titleText = new TitletextTp();
-        titleText.setOriginal(n);
-        titleText.setLang(randomScopusLanguageCode6391Code());
-        titleText.setPerspective(randomString());
-        titleText.setLang(randomScopusLanguageCode6391Code());
-        titleText.getContent().addAll(contentWithSupAndInf.getContentList());
-        return titleText;
     }
 
     private static List<ShortTitle> randomShortTitles() {
@@ -776,90 +647,219 @@ public final class ScopusGenerator {
         return new HashSet<>(IoUtils.linesfromResource(Path.of("conversion", "ignoredScopusFields.txt")));
     }
 
+    private DocTp randomDocumentWithAuthorGroup(AuthorGroupTp authorGroup) {
+        DocTp docTp = new DocTp();
+        docTp.setItem(itemWithAuthorGroup(authorGroup));
+        docTp.setMeta(randomMetaTp());
+        assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
+        return docTp;
+    }
+
+    private ItemTp itemWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+        var item = new ItemTp();
+        item.setItem(randomOriginalItemWithAuthorGroup(authorGroupTp));
+        return item;
+    }
+
+    private OrigItemTp randomOriginalItemWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+        var item = new OrigItemTp();
+        item.setBibrecord(randomBibRecordWithAuthorGroup(authorGroupTp));
+        item.setProcessInfo(randomProcessInfo());
+        return item;
+    }
+
+    private BibrecordTp randomBibRecordWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+        var bibRecord = new BibrecordTp();
+        bibRecord.setItemInfo(randomItemInfo());
+        bibRecord.setHead(randomHeadTpWithAuthorGroup(authorGroupTp));
+        return bibRecord;
+    }
+
+    private HeadTp randomHeadTpWithAuthorGroup(AuthorGroupTp authorGroupTp) {
+        var head = new HeadTp();
+        head.getAuthorGroup().add(authorGroupTp);
+        head.setCitationTitle(randomCitationTitle());
+        head.setAbstracts(abstractsTp);
+        head.setCitationInfo(randomCitationInfo());
+        head.setSource(randomSource());
+        return head;
+    }
+
+    private MetaTp randomMetaTp() {
+        var meta = new MetaTp();
+        meta.setDoi(randomScopusDoi());
+        meta.setSrctype(sourcetypeAtt.value());
+        meta.setEid(randomString());
+        return meta;
+    }
+
+    private String randomScopusDoi() {
+        return nonNull(doi)
+                   ? UriWrapper.fromUri(doi).getPath().removeRoot().toString()
+                   : null;
+    }
+
+    private ItemTp randomItemTp() {
+        var item = new ItemTp();
+        item.setItem(randomOriginalItem());
+        return item;
+    }
+
+    private OrigItemTp randomOriginalItem() {
+        var item = new OrigItemTp();
+        item.setBibrecord(randomBibRecord());
+        item.setProcessInfo(randomProcessInfo());
+        return item;
+    }
+
+    private BibrecordTp randomBibRecord() {
+        var bibRecord = new BibrecordTp();
+        bibRecord.setItemInfo(randomItemInfo());
+        bibRecord.setHead(randomHeadTp());
+        return bibRecord;
+    }
+
+    private HeadTp randomHeadTp() {
+        List<?> authorsAndCollaborations = randomAuthorOrCollaborations();
+        var head = new HeadTp();
+        head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
+        head.setCitationTitle(randomCitationTitle());
+        head.setAbstracts(abstractsTp);
+        head.setCitationInfo(randomCitationInfo());
+        head.setSource(randomSource());
+        return head;
+    }
+
+    private Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
+        return affiliations
+                   .stream()
+                   .map(affiliationTp -> randomAuthorGroup(authorsAndCollaborations, affiliationTp))
+                   .collect(Collectors.toList());
+    }
+
+    private List<?> randomAuthorOrCollaborations() {
+        final int maxNumbersOfAuthors = 50;
+        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 2)
+                   .boxed()
+                   .map(index -> randomAuthorOrCollaboration())
+                   .collect(Collectors.toList());
+    }
+
+    private List<AffiliationTp> randomAffiliations() {
+        final int maxNumberOfAuthorGroups = 50;
+        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
+                   .boxed()
+                   .map(ignored -> randomAffiliation())
+                   .collect(Collectors.toList());
+    }
+
+    private Object randomAuthorOrCollaboration() {
+        shouldReturnAuthorTyp = !shouldReturnAuthorTyp;
+        return shouldReturnAuthorTyp
+                   ? randomAuthorTp()
+                   : randomCollaborationTp();
+    }
+
+    private String generateSequenceNumber() {
+        final var maxGapInSequenceNumber = 200;
+        var sequenceNumber = getMinimumSequenceNumber() + randomInteger(maxGapInSequenceNumber) + 1;
+        setMinimumSequenceNumber(sequenceNumber);
+        return Integer.toString(sequenceNumber);
+    }
+
+    private CollaborationTp randomCollaborationTp() {
+        var collaborationTp = new CollaborationTp();
+        collaborationTp.setIndexedName(randomString());
+        collaborationTp.setSeq(generateSequenceNumber());
+        return collaborationTp;
+    }
+
+    private CorrespondenceTp createCorrespondenceTp(AuthorTp authorTp) {
+        var correspondenceTp = new CorrespondenceTp();
+        correspondenceTp.setPerson(createPersonalnameType(authorTp));
+        return correspondenceTp;
+    }
+
+    private PersonalnameType createPersonalnameType(AuthorTp authorTp) {
+        var personalnameType = new PersonalnameType();
+        personalnameType.setIndexedName(authorTp.getIndexedName());
+        personalnameType.setGivenName(authorTp.getGivenName());
+        personalnameType.setSurname(authorTp.getSurname());
+        return personalnameType;
+    }
+
+    private CitationInfoTp randomCitationInfo() {
+        var citationInfo = new CitationInfoTp();
+        citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
+        citationInfo.getCitationType().add(createCitationType());
+        if (nonNull(languages.getLanguages())) {
+            citationInfo.getCitationLanguage().addAll(generateCitationLanguages());
+        }
+        return citationInfo;
+    }
+
+    private Collection<? extends CitationLanguageTp> generateCitationLanguages() {
+        return languages.getLanguages().stream().map(this::generateCitationLanguage).collect(Collectors.toList());
+    }
+
+    private CitationLanguageTp generateCitationLanguage(Language language) {
+        var citationLanguageTp = new CitationLanguageTp();
+        citationLanguageTp.setLanguage(language.getEng());
+        citationLanguageTp.setLang(language.getIso6393Code());
+        return citationLanguageTp;
+    }
+
+    private CitationTypeTp createCitationType() {
+        var citationType = new CitationTypeTp();
+        citationType.setCode(createCitationTypeAtt());
+        return citationType;
+    }
+
+    private CitationtypeAtt createCitationTypeAtt() {
+        return nonNull(citationtypeAtt) ? citationtypeAtt : randomSupportedCitationType();
+    }
+
+    //TODO: enrich method when we are supporting more citationTypes
+    private CitationtypeAtt randomSupportedCitationType() {
+        return CitationtypeAtt.AR;
+    }
+
+    private CitationTitleTp randomCitationTitle() {
+        var citationTitle = new CitationTitleTp();
+        citationTitle.getShortTitle().addAll(randomShortTitles());
+        citationTitle.getTitletext().add(randomOriginalTitle());
+        citationTitle.getTitletext().addAll(randomNonOriginalTitles());
+        return citationTitle;
+    }
+
+    private Collection<? extends TitletextTp> randomNonOriginalTitles() {
+        return smallStream().map(ignored -> randomNonOriginalTitle()).collect(Collectors.toList());
+    }
+
+    private TitletextTp randomOriginalTitle() {
+        return randomTitle(YesnoAtt.Y);
+    }
+
+    private TitletextTp randomNonOriginalTitle() {
+        return randomTitle(YesnoAtt.N);
+    }
+
+    private TitletextTp randomTitle(YesnoAtt n) {
+        var titleText = new TitletextTp();
+        titleText.setOriginal(n);
+        titleText.setLang(randomScopusLanguageCode6391Code());
+        titleText.setPerspective(randomString());
+        titleText.setLang(randomScopusLanguageCode6391Code());
+        titleText.getContent().addAll(contentWithSupAndInf.getContentList());
+        return titleText;
+    }
+
     private int getMinimumSequenceNumber() {
         return minimumSequenceNumber;
     }
 
     private void setMinimumSequenceNumber(int minimumSequenceNumber) {
         this.minimumSequenceNumber = minimumSequenceNumber;
-    }
-
-    public void setCorrespondence(AuthorTp authorTp) {
-        var correspondenceTp = createCorrespondenceTp(authorTp);
-        document.getItem().getItem().getBibrecord().getHead().getCorrespondence().add(correspondenceTp);
-    }
-
-    public void addIssn(String issn, String type) {
-        IssnTp issnTp = new IssnTp();
-        issnTp.setContent(issn);
-        issnTp.setType(type);
-        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
-    }
-
-    public void addIsbn(String isbn, String length) {
-        IsbnTp isbnTp = new IsbnTp();
-        isbnTp.setContent(isbn);
-        isbnTp.setLength(length);
-        if (randomBoolean()) {
-            isbnTp.setType(ScopusConstants.ISSN_TYPE_ELECTRONIC);
-        }
-        if (randomBoolean()) {
-            isbnTp.setType(ScopusConstants.ISSN_TYPE_PRINT);
-        }
-        isbnTp.setLevel("Volume");
-        document.getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp);
-    }
-
-    public void clearIssn() {
-        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().clear();
-    }
-
-    public void addAuthorKeyword(String keyword, String language) {
-        AuthorKeywordTp authorKeywordTp = new AuthorKeywordTp();
-        authorKeywordTp.setLang(language);
-        authorKeywordTp.getContent().add(keyword);
-        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
-            .add(authorKeywordTp);
-    }
-
-    public void clearAuthorKeywords() {
-        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
-            .clear();
-    }
-
-    public void setPublicationYear(String year) {
-        document.getMeta().setPubYear(year);
-    }
-
-    public void setPublicationDate(String year, String month, String day) {
-        document.getItem().getItem().getProcessInfo().getDateSort().setDay(day);
-        document.getItem().getItem().getProcessInfo().getDateSort().setMonth(month);
-        document.getItem().getItem().getProcessInfo().getDateSort().setYear(year);
-    }
-
-    public void setPublishername(String publisherName) {
-        document.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
-            .setPublishername(publisherName);
-    }
-
-    public void setSrcType(SourcetypeAtt sourcetypeAtt) {
-        document.getMeta().setSrctype(sourcetypeAtt.value());
-    }
-
-    public void setJournalInfo(String volume, String issue, String pages) {
-        ObjectFactory factory = new ObjectFactory();
-        VolissTp volissTp = factory.createVolissTp();
-        volissTp.setVolume(volume);
-        volissTp.setIssue(issue);
-        JAXBElement<VolissTp> volisspagTpVoliss = factory.createVolisspagTpVoliss(volissTp);
-        VolisspagTp volisspagTp = factory.createVolisspagTp();
-        volisspagTp.getContent().add(volisspagTpVoliss);
-        PagerangeTp pagerangeTp = factory.createPagerangeTp();
-        JAXBElement<PagerangeTp> volisspagTpPagerange = factory.createVolisspagTpPagerange(pagerangeTp);
-        pagerangeTp.setFirst("0");
-        pagerangeTp.setLast(pages);
-        volisspagTp.getContent().add(volisspagTpPagerange);
-        document.getItem().getItem().getBibrecord().getHead().getSource().setVolisspag(volisspagTp);
     }
 
     private LanguagesWrapper createRandomLanguages() {
