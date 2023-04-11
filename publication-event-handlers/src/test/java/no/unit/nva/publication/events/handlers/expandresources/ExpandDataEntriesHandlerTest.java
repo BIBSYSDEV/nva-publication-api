@@ -7,6 +7,7 @@ import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURC
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_DELETE_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -25,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -35,15 +37,16 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -51,6 +54,8 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,6 +79,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
+    private TicketService ticketService;
+
+    private FakeRawContentRetriever backendClient;
+
+    private ResourceExpansionService resourceExpansionService;
 
     @BeforeEach
     public void init() {
@@ -81,17 +91,17 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
         resourceService = new ResourceService(client, CLOCK);
-        var ticketService = new TicketService(client);
+        ticketService = new TicketService(client);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
-
+        backendClient = new FakeRawContentRetriever();
         var mockUriRetriever = mock(UriRetriever.class);
         when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 
-        ResourceExpansionService resourceExpansionService =
+        resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever);
 
-        this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
+        this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService, backendClient);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
 
@@ -136,7 +146,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
 
-        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, createFailingService());
+        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, createFailingService(), backendClient);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
         assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
@@ -152,6 +162,40 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var eventReference = parseHandlerResponse();
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
+    }
+
+    @Test
+    void shouldIgnoreAndNotCreateEnrichmentEventForPublishingRequestTicketsForCustomerWithAutomaticApproval()
+        throws IOException, ApiGatewayException {
+        var newImage = publishingRequest();
+        var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
+        backendClient.setResponse(mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval());
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
+    }
+
+    @Test
+    void shouldEmitExpandedEntryEventForPublishingRequestWhenCustomerDoesNotHaveAutomaticApproval()
+        throws ApiGatewayException, IOException {
+        var newImage = publishingRequest();
+        var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC)));
+    }
+
+    @Test
+    void shouldExpandedEntryEventWhenBackendClientRespondsWithError() throws ApiGatewayException,
+                                                                             IOException {
+        var backendClient = new FakeRawContentRetrieverThrowingException();
+        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService, backendClient);
+
+        var newImage = publishingRequest();
+        var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC)));
     }
 
     @Test
@@ -180,9 +224,23 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     @Disabled
-    //TODO: implement this test as a test or a set of tests
+        //TODO: implement this test as a test or a set of tests
     void shouldAlwaysEmitEventsForAllTypesOfDataEntries() {
 
+    }
+
+    private static String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
+        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
+                                                   "customer_allowing_publishing.json"));
+    }
+
+    private PublishingRequestCase publishingRequest() throws ApiGatewayException {
+        Publication publication = randomPublication().copy()
+                                      .withStatus(DRAFT)
+                                      .build();
+        resourceService.insertPreexistingPublication(publication);
+        var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
+        return (PublishingRequestCase) ticket.persistNewTicket(ticketService);
     }
 
     private Publication createUpdatedVersionOfPublication(Publication oldImage) {
@@ -217,6 +275,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             return (DoiRequest) image;
         } else if (image instanceof Message) {
             return (Message) image;
+        } else if (image instanceof PublishingRequestCase) {
+            return (PublishingRequestCase) image;
         } else {
             return null;
         }

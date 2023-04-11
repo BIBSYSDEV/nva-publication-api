@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -12,17 +13,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -42,41 +48,46 @@ public class ExpandDataEntriesHandler
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
     public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final String EXPANDED_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Delete";
+
+    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     public static final String PUBLICATION_SERVICE_DATA_ENTRY_DELETION = "Publicationservice-DataEntryDeletion";
+    public static final String APPLICAITON_LD_JSON = "applicaiton/ld+json";
+    public static final String COULD_NOT_RETRIEVE_CUSTOMER = "could not retrieve customer {}";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
 
+    private final RawContentRetriever backendClient;
+
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
-        this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService());
+        this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService(),
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
-    public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
-        this(new S3Driver(s3Client, EVENTS_BUCKET), resourceExpansionService);
+    public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService,
+                                    RawContentRetriever backendClient) {
+        this(new S3Driver(s3Client, EVENTS_BUCKET), resourceExpansionService, backendClient);
     }
 
-    private ExpandDataEntriesHandler(S3Driver s3Driver, ResourceExpansionService resourceExpansionService) {
+    private ExpandDataEntriesHandler(S3Driver s3Driver, ResourceExpansionService resourceExpansionService,
+                                     RawContentRetriever backendClient) {
         super(EventReference.class);
         this.s3Driver = s3Driver;
         this.resourceExpansionService = resourceExpansionService;
+        this.backendClient = backendClient;
     }
 
     @Override
     protected EventReference processInputPayload(EventReference input,
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
-
         var blobObject = readBlobFromS3(input);
-
-        if (shouldBeDeleted(blobObject.getNewData())) {
-            return createDeleteEventReference(blobObject.getNewData());
-        } else if (shouldBeEnriched(blobObject.getNewData())) {
-            return createEnrichedEventReference(blobObject.getNewData()).orElseGet(this::emptyEvent);
-        } else {
-            return emptyEvent();
-        }
+        var eventReference = createEventReference(blobObject);
+        logger.info("EventReference: {}", eventReference.toJsonString());
+        return eventReference;
     }
 
     @JacocoGenerated
@@ -89,6 +100,16 @@ public class ExpandDataEntriesHandler
     @JacocoGenerated
     private static ResourceService defaultResourceService() {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+    }
+
+    private EventReference createEventReference(DataEntryUpdateEvent blobObject) {
+        if (shouldBeDeleted(blobObject.getNewData())) {
+            return createDeleteEventReference(blobObject.getNewData());
+        } else if (shouldBeEnriched(blobObject.getNewData())) {
+            return createEnrichedEventReference(blobObject.getNewData()).orElseGet(this::emptyEvent);
+        } else {
+            return emptyEvent();
+        }
     }
 
     private EventReference createDeleteEventReference(Entity newData) {
@@ -135,9 +156,34 @@ public class ExpandDataEntriesHandler
             return PUBLISHED.equals(publicationStatus.get()) || PUBLISHED_METADATA.equals(publicationStatus.get());
         } else if (entry instanceof DoiRequest) {
             return isDoiRequestReadyForEvaluation((DoiRequest) entry);
+        } else if (entry instanceof PublishingRequestCase) {
+            return publishingRequestTicketIsNotAutomaticallyApproved((PublishingRequestCase) entry);
         } else {
             return true;
         }
+    }
+
+    private boolean publishingRequestTicketIsNotAutomaticallyApproved(PublishingRequestCase entry) {
+        return !customerAllowsPublishing(entry);
+    }
+
+    private boolean customerAllowsPublishing(PublishingRequestCase publishingRequest) {
+        var customerId = publishingRequest.getCustomerId();
+        var customer = fetchCustomer(customerId);
+        return customer.map(CustomerDto::customerAllowsRegistratorsToPublishDataAndMetadata).orElse(false);
+    }
+
+    private Optional<CustomerDto> fetchCustomer(URI customerId) {
+        return attempt(() -> backendClient.getRawContent(customerId, APPLICAITON_LD_JSON))
+                   .map(Optional::get)
+                   .map(response -> JsonUtils.dtoObjectMapper.readValue(response, CustomerDto.class))
+                   .map(Optional::of)
+                   .orElse(this::logFailure);
+    }
+
+    private Optional<CustomerDto> logFailure(Failure<Optional<CustomerDto>> optionalFailure) {
+        logger.error(COULD_NOT_RETRIEVE_CUSTOMER, optionalFailure.getException());
+        return Optional.empty();
     }
 
     private boolean isDoiRequestReadyForEvaluation(DoiRequest doiRequest) {
