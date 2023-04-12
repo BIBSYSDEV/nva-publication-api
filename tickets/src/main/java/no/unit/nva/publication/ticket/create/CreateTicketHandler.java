@@ -5,24 +5,18 @@ import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import no.unit.nva.auth.AuthorizedBackendClient;
-import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -39,10 +33,8 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
 
@@ -50,33 +42,24 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String LOCATION_HEADER = "Location";
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
+    public static final String CONTENT_TYPE = "application/json";
     private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
-    private final HttpClient httpClient;
-    private final SecretsReader secretsReader;
     private final TicketService ticketService;
     private final ResourceService resourceService;
+    private final RawContentRetriever uriRetriever;
 
     @JacocoGenerated
     public CreateTicketHandler() {
         this(TicketService.defaultService(), ResourceService.defaultService(),
-             HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
-             SecretsReader.defaultSecretsManagerClient());
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL));
     }
 
     public CreateTicketHandler(TicketService ticketService, ResourceService resourceService,
-                               HttpClient httpClient, SecretsManagerClient secretsManagerClient) {
+                               RawContentRetriever uriRetriever) {
         super(TicketDto.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
-        this.httpClient = httpClient;
-        this.secretsReader = new SecretsReader(secretsManagerClient);
-    }
-
-    protected static CognitoCredentials fetchCredentials(SecretsReader secretsReader) {
-        var credentials = secretsReader.fetchClassSecret(BACKEND_CLIENT_SECRET_NAME, BackendClientCredentials.class);
-        var uri = UriWrapper.fromHost(BACKEND_CLIENT_AUTH_URL).getUri();
-
-        return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -99,13 +82,13 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         return null;
     }
 
-    private static UserInstance getUser(RequestInfo requestInfo) throws UnauthorizedException {
-        return UserInstance.fromRequestInfo(requestInfo);
-    }
-
     @Override
     protected Integer getSuccessStatusCode(TicketDto input, Void output) {
         return HttpURLConnection.HTTP_CREATED;
+    }
+
+    private static UserInstance getUser(RequestInfo requestInfo) throws UnauthorizedException {
+        return UserInstance.fromRequestInfo(requestInfo);
     }
 
     private static String createTicketLocation(SortableIdentifier publicationIdentifier, TicketEntry createdTicket) {
@@ -210,16 +193,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     private boolean customerAllowsPublishing(URI customerId) {
-        var credentials = fetchCredentials(secretsReader);
-        var backendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, credentials);
-        var fetchCustomerResult = attempt(() -> fetchCustomer(backendClient, customerId)).orElseThrow();
-        return fetchCustomerResult.isKnownThatCustomerAllowsPublishing();
-    }
-
-    private CustomerTransactionResult fetchCustomer(AuthorizedBackendClient backendClient, URI customerId)
-        throws IOException, InterruptedException {
-        var request = HttpRequest.newBuilder(customerId).GET();
-        var response = backendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
-        return new CustomerTransactionResult(response, customerId);
+        var rawContent = uriRetriever.getRawContent(customerId, CONTENT_TYPE);
+        return rawContent.isPresent() &&
+               new CustomerTransactionResult(rawContent.get(), customerId).isKnownThatCustomerAllowsPublishing();
     }
 }

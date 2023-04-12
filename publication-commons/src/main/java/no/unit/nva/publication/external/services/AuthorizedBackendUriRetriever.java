@@ -18,6 +18,7 @@ import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @JacocoGenerated
 public class AuthorizedBackendUriRetriever implements RawContentRetriever {
@@ -34,11 +35,11 @@ public class AuthorizedBackendUriRetriever implements RawContentRetriever {
     private final String backendClientSecretName;
 
     public AuthorizedBackendUriRetriever(HttpClient httpClient,
-                                         SecretsReader secretsReader,
+                                         SecretsManagerClient secretsManagerClient,
                                          String backendClientAuthUrl,
                                          String backendClientSecretName) {
         this.httpClient = httpClient;
-        this.secretsReader = secretsReader;
+        this.secretsReader = new SecretsReader(secretsManagerClient);
         this.backendClientAuthUrl = backendClientAuthUrl;
         this.backendClientSecretName = backendClientSecretName;
     }
@@ -46,7 +47,7 @@ public class AuthorizedBackendUriRetriever implements RawContentRetriever {
     @JacocoGenerated
     public AuthorizedBackendUriRetriever(String backendClientAuthUrl, String backendClientSecretName) {
         this(HttpClient.newHttpClient(),
-             new SecretsReader(),
+             SecretsReader.defaultSecretsManagerClient(),
              backendClientAuthUrl,
              backendClientSecretName);
     }

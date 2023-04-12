@@ -14,10 +14,6 @@ public class CustomerDto {
     //property does not have getter because we are never going to serialize this object
     private PublicationWorkflow publicationWorkflow;
     
-    public void setPublicationWorkflow(PublicationWorkflow publicationWorkflow) {
-        this.publicationWorkflow = publicationWorkflow;
-    }
-    
     @JsonIgnore
     public Boolean customerAllowsRegistratorsToPublishDataAndMetadata() {
         return PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publicationWorkflow);

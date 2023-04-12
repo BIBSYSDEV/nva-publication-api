@@ -2,7 +2,6 @@ package no.unit.nva.publication.ticket.model.identityservice;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.net.http.HttpResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
@@ -14,8 +13,8 @@ public class CustomerTransactionResult {
     private final Try<CustomerDto> customer;
     private final URI customerId;
 
-    public CustomerTransactionResult(HttpResponse<String> response, URI customerId) {
-        this.customer = attempt(() -> JsonUtils.dtoObjectMapper.readValue(response.body(), CustomerDto.class));
+    public CustomerTransactionResult(String response, URI customerId) {
+        this.customer = attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CustomerDto.class));
         this.customerId = customerId;
     }
 
