@@ -32,7 +32,7 @@ public class ExpandedDataEntriesPersistenceHandler
     public static final EventReference EMPTY_EVENT = new EventReference("Empty event", null);
     private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
     public static final String APPLICAITON_LD_JSON = "applicaiton/ld+json";
-    public static final String COULD_NOT_RETRIEVE_CUSTOMER = "could not retreive customer";
+    public static final String COULD_NOT_RETRIEVE_CUSTOMER = "could not retreive customer {}";
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
 
