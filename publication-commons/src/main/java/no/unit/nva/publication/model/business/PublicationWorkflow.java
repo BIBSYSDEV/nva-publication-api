@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.joining;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
 public enum PublicationWorkflow {
@@ -35,7 +36,8 @@ public enum PublicationWorkflow {
     public String getValue() {
         return value;
     }
-    
+
+    @JacocoGenerated
     private static RuntimeException throwException(String value) {
         var validValues = stream(PublicationWorkflow.values())
                               .map(PublicationWorkflow::toString)
@@ -44,11 +46,13 @@ public enum PublicationWorkflow {
     }
 
     @JsonIgnore
+    @JacocoGenerated
     public Boolean registratorsAllowedToPublishDataAndMetadata() {
         return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(this);
     }
 
     @JsonIgnore
+    @JacocoGenerated
     public Boolean registratorsAllowedToPublishMetadata() {
         return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(this);
     }

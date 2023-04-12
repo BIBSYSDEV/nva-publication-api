@@ -28,7 +28,6 @@ public enum AccessRight {
     @JsonCreator
     @JacocoGenerated
     public static AccessRight fromString(String accessRight) {
-        
         String formattedString = formatString(accessRight);
         if (index.containsKey(formattedString)) {
             return index.get(formattedString);

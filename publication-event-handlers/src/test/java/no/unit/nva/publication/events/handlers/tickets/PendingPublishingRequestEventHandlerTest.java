@@ -1,9 +1,35 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_OK;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.events.models.EventReference;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.paths.UnixPath;
+import nva.commons.logutils.LogUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.time.Clock;
+
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.events.handlers.tickets.PendingPublishingRequestEventHandler.BACKEND_CLIENT_SECRET_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -13,40 +39,6 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Clock;
-import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.events.models.EventReference;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.model.BackendClientCredentials;
-import no.unit.nva.publication.model.business.*;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.FakeHttpResponse;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.stubs.FakeContext;
-import no.unit.nva.stubs.FakeS3Client;
-import no.unit.nva.stubs.FakeSecretsManagerClient;
-import no.unit.nva.testutils.EventBridgeEventBuilder;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.ioutils.IoUtils;
-import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
-import nva.commons.secrets.SecretsReader;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     
@@ -61,8 +53,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private FakeContext context;
     private ResourceService resourceService;
     private TicketService ticketService;
-    private FakeHttpClient<String> httpClient;
-    private SecretsReader secretsReader;
 
     @BeforeEach
     public void setup() {
@@ -71,12 +61,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         this.s3Driver = new S3Driver(s3Client, randomString());
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
-
-        var secretManagerClient = new FakeSecretsManagerClient();
-        var credentials = new BackendClientCredentials("id", "secret");
-        secretManagerClient.putPlainTextSecret(BACKEND_CLIENT_SECRET_NAME, credentials.toString() );
-        this.secretsReader = new SecretsReader(secretManagerClient);
-        
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }
@@ -85,11 +69,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldApprovePublishingRequestAutomaticallyWhenCustomerHasPolicyAllowingRegistratorsToPublishDataAndMetadata()
         throws IOException, ApiGatewayException {
         var publishingRequest = pendingPublishingRequest();
+        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
         var event = createEvent(publishingRequest);
-        var customerAllowingPublishing =
-            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval();
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
-
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
@@ -100,36 +81,15 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldIgnorePublishingRequestWhenCustomerHasPolicyForbiddingRegistratorsToPublishDataAndMetadata()
         throws IOException, ApiGatewayException {
         var publishingRequest = pendingPublishingRequest();
+        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var event = createEvent(publishingRequest);
-    
-        var customerAllowingPublishing =
-            mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests();
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
 
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
     }
-    
-    @Test
-    void shouldIgnorePublishingRequestAndLogResponseWhenCustomerCannotBeResolved()
-        throws IOException, ApiGatewayException {
-        var publishingRequest = pendingPublishingRequest();
-        var event = createEvent(publishingRequest);
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
 
-        var tokenResponse = tokenResponse();
-        var identityServiceResponse = unresolvableCustomer();
-        this.httpClient = new FakeHttpClient<>(tokenResponse, identityServiceResponse, tokenResponse);
-        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService,s3Client);
-        
-        handler.handleRequest(event, output, context);
-        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
-        assertThat(logger.getMessages(), containsString(identityServiceResponse.body()));
-    }
-    
     @Test
     void shouldNotCompleteAlreadyCompletedTicketsAndEnterInfiniteLoop() throws ApiGatewayException, IOException {
         var completedTicket = createCompletedTicketEntry();
@@ -143,10 +103,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldUpdatePublicationStatusButNotCompleteTicketWhenCustomerAllowsMetadataPublishing()
         throws ApiGatewayException, IOException {
         var publishingRequest = pendingPublishingRequest();
+        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(publishingRequest);
-        var customerAllowingMetadataPublishing =
-            mockIdentityServiceResponseForPublisherAllowingMetadataPublishing();
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingMetadataPublishing, HTTP_OK));
 
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         handler.handleRequest(event, output, context);
@@ -160,11 +118,10 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldLogFailingReasonsWhenPublishingMetadataFails() throws ApiGatewayException, IOException {
         var publication = createUnpublishablePublication();
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var pendingPublishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        pendingPublishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(pendingPublishingRequest);
 
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse
-               .create(mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(), HTTP_OK));
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
@@ -178,17 +135,16 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldLogFailingReasonsWhenUpdatingPublicationStatusFails() throws ApiGatewayException, IOException {
         var publication = createPublication();
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var pendingPublishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        pendingPublishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(pendingPublishingRequest);
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse
-               .create(mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(), HTTP_OK));
-
         var expectedMessage = "Testing string";
         var failingResourceService = mockResourceServiceFailure(expectedMessage);
         var logger = LogUtils.getTestingAppenderForRootLogger();
-        this.handler = new PendingPublishingRequestEventHandler(failingResourceService,
-                                                                ticketService,
-                                                                s3Client);
+        this.handler = new PendingPublishingRequestEventHandler(
+            failingResourceService,
+            ticketService,
+            s3Client);
         handler.handleRequest(event, output, context);
         assertThat(logger.getMessages(), containsString(expectedMessage));
     }
@@ -203,8 +159,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
+        return Resource.fromPublication(publication).persistNew(
+            resourceService,
+            UserInstance.fromPublication(publication));
     }
 
     private void assertThatFilesAreUnpublished(Resource resource) {
@@ -216,12 +173,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private void callApiOfCustomerAllowingAutomaticPublishing(PublishingRequestCase completedTicket)
             throws IOException {
-        var customerAllowingPublishing =
-                mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval();
-
+        completedTicket.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
         var event = createEvent(completedTicket);
-
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         handler.handleRequest(event, output, context);
     }
@@ -235,29 +188,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return completedTicket;
     }
 
-    private static String mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests() {
-        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
-            "customer_forbidding_publishing.json"));
-    }
-    
-    private static FakeHttpResponse<String> unresolvableCustomer() {
-        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
-    }
-
-    private static FakeHttpResponse<String> tokenResponse() {
-        return FakeHttpResponse.create("{ \"access_token\" : \"Bearer token\"}", HTTP_OK);
-    }
-    
-    private static String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
-        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
-            "customer_allowing_publishing.json"));
-    }
-
-    private static String mockIdentityServiceResponseForPublisherAllowingMetadataPublishing() {
-        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
-                                                   "customer_allowing_metadata_publishing.json"));
-    }
-    
     private InputStream createEvent(PublishingRequestCase publishingRequest) throws IOException {
         var blobUri = createEventBlob(publishingRequest);
         var event = new EventReference(DataEntryUpdateEvent.PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC, blobUri);
@@ -277,10 +207,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private PublishingRequestCase pendingPublishingRequest() throws ApiGatewayException {
         var publication = createPublication();
         return createPendingPublishingRequest(publication);
-    }
-
-    private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return PublishingRequestCase.createOpeningCaseObject(publication);
     }
 
     

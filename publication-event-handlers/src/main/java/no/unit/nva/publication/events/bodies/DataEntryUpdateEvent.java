@@ -37,7 +37,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         GeneralSupportRequest.class, GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC
     );
     @JsonProperty(ACTION)
-    private final String action;
+    private final String eventName;
     @JsonProperty(OLD_DATA)
     private final Entity oldData;
     @JsonProperty(NEW_DATA)
@@ -46,17 +46,17 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     /**
      * Constructor for creating DynamoEntryUpdateEvent.
      *
-     * @param action  eventName from DynamodbStreamRecord
+     * @param eventName  eventName from DynamodbStreamRecord
      * @param oldData old data
      * @param newData new data
      */
     @JsonCreator
     public DataEntryUpdateEvent(
-        @JsonProperty(ACTION) String action,
+        @JsonProperty(ACTION) String eventName,
         @JsonProperty(OLD_DATA) Entity oldData,
         @JsonProperty(NEW_DATA) Entity newData) {
         
-        this.action = action;
+        this.eventName = eventName;
         this.oldData = oldData;
         this.newData = newData;
     }
@@ -65,8 +65,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(json, DataEntryUpdateEvent.class)).orElseThrow();
     }
     
-    public String getAction() {
-        return action;
+    public String getEventName() {
+        return eventName;
     }
     
     public Entity getOldData() {
@@ -93,7 +93,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             return false;
         }
         DataEntryUpdateEvent that = (DataEntryUpdateEvent) o;
-        return getAction().equals(that.getAction())
+        return getEventName().equals(that.getEventName())
                && getTopic().equals(that.getTopic())
                && Objects.equals(getOldData(), that.getOldData())
                && Objects.equals(getNewData(), that.getNewData());

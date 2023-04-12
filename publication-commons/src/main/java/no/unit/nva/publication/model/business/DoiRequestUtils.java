@@ -1,5 +1,8 @@
 package no.unit.nva.publication.model.business;
 
+import nva.commons.core.JacocoGenerated;
+
+@JacocoGenerated
 public final class DoiRequestUtils {
     
     private DoiRequestUtils() {

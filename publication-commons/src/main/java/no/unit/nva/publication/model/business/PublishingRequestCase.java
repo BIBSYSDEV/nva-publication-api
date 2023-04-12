@@ -91,6 +91,7 @@ public class PublishingRequestCase extends TicketEntry {
     }
     
     @Override
+    @JacocoGenerated
     public void validateCreationRequirements(Publication publication)
         throws ConflictException {
         if (PublicationStatus.PUBLISHED == publication.getStatus()) {
