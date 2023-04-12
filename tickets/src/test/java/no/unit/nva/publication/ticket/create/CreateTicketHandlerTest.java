@@ -3,11 +3,16 @@ package no.unit.nva.publication.ticket.create;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
+import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
+import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
@@ -16,36 +21,50 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.GeneralSupportRequestDto;
 import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -57,11 +76,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
+@WireMockTest(httpsEnabled = true)
 class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
+    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
+    private final Environment environment = mock(Environment.class);
+    private FakeSecretsManagerClient secretsManagerClient;
     private CreateTicketHandler handler;
 
     public static Stream<Arguments> ticketEntryProvider() {
@@ -69,9 +92,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @BeforeEach
-    public void setup() {
+    public void setup(WireMockRuntimeInfo wireMockRuntimeInfo) {
         super.init();
-        this.handler = new CreateTicketHandler(ticketService, resourceService);
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        secretsManagerClient = new FakeSecretsManagerClient();
+        var credentials = new BackendClientCredentials("id", "secret");
+        secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
+        var uriRetriever = getUriRetriever(getHttpClientWithUnresolvableClient(), secretsManagerClient);
+        this.handler = new CreateTicketHandler(ticketService, resourceService, uriRetriever);
     }
 
     @ParameterizedTest
@@ -239,16 +268,22 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(DoiRequest.class);
 
+        this.handler = new CreateTicketHandler(ticketService, resourceService,
+                                               getUriRetriever(getHttpClientWithUnresolvableClient(),
+                                                               secretsManagerClient));
         var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(firstRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
 
         var createdTicket = fetchTicket(response).copy();
-
         var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         output = new ByteArrayOutputStream();
+        this.handler = new CreateTicketHandler(ticketService, resourceService,
+                                               getUriRetriever(getHttpClientWithUnresolvableClient(),
+                                                             secretsManagerClient));
         handler.handleRequest(secondRequest, output, CONTEXT);
+
         var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -268,13 +303,13 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(appender.getMessages(), containsString("Request failed:"));
     }
 
-
     @Test
     void shouldAllowUserWithDoiRequestApprovalAccessRight() throws ApiGatewayException, IOException {
         var publication = createPersistedPublishedPublication();
         var publicationOwner = publication.getPublisher().getId();
         var requestBody = constructDto(DoiRequest.class);
-        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner, AccessRight.APPROVE_DOI_REQUEST);
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner,
+                                                                             AccessRight.APPROVE_DOI_REQUEST);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -304,7 +339,62 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
 
+    @Test
+    void shouldPublishPublicationAndSetTicketStatusToApprovedWhenCustomerAllowsPublishing()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        handler = new CreateTicketHandler(ticketService, resourceService,
+                                          getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                         secretsManagerClient));
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
+    }
+
+    @Test
+    void shouldIgnorePublishingRequestWhenItCanNotBeResolved() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        this.handler = new CreateTicketHandler(ticketService, resourceService,
+                                               getUriRetriever(getHttpClientWithNonResolvedPublishingWorkflow(),
+                                                               secretsManagerClient));
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
+    }
+
+    private static FakeHttpClient<String> getHttpClientWithUnresolvableClient() {
+        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY,
+                                                            HTTP_OK), unresolvableCustomer());
+    }
+
+    private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
+        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
+                                    mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval());
+    }
+
+    private static FakeHttpClient<String> getHttpClientWithNonResolvedPublishingWorkflow() {
+        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
+                                    mockIdentityServiceResponseForNonResolvedPublishingWorkflow());
+    }
+
+    private static FakeHttpResponse<String> mockIdentityServiceResponseForNonResolvedPublishingWorkflow() {
+        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("unrecognizable_publishing_workflow.json")),
+                                       HTTP_OK);
+    }
+
+    private static FakeHttpResponse<String> mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
+        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing.json")),
+                                       HTTP_OK);
     }
 
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
@@ -327,12 +417,28 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .orElseThrow();
     }
 
+    private static FakeHttpResponse<String> unresolvableCustomer() {
+        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
+    }
+
+    private AuthorizedBackendUriRetriever getUriRetriever(FakeHttpClient<String> httpClient,
+                                                          SecretsManagerClient secretsManagerClient) {
+        return new AuthorizedBackendUriRetriever(httpClient,
+                                                 secretsManagerClient,
+                                                 BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
+    }
+
+    private TicketStatus getTicketStatusForPublication(Publication publication) {
+        return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                             publication.getIdentifier(),
+                                                             PublishingRequestCase.class).get().getStatus();
+    }
+
     private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
-
 
     private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication().copy().withEntityDescription(null).build();

@@ -10,6 +10,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -30,18 +31,18 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class AcceptedPublishingRequestEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
     public static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
+    private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
-    
+
     @JacocoGenerated
     public AcceptedPublishingRequestEventHandler() {
         this(ResourceService.defaultService(), new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT),
              S3Driver.defaultS3Client().build());
     }
-    
+
     protected AcceptedPublishingRequestEventHandler(ResourceService resourceService,
                                                     TicketService ticketService,
                                                     S3Client s3Client) {
@@ -50,14 +51,14 @@ public class AcceptedPublishingRequestEventHandler
         this.ticketService = ticketService;
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
-    
+
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
         var latestUpdate = parseInput(eventBlob);
-        if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus())) {
+        if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus()) && publicationIsNotPublished(latestUpdate)) {
             var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
             var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
             attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
@@ -67,14 +68,23 @@ public class AcceptedPublishingRequestEventHandler
         return null;
     }
 
+    private static boolean hasDoi(Publication publication) {
+        return nonNull(publication.getDoi());
+    }
+
+    private boolean publicationIsNotPublished(PublishingRequestCase latestUpdate) {
+        var identifier = latestUpdate.getPublicationDetails().getIdentifier();
+        var publication = attempt(() -> resourceService.getPublicationByIdentifier(identifier)).orElseThrow();
+        return !PublicationStatus.PUBLISHED.equals(publication.getStatus());
+    }
+
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier publicationIdentifier) {
         return attempt(() -> resourceService.getPublication(userInstance, publicationIdentifier))
-                .orElseThrow();
-
+                   .orElseThrow();
     }
 
     private void createDoiRequestIfNeeded(Publication publication) {
-        if(hasDoi(publication) && !doiRequestExists(publication)) {
+        if (hasDoi(publication) && !doiRequestExists(publication)) {
             var doiRequest = DoiRequest.fromPublication(publication);
             attempt(() -> ticketService.createTicket(doiRequest, DoiRequest.class)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
@@ -91,15 +101,11 @@ public class AcceptedPublishingRequestEventHandler
                                                              DoiRequest.class);
     }
 
-    private static boolean hasDoi(Publication publication) {
-        return nonNull(publication.getDoi());
-    }
-
     private PublishPublicationStatusResponse logError(Exception exception) {
         logger.warn(ExceptionUtils.stackTraceInSingleLine(exception));
         return null;
     }
-    
+
     private PublishingRequestCase parseInput(String eventBlob) {
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
         return (PublishingRequestCase) entryUpdate.getNewData();
