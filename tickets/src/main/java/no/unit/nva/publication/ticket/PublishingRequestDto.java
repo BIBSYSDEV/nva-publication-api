@@ -3,21 +3,21 @@ package no.unit.nva.publication.ticket;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.business.PublicationWorkflow;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.PublicationDetails;
+import no.unit.nva.publication.model.business.User;
+import nva.commons.core.JacocoGenerated;
+
 import java.beans.ConstructorProperties;
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.PublicationWorkflow;
-import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
-import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestDto.TYPE)

@@ -210,6 +210,7 @@ public class PublishingRequestCase extends TicketEntry {
         this.workflow = workflow;
     }
 
+    @Override
     public PublicationWorkflow getWorkflow() {
         return workflow;
     }

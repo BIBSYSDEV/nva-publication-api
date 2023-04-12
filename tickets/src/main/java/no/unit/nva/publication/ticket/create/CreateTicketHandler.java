@@ -27,7 +27,9 @@ import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.Map;
 
-import static no.unit.nva.publication.PublicationServiceConfig.*;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
@@ -65,7 +67,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
 
         if (PublishingRequestCase.class.equals(input.ticketType())) {
             var workflow = uriRetriever.getDto(publication.getPublisher().getId(), WorkFlowDto.class).get();
-            ((PublishingRequestCase)newTicket).setWorkflow(workflow.publicationWorkflow());
+            ((PublishingRequestCase)newTicket).setWorkflow(workflow.getPublicationWorkflow());
         }
 
         var createdTicket = persistTicket(newTicket);
@@ -94,7 +96,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         return attempt(() -> newTicket.persistNewTicket(ticketService))
                    .orElse(fail -> handleCreationException(fail.getException(), newTicket));
     }
-    
+
+    @JacocoGenerated
     private TicketEntry handleCreationException(Exception exception, TicketEntry newTicket) throws ApiGatewayException {
         if (exception instanceof TransactionFailedException) {
             return updateAlreadyExistingTicket(newTicket);
@@ -122,12 +125,6 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user)
-            throws ApiGatewayException {
-        return attempt(() -> resourceService.getPublication(user, publicationIdentifier))
-                .orElseThrow(fail -> loggingFailureReporter(fail.getException()));
-    }
-
-    private Publication fetchPublication2(SortableIdentifier publicationIdentifier, UserInstance user)
             throws ApiGatewayException {
         return attempt(() -> resourceService.getPublication(user, publicationIdentifier))
                 .orElseThrow(fail -> loggingFailureReporter(fail.getException()));

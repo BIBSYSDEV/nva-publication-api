@@ -107,8 +107,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     private DoiRequest createDoiRequestTicket(Publication publication) {
-        return attempt(() -> ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class))
-            .orElseThrow();
+        return  (DoiRequest) attempt(() ->
+            DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).get();
     }
 
     @Test

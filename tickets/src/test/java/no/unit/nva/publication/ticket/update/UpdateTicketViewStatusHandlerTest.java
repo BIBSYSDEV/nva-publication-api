@@ -43,15 +43,15 @@ import org.zalando.problem.Problem;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
-    
+
     private UpdateTicketViewStatusHandler handler;
-    
+
     @BeforeEach
     public void setup() {
         super.init();
         this.handler = new UpdateTicketViewStatusHandler(ticketService);
     }
-    
+
     @ParameterizedTest
     @DisplayName("should mark ticket as read for owner when user is ticket owner and marks it as read")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -62,20 +62,20 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
-        
+
         var httpRequest = createOwnerMarksTicket(publication, ticket, ViewStatus.READ);
         handler.handleRequest(httpRequest, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
-        
+
         var expectedLocationHeader = createLocationUri(publication, ticket);
         assertThat(response.getHeaders().get(LOCATION_HEADER), is(equalTo(expectedLocationHeader.toString())));
-        
+
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should mark ticket as unread for owner when user is ticket owner and marks it as unread")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -85,17 +85,17 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-        
+
         var httpRequest = createOwnerMarksTicket(publication, ticket, ViewStatus.UNREAD);
         handler.handleRequest(httpRequest, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
-        
+
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), not(hasItem(ticket.getOwner())));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should mark ticket as Read for all Curators when user is curator and marks it as read")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -106,18 +106,18 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
-        
+
         var httpRequest = curatorMarksTicket(publication, ticket, ViewStatus.READ);
         handler.handleRequest(httpRequest, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
-        
+
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(updatedTicket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
     }
-    
+
     @ParameterizedTest
     @DisplayName("should mark ticket as Unread for all Curators when user is curator and marks it as unread")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -129,13 +129,13 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
-        
+
         var httpRequest = curatorMarksTicket(publication, ticket, ViewStatus.UNREAD);
         handler.handleRequest(httpRequest, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_SEE_OTHER)));
-        
+
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(updatedTicket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
@@ -143,17 +143,18 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldNotProvideAnyInformationAboutTheExistenceOfATicketWhenAnAlienUserTriesToModifyTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldNotProvideAnyInformationAboutTheExistenceOfATicketWhenAnAlienUserTriesToModifyTicket(
+        Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
-        
+
         var httpRequest = alienCuratorMarksTicket(publication, ticket);
         handler.handleRequest(httpRequest, output, CONTEXT);
-        
+
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
         assertThatTicketIsUnchanged(ticket);
@@ -161,7 +162,9 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType,
+                                                                   PublicationStatus status)
+        throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         SortableIdentifier wrongPublicationIdentifier = SortableIdentifier.next();
@@ -174,7 +177,9 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType,
+                                                                 PublicationStatus status)
+        throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         SortableIdentifier wrongPublicationIdentifier = SortableIdentifier.next();
@@ -187,7 +192,9 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenTicketDoesNotExistAndUserIsNotElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+    void shouldReturnForbiddenWhenTicketDoesNotExistAndUserIsNotElevatedUser(Class<? extends TicketEntry> ticketType,
+                                                                             PublicationStatus status)
+        throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
         var httpRequest = ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(ticket,
@@ -196,7 +203,7 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-    
+
     @ParameterizedTest(name = "body:{0}")
     @DisplayName("should return Bad Request when input is malformed")
     @ValueSource(strings = {
@@ -210,91 +217,91 @@ class UpdateTicketViewStatusHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
-    
+
     private static void assertThatTicketIsUnchanged(TicketEntry ticket) {
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
     }
-    
+
     private static URI createLocationUri(Publication publication, TicketEntry ticket) {
         return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION_PATH)
-                   .addChild(publication.getIdentifier().toString())
-                   .addChild(TICKET_PATH)
-                   .addChild(ticket.getIdentifier().toString())
-                   .getUri();
+            .addChild(PUBLICATION_PATH)
+            .addChild(publication.getIdentifier().toString())
+            .addChild(TICKET_PATH)
+            .addChild(ticket.getIdentifier().toString())
+            .getUri();
     }
-    
+
     private static Map<String, String> createPathParameters(TicketEntry ticket,
                                                             SortableIdentifier publicationIdentifier) {
         return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publicationIdentifier.toString(),
             TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
     }
-    
+
     private static InputStream createOwnerMarksTicket(Publication publication,
                                                       TicketEntry ticket,
                                                       ViewStatus viewStatus)
         throws JsonProcessingException, BadRequestException {
         return new HandlerRequestBuilder<UpdateViewStatusRequest>(JsonUtils.dtoObjectMapper)
-                   .withCustomerId(ticket.getCustomerId())
-                   .withNvaUsername(ticket.getOwner().toString())
-                   .withBody(new UpdateViewStatusRequest(viewStatus))
-                   .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
-                   .build();
+            .withCustomerId(ticket.getCustomerId())
+            .withNvaUsername(ticket.getOwner().toString())
+            .withBody(new UpdateViewStatusRequest(viewStatus))
+            .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+            .build();
     }
-    
+
     private static InputStream elevatedUserMarksTicket(Publication publication,
                                                        TicketEntry ticket,
                                                        ViewStatus viewStatus,
                                                        URI customerId)
         throws JsonProcessingException, BadRequestException {
         return new HandlerRequestBuilder<UpdateViewStatusRequest>(JsonUtils.dtoObjectMapper)
-                   .withCustomerId(customerId)
-                   .withNvaUsername(randomString())
-                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
-                   .withBody(new UpdateViewStatusRequest(viewStatus))
-                   .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
-                   .build();
+            .withCustomerId(customerId)
+            .withNvaUsername(randomString())
+            .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
+            .withBody(new UpdateViewStatusRequest(viewStatus))
+            .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+            .build();
     }
-    
+
     private InputStream requestWithEmptyBody(TicketEntry ticket, String requestBody) throws JsonProcessingException {
         return new HandlerRequestBuilder<String>(JsonUtils.dtoObjectMapper)
-                   .withBody(requestBody)
-                   .withCustomerId(ticket.getCustomerId())
-                   .withNvaUsername(ticket.getOwner().toString())
-                   .withPathParameters(createPathParameters(ticket, ticket.extractPublicationIdentifier()))
-                   .build();
+            .withBody(requestBody)
+            .withCustomerId(ticket.getCustomerId())
+            .withNvaUsername(ticket.getOwner().toString())
+            .withPathParameters(createPathParameters(ticket, ticket.extractPublicationIdentifier()))
+            .build();
     }
-    
+
     private InputStream ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(
         TicketEntry ticket, SortableIdentifier wrongPublicationIdentifier)
         throws JsonProcessingException, BadRequestException {
         return new HandlerRequestBuilder<UpdateViewStatusRequest>(JsonUtils.dtoObjectMapper)
-                   .withBody(new UpdateViewStatusRequest(ViewStatus.UNREAD))
-                   .withCustomerId(ticket.getCustomerId())
-                   .withNvaUsername(ticket.getOwner().toString())
-                   .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
-                   .build();
+            .withBody(new UpdateViewStatusRequest(ViewStatus.UNREAD))
+            .withCustomerId(ticket.getCustomerId())
+            .withNvaUsername(ticket.getOwner().toString())
+            .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
+            .build();
     }
-    
+
     private InputStream curatorAttemptsToMarkExistingTicketConnectedToWrongPublication(
         TicketEntry ticket,
         SortableIdentifier wrongPublicationIdentifier)
         throws JsonProcessingException, BadRequestException {
         return new HandlerRequestBuilder<UpdateViewStatusRequest>(JsonUtils.dtoObjectMapper)
-                   .withCustomerId(ticket.getCustomerId())
-                   .withNvaUsername(randomString())
-                   .withBody(new UpdateViewStatusRequest(ViewStatus.UNREAD))
-                   .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
-                   .withAccessRights(ticket.getCustomerId(), AccessRight.APPROVE_DOI_REQUEST.toString())
-                   .build();
+            .withCustomerId(ticket.getCustomerId())
+            .withNvaUsername(randomString())
+            .withBody(new UpdateViewStatusRequest(ViewStatus.UNREAD))
+            .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
+            .withAccessRights(ticket.getCustomerId(), AccessRight.APPROVE_DOI_REQUEST.toString())
+            .build();
     }
-    
+
     private InputStream alienCuratorMarksTicket(Publication publication, TicketEntry ticket)
         throws JsonProcessingException, BadRequestException {
         return elevatedUserMarksTicket(publication, ticket, ViewStatus.UNREAD, randomUri());
     }
-    
+
     private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus)
         throws JsonProcessingException, BadRequestException {
         return elevatedUserMarksTicket(publication, ticket, viewStatus, ticket.getCustomerId());
