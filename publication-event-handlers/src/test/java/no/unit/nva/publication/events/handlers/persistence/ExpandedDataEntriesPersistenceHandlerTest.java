@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -32,8 +34,8 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -48,8 +50,10 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -65,6 +69,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
+    private FakeAuthorizedBackendClient backendClient;
 
     @BeforeEach
     public void setup() {
@@ -85,9 +90,32 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var indexBucket = new FakeS3Client();
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
-        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
+        backendClient = new FakeAuthorizedBackendClient();
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, backendClient);
 
         output = new ByteArrayOutputStream();
+    }
+
+    @Test
+    void shouldEmitEmptyEventWhenPublishingRequestIsFromCustomerThatAutocompletesPublishingRequests()
+        throws ApiGatewayException, IOException {
+        backendClient.setResponse(mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval());
+        var entryUpdate = generateExpandedEntry(ExpandedPublishingRequest.class);
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
+        EventReference outputEvent = sendEvent();
+        assertThat(outputEvent, is(equalTo(EMPTY_EVENT)));
+    }
+
+    @Test
+    void shouldEmitEventCointaingS3UriToPersistedExpandedResourceWhenItCannotRetrieveCustomerPublishingWorkflow()
+        throws ApiGatewayException, IOException {
+        var backendClient = new FakeAuthorizedBackendClientThrowingException();
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, backendClient);
+        var entryUpdate = generateExpandedEntry(ExpandedPublishingRequest.class);
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
+        EventReference outputEvent = sendEvent();
+        String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
+        assertThat(indexingEventPayload, is(not(emptyString())));
     }
 
     @ParameterizedTest(name = "should emit event containing S3 URI to persisted expanded resource:{0}")
@@ -134,6 +162,11 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
 
+    private String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
+        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
+                                                   "customer_allowing_publishing.json"));
+    }
+
     private PersistedEntryWithExpectedType generateExpandedEntry(Class<?> expandedEntryType)
         throws JsonProcessingException, ApiGatewayException {
         if (ExpandedResource.class.equals(expandedEntryType)) {
@@ -158,8 +191,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var publishingRequest = PublishingRequestCase
-            .createOpeningCaseObject(publication)
-            .persistNewTicket(ticketService);
+                                    .createOpeningCaseObject(publication)
+                                    .persistNewTicket(ticketService);
 
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
@@ -172,7 +205,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
         var publication = randomPublication().copy().withDoi(null).build();
         var persisted = Resource.fromPublication(publication)
-            .persistNew(resourceService, UserInstance.fromPublication(publication));
+                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
 

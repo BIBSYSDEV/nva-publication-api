@@ -6,66 +6,120 @@ import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.util.Optional;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
+import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
+import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ExpandedDataEntriesPersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
-    
+
     public static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
+    public static final EventReference EMPTY_EVENT = new EventReference("Empty event", null);
     private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
+    public static final String APPLICAITON_LD_JSON = "applicaiton/ld+json";
+    public static final String COULD_NOT_RETRIEVE_CUSTOMER = "could not retreive customer";
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
-    
+
+    private final RawContentRetriever backendClient;
+
     @JacocoGenerated
     public ExpandedDataEntriesPersistenceHandler() {
-        this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
+        this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET),
+             new AuthorizedBackendUriRetriever("", ""));
     }
-    
-    public ExpandedDataEntriesPersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
+
+    public ExpandedDataEntriesPersistenceHandler(S3Driver s3Reader, S3Driver s3Writer,
+                                                 RawContentRetriever backendClient) {
         super(EventReference.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;
+        this.backendClient = backendClient;
     }
-    
+
     @Override
     protected EventReference processInputPayload(
         EventReference input,
         AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
         ExpandedDataEntry expandedResourceUpdate = readEvent(input);
-        var indexDocument = createIndexDocument(expandedResourceUpdate);
-        var uri = writeEntryToS3(indexDocument);
-        var outputEvent = new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
+        EventReference outputEvent =
+            shouldBePersisted(expandedResourceUpdate)
+                ? createOutPutEventAndPersistDocument(expandedResourceUpdate)
+                : EMPTY_EVENT;
         logger.info(outputEvent.toJsonString());
         return outputEvent;
     }
-    
+
+    private EventReference createOutPutEventAndPersistDocument(ExpandedDataEntry expandedResourceUpdate) {
+        var indexDocument = createIndexDocument(expandedResourceUpdate);
+        var uri = writeEntryToS3(indexDocument);
+        var outputEvent = new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
+        return outputEvent;
+    }
+
+    private boolean shouldBePersisted(ExpandedDataEntry expandedResourceUpdate) {
+        if (expandedResourceUpdate instanceof ExpandedPublishingRequest) {
+            return shouldPersistPublishingRequest((ExpandedPublishingRequest) expandedResourceUpdate);
+        }else {
+            return true;
+        }
+    }
+
+    private boolean shouldPersistPublishingRequest(ExpandedPublishingRequest expandedResourceUpdate) {
+        return !isAutomaticallyApproved(expandedResourceUpdate);
+    }
+
+    private boolean isAutomaticallyApproved(ExpandedPublishingRequest expandedResourceUpdate) {
+        var customerId = expandedResourceUpdate.getCustomerId();
+        var customer = fetchCustomer(customerId);
+        return customer.map(CustomerDto::customerAllowsRegistratorsToPublishDataAndMetadata).orElse(false);
+    }
+
+    private Optional<CustomerDto> fetchCustomer(URI customerId) {
+        return attempt(() -> backendClient.getRawContent(customerId, APPLICAITON_LD_JSON))
+                   .map(Optional::get)
+                   .map(response -> JsonUtils.dtoObjectMapper.readValue(response, CustomerDto.class))
+                   .map(Optional::of)
+                   .orElse(this::logFailure);
+    }
+
+    private Optional<CustomerDto> logFailure(Failure<Optional<CustomerDto>> optionalFailure) {
+        logger.error(COULD_NOT_RETRIEVE_CUSTOMER, optionalFailure.getException());
+        return Optional.empty();
+    }
+
     private URI writeEntryToS3(PersistedDocument indexDocument) {
         var filePath = createFilePath(indexDocument);
         return attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
     }
-    
+
     private ExpandedDataEntry readEvent(EventReference input) {
         String data = s3Reader.readEvent(input.getUri());
         return attempt(() -> PublicationEventsConfig.objectMapper.readValue(data, ExpandedDataEntry.class))
                    .orElseThrow();
     }
-    
+
     private UnixPath createFilePath(PersistedDocument indexDocument) {
         return UnixPath.of(createPathBasedOnIndexName(indexDocument))
                    .addChild(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString() + GZIP_ENDING);
     }
-    
+
     private String createPathBasedOnIndexName(PersistedDocument indexDocument) {
         return indexDocument.getConsumptionAttributes().getIndex();
     }
