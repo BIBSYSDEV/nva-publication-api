@@ -1,10 +1,14 @@
 package no.unit.nva.publication.ticket.update;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -15,6 +19,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -32,6 +38,7 @@ import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.TicketConfig;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
@@ -42,8 +49,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
+@WireMockTest(httpsEnabled = true)
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
     private UpdateTicketStatusHandler handler;
@@ -116,6 +123,46 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+    }
+
+    @Test
+    void shouldReturnErrorForDeleteDraftDoiTicketWhenDoiClientRespondsWithError()
+        throws IOException, ApiGatewayException {
+        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService,
+                                                     new FakeDoiClientThrowingException());
+        var publication = TicketTestUtils.createPersistedPublicationWithDoi(
+            PublicationStatus.PUBLISHED, resourceService);
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var completedTicket = ticket.close();
+        mockBadResponseFromDoiRegistrar(publication.getDoi());
+        var request = authorizedUserCompletesTicket(completedTicket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+    }
+
+    private void mockBadResponseFromDoiRegistrar(URI doi) {
+        stubFor(WireMock.get(urlPathEqualTo("/draft/" + doiPrefix(doi) + "/" + doiSuffix(doi)))
+                    .willReturn(aResponse().withBody("[]").withStatus(HTTP_BAD_GATEWAY)));
+    }
+
+    private String doiSuffix(URI doi) {
+        return doi.getPath().split("/")[2];
+    }
+
+    private String doiPrefix(URI doi) {
+        return doi.getPath().split("/")[1];
+    }
+
+    @Test
+    void shouldDeleteDraftDoiAndUpdatePublicationSuccessfully()
+        throws IOException, ApiGatewayException {
+        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService, new FakeDoiClient());
+        var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED, resourceService);
+        var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);
+        var request = authorizedUserCompletesTicket(ticket);
+        handler.handleRequest(request, output, CONTEXT);
+        assertThat(resourceService.getPublication(publication).getDoi(), is(nullValue()));
     }
 
     @Test

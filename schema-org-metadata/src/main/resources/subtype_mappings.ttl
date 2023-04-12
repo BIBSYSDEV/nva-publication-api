@@ -2,6 +2,8 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix schema: <https://schema.org/> .
 
+nva:ExhibitionProduction rdfs:subClassOf schema:ExhibitionEvent .
+
 nva:JournalArticle rdfs:subClassOf schema:ScholarlyArticle .
 nva:AcademicArticle rdfs:subClassOf schema:ScholarlyArticle .
 nva:AcademicLiteratureReview rdfs:subClassOf schema:ScholarlyArticle .

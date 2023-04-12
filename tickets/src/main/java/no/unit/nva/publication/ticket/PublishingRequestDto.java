@@ -14,6 +14,7 @@ import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
 import java.beans.ConstructorProperties;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -27,27 +28,31 @@ public class PublishingRequestDto extends TicketDto {
     private final Instant createdDate;
     private final Instant modifiedDate;
     private final SortableIdentifier identifier;
+    private final URI id;
     private final PublicationWorkflow workflow;
 
     @ConstructorProperties({"status","createdDate","modifiedDate","identifier","publication","messages",
-            "viewedBy", "publicationWorkflow"})
+            "id", "viewedBy", "publicationWorkflow", "assignee"})
     public PublishingRequestDto(TicketStatus status,
                                 Instant createdDate,
                                 Instant modifiedDate,
                                 SortableIdentifier identifier,
                                 PublicationSummary publication,
+                                URI id,
                                 List<MessageDto> messages,
                                 Set<User> viewedBy,
-                                PublicationWorkflow publicationWorkflow) {
-        super(status, messages, viewedBy, publication);
+                                PublicationWorkflow publicationWorkflow,
+                                User assignee) {
+        super(status, messages, viewedBy, publication,assignee);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
+        this.id = id;
         this.workflow = publicationWorkflow;
     }
     
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, PublicationWorkflow.UNSET);
+        return new PublishingRequestDto(null, null, null, null,null, null, null, null, PublicationWorkflow.UNSET,null);
     }
     
     public Instant getCreatedDate() {
@@ -88,7 +93,7 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationSummary().getPublicationId(), getMessages(), getWorkflow());
+            getWorkflow(),getPublicationSummary().getPublicationId(), id, getMessages(), getAssignee());
     }
     
     @Override
@@ -108,6 +113,8 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getPublicationSummary().getPublicationId(),
             that.getPublicationSummary().getPublicationId())
                && Objects.equals(getWorkflow(), that.getWorkflow())
-               && Objects.equals(getMessages(), that.getMessages());
+               && Objects.equals(id, that.id)
+               && Objects.equals(getMessages(), that.getMessages())
+               && Objects.equals(getAssignee(), that.getAssignee());
     }
 }

@@ -72,6 +72,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -124,7 +125,7 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Publication status: {0}")
     @DisplayName("should create Doi Request when Publication is eligible")
-    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED"}, mode = Mode.INCLUDE)
+    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED", "PUBLISHED_METADATA"}, mode = Mode.INCLUDE)
     void shouldCreateDoiRequestWhenPublicationIsEligible(PublicationStatus status) throws ApiGatewayException {
         var publication = persistPublication(owner, status);
         publication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -409,7 +410,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     //TODO: remove this test when ticket service is in place
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("Legacy functionality: should retrieve tickets that are unique to a publication by "
-        + "publication identifier")
+                 + "publication identifier")
     @MethodSource("uniqueTicketsProvider")
     void shouldCompleteTicketByResourceIdentifierWhenTicketIsUniqueForAPublication(
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
@@ -695,6 +696,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException {
+
         var publication = new Publication.Builder().withResourceOwner(
                 new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
             .withPublisher(createOrganization(owner.getOrganizationUri()))

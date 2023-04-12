@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
@@ -25,9 +24,11 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects", "PMD.ForLoopCanBeForeach"})
 public class CristinMapper extends CristinMappingModule {
 
     public static final String EMPTY_STRING = "";
@@ -57,7 +58,7 @@ public class CristinMapper extends CristinMappingModule {
     public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
-                                                               "0").toResourceOwner();
+                                                                     "0").toResourceOwner();
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
@@ -77,13 +78,45 @@ public class CristinMapper extends CristinMappingModule {
                                       .withPublisher(extractOrganization())
                                       .withResourceOwner(extractResourceOwner())
                                       .withStatus(PublicationStatus.PUBLISHED)
-                                      .withLink(HARDCODED_SAMPLE_DOI)
                                       .withProjects(extractProjects())
                                       .withSubjects(generateNvaHrcsCategoriesAndActivities())
                                       .withFundings(extractFundings())
                                       .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
+    }
+
+    private static void addContributorNumberIfMissing(List<CristinContributor> cristinContributors) {
+        if (allContributerNumbersAreNullValues(cristinContributors)) {
+            addMissingSequenceNumberToAllContributors(cristinContributors);
+        } else {
+            addMissingSequenceNumbers(cristinContributors);
+        }
+    }
+
+    private static void addMissingSequenceNumberToAllContributors(List<CristinContributor> cristinContributors) {
+        for (int i = 0; i < cristinContributors.size(); i++) {
+            cristinContributors.get(i).setContributorOrder(i);
+        }
+    }
+
+    private static void addMissingSequenceNumbers(List<CristinContributor> cristinContributors) {
+        for (int i = 0; i < cristinContributors.size(); i++) {
+            if (isNull(cristinContributors.get(i).getContributorOrder())) {
+                cristinContributors.get(i)
+                    .setContributorOrder(cristinContributors.get(i - 1).getContributorOrder() + 1);
+            }
+        }
+    }
+
+    private static boolean allContributerNumbersAreNullValues(List<CristinContributor> cristinContributors) {
+        return cristinContributors.stream().map(CristinContributor::getContributorOrder).noneMatch(Objects::nonNull);
+    }
+
+    private static List<CristinContributor> sortCristinContributors(List<CristinContributor> cristinContributors) {
+        return cristinContributors.stream()
+                   .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
+                   .collect(Collectors.toList());
     }
 
     private ResourceOwner extractResourceOwner() {
@@ -156,7 +189,7 @@ public class CristinMapper extends CristinMappingModule {
             if (publication.getEntityDescription().getContributors().isEmpty()) {
                 assertThat(publication,
                            doesNotHaveEmptyValuesIgnoringFields(IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY));
-            }else {
+            } else {
                 assertThat(publication,
                            doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
             }
@@ -232,9 +265,16 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private List<Contributor> extractContributors() {
-        return Optional.ofNullable(cristinObject.getContributors())
-                   .orElse(List.of())
-                   .stream()
+        var contributors = Optional.ofNullable(cristinObject.getContributors());
+        return contributors.isPresent()
+                   ? contributorsWithUpdatedSequenceNumbers(contributors.get())
+                   : Collections.emptyList();
+    }
+
+    private List<Contributor> contributorsWithUpdatedSequenceNumbers(List<CristinContributor> cristinContributors) {
+        var sortedContributors = sortCristinContributors(cristinContributors);
+        addContributorNumberIfMissing(sortedContributors);
+        return cristinContributors.stream()
                    .map(attempt(CristinContributor::toNvaContributor))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());

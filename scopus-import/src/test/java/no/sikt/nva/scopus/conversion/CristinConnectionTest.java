@@ -85,7 +85,7 @@ public class CristinConnectionTest {
     }
 
     @Test
-    void shouldReturnNullWhenCristinIdIsNull(){
+    void shouldReturnNullWhenCristinIdIsNull() {
         URI cristinId = null;
         var actualOrganization = cristinConnection.getCristinOrganizationByCristinId(cristinId);
         assertThat(actualOrganization, is(nullValue()));
