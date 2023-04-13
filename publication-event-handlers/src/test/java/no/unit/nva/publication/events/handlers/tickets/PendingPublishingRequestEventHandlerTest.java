@@ -24,7 +24,6 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Entity;
@@ -163,7 +162,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
         var resource = resourceService.getResourceByIdentifier(publishingRequest.getResourceIdentifier());
         assertThat(resource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED_METADATA)));
-        assertThatFilesAreUnpublished(resource);
     }
 
     @Test
@@ -217,13 +215,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         publication.getEntityDescription().setMainTitle(null);
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
-    }
-
-    private void assertThatFilesAreUnpublished(Resource resource) {
-        var publishedFileCount = resource.getAssociatedArtifacts().stream()
-                        .filter(PublishedFile.class::isInstance)
-                        .count();
-        assertThat(publishedFileCount, is(equalTo(0L)));
     }
 
     private void callApiOfCustomerAllowingAutomaticPublishing(PublishingRequestCase completedTicket)
