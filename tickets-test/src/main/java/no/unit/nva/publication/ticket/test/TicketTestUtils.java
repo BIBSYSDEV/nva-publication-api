@@ -4,12 +4,18 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import java.util.ArrayList;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -42,6 +48,20 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatus(status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (isPublished(publication)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
+    public static Publication createPersistedPublicationWithUnpublishedFiles(PublicationStatus status,
+                                                                  ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithUnpublishedFiles(status);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
@@ -118,6 +138,26 @@ public final class TicketTestUtils {
                    .withDoi(null)
                    .withStatus(status)
                    .build();
+    }
+
+    private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
+        var publication = randomPublication().copy()
+                              .withStatus(status)
+                              .build();
+        unpublishFiles(publication);
+        return publication;
+    }
+
+    private static Publication unpublishFiles(Publication publication) {
+        var list = publication.getAssociatedArtifacts()
+                       .stream()
+                       .filter(artifact -> artifact instanceof File)
+                       .map(File.class::cast)
+                       .map(File::toUnpublishedFile)
+                       .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
+         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
+
+         return publication;
     }
 
     private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {
