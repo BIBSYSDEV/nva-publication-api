@@ -162,13 +162,16 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var status = publication.getStatus();
         return PublicationStatus.PUBLISHED.equals(status);
     }
-    
+
+    /**
+     * Associated artifacts are NOT updated anymore. For now all files are just files,
+     * i.e. we do not use Published/Unpublished temporary.
+     **/
+
     private void publishPublication(Publication publication) throws InvalidPublicationException {
         assertThatPublicationHasMinimumMandatoryFields(publication);
         publication.setStatus(PublicationStatus.PUBLISHED);
         publication.setPublishedDate(clockForTimestamps.instant());
-        //TODO: the associated artifacts are updated when the Publication is converted to a Resource.
-        // make this fact a bit more clear.
         updatePublicationIncludingStatus(publication);
     }
 
