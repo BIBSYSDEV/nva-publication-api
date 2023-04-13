@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -29,8 +28,8 @@ public class PublishingRequestResolver {
 
     @JacocoGenerated
     public PublishingRequestResolver() {
-        this(ResourceService.defaultService(),TicketService.defaultService(),
-            new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL));
+        this(ResourceService.defaultService(), TicketService.defaultService(),
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL));
     }
 
     public PublishingRequestResolver(ResourceService resourceService, TicketService ticketService,
@@ -47,6 +46,14 @@ public class PublishingRequestResolver {
         }
     }
 
+    private static ArrayList<AssociatedArtifact> convertFilesToPublishedFiles(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(artifact -> artifact instanceof File)
+                   .map(File.class::cast)
+                   .map(File::toPublishedFile)
+                   .collect(Collectors.toCollection(ArrayList::new));
+    }
+
     private boolean customerAllowsPublishing(URI customerId) {
         var rawContent = uriRetriever.getRawContent(customerId, CONTENT_TYPE);
         return rawContent.isPresent() &&
@@ -54,20 +61,14 @@ public class PublishingRequestResolver {
     }
 
     private void publishPublication(Publication publication) {
-        publishFiles(publication);
+        updateFilesToPublished(publication);
         attempt(() -> resourceService.updatePublication(publication));
         attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(publication),
                                                          publication.getIdentifier()));
     }
 
-    private void publishFiles(Publication publication) {
-        var files = publication.getAssociatedArtifacts()
-                        .stream()
-                        .filter(artifact -> artifact instanceof File)
-                        .map(File.class::cast)
-                        .map(File::toPublishedFile)
-                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(files));
+    private void updateFilesToPublished(Publication publication) {
+        publication.getAssociatedArtifacts().forEach(artifact -> mapToPublished(artifact));
     }
 
     private void updateStatusToApproved(TicketEntry createdTicket) {

@@ -378,7 +378,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
-        assertThat(getFiles(publishedPublication), everyItem(instanceOf(PublishedFile.class)));
+        assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(PublishedFile.class)));
         assertThat(publishedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
     }
@@ -398,7 +398,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
     }
 
-    private static List<AssociatedArtifact> getFiles(Publication publishedPublication) {
+    private static List<AssociatedArtifact> getAssociatedFiles(Publication publishedPublication) {
         return publishedPublication.getAssociatedArtifacts()
                    .stream()
                    .filter(artifact -> artifact instanceof File)

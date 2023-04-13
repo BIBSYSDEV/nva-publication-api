@@ -3,7 +3,9 @@ package no.unit.nva.publication.events.handlers.tickets;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.util.ArrayList;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -11,6 +13,9 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -59,17 +64,33 @@ public class AcceptedPublishingRequestEventHandler
         var eventBlob = s3Driver.readEvent(input.getUri());
         var latestUpdate = parseInput(eventBlob);
         if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus()) && publicationIsNotPublished(latestUpdate)) {
-            var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
-            var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
-            attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
-                .orElse(fail -> logError(fail.getException()));
-            createDoiRequestIfNeeded(publication);
+            publishPublication(latestUpdate);
         }
         return null;
     }
 
     private static boolean hasDoi(Publication publication) {
         return nonNull(publication.getDoi());
+    }
+
+    private void publishPublication(PublishingRequestCase latestUpdate) {
+        var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
+        var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
+        updateFilesToPublished(publication);
+        attempt(() -> resourceService.updatePublication(publication));
+        attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
+            .orElse(fail -> logError(fail.getException()));
+        createDoiRequestIfNeeded(publication);
+    }
+
+    private void updateFilesToPublished(Publication publication) {
+        var files = publication.getAssociatedArtifacts()
+                        .stream()
+                        .filter(artifact -> artifact instanceof File)
+                        .map(File.class::cast)
+                        .map(File::toPublishedFile)
+                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(files));
     }
 
     private boolean publicationIsNotPublished(PublishingRequestCase latestUpdate) {
