@@ -85,6 +85,10 @@ public class PendingPublishingRequestEventHandler
         var credentials = fetchCredentials(this.secretsReader);
         var backendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, credentials);
 
+        if (customerAllowsPublishing(backendClient, publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
+            attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED))
+                .orElseThrow();
+        }
         if (customerAllowsMetadataPublishing(backendClient, publishingRequest)
             && ticketHasNotBeenCompleted(publishingRequest)) {
                 publishMetadata(publishingRequest);
