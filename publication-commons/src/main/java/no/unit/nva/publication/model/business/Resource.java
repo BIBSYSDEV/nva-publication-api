@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -22,10 +21,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.storage.Dao;
@@ -120,7 +116,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withPublishedDate(publication.getPublishedDate())
-                   .withAssociatedArtifactsList(calculateArtifacts(publication))
+                   .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -190,7 +186,7 @@ public class Resource implements Entity {
                    .withDoi(getDoi())
                    .withHandle(getHandle())
                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withAssociatedArtifacts(calculateArtifacts(this))
+                   .withAssociatedArtifacts(getAssociatedArtifacts())
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
                    .withRightsHolder(getRightsHolder())
@@ -259,7 +255,6 @@ public class Resource implements Entity {
 
     public void setStatus(PublicationStatus status) {
         this.status = status;
-        this.associatedArtifacts = calculateArtifacts(this);
     }
 
     public Organization getPublisher() {
@@ -385,6 +380,7 @@ public class Resource implements Entity {
      *
      * @return the hashcode.
      */
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
@@ -399,6 +395,7 @@ public class Resource implements Entity {
      * @param o the other Resource.
      * @return true if the two Resources are equivalent without considering the row version, false otherwise.
      */
+    @JacocoGenerated
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -430,65 +427,6 @@ public class Resource implements Entity {
 
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
         return resourceService.fetchAllTicketsForResource(this);
-    }
-
-    private static AssociatedArtifactList calculateArtifacts(Publication publication) {
-        var artifactsList = Optional.ofNullable(publication.getAssociatedArtifacts())
-                                .stream()
-                                .flatMap(artifacts -> calculateArtifacts(artifacts, publication.getStatus()))
-                                .collect(Collectors.toList());
-        return new AssociatedArtifactList(artifactsList);
-    }
-
-    private static AssociatedArtifactList calculateArtifacts(Resource resource) {
-        var artifactsList = Optional.ofNullable(resource.getAssociatedArtifacts())
-                                .stream()
-                                .flatMap(artifacts -> calculateArtifacts(artifacts, resource.getStatus()))
-                                .collect(Collectors.toList());
-        return new AssociatedArtifactList(artifactsList);
-    }
-
-    private static Stream<AssociatedArtifact> calculateArtifacts(AssociatedArtifactList arts,
-                                                                 PublicationStatus publicationStatus) {
-        return arts.stream().map(artifact -> convertArtifact(artifact, publicationStatus));
-    }
-
-    private static AssociatedArtifact convertArtifact(AssociatedArtifact artifact,
-                                                      PublicationStatus publicationStatus) {
-        if (artifactIsAFile(artifact)) {
-            var file = (File) artifact;
-            return convertFile(file, publicationStatus);
-        } else {
-            return artifact;
-        }
-    }
-
-    private static AssociatedArtifact convertFile(File file, PublicationStatus publicationStatus) {
-        if (isPublishableFile(file) && shouldNotYetGetPublished(publicationStatus)) {
-            return file.toUnpublishedFile();
-        } else if (isPublishableFile(file) && shouldBePublished(publicationStatus)) {
-            return file.toPublishedFile();
-        } else if (!isPublishableFile(file)) {
-            return file instanceof AdministrativeAgreement ? file : file.toUnpublishableFile();
-        } else {
-            throw new IllegalStateException("Missing conversion rule for file");
-        }
-    }
-
-    private static boolean artifactIsAFile(AssociatedArtifact artifact) {
-        return artifact instanceof File;
-    }
-
-    private static boolean shouldBePublished(PublicationStatus publicationStatus) {
-        return PublicationStatus.PUBLISHED.equals(publicationStatus);
-    }
-
-    private static boolean shouldNotYetGetPublished(PublicationStatus publicationStatus) {
-        return !PublicationStatus.PUBLISHED.equals(publicationStatus);
-    }
-
-    private static boolean isPublishableFile(File artifact) {
-        return !(artifact instanceof AdministrativeAgreement) && !artifact.isAdministrativeAgreement();
     }
 }
 

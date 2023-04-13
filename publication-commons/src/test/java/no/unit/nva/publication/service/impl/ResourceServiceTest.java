@@ -70,11 +70,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -91,6 +88,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -110,7 +108,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -894,55 +891,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                      () -> resourceService.publishPublication(userInstance,
                                                                               samplePublication.getIdentifier()));
         assertThat(exception.getMessage(), containsString(RESOURCE_LACKS_DATA));
-    }
-
-    @Test
-    void shouldSaveDraftPublicationWithAssociatedFilesAsUnpublished() throws BadRequestException {
-        var publication = draftPublicationWithoutDoiAndAllTypesOfFiles();
-        var persisted = Resource.fromPublication(publication)
-                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        assertThat(persisted.getAssociatedArtifacts(), everyItem(is(instanceOf(UnpublishedFile.class))));
-    }
-
-    @Test
-    void shouldSaveAlreadyPublishedPublicationWithAssociatedFilesAsPublished() {
-        var legacyFile = randomFile().buildLegacyFile();
-        var publishedFile = randomFile().buildPublishedFile();
-        var unpublishedFile = randomFile().buildUnpublishedFile();
-        var publication = randomPublication().copy()
-
-                              .withStatus(PUBLISHED)
-                              .withAssociatedArtifacts(List.of(legacyFile, publishedFile, unpublishedFile))
-                              .build();
-        var persisted = resourceService.createPublicationFromImportedEntry(publication);
-        assertThat(persisted.getAssociatedArtifacts(), everyItem(is(instanceOf(PublishedFile.class))));
-    }
-
-    @Test
-    void shouldConvertUnPublishedArtifactsToPublishedWhenPublicationIsPublished() throws ApiGatewayException {
-        var publication = draftPublicationWithoutDoiAndAllTypesOfFiles();
-        var persistedDraft = Resource.fromPublication(publication)
-                                 .persistNew(resourceService, UserInstance.fromPublication(publication));
-        assertThat(persistedDraft.getAssociatedArtifacts(), everyItem(is(instanceOf(UnpublishedFile.class))));
-        resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
-                                           persistedDraft.getIdentifier());
-        var persistedPublished = resourceService.getPublication(persistedDraft);
-        assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
-        assertThat(persistedPublished.getAssociatedArtifacts(), everyItem(is(instanceOf(PublishedFile.class))));
-    }
-
-    @Test
-    void shouldNotConvertUnpublishableArtifactsToPublishableWhenPublicationIsPublished() throws ApiGatewayException {
-        var publication = draftPublicationWithAdministrativeAgreements();
-        var persistedDraft = Resource.fromPublication(publication)
-                                 .persistNew(resourceService, UserInstance.fromPublication(publication));
-        assertThat(persistedDraft.getAssociatedArtifacts(), everyItem(is(instanceOf(AdministrativeAgreement.class))));
-        resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
-                                           persistedDraft.getIdentifier());
-        var persistedPublished = resourceService.getPublication(persistedDraft);
-        assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
-        assertThat(persistedPublished.getAssociatedArtifacts(),
-                   everyItem(is(instanceOf(AdministrativeAgreement.class))));
     }
 
     @Test
