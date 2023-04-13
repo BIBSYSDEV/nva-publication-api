@@ -1,18 +1,8 @@
 package no.unit.nva.publication.ticket.create;
 
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
+
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
@@ -21,7 +11,6 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.WorkFlowDto;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -38,20 +27,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
-import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.PublicationServiceConfig.*;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
 
-    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
-    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
-    private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
-    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final String  BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String LOCATION_HEADER = "Location";
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
