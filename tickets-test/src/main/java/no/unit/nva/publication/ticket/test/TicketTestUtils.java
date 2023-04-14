@@ -22,6 +22,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -59,7 +60,7 @@ public final class TicketTestUtils {
     }
 
     public static Publication createPersistedPublicationWithUnpublishedFiles(PublicationStatus status,
-                                                                  ResourceService resourceService)
+                                                                             ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithUnpublishedFiles(status);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
@@ -112,6 +113,16 @@ public final class TicketTestUtils {
                    .persistNewTicket(ticketService).close();
     }
 
+    public static TicketEntry createCompletedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
+                                                    TicketService ticketService)
+        throws ApiGatewayException {
+        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
+
+        return ticketService.fetchTicket(ticket);
+    }
+
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
@@ -155,9 +166,9 @@ public final class TicketTestUtils {
                        .map(File.class::cast)
                        .map(File::toUnpublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
-         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
 
-         return publication;
+        return publication;
     }
 
     private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {

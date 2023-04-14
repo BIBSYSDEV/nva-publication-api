@@ -68,6 +68,17 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler = new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         outputStream = new ByteArrayOutputStream();
     }
+
+    @Test
+    void shouldDoNothingWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
     
     @Test
     void shouldPublishPublicationWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {

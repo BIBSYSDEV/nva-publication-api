@@ -6,6 +6,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.tickets.PendingPublishingRequestEventHandler.BACKEND_CLIENT_SECRET_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -37,6 +38,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -85,6 +87,37 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         this.context = new FakeContext();
     }
     
+    @Test
+    void shouldDoNothingWhenPublicationIsAlreadyPublished()
+        throws IOException, ApiGatewayException {
+
+        var publishingRequest = completedPublishingRequest();
+        var event = createEvent(publishingRequest);
+        var customerAllowingPublishing =
+            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval();
+        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
+
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
+                                                                secretsReader, s3Client);
+        handler.handleRequest(event, output, context);
+        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
+    }
+
+    @Test
+    void shouldDoNothingWhenMetadataIsAlreadyPublished() throws ApiGatewayException, IOException {
+        var publishingRequest = completedPublishingRequest();
+        var event = createEvent(publishingRequest);
+        var customerAllowingMetadataPublishing =
+            mockIdentityServiceResponseForPublisherAllowingMetadataPublishing();
+        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingMetadataPublishing, HTTP_OK));
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
+                                                                secretsReader, s3Client);
+        handler.handleRequest(event, output, context);
+        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
+    }
+
     @Test
     void shouldIgnorePublishingRequestWhenCustomerHasPolicyForbiddingRegistratorsToPublishDataAndMetadata()
         throws IOException, ApiGatewayException {
@@ -264,6 +297,22 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private PublishingRequestCase pendingPublishingRequest() throws ApiGatewayException {
         var publication = createPublication();
         return createPendingPublishingRequest(publication);
+    }
+
+    private PublishingRequestCase completedPublishingRequest() throws ApiGatewayException {
+        var publication = createPublication();
+        return createCompletedPublishingRequest(publication);
+    }
+
+    private PublishingRequestCase createCompletedPublishingRequest(Publication publication) throws ApiGatewayException {
+        var publishingRequest = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class,
+                                                                 ticketService);
+        return (PublishingRequestCase) publishingRequest;
+    }
+
+    private TicketEntry persistTicket(TicketEntry newTicket) {
+        return attempt(() -> newTicket.persistNewTicket(ticketService))
+                   .orElseThrow();
     }
 
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
