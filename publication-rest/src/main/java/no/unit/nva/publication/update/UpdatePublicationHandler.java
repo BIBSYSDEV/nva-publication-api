@@ -75,7 +75,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         validateRequest(identifierInPath, input);
         Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
-        if (newFilesAdded(publicationUpdate)) {
+        if (containsNewFiles(publicationUpdate)) {
             TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class)
                 .persistNewTicket(ticketService);
         }
@@ -88,7 +88,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return HttpStatus.SC_OK;
     }
 
-    private boolean newFilesAdded(Publication publicationUpdate) {
+    private boolean containsNewFiles(Publication publicationUpdate) {
         return getUnpublishedFiles(publicationUpdate).isEmpty();
     }
 

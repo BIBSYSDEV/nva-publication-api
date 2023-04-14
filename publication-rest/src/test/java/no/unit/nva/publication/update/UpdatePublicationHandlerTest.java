@@ -43,6 +43,7 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.AccessRight;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -52,6 +53,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -130,12 +132,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerCreatesPendingPublicationRequestTicketWhenUpdatingFiles()
-        throws BadRequestException, IOException {
-        publication = PublicationGenerator.publicationWithoutIdentifier();
-        Publication savedPublication = createSamplePublication();
+    void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFiles()
+        throws ApiGatewayException, IOException {
+        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, publicationService);
 
-        Publication publicationUpdate = updateTitle(savedPublication);
+        Publication publicationUpdate = updateTitle(publishedPublication);
 
         InputStream inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
