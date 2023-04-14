@@ -20,13 +20,17 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.everyItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -107,10 +111,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
 
-    public static Stream<Class<?>> uniqueTicketsProvider() {
-        return Stream.of(DoiRequest.class, PublishingRequestCase.class);
-    }
-
     @BeforeEach
     public void initialize() {
         super.init();
@@ -124,7 +124,8 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Publication status: {0}")
     @DisplayName("should create Doi Request when Publication is eligible")
-    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED", "PUBLISHED_METADATA"}, mode = Mode.INCLUDE)
+    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "PUBLISHED",
+        "PUBLISHED_METADATA"}, mode = Mode.INCLUDE)
     void shouldCreateDoiRequestWhenPublicationIsEligible(PublicationStatus status) throws ApiGatewayException {
         var publication = persistPublication(owner, status);
         publication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -177,17 +178,14 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     // This action fails with a TransactionFailedException which contains no information about why the transaction
     // failed, which may fail because of multiple reasons including what we are testing for here.
-    @ParameterizedTest(name = "type: {0}")
-    @DisplayName("should throw Error when more than one tickets exist for one publication for type")
-    @MethodSource("uniqueTicketsProvider")
-    void shouldThrowExceptionOnMoreThanOnePublishingRequestsForTheSamePublication(
-        Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+    @Test
+    void shouldThrowExceptionOnMoreThanOneDoiRequestsForTheSamePublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
 
-        var firstTicket = createUnpersistedTicket(publication, ticketType);
+        var firstTicket = createUnpersistedTicket(publication, DoiRequest.class);
         attempt(() -> firstTicket.persistNewTicket(ticketService)).orElseThrow();
 
-        var secondTicket = createUnpersistedTicket(publication, ticketType);
+        var secondTicket = createUnpersistedTicket(publication, DoiRequest.class);
         Executable action = () -> secondTicket.persistNewTicket(ticketService);
         assertThrows(TransactionFailedException.class, action);
     }
@@ -304,14 +302,12 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(actualTicketEntry, is(equalTo(expectedTicketEntry)));
     }
 
-
     @Test
     void shouldThrowBadRequestExceptionWhenTryingToCompleteDoiReqeuestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(ticket, COMPLETED));
     }
-
 
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve eventually consistent ticket")
@@ -333,7 +329,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var expectedTicket = createPersistedTicket(publication, ticketType);
         var retrievedRequest = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
-            publication.getIdentifier(), ticketType).orElseThrow();
+                                                                             publication.getIdentifier(), ticketType)
+                                   .orElseThrow();
         assertThat(retrievedRequest, is(equalTo(expectedTicket)));
     }
 
@@ -409,15 +406,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     //TODO: remove this test when ticket service is in place
-    @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("Legacy functionality: should retrieve tickets that are unique to a publication by "
-                 + "publication identifier")
-    @MethodSource("uniqueTicketsProvider")
-    void shouldCompleteTicketByResourceIdentifierWhenTicketIsUniqueForAPublication(
-        Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
-        var ticket = createPersistedTicket(publication, ticketType);
-        var ticketFetchedByResourceIdentifier = legacyQueryObject(ticketType, publication);
+    @Test
+    void shouldCompleteTicketByResourceIdentifierWhenTicketIsUniqueForAPublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(DoiRequest.class));
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticketFetchedByResourceIdentifier = legacyQueryObject(publication);
         var completedTicket = ticketService.completeTicket(ticketFetchedByResourceIdentifier);
         var expectedTicket = ticket.copy();
         expectedTicket.setStatus(COMPLETED);
@@ -496,7 +489,8 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+    void shouldMarkTicketAsUnreadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
@@ -506,7 +500,8 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+    void shouldMarkTicketAsReadForOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markUnreadByOwner().persistUpdate(ticketService);
@@ -517,7 +512,8 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+    void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
@@ -527,7 +523,8 @@ class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+    void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);
@@ -627,15 +624,28 @@ class TicketServiceTest extends ResourcesLocalTest {
         assertThat(fetchedTickets, is(empty()));
     }
 
+    @Test
+    void shouldBePossibleToCreateSeveralPublishingRequestTicketsForSinglePublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        assertDoesNotThrow(() -> IntStream.range(0, 2)
+                                                   .boxed()
+                                                   .map(ticketType -> createPersistedTicket(publication,
+                                                                                            PublishingRequestCase.class))
+                                                   .collect(Collectors.toList()));
+        var ticketsFromDatabase = resourceService.fetchAllTicketsForElevatedUser(owner, publication.getIdentifier()).collect(
+            Collectors.toList());
+        assertThat(ticketsFromDatabase, allOf(hasSize(2), everyItem(instanceOf(PublishingRequestCase.class))));
+    }
 
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {
         return TicketTestUtils.ticketTypeAndPublicationStatusProvider()
-            .map(Arguments::get)
-            .filter(argument -> Arrays.asList(argument).get(1) == publication.getStatus())
-            .map(arg -> TicketEntry.requestNewTicket(publication, (Class<? extends TicketEntry>) Arrays.asList(arg).get(0)))
-            .map(attempt(ticket -> ticket.persistNewTicket(ticketService)))
-            .map(Try::orElseThrow)
-            .collect(Collectors.toList());
+                   .map(Arguments::get)
+                   .filter(argument -> Arrays.asList(argument).get(1) == publication.getStatus())
+                   .map(arg -> TicketEntry.requestNewTicket(publication,
+                                                            (Class<? extends TicketEntry>) Arrays.asList(arg).get(0)))
+                   .map(attempt(ticket -> ticket.persistNewTicket(ticketService)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
     }
 
     private Publication updatePublicationTile(Publication publication) {
@@ -649,18 +659,11 @@ class TicketServiceTest extends ResourcesLocalTest {
                    .map(GeneralSupportRequest.class::cast).orElseThrow();
     }
 
-    private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
-        if (DoiRequest.class.equals(ticketType)) {
+    private TicketEntry legacyQueryObject( Publication publication) {
             return DoiRequest.builder()
                        .withCustomerId(publication.getPublisher().getId())
                        .withPublicationDetails(PublicationDetails.create(publication))
                        .build();
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
-            return PublishingRequestCase.createOpeningCaseObject(publication);
-        }
-        throw new UnsupportedOperationException(
-            "Legacy access pattern supported for strictly only DoiRequests and " + "PublishingRequests");
     }
 
     private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
