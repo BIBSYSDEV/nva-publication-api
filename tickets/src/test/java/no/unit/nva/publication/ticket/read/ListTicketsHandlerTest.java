@@ -8,6 +8,10 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -15,13 +19,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.time.Clock;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.PublicationWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.WorkFlowDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -45,12 +54,14 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     private MessageService messageService;
     private ListTicketsHandler handler;
     private ByteArrayOutputStream outputStream;
-    
+    private UriRetriever uriRetriever;
+
     @BeforeEach
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(client);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
         this.messageService = new MessageService(client);
         this.handler = new ListTicketsHandler(ticketService);
         this.outputStream = new ByteArrayOutputStream();
@@ -97,6 +108,8 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     
     private Stream<TicketEntry> generateTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status,
                                                 UserInstance owner) {
+        when(uriRetriever.getDto(any(), any()))
+            .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
         return IntStream.range(0, SMALL_PUBLICATIONS_NUMBER)
                    .boxed()
                    .map(ignored -> attempt(() -> TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService)).orElseThrow())

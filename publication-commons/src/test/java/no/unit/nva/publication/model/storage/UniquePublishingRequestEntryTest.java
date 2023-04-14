@@ -12,7 +12,7 @@ class UniquePublishingRequestEntryTest {
     @Test
     void shouldContainPrimaryKeyThatEnsuresThatOnlyOnePublishingRequestExistsPerPublication() {
         var publication = randomPublication();
-        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        var publishingRequest = PublishingRequestCase.fromPublication(publication);
         var firstUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
         var secondUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
         assertThat(firstUniquenessEntry.primaryKey(), is(equalTo(secondUniquenessEntry.primaryKey())));

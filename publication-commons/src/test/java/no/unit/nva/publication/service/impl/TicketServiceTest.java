@@ -44,10 +44,7 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -58,17 +55,8 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
@@ -91,7 +79,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class TicketServiceTest extends ResourcesLocalTest {
 
@@ -103,6 +90,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     private UserInstance owner;
     private Instant now;
     private MessageService messageService;
+    private UriRetriever uriRetriever;
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -119,7 +107,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         this.owner = randomUserInstance();
         Clock clock = Clock.systemDefaultZone();
         this.resourceService = new ResourceService(client, clock);
-        this.ticketService = new TicketService(client);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
         this.messageService = new MessageService(client);
     }
 
@@ -155,7 +144,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreatePublishingRequestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
+        var ticket = PublishingRequestCase.fromPublication(publication);
 
         var persistedTicket = ticket.persistNewTicket(ticketService);
 
@@ -196,7 +185,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowConflictExceptionWhenRequestingToPublishAlreadyPublishedPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, PUBLISHED);
-        var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
+        var ticket = PublishingRequestCase.fromPublication(publication);
         Executable action = () -> ticket.persistNewTicket(ticketService);
         assertThrows(ConflictException.class, action);
     }
@@ -266,8 +255,8 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenDuplicateTicketIdentifierIsCreated(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var duplicateIdentifier = SortableIdentifier.next();
-        ticketService = new TicketService(client, () -> duplicateIdentifier);
+        when(uriRetriever.getDto(any(), any()))
+            .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
         var ticket = createUnpersistedTicket(publication, ticketType);
         Executable action = () -> ticket.persistNewTicket(ticketService);
         assertDoesNotThrow(action);
@@ -660,7 +649,7 @@ class TicketServiceTest extends ResourcesLocalTest {
                 .build();
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
-            return PublishingRequestCase.createOpeningCaseObject(publication);
+            return PublishingRequestCase.fromPublication(publication);
         }
         throw new UnsupportedOperationException(
             "Legacy access pattern supported for strictly only DoiRequests and " + "PublishingRequests");
@@ -725,19 +714,15 @@ class TicketServiceTest extends ResourcesLocalTest {
             return DoiRequest.fromPublication(publication);
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
-            return createRandomPublishingRequest(publication);
+            var publishingRequest = PublishingRequestCase.fromPublication(publication);
+            publishingRequest.setIdentifier(SortableIdentifier.next());
+            return publishingRequest;
         }
         if (GeneralSupportRequest.class.equals(ticketType)) {
-            return createGeneralSupportRequest(publication);
+            return GeneralSupportRequest.fromPublication(publication);
         }
 
         throw new UnsupportedOperationException();
-    }
-
-    private PublishingRequestCase createRandomPublishingRequest(Publication publication) {
-        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
-        publishingRequest.setIdentifier(SortableIdentifier.next());
-        return publishingRequest;
     }
 
     private void copyServiceControlledFields(TicketEntry originalTicket, TicketEntry persistedTicket) {

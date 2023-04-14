@@ -77,7 +77,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     }
 
     public PublicationWorkflow getPublicationWorkflow() {
-        return  getData().getWorkflow();
+        return  ((PublishingRequestCase)getData()).getWorkflow();
     }
 
     @Override

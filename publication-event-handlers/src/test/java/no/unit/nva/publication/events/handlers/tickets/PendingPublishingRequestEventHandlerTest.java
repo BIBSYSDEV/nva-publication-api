@@ -2,16 +2,17 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Optional;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -40,7 +42,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+
 class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     
     public static final Entity EMPTY = null;
@@ -54,6 +56,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private FakeContext context;
     private ResourceService resourceService;
     private TicketService ticketService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
@@ -61,7 +64,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(client);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }
@@ -103,10 +107,10 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdatePublicationStatusButNotCompleteTicketWhenCustomerAllowsMetadataPublishing()
         throws ApiGatewayException, IOException {
+        when(uriRetriever.getDto(any(), any()))
+            .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
         var publishingRequest = pendingPublishingRequest();
-        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(publishingRequest);
-
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
@@ -119,7 +123,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldLogFailingReasonsWhenPublishingMetadataFails() throws ApiGatewayException, IOException {
         var publication = createUnpublishablePublication();
-        var pendingPublishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        var pendingPublishingRequest = PublishingRequestCase.fromPublication(publication);
         pendingPublishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(pendingPublishingRequest);
 
@@ -136,7 +140,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldLogFailingReasonsWhenUpdatingPublicationStatusFails() throws ApiGatewayException, IOException {
         var publication = createPublication();
-        var pendingPublishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        var pendingPublishingRequest = PublishingRequestCase.fromPublication(publication);
         pendingPublishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(pendingPublishingRequest);
 
@@ -168,8 +172,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private void assertThatFilesAreUnpublished(Resource resource) {
         var publishedFileCount = resource.getAssociatedArtifacts().stream()
-                        .filter(PublishedFile.class::isInstance)
-                        .count();
+            .filter(PublishedFile.class::isInstance)
+            .count();
         assertThat(publishedFileCount, is(equalTo(0L)));
     }
 
@@ -213,8 +217,8 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     private PublishingRequestCase createPendingPublishingRequest(Publication publication) throws ApiGatewayException {
-        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
-        publishingRequest.setWorkflow(PublicationWorkflow.UNSET);
+        var publishingRequest = PublishingRequestCase.fromPublication(publication);
+        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
     

@@ -45,16 +45,15 @@ public class GeneralSupportRequest extends TicketEntry {
         super();
     }
     
-    public static TicketEntry fromPublication(Publication publication) {
+    public static GeneralSupportRequest fromPublication(Publication publication) {
         var ticket = new GeneralSupportRequest();
-        ticket.setPublicationDetails(PublicationDetails.create(publication));
-        ticket.setOwner(extractOwner(publication));
-        ticket.setCustomerId(extractCustomerId(publication));
         ticket.setCreatedDate(Instant.now());
-        ticket.setModifiedDate(Instant.now());
-        ticket.setStatus(TicketStatus.PENDING);
+        ticket.setCustomerId(extractCustomerId(publication));
         ticket.setIdentifier(SortableIdentifier.next());
+        ticket.setModifiedDate(Instant.now());
+        ticket.setOwner(extractOwner(publication));
         ticket.setPublicationDetails(PublicationDetails.create(publication));
+        ticket.setStatus(TicketStatus.PENDING);
         ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
         return ticket;
     }
@@ -122,11 +121,6 @@ public class GeneralSupportRequest extends TicketEntry {
         return this.customerId;
     }
 
-    @Override
-    public PublicationWorkflow getWorkflow() {
-        return PublicationWorkflow.UNSET;
-    }
-
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
@@ -154,14 +148,14 @@ public class GeneralSupportRequest extends TicketEntry {
     @Override
     public TicketEntry copy() {
         var copy = new GeneralSupportRequest();
-        copy.setStatus(this.getStatus());
-        copy.setModifiedDate(this.getModifiedDate());
-        copy.setIdentifier(this.getIdentifier());
-        copy.setType(this.getType());
         copy.setCreatedDate(this.getCreatedDate());
         copy.setCustomerId(this.getCustomerId());
+        copy.setIdentifier(this.getIdentifier());
+        copy.setModifiedDate(this.getModifiedDate());
         copy.setOwner(this.getOwner());
         copy.setPublicationDetails(this.getPublicationDetails());
+        copy.setStatus(this.getStatus());
+        copy.setType(this.getType());
         copy.setViewedBy(this.getViewedBy());
         return copy;
     }

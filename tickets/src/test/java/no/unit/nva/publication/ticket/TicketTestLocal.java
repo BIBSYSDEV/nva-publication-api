@@ -1,11 +1,8 @@
 package no.unit.nva.publication.ticket;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static nva.commons.core.attempt.Try.attempt;
-import java.io.ByteArrayOutputStream;
-import java.time.Clock;
-import java.util.function.Consumer;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -18,18 +15,29 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
+import java.io.ByteArrayOutputStream;
+import java.time.Clock;
+import java.util.function.Consumer;
+
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.mockito.Mockito.mock;
+
 public abstract class TicketTestLocal extends ResourcesLocalTest {
     
     public static final FakeContext CONTEXT = new FakeContext();
     protected ResourceService resourceService;
     protected TicketService ticketService;
     protected ByteArrayOutputStream output;
+    protected UriRetriever uriRetriever;
 
-    
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        var duplicateIdentifier = SortableIdentifier.next();
+        this.uriRetriever = mock(UriRetriever .class);
         this.ticketService = new TicketService(client);
+
         this.output = new ByteArrayOutputStream();
     }
     

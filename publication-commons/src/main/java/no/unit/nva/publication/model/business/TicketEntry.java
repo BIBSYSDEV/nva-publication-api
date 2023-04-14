@@ -3,7 +3,7 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.fromPublication;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -62,7 +62,7 @@ public abstract class TicketEntry implements Entity {
         if (DoiRequest.class.equals(ticketType)) {
             return attempt(() -> requestDoiRequestTicket(publication)).orElseThrow();
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return createOpeningCaseObject(publication);
+            return PublishingRequestCase.fromPublication(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.fromPublication(publication);
         }
@@ -266,7 +266,7 @@ public abstract class TicketEntry implements Entity {
 
     private static TicketEntry createNewPublishingRequestEntry(Publication publication,
                                                                Supplier<SortableIdentifier> identifierProvider) {
-        var entry = createOpeningCaseObject(publication);
+        var entry = fromPublication(publication);
         setServiceControlledFields(entry, identifierProvider);
         return entry;
     }

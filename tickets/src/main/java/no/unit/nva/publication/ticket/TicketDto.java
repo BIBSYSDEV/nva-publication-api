@@ -86,7 +86,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
                    .withAssignee(assignee)
-                   .withPublicationWorkflow(ticket.getWorkflow())
+                   .withPublicationWorkflow(ticket)
                    .build(ticket.getClass());
     }
     
@@ -192,11 +192,12 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withPublicationWorkflow(PublicationWorkflow workflow) {
-            this.workflow = workflow;
+        public Builder withPublicationWorkflow(TicketEntry ticketEntry) {
+            if (PublishingRequestCase.class.equals(ticketEntry.getClass())) {
+                this.workflow = ((PublishingRequestCase)ticketEntry).getWorkflow();
+            }
             return this;
         }
-
 
         public TicketDto build(Class<? extends TicketEntry> ticketType) {
             

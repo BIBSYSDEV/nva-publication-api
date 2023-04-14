@@ -154,12 +154,6 @@ public class DoiRequest extends TicketEntry {
         return customerId;
     }
 
-
-    @Override
-    public PublicationWorkflow getWorkflow() {
-        return PublicationWorkflow.UNSET;
-    }
-
     @Override
     public TicketDao toDao() {
         return new DoiRequestDao(this);

@@ -49,8 +49,6 @@ public interface Entity {
     User getOwner();
     
     URI getCustomerId();
-
-    PublicationWorkflow getWorkflow();
     
     Dao toDao();
     

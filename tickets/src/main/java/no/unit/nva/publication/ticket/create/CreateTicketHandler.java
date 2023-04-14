@@ -7,8 +7,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
-import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -45,21 +43,16 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
     private final TicketService ticketService;
     private final ResourceService resourceService;
-    private final RawContentRetriever uriRetriever;
 
     @JacocoGenerated
     public CreateTicketHandler() {
-        this(TicketService.defaultService(), ResourceService.defaultService(),
-                new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                        BACKEND_CLIENT_SECRET_NAME));
+        this(TicketService.defaultService(), ResourceService.defaultService());
     }
     
-    public CreateTicketHandler(TicketService ticketService, ResourceService resourceService,
-                               RawContentRetriever uriRetriever) {
+    public CreateTicketHandler(TicketService ticketService, ResourceService resourceService) {
         super(TicketDto.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
-        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -68,16 +61,9 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var publicationIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
         var publication = fetchPublication(publicationIdentifier, getUser(requestInfo), requestInfo);
         var ticketType = input.ticketType();
-        var newTicket = TicketEntry.requestNewTicket(publication, ticketType);
-        var workflow = GetCustomerWorkflow(requestInfo);
+        var persistedTicket = persistTicket(TicketEntry.requestNewTicket(publication, ticketType));
 
-        if (isPublishingRequest(ticketType)) {
-            ((PublishingRequestCase)newTicket).setWorkflow(workflow);
-        }
-
-        var persistedTicket = persistTicket(newTicket);
-
-        if (isPublishingRequest(ticketType) && workflow.registratorsAllowedToPublishDataAndMetadata()) {
+        if (isPublishingRequest(ticketType) && registratorsAllowedToPublishDataAndMetadata(persistedTicket)) {
             updateStatusToApproved(persistedTicket);
             publishPublication(publication);
         } else {
@@ -88,10 +74,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         return null;
     }
 
-    private PublicationWorkflow GetCustomerWorkflow(RequestInfo requestInfo) throws UnauthorizedException {
-        return uriRetriever.getDto(requestInfo.getCurrentCustomer(), WorkFlowDto.class)
-            .map(WorkFlowDto::getPublicationWorkflow)
-            .orElse(PublicationWorkflow.UNSET);
+    private boolean registratorsAllowedToPublishDataAndMetadata(TicketEntry ticketEntry) {
+        return ((PublishingRequestCase) ticketEntry).getWorkflow().registratorsAllowedToPublishDataAndMetadata();
     }
 
     @Override

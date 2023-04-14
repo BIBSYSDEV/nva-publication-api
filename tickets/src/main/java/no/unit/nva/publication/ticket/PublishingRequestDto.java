@@ -25,10 +25,10 @@ import java.util.Set;
 public class PublishingRequestDto extends TicketDto {
     public static final String TYPE = "PublishingRequest";
 
+    private final URI id;
     private final Instant createdDate;
     private final Instant modifiedDate;
     private final SortableIdentifier identifier;
-    private final URI id;
     private final PublicationWorkflow workflow;
 
     @ConstructorProperties({"status","createdDate","modifiedDate","identifier","publication",
@@ -52,7 +52,7 @@ public class PublishingRequestDto extends TicketDto {
     }
     
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null,null, null, null, null, PublicationWorkflow.UNSET,null);
+        return new PublishingRequestDto(null, null, null, null,null, null, null, null, null,null);
     }
     
     public Instant getCreatedDate() {
@@ -69,6 +69,10 @@ public class PublishingRequestDto extends TicketDto {
 
     public PublicationWorkflow getWorkflow() {
         return workflow;
+    }
+
+    public URI getId() {
+        return id;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.model.business.TicketEntry.createNewTicket;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -13,39 +14,40 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.TicketDao;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
-import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.*;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
 
 public class TicketService extends ServiceWithTransactions {
 
     public static final String TICKET_NOT_FOUND = "Ticket not found";
+    public static final String  BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
 
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
 
+    private final RawContentRetriever uriRetriever;
+
     public TicketService(AmazonDynamoDB client) {
-        this(client, DEFAULT_IDENTIFIER_PROVIDER);
+        this(client, DEFAULT_IDENTIFIER_PROVIDER,
+            new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
-    protected TicketService(AmazonDynamoDB client,
-                            Supplier<SortableIdentifier> identifierProvider) {
+    public TicketService(
+        AmazonDynamoDB client,Supplier<SortableIdentifier> identifierProvider, RawContentRetriever uriRetriever) {
         super(client);
         this.identifierProvider = identifierProvider;
         resourceService = new ResourceService(client, Clock.systemDefaultZone(), identifierProvider);
+        this.uriRetriever = uriRetriever;
     }
 
     @JacocoGenerated
@@ -69,7 +71,7 @@ public class TicketService extends ServiceWithTransactions {
     public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
         throws ApiGatewayException {
         var associatedPublication = fetchPublicationToEnsureItExists(ticketEntry);
-        return createTicketForPublication(associatedPublication, ticketEntry, ticketType);
+        return createTicketForPublication(associatedPublication, ticketType);
     }
 
     public TicketEntry fetchTicket(UserInstance userInstance, SortableIdentifier ticketIdentifier)
@@ -178,10 +180,19 @@ public class TicketService extends ServiceWithTransactions {
         return closedTicket;
     }
 
+
     private static NotFoundException notFoundException() {
         return new NotFoundException(TICKET_NOT_FOUND);
     }
 
+    private boolean isPublishingRequest(Class<? extends TicketEntry> ticketType) {
+        return PublishingRequestCase.class.equals(ticketType);
+    }
+    private PublicationWorkflow getCustomerWorkflow(URI custommerId) {
+        return uriRetriever.getDto(custommerId, WorkFlowDto.class)
+            .map(WorkFlowDto::getPublicationWorkflow)
+            .orElse(PublicationWorkflow.UNSET);
+    }
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
         return new BadRequestException(exception.getMessage(), exception);
     }
@@ -200,8 +211,15 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     private <T extends TicketEntry> T createTicketForPublication(
-        Publication publication, TicketEntry sourceTicketEntry, Class<T> ticketType) throws ConflictException {
+        Publication publication, Class<T> ticketType) throws ConflictException {
         var ticketEntry = createNewTicket(publication, ticketType, identifierProvider);
+        if (isPublishingRequest(ticketType)) {
+            var customerId = publication.getPublisher().getId();
+            var workflow = getCustomerWorkflow(customerId);
+            if (workflow.equals(PublicationWorkflow.UNSET))
+                throw new UnsatisfiedLinkError();
+            ((PublishingRequestCase) ticketEntry).setWorkflow(workflow);
+        }
         var request = ticketEntry.toDao().createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);
         FunctionWithException<TicketEntry, TicketEntry, NotFoundException>
