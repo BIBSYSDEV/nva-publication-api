@@ -111,10 +111,6 @@ class TicketServiceTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
 
-    public static Stream<Class<?>> uniqueTicketsProvider() {
-        return Stream.of(DoiRequest.class);
-    }
-
     @BeforeEach
     public void initialize() {
         super.init();
@@ -410,14 +406,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     //TODO: remove this test when ticket service is in place
-    @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("Legacy functionality: should retrieve tickets that are unique to a publication by "
-                 + "publication identifier")
-    @MethodSource("uniqueTicketsProvider")
+    @Test
     void shouldCompleteTicketByResourceIdentifierWhenTicketIsUniqueForAPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(DoiRequest.class));
         var ticket = createPersistedTicket(publication, DoiRequest.class);
-        var ticketFetchedByResourceIdentifier = legacyQueryObject(DoiRequest.class, publication);
+        var ticketFetchedByResourceIdentifier = legacyQueryObject(publication);
         var completedTicket = ticketService.completeTicket(ticketFetchedByResourceIdentifier);
         var expectedTicket = ticket.copy();
         expectedTicket.setStatus(COMPLETED);
@@ -666,18 +659,11 @@ class TicketServiceTest extends ResourcesLocalTest {
                    .map(GeneralSupportRequest.class::cast).orElseThrow();
     }
 
-    private TicketEntry legacyQueryObject(Class<? extends TicketEntry> ticketType, Publication publication) {
-        if (DoiRequest.class.equals(ticketType)) {
+    private TicketEntry legacyQueryObject( Publication publication) {
             return DoiRequest.builder()
                        .withCustomerId(publication.getPublisher().getId())
                        .withPublicationDetails(PublicationDetails.create(publication))
                        .build();
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
-            return PublishingRequestCase.createOpeningCaseObject(publication);
-        }
-        throw new UnsupportedOperationException(
-            "Legacy access pattern supported for strictly only DoiRequests and " + "PublishingRequests");
     }
 
     private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
