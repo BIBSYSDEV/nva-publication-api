@@ -86,22 +86,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldApprovePublishingRequestAutomaticallyWhenCustomerHasPolicyAllowingRegistratorsToPublishDataAndMetadata()
-        throws IOException, ApiGatewayException {
-        var publishingRequest = pendingPublishingRequest();
-        var event = createEvent(publishingRequest);
-        var customerAllowingPublishing =
-            mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval();
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
-
-        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, httpClient,
-                                                                secretsReader, s3Client);
-        handler.handleRequest(event, output, context);
-        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
-        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
-    }
-    
-    @Test
     void shouldIgnorePublishingRequestWhenCustomerHasPolicyForbiddingRegistratorsToPublishDataAndMetadata()
         throws IOException, ApiGatewayException {
         var publishingRequest = pendingPublishingRequest();
@@ -111,7 +95,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             mockIdentityServiceResponseForCustomersThatRequireManualApprovalOfPublishingRequests();
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
 
-        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, httpClient,
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
                                                                 secretsReader, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
@@ -128,7 +112,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var tokenResponse = tokenResponse();
         var identityServiceResponse = unresolvableCustomer();
         this.httpClient = new FakeHttpClient<>(tokenResponse, identityServiceResponse, tokenResponse);
-        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, httpClient,
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
                                                                 secretsReader, s3Client);
         
         handler.handleRequest(event, output, context);
@@ -155,7 +139,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             mockIdentityServiceResponseForPublisherAllowingMetadataPublishing();
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingMetadataPublishing, HTTP_OK));
 
-        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, httpClient,
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
                                                                 secretsReader, s3Client);
         handler.handleRequest(event, output, context);
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
@@ -172,7 +156,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse
                .create(mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(), HTTP_OK));
-        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, httpClient,
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
                                                                 secretsReader, s3Client);
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
@@ -195,7 +179,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var failingResourceService = mockResourceServiceFailure(expectedMessage);
         var logger = LogUtils.getTestingAppenderForRootLogger();
         this.handler = new PendingPublishingRequestEventHandler(failingResourceService,
-                                                                ticketService,
                                                                 httpClient,
                                                                 secretsReader,
                                                                 s3Client);
@@ -225,7 +208,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var event = createEvent(completedTicket);
 
         this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(customerAllowingPublishing, HTTP_OK));
-        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, httpClient,
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
                                                                 secretsReader, s3Client);
         handler.handleRequest(event, output, context);
     }

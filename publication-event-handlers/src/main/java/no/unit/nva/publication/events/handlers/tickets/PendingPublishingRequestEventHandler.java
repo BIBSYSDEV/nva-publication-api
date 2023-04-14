@@ -46,7 +46,6 @@ public class PendingPublishingRequestEventHandler
     
     private static final Logger logger = LoggerFactory.getLogger(PendingPublishingRequestEventHandler.class);
     private final S3Driver s3Driver;
-    private final TicketService ticketService;
     private final HttpClient httpClient;
     private final SecretsReader secretsReader;
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
@@ -56,20 +55,17 @@ public class PendingPublishingRequestEventHandler
     @JacocoGenerated
     public PendingPublishingRequestEventHandler() {
         this(ResourceService.defaultService(),
-             defaultPublishingRequestService(),
              HttpClient.newHttpClient(),
              new SecretsReader(),
              DEFAULT_S3_CLIENT);
     }
     
     protected PendingPublishingRequestEventHandler(ResourceService resourceService,
-                                                   TicketService ticketService,
                                                    HttpClient httpClient,
                                                    SecretsReader secretsReader,
                                                    S3Client s3Client) {
         super(EventReference.class);
         this.resourceService = resourceService;
-        this.ticketService = ticketService;
         this.httpClient = httpClient;
         this.secretsReader = secretsReader;
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
@@ -85,10 +81,6 @@ public class PendingPublishingRequestEventHandler
         var credentials = fetchCredentials(this.secretsReader);
         var backendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, credentials);
 
-        if (customerAllowsPublishing(backendClient, publishingRequest) && ticketHasNotBeenCompleted(publishingRequest)) {
-            attempt(() -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED))
-                .orElseThrow();
-        }
         if (customerAllowsMetadataPublishing(backendClient, publishingRequest)
             && ticketHasNotBeenCompleted(publishingRequest)) {
                 publishMetadata(publishingRequest);
@@ -130,13 +122,6 @@ public class PendingPublishingRequestEventHandler
         return
             new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT);
     }
-    
-    private boolean customerAllowsPublishing(AuthorizedBackendClient backendClient,
-                                             PublishingRequestCase publishingRequest) {
-        var customerId = publishingRequest.getCustomerId();
-        var fetchCustomerResult = attempt(() -> fetchCustomer(backendClient, customerId)).orElseThrow();
-        return fetchCustomerResult.isKnownThatCustomerAllowsPublishing();
-    }
 
     private boolean customerAllowsMetadataPublishing(AuthorizedBackendClient backendClient,
                                                      PublishingRequestCase publishingRequest) {
@@ -174,11 +159,6 @@ public class PendingPublishingRequestEventHandler
             this.httpResponse = response;
             this.customer = attempt(() -> JsonUtils.dtoObjectMapper.readValue(response.body(), CustomerDto.class));
             this.customerId = customerId;
-        }
-        
-        public boolean isKnownThatCustomerAllowsPublishing() {
-            return customer.map(CustomerDto::customerAllowsRegistratorsToPublishDataAndMetadata)
-                       .orElse(fail -> returnFalseAndLogUnsuccessfulResponse(httpResponse, customerId));
         }
 
         public boolean isKnownThatCustomerAllowsPublishingOfMetadata() {
