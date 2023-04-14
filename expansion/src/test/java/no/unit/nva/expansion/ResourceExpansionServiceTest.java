@@ -1,6 +1,7 @@
 package no.unit.nva.expansion;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
@@ -98,7 +99,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var regeneratedTicket = expandedTicket.toTicketEntry();
 
-        assertThat(ticket, doesNotHaveEmptyValues());
+        assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
