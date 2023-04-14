@@ -45,10 +45,13 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.AccessRight;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -80,6 +83,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private Publication publication;
     private Environment environment;
     private IdentityServiceClient identityServiceClient;
+    private TicketService ticketService;
 
     /**
      * Set up environment.
@@ -92,6 +96,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        this.ticketService = new TicketService(client);
         context = mock(Context.class);
 
         identityServiceClient = mock(IdentityServiceClient.class);
@@ -99,7 +104,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         output = new ByteArrayOutputStream();
         updatePublicationHandler =
-            new UpdatePublicationHandler(publicationService, environment, identityServiceClient);
+            new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient);
         publication = createPublication();
     }
 
@@ -124,6 +129,29 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
 
+    @Test
+    void handlerCreatesPendingPublicationRequestTicketWhenUpdatingFiles()
+        throws BadRequestException, IOException {
+        publication = PublicationGenerator.publicationWithoutIdentifier();
+        Publication savedPublication = createSamplePublication();
+
+        Publication publicationUpdate = updateTitle(savedPublication);
+
+        InputStream inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
+                                                                   publicationUpdate.getIdentifier(), PublishingRequestCase.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(ticket.get().getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(body.getEntityDescription().getMainTitle(),
+                   is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+    }
+    
     @Test
     void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException, BadRequestException {
         publication = PublicationGenerator.publicationWithoutIdentifier();
@@ -163,7 +191,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
-        updatePublicationHandler = new UpdatePublicationHandler(publicationService, environment, identityServiceClient);
+        updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
+                                                                identityServiceClient);
 
         Publication savedPublication = createSamplePublication();
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
@@ -180,7 +209,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
-        updatePublicationHandler = new UpdatePublicationHandler(publicationService, environment, identityServiceClient);
+        updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
+                                                                identityServiceClient);
         Publication savedPublication = createSamplePublication();
 
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
