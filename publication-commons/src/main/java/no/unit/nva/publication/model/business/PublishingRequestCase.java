@@ -145,6 +145,7 @@ public class PublishingRequestCase extends TicketEntry {
         return  assignee;
     }
 
+    @Override
     public void setAssignee(Optional<User> assignee) {
         this.assignee = assignee;
     }

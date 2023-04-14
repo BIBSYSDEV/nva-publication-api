@@ -211,16 +211,12 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     protected TicketEntry updateTicketAssignee(TicketEntry ticketEntry) throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
-        var existingTicket =
-            attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
-                .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
-                .orElseThrow(fail -> notFoundException());
+         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
+        var updatedAssignee = existingTicket.updateAssignee(publication);
 
-        var updatedAssignee = attempt(() -> existingTicket.updateAssignee(publication))
-            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
-
-        var putItemRequest = ((TicketDao) updatedAssignee.toDao()).createPutItemRequest();
+        var dao = (TicketDao) updatedAssignee.toDao();
+        var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return updatedAssignee;
     }

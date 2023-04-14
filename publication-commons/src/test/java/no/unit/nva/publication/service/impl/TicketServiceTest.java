@@ -47,6 +47,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -294,6 +295,26 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "ticket type:{0}")
+    @DisplayName("should persist updated ticket assignee when ticket assignee is updated")
+    @MethodSource("ticketTypeProvider")
+    void shouldPersistUpdatedAssigneeWhenTicketAssigneeIsUpdated(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
+        var publication = persistPublication(owner, publicationStatus);
+        var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
+
+        ticketService.updateTicketAssignee(persistedTicket);
+        var updatedTicket = ticketService.fetchTicket(persistedTicket);
+
+        var expectedTicket = persistedTicket.copy();
+        expectedTicket.setAssignee(Optional.ofNullable(UserInstance.fromPublication(publication).getUser()));
+        expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
+
+        assertThat(updatedTicket, is(equalTo(expectedTicket)));
+        assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
+    }
+
+    @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should retrieve ticket by Identifier.")
     @MethodSource("ticketTypeProvider")
     void shouldRetrieveTicketByIdentifier(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
@@ -310,6 +331,13 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(ticket, COMPLETED));
+    }
+
+    @Test
+    void shouldReturTicketWithNoAssigneeForDoiReqeuestForDraftPublication() throws ApiGatewayException {
+        var publication = persistPublication(owner, DRAFT);
+        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        assertThat(ticket.getAssignee(), is(equalTo(null)));
     }
 
 
