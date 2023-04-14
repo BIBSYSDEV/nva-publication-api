@@ -3,7 +3,7 @@ package no.unit.nva.publication.events.handlers.tickets;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -76,21 +76,32 @@ public class AcceptedPublishingRequestEventHandler
     private void publishPublication(PublishingRequestCase latestUpdate) {
         var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
         var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
-        updateFilesToPublished(publication);
-        attempt(() -> resourceService.updatePublication(publication));
+        var updatedPublication = toPublicationWithPublishedFiles(publication);
+        attempt(() -> resourceService.updatePublication(updatedPublication));
         attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
             .orElse(fail -> logError(fail.getException()));
-        createDoiRequestIfNeeded(publication);
+        createDoiRequestIfNeeded(updatedPublication);
     }
 
-    private void updateFilesToPublished(Publication publication) {
-        var files = publication.getAssociatedArtifacts()
-                        .stream()
-                        .filter(artifact -> artifact instanceof File)
-                        .map(File.class::cast)
-                        .map(File::toPublishedFile)
-                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(files));
+    private Publication toPublicationWithPublishedFiles(Publication publication) {
+        return publication.copy()
+                   .withAssociatedArtifacts(convertFilesToPublished(publication.getAssociatedArtifacts()))
+                   .build();
+    }
+
+    private List<AssociatedArtifact> convertFilesToPublished(AssociatedArtifactList associatedArtifacts) {
+        return associatedArtifacts.stream()
+                   .map(this::updateFileToPublished)
+                   .collect(Collectors.toList());
+    }
+
+    private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
+        if (artifact instanceof File) {
+            var file = (File) artifact;
+            return file.toPublishedFile();
+        } else {
+            return artifact;
+        }
     }
 
     private boolean publicationIsNotPublished(PublishingRequestCase latestUpdate) {
@@ -106,8 +117,7 @@ public class AcceptedPublishingRequestEventHandler
 
     private void createDoiRequestIfNeeded(Publication publication) {
         if (hasDoi(publication) && !doiRequestExists(publication)) {
-            var doiRequest = DoiRequest.fromPublication(publication);
-            attempt(() -> ticketService.createTicket(doiRequest, DoiRequest.class)).orElseThrow();
+            attempt(() -> DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
         }
     }

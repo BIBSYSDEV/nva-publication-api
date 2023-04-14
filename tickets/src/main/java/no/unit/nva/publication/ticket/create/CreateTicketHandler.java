@@ -67,13 +67,17 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var ticketType = input.ticketType();
         var ticket = persistTicket(TicketEntry.requestNewTicket(publication, ticketType));
         var customer = requestInfo.getCurrentCustomer();
-        if (PublishingRequestCase.class.equals(ticketType)) {
+        if (isPublishingRequest(ticketType)) {
             publishingRequestResolver.resolve(ticket, publication, customer);
         }
         var ticketLocation = createTicketLocation(publicationIdentifier, ticket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
 
         return null;
+    }
+
+    private static boolean isPublishingRequest(Class<? extends TicketEntry> ticketType) {
+        return PublishingRequestCase.class.equals(ticketType);
     }
 
     @Override
