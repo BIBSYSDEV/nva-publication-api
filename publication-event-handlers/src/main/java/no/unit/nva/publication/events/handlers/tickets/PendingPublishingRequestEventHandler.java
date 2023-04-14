@@ -20,7 +20,6 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.tickets.identityservice.CustomerDto;
@@ -30,7 +29,6 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -43,15 +41,15 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class PendingPublishingRequestEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
-    
+
+    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     private static final Logger logger = LoggerFactory.getLogger(PendingPublishingRequestEventHandler.class);
     private final S3Driver s3Driver;
     private final HttpClient httpClient;
     private final SecretsReader secretsReader;
-    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
-    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     private final ResourceService resourceService;
-    
+
     @JacocoGenerated
     public PendingPublishingRequestEventHandler() {
         this(ResourceService.defaultService(),
@@ -59,7 +57,7 @@ public class PendingPublishingRequestEventHandler
              new SecretsReader(),
              DEFAULT_S3_CLIENT);
     }
-    
+
     protected PendingPublishingRequestEventHandler(ResourceService resourceService,
                                                    HttpClient httpClient,
                                                    SecretsReader secretsReader,
@@ -70,7 +68,15 @@ public class PendingPublishingRequestEventHandler
         this.secretsReader = secretsReader;
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
-    
+
+    protected static CognitoCredentials fetchCredentials(SecretsReader secretsReader) {
+        var credentials
+            = secretsReader.fetchClassSecret(BACKEND_CLIENT_SECRET_NAME, BackendClientCredentials.class);
+        var uri = getCognitoTokenUrl();
+
+        return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
+    }
+
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
@@ -83,22 +89,18 @@ public class PendingPublishingRequestEventHandler
 
         if (customerAllowsMetadataPublishing(backendClient, publishingRequest)
             && ticketHasNotBeenCompleted(publishingRequest)) {
-                publishMetadata(publishingRequest);
+            publishMetadata(publishingRequest);
         }
 
         return null;
     }
 
-    protected static CognitoCredentials fetchCredentials(SecretsReader secretsReader) {
-        var credentials
-            = secretsReader.fetchClassSecret(BACKEND_CLIENT_SECRET_NAME, BackendClientCredentials.class);
-        var uri = getCognitoTokenUrl();
-
-        return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
-    }
-
     private static URI getCognitoTokenUrl() {
         return UriWrapper.fromHost(BACKEND_CLIENT_AUTH_URL).getUri();
+    }
+
+    private static boolean ticketHasNotBeenCompleted(PublishingRequestCase publishingRequest) {
+        return !TicketStatus.COMPLETED.equals(publishingRequest.getStatus());
     }
 
     private void publishMetadata(PublishingRequestCase publishingRequest) {
@@ -113,48 +115,38 @@ public class PendingPublishingRequestEventHandler
         return null;
     }
 
-    private static boolean ticketHasNotBeenCompleted(PublishingRequestCase publishingRequest) {
-        return !TicketStatus.COMPLETED.equals(publishingRequest.getStatus());
-    }
-    
-    @JacocoGenerated
-    private static TicketService defaultPublishingRequestService() {
-        return
-            new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT);
-    }
-
     private boolean customerAllowsMetadataPublishing(AuthorizedBackendClient backendClient,
                                                      PublishingRequestCase publishingRequest) {
         var customerId = publishingRequest.getCustomerId();
         var fetchCustomerResult = attempt(() -> fetchCustomer(backendClient, customerId)).orElseThrow();
         return fetchCustomerResult.isKnownThatCustomerAllowsPublishingOfMetadata();
     }
-    
+
     private HttpTransactionResult fetchCustomer(AuthorizedBackendClient backendClient, URI customerId)
-                                                                            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder(customerId).GET();
         var response = backendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
         return new HttpTransactionResult(response, customerId);
     }
-    
+
     private PublishingRequestCase extractPublishingRequestCaseUpdate(DataEntryUpdateEvent updateEvent) {
         return Optional.ofNullable(updateEvent)
                    .map(DataEntryUpdateEvent::getNewData)
                    .map(PublishingRequestCase.class::cast)
                    .orElseThrow();
     }
-    
+
     private DataEntryUpdateEvent parseInput(EventReference input) {
         var blob = s3Driver.readEvent(input.getUri());
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(blob, DataEntryUpdateEvent.class)).orElseThrow();
     }
-    
+
     private static class HttpTransactionResult {
-        
+
         private final HttpResponse<String> httpResponse;
         private final Try<CustomerDto> customer;
         private final URI customerId;
-        
+
         public HttpTransactionResult(HttpResponse<String> response, URI customerId) {
             this.httpResponse = response;
             this.customer = attempt(() -> JsonUtils.dtoObjectMapper.readValue(response.body(), CustomerDto.class));
@@ -165,38 +157,38 @@ public class PendingPublishingRequestEventHandler
             return customer.map(CustomerDto::customerAllowsRegistratorsToPublishMetadata)
                        .orElse(fail -> returnFalseAndLogUnsuccessfulResponse(httpResponse, customerId));
         }
-        
+
         private boolean returnFalseAndLogUnsuccessfulResponse(HttpResponse<String> response, URI customerId) {
             logger.warn(new FailedResponseMessage(response, customerId).toString());
             return false;
         }
     }
-    
+
     private static class FailedResponseMessage {
-        
+
         private final HttpResponse<String> response;
         private final URI customerId;
-        
+
         public FailedResponseMessage(HttpResponse<String> response, URI customerId) {
             this.response = response;
             this.customerId = customerId;
         }
-        
+
         @JsonProperty("statusCode")
         public int getStatusCode() {
             return response.statusCode();
         }
-        
+
         @JsonProperty("body")
         public String body() {
             return response.body();
         }
-        
+
         @JsonProperty
         public URI getCustomerId() {
             return customerId;
         }
-        
+
         @Override
         public String toString() {
             return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(this)).orElseThrow();
