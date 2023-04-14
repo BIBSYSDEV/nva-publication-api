@@ -13,9 +13,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,10 +51,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -65,13 +61,10 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -126,11 +119,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     public static final int BIG_PAGE = 10;
     public static final URI UNIMPORTANT_AFFILIATION = null;
     public static final URI AFFILIATION_NOT_IMPORTANT = null;
-    public static final boolean ADMINISTRATIVE_AGREEMENT = true;
     private static final URI SOME_ORG = randomUri();
     public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    private static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
     public static final String RESOURCE_LACKS_DATA = "Resource does not have required data to be published:";
     private ResourceService resourceService;
 
@@ -139,13 +130,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Instant now;
     private Clock clock;
 
-    public static License getCcByLicense() {
-        var ccByUri = URI.create("https://creativecommons.org/licenses/by/4.0/");
-        return new License.Builder().withIdentifier("CC_BY")
-                   .withLabels(Map.of("en", "CC-BY 4.0"))
-                   .withLink(ccByUri)
-                   .build();
-    }
 
     @BeforeEach
     public void init() {
@@ -933,23 +917,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return new AssociatedArtifactList(emptyList());
     }
 
-    private Publication draftPublicationWithoutDoiAndAllTypesOfFiles() {
-        var legacyFile = randomFile().buildLegacyFile();
-        var publishedFile = randomFile().buildPublishedFile();
-        var unpublishedFile = randomFile().buildUnpublishedFile();
-        return draftPublicationWithoutDoi().withAssociatedArtifacts(List.of(legacyFile, publishedFile, unpublishedFile))
-                   .build();
-    }
-
-    private Publication draftPublicationWithAdministrativeAgreements() {
-        var legacyAdministrativeAgreement = randomFile().withAdministrativeAgreement(ADMINISTRATIVE_AGREEMENT)
-                                                .buildLegacyFile();
-        var newAdministrativeAgreement = randomFile().withAdministrativeAgreement(ADMINISTRATIVE_AGREEMENT)
-                                             .buildUnpublishableFile();
-        return draftPublicationWithoutDoi().withAssociatedArtifacts(
-            List.of(legacyAdministrativeAgreement, newAdministrativeAgreement)).build();
-    }
-
     private Publication draftPublicationWithoutDoiAndAssociatedLink() {
 
         return randomPublication().copy()
@@ -957,22 +924,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withStatus(DRAFT)
                    .withAssociatedArtifacts(List.of(randomAssociatedLink()))
                    .build();
-    }
-
-    private File.Builder randomFile() {
-        return File.builder()
-                   .withName(randomString())
-                   .withAdministrativeAgreement(NOT_ADMINISTRATIVE_AGREEMENT)
-                   .withMimeType(randomString())
-                   .withSize(randomInteger().longValue())
-                   .withEmbargoDate(randomInstant())
-                   .withLicense(getCcByLicense())
-                   .withIdentifier(UUID.randomUUID())
-                   .withPublisherAuthority(randomBoolean());
-    }
-
-    private Builder draftPublicationWithoutDoi() {
-        return randomPublication().copy().withStatus(DRAFT);
     }
 
     private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {

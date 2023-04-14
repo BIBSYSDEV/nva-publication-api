@@ -41,13 +41,14 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -383,7 +384,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     void mapReturnsPublicationsWhereCristinRoleIsMappedToCorrectNvaRole(String cristinRole,
                                                                         String nvaRole) {
         CristinContributorRoleCode actualCristinRole = CristinContributorRoleCode.fromString(cristinRole);
-        Role expectedNvaRole = Role.lookup(nvaRole);
+        RoleType expectedNvaRole = new RoleType(Role.lookup(nvaRole));
         CristinObject objectWithEditor = createObjectWithRoleCode(actualCristinRole);
 
         Optional<Contributor> contributor = getContributors(objectWithEditor)
