@@ -395,7 +395,6 @@ public class Resource implements Entity {
      * @param o the other Resource.
      * @return true if the two Resources are equivalent without considering the row version, false otherwise.
      */
-    @JacocoGenerated
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {

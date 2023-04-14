@@ -10,7 +10,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
 public enum PublicationWorkflow {
-    UNSET("null"),
+    UNSET("NA"),
     REGISTRATOR_PUBLISHES_METADATA_ONLY("RegistratorPublishesMetadataOnly"),
     REGISTRATOR_PUBLISHES_METADATA_AND_FILES("RegistratorPublishesMetadataAndFiles"),
     REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES("RegistratorRequiresApprovalForMetadataAndFiles");

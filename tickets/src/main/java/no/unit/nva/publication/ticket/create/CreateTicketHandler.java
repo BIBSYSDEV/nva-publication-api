@@ -3,18 +3,16 @@ package no.unit.nva.publication.ticket.create;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
 
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.Organization;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
-import no.unit.nva.publication.ticket.model.identityservice.CustomerTransactionResult;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -32,7 +30,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
-import static no.unit.nva.publication.PublicationServiceConfig.*;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
@@ -68,18 +68,30 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var publicationIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
         var publication = fetchPublication(publicationIdentifier, getUser(requestInfo), requestInfo);
         var ticketType = input.ticketType();
-        var ticket = persistTicket(TicketEntry.requestNewTicket(publication, ticketType));
-        var customer = requestInfo.getCurrentCustomer();
+        var newTicket = TicketEntry.requestNewTicket(publication, ticketType);
+        var workflow = GetCustomerWorkflow(requestInfo);
 
-        if (registratorPublishesMetadataAndFiles(ticketType, customer)) {
-            updateStatusToApproved(ticket);
+        if (isPublishingRequest(ticketType)) {
+            ((PublishingRequestCase)newTicket).setWorkflow(workflow);
+        }
+
+        var persistedTicket = persistTicket(newTicket);
+
+        if (isPublishingRequest(ticketType) && workflow.registratorsAllowedToPublishDataAndMetadata()) {
+            updateStatusToApproved(persistedTicket);
             publishPublication(publication);
         } else {
-            var ticketLocation = createTicketLocation(publicationIdentifier, ticket);
+            var ticketLocation = createTicketLocation(publicationIdentifier, persistedTicket);
             addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
         }
 
         return null;
+    }
+
+    private PublicationWorkflow GetCustomerWorkflow(RequestInfo requestInfo) throws UnauthorizedException {
+        return uriRetriever.getDto(requestInfo.getCurrentCustomer(), WorkFlowDto.class)
+            .map(WorkFlowDto::getPublicationWorkflow)
+            .orElse(PublicationWorkflow.UNSET);
     }
 
     @Override
@@ -108,10 +120,6 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     private static boolean hasValidAccessRights(RequestInfo requestInfo) {
         return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
                || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString());
-    }
-
-    private boolean registratorPublishesMetadataAndFiles(Class<? extends TicketEntry> ticketType, URI customer) {
-        return isPublishingRequest(ticketType) && customerAllowsPublishing(customer);
     }
 
     private void publishPublication(Publication publication) {
@@ -193,9 +201,5 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         return new ForbiddenException();
     }
 
-    private boolean customerAllowsPublishing(URI customerId) {
-        var rawContent = uriRetriever.getRawContent(customerId, CONTENT_TYPE);
-        return rawContent.isPresent() &&
-               new CustomerTransactionResult(rawContent.get(), customerId).isKnownThatCustomerAllowsPublishing();
-    }
+
 }

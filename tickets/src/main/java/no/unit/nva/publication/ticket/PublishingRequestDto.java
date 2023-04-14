@@ -31,8 +31,8 @@ public class PublishingRequestDto extends TicketDto {
     private final URI id;
     private final PublicationWorkflow workflow;
 
-    @ConstructorProperties({"status","createdDate","modifiedDate","identifier","publication","messages",
-            "id", "viewedBy", "publicationWorkflow", "assignee"})
+    @ConstructorProperties({"status","createdDate","modifiedDate","identifier","publication",
+            "id","messages", "viewedBy", "publicationWorkflow", "assignee"})
     public PublishingRequestDto(TicketStatus status,
                                 Instant createdDate,
                                 Instant modifiedDate,

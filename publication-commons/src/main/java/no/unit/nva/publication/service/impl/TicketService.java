@@ -69,7 +69,7 @@ public class TicketService extends ServiceWithTransactions {
     public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
         throws ApiGatewayException {
         var associatedPublication = fetchPublicationToEnsureItExists(ticketEntry);
-        return createTicketForPublication(associatedPublication, ticketType);
+        return createTicketForPublication(associatedPublication, ticketEntry, ticketType);
     }
 
     public TicketEntry fetchTicket(UserInstance userInstance, SortableIdentifier ticketIdentifier)
@@ -199,9 +199,8 @@ public class TicketService extends ServiceWithTransactions {
                    .orElseThrow(fail -> new ForbiddenException());
     }
 
-    private <T extends TicketEntry> T createTicketForPublication(Publication publication, Class<T> ticketType)
-        throws ConflictException {
-
+    private <T extends TicketEntry> T createTicketForPublication(
+        Publication publication, TicketEntry sourceTicketEntry, Class<T> ticketType) throws ConflictException {
         var ticketEntry = createNewTicket(publication, ticketType, identifierProvider);
         var request = ticketEntry.toDao().createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);

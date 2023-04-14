@@ -34,7 +34,6 @@ public class PendingPublishingRequestEventHandler
     private static final Logger logger = LoggerFactory.getLogger(PendingPublishingRequestEventHandler.class);
     private final S3Driver s3Driver;
     private final TicketService ticketService;
-    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     private final ResourceService resourceService;
     
     @JacocoGenerated
