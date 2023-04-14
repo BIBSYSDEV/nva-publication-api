@@ -143,6 +143,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
         var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
+
                                                                    publicationUpdate.getIdentifier(), PublishingRequestCase.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
