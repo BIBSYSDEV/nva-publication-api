@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -49,13 +50,13 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(MESSAGES_FIELD)
     private final List<MessageDto> messages;
     @JsonProperty(ASSIGNEE_FIELD)
-    private final User assignee;
+    private final Optional<User> assignee;
     
     protected TicketDto(TicketStatus status,
                         List<MessageDto> messages,
                         Set<User> viewedBy,
                         PublicationSummary publicationSummary,
-                        User assignee) {
+                        Optional<User> assignee) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
@@ -64,14 +65,14 @@ public abstract class TicketDto implements JsonSerializable {
     }
     
     public static TicketDto fromTicket(TicketEntry ticket) {
-        return fromTicket(ticket, Collections.emptyList(), null);
+        return fromTicket(ticket, Collections.emptyList());
     }
     
-    public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages, User assignee) {
-        return create(ticket, messages, assignee);
+    public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages) {
+        return create(ticket, messages);
     }
     
-    public static TicketDto create(TicketEntry ticket, Collection<Message> messages, User assignee) {
+    public static TicketDto create(TicketEntry ticket, Collection<Message> messages) {
         var messageDtos = messages.stream()
                               .map(MessageDto::fromMessage)
                               .collect(Collectors.toList());
@@ -84,7 +85,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationSummary(createPublicationSummary(ticket))
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
-                   .withAssignee(assignee)
+                   .withAssignee(Optional.empty())
                    .build(ticket.getClass());
     }
     
@@ -103,7 +104,7 @@ public abstract class TicketDto implements JsonSerializable {
         return publicationSummary;
     }
 
-    public User getAssignee() {
+    public Optional<User> getAssignee() {
         return assignee;
     }
 
@@ -144,7 +145,7 @@ public abstract class TicketDto implements JsonSerializable {
         private List<MessageDto> messages;
         private ViewedBy viewedBy;
         private PublicationSummary publicationSummary;
-        private User assignee;
+        private Optional<User> assignee;
         
         private Builder() {
         }
@@ -179,7 +180,7 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withAssignee(User assignee) {
+        public Builder withAssignee(Optional<User> assignee) {
             this.assignee = assignee;
             return this;
         }

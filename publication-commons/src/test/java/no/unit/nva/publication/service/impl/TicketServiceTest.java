@@ -134,7 +134,7 @@ class TicketServiceTest extends ResourcesLocalTest {
 
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("doi")));
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("doi", "assignee")));
     }
 
     @ParameterizedTest(name = "Publication status: {0}")
@@ -161,7 +161,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         copyServiceControlledFields(ticket, persistedTicket);
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValues());
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
     }
 
     @Test
@@ -172,7 +172,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         copyServiceControlledFields(ticket, persistedTicket);
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValues());
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
     }
 
     // This action fails with a TransactionFailedException which contains no information about why the transaction

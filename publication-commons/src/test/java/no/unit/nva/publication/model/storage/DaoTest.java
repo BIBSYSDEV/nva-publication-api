@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -179,7 +181,7 @@ class DaoTest extends ResourcesLocalTest {
                 .withKey(originalResource.primaryKey()));
         Dao retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
         
-        assertThat(originalResource, doesNotHaveEmptyValues());
+        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }
     
@@ -199,7 +201,7 @@ class DaoTest extends ResourcesLocalTest {
     @MethodSource("instanceProvider")
     void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
         
-        assertThat(originalDao, doesNotHaveEmptyValues());
+        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
@@ -217,7 +219,7 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(dynamoMap, is(equalTo(savedMap)));
     
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
-        assertThat(retrievedDao, doesNotHaveEmptyValues());
+        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     

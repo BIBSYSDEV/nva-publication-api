@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
@@ -12,6 +13,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -79,7 +81,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldCreateDaoWithoutLossOfInformation() {
         var aprDao = sampleApprovePublicationRequestDao();
-        assertThat(aprDao, doesNotHaveEmptyValues());
+        assertThat(aprDao, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
         var dynamoMap = aprDao.toDynamoFormat();
         var parsedDao = parseAttributeValuesMap(dynamoMap, aprDao.getClass());
         assertThat(parsedDao, is(equalTo(aprDao)));

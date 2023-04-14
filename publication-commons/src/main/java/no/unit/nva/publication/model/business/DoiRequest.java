@@ -58,6 +58,8 @@ public class DoiRequest extends TicketEntry {
     private URI customerId;
     @JsonProperty(OWNER_FIELD)
     private User owner;
+    @JsonProperty("assignee")
+    private Optional<User> assignee;
 
     public DoiRequest() {
         super();
@@ -79,6 +81,7 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        doiRequest.setAssignee(null);
         return doiRequest;
     }
 
@@ -93,6 +96,7 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setCreatedDate(now);
         doiRequest.validate();
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        doiRequest.setAssignee(null);
         return doiRequest;
     }
 
@@ -204,6 +208,7 @@ public class DoiRequest extends TicketEntry {
                    .withCustomerId(getCustomerId())
                    .withOwner(getOwner())
                    .withViewedBy(this.getViewedBy())
+                   .withAssignee(getAssignee())
                    .build();
     }
 
@@ -215,6 +220,15 @@ public class DoiRequest extends TicketEntry {
     @Override
     public void setStatus(TicketStatus status) {
         this.status = status;
+    }
+
+    @Override
+    public Optional<User> getAssignee() {
+        return assignee;
+    }
+
+    public void setAssignee(Optional<User> assignee) {
+        this.assignee = assignee;
     }
 
     @Override
@@ -243,7 +257,7 @@ public class DoiRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(), getCreatedDate(),
-                            getCustomerId(), getOwner());
+                            getCustomerId(), getOwner(), getAssignee());
     }
 
     @Override
@@ -262,7 +276,8 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner());
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getAssignee(), that.getAssignee());
     }
 
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
@@ -288,6 +303,11 @@ public class DoiRequest extends TicketEntry {
 
         public Builder withStatus(TicketStatus status) {
             doiRequest.setStatus(status);
+            return this;
+        }
+
+        public Builder withAssignee(Optional<User> assignee) {
+            doiRequest.setAssignee(assignee);
             return this;
         }
 

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -51,6 +52,8 @@ public class PublishingRequestCase extends TicketEntry {
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
+    @JsonProperty("assignee")
+    private Optional<User> assignee;
     
     public PublishingRequestCase() {
         super();
@@ -64,6 +67,7 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
+        openingCaseObject.setAssignee(null);
         return openingCaseObject;
     }
     
@@ -122,6 +126,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setOwner(this.getOwner());
         copy.setViewedBy(this.getViewedBy());
         copy.setPublicationDetails(this.getPublicationDetails());
+        copy.setAssignee(this.getAssignee());
         return copy;
     }
     
@@ -134,7 +139,16 @@ public class PublishingRequestCase extends TicketEntry {
     public void setStatus(TicketStatus status) {
         this.status = status;
     }
-    
+
+    @Override
+    public Optional<User> getAssignee() {
+        return  assignee;
+    }
+
+    public void setAssignee(Optional<User> assignee) {
+        this.assignee = assignee;
+    }
+
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
@@ -208,7 +222,7 @@ public class PublishingRequestCase extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
-            getCreatedDate());
+            getCreatedDate(), getAssignee());
     }
     
     @Override
@@ -226,7 +240,8 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate());
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getAssignee(), that.getAssignee());
     }
     
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(

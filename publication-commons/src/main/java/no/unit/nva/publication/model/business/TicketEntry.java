@@ -166,6 +166,10 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setStatus(TicketStatus ticketStatus);
 
+    public abstract Optional<User> getAssignee();
+
+    public abstract void setAssignee(Optional<User> assignee);
+
     public final List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);
     }
@@ -273,6 +277,13 @@ public abstract class TicketEntry implements Entity {
 
     private static boolean isPublished(Publication publication) {
         return PUBLISHED_STATUSES.contains(publication.getStatus());
+    }
+
+    public TicketEntry updateAssignee(Publication publication) {
+        var updated = this.copy();
+        updated.setAssignee(Optional.ofNullable(UserInstance.fromPublication(publication).getUser()));
+        updated.setModifiedDate(Instant.now());
+        return updated;
     }
 
     public static final class Constants {

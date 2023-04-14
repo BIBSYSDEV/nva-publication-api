@@ -8,6 +8,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -45,7 +46,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(ID_FIELD) URI id,
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                     @JsonProperty(VIEWED_BY) Set<User> viewedBy,
-                                    @JsonProperty(ASSIGNEE_FIELD) User assignee) {
+                                    @JsonProperty(ASSIGNEE_FIELD) Optional<User> assignee) {
         super(status, messages, viewedBy, publicationSummary, assignee);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;

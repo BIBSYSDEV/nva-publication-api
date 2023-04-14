@@ -209,4 +209,19 @@ public class TicketService extends ServiceWithTransactions {
             fetchTicketProvider = this::fetchTicket;
         return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
     }
+
+    protected TicketEntry updateTicketAssignee(TicketEntry ticketEntry) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket =
+            attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
+                .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
+                .orElseThrow(fail -> notFoundException());
+
+        var updatedAssignee = attempt(() -> existingTicket.updateAssignee(publication))
+            .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
+
+        var putItemRequest = ((TicketDao) updatedAssignee.toDao()).createPutItemRequest();
+        getClient().putItem(putItemRequest);
+        return updatedAssignee;
+    }
 }
