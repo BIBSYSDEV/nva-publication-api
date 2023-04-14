@@ -40,7 +40,7 @@ public class PublishingRequestResolver {
         this.uriRetriever = uriRetriever;
     }
 
-    public void resolve(TicketEntry ticket, Publication publication, URI customer) {
+    public void updateTicketAndPublicationIfNeeded(TicketEntry ticket, Publication publication, URI customer) {
         if (customerAllowsPublishing(customer)) {
             updateStatusToApproved(ticket);
             publishPublication(publication);
