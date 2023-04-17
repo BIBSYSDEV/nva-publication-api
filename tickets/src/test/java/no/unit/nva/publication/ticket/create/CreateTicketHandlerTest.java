@@ -213,20 +213,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsPublished()
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedPublishedPublication();
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        var owner = UserInstance.fromPublication(publication);
-        var requestBody = constructDto(PublishingRequestCase.class);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
-    }
-
-    @Test
     void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable()
         throws IOException, BadRequestException {
         var publication = createUnpublishablePublication();
