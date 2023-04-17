@@ -49,7 +49,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
     }
     
-    protected TicketEntry createPersistedTicket(Publication publication)
+    protected TicketEntry createPersistedDoiTicket(Publication publication)
         throws ApiGatewayException {
         var doiTicket = DoiRequest.fromPublication(publication);
         return ticketService.createTicket(doiTicket);
