@@ -41,9 +41,10 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Role;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
@@ -163,7 +164,7 @@ public class NvaBrageMigrationDataGenerator {
         return new no.unit.nva.model.Contributor.Builder()
                    .withIdentity(createIdentity(name))
                    .withAffiliations(createAffiliationList())
-                   .withRole(Role.lookup(contributor.getRole()))
+                   .withRole(new RoleType(Role.lookup(contributor.getRole())))
                    .build();
     }
 

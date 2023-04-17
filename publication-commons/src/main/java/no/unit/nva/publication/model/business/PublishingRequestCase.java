@@ -34,9 +34,6 @@ public class PublishingRequestCase extends TicketEntry {
                                                               + "published: ";
     
     public static final String TYPE = "PublishingRequestCase";
-    
-    public static final String ALREADY_PUBLISHED_ERROR =
-        "Publication is already published.";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
     
@@ -97,9 +94,6 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     public void validateCreationRequirements(Publication publication)
         throws ConflictException {
-        if (PublicationStatus.PUBLISHED == publication.getStatus()) {
-            throw new ConflictException(ALREADY_PUBLISHED_ERROR);
-        }
         if (PublicationStatus.DRAFT_FOR_DELETION == publication.getStatus()) {
             throw new ConflictException(MARKED_FOR_DELETION_ERROR);
         }
