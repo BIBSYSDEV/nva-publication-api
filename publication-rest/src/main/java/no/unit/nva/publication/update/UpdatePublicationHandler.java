@@ -80,6 +80,11 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return PublicationResponse.fromPublication(updatedPublication);
     }
 
+    @Override
+    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
+        return HttpStatus.SC_OK;
+    }
+
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
         if (containsNewFiles(publicationUpdate)) {
             TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class)
@@ -87,13 +92,9 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         }
     }
 
-    @Override
-    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_OK;
-    }
-
     private boolean containsNewFiles(Publication publicationUpdate) {
-        return !getUnpublishedFiles(publicationUpdate).isEmpty();
+        return publicationUpdate.getAssociatedArtifacts().stream()
+                   .anyMatch(this::isUnpublishedFile);
     }
 
     private List<AssociatedArtifact> getUnpublishedFiles(Publication publicationUpdate) {

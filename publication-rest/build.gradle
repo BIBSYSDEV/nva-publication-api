@@ -5,7 +5,6 @@ dependencies {
     }
     implementation project(':datacite-commons')
     implementation project(':schema-org-metadata')
-    implementation project(":tickets")
 
     implementation libs.nva.apigateway
     implementation libs.nva.core
