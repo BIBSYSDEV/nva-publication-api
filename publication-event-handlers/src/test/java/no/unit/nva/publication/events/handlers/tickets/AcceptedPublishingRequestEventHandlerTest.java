@@ -6,6 +6,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
@@ -14,9 +16,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.util.List;
+import java.util.stream.Collectors;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -27,6 +34,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -60,6 +68,17 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler = new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         outputStream = new ByteArrayOutputStream();
     }
+
+    @Test
+    void shouldDoNothingWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
     
     @Test
     void shouldPublishPublicationWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {
@@ -70,6 +89,24 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    @Test
+    void shouldPublishPublicationAndFilesWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PublicationStatus.DRAFT,
+                                                                                         resourceService);
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(getAssociatedFiles(updatedPublication), everyItem(instanceOf(PublishedFile.class)));
+    }
+
+    private static List<AssociatedArtifact> getAssociatedFiles(Publication updatedPublication) {
+        return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance).collect(
+            Collectors.toList());
     }
 
     @Test

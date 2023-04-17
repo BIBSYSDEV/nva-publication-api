@@ -24,25 +24,24 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.Optional;
 
-import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.DEFAULT_S3_CLIENT;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class PendingPublishingRequestEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PendingPublishingRequestEventHandler.class);
     private final S3Driver s3Driver;
     private final TicketService ticketService;
     private final ResourceService resourceService;
-    
+
     @JacocoGenerated
     public PendingPublishingRequestEventHandler() {
         this(ResourceService.defaultService(),
              defaultPublishingRequestService(),
              DEFAULT_S3_CLIENT);
     }
-    
+
     protected PendingPublishingRequestEventHandler(ResourceService resourceService,
                                                    TicketService ticketService,
                                                    S3Client s3Client) {
@@ -51,7 +50,7 @@ public class PendingPublishingRequestEventHandler
         this.ticketService = ticketService;
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
-    
+
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
@@ -70,7 +69,6 @@ public class PendingPublishingRequestEventHandler
 
         return null;
     }
-
 
     private void publishMetadata(PublishingRequestCase publishingRequest) {
         var userInstance = UserInstance.create(publishingRequest.getOwner(), publishingRequest.getCustomerId());
@@ -101,7 +99,7 @@ public class PendingPublishingRequestEventHandler
                    .map(PublishingRequestCase.class::cast)
                    .orElseThrow();
     }
-    
+
     private DataEntryUpdateEvent parseInput(EventReference input) {
         var blob = s3Driver.readEvent(input.getUri());
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(blob, DataEntryUpdateEvent.class)).orElseThrow();

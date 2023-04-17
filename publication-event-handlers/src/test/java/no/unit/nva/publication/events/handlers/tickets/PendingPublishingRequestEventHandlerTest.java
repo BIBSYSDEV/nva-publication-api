@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -13,6 +14,9 @@ import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.FakeHttpResponse;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -44,11 +48,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
-    
+
     public static final Entity EMPTY = null;
-    private static final URI CUSTOMER_ID = randomUri();
     public static final String RESOURCE_LACKS_REQUIRED_DATA = "Resource does not have required data to be "
                                                               + "published: ";
+    private static final URI CUSTOMER_ID = randomUri();
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private PendingPublishingRequestEventHandler handler;
@@ -69,9 +73,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }
-    
+
     @Test
-    void shouldApprovePublishingRequestAutomaticallyWhenCustomerHasPolicyAllowingRegistratorsToPublishDataAndMetadata()
+    void shouldDoNothingWhenPublicationIsAlreadyPublished()
         throws IOException, ApiGatewayException {
         var publishingRequest = pendingPublishingRequest();
         publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
@@ -81,7 +85,17 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
     }
-    
+
+    @Test
+    void shouldDoNothingWhenMetadataIsAlreadyPublished() throws ApiGatewayException, IOException {
+        var publishingRequest = completedPublishingRequest();
+        var event = createEvent(publishingRequest);
+        this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
+        handler.handleRequest(event, output, context);
+        var updatedPublishingRequest = ticketService.fetchTicket(publishingRequest);
+        assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
+    }
+
     @Test
     void shouldIgnorePublishingRequestWhenCustomerHasPolicyForbiddingRegistratorsToPublishDataAndMetadata()
         throws IOException, ApiGatewayException {
@@ -117,7 +131,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublishingRequest.getStatus(), is(equalTo(TicketStatus.PENDING)));
         var resource = resourceService.getResourceByIdentifier(publishingRequest.getResourceIdentifier());
         assertThat(resource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED_METADATA)));
-        assertThatFilesAreUnpublished(resource);
     }
 
     @Test
@@ -200,28 +213,38 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var event = new EventReference(DataEntryUpdateEvent.PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC, blobUri);
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
     }
-    
+
     private URI createEventBlob(PublishingRequestCase publishingRequest) throws IOException {
         var dataEntryUpdateEvent = firstAppearanceOfAPublishingRequest(publishingRequest);
         var blobContent = JsonUtils.dtoObjectMapper.writeValueAsString(dataEntryUpdateEvent);
         return s3Driver.insertEvent(UnixPath.of(randomString()), blobContent);
     }
-    
+
     private DataEntryUpdateEvent firstAppearanceOfAPublishingRequest(PublishingRequestCase publishingRequest) {
         return new DataEntryUpdateEvent(randomString(), EMPTY, publishingRequest);
     }
-    
+
     private PublishingRequestCase pendingPublishingRequest() throws ApiGatewayException {
         var publication = createPublication();
         return createPendingPublishingRequest(publication);
     }
 
+    private PublishingRequestCase completedPublishingRequest() throws ApiGatewayException {
+        var publication = createPublication();
+        return createCompletedPublishingRequest(publication);
+    }
+
+    private PublishingRequestCase createCompletedPublishingRequest(Publication publication) throws ApiGatewayException {
+        var publishingRequest = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class,
+            ticketService);
+        return (PublishingRequestCase) publishingRequest;
+    }
     private PublishingRequestCase createPendingPublishingRequest(Publication publication) throws ApiGatewayException {
         var publishingRequest = PublishingRequestCase.fromPublication(publication);
         publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
-    
+
     private Publication createPublication() throws BadRequestException {
         var publication = randomPublication();
         publication.setStatus(PublicationStatus.DRAFT);

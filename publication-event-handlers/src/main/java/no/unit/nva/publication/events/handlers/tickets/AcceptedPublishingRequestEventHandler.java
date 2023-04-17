@@ -3,7 +3,9 @@ package no.unit.nva.publication.events.handlers.tickets;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -11,6 +13,9 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -59,17 +64,44 @@ public class AcceptedPublishingRequestEventHandler
         var eventBlob = s3Driver.readEvent(input.getUri());
         var latestUpdate = parseInput(eventBlob);
         if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus()) && publicationIsNotPublished(latestUpdate)) {
-            var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
-            var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
-            attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
-                .orElse(fail -> logError(fail.getException()));
-            createDoiRequestIfNeeded(publication);
+            publishPublication(latestUpdate);
         }
         return null;
     }
 
     private static boolean hasDoi(Publication publication) {
         return nonNull(publication.getDoi());
+    }
+
+    private void publishPublication(PublishingRequestCase latestUpdate) {
+        var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
+        var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
+        var updatedPublication = toPublicationWithPublishedFiles(publication);
+        attempt(() -> resourceService.updatePublication(updatedPublication));
+        attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
+            .orElse(fail -> logError(fail.getException()));
+        createDoiRequestIfNeeded(updatedPublication);
+    }
+
+    private Publication toPublicationWithPublishedFiles(Publication publication) {
+        return publication.copy()
+                   .withAssociatedArtifacts(convertFilesToPublished(publication.getAssociatedArtifacts()))
+                   .build();
+    }
+
+    private List<AssociatedArtifact> convertFilesToPublished(AssociatedArtifactList associatedArtifacts) {
+        return associatedArtifacts.stream()
+                   .map(this::updateFileToPublished)
+                   .collect(Collectors.toList());
+    }
+
+    private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
+        if (artifact instanceof File) {
+            var file = (File) artifact;
+            return file.toPublishedFile();
+        } else {
+            return artifact;
+        }
     }
 
     private boolean publicationIsNotPublished(PublishingRequestCase latestUpdate) {
@@ -84,8 +116,7 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private void createDoiRequestIfNeeded(Publication publication) {
-        if(hasDoi(publication) && !doiRequestExists(publication)) {
-
+        if (hasDoi(publication) && !doiRequestExists(publication)) {
             attempt(() -> DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
         }

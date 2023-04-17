@@ -68,12 +68,10 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
         var publishingRequestInsertionEntry = createPublishingRequestInsertionEntry();
         var identifierEntry = createUniqueIdentifierEntry();
-        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry();
         return new TransactWriteItemsRequest()
                    .withTransactItems(
                        identifierEntry,
-                       publishingRequestInsertionEntry,
-                       publishingRequestUniquenessEntry);
+                       publishingRequestInsertionEntry);
     }
 
     public PublicationWorkflow getPublicationWorkflow() {
@@ -118,12 +116,6 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     @JacocoGenerated
     public String toString() {
         return toJsonString();
-    }
-    
-    private TransactWriteItem createPublishingRequestUniquenessEntry() {
-        var publishingRequestUniquenessEntry =
-            UniquePublishingRequestEntry.create((PublishingRequestCase) getData());
-        return newPutTransactionItem(publishingRequestUniquenessEntry);
     }
     
     private TransactWriteItem createPublishingRequestInsertionEntry() {
