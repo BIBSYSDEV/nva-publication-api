@@ -10,6 +10,7 @@ import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -37,6 +38,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.GetExternalClientResponse;
@@ -44,6 +46,9 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.License;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.AccessRight;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -136,7 +141,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, publicationService);
 
-        Publication publicationUpdate = updateTitle(publishedPublication);
+        Publication publicationUpdate = updateFiles(publishedPublication);
 
         InputStream inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
@@ -385,6 +390,21 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         Publication update = savedPublication.copy().build();
         update.getEntityDescription().setMainTitle(randomString());
         return update;
+    }
+
+    private Publication updateFiles(Publication savedPublication) {
+        Publication update = savedPublication.copy().build();
+        var associatedArtifacts = update.getAssociatedArtifacts();
+        associatedArtifacts.add(randomFile());
+        update.setAssociatedArtifacts(associatedArtifacts);
+        return update;
+    }
+
+    private AssociatedArtifact randomFile() {
+        return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
+                                   Long.valueOf(randomInteger().toString()),
+                                   new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
+                                   false, false, null);
     }
 
     private TestAppender createAppenderForLogMonitoring() {

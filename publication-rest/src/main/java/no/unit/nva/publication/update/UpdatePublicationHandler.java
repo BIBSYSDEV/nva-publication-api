@@ -93,7 +93,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private boolean containsNewFiles(Publication publicationUpdate) {
-        return getUnpublishedFiles(publicationUpdate).isEmpty();
+        return !getUnpublishedFiles(publicationUpdate).isEmpty();
     }
 
     private List<AssociatedArtifact> getUnpublishedFiles(Publication publicationUpdate) {
