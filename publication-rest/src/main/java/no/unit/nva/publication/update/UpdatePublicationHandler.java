@@ -75,12 +75,16 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         validateRequest(identifierInPath, input);
         Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
+        createPublishingRequestOnFileUpdate(publicationUpdate);
+        Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
+        return PublicationResponse.fromPublication(updatedPublication);
+    }
+
+    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
         if (containsNewFiles(publicationUpdate)) {
             TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class)
                 .persistNewTicket(ticketService);
         }
-        Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
-        return PublicationResponse.fromPublication(updatedPublication);
     }
 
     @Override
