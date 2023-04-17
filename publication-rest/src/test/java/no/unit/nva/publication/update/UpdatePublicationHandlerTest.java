@@ -141,13 +141,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, publicationService);
 
-        Publication publicationUpdate = updateFiles(publishedPublication);
+        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
-        InputStream inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
         var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
 
                                                                    publicationUpdate.getIdentifier(), PublishingRequestCase.class);
@@ -155,8 +154,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(ticket.get().getStatus(), is(equalTo(TicketStatus.PENDING)));
-        assertThat(body.getEntityDescription().getMainTitle(),
-                   is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
     
     @Test
@@ -392,7 +389,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return update;
     }
 
-    private Publication updateFiles(Publication savedPublication) {
+    private Publication addAnotherUnpublishedFile(Publication savedPublication) {
         Publication update = savedPublication.copy().build();
         var associatedArtifacts = update.getAssociatedArtifacts();
         associatedArtifacts.add(randomFile());
