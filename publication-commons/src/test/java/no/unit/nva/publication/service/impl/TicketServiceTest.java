@@ -191,11 +191,11 @@ class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowConflictExceptionWhenRequestingToPublishAlreadyPublishedPublication() throws ApiGatewayException {
+    void shouldAllowCreationOfPublishingRequestTicketForAlreadyPublishedPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, PUBLISHED);
         var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
-        Executable action = () -> ticket.persistNewTicket(ticketService);
-        assertThrows(ConflictException.class, action);
+        var actualTicket = ticket.persistNewTicket(ticketService);
+        assertThat(actualTicket, is(instanceOf(PublishingRequestCase.class)));
     }
 
     @ParameterizedTest(name = "type: {0}")
@@ -628,12 +628,13 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldBePossibleToCreateSeveralPublishingRequestTicketsForSinglePublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         assertDoesNotThrow(() -> IntStream.range(0, 2)
-                                                   .boxed()
-                                                   .map(ticketType -> createPersistedTicket(publication,
-                                                                                            PublishingRequestCase.class))
-                                                   .collect(Collectors.toList()));
-        var ticketsFromDatabase = resourceService.fetchAllTicketsForElevatedUser(owner, publication.getIdentifier()).collect(
-            Collectors.toList());
+                                     .boxed()
+                                     .map(ticketType -> createPersistedTicket(publication,
+                                                                              PublishingRequestCase.class))
+                                     .collect(Collectors.toList()));
+        var ticketsFromDatabase = resourceService.fetchAllTicketsForElevatedUser(owner, publication.getIdentifier())
+                                      .collect(
+                                          Collectors.toList());
         assertThat(ticketsFromDatabase, allOf(hasSize(2), everyItem(instanceOf(PublishingRequestCase.class))));
     }
 
@@ -659,11 +660,11 @@ class TicketServiceTest extends ResourcesLocalTest {
                    .map(GeneralSupportRequest.class::cast).orElseThrow();
     }
 
-    private TicketEntry legacyQueryObject( Publication publication) {
-            return DoiRequest.builder()
-                       .withCustomerId(publication.getPublisher().getId())
-                       .withPublicationDetails(PublicationDetails.create(publication))
-                       .build();
+    private TicketEntry legacyQueryObject(Publication publication) {
+        return DoiRequest.builder()
+                   .withCustomerId(publication.getPublisher().getId())
+                   .withPublicationDetails(PublicationDetails.create(publication))
+                   .build();
     }
 
     private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
