@@ -25,6 +25,7 @@ public final class StorageModelTestUtils {
         sample.setStatus(TicketStatus.COMPLETED);
         sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
         sample.setPublicationDetails(PublicationDetails.create(publication));
+        sample.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         assertThat(sample, doesNotHaveEmptyValues());
         return sample;
     }

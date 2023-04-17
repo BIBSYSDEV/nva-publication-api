@@ -67,7 +67,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         assertThat(publication.getDoi(), is(nullValue()));
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         var completedTicket = ticket.complete(publication);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
@@ -84,7 +84,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublicationWithDoi();
         assertThat(publication.getDoi(), is(notNullValue()));
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         var completedTicket = ticket.complete(publication);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
@@ -103,7 +103,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         publication.getEntityDescription().setMainTitle(null);
         resourceService.updatePublication(publication.copy().withEntityDescription(publication.getEntityDescription()).build());
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         ticket.setStatus(COMPLETED);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
@@ -117,7 +117,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         this.handler = new UpdateTicketStatusHandler(ticketService, resourceService,
                                                      new FakeDoiClientThrowingException());
         var publication = createPersistAndPublishPublication();
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         var completedTicket = ticket.complete(publication);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
@@ -132,7 +132,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
                                                      new FakeDoiClientThrowingException());
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(
             PublicationStatus.PUBLISHED, resourceService);
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         var completedTicket = ticket.close();
         mockBadResponseFromDoiRegistrar(publication.getDoi());
         var request = authorizedUserCompletesTicket(completedTicket);
@@ -168,7 +168,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnForbiddenWhenRequestingUserIsNotCurator() throws IOException, ApiGatewayException {
         var publication = createPersistAndPublishPublication();
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         var completedTicket = ticket.complete(publication);
         var request = createCompleteTicketHttpRequest(
             completedTicket,
@@ -184,7 +184,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     void shouldReturnForbiddenWhenRequestingUserIsCuratorAtOtherCustomerThanCurrentPublisher()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         var completedTicket = ticket.complete(publication);
         var customer = randomUri();
         var request = createCompleteTicketHttpRequest(completedTicket, AccessRight.APPROVE_DOI_REQUEST, customer);
@@ -197,7 +197,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     void shouldReturnAcceptedWhenCompletingAnAlreadyCompletedDoiRequestTicket()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
+        var ticket = createPersistedTicket(publication);
         var completedTicket = ticketService.updateTicketStatus(ticket, COMPLETED);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);

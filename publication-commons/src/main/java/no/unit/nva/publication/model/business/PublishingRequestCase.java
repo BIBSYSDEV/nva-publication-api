@@ -6,6 +6,7 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENT
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -48,12 +49,16 @@ public class PublishingRequestCase extends TicketEntry {
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
+
+    @JsonProperty(WORKFLOW)
+    private PublishingWorkflow workflow;
     
     public PublishingRequestCase() {
         super();
     }
-    
-    public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
+
+    public static PublishingRequestCase createOpeningCaseObject(Publication publication,
+                                                                PublishingWorkflow publishingWorkflow) {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());
@@ -61,15 +66,20 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
+        openingCaseObject.setWorkflow(publishingWorkflow);
         return openingCaseObject;
     }
-    
+
+    public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
+        return createOpeningCaseObject(publication, null);
+    }
+
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
                                                           SortableIdentifier publicationIdentifier,
                                                           SortableIdentifier publishingRequestIdentifier) {
         return createPublishingRequestIdentifyingObject(userInstance,
-            publicationIdentifier,
-            publishingRequestIdentifier);
+                                                        publicationIdentifier,
+                                                        publishingRequestIdentifier);
     }
     
     public static PublishingRequestCase createQueryObject(SortableIdentifier resourceIdentifier, URI customerId) {
@@ -86,7 +96,15 @@ public class PublishingRequestCase extends TicketEntry {
             throwErrorWhenPublishingResourceThatDoesNotHaveRequiredData(resource);
         }
     }
-    
+
+    public PublishingWorkflow getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(PublishingWorkflow workflow) {
+        this.workflow = workflow;
+    }
+
     @Override
     public void validateCreationRequirements(Publication publication)
         throws ConflictException {
