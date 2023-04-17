@@ -20,7 +20,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationEx
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -107,7 +107,7 @@ public class CristinContributor implements Comparable<CristinContributor> {
         return StringUtils.isNotBlank(nameBuilder.toString().trim()) ? nameBuilder.toString().trim() : null;
     }
 
-    private Role extractRoles() {
+    private RoleType extractRoles() {
         CristinContributorRole firstRole =
             affiliations.stream()
                 .map(CristinContributorsAffiliation::getRoles)

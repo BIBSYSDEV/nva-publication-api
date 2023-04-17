@@ -35,7 +35,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Role;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -43,6 +42,8 @@ import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -319,9 +320,9 @@ public final class BrageNvaMapper {
                    .getUri();
     }
 
-    private static Role extractRole(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return Optional.ofNullable(Role.lookup(contributor.getRole()))
-                   .orElse(Role.OTHER);
+    private static RoleType extractRole(no.sikt.nva.brage.migration.record.Contributor contributor) {
+        return Optional.of(new RoleType(Role.lookup(contributor.getRole())))
+                   .orElse(new RoleType(Role.OTHER));
     }
 
     private static Identity extractIdentity(no.sikt.nva.brage.migration.record.Contributor contributor) {
