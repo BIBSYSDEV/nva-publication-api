@@ -279,8 +279,11 @@ public abstract class TicketEntry implements Entity {
         return PUBLISHED_STATUSES.contains(publication.getStatus());
     }
 
+    public abstract void validateAssigneeRequirements(Publication publication);
+
     public TicketEntry updateAssignee(Publication publication, User user) {
         var updated = this.copy();
+        updated.validateAssigneeRequirements(publication);
         updated.setAssignee(user);
         updated.setModifiedDate(Instant.now());
         return updated;

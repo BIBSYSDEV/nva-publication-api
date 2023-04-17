@@ -108,6 +108,10 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     public void validateCompletionRequirements(Publication publication) {
     }
+
+    @Override
+    public void validateAssigneeRequirements(Publication publication) {
+    }
     
     @Override
     public PublishingRequestCase complete(Publication publication) {

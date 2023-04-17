@@ -192,6 +192,10 @@ public class DoiRequest extends TicketEntry {
     }
 
     @Override
+    public void validateAssigneeRequirements(Publication publication) {
+    }
+
+    @Override
     public DoiRequest complete(Publication publication) {
         return (DoiRequest) super.complete(publication);
     }

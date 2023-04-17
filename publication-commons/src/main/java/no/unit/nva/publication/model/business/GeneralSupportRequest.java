@@ -148,6 +148,10 @@ public class GeneralSupportRequest extends TicketEntry {
     public void validateCompletionRequirements(Publication publication) {
         //NO OP
     }
+
+    @Override
+    public void validateAssigneeRequirements(Publication publication) {
+    }
     
     @Override
     public TicketEntry copy() {
