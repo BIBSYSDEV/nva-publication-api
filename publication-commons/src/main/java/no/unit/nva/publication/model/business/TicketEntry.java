@@ -298,6 +298,7 @@ public abstract class TicketEntry implements Entity {
         public static final String CUSTOMER_ID_FIELD = "customerId";
         public static final String PUBLICATION_DETAILS_FIELD = "publicationDetails";
         public static final String IDENTIFIER_FIELD = "identifier";
+        public static final String ASSIGNEE_FIELD = "assignee";
 
         private Constants() {
 

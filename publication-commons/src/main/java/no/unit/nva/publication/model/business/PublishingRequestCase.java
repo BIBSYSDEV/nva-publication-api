@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
@@ -51,7 +52,7 @@ public class PublishingRequestCase extends TicketEntry {
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
-    @JsonProperty("assignee")
+    @JsonProperty(ASSIGNEE_FIELD)
     private User assignee;
     
     public PublishingRequestCase() {

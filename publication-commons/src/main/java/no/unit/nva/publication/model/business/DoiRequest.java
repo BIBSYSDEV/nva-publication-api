@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
@@ -58,7 +59,7 @@ public class DoiRequest extends TicketEntry {
     private URI customerId;
     @JsonProperty(OWNER_FIELD)
     private User owner;
-    @JsonProperty("assignee")
+    @JsonProperty(ASSIGNEE_FIELD)
     private User assignee;
 
     public DoiRequest() {
