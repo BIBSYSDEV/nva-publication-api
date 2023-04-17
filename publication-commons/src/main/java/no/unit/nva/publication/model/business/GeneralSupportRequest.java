@@ -41,7 +41,7 @@ public class GeneralSupportRequest extends TicketEntry {
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
     @JsonProperty("assignee")
-    private Optional<User> assignee;
+    private User assignee;
     
     public GeneralSupportRequest() {
         super();
@@ -176,12 +176,12 @@ public class GeneralSupportRequest extends TicketEntry {
     }
 
     @Override
-    public Optional<User> getAssignee() {
+    public User getAssignee() {
         return assignee;
     }
 
     @Override
-    public void setAssignee(Optional<User> assignee) {
+    public void setAssignee(User assignee) {
         this.assignee = assignee;
     }
 

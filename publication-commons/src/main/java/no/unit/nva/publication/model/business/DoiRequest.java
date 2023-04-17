@@ -59,7 +59,7 @@ public class DoiRequest extends TicketEntry {
     @JsonProperty(OWNER_FIELD)
     private User owner;
     @JsonProperty("assignee")
-    private Optional<User> assignee;
+    private User assignee;
 
     public DoiRequest() {
         super();
@@ -223,12 +223,12 @@ public class DoiRequest extends TicketEntry {
     }
 
     @Override
-    public Optional<User> getAssignee() {
+    public User getAssignee() {
         return assignee;
     }
 
     @Override
-    public void setAssignee(Optional<User> assignee) {
+    public void setAssignee(User assignee) {
         this.assignee = assignee;
     }
 
@@ -307,7 +307,7 @@ public class DoiRequest extends TicketEntry {
             return this;
         }
 
-        public Builder withAssignee(Optional<User> assignee) {
+        public Builder withAssignee(User assignee) {
             doiRequest.setAssignee(assignee);
             return this;
         }

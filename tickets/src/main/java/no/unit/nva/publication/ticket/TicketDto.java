@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -50,13 +49,13 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(MESSAGES_FIELD)
     private final List<MessageDto> messages;
     @JsonProperty(ASSIGNEE_FIELD)
-    private final Optional<User> assignee;
+    private final User assignee;
     
     protected TicketDto(TicketStatus status,
                         List<MessageDto> messages,
                         Set<User> viewedBy,
                         PublicationSummary publicationSummary,
-                        Optional<User> assignee) {
+                        User assignee) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
@@ -85,7 +84,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationSummary(createPublicationSummary(ticket))
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
-                   .withAssignee(Optional.empty())
+                   .withAssignee(ticket.getAssignee())
                    .build(ticket.getClass());
     }
     
@@ -104,7 +103,7 @@ public abstract class TicketDto implements JsonSerializable {
         return publicationSummary;
     }
 
-    public Optional<User> getAssignee() {
+    public User getAssignee() {
         return assignee;
     }
 
@@ -145,7 +144,7 @@ public abstract class TicketDto implements JsonSerializable {
         private List<MessageDto> messages;
         private ViewedBy viewedBy;
         private PublicationSummary publicationSummary;
-        private Optional<User> assignee;
+        private User assignee;
         
         private Builder() {
         }
@@ -180,7 +179,7 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withAssignee(Optional<User> assignee) {
+        public Builder withAssignee(User assignee) {
             this.assignee = assignee;
             return this;
         }

@@ -53,7 +53,7 @@ public class PublishingRequestCase extends TicketEntry {
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
     @JsonProperty("assignee")
-    private Optional<User> assignee;
+    private User assignee;
     
     public PublishingRequestCase() {
         super();
@@ -141,12 +141,12 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
-    public Optional<User> getAssignee() {
+    public User getAssignee() {
         return  assignee;
     }
 
     @Override
-    public void setAssignee(Optional<User> assignee) {
+    public void setAssignee(User assignee) {
         this.assignee = assignee;
     }
 
