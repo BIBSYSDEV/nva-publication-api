@@ -22,7 +22,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
-import no.unit.nva.publication.ticket.model.identityservice.CustomerTransactionResult;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -44,7 +43,6 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final PublishingRequestResolver publishingRequestResolver;
-    private final RawContentRetriever uriRetriever;
 
     @JacocoGenerated
     public CreateTicketHandler() {
@@ -60,7 +58,6 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         this.resourceService = resourceService;
         this.publishingRequestResolver = publishingRequestResolver;
 
-        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -177,9 +174,4 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         return new ForbiddenException();
     }
 
-    private boolean customerAllowsPublishing(URI customerId) {
-        var rawContent = uriRetriever.getRawContent(customerId, CONTENT_TYPE);
-        return rawContent.isPresent() &&
-               new CustomerTransactionResult(rawContent.get(), customerId).isKnownThatCustomerAllowsPublishing();
-    }
 }

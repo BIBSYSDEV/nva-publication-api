@@ -10,15 +10,19 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.time.Clock;
+import java.util.Optional;
+
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -38,12 +42,16 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     
     private ResourceService resourceService;
     private TicketService ticketService;
-    
+    private UriRetriever uriRetriever;
+
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(super.client, Clock.systemDefaultZone());
-        this.ticketService = new TicketService(super.client);
+        this.uriRetriever = mock(UriRetriever.class);
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
     }
     
     @Test

@@ -49,9 +49,9 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatus(status);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
+        var persistedPublication = Resource
+                .fromPublication(publication)
+                .persistNew(resourceService,UserInstance.fromPublication(publication));
         if (isPublished(publication)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
@@ -63,9 +63,9 @@ public final class TicketTestUtils {
                                                                              ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithUnpublishedFiles(status);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
+        var persistedPublication = Resource
+                .fromPublication(publication)
+                .persistNew(resourceService,UserInstance.fromPublication(publication));
         if (isPublished(publication)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
@@ -77,9 +77,9 @@ public final class TicketTestUtils {
                                                                 ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatusAndDoi(status);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
+        var persistedPublication = Resource
+                .fromPublication(publication)
+                .persistNew(resourceService,UserInstance.fromPublication(publication));
         if (PUBLISHED.equals(status)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
@@ -103,21 +103,25 @@ public final class TicketTestUtils {
     public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        return TicketEntry
+                .requestNewTicket(publication, ticketType)
+                .persistNewTicket(ticketService);
     }
 
     public static TicketEntry createClosedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                  TicketService ticketService)
         throws ApiGatewayException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                   .persistNewTicket(ticketService).close();
+        return TicketEntry
+                .createNewTicket(publication, ticketType, SortableIdentifier::next)
+                .persistNewTicket(ticketService).close();
     }
 
     public static TicketEntry createCompletedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
-        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                         .persistNewTicket(ticketService);
+        var ticket = TicketEntry
+                .createNewTicket(publication, ticketType, SortableIdentifier::next)
+                .persistNewTicket(ticketService);
         ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
 
         return ticketService.fetchTicket(ticket);
@@ -152,9 +156,10 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
-        var publication = randomPublication().copy()
-                              .withStatus(status)
-                              .build();
+        var publication = randomPublication()
+                .copy()
+                .withStatus(status)
+                .build();
         unpublishFiles(publication);
         return publication;
     }

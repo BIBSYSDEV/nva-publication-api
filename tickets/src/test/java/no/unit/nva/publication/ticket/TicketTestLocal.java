@@ -34,10 +34,9 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        var duplicateIdentifier = SortableIdentifier.next();
-        this.uriRetriever = mock(UriRetriever .class);
-        this.ticketService = new TicketService(client);
-
+        this.uriRetriever = mock(UriRetriever.class);
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
+        mockUriRetriever(REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
         this.output = new ByteArrayOutputStream();
     }
     
@@ -98,5 +97,10 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         action.accept(storedResult);
         return resourceService.getPublication(storedResult);
+    }
+
+    protected void mockUriRetriever(PublicationWorkflow publicationWorkflow) {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(publicationWorkflow)));
     }
 }

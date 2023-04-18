@@ -32,14 +32,10 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -65,14 +61,17 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         super.init();
         Clock clock = Clock.systemDefaultZone();
         resourceService = new ResourceService(client, clock);
-        ticketService = new TicketService(client);
-
+        this.uriRetriever = mock(UriRetriever.class);
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
         var mockUriRetriever = mock(UriRetriever.class);
         when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 

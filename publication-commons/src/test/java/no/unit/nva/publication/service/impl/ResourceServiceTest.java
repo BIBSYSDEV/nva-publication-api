@@ -154,6 +154,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         now = clock.instant();
         resourceService = new ResourceService(client, clock);
         ticketService = new TicketService(client);
+
+        ticketService = new TicketService(client);
         messageService = new MessageService(client);
     }
 

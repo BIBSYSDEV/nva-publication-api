@@ -12,12 +12,10 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.ticket.model.identityservice.CustomerTransactionResult;
+import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.JacocoGenerated;
 
 public class PublishingRequestResolver {
@@ -40,24 +38,27 @@ public class PublishingRequestResolver {
         this.uriRetriever = uriRetriever;
     }
 
-    public void updateTicketAndPublicationIfNeeded(TicketEntry ticket, Publication publication, URI customer) {
+    public void updateTicketAndPublicationIfNeeded(TicketEntry ticket, Publication publication, URI customer) throws BadGatewayException {
         if (customerAllowsPublishing(customer)) {
             updateStatusToApproved(ticket);
             publishPublication(publication);
         }
     }
 
-    private boolean customerAllowsPublishing(URI customerId) {
-        var rawContent = uriRetriever.getRawContent(customerId, CONTENT_TYPE);
-        return rawContent.isPresent() &&
-               new CustomerTransactionResult(rawContent.get(), customerId).isKnownThatCustomerAllowsPublishing();
+    private boolean customerAllowsPublishing(URI customerId)  {
+        return uriRetriever
+                .getDto(customerId, WorkFlowDto.class)
+                .map(WorkFlowDto::getPublication)
+                .map(PublicationWorkflow::registratorsAllowedToPublishDataAndMetadata)
+                .orElseThrow();
     }
 
     private void publishPublication(Publication publication) {
         var updatedPublication = toPublicationWithPublishedFiles(publication);
         attempt(() -> resourceService.updatePublication(updatedPublication));
-        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(updatedPublication),
-                                                         updatedPublication.getIdentifier()));
+        attempt(() -> resourceService.publishPublication(
+                UserInstance.fromPublication(updatedPublication),updatedPublication.getIdentifier())
+        );
     }
 
     private Publication toPublicationWithPublishedFiles(Publication publication) {

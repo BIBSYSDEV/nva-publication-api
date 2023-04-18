@@ -95,6 +95,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     public void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(
             Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var user = randomUserInstance(ticket.getCustomerId());
@@ -108,6 +110,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     public void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator(
             Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
@@ -129,6 +133,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     public void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(
             Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), randomUri());
@@ -148,6 +154,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                              PublicationStatus status)
         throws ApiGatewayException, IOException {
 
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
@@ -167,6 +175,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     void shouldMarkTicketAsUnreadForCuratorAndReadForPublicationOwnerWhenOwnerSendsAMessage(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException,
                                                                                             IOException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.markReadForCurators().persistUpdate(ticketService);

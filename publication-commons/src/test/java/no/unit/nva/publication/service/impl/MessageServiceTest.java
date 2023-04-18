@@ -6,16 +6,18 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
+import java.util.Optional;
+
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +37,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private UserInstance owner;
     private TicketService ticketService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void initialize() {
@@ -42,7 +45,10 @@ class MessageServiceTest extends ResourcesLocalTest {
         var clock = mockClock();
         messageService = new MessageService(client);
         resourceService = new ResourceService(client, clock);
-        ticketService = new TicketService(client);
+        this.uriRetriever = mock(UriRetriever.class);
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
         owner = randomUserInstance();
     }
     

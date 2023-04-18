@@ -20,7 +20,6 @@ import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.TicketDao;
-import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.*;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
@@ -188,10 +187,10 @@ public class TicketService extends ServiceWithTransactions {
     private boolean isPublishingRequest(Class<? extends TicketEntry> ticketType) {
         return PublishingRequestCase.class.equals(ticketType);
     }
-    private PublicationWorkflow getCustomerWorkflow(URI custommerId) {
+    private PublicationWorkflow getCustomerWorkflow(URI custommerId)  {
         return uriRetriever.getDto(custommerId, WorkFlowDto.class)
-            .map(WorkFlowDto::getPublicationWorkflow)
-            .orElse(PublicationWorkflow.UNSET);
+                .map(WorkFlowDto::getPublication)
+                .orElse(PublicationWorkflow.UNSET);
     }
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
         return new BadRequestException(exception.getMessage(), exception);
@@ -211,7 +210,7 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     private <T extends TicketEntry> T createTicketForPublication(
-        Publication publication, Class<T> ticketType) throws ConflictException {
+        Publication publication, Class<T> ticketType) throws ConflictException, BadGatewayException {
         var ticketEntry = createNewTicket(publication, ticketType, identifierProvider);
         if (isPublishingRequest(ticketType)) {
             var customerId = publication.getPublisher().getId();

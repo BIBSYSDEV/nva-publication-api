@@ -7,16 +7,22 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Optional;
+
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -38,13 +44,17 @@ class MessageDaoTest extends ResourcesLocalTest {
     private MessageService messageService;
     private TicketService ticketService;
     private ResourceService resourceService;
-    
+    private UriRetriever uriRetriever;
+
     @BeforeEach
     public void initialize() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.messageService = new MessageService(client);
-        this.ticketService = new TicketService(client);
+        this.uriRetriever = mock(UriRetriever.class);
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
     }
 
     @ParameterizedTest

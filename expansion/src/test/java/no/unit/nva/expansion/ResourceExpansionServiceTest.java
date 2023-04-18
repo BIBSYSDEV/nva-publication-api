@@ -4,6 +4,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.model.business.PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -14,14 +15,14 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
@@ -32,13 +33,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -250,8 +245,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private void initializeServices() {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client);
-        ticketService = new TicketService(client);
-        uriRetriever = mock(UriRetriever.class);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.ticketService = new TicketService(client, SortableIdentifier::next, uriRetriever);
+        mockUriRetriever(REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
@@ -263,5 +259,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                 .build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
+    }
+
+    protected void mockUriRetriever(PublicationWorkflow publicationWorkflow) {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(publicationWorkflow)));
     }
 }

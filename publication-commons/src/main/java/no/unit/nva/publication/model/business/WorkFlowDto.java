@@ -15,7 +15,7 @@ public final class WorkFlowDto {
         this.publicationWorkflow = publicationWorkflow;
     }
 
-    public PublicationWorkflow getPublicationWorkflow() {
+    public PublicationWorkflow getPublication() {
         return publicationWorkflow;
     }
 

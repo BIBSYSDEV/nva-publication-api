@@ -1,6 +1,23 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
-
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.model.business.PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
+import static no.unit.nva.publication.model.business.PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.time.Clock;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -10,12 +27,17 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.PublicationWorkflow;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.WorkFlowDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
@@ -28,24 +50,6 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.time.Clock;
-import java.util.Optional;
-
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
@@ -77,8 +81,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldDoNothingWhenPublicationIsAlreadyPublished()
         throws IOException, ApiGatewayException {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(REGISTRATOR_PUBLISHES_METADATA_AND_FILES)));
         var publishingRequest = pendingPublishingRequest();
-        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
         var event = createEvent(publishingRequest);
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
         handler.handleRequest(event, output, context);
@@ -88,6 +93,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldDoNothingWhenMetadataIsAlreadyPublished() throws ApiGatewayException, IOException {
+        mockUriRetriever(REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var publishingRequest = completedPublishingRequest();
         var event = createEvent(publishingRequest);
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
@@ -99,8 +105,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldIgnorePublishingRequestWhenCustomerHasPolicyForbiddingRegistratorsToPublishDataAndMetadata()
         throws IOException, ApiGatewayException {
+        when(uriRetriever.getDto(any(), any()))
+            .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
         var publishingRequest = pendingPublishingRequest();
-        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var event = createEvent(publishingRequest);
 
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
@@ -111,6 +118,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotCompleteAlreadyCompletedTicketsAndEnterInfiniteLoop() throws ApiGatewayException, IOException {
+        mockUriRetriever(REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
         var completedTicket = createCompletedTicketEntry();
         var versionBeforeEvent = completedTicket.toDao().fetchByIdentifier(client).getVersion();
         callApiOfCustomerAllowingAutomaticPublishing((PublishingRequestCase) completedTicket);
@@ -121,8 +129,7 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdatePublicationStatusButNotCompleteTicketWhenCustomerAllowsMetadataPublishing()
         throws ApiGatewayException, IOException {
-        when(uriRetriever.getDto(any(), any()))
-            .thenReturn(Optional.of(new WorkFlowDto(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
+        mockUriRetriever(REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var publishingRequest = pendingPublishingRequest();
         var event = createEvent(publishingRequest);
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
@@ -135,9 +142,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldLogFailingReasonsWhenPublishingMetadataFails() throws ApiGatewayException, IOException {
+        mockUriRetriever(REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = PublishingRequestCase.fromPublication(publication);
-        pendingPublishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(pendingPublishingRequest);
 
         this.handler = new PendingPublishingRequestEventHandler(resourceService, ticketService, s3Client);
@@ -152,9 +159,10 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldLogFailingReasonsWhenUpdatingPublicationStatusFails() throws ApiGatewayException, IOException {
+        mockUriRetriever(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
         var publication = createPublication();
         var pendingPublishingRequest = PublishingRequestCase.fromPublication(publication);
-        pendingPublishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var event = createEvent(pendingPublishingRequest);
 
         var expectedMessage = "Testing string";
@@ -178,9 +186,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private Publication createUnpublishablePublication() throws BadRequestException {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
-        return Resource.fromPublication(publication).persistNew(
-            resourceService,
-            UserInstance.fromPublication(publication));
+        return Resource
+                .fromPublication(publication)
+                .persistNew(resourceService,UserInstance.fromPublication(publication));
     }
 
     private void assertThatFilesAreUnpublished(Resource resource) {
@@ -201,9 +209,10 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private TicketEntry createCompletedTicketEntry() throws ApiGatewayException {
         var publication = createPublication();
-        var completedTicket = TicketEntry.requestNewTicket(publication, PublishingRequestCase.class)
-                                  .persistNewTicket(ticketService)
-                                  .complete(publication);
+        var completedTicket = TicketEntry
+                .requestNewTicket(publication, PublishingRequestCase.class)
+                .persistNewTicket(ticketService)
+                .complete(publication);
         completedTicket = ticketService.updateTicketStatus(completedTicket, TicketStatus.COMPLETED);
         return completedTicket;
     }
@@ -241,7 +250,6 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     private PublishingRequestCase createPendingPublishingRequest(Publication publication) throws ApiGatewayException {
         var publishingRequest = PublishingRequestCase.fromPublication(publication);
-        publishingRequest.setWorkflow(PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
 
@@ -252,5 +260,10 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
         return publication;
+    }
+
+    private void mockUriRetriever(PublicationWorkflow publicationWorkflow) {
+        when(uriRetriever.getDto(any(), any()))
+                .thenReturn(Optional.of(new WorkFlowDto(publicationWorkflow)));
     }
 }

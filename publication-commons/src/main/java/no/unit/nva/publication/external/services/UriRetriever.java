@@ -40,7 +40,8 @@ public class UriRetriever implements RawContentRetriever {
 
         return attempt(() -> httpClient.send(request, responseBodyHandler))
                 .map(response -> dtoObjectMapper.readValue(response.body(), valueType))
-                .toOptional();    }
+                .toOptional();
+    }
 
     private static HttpClient newHttpClient() {
         return HttpClient.newHttpClient();
