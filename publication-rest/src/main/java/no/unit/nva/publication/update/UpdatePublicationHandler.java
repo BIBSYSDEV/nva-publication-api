@@ -11,6 +11,7 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.AccessRight;
@@ -75,9 +76,21 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         validateRequest(identifierInPath, input);
         Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
-        createPublishingRequestOnFileUpdate(publicationUpdate);
+        if (isAlreadyPublished(existingPublication)) {
+            createPublishingRequestOnFileUpdate(publicationUpdate);
+        }
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
         return PublicationResponse.fromPublication(updatedPublication);
+    }
+
+    @Override
+    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
+        return HttpStatus.SC_OK;
+    }
+
+    private static boolean isAlreadyPublished(Publication existingPublication) {
+        return PublicationStatus.PUBLISHED.equals(existingPublication.getStatus())
+               || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
     }
 
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
@@ -85,11 +98,6 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
             TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class)
                 .persistNewTicket(ticketService);
         }
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_OK;
     }
 
     private boolean containsNewFiles(Publication publicationUpdate) {

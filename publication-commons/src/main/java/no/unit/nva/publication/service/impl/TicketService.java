@@ -17,6 +17,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -209,5 +210,16 @@ public class TicketService extends ServiceWithTransactions {
         FunctionWithException<TicketEntry, TicketEntry, NotFoundException>
             fetchTicketProvider = this::fetchTicket;
         return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
+    }
+
+    protected TicketEntry updateTicketAssignee(TicketEntry ticketEntry, User user) throws ApiGatewayException {
+         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
+        var updatedAssignee = existingTicket.updateAssignee(publication, user);
+
+        var dao = (TicketDao) updatedAssignee.toDao();
+        var putItemRequest = dao.createPutItemRequest();
+        getClient().putItem(putItemRequest);
+        return updatedAssignee;
     }
 }

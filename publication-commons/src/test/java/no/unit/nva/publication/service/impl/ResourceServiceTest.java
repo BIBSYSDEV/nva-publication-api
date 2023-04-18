@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
@@ -731,7 +732,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
 
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
     }
 
     @Test
@@ -746,8 +747,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(initialPublication, initialDoiRequest,
                                                                           publicationUpdate, updatedDoiRequest);
 
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }

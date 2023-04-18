@@ -99,7 +99,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var regeneratedTicket = expandedTicket.toTicketEntry();
 
-        assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of("workflow")));
+        assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of("workflow", "assignee")));
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));

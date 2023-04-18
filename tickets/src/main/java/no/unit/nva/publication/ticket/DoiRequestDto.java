@@ -86,6 +86,7 @@ public class DoiRequestDto extends TicketDto {
         ticket.setIdentifier(getIdentifier());
         ticket.setPublicationDetails(PublicationDetails.create(getPublicationSummary()));
         ticket.setViewedBy(getViewedBy());
+        ticket.setAssignee(getAssignee());
         return ticket;
     }
     
