@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -39,6 +38,7 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -50,7 +50,6 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +68,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
-    private FakeAuthorizedBackendClient backendClient;
 
     @BeforeEach
     public void setup() {
@@ -90,8 +88,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var indexBucket = new FakeS3Client();
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
-        backendClient = new FakeAuthorizedBackendClient();
-        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, backendClient);
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
 
         output = new ByteArrayOutputStream();
     }
@@ -99,8 +96,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldEmitEmptyEventWhenPublishingRequestIsFromCustomerThatAutocompletesPublishingRequests()
         throws ApiGatewayException, IOException {
-        backendClient.setResponse(mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval());
-        var entryUpdate = generateExpandedEntry(ExpandedPublishingRequest.class);
+        var entryUpdate = generateExpandedPublishingRequestEntryWithAutocompletion();
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
         EventReference outputEvent = sendEvent();
         assertThat(outputEvent, is(equalTo(EMPTY_EVENT)));
@@ -109,9 +105,9 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldEmitEventCointaingS3UriToPersistedExpandedResourceWhenItCannotRetrieveCustomerPublishingWorkflow()
         throws ApiGatewayException, IOException {
-        var backendClient = new FakeAuthorizedBackendClientThrowingException();
-        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, backendClient);
-        var entryUpdate = generateExpandedEntry(ExpandedPublishingRequest.class);
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
+        var entryUpdate =
+            generateExpandedPublishingRequestWithWorkflowSetToNull();
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
         EventReference outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
@@ -162,11 +158,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
 
-    private String mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
-        return IoUtils.stringFromResources(Path.of("publishingrequests", "customers",
-                                                   "customer_allowing_publishing.json"));
-    }
-
     private PersistedEntryWithExpectedType generateExpandedEntry(Class<?> expandedEntryType)
         throws JsonProcessingException, ApiGatewayException {
         if (ExpandedResource.class.equals(expandedEntryType)) {
@@ -181,6 +172,16 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         throw new RuntimeException();
     }
 
+    private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()
+        throws ApiGatewayException, JsonProcessingException {
+        return new PersistedEntryWithExpectedType(publishingRequestWithAutomaticCompletion(), TICKETS_INDEX);
+    }
+
+    private PersistedEntryWithExpectedType generateExpandedPublishingRequestWithWorkflowSetToNull()
+        throws ApiGatewayException, JsonProcessingException {
+        return new PersistedEntryWithExpectedType(publishingRequestWithoutWorkflow(), TICKETS_INDEX);
+    }
+
     private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var openingCaseObject =
@@ -190,10 +191,31 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
-        var publishingRequest = PublishingRequestCase
-                                    .createOpeningCaseObject(publication)
-                                    .persistNewTicket(ticketService);
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createOpeningCaseObject(publication);
+        publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+        publishingRequest.persistNewTicket(ticketService);
+        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
+    }
 
+    private ExpandedPublishingRequest publishingRequestWithAutomaticCompletion()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createOpeningCaseObject(publication);
+        publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+        publishingRequest.persistNewTicket(ticketService);
+
+        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
+    }
+
+    private ExpandedPublishingRequest publishingRequestWithoutWorkflow()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createOpeningCaseObject(publication);
+        publishingRequest.setWorkflow(null);
+        publishingRequest.persistNewTicket(ticketService);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
 

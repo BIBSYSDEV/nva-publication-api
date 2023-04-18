@@ -15,6 +15,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -36,6 +37,8 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private User owner;
     private Instant modifiedDate;
     private Instant createdDate;
+
+    private PublishingWorkflow workflow;
     
     public ExpandedPublishingRequest() {
         super();
@@ -50,7 +53,8 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
         var messages = publishingRequestCase.fetchMessages(ticketService);
-        return createRequest(publishingRequestCase, publication, organizationIds, messages);
+        var workflow = publishingRequestCase.getWorkflow();
+        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow);
     }
     
     @JacocoGenerated
@@ -126,11 +130,20 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
-    
+
+    public PublishingWorkflow getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(PublishingWorkflow workflow) {
+        this.workflow = workflow;
+    }
+
     private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
                                                            Publication publication,
                                                            Set<URI> organizationIds,
-                                                           List<Message> messages) {
+                                                           List<Message> messages,
+                                                           PublishingWorkflow workflow) {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
@@ -143,6 +156,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setOwner(dataEntry.getOwner());
         entry.setMessages(messages);
         entry.setViewedBy(dataEntry.getViewedBy());
+        entry.setWorkflow(workflow);
         return entry;
     }
     
