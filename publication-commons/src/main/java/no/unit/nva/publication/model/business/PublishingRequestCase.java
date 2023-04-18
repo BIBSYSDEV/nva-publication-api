@@ -57,13 +57,11 @@ public class PublishingRequestCase extends TicketEntry {
     @JsonProperty(ASSIGNEE_FIELD)
     private User assignee;
 
-    
     public PublishingRequestCase() {
         super();
     }
 
-    public static PublishingRequestCase createOpeningCaseObject(Publication publication,
-                                                                PublishingWorkflow publishingWorkflow) {
+    public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());
@@ -71,21 +69,18 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
-        openingCaseObject.setWorkflow(publishingWorkflow);
+        openingCaseObject.setWorkflow(null);
         openingCaseObject.setAssignee(null);
         return openingCaseObject;
-    }
-
-    public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
-        return createOpeningCaseObject(publication, null);
     }
 
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
                                                           SortableIdentifier publicationIdentifier,
                                                           SortableIdentifier publishingRequestIdentifier) {
-        return createPublishingRequestIdentifyingObject(userInstance,
-                                                        publicationIdentifier,
-                                                        publishingRequestIdentifier);
+        return createPublishingRequestIdentifyingObject(
+            userInstance,
+            publicationIdentifier,
+            publishingRequestIdentifier);
     }
     
     public static PublishingRequestCase createQueryObject(SortableIdentifier resourceIdentifier, URI customerId) {

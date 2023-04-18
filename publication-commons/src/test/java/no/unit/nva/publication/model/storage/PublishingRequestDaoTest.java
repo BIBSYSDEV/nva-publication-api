@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -109,7 +108,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.randomPublication();
         var publishingRequestCase = randomPublishingRequest(publication).complete(publication);
         publishingRequestCase.setStatus(randomElement(TicketStatus.values()));
-        publishingRequestCase.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        publishingRequestCase.setWorkflow(randomElement(PublishingWorkflow.values()));
         return (PublishingRequestDao) publishingRequestCase.toDao();
     }
     
