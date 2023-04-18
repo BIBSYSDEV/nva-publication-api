@@ -101,7 +101,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
             ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
                                                           publicationUpdate.getIdentifier(),
                                                           PublishingRequestCase.class);
-        return publishingRequest.isPresent() && !TicketStatus.PENDING.equals(publishingRequest.get().getStatus());
+        return publishingRequest.isEmpty() || !TicketStatus.PENDING.equals(publishingRequest.get().getStatus());
     }
 
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
