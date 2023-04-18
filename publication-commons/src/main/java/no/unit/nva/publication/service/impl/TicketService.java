@@ -1,7 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
-import static no.unit.nva.publication.model.business.TicketEntry.createNewTicket;
+import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
@@ -17,6 +17,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -59,17 +60,16 @@ public class TicketService extends ServiceWithTransactions {
      * Method should be protected or package-private.
      *
      * @param ticketEntry the ticket entry to be persisted
-     * @param ticketType  the type of the ticket
      * @param <T>         the TicketEntry class
      * @return the persisted ticket type with service updated fields.
      * @throws ApiGatewayException when an expected error occurs that needs to be sent to the client
      * @deprecated Use TicketEntry#persist instead.
      */
     @Deprecated(since = " TicketEntry#persist")
-    public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Class<T> ticketType)
+    public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry)
         throws ApiGatewayException {
         var associatedPublication = fetchPublicationToEnsureItExists(ticketEntry);
-        return createTicketForPublication(associatedPublication, ticketType);
+        return createTicketForPublication(associatedPublication, ticketEntry);
     }
 
     public TicketEntry fetchTicket(UserInstance userInstance, SortableIdentifier ticketIdentifier)
@@ -199,14 +199,27 @@ public class TicketService extends ServiceWithTransactions {
                    .orElseThrow(fail -> new ForbiddenException());
     }
 
-    private <T extends TicketEntry> T createTicketForPublication(Publication publication, Class<T> ticketType)
+    private <T extends TicketEntry> T createTicketForPublication(Publication publication,
+                                                                 TicketEntry ticketEntry)
         throws ConflictException {
 
-        var ticketEntry = createNewTicket(publication, ticketType, identifierProvider);
+        setServiceControlledFields(ticketEntry, identifierProvider);
+        ticketEntry.validateCreationRequirements(publication);
         var request = ticketEntry.toDao().createInsertionTransactionRequest();
         sendTransactionWriteRequest(request);
         FunctionWithException<TicketEntry, TicketEntry, NotFoundException>
             fetchTicketProvider = this::fetchTicket;
         return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
+    }
+
+    protected TicketEntry updateTicketAssignee(TicketEntry ticketEntry, User user) throws ApiGatewayException {
+         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
+        var updatedAssignee = existingTicket.updateAssignee(publication, user);
+
+        var dao = (TicketDao) updatedAssignee.toDao();
+        var putItemRequest = dao.createPutItemRequest();
+        getClient().putItem(putItemRequest);
+        return updatedAssignee;
     }
 }

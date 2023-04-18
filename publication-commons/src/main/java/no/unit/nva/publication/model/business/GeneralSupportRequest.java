@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
@@ -40,6 +41,8 @@ public class GeneralSupportRequest extends TicketEntry {
     private URI customerId;
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
+    @JsonProperty(ASSIGNEE_FIELD)
+    private User assignee;
     
     public GeneralSupportRequest() {
         super();
@@ -56,6 +59,7 @@ public class GeneralSupportRequest extends TicketEntry {
         ticket.setIdentifier(SortableIdentifier.next());
         ticket.setPublicationDetails(PublicationDetails.create(publication));
         ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
+        ticket.setAssignee(null);
         return ticket;
     }
     
@@ -145,6 +149,10 @@ public class GeneralSupportRequest extends TicketEntry {
     public void validateCompletionRequirements(Publication publication) {
         //NO OP
     }
+
+    @Override
+    public void validateAssigneeRequirements(Publication publication) {
+    }
     
     @Override
     public TicketEntry copy() {
@@ -158,6 +166,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setOwner(this.getOwner());
         copy.setPublicationDetails(this.getPublicationDetails());
         copy.setViewedBy(this.getViewedBy());
+        copy.setAssignee(this.getAssignee());
         return copy;
     }
     
@@ -170,12 +179,22 @@ public class GeneralSupportRequest extends TicketEntry {
     public void setStatus(TicketStatus ticketStatus) {
         this.status = ticketStatus;
     }
-    
+
+    @Override
+    public User getAssignee() {
+        return assignee;
+    }
+
+    @Override
+    public void setAssignee(User assignee) {
+        this.assignee = assignee;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-            extractPublicationIdentifier(), getStatus());
+            extractPublicationIdentifier(), getStatus(), getAssignee());
     }
     
     @Override
@@ -194,7 +213,8 @@ public class GeneralSupportRequest extends TicketEntry {
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(extractPublicationIdentifier(), that.extractPublicationIdentifier())
-               && getStatus() == that.getStatus();
+               && getStatus() == that.getStatus()
+               && Objects.equals(getAssignee(), that.getAssignee());
     }
     
     private static URI extractCustomerId(Publication publication) {

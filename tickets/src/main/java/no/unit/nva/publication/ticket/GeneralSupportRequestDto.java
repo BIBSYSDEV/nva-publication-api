@@ -88,6 +88,7 @@ public class GeneralSupportRequestDto extends TicketDto {
         request.setCreatedDate(this.getCreatedDate());
         request.setModifiedDate(this.getModifiedDate());
         request.setViewedBy(this.getViewedBy());
+        request.setAssignee(this.getAssignee());
         return request;
     }
     

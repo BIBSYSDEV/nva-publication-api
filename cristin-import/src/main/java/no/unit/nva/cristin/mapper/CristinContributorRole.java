@@ -8,7 +8,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import no.unit.nva.model.Role;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 
 @Data
 @Builder(
@@ -49,7 +50,7 @@ public class CristinContributorRole {
     public CristinContributorRole() {
     }
 
-    public Role toNvaRole() {
-        return cristinRoleToNvaRoles.getOrDefault(roleCode, Role.OTHER);
+    public RoleType toNvaRole() {
+        return new RoleType(cristinRoleToNvaRoles.getOrDefault(roleCode, Role.OTHER));
     }
 }

@@ -64,14 +64,14 @@ public abstract class TicketDto implements JsonSerializable {
     }
     
     public static TicketDto fromTicket(TicketEntry ticket) {
-        return fromTicket(ticket, Collections.emptyList(), null);
+        return fromTicket(ticket, Collections.emptyList());
     }
     
-    public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages, User assignee) {
-        return create(ticket, messages, assignee);
+    public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages) {
+        return create(ticket, messages);
     }
     
-    public static TicketDto create(TicketEntry ticket, Collection<Message> messages, User assignee) {
+    public static TicketDto create(TicketEntry ticket, Collection<Message> messages) {
         var messageDtos = messages.stream()
                               .map(MessageDto::fromMessage)
                               .collect(Collectors.toList());
@@ -84,7 +84,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withPublicationSummary(createPublicationSummary(ticket))
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
-                   .withAssignee(assignee)
+                   .withAssignee(ticket.getAssignee())
                    .build(ticket.getClass());
     }
     

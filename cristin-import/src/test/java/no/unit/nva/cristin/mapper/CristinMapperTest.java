@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -42,13 +41,14 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -379,24 +379,12 @@ class CristinMapperTest extends AbstractCristinImportTest {
                    containsInAnyOrder(expectedPublicationDates.toArray(PublicationDate[]::new)));
     }
 
-    @Test
-    void mapReturnsPublicationWithHardcodedLink() {
-        Set<URI> actualLicenseIdentifiers = cristinObjects.stream()
-                                                .map(CristinObject::toPublication)
-                                                .map(Publication::getLink)
-                                                .collect(Collectors.toSet());
-
-        Set<URI> expectedLinks = Set.of(HARDCODED_SAMPLE_DOI);
-
-        assertThat(actualLicenseIdentifiers, is(equalTo(expectedLinks)));
-    }
-
     @ParameterizedTest(name = "map returns NVA role {1} when Cristin role is {0}")
     @CsvSource({"REDAKTØR,EDITOR", "FORFATTER,CREATOR"})
     void mapReturnsPublicationsWhereCristinRoleIsMappedToCorrectNvaRole(String cristinRole,
                                                                         String nvaRole) {
         CristinContributorRoleCode actualCristinRole = CristinContributorRoleCode.fromString(cristinRole);
-        Role expectedNvaRole = Role.lookup(nvaRole);
+        RoleType expectedNvaRole = new RoleType(Role.lookup(nvaRole));
         CristinObject objectWithEditor = createObjectWithRoleCode(actualCristinRole);
 
         Optional<Contributor> contributor = getContributors(objectWithEditor)

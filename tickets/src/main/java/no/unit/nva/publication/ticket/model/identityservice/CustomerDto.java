@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.tickets.identityservice;
+package no.unit.nva.publication.ticket.model.identityservice;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,9 +13,9 @@ public class CustomerDto {
     @JsonProperty("publicationWorkflow")
     //property does not have getter because we are never going to serialize this object
     private PublicationWorkflow publicationWorkflow;
-
+    
     @JsonIgnore
-    public Boolean customerAllowsRegistratorsToPublishMetadata() {
-        return PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publicationWorkflow);
+    public Boolean customerAllowsRegistratorsToPublishDataAndMetadata() {
+        return PublicationWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publicationWorkflow);
     }
 }

@@ -6,6 +6,8 @@ paths:
   /:
     post:
       summary: Create Publication
+      tags:
+        - external
       requestBody:
         required: true
         content:
@@ -47,7 +49,8 @@ paths:
   /{publicationIdentifier}:
     get:
       summary: Fetch Publication by Identifier
-
+      tags:
+        - external
       parameters:
         - in: path
           name: publicationIdentifier
@@ -86,6 +89,8 @@ paths:
                 $ref: "#/components/schemas/Problem"
     put:
       summary: Update Publication for Identifier
+      tags:
+        - external
       security:
         - CognitoUserPool: [
           'https://api.nva.unit.no/scopes/backend',
@@ -122,6 +127,8 @@ paths:
                 $ref: '#/components/schemas/Publication'
     delete:
       summary: Delete Publication for Identifier
+      tags:
+        - external
       security:
         - CognitoUserPool: [
           'https://api.nva.unit.no/scopes/backend',
@@ -152,6 +159,8 @@ paths:
   /by-owner:
     get:
       summary: Get Publications by Owner
+      tags:
+        - external
       security:
         - CognitoUserPool: [
           'https://api.nva.unit.no/scopes/backend',

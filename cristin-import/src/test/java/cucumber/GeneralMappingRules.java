@@ -49,6 +49,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 
@@ -314,6 +315,7 @@ public class GeneralMappingRules {
         assertThat(contributors.size(), is(equalTo(this.scenarioContext.getCristinEntry().getContributors().size())));
         String actualRole = contributors.stream()
                                 .map(Contributor::getRole)
+                                .map(RoleType::getType)
                                 .map(Enum::toString)
                                 .collect(SingletonCollector.collect());
         assertThat(actualRole, is(equalTo(expectedNvaRole)));

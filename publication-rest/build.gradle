@@ -5,6 +5,7 @@ dependencies {
     }
     implementation project(':datacite-commons')
     implementation project(':schema-org-metadata')
+    implementation project(":tickets")
 
     implementation libs.nva.apigateway
     implementation libs.nva.core
@@ -29,6 +30,7 @@ dependencies {
     implementation libs.aws.sdk2.secrets
 
     testImplementation project(":publication-testing")
+    testImplementation project(path: ':tickets-test')
     testImplementation libs.bundles.testing
     testImplementation libs.nva.datamodel.testutils
     testImplementation libs.logutils

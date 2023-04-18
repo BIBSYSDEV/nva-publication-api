@@ -1,11 +1,13 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -33,9 +35,6 @@ public class PublishingRequestCase extends TicketEntry {
                                                               + "published: ";
     
     public static final String TYPE = "PublishingRequestCase";
-    
-    public static final String ALREADY_PUBLISHED_ERROR =
-        "Publication is already published.";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
     
@@ -51,11 +50,17 @@ public class PublishingRequestCase extends TicketEntry {
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
-    
+
+    @JsonProperty(WORKFLOW)
+    private PublishingWorkflow workflow;
+
+    @JsonProperty(ASSIGNEE_FIELD)
+    private User assignee;
+
     public PublishingRequestCase() {
         super();
     }
-    
+
     public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
@@ -64,13 +69,16 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
+        openingCaseObject.setWorkflow(null);
+        openingCaseObject.setAssignee(null);
         return openingCaseObject;
     }
-    
+
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
                                                           SortableIdentifier publicationIdentifier,
                                                           SortableIdentifier publishingRequestIdentifier) {
-        return createPublishingRequestIdentifyingObject(userInstance,
+        return createPublishingRequestIdentifyingObject(
+            userInstance,
             publicationIdentifier,
             publishingRequestIdentifier);
     }
@@ -89,13 +97,18 @@ public class PublishingRequestCase extends TicketEntry {
             throwErrorWhenPublishingResourceThatDoesNotHaveRequiredData(resource);
         }
     }
-    
+
+    public PublishingWorkflow getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(PublishingWorkflow workflow) {
+        this.workflow = workflow;
+    }
+
     @Override
     public void validateCreationRequirements(Publication publication)
         throws ConflictException {
-        if (PublicationStatus.PUBLISHED == publication.getStatus()) {
-            throw new ConflictException(ALREADY_PUBLISHED_ERROR);
-        }
         if (PublicationStatus.DRAFT_FOR_DELETION == publication.getStatus()) {
             throw new ConflictException(MARKED_FOR_DELETION_ERROR);
         }
@@ -104,6 +117,10 @@ public class PublishingRequestCase extends TicketEntry {
     
     @Override
     public void validateCompletionRequirements(Publication publication) {
+    }
+
+    @Override
+    public void validateAssigneeRequirements(Publication publication) {
     }
     
     @Override
@@ -122,6 +139,8 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setOwner(this.getOwner());
         copy.setViewedBy(this.getViewedBy());
         copy.setPublicationDetails(this.getPublicationDetails());
+        copy.setWorkflow(this.getWorkflow());
+        copy.setAssignee(this.getAssignee());
         return copy;
     }
     
@@ -134,7 +153,17 @@ public class PublishingRequestCase extends TicketEntry {
     public void setStatus(TicketStatus status) {
         this.status = status;
     }
-    
+
+    @Override
+    public User getAssignee() {
+        return  assignee;
+    }
+
+    @Override
+    public void setAssignee(User assignee) {
+        this.assignee = assignee;
+    }
+
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
@@ -208,7 +237,7 @@ public class PublishingRequestCase extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
-            getCreatedDate());
+            getCreatedDate(), getAssignee(), getWorkflow());
     }
     
     @Override
@@ -226,7 +255,9 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate());
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getWorkflow(), that.getWorkflow())
+               && Objects.equals(getAssignee(), that.getAssignee());
     }
     
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(

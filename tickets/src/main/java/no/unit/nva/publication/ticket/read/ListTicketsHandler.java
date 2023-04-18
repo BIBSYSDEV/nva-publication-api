@@ -43,6 +43,6 @@ public class ListTicketsHandler extends ApiGatewayHandler<Void, TicketCollection
     
     private TicketDto createDto(TicketEntry ticket) {
         var messages = ticket.fetchMessages(ticketService);
-        return TicketDto.fromTicket(ticket, messages, null);
+        return TicketDto.fromTicket(ticket, messages);
     }
 }
