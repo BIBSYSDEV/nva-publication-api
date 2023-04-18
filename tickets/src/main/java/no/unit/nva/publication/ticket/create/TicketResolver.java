@@ -50,9 +50,7 @@ public class TicketResolver {
 
     public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId) throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
-            var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
-            var publishingRequestCase = (PublishingRequestCase) ticket;
-            publishingRequestCase.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
+            var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
 
             if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
                 var persistedTicket = persistTicket(ticket);
@@ -61,6 +59,12 @@ public class TicketResolver {
             }
         }
         return persistTicket(ticket);
+    }
+
+    private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId) throws BadGatewayException {
+        var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
+        ticket.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
+        return ticket;
     }
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId) throws BadGatewayException {
