@@ -49,17 +49,21 @@ public class TicketResolver {
 
     public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId) throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
-            var rawContent = uriRetriever.getRawContent(customerId, CONTENT_TYPE).orElseThrow(this::createBadGatewayException);
-            var customerTransactionResult = new CustomerTransactionResult(rawContent, customerId);
+            var customerTransactionResult = getCustomerTransactionResult(customerId);
 
             if (customerTransactionResult.customerAllowsRegistratorsToPublishDataAndMetadata()) {
                 ((PublishingRequestCase) ticket).setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
                 var persistedTicket = persistTicket(ticket);
                 approveTicketAndPublishPublication(persistedTicket, publication);
-                return ticket;
+                return persistedTicket;
             }
         }
         return persistTicket(ticket);
+    }
+
+    private CustomerTransactionResult getCustomerTransactionResult(URI customerId) throws BadGatewayException {
+        var rawContent = uriRetriever.getRawContent(customerId, CONTENT_TYPE).orElseThrow(this::createBadGatewayException);
+        return new CustomerTransactionResult(rawContent, customerId);
     }
 
     private boolean isPublishingRequestCase(TicketEntry ticket) {
