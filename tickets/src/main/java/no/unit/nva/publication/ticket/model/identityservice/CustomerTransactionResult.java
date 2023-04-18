@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket.model.identityservice;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonUtils;
+import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,14 +19,14 @@ public class CustomerTransactionResult {
         this.customerId = customerId;
     }
 
-    public boolean isKnownThatCustomerAllowsPublishing() {
+    public boolean customerAllowsRegistratorsToPublishDataAndMetadata() throws BadGatewayException {
         return customer.map(CustomerDto::customerAllowsRegistratorsToPublishDataAndMetadata)
-                   .orElse(fail -> returnFalseAndLogUnsuccessfulResponse(customerId));
+                   .orElseThrow(fail -> logAndCreateBadGatewayException(customerId));
     }
 
-    private boolean returnFalseAndLogUnsuccessfulResponse(URI customerId) {
-        logger.warn("Could not fetch publication workflow for customer: " + customerId);
-        return false;
+    private BadGatewayException logAndCreateBadGatewayException(URI customerId) {
+        logger.warn("Unable to resolve publishing workflow for customer: {}", customerId);
+        return new BadGatewayException("Unable to resolve customer publishing workflow");
     }
 
 }

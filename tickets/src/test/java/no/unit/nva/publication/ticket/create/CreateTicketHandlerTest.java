@@ -93,7 +93,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     private final Environment environment = mock(Environment.class);
     private FakeSecretsManagerClient secretsManagerClient;
     private CreateTicketHandler handler;
-    private PublishingRequestResolver publishingRequestResolver;
+    private TicketResolver ticketResolver;
 
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
@@ -107,9 +107,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        var uriRetriever = getUriRetriever(getHttpClientWithUnresolvableClient(), secretsManagerClient);
-        publishingRequestResolver = new PublishingRequestResolver(resourceService, ticketService, uriRetriever);
-        this.handler = new CreateTicketHandler(ticketService, resourceService, publishingRequestResolver);
+        var uriRetriever = getUriRetriever(getHttpClientWithPublisherAllowingPublishing(), secretsManagerClient);
+        ticketResolver = new TicketResolver(resourceService, ticketService, uriRetriever);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
     }
 
     @ParameterizedTest
@@ -262,9 +262,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistedPublishedPublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(DoiRequest.class);
-        publishingRequestResolver = new PublishingRequestResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
+        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
                                                                                                                   secretsManagerClient));
-        this.handler = new CreateTicketHandler(ticketService, resourceService, publishingRequestResolver);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
         var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(firstRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -273,9 +273,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var createdTicket = fetchTicket(response).copy();
         var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         output = new ByteArrayOutputStream();
-        publishingRequestResolver = new PublishingRequestResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
+        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
                                                                                                                   secretsManagerClient));
-        this.handler = new CreateTicketHandler(ticketService, resourceService, publishingRequestResolver);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(secondRequest, output, CONTEXT);
 
         var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
@@ -341,9 +341,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        publishingRequestResolver = new PublishingRequestResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
                                                                                                                   secretsManagerClient));
-        handler = new CreateTicketHandler(ticketService, resourceService, publishingRequestResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -357,9 +357,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PublicationStatus.DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        publishingRequestResolver = new PublishingRequestResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
                                                                                                                   secretsManagerClient));
-        handler = new CreateTicketHandler(ticketService, resourceService, publishingRequestResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -370,18 +370,41 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldIgnorePublishingRequestWhenItCanNotBeResolved() throws ApiGatewayException, IOException {
+    void shouldLogAndReturnBadGatewayWhenHttpClientWithNonResolvablePublishingWorkflow() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        publishingRequestResolver = new PublishingRequestResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithNonResolvedPublishingWorkflow(),
-                                                                                                                  secretsManagerClient));
-        this.handler = new CreateTicketHandler(ticketService, resourceService, publishingRequestResolver);
+        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithNonResolvedPublishingWorkflow(),
+                secretsManagerClient));
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+
+        var problem = response.getBodyObject(Problem.class);
+
+        assertThat(problem.getDetail(), is(equalTo("Unable to resolve customer publishing workflow")));
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.DRAFT)));
-        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
+    }
+
+    @Test
+    void shouldLogAndReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
+                secretsManagerClient));
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+
+        var problem = response.getBodyObject(Problem.class);
+
+        assertThat(problem.getDetail(), is(equalTo("Unable to fetch customer publishing workflow from upstream")));
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.DRAFT)));
     }
 
     private static List<AssociatedArtifact> getAssociatedFiles(Publication publishedPublication) {

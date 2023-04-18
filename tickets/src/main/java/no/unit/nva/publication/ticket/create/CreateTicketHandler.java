@@ -14,9 +14,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -40,23 +38,20 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     public static final String LOCATION_HEADER = "Location";
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
-    private final TicketService ticketService;
     private final ResourceService resourceService;
-    private final PublishingRequestResolver publishingRequestResolver;
+    private final TicketResolver ticketResolver;
 
     @JacocoGenerated
     public CreateTicketHandler() {
-        this(TicketService.defaultService(), ResourceService.defaultService(),
-             new PublishingRequestResolver(ResourceService.defaultService(), TicketService.defaultService(),
-                                           new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)));
+        this(ResourceService.defaultService(),
+                new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
+                        new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)));
     }
 
-    public CreateTicketHandler(TicketService ticketService, ResourceService resourceService,
-                               PublishingRequestResolver publishingRequestResolver) {
+    public CreateTicketHandler(ResourceService resourceService, TicketResolver ticketResolver) {
         super(TicketDto.class);
-        this.ticketService = ticketService;
         this.resourceService = resourceService;
-        this.publishingRequestResolver = publishingRequestResolver;
+        this.ticketResolver = ticketResolver;
     }
 
     @Override
@@ -65,19 +60,12 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var publicationIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
         var publication = fetchPublication(publicationIdentifier, getUser(requestInfo), requestInfo);
         var ticketType = input.ticketType();
-        var ticket = persistTicket(TicketEntry.requestNewTicket(publication, ticketType));
+        var newTicket = TicketEntry.requestNewTicket(publication, ticketType);
         var customer = requestInfo.getCurrentCustomer();
-        if (isPublishingRequest(ticketType)) {
-            publishingRequestResolver.updateTicketAndPublicationIfNeeded(ticket, publication, customer);
-        }
-        var ticketLocation = createTicketLocation(publicationIdentifier, ticket);
+        var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer);
+        var ticketLocation = createTicketLocation(publicationIdentifier, persistedTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
-
         return null;
-    }
-
-    private static boolean isPublishingRequest(Class<? extends TicketEntry> ticketType) {
-        return PublishingRequestCase.class.equals(ticketType);
     }
 
     @Override
@@ -106,37 +94,6 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     private static boolean hasValidAccessRights(RequestInfo requestInfo) {
         return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
                || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString());
-    }
-
-    private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
-        return attempt(() -> newTicket.persistNewTicket(ticketService))
-                   .orElse(fail -> handleCreationException(fail.getException(), newTicket));
-    }
-
-    private TicketEntry handleCreationException(Exception exception, TicketEntry newTicket) throws ApiGatewayException {
-        if (exception instanceof TransactionFailedException) {
-            return updateAlreadyExistingTicket(newTicket);
-        }
-        if (exception instanceof RuntimeException) {
-            throw (RuntimeException) exception;
-        }
-        if (exception instanceof ApiGatewayException) {
-            throw (ApiGatewayException) exception;
-        }
-        throw new RuntimeException(exception);
-    }
-
-    private TicketEntry updateAlreadyExistingTicket(TicketEntry newTicket) {
-        var customerId = newTicket.getCustomerId();
-        var resourceIdentifier = newTicket.extractPublicationIdentifier();
-        return ticketService.fetchTicketByResourceIdentifier(customerId, resourceIdentifier, newTicket.getClass())
-                   .map(this::updateTicket)
-                   .orElseThrow();
-    }
-
-    private TicketEntry updateTicket(TicketEntry ticket) {
-        ticket.persistUpdate(ticketService);
-        return ticket;
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user,
