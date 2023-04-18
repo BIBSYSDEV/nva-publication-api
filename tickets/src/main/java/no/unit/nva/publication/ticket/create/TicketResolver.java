@@ -1,8 +1,6 @@
 package no.unit.nva.publication.ticket.create;
 
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.core.attempt.Try.attempt;
@@ -53,17 +51,13 @@ public class TicketResolver {
     public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId) throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
-            var publishingWorkflow = customerTransactionResult.convertToPublishingWorkflow();
+            var publishingRequestCase = (PublishingRequestCase) ticket;
+            publishingRequestCase.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
 
-            if (publishingWorkflow == REGISTRATOR_PUBLISHES_METADATA_AND_FILES) {
-                ((PublishingRequestCase) ticket).setWorkflow(publishingWorkflow);
+            if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
                 var persistedTicket = persistTicket(ticket);
                 approveTicketAndPublishPublication(persistedTicket, publication);
                 return persistedTicket;
-            }else if (publishingWorkflow == REGISTRATOR_PUBLISHES_METADATA_ONLY) {
-                ((PublishingRequestCase) ticket).setWorkflow(publishingWorkflow);
-            }else if(publishingWorkflow == REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES) {
-                ((PublishingRequestCase) ticket).setWorkflow(publishingWorkflow);
             }
         }
         return persistTicket(ticket);
