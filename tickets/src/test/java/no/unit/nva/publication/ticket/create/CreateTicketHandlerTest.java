@@ -370,7 +370,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldLogAndReturnBadGatewayWhenHttpClientWithNonResolvablePublishingWorkflow() throws ApiGatewayException, IOException {
+    void shouldReturnBadGatewayWhenHttpClientWithNonResolvablePublishingWorkflow() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
@@ -389,7 +389,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldLogAndReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow() throws ApiGatewayException, IOException {
+    void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
