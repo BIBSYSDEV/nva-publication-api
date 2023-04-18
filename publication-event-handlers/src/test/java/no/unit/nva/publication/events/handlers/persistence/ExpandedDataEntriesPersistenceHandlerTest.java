@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
@@ -32,11 +33,12 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -50,6 +52,7 @@ import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -88,6 +91,27 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
 
         output = new ByteArrayOutputStream();
+    }
+
+    @Test
+    void shouldEmitEmptyEventWhenPublishingRequestIsFromCustomerThatAutocompletesPublishingRequests()
+        throws ApiGatewayException, IOException {
+        var entryUpdate = generateExpandedPublishingRequestEntryWithAutocompletion();
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
+        EventReference outputEvent = sendEvent();
+        assertThat(outputEvent, is(equalTo(EMPTY_EVENT)));
+    }
+
+    @Test
+    void shouldEmitEventCointaingS3UriToPersistedExpandedResourceWhenItCannotRetrieveCustomerPublishingWorkflow()
+        throws ApiGatewayException, IOException {
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
+        var entryUpdate =
+            generateExpandedPublishingRequestWithWorkflowSetToNull();
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
+        EventReference outputEvent = sendEvent();
+        String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
+        assertThat(indexingEventPayload, is(not(emptyString())));
     }
 
     @ParameterizedTest(name = "should emit event containing S3 URI to persisted expanded resource:{0}")
@@ -148,6 +172,16 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         throw new RuntimeException();
     }
 
+    private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()
+        throws ApiGatewayException, JsonProcessingException {
+        return new PersistedEntryWithExpectedType(publishingRequestWithAutomaticCompletion(), TICKETS_INDEX);
+    }
+
+    private PersistedEntryWithExpectedType generateExpandedPublishingRequestWithWorkflowSetToNull()
+        throws ApiGatewayException, JsonProcessingException {
+        return new PersistedEntryWithExpectedType(publishingRequestWithoutWorkflow(), TICKETS_INDEX);
+    }
+
     private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var openingCaseObject =
@@ -157,10 +191,31 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
-        var publishingRequest = PublishingRequestCase
-            .createOpeningCaseObject(publication)
-            .persistNewTicket(ticketService);
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createOpeningCaseObject(publication);
+        publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+        publishingRequest.persistNewTicket(ticketService);
+        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
+    }
 
+    private ExpandedPublishingRequest publishingRequestWithAutomaticCompletion()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createOpeningCaseObject(publication);
+        publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+        publishingRequest.persistNewTicket(ticketService);
+
+        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
+    }
+
+    private ExpandedPublishingRequest publishingRequestWithoutWorkflow()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createOpeningCaseObject(publication);
+        publishingRequest.setWorkflow(null);
+        publishingRequest.persistNewTicket(ticketService);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
 
@@ -172,7 +227,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
         var publication = randomPublication().copy().withDoi(null).build();
         var persisted = Resource.fromPublication(publication)
-            .persistNew(resourceService, UserInstance.fromPublication(publication));
+                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
 
