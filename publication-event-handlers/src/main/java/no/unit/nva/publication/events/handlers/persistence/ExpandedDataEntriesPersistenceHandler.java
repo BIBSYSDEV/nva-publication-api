@@ -46,18 +46,16 @@ public class ExpandedDataEntriesPersistenceHandler
         AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
         ExpandedDataEntry expandedResourceUpdate = readEvent(input);
-        EventReference outputEvent =
-            shouldBePersisted(expandedResourceUpdate)
-                ? createOutPutEventAndPersistDocument(expandedResourceUpdate)
-                : EMPTY_EVENT;
-        logger.info(outputEvent.toJsonString());
-        return outputEvent;
+        return shouldBePersisted(expandedResourceUpdate)
+            ? createOutPutEventAndPersistDocument(expandedResourceUpdate)
+            : EMPTY_EVENT;
     }
 
     private EventReference createOutPutEventAndPersistDocument(ExpandedDataEntry expandedResourceUpdate) {
         var indexDocument = createIndexDocument(expandedResourceUpdate);
         var uri = writeEntryToS3(indexDocument);
         var outputEvent = new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
+        logger.info(outputEvent.toJsonString());
         return outputEvent;
     }
 
