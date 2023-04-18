@@ -182,7 +182,7 @@ public abstract class TicketEntry implements Entity {
 
     public final TicketEntry persistNewTicket(TicketService ticketService) throws ApiGatewayException {
         // this is the only place that deprecated should be called.
-        return ticketService.createTicket(this, this.getClass());
+        return ticketService.createTicket(this);
     }
 
     public final TicketEntry markUnreadByOwner() {
@@ -260,8 +260,8 @@ public abstract class TicketEntry implements Entity {
         return doiRequest;
     }
 
-    private static void setServiceControlledFields(TicketEntry ticketEntry,
-                                                   Supplier<SortableIdentifier> identifierProvider) {
+    public static void setServiceControlledFields(TicketEntry ticketEntry,
+                                                  Supplier<SortableIdentifier> identifierProvider) {
         var now = Instant.now();
         ticketEntry.setCreatedDate(now);
         ticketEntry.setModifiedDate(now);
@@ -298,6 +298,7 @@ public abstract class TicketEntry implements Entity {
         public static final String CUSTOMER_ID_FIELD = "customerId";
         public static final String PUBLICATION_DETAILS_FIELD = "publicationDetails";
         public static final String IDENTIFIER_FIELD = "identifier";
+        public static final String WORKFLOW = "workflow";
         public static final String ASSIGNEE_FIELD = "assignee";
 
         private Constants() {

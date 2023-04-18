@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.Clock;
 import java.util.function.Consumer;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -48,10 +49,10 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
     }
     
-    protected TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+    protected TicketEntry createPersistedDoiTicket(Publication publication)
         throws ApiGatewayException {
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        return ticketService.createTicket(ticket, ticketType);
+        var doiTicket = DoiRequest.fromPublication(publication);
+        return ticketService.createTicket(doiTicket);
     }
 
     protected TicketEntry persistTicket(Publication publication, Class<? extends TicketEntry> ticketType)

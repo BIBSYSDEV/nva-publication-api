@@ -104,11 +104,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(getAssociatedFiles(updatedPublication), everyItem(instanceOf(PublishedFile.class)));
     }
 
-    private static List<AssociatedArtifact> getAssociatedFiles(Publication updatedPublication) {
-        return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance).collect(
-            Collectors.toList());
-    }
-
     @Test
     void shouldCreateDoiRequestTicketWhenPublicationWithDraftDoiIsPublished()
         throws IOException, NotFoundException, BadRequestException {
@@ -143,11 +138,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(actualTicket.get().getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
-    private DoiRequest createDoiRequestTicket(Publication publication) {
-        return attempt(() -> ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class))
-            .orElseThrow();
-    }
-
     @Test
     void shouldNotPublishPublicationWhenPublishingRequestIsStillNotApproved() throws ApiGatewayException, IOException {
         var publication = createPublication();
@@ -173,6 +163,16 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
         assertThat(logger.getMessages(), containsString(RESOURCE_LACKS_REQUIRED_DATA));
+    }
+
+    private static List<AssociatedArtifact> getAssociatedFiles(Publication updatedPublication) {
+        return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance).collect(
+            Collectors.toList());
+    }
+
+    private DoiRequest createDoiRequestTicket(Publication publication) {
+        return (DoiRequest) attempt(
+            () -> DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).orElseThrow();
     }
 
     private Publication createDraftPublicationWithDoi() throws BadRequestException {

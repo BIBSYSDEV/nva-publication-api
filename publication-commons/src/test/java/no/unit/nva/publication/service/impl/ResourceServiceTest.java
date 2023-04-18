@@ -642,7 +642,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldKeepTheResourceInSyncWithTheAssociatedDoiRequestWhenResourceIsPublished() throws ApiGatewayException {
         var publication = createPersistedPublicationWithoutDoi();
 
-        var doiRequest = ticketService.createTicket(DoiRequest.fromPublication(publication), DoiRequest.class);
+        var doiRequest = DoiRequest.fromPublication(publication);
+        doiRequest.persistNewTicket(ticketService);
         assertThat(doiRequest.getResourceStatus(), is(equalTo(PublicationStatus.DRAFT)));
 
         var publishedResource = publishResource(publication);
