@@ -21,6 +21,7 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -78,7 +79,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         validateRequest(identifierInPath, input);
         Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
-        if (isAlreadyPublished(existingPublication)) {
+        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate);
         }
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
@@ -95,6 +96,14 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
                || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
     }
 
+    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publicationUpdate) {
+        var publishingRequest =
+            ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
+                                                          publicationUpdate.getIdentifier(),
+                                                          PublishingRequestCase.class);
+        return publishingRequest.isPresent() && !TicketStatus.PENDING.equals(publishingRequest.get().getStatus());
+    }
+
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
         if (containsNewPublishableFiles(publicationUpdate)) {
             TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class)
@@ -104,16 +113,16 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private boolean containsNewPublishableFiles(Publication publicationUpdate) {
         var unpublishedFiles = getUnpublishedFiles(publicationUpdate);
-        return !unpublishedFiles.isEmpty() && allFilesArePublishable(unpublishedFiles);
+        return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
     }
 
-    private boolean allFilesArePublishable(List<AssociatedArtifact> unpublishedFiles) {
-        return unpublishedFiles.stream().allMatch(this::hasLicense);
+    private boolean containsPublishableFile(List<AssociatedArtifact> unpublishedFiles) {
+        return unpublishedFiles.stream().anyMatch(this::hasLicense);
     }
 
     private boolean hasLicense(AssociatedArtifact artifact) {
         var file = (File) artifact;
-        return nonNull(file.getLicense());
+        return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
     }
 
     private List<AssociatedArtifact> getUnpublishedFiles(Publication publicationUpdate) {
