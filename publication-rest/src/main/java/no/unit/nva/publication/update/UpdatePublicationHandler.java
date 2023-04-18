@@ -1,5 +1,6 @@
 package no.unit.nva.publication.update;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -13,12 +14,14 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.AccessRight;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -76,7 +79,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         validateRequest(identifierInPath, input);
         Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
-        if (isAlreadyPublished(existingPublication)) {
+        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate);
         }
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
@@ -93,15 +96,33 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
                || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
     }
 
+    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publicationUpdate) {
+        var publishingRequest =
+            ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
+                                                          publicationUpdate.getIdentifier(),
+                                                          PublishingRequestCase.class);
+        return publishingRequest.isEmpty() || !TicketStatus.PENDING.equals(publishingRequest.get().getStatus());
+    }
+
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
-        if (containsNewFiles(publicationUpdate)) {
+        if (containsNewPublishableFiles(publicationUpdate)) {
             TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class)
                 .persistNewTicket(ticketService);
         }
     }
 
-    private boolean containsNewFiles(Publication publicationUpdate) {
-        return !getUnpublishedFiles(publicationUpdate).isEmpty();
+    private boolean containsNewPublishableFiles(Publication publicationUpdate) {
+        var unpublishedFiles = getUnpublishedFiles(publicationUpdate);
+        return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
+    }
+
+    private boolean containsPublishableFile(List<AssociatedArtifact> unpublishedFiles) {
+        return unpublishedFiles.stream().anyMatch(this::hasLicense);
+    }
+
+    private boolean hasLicense(AssociatedArtifact artifact) {
+        var file = (File) artifact;
+        return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
     }
 
     private List<AssociatedArtifact> getUnpublishedFiles(Publication publicationUpdate) {

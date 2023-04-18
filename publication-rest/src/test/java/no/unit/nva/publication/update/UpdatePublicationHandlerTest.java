@@ -24,7 +24,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,9 +39,11 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -53,6 +57,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.AccessRight;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -139,7 +144,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFiles()
         throws ApiGatewayException, IOException {
-        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, publicationService);
+        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+                                                                              publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -149,13 +155,51 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
 
-                                                                   publicationUpdate.getIdentifier(), PublishingRequestCase.class);
+                                                                   publicationUpdate.getIdentifier(),
+                                                                   PublishingRequestCase.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(ticket.get().getStatus(), is(equalTo(TicketStatus.PENDING)));
     }
-    
+
+    @Test
+    void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenCompletedPublishingRequestExists()
+        throws ApiGatewayException, IOException {
+        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+                                                                              publicationService);
+        var completedTicket = persistCompletedPublishingRequest(publishedPublication);
+        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+
+        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var tickets =
+            ticketService.fetchTicketsForUser(UserInstance.fromTicket(completedTicket)).collect(Collectors.toList());
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertTrue(containsOneCompletedAndOnePendingPublishingRequest(tickets));
+    }
+
+    @Test
+    void handlerDoesNotCreateNewPublishingRequestWhenThereExistsPendingPublishingRequest()
+        throws IOException, ApiGatewayException {
+        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+                                                                              publicationService);
+        var pendingTicket = createPendingPublishingRequest(publishedPublication);
+        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+
+        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+
+        var existingTickets = ticketService.fetchTicketsForUser(UserInstance.fromTicket(pendingTicket))
+                                  .collect(Collectors.toList());
+        assertThat(existingTickets, hasSize(1));
+    }
+
     @Test
     void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException, BadRequestException {
         publication = PublicationGenerator.publicationWithoutIdentifier();
@@ -313,6 +357,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+    }
+
+    private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
+        var statuses = tickets.stream().map(TicketEntry::getStatus).collect(Collectors.toList());
+        return statuses.stream().anyMatch(TicketStatus.COMPLETED::equals)
+               && statuses.stream().anyMatch(TicketStatus.PENDING::equals);
+    }
+
+    private TicketEntry createPendingPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
+        return PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
+                                                     SortableIdentifier::next).persistNewTicket(ticketService);
+    }
+
+    private TicketEntry persistCompletedPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
+        var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
+                                                           SortableIdentifier::next).persistNewTicket(ticketService);
+        return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
     }
 
     private Publication createSamplePublication() throws BadRequestException {
