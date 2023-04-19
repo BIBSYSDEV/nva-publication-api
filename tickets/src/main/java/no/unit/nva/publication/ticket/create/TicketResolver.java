@@ -75,9 +75,8 @@ public class TicketResolver {
     }
 
     private void persistAndApproveTicket(TicketEntry ticket) throws ApiGatewayException {
-        attempt(() -> ticket.persistNewTicket(ticketService))
-            .map(publishingRequest -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED))
-            .orElse(fail -> handleCreationException(fail.getException(), ticket));
+        ticket.persistNewTicket(ticketService);
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
     }
 
     private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)
@@ -97,10 +96,6 @@ public class TicketResolver {
 
     private boolean isPublishingRequestCase(TicketEntry ticket) {
         return ticket instanceof PublishingRequestCase;
-    }
-
-    private void approveTicketAndPublishPublication(Publication publication) {
-        publishPublicationAndFiles(publication);
     }
 
     private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
@@ -165,11 +160,6 @@ public class TicketResolver {
         } else {
             return artifact;
         }
-    }
-
-    private void updateStatusToApproved(TicketEntry createdTicket) {
-        attempt(() -> ticketService.updateTicketStatus(createdTicket, TicketStatus.COMPLETED))
-            .orElseThrow();
     }
 
     private BadGatewayException createBadGatewayException() {
