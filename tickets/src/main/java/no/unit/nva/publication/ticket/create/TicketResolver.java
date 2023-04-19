@@ -2,7 +2,6 @@ package no.unit.nva.publication.ticket.create;
 
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.core.attempt.Try.attempt;
@@ -52,6 +51,7 @@ public class TicketResolver {
         throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
+            persistTicket(ticket);
             return resolvePublishingRequest(ticket, publication, publishingRequestCase);
         }
         return persistTicket(ticket);
@@ -61,21 +61,16 @@ public class TicketResolver {
                                                  PublishingRequestCase publishingRequestCase)
         throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
-            persistAndApproveTicket(ticket);
+            approveTicket(ticket);
             publishPublicationAndFiles(publication);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
-            persistTicket(ticket);
             publishMetadata(publication);
-        }
-        if (REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
-            persistTicket(ticket);
         }
         return ticket;
     }
 
-    private void persistAndApproveTicket(TicketEntry ticket) throws ApiGatewayException {
-        ticket.persistNewTicket(ticketService);
+    private void approveTicket(TicketEntry ticket) throws ApiGatewayException {
         ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
     }
 
@@ -132,13 +127,16 @@ public class TicketResolver {
     private void publishPublicationAndFiles(Publication publication) {
         var updatedPublication = toPublicationWithPublishedFiles(publication);
         attempt(() -> resourceService.updatePublication(updatedPublication));
+        publishPublication(updatedPublication);
+    }
+
+    private void publishPublication(Publication updatedPublication) {
         attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(updatedPublication),
                                                          updatedPublication.getIdentifier()));
     }
 
     private void publishMetadata(Publication publication) {
-        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(publication),
-                                                         publication.getIdentifier()));
+        publishPublication(publication);
     }
 
     private Publication toPublicationWithPublishedFiles(Publication publication) {
