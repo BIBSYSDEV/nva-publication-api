@@ -724,6 +724,25 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+  UpdateTicketAssigneeHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketAssigneeHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/assignee
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
+
   #==========================Event Lambda functions====================================================
 
   BrageMigrationEventConsumer:

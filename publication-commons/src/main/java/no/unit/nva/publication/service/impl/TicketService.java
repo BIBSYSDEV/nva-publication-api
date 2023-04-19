@@ -212,7 +212,7 @@ public class TicketService extends ServiceWithTransactions {
         return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
     }
 
-    protected TicketEntry updateTicketAssignee(TicketEntry ticketEntry, User user) throws ApiGatewayException {
+    public TicketEntry updateTicketAssignee(TicketEntry ticketEntry, User user) throws ApiGatewayException {
          var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
         var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
         var updatedAssignee = existingTicket.updateAssignee(publication, user);

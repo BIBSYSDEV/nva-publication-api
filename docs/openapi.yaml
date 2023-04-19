@@ -505,6 +505,77 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+  /{publicationIdentifier}/ticket/{ticketIdentifier}/assignee:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    put:
+      description: Update the assignee of an existing ticket
+      requestBody:
+        description: A Ticket Object containing the new ticket assignee
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+      responses:
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Ticket"
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        405:
+          description: Operation not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        409:
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+        502:
+          description: Bad gateway
+          content:
+            application/json:
+              schema:
+                $ref: "/components/schemas/Problem"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketAssigneeHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
 
 components:
   schemas:
@@ -566,6 +637,8 @@ components:
             - Pending
             - Completed
             - Closed
+        assignee:
+          type: string
     UpdateViewStatusRequest:
       type: object
       properties:
