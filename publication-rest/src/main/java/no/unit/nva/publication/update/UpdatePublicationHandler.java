@@ -117,10 +117,10 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private boolean containsPublishableFile(List<AssociatedArtifact> unpublishedFiles) {
-        return unpublishedFiles.stream().anyMatch(this::hasLicense);
+        return unpublishedFiles.stream().anyMatch(this::isPublishable);
     }
 
-    private boolean hasLicense(AssociatedArtifact artifact) {
+    private boolean isPublishable(AssociatedArtifact artifact) {
         var file = (File) artifact;
         return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
     }
