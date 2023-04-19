@@ -2,14 +2,13 @@ package no.unit.nva.publication.ticket.create;
 
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -39,7 +38,7 @@ public class TicketResolver {
     @JacocoGenerated
     public TicketResolver() {
         this(ResourceService.defaultService(), TicketService.defaultService(),
-                new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL));
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL));
     }
 
     public TicketResolver(ResourceService resourceService, TicketService ticketService,
@@ -49,7 +48,8 @@ public class TicketResolver {
         this.uriRetriever = uriRetriever;
     }
 
-    public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId) throws ApiGatewayException {
+    public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId)
+        throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
             return resolvePublishingRequest(ticket, publication, publishingRequestCase);
@@ -58,50 +58,62 @@ public class TicketResolver {
     }
 
     private TicketEntry resolvePublishingRequest(TicketEntry ticket, Publication publication,
-                                       PublishingRequestCase publishingRequestCase) throws ApiGatewayException {
+                                                 PublishingRequestCase publishingRequestCase)
+        throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
-            var persistedTicket = persistTicket(ticket);
-            approveTicketAndPublishPublication(persistedTicket, publication);
-            return persistedTicket;
+            persistAndApproveTicket(ticket);
+            publishPublicationAndFiles(publication);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
+            persistTicket(ticket);
             publishMetadata(publication);
-            return persistTicket(ticket);
         }
-        return persistTicket(ticket);
+        if (REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
+            persistTicket(ticket);
+        }
+        return ticket;
     }
 
-    private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId) throws BadGatewayException {
+    private void persistAndApproveTicket(TicketEntry ticket) throws ApiGatewayException {
+        attempt(() -> ticket.persistNewTicket(ticketService))
+            .map(publishingRequest -> ticketService.updateTicketStatus(publishingRequest, TicketStatus.COMPLETED))
+            .orElse(fail -> handleCreationException(fail.getException(), ticket));
+    }
+
+    private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)
+        throws BadGatewayException {
         var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
         ticket.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
         return ticket;
     }
 
-    private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId) throws BadGatewayException {
-        var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE).orElseThrow(this::createBadGatewayException);
-        return attempt(()-> JsonUtils.dtoObjectMapper.readValue(response, CustomerPublishingWorkflowResponse.class)).orElseThrow();
+    private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
+        throws BadGatewayException {
+        var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
+                           .orElseThrow(this::createBadGatewayException);
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
+                                                                 CustomerPublishingWorkflowResponse.class)).orElseThrow();
     }
 
     private boolean isPublishingRequestCase(TicketEntry ticket) {
         return ticket instanceof PublishingRequestCase;
     }
 
-    private void approveTicketAndPublishPublication(TicketEntry ticket, Publication publication) {
-        updateStatusToApproved(ticket);
+    private void approveTicketAndPublishPublication(Publication publication) {
         publishPublicationAndFiles(publication);
     }
 
     private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
         return attempt(() -> newTicket.persistNewTicket(ticketService))
-                .orElse(fail -> handleCreationException(fail.getException(), newTicket));
+                   .orElse(fail -> handleCreationException(fail.getException(), newTicket));
     }
 
     private TicketEntry updateAlreadyExistingTicket(TicketEntry newTicket) {
         var customerId = newTicket.getCustomerId();
         var resourceIdentifier = newTicket.extractPublicationIdentifier();
         return ticketService.fetchTicketByResourceIdentifier(customerId, resourceIdentifier, newTicket.getClass())
-                .map(this::updateTicket)
-                .orElseThrow();
+                   .map(this::updateTicket)
+                   .orElseThrow();
     }
 
     private TicketEntry updateTicket(TicketEntry ticket) {
