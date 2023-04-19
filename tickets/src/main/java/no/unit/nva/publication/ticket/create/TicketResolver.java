@@ -12,6 +12,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
@@ -152,12 +153,16 @@ public class TicketResolver {
     }
 
     private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
-        if (artifact instanceof File) {
+        if (isNotAdministrativeAgreement(artifact)) {
             var file = (File) artifact;
             return file.toPublishedFile();
         } else {
             return artifact;
         }
+    }
+
+    private static boolean isNotAdministrativeAgreement(AssociatedArtifact artifact) {
+        return artifact instanceof File && !(artifact instanceof AdministrativeAgreement);
     }
 
     private BadGatewayException createBadGatewayException() {

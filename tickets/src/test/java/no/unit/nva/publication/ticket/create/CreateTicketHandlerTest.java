@@ -43,6 +43,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -422,6 +423,26 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
     }
 
+    @Test
+    void shouldPublishPublicationButNotFileWhenFileIsAdministrativeAgreement()
+        throws ApiGatewayException, IOException {
+        var publication =
+            TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(PublicationStatus.DRAFT,
+                                                                                  resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+        var publishedPublication = resourceService.getPublication(publication);
+        assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(AdministrativeAgreement.class)));
+        assertThat(publishedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
+    }
 
     @Test
     void shouldReturnBadGatewayWhenHttpClientWithNonResolvablePublishingWorkflow() throws ApiGatewayException, IOException {

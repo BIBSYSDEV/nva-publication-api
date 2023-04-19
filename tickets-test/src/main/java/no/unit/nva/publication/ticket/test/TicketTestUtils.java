@@ -5,8 +5,11 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -15,7 +18,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -49,6 +54,20 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatus(status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (isPublished(publication)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
+    public static Publication createPersistedPublicationWithAdministrativeAgreement(PublicationStatus status,
+                                                                             ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(administrativeAgreement())).build();
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
@@ -176,5 +195,11 @@ public final class TicketTestUtils {
                    .withDoi(randomDoi())
                    .withStatus(status)
                    .build();
+    }
+
+    private static AdministrativeAgreement administrativeAgreement() {
+        var license = new License.Builder().withLink(randomUri()).withIdentifier("identifier").build();
+        return new AdministrativeAgreement(UUID.randomUUID(), "name", "application/json",
+                                           123124124L, license, true, false, null);
     }
 }
