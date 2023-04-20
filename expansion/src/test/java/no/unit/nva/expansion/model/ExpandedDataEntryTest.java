@@ -22,10 +22,7 @@ import java.util.stream.Stream;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -86,17 +83,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
 
-    @ParameterizedTest(name = "Expanded resource should not loose information for instance type {0}")
+    @ParameterizedTest(name = "Expanded resource should not lose information for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
         throws JsonProcessingException, JSONException, BadRequestException {
         var publication = createPublicationWithoutDoi(instanceType);
-        var contributors = publication.getEntityDescription().getContributors();
-        var contributor = contributors.get(0);
-        var role = new RoleType(Role.OTHER);
-        var r = role.createOther("nope");
-        var other = new Contributor(contributor.getIdentity(), contributor.getAffiliations(), r, 21, false);
-        contributors.add(other);
         var expandedResource = fromPublication(uriRetriever, publication);
 
         var expandedResourceAsJson = expandedResource.toJsonString();
@@ -184,7 +175,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var publication = randomPublicationWithoutDoi(instanceType);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
-        resourceService.publishPublication(UserInstance.fromPublication(persistedPublication), persistedPublication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
+                                           persistedPublication.getIdentifier());
         return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
@@ -226,7 +218,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
-                resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+                resourceService.publishPublication(UserInstance.fromPublication(publication),
+                                                   publication.getIdentifier());
                 var publishedPublication = resourceService.getPublication(publication);
                 return new ExpandedDataEntryWithAssociatedPublication(
                         randomDoiRequest(publishedPublication,
