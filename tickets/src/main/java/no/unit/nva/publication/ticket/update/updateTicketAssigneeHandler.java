@@ -77,7 +77,7 @@ public class updateTicketAssigneeHandler extends TicketHandler<TicketDto, Void> 
 
     private static boolean userIsNotAuthorized(RequestInfo requestInfo, TicketEntry ticket)
         throws UnauthorizedException {
-        return !(isAuthorizedToCompleteTickets(requestInfo) && isUserFromSameCustomerAsTicket(requestInfo, ticket));
+        return !(isAuthorizedToClaimTickets(requestInfo) && isUserFromSameCustomerAsTicket(requestInfo, ticket));
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
@@ -85,7 +85,7 @@ public class updateTicketAssigneeHandler extends TicketHandler<TicketDto, Void> 
         return requestInfo.getCurrentCustomer().equals(ticket.getCustomerId());
     }
 
-    private static boolean isAuthorizedToCompleteTickets(RequestInfo requestInfo) {
+    private static boolean isAuthorizedToClaimTickets(RequestInfo requestInfo) {
         return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
     }
 
