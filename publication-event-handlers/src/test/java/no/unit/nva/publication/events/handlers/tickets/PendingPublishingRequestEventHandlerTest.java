@@ -185,10 +185,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var event = createEvent(pendingPublishingRequest);
 
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse
-                                                   .create(
-                                                       mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(),
-                                                       HTTP_OK));
+        this.httpClient = new FakeHttpClient<>
+                              (FakeHttpResponse.create(
+                                  mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(), HTTP_OK));
         this.handler = new PendingPublishingRequestEventHandler(resourceService, httpClient,
                                                                 secretsReader, s3Client);
 
@@ -205,10 +204,9 @@ class PendingPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var event = createEvent(pendingPublishingRequest);
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse
-                                                   .create(
-                                                       mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(),
-                                                       HTTP_OK));
+        this.httpClient = new FakeHttpClient<>
+                              (FakeHttpResponse.create(
+                                  mockIdentityServiceResponseForPublisherAllowingMetadataPublishing(), HTTP_OK));
 
         var expectedMessage = "Testing string";
         var failingResourceService = mockResourceServiceFailure(expectedMessage);

@@ -209,7 +209,7 @@ public final class BrageNvaMapper {
                    .withLanguage(extractLanguage(record))
                    .withAbstract(extractAbstract(record))
                    .withDescription(extractDescription(record))
-                   .withDate(extractDate(record))
+                   .withPublicationDate(extractDate(record))
                    .withContributors(extractContributors(record))
                    .withTags(extractTags(record))
                    .withReference(extractReference(record))
@@ -321,7 +321,7 @@ public final class BrageNvaMapper {
     }
 
     private static RoleType extractRole(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return Optional.of(new RoleType(Role.lookup(contributor.getRole())))
+        return Optional.of(new RoleType(Role.parse(contributor.getRole())))
                    .orElse(new RoleType(Role.OTHER));
     }
 

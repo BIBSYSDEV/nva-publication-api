@@ -76,6 +76,6 @@ public class DoiRegistrarEntryFieldsTest {
                    .withMainTitle(entityDescription.getMainTitle())
                    .withContributors(entityDescription.getContributors())
                    .withReference(reference)
-                   .withDate(entityDescription.getDate());
+                   .withPublicationDate(entityDescription.getPublicationDate());
     }
 }
