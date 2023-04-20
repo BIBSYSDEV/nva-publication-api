@@ -58,7 +58,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnAllTicketsWithMessagesForPublicationWhenUserIsThePublicationOwner(
+    void shouldReturnAllTicketsWithMessagesForPublicationWhenTicketContainsMessages(
             Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var expectedTicketDto = constructDto(createPersistedTicketWithMessage(ticketType, publication));
