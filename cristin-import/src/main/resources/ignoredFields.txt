@@ -13,8 +13,8 @@ entityDescription.contributors.identity.arpId
 entityDescription.contributors.identity.nameType
 entityDescription.contributors.identity.orcId
 entityDescription.contributors.email
-entityDescription.date.day
-entityDescription.date.month
+entityDescription.publicationDate.day
+entityDescription.publicationDate.month
 entityDescription.reference.publicationContext.series
 entityDescription.reference.publicationContext.unconfirmedSeriesTitle
 entityDescription.reference.publicationContext.seriesNumber

@@ -178,7 +178,7 @@ public class DataCiteMetadataDtoMapperTest {
         return new EntityDescription.Builder()
                    .withReference(createReference())
                    .withMainTitle(MAIN_TITLE)
-                   .withDate(createPublicationDate())
+                   .withPublicationDate(createPublicationDate())
                    .withContributors(List.of(createUnexpectedContributor(), createExpectedContributor()))
                    .build();
     }

@@ -652,7 +652,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setPublicationDate(year, month, day);
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualPublicationDate = publication.getEntityDescription().getDate();
+        var actualPublicationDate = publication.getEntityDescription().getPublicationDate();
         assertThat(actualPublicationDate, allOf(hasProperty(PUBLICATION_DAY_FIELD_NAME, is(day)),
                                                 hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(month)),
                                                 hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(year))));
