@@ -5,10 +5,12 @@ PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
 
 CONSTRUCT {
   ?publication nva:topLevelOrganization ?top_org .
+  ?top_org nva:label ?name .
   } WHERE {
   ?publication a nva:Publication .
-  ?affiliation nva:affiliations ?org .
+  ?affiliation nva:affiliation ?org .
   ?org nva:partOf* ?top_org .
-    FILTER NOT EXISTS { ?top_org nva:partOf ?e } .
-    FILTER ( strstarts(str(?org), "http") ) .
+  OPTIONAL { ?top_org nva:name ?name . }
+  FILTER NOT EXISTS { ?top_org nva:partOf ?e } .
+  FILTER ( strstarts(str(?org), "http") ) .
 }

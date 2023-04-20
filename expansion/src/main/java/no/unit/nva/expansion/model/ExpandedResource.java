@@ -9,6 +9,7 @@ import static no.unit.nva.expansion.utils.PublicationJsonPointers.JOURNAL_ID_JSO
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static nva.commons.core.StringUtils.isNotBlank;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -44,6 +45,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     // but it contains its data as an inner Json Node.
     public static final String ID_FIELD_NAME = "id";
     public static final String TYPE = "Publication";
+    public static final String JSON_LD_CONTEXT_FIELD = "@context";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -53,7 +55,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     public static ExpandedResource fromPublication(UriRetriever uriRetriever, Publication publication)
         throws JsonProcessingException {
-        var documentWithId = createJsonWithId(publication);
+        var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
         return attempt(() -> objectMapper.readValue(enrichedJson, ExpandedResource.class)).orElseThrow();
     }
@@ -139,12 +141,20 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
                    .orElseThrow();
     }
 
-    private static ObjectNode createJsonWithId(Publication publication) throws JsonProcessingException {
+    private static ObjectNode transformToJsonLd(Publication publication) throws JsonProcessingException {
         var jsonString = objectMapper.writeValueAsString(publication);
         var json = (ObjectNode) objectMapper.readTree(jsonString);
-        var id = UriWrapper.fromUri(PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
-        json.put(ID_FIELD_NAME, id.toString());
+        json.put(ID_FIELD_NAME, extractJsonLdId(publication).toString());
+        json.set(JSON_LD_CONTEXT_FIELD, extractJsonLdContext(publication));
         return json;
+    }
+
+    private static URI extractJsonLdId(Publication publication) {
+        return UriWrapper.fromUri(PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
+    }
+
+    private static JsonNode extractJsonLdContext(Publication publication) {
+        return attempt(() -> dtoObjectMapper.readTree(publication.getJsonLdContext())).orElseThrow();
     }
 
     private static String getPublicationContextType(JsonNode root) {
