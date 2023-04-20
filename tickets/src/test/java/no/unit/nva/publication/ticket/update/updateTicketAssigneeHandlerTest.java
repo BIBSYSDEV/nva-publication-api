@@ -1,7 +1,8 @@
 package no.unit.nva.publication.ticket.update;
 
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -14,11 +15,12 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.ticket.TicketConfig;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
@@ -38,7 +40,7 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new updateTicketAssigneeHandler(ticketService, resourceService, new FakeDoiClient());
+        this.handler = new updateTicketAssigneeHandler(ticketService);
     }
 
     @Test
@@ -49,7 +51,7 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.fromTicket(ticket);
         var addAssigneeTicket = ticket.updateAssignee(publication, user.getUser());
-        var request = authorizedUserAssigneesTicket(addAssigneeTicket);
+        var request = authorizedUserAssigneesTicket(publication, addAssigneeTicket, user);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
@@ -65,7 +67,7 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.fromTicket(ticket);
         var addAssigneeTicket = ticket.updateAssignee(publication, user.getUser());
-        var request = authorizedUserAssigneesTicket(addAssigneeTicket);
+        var request = authorizedUserAssigneesTicket(publication, addAssigneeTicket, user);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
@@ -76,7 +78,7 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldUpdateAssigneeToTicketWhenUserAttemptsToClaimTheTicket()
+    void shouldUpdateAssigneeToTicketWhenCuratorAttemptsToClaimTheTicket()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = createPersistedDoiTicket(publication);
@@ -86,7 +88,7 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
         var user = UserInstance.fromTicket(ticket);
         var addAssigneeTicket = ticket.updateAssignee(publication, user.getUser());
 
-        var request = authorizedUserAssigneesTicket(addAssigneeTicket);
+        var request = authorizedUserAssigneesTicket(publication, addAssigneeTicket, user);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var actualTicket = ticketService.fetchTicket(ticket);
@@ -108,7 +110,7 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
         );
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -122,24 +124,20 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
         var request = createAssigneeTicketHttpRequest(completedTicket, AccessRight.APPROVE_DOI_REQUEST, customer);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
-    void shouldReturnAcceptedWhenUserAttemptingToClaimAnAlreadyAssignedTicket()
+    void shouldReturnAcceptedWhenCurtaorAttemptingToClaimAnAlreadyAssignedTicket()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.fromTicket(ticket);
         var completedTicket = ticketService.updateTicketAssignee(ticket, user.getUser());
-        var request = authorizedUserAssigneesTicket(completedTicket);
+        var request = authorizedUserAssigneesTicket(publication, completedTicket, user);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
-    }
-
-    private InputStream authorizedUserAssigneesTicket(TicketEntry ticket) throws JsonProcessingException {
-        return createAssigneeTicketHttpRequest(ticket, AccessRight.APPROVE_DOI_REQUEST, ticket.getCustomerId());
     }
 
     private InputStream createAssigneeTicketHttpRequest(TicketEntry ticket,
@@ -154,5 +152,25 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
                                        TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                        ticket.getIdentifier().toString()))
             .build();
+    }
+
+    private InputStream authorizedUserAssigneesTicket(Publication publication,
+                                                      TicketEntry ticket,
+                                                      UserInstance user) throws JsonProcessingException {
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+            .withPathParameters(pathParameters(publication, ticket))
+            .withBody(TicketDto.fromTicket(ticket))
+            .withNvaUsername(user.getUsername())
+            .withCustomerId(user.getOrganizationUri())
+            .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
+            .build();
+    }
+
+    private static Map<String, String> pathParameters(Publication publication,
+                                                      TicketEntry ticket) {
+        return Map.of(
+            PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publication.getIdentifier().toString(),
+            TicketDao.TICKET_IDENTIFIER_FIELD_NAME, ticket.getIdentifier().toString()
+        );
     }
 }
