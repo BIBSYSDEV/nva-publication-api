@@ -22,7 +22,10 @@ import java.util.stream.Stream;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -88,7 +91,12 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
         throws JsonProcessingException, JSONException, BadRequestException {
         var publication = createPublicationWithoutDoi(instanceType);
-
+        var contributors = publication.getEntityDescription().getContributors();
+        var contributor = contributors.get(0);
+        var role = new RoleType(Role.OTHER);
+        var r = role.createOther("nope");
+        var other = new Contributor(contributor.getIdentity(), contributor.getAffiliations(), r, 21, false);
+        contributors.add(other);
         var expandedResource = fromPublication(uriRetriever, publication);
 
         var expandedResourceAsJson = expandedResource.toJsonString();
