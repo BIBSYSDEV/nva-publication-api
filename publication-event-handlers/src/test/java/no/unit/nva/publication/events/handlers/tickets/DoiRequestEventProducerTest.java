@@ -255,7 +255,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var publication = randomPublication();
         publication.setStatus(PublicationStatus.DRAFT);
         publication.getEntityDescription().setMainTitle(StringUtils.EMPTY_STRING);
-        publication.getEntityDescription().getDate().setYear(null);
+        publication.getEntityDescription().getPublicationDate().setYear(null);
         publication.getEntityDescription().getReference().setPublicationInstance(null);
         publication.setPublisher(null);
         publication.setModifiedDate(null);

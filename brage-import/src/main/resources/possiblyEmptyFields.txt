@@ -23,7 +23,7 @@ entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.linkedContext
 entityDescription.reference.publicationContext.title
 
-entityDescription.date
+entityDescription.publicationDate
 entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading

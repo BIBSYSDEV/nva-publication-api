@@ -203,7 +203,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
         List<Integer> actualPublicationDates = cristinObjects.stream().map(CristinObject::toPublication)
                                                    .map(Publication::getEntityDescription)
-                                                   .map(EntityDescription::getDate)
+                                                   .map(EntityDescription::getPublicationDate)
                                                    .map(PublicationDate::getYear)
                                                    .map(Integer::parseInt)
                                                    .collect(Collectors.toList());
@@ -372,7 +372,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         List<PublicationDate> actualPublicationDates = cristinObjects.stream()
                                                            .map(CristinObject::toPublication)
                                                            .map(Publication::getEntityDescription)
-                                                           .map(EntityDescription::getDate)
+                                                           .map(EntityDescription::getPublicationDate)
                                                            .collect(Collectors.toList());
 
         assertThat(actualPublicationDates,
@@ -384,7 +384,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     void mapReturnsPublicationsWhereCristinRoleIsMappedToCorrectNvaRole(String cristinRole,
                                                                         String nvaRole) {
         CristinContributorRoleCode actualCristinRole = CristinContributorRoleCode.fromString(cristinRole);
-        RoleType expectedNvaRole = new RoleType(Role.lookup(nvaRole));
+        RoleType expectedNvaRole = new RoleType(Role.parse(nvaRole));
         CristinObject objectWithEditor = createObjectWithRoleCode(actualCristinRole);
 
         Optional<Contributor> contributor = getContributors(objectWithEditor)
