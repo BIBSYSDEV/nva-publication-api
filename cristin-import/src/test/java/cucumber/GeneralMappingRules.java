@@ -151,7 +151,7 @@ public class GeneralMappingRules {
     @Then("the NVA Resource has a Publication Date with year equal to {int}, month equal to null and "
           + "day equal to null")
     public void theNvaResourceHasPublicationDateWithTheCristinYear(Integer expectedPublicationYear) {
-        PublicationDate actualDate = scenarioContext.getNvaEntry().getEntityDescription().getDate();
+        PublicationDate actualDate = scenarioContext.getNvaEntry().getEntityDescription().getPublicationDate();
         assertThat(actualDate.getYear(), is(equalTo(expectedPublicationYear.toString())));
         assertThat(actualDate.getMonth(), is(nullValue()));
         assertThat(actualDate.getDay(), is(nullValue()));

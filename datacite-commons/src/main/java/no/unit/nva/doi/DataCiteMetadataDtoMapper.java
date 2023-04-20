@@ -80,7 +80,7 @@ public final class DataCiteMetadataDtoMapper {
 
     private static String extractPublicationYear(Publication publication) {
         return getEntityDescription(publication)
-                   .map(EntityDescription::getDate)
+                   .map(EntityDescription::getPublicationDate)
                    .map(PublicationDate::getYear)
                    .orElse(null);
     }

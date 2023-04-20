@@ -122,7 +122,7 @@ public class DoiRegistrarEntryFields {
     
     private static PublicationDate extractPublicationDate(Publication publication) {
         return extractEntityDescription(publication)
-                   .map(EntityDescription::getDate)
+                   .map(EntityDescription::getPublicationDate)
                    .orElse(null);
     }
     

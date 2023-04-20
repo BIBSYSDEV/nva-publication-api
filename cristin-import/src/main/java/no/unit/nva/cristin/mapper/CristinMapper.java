@@ -254,7 +254,7 @@ public class CristinMapper extends CristinMappingModule {
         return new EntityDescription.Builder()
                    .withLanguage(extractLanguage())
                    .withMainTitle(extractMainTitle())
-                   .withDate(extractPublicationDate())
+                   .withPublicationDate(extractPublicationDate())
                    .withReference(new ReferenceBuilder(cristinObject).buildReference())
                    .withContributors(extractContributors())
                    .withNpiSubjectHeading(extractNpiSubjectHeading())

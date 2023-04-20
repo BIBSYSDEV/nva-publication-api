@@ -132,7 +132,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withAbstract(builder.getEntityAbstractsForPublication())
                    .withAlternativeTitles(builder.getAlternativeTitlesMap())
                    .withMainTitle(builder.getMainTitle())
-                   .withDate(builder.getPublicationDateForPublication())
+                   .withPublicationDate(builder.getPublicationDateForPublication())
                    .build();
     }
 
@@ -164,7 +164,7 @@ public class NvaBrageMigrationDataGenerator {
         return new no.unit.nva.model.Contributor.Builder()
                    .withIdentity(createIdentity(name))
                    .withAffiliations(createAffiliationList())
-                   .withRole(new RoleType(Role.lookup(contributor.getRole())))
+                   .withRole(new RoleType(Role.parse(contributor.getRole())))
                    .build();
     }
 
