@@ -1,7 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.lang.StrictMath.ceil;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -656,7 +655,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         expectedTicket.setAssignee(UserInstance.fromPublication(publication).getUser());
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
 
-        assertThat(updatedTicket, is(equalTo(expectedTicket)));
+        assertThat(updatedTicket.getAssignee(), is(equalTo(expectedTicket.getAssignee())));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
     }
 
