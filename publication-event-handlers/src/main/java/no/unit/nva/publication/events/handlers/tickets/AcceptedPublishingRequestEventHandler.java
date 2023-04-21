@@ -21,6 +21,7 @@ import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -76,10 +77,23 @@ public class AcceptedPublishingRequestEventHandler
         var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
         var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
         var updatedPublication = toPublicationWithPublishedFiles(publication);
-        attempt(() -> resourceService.updatePublication(updatedPublication));
+        if(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
+            publishFiles(updatedPublication);
+        }
+        if(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(latestUpdate.getWorkflow())) {
+            publishFiles(updatedPublication);
+            publishPublication(latestUpdate, userInstance);
+        }
+        createDoiRequestIfNeeded(updatedPublication);
+    }
+
+    private void publishPublication(PublishingRequestCase latestUpdate, UserInstance userInstance) {
         attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
             .orElse(fail -> logError(fail.getException()));
-        createDoiRequestIfNeeded(updatedPublication);
+    }
+
+    private void publishFiles(Publication updatedPublication) {
+        attempt(() -> resourceService.updatePublication(updatedPublication));
     }
 
     private Publication toPublicationWithPublishedFiles(Publication publication) {
