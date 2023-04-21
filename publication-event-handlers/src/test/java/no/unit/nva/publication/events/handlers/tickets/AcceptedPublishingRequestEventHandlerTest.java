@@ -70,7 +70,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDoNothingWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
+    void shouldPublishFilesWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
