@@ -27,6 +27,7 @@ import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -70,7 +71,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDoNothingWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
+    void shouldPublishFilesWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
@@ -82,8 +83,9 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     
     @Test
     void shouldPublishPublicationWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {
-        var publication = createPublication();
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
+        pendingPublishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -96,6 +98,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PublicationStatus.DRAFT,
                                                                                          resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
+        pendingPublishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -109,6 +112,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         throws IOException, NotFoundException, BadRequestException {
         var publication = createDraftPublicationWithDoi();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
+        pendingPublishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -126,6 +130,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createDraftPublicationWithDoi();
         var existingTicket = createDoiRequestTicket(publication);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
+        pendingPublishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -155,6 +160,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication);
+        approvedPublishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         var logger = LogUtils.getTestingAppenderForRootLogger();
         
