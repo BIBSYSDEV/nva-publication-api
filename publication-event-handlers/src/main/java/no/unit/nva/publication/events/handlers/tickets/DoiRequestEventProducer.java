@@ -48,7 +48,7 @@ public class DoiRequestEventProducer
     public static final String INPUT = "INPUT {}";
     public static final String OUTPUT = "OUTPUT {}";
     protected static final Integer HTTP_FOUND = 302;
-    private static final String HANDLER_DOES_NOT_DEAL_WITH_DELETIONS = "Handler does not deal with deletions";
+    public static final String HANDLER_DOES_NOT_DEAL_WITH_DELETIONS = "Handler does not deal with deletions";
     private static final Logger logger = LoggerFactory.getLogger(DoiRequestEventProducer.class);
     private final ResourceService resourceService;
     private final HttpClient httpClient;

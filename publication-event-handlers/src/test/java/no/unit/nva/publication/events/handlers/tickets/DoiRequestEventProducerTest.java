@@ -8,6 +8,7 @@ import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDAT
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.DOI_REQUEST_HAS_NO_IDENTIFIER;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HANDLER_DOES_NOT_DEAL_WITH_DELETIONS;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.MIN_INTERVAL_FOR_REREQUESTING_A_DOI;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NVA_API_DOMAIN;
@@ -38,6 +39,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
+import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
@@ -99,6 +101,16 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
             Executable action = () -> handler.handleRequest(event, outputStream, context);
             IllegalStateException exception = assertThrows(IllegalStateException.class, action);
             assertThat(exception.getMessage(), is(equalTo(DOI_REQUEST_HAS_NO_IDENTIFIER)));
+        }
+    }
+
+    @Test
+    void handleRequestThrowsExceptionWhenEventIsADeletion() throws IOException {
+        var publication = randomPublishedPublication();
+        try (var event = createEvent(Resource.fromPublication(publication), Resource.fromPublication(null))) {
+            Executable action = () -> handler.handleRequest(event, outputStream, context);
+            InvalidInputException exception = assertThrows(InvalidInputException.class, action);
+            assertThat(exception.getMessage(), is(equalTo(HANDLER_DOES_NOT_DEAL_WITH_DELETIONS)));
         }
     }
 

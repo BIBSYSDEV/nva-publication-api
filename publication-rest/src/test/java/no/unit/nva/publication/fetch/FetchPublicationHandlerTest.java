@@ -51,7 +51,6 @@ import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -116,21 +115,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         output = new ByteArrayOutputStream();
         this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, uriRetriever, environment);
-    }
-
-    // TODO: replace test with tests that assert unauth/non-owner/non-curator users do not receive unpublished files
-    //  with published metadata and authenticated users do
-    @Test
-    void shouldReturnStatusPublishedForPublicationsWithStatusPublishedMetadata()
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedPublicationWithStatusPublishedMetadata();
-        assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED_METADATA)));
-        var identifier = publication.getIdentifier().toString();
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier), output, context);
-        var response = parseHandlerResponse();
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
-        var body = response.getBodyObject(PublicationResponse.class);
-        assertThat(body.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
@@ -331,15 +315,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         JavaType responseWithProblemType = restApiMapper.getTypeFactory()
                                                .constructParametricType(GatewayResponse.class, Problem.class);
         return restApiMapper.readValue(output.toString(), responseWithProblemType);
-    }
-
-    private Publication createPersistedPublicationWithStatusPublishedMetadata() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
-        publicationService.publishPublicationMetadata(userInstance, publicationIdentifier);
-        return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 
     private Publication createPublication() throws ApiGatewayException {
