@@ -67,7 +67,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
              TicketService.defaultService(),
              new Environment(),
              IdentityServiceClient.prepare(),
-             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL));
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
     /**
