@@ -78,6 +78,7 @@ public class AcceptedPublishingRequestEventHandler
         var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
         var updatedPublication = toPublicationWithPublishedFiles(publication);
         if(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
+            logger.info(updatedPublication.toString());
             publishFiles(updatedPublication);
         }
         if(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(latestUpdate.getWorkflow())) {

@@ -42,12 +42,15 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow from upstream";
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -127,8 +130,14 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
             attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
                 .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, getCustomerId(publicationUpdate)))
                 .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
+                .map(this::logg)
                 .orElseThrow(fail -> createBadGatewayException());
         }
+    }
+
+    private TicketEntry logg(TicketEntry ticket) {
+        logger.info("Ticket on update: {}" ,ticket.toString());
+        return ticket;
     }
 
     private static URI getCustomerId(Publication publicationUpdate) {
