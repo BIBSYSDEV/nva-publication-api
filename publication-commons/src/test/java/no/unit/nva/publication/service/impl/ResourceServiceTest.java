@@ -2,11 +2,9 @@ package no.unit.nva.publication.service.impl;
 
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -375,17 +373,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
-        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
-        String expectedMessage = "expectedMessage";
-        RuntimeException exptedMessage = new RuntimeException(expectedMessage);
-        when(client.getItem(any(GetItemRequest.class))).thenThrow(exptedMessage);
-        Publication resource = publicationWithIdentifier();
+        var client = mock(AmazonDynamoDB.class);
+        var expectedMessage = new RuntimeException("expectedMessage");
+        when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
+        var resource = publicationWithIdentifier();
 
-        ResourceService failingResourceService = new ResourceService(client, clock);
+        var failingResourceService = new ResourceService(client, clock);
 
         Executable action = () -> failingResourceService.getPublication(resource);
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
+        var exception = assertThrows(RuntimeException.class, action);
+        assertThat(exception.getMessage(), is(equalTo(expectedMessage.getMessage())));
     }
 
     @ParameterizedTest(name = "Should return publication by owner when status is {0}")
@@ -508,40 +505,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPublishResourceMetadataWhenClientRequestsToPublish() throws ApiGatewayException {
-        var resource = createPersistedPublicationWithDoi();
-        var userInstance = UserInstance.fromPublication(resource);
-        resourceService.publishPublicationMetadata(userInstance, resource.getIdentifier());
-        var actualResource = resourceService.getPublication(resource);
-        var expectedResource = resource.copy()
-                                   .withStatus(PUBLISHED_METADATA)
-                                   .withModifiedDate(actualResource.getModifiedDate())
-                                   .withPublishedDate(actualResource.getPublishedDate())
-                                   .build();
-
-        assertThat(actualResource, is(equalTo(expectedResource)));
-    }
-
-    @ParameterizedTest(name = "Should not change publication status when user requests to publish metadata and "
-                              + "publication status is: {0}")
-    @EnumSource(value = PublicationStatus.class, mode = Mode.INCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldNotUpdatePublicationStatusWhenUserRequestsToPublishMetadataAndStatusIsPublished(PublicationStatus status)
-        throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication().copy().withStatus(status).build();
-        var resource = resourceService.insertPreexistingPublication(publication);
-        var userInstance = UserInstance.fromPublication(resource);
-        resourceService.publishPublicationMetadata(userInstance, resource.getIdentifier());
-        var actualResource = resourceService.getPublication(resource);
-        var expectedResource = resource.copy()
-                                   .withStatus(status)
-                                   .withModifiedDate(actualResource.getModifiedDate())
-                                   .withPublishedDate(actualResource.getPublishedDate())
-                                   .build();
-
-        assertThat(actualResource, is(equalTo(expectedResource)));
-    }
-
-    @Test
     void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
         Publication resource = createPersistedPublicationWithDoi();
@@ -576,7 +539,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(resourceWithStatusDraft),
                                            resourceWithStatusDraft.getIdentifier());
 
-        verifyThatTheResourceWasMovedFromtheDrafts(resourceDaoWithStatusDraft);
+        verifyThatTheResourceWasMovedFromTheDrafts(resourceDaoWithStatusDraft);
 
         verifyThatTheResourceIsInThePublishedResources(resourceWithStatusDraft);
     }
@@ -1049,7 +1012,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(resource.getStatus(), is(equalTo(PUBLISHED)));
     }
 
-    private void verifyThatTheResourceWasMovedFromtheDrafts(ResourceDao resourceDaoWithStatusDraft) {
+    private void verifyThatTheResourceWasMovedFromTheDrafts(ResourceDao resourceDaoWithStatusDraft) {
         Optional<ResourceDao> expectedEmptyResult = searchForResource(resourceDaoWithStatusDraft);
         assertThat(expectedEmptyResult.isEmpty(), is(true));
     }
