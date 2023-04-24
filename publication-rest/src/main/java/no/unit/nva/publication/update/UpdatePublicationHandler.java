@@ -42,8 +42,6 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
@@ -51,7 +49,6 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
                                                                         + " from upstream";
-    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -204,7 +201,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(requestInfo::getCurrentCustomer)
-                   .map(customerId -> UserInstance.create(requestInfo.getNvaUsername(), customerId))
+                   .map(customerId -> UserInstance.create(requestInfo.getUserName(), customerId))
                    .orElseThrow(fail -> new UnauthorizedException());
     }
 
