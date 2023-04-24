@@ -2,12 +2,17 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
+import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
+import static no.unit.nva.publication.update.UpdatePublicationHandler.UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -38,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +61,8 @@ import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.AccessRight;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -63,25 +71,33 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.apache.http.entity.ContentType;
+import org.hamcrest.core.Is;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
         restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
+    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
 
     public static final String SOME_MESSAGE = "SomeMessage";
     public static final String SOME_CURATOR = "some@curator";
@@ -96,6 +112,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private Environment environment;
     private IdentityServiceClient identityServiceClient;
     private TicketService ticketService;
+    private FakeSecretsManagerClient secretsManagerClient;
 
     /**
      * Set up environment.
@@ -114,9 +131,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
+        secretsManagerClient = new FakeSecretsManagerClient();
+        var credentials = new BackendClientCredentials("id", "secret");
+        secretsManagerClient.putPlainTextSecret("secret", credentials.toString());
         output = new ByteArrayOutputStream();
+        var uriRetriever = getUriRetriever(getHttpClientWithPublisherAllowingPublishing(), secretsManagerClient);
         updatePublicationHandler =
-            new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient);
+            new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
+                                         uriRetriever);
         publication = createPublication();
     }
 
@@ -201,6 +223,25 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void handlerDoesNotCreateNewPublishingRequestWhenThereExistsPendingAndCompletedPublishingRequest()
+        throws ApiGatewayException, IOException {
+        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+                                                                              publicationService);
+        persistCompletedPublishingRequest(publishedPublication);
+        var pendingPublishingRequest = createPendingPublishingRequest(publishedPublication);
+
+        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+
+        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+
+        var existingTickets = ticketService.fetchTicketsForUser(UserInstance.fromTicket(pendingPublishingRequest))
+                                  .collect(Collectors.toList());
+        assertThat(existingTickets, hasSize(2));
+    }
+
+    @Test
     void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException, BadRequestException {
         publication = PublicationGenerator.publicationWithoutIdentifier();
         Publication savedPublication = createSamplePublication();
@@ -240,7 +281,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
-                                                                identityServiceClient);
+                                                                identityServiceClient,
+                                                                getUriRetriever(
+                                                                    getHttpClientWithPublisherAllowingPublishing(),
+                                                                    secretsManagerClient));
 
         Publication savedPublication = createSamplePublication();
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
@@ -258,7 +302,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
-                                                                identityServiceClient);
+                                                                identityServiceClient, getUriRetriever(
+            getHttpClientWithPublisherAllowingPublishing(),
+            secretsManagerClient));
         Publication savedPublication = createSamplePublication();
 
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
@@ -357,6 +403,37 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow()
+        throws IOException, ApiGatewayException {
+        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+                                                                              publicationService);
+
+        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+
+        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        this.updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
+                                                                     identityServiceClient,
+                                                                     getUriRetriever(getHttpClientWithUnresolvableClient(), secretsManagerClient));
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        var problem = response.getBodyObject(Problem.class);
+
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+        assertThat(problem.getDetail(), Is.is(
+            IsEqual.equalTo(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE)));
+    }
+
+    private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
+        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
+                                    mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval());
+    }
+
+    private static FakeHttpResponse<String> mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
+        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing.json")),
+                                       HTTP_OK);
     }
 
     private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
@@ -501,5 +578,21 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
         return gatewayResponse.getBodyObject(Problem.class).getDetail();
+    }
+
+    private AuthorizedBackendUriRetriever getUriRetriever(FakeHttpClient<String> httpClient,
+                                                          SecretsManagerClient secretsManagerClient) {
+        return new AuthorizedBackendUriRetriever(httpClient,
+                                                 secretsManagerClient,
+                                                 BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
+    }
+
+    private static FakeHttpClient<String> getHttpClientWithUnresolvableClient() {
+        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY,
+                                                            HTTP_OK), unresolvableCustomer());
+    }
+
+    private static FakeHttpResponse<String> unresolvableCustomer() {
+        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
     }
 }
