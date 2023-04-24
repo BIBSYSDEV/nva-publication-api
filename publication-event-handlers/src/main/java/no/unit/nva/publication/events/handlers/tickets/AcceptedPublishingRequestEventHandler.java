@@ -79,7 +79,9 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
-        return updateEvent.getNewData().getStatusString().equals(updateEvent.getOldData().getStatusString());
+        var newStatus = updateEvent.getNewData().getStatusString();
+        var oldStatus = updateEvent.getOldData().getStatusString();
+        return oldStatus.equals(newStatus);
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {
