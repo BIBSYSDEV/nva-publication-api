@@ -510,19 +510,146 @@ components:
   schemas:
     Publication:
       type: object
+      description: Complete Publication entity
+      properties:
+        abstract:
+          type: string
+          description: short abstract of content
+        alternativeTitles:
+          type: array
+          description: short abstract of content
+          items:
+            type: string
+        contributors:
+          type: array
+          description: List of contributing people
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+        description:
+          type: string
+        doi:
+          type: string
+        id:
+          type: string
+        modifiedDate:
+          type: string
+          format: date
+        owner:
+          type: string
+        publicationDate:
+          type: object
+          properties:
+            day:
+              type: string
+            month:
+              type: string
+            type:
+              type: string
+            year:
+              type: string
+        publicationType:
+          type: string
+        publishedDate:
+          type: string
+          format: date
+        publisher:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        reference:
+          type: object
+          properties:
+            doi:
+              type: string
+            publicationContext:
+              type: object
+              properties:
+                level:
+                  type: string
+                linkedContext:
+                  type: string
+                onlineIssn:
+                  type: string
+                openAccess:
+                  type: boolean
+                peerReviewed:
+                  type: boolean
+                printIssn:
+                  type: string
+                publisher:
+                  type: string
+                seriesTitle:
+                  type: string
+                title:
+                  type: string
+                type:
+                  type: string
+                url:
+                  type: string
+            publicationInstance:
+              type: object
+              properties:
+                articleNumber:
+                  type: string
+                issue:
+                  type: string
+                pages:
+                  type: object
+                  properties:
+                    begin:
+                      type: string
+                    end:
+                      type: string
+                    illustrated:
+                      type: boolean
+                    pages:
+                      type: string
+                    type:
+                      type: string
+                peerReviewed:
+                  type: boolean
+                textbookContent:
+                  type: boolean
+                type:
+                  type: string
+                volume:
+                  type: string
+            type:
+              type: string
+        tags:
+          type: array
+          items:
+            type: string
+        title:
+          type: string
     PublicationDataCiteXml:
       type: object
     PublicationSchemaOrg:
       type: object
     Problem:
       type: object
+      description: Problem object model
       properties:
         title:
           type: string
+          description: Title
         status:
           type: integer
+          description: Kind of problem
         detail:
           type: string
+          description: details of problem
+        requestId:
+          type: string
+          description: Identifier of the request causing the problem
     Message:
       description: Message
       type: object
