@@ -63,24 +63,37 @@ public class AcceptedPublishingRequestEventHandler
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
         var latestUpdate = parseInput(eventBlob);
-        if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus())) {
+        if (isCompletedTicket(latestUpdate) && hasEffectiveChanges(eventBlob)) {
             publishPublicationAndFiles(latestUpdate);
         }
         return null;
+    }
+
+    private static boolean isCompletedTicket(PublishingRequestCase latestUpdate) {
+        return TicketStatus.COMPLETED.equals(latestUpdate.getStatus());
     }
 
     private static boolean hasDoi(Publication publication) {
         return nonNull(publication.getDoi());
     }
 
+    private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
+        return updateEvent.getNewData().getStatusString().equals(updateEvent.getOldData().getStatusString());
+    }
+
+    private boolean hasEffectiveChanges(String eventBlob) {
+        return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
+    }
+
     private void publishPublicationAndFiles(PublishingRequestCase latestUpdate) {
         var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
         var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
         var updatedPublication = toPublicationWithPublishedFiles(publication);
-        if(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
+        if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
             publishFiles(updatedPublication);
         }
-        if(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(latestUpdate.getWorkflow())) {
+        if (PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
+            latestUpdate.getWorkflow())) {
             publishFiles(updatedPublication);
             publishPublication(latestUpdate, userInstance);
         }
