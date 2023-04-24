@@ -57,19 +57,20 @@ public class AcceptedPublishingRequestEventHandler
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
 
+    // TODO: hasEffectiveChanges method should be implemented in a predecessor eventHandler.
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
-        var latestUpdate = parseInput(eventBlob);
-        if (isCompletedTicket(latestUpdate) && hasEffectiveChanges(eventBlob)) {
-            publishPublicationAndFiles(latestUpdate);
+        var ticketUpdate = parseInput(eventBlob);
+        if (isCompleted(ticketUpdate) && hasEffectiveChanges(eventBlob)) {
+            publishPublicationAndFiles(ticketUpdate);
         }
         return null;
     }
 
-    private static boolean isCompletedTicket(PublishingRequestCase latestUpdate) {
+    private static boolean isCompleted(PublishingRequestCase latestUpdate) {
         return TicketStatus.COMPLETED.equals(latestUpdate.getStatus());
     }
 
