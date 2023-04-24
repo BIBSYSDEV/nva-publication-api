@@ -57,20 +57,35 @@ public class AcceptedPublishingRequestEventHandler
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
 
+    // TODO: hasEffectiveChanges method should be implemented in a predecessor eventHandler.
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
-        var latestUpdate = parseInput(eventBlob);
-        if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus())) {
-            publishPublicationAndFiles(latestUpdate);
+        var ticketUpdate = parseInput(eventBlob);
+        if (isCompleted(ticketUpdate) && hasEffectiveChanges(eventBlob)) {
+            publishPublicationAndFiles(ticketUpdate);
         }
         return null;
     }
 
+    private static boolean isCompleted(PublishingRequestCase latestUpdate) {
+        return TicketStatus.COMPLETED.equals(latestUpdate.getStatus());
+    }
+
     private static boolean hasDoi(Publication publication) {
         return nonNull(publication.getDoi());
+    }
+
+    private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
+        var newStatus = updateEvent.getNewData().getStatusString();
+        var oldStatus = updateEvent.getOldData().getStatusString();
+        return oldStatus.equals(newStatus);
+    }
+
+    private boolean hasEffectiveChanges(String eventBlob) {
+        return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
     }
 
     private void publishPublicationAndFiles(PublishingRequestCase latestUpdate) {
@@ -78,7 +93,6 @@ public class AcceptedPublishingRequestEventHandler
         var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
         var updatedPublication = toPublicationWithPublishedFiles(publication);
         if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
-            logger.info(updatedPublication.toString());
             publishFiles(updatedPublication);
         }
         if (PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(

@@ -71,6 +71,17 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldDoNothingWhenEventHasNoEffectiveChanges() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var publishingRequest = pendingPublishingRequest(publication).complete(publication);
+        var event = createEvent(publishingRequest, publishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var notUpdatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        assertThat(publication.getModifiedDate(), is(equalTo(notUpdatedPublication.getModifiedDate())));
+        assertThat(notUpdatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    @Test
     void shouldPublishFilesWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
