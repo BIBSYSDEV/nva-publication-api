@@ -49,7 +49,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
-    public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow from upstream";
+    public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
+                                                                        + " from upstream";
     private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
@@ -117,9 +118,18 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return TicketStatus.PENDING.equals(publishingRequest.getStatus());
     }
 
-    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publicationUpdate) {
-        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publicationUpdate))
+    private static boolean hasMatchingIdentifier(Publication publication, TicketEntry ticketEntry) {
+        return ticketEntry.getResourceIdentifier().equals(publication.getIdentifier());
+    }
+
+    private static URI getCustomerId(Publication publicationUpdate) {
+        return publicationUpdate.getPublisher().getId();
+    }
+
+    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication) {
+        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
                    .filter(PublishingRequestCase.class::isInstance)
+                   .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
                    .filter(UpdatePublicationHandler::isPending)
                    .findAny()
                    .isEmpty();
@@ -130,18 +140,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
             attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
                 .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, getCustomerId(publicationUpdate)))
                 .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
-                .map(this::logg)
                 .orElseThrow(fail -> createBadGatewayException());
         }
-    }
-
-    private TicketEntry logg(TicketEntry ticket) {
-        logger.info("Ticket on update: {}" ,ticket.toString());
-        return ticket;
-    }
-
-    private static URI getCustomerId(Publication publicationUpdate) {
-        return publicationUpdate.getPublisher().getId();
     }
 
     private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, URI customerId)
