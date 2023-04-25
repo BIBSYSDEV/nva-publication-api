@@ -4,7 +4,6 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -29,15 +28,15 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class updateTicketAssigneeHandlerTest extends TicketTestLocal {
+class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
 
-    private updateTicketAssigneeHandler handler;
+    private UpdateTicketAssigneeHandler handler;
     public static final String SOME_ASSIGNEE = "some@user";
 
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new updateTicketAssigneeHandler(ticketService, resourceService, new FakeDoiClient());
+        this.handler = new UpdateTicketAssigneeHandler(ticketService);
     }
 
     @Test
@@ -54,24 +53,6 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
         var actualTicket = ticketService.fetchTicket(ticket);
         assertThat(actualTicket.getAssignee(), is(equalTo(addAssigneeTicket.getAssignee())));
-    }
-
-    @Test
-    void shouldAddAssigneeDoiRequestWithoutChangingAlreadyExistingDoi()
-        throws ApiGatewayException, IOException {
-        var publication = createPersistAndPublishPublicationWithDoi();
-        assertThat(publication.getDoi(), is(notNullValue()));
-        var ticket = createPersistedDoiTicket(publication);
-        var user = UserInstance.fromTicket(ticket);
-        var addAssigneeTicket = ticket.updateAssignee(publication, user.getUser());
-        var request = authorizedUserAssigneesTicket(addAssigneeTicket);
-        handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
-        var actualTicket = ticketService.fetchTicket(ticket);
-        assertThat(actualTicket.getAssignee(), is(equalTo(addAssigneeTicket.getAssignee())));
-        var publicationInDatabase = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(publicationInDatabase.getDoi(), is(equalTo(publication.getDoi())));
     }
 
     @Test
@@ -147,7 +128,7 @@ class updateTicketAssigneeHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
             .withBody(TicketDto.fromTicket(ticket))
             .withAccessRights(customer, accessRight.toString())
-            .withCustomerId(customer)
+            .withCurrentCustomer(customer)
             .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                        ticket.extractPublicationIdentifier().toString(),
                                        TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,

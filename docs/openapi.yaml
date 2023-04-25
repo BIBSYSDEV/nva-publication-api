@@ -524,7 +524,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Ticket'
+              type: object
+              nullable: true
       responses:
         202:
           description: Accepted
@@ -532,38 +533,8 @@ paths:
             application/json:
               schema:
                 $ref: "/components/schemas/Ticket"
-        400:
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: "/components/schemas/Problem"
         403:
           description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "/components/schemas/Problem"
-        404:
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: "/components/schemas/Problem"
-        405:
-          description: Operation not allowed
-          content:
-            application/json:
-              schema:
-                $ref: "/components/schemas/Problem"
-        409:
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: "/components/schemas/Problem"
-        502:
-          description: Bad gateway
           content:
             application/json:
               schema:
