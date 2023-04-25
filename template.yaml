@@ -502,6 +502,24 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+  NvaFetchPublicationContextFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.fetch.FetchPublicationContextHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /context
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
   NvaFetchPublicationFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
