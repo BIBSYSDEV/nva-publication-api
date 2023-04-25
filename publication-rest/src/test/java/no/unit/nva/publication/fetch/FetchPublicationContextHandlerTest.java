@@ -6,6 +6,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import org.junit.jupiter.api.BeforeEach;
 import com.amazonaws.services.lambda.runtime.Context;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
@@ -13,9 +14,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Stream;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -40,6 +43,16 @@ class FetchPublicationContextHandlerTest {
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         fetchPublicationContextHandler = new FetchPublicationContextHandler();
+    }
+
+    @Test
+    void shouldReturnPublicationContextAsString()
+            throws IOException {
+        var request = generateHandlerRequest(Map.of(ACCEPT, APPLICATION_JSON));
+        fetchPublicationContextHandler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, String.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
+        assertThat(response.getBody(), is(equalTo(stringFromResources(Path.of("publicationContext.json")))));
     }
 
     @ParameterizedTest(name = "mediaType {0} is invalid")

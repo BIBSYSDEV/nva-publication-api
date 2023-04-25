@@ -6,9 +6,11 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import java.net.HttpURLConnection;
+import java.nio.file.Path;
 import java.util.List;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 
 public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, String> {
 
@@ -18,7 +20,7 @@ public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, Stri
 
     @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        return null;
+        return stringFromResources(Path.of("publicationContext.json"));
     }
 
     @Override
