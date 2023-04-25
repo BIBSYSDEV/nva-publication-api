@@ -27,6 +27,9 @@ class FetchPublicationContextHandlerTest {
     private static final String TEXT_ANY = "text/*";
     private static final String TEXT_HTML = "text/html";
     private static final String APPLICATION_XHTML = "application/xhtml+xml";
+    private static final String APPLICATION_JSON_LD = "application/ld+json";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String DEFAULT_MEDIA_TYPE = "*/*";
     private static final String UNSUPPORTED_ACCEPT_HEADER_MESSAGE = "contains no supported Accept header values.";
     private FetchPublicationContextHandler fetchPublicationContextHandler;
     private Context context;
@@ -51,6 +54,16 @@ class FetchPublicationContextHandlerTest {
         assertThat(problem.getDetail(), is(containsString(UNSUPPORTED_ACCEPT_HEADER_MESSAGE)));
     }
 
+    @ParameterizedTest(name = "mediaType {0} is valid")
+    @MethodSource("supportedMediaTypes")
+    void shouldReturnPublicationContextIfRequestHeaderAcceptsJsonOrJsonLdOrDefault(String mediaType)
+            throws IOException {
+        var request = generateHandlerRequest(Map.of(ACCEPT, mediaType));
+        fetchPublicationContextHandler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, String.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
+    }
+
     private InputStream generateHandlerRequest(Map<String, String> headers)
             throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
@@ -60,5 +73,9 @@ class FetchPublicationContextHandlerTest {
 
     private static Stream<String> unsupportedMediaTypes() {
         return Stream.of(TEXT_ANY, TEXT_HTML, APPLICATION_XHTML);
+    }
+
+    private static Stream<String> supportedMediaTypes() {
+        return Stream.of(APPLICATION_JSON, APPLICATION_JSON_LD, DEFAULT_MEDIA_TYPE);
     }
 }
