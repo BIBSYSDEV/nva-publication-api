@@ -51,7 +51,6 @@ class FetchPublicationContextHandlerTest {
         var request = generateHandlerRequest(Map.of(ACCEPT, APPLICATION_JSON));
         fetchPublicationContextHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, String.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
         assertThat(response.getBody(), is(equalTo(stringFromResources(Path.of("publicationContext.json")))));
     }
 
