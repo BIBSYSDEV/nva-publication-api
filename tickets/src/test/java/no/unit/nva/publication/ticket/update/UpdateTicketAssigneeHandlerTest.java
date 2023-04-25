@@ -92,7 +92,7 @@ class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldReturnForbiddenWhenRequestingUserIsCuratorAtOtherCustomerThanCurrentPublisher()
+    void shouldReturnForbiddenWhenCuratorAndPublisherHaveDifferentCustomers()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
