@@ -69,7 +69,7 @@ class FetchPublicationContextHandlerTest {
 
     @ParameterizedTest(name = "mediaType {0} is valid")
     @MethodSource("supportedMediaTypes")
-    void shouldReturnPublicationContextIfRequestHeaderAcceptsJsonOrJsonLdOrDefault(String mediaType)
+    void shouldReturnSuccessfulStatusCodeIfRequestHeaderAcceptsJsonOrJsonLdOrDefault(String mediaType)
             throws IOException {
         var request = generateHandlerRequest(Map.of(ACCEPT, mediaType));
         fetchPublicationContextHandler.handleRequest(request, output, context);
