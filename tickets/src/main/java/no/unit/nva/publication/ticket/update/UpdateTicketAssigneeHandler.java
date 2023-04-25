@@ -39,7 +39,7 @@ public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<Void, TicketD
         if (userIsNotAuthorized(requestInfo, ticket)) {
             throw new ForbiddenException();
         }
-        var user = UserInstance.fromTicket(ticket);
+        var user = UserInstance.fromRequestInfo(requestInfo);
         ticketService.updateTicketAssignee(ticket, user.getUser());
         return null;
     }
