@@ -270,7 +270,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Ticket"
+                $ref: "#/components/schemas/Ticket"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
@@ -299,7 +299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Ticket"
+                $ref: "#/components/schemas/Ticket"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
@@ -322,43 +322,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Ticket"
+                $ref: "#/components/schemas/Ticket"
         400:
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         403:
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         404:
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         405:
           description: Operation not allowed
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         409:
           description: Conflict
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         502:
           description: Bad gateway
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
@@ -519,13 +519,6 @@ paths:
         required: true
     put:
       description: Update the assignee of an existing ticket
-      requestBody:
-        description: A Ticket Object containing the new ticket assignee
-        content:
-          application/json:
-            schema:
-              type: object
-              nullable: true
       responses:
         202:
           description: Accepted
@@ -552,19 +545,156 @@ components:
   schemas:
     Publication:
       type: object
+      description: Complete Publication entity
+      properties:
+        abstract:
+          type: string
+          description: short abstract of content
+        alternativeTitles:
+          type: array
+          description: short abstract of content
+          items:
+            type: string
+        contributors:
+          type: array
+          description: List of contributing people
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+        description:
+          type: string
+        doi:
+          type: string
+        id:
+          type: string
+        modifiedDate:
+          type: string
+          format: date
+        owner:
+          type: string
+        publicationDate:
+          type: object
+          properties:
+            day:
+              type: string
+            month:
+              type: string
+            type:
+              type: string
+            year:
+              type: string
+        publicationType:
+          type: string
+        publishedDate:
+          type: string
+          format: date
+        publisher:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        reference:
+          type: object
+          properties:
+            doi:
+              type: string
+            publicationContext:
+              type: object
+              properties:
+                level:
+                  type: string
+                linkedContext:
+                  type: string
+                onlineIssn:
+                  type: string
+                openAccess:
+                  type: boolean
+                peerReviewed:
+                  type: boolean
+                printIssn:
+                  type: string
+                publisher:
+                  type: string
+                seriesTitle:
+                  type: string
+                title:
+                  type: string
+                type:
+                  type: string
+                url:
+                  type: string
+            publicationInstance:
+              type: object
+              properties:
+                articleNumber:
+                  type: string
+                issue:
+                  type: string
+                pages:
+                  type: object
+                  properties:
+                    begin:
+                      type: string
+                    end:
+                      type: string
+                    illustrated:
+                      type: boolean
+                    pages:
+                      type: string
+                    type:
+                      type: string
+                peerReviewed:
+                  type: boolean
+                textbookContent:
+                  type: boolean
+                type:
+                  type: string
+                volume:
+                  type: string
+            type:
+              type: string
+        tags:
+          type: array
+          items:
+            type: string
+        title:
+          type: string
     PublicationDataCiteXml:
       type: object
     PublicationSchemaOrg:
       type: object
     Problem:
       type: object
+      description: NVA error reporting object
+      required:
+        - title
+        - detail
+        - status
       properties:
         title:
           type: string
-        status:
-          type: integer
+          description: Human-readable description of the error status
         detail:
           type: string
+          description: A more detailed error message describing the error and potential mitigations
+        status:
+          type: integer
+          description: The HTTP status code associated with the problem
+        requestId:
+          type: string
+          description: Identifier of the request causing the problem
+        instance:
+          type: string
+          description: The requested path associated with the error
+        type:
+          type: string
+          description: A URI describing the error and mitigations, in generic cases, this is about:blank
     Message:
       description: Message
       type: object
@@ -608,8 +738,6 @@ components:
             - Pending
             - Completed
             - Closed
-        assignee:
-          type: string
     UpdateViewStatusRequest:
       type: object
       properties:
@@ -631,7 +759,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Ticket"
-
   securitySchemes:
     CognitoUserPool:
       type: apiKey
