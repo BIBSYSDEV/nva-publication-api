@@ -29,7 +29,6 @@ entityDescription.reference.publicationInstance.corrigendumFor
 entityDescription.alternativeTitles
 entityDescription.description
 entityDescription.metadataSource
-entityDescription.approvedBy
 
 
 

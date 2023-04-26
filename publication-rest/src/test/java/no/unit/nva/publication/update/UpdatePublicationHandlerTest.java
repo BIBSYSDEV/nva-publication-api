@@ -47,7 +47,6 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -183,7 +182,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertThat(Objects.requireNonNull(ticket.orElse(null)).getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(), is(equalTo(TicketStatus.PENDING)));
     }
 
     @Test

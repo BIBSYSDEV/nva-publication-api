@@ -37,7 +37,7 @@ public class UserInstance implements JsonSerializable {
     }
     
     public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
-        return new UserInstance(resourceOwner.getOwner().toString(), organizationUri, resourceOwner.getOwnerAffiliation());
+        return new UserInstance(resourceOwner.getOwner().getValue(), organizationUri, resourceOwner.getOwnerAffiliation());
     }
 
     public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
