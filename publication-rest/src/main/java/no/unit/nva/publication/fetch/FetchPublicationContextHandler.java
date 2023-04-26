@@ -27,10 +27,10 @@ public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, Stri
     protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var host = environment.readEnv(ENV_API_HOST);
         var path = environment.readEnv(ENV_CUSTOM_DOMAIN_BASE_PATH);
-        var domainBaseUri = UriWrapper.fromHost(host)
+        var baseUri = UriWrapper.fromHost(host)
                 .addChild(path)
                 .getUri();
-        return Publication.getJsonLdContext(domainBaseUri);
+        return Publication.getJsonLdContext(baseUri);
     }
 
     @Override
