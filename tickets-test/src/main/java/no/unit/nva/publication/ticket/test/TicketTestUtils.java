@@ -176,7 +176,6 @@ public final class TicketTestUtils {
                               .withStatus(status)
                               .build();
         unpublishFiles(publication);
-        publication.getEntityDescription().setApprovedBy(null);
         return publication;
     }
 

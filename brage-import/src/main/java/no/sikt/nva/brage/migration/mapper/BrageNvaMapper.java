@@ -159,7 +159,7 @@ public final class BrageNvaMapper {
                    .withLicense(extractLicense(file))
                    .withPublisherAuthority(extractPublisherAuthority(record))
                    .withEmbargoDate(extractEmbargoDate(file))
-                   .buildPublishedFile(null);
+                   .buildPublishedFile();
     }
 
     private static java.time.Instant extractEmbargoDate(ContentFile file) {

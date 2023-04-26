@@ -14,7 +14,10 @@
     "InteractiveFilm": "https://nva.sikt.no/ontology/publication#InteractiveFilm",
     "AugmentedVirtualRealityFilm": "https://nva.sikt.no/ontology/publication#AugmentedVirtualRealityFilm",
     "approvedBy": {
-      "@type": "xsd:string"
+      "@context": {
+        "@vocab": "https://nva.sikt.no/ontology/approvals-body#"
+      },
+      "@type": "@vocab"
     },
     "activeFrom": {
       "@type": "xsd:dateTime"

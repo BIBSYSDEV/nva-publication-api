@@ -976,7 +976,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withSize(FakeS3cClientWithCopyObjectSupport.SOME_CONTENT_LENGTH)
                            .withMimeType(FakeS3cClientWithCopyObjectSupport.APPLICATION_PDF_MIMETYPE)
                            .withEmbargoDate(Instant.parse(EMBARGO_DATE))
-                           .buildPublishedFile(null));
+                           .buildPublishedFile());
     }
 
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {

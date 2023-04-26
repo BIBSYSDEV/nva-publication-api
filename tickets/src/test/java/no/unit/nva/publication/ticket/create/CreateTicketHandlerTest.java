@@ -20,7 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -98,7 +97,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
-    public static final String APPROVED_BY_PROPERTY = "approvedBy";
     private final Environment environment = mock(Environment.class);
     private FakeSecretsManagerClient secretsManagerClient;
     private CreateTicketHandler handler;
@@ -419,43 +417,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldSetPublicationOwnerAsApproverForPublishedFilesAndEntityDescriptionWhenCustomerAllowsPublishing()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
-        var requestBody = constructDto(PublishingRequestCase.class);
-        var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService,
-                                                   getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
-                                                                   secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
-        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        var publishedPublication = resourceService.getPublication(publication);
-        assertThat(getAssociatedFiles(publishedPublication), everyItem(hasProperty(APPROVED_BY_PROPERTY)));
-        assertThat(getFileApprovers(publishedPublication), everyItem(is(equalTo(getResourceOwner(publication)))));
-        assertThat(getApprovedByMetadataUsername(publishedPublication), is(equalTo(getResourceOwner(publication))));
-    }
-
-    @Test
-    void shouldSetPublicationOwnerAsApproverForEntityDescriptionWhenCustomerAllowsPublishingMetadataOnly()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
-        var requestBody = constructDto(PublishingRequestCase.class);
-        var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService,
-                                                   getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
-                                                                   secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
-        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        var publishedPublication = resourceService.getPublication(publication);
-        assertThat(getAssociatedFiles(publishedPublication), everyItem(not(hasProperty(APPROVED_BY_PROPERTY))));
-        assertThat(getApprovedByMetadataUsername(publishedPublication), is(equalTo(getResourceOwner(publication))));
-    }
-
-    @Test
     void shouldPublishPublicationButNotFilesWhenCustomerAllowsPublishingMetadataOnly()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
@@ -533,19 +494,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
     }
 
-    private static Username getApprovedByMetadataUsername(Publication publishedPublication) {
-        return publishedPublication.getEntityDescription().getApprovedBy();
-    }
-
     private static Username getResourceOwner(Publication publication) {
         return publication.getResourceOwner().getOwner();
-    }
-
-    private static List<Username> getFileApprovers(Publication publishedPublication) {
-        return getAssociatedFiles(publishedPublication).stream()
-                   .map(file -> ((PublishedFile) file).getApprovedBy())
-                   .collect(
-                       Collectors.toList());
     }
 
     private static List<AssociatedArtifact> getAssociatedFiles(Publication publishedPublication) {
