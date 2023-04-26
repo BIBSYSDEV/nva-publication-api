@@ -15,10 +15,13 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<Void, TicketDto> {
 
     private final TicketService ticketService;
+    private static final Logger logger = LoggerFactory.getLogger(UpdateTicketAssigneeHandler.class);
 
     @JacocoGenerated
     public UpdateTicketAssigneeHandler() {
@@ -41,6 +44,8 @@ public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<Void, TicketD
         }
         var user = UserInstance.fromRequestInfo(requestInfo);
         ticketService.updateTicketAssignee(ticket, user.getUser());
+        logger.info("Assignee has been set to: {}:" , user.getUsername());
+        logger.info("Username from requestInfo: {}:", requestInfo.getUserName());
         return null;
     }
 
