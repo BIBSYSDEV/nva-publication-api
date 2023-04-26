@@ -98,7 +98,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         samplePublication = randomPublication();
-        testUserName = samplePublication.getResourceOwner().getOwner();
+        testUserName = samplePublication.getResourceOwner().getOwner().getValue();
         testOrgId = samplePublication.getPublisher().getId();
         topLevelCristinOrgId = randomUri();
     }
@@ -198,7 +198,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var expectedOwnerAffiliation = getExternalClientResponse.getCristinUrgUri();
         var expectedPublisherId = getExternalClientResponse.getCustomerUri();
 
-        assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(expectedOwner)));
+        assertThat(publicationResponse.getResourceOwner().getOwner().getValue(), is(equalTo(expectedOwner)));
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(expectedOwnerAffiliation)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(expectedPublisherId)));
     }
@@ -337,7 +337,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getIdentifier(), is(not(nullValue())));
         assertThat(publicationResponse.getIdentifier(), is(instanceOf(SortableIdentifier.class)));
         assertThat(publicationResponse.getCreatedDate(), is(not(nullValue())));
-        assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testUserName)));
+        assertThat(publicationResponse.getResourceOwner().getOwner().getValue(), is(equalTo(testUserName)));
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
     }
@@ -345,8 +345,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
     
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withNvaUsername(testUserName)
-                   .withCustomerId(testOrgId)
+                   .withUserName(testUserName)
+                   .withCurrentCustomer(testOrgId)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withBody(request)
                    .build();
@@ -355,8 +355,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream createPublicationRequestFromString(String request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<String>(dtoObjectMapper)
-                .withNvaUsername(testUserName)
-                .withCustomerId(testOrgId)
+                .withUserName(testUserName)
+                .withCurrentCustomer(testOrgId)
                 .withTopLevelCristinOrgId(topLevelCristinOrgId)
                 .withBody(request)
                 .build();
@@ -381,7 +381,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
     
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withCustomerId(testOrgId)
+                   .withCurrentCustomer(testOrgId)
                    .withBody(request)
                    .build();
     }

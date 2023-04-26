@@ -14,6 +14,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -104,7 +105,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     
     private ResourceOwner createInternalResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(() -> requestInfo.getTopLevelOrgCristinId().orElseThrow())
-                   .map(topLevelOrgCristinId -> new ResourceOwner(requestInfo.getNvaUsername(), topLevelOrgCristinId))
+                   .map(topLevelOrgCristinId -> new ResourceOwner(new Username(requestInfo.getUserName()),
+                                                                               topLevelOrgCristinId))
                    .orElseThrow(fail -> new UnauthorizedException());
     }
     

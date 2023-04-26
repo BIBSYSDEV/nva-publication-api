@@ -1,7 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.lang.StrictMath.ceil;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -59,6 +58,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -253,10 +253,14 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenTheUserIsNotTheResourceOwner(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        publication.setResourceOwner(new ResourceOwner(randomString(), randomUri()));
+        publication.setResourceOwner(new ResourceOwner(randomUsername(), randomUri()));
         var ticket = createUnpersistedTicket(publication, ticketType);
         Executable action = () -> ticket.persistNewTicket(ticketService);
         assertThrows(ForbiddenException.class, action);
+    }
+
+    private Username randomUsername() {
+        return new Username(randomString());
     }
 
     @ParameterizedTest(name = "ticket type:{0}")
@@ -764,7 +768,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException {
 
         var publication = new Publication.Builder().withResourceOwner(
-                new ResourceOwner(owner.getUsername(), randomOrgUnitId()))
+                new ResourceOwner(new Username(owner.getUsername()), randomOrgUnitId()))
             .withPublisher(createOrganization(owner.getOrganizationUri()))
             .withStatus(DRAFT)
             .build();
@@ -777,7 +781,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         return DoiRequest.builder()
             .withIdentifier(actualDoiRequest.getIdentifier())
             .withPublicationDetails(PublicationDetails.create(emptyPublication))
-            .withOwner(new User(emptyPublication.getResourceOwner().getOwner()))
+            .withOwner(new User(emptyPublication.getResourceOwner().getOwner().getValue()))
             .withCustomerId(emptyPublication.getPublisher().getId())
             .withStatus(TicketStatus.PENDING)
             .withResourceStatus(DRAFT)

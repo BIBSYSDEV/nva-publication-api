@@ -35,12 +35,13 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
@@ -222,13 +223,18 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         }
     }
 
-    private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
+    private void insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
         var publication = randomPublication().copy()
                               .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
                               .withResourceOwner(
-                                  new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
+                                  new ResourceOwner(randomUsername(),
+                                                    AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
                               .build();
-        return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
+        attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
+    }
+
+    private Username randomUsername() {
+        return new Username(randomString());
     }
 
     private EventReference emptyEvent(Instant timestamp) {

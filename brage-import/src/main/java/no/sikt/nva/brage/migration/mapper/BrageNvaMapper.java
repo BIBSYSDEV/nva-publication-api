@@ -35,6 +35,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -135,7 +136,7 @@ public final class BrageNvaMapper {
     }
 
     private static ResourceOwner generateResourceOwner(no.sikt.nva.brage.migration.record.ResourceOwner resourceOwner) {
-        return new ResourceOwner(resourceOwner.getOwner(), resourceOwner.getOwnerAffiliation());
+        return new ResourceOwner(new Username(resourceOwner.getOwner()), resourceOwner.getOwnerAffiliation());
     }
 
     private static List<AssociatedArtifact> extractAssociatedFiles(Record record) {

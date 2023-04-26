@@ -21,7 +21,7 @@ class TicketEntryTest {
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         var actualUserInstance = UserInstance.fromTicket(ticket);
         var expectedUserInstance =
-            UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
+            UserInstance.create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
 
         assertThat(ticket.getClass(), is(equalTo(ticketType)));
         assertThat(ticket.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));

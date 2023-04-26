@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -56,6 +55,10 @@ public class TicketResolver {
             return resolvePublishingRequest(ticket, publication, publishingRequestCase);
         }
         return persistTicket(ticket);
+    }
+
+    private static boolean isNotAdministrativeAgreement(AssociatedArtifact artifact) {
+        return artifact instanceof File && !(artifact instanceof AdministrativeAgreement);
     }
 
     private TicketEntry resolvePublishingRequest(TicketEntry ticket, Publication publication,
@@ -131,9 +134,10 @@ public class TicketResolver {
         publishPublication(updatedPublication);
     }
 
-    private void publishPublication(Publication updatedPublication) {
-        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(updatedPublication),
-                                                         updatedPublication.getIdentifier()));
+    private void publishPublication(Publication publication) {
+        attempt(() -> resourceService.updatePublication(publication));
+        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(publication),
+                                                         publication.getIdentifier()));
     }
 
     private void publishMetadata(Publication publication) {
@@ -142,12 +146,12 @@ public class TicketResolver {
 
     private Publication toPublicationWithPublishedFiles(Publication publication) {
         return publication.copy()
-                   .withAssociatedArtifacts(convertFilesToPublished(publication.getAssociatedArtifacts()))
+                   .withAssociatedArtifacts(convertFilesToPublished(publication))
                    .build();
     }
 
-    private List<AssociatedArtifact> convertFilesToPublished(AssociatedArtifactList associatedArtifacts) {
-        return associatedArtifacts.stream()
+    private List<AssociatedArtifact> convertFilesToPublished(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
                    .map(this::updateFileToPublished)
                    .collect(Collectors.toList());
     }
@@ -159,10 +163,6 @@ public class TicketResolver {
         } else {
             return artifact;
         }
-    }
-
-    private static boolean isNotAdministrativeAgreement(AssociatedArtifact artifact) {
-        return artifact instanceof File && !(artifact instanceof AdministrativeAgreement);
     }
 
     private BadGatewayException createBadGatewayException() {

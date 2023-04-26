@@ -5,6 +5,7 @@ import java.net.URI;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -50,7 +51,7 @@ public final class RequestUtil {
      */
     @SuppressWarnings("PMD.InvalidLogMessageFormat")
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
-        return attempt(requestInfo::getNvaUsername).orElseThrow(fail -> new UnauthorizedException());
+        return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
     }
 
     public static UserInstance createExternalUserInstance(RequestInfo requestInfo,
@@ -61,7 +62,7 @@ public final class RequestUtil {
                          .orElseThrow(fail -> new UnauthorizedException());
 
         var resourceOwner = new ResourceOwner(
-            client.getActingUser(),
+            new Username(client.getActingUser()),
             client.getCristinUrgUri()
         );
 

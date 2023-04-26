@@ -47,7 +47,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         assertThat(summary, doesNotHaveEmptyValues());
         assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
-        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
+        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
         assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
     }
@@ -59,7 +59,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         assertThat(summary, doesNotHaveEmptyValues());
         assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
-        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
+        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
         assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
     }

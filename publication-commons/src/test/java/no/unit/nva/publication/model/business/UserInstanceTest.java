@@ -24,7 +24,7 @@ class UserInstanceTest {
     void shouldReturnUserInstanceFromPublication() {
         Publication publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
-        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
     
@@ -33,7 +33,7 @@ class UserInstanceTest {
         var publication = PublicationGenerator.randomPublication();
         var doiRequest = DoiRequest.fromPublication(publication);
         var userInstance = UserInstance.fromDoiRequest(doiRequest);
-        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
 
@@ -44,7 +44,7 @@ class UserInstanceTest {
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         var userInstance = UserInstance.fromMessage(message);
-        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
     }
     
