@@ -13,11 +13,12 @@ import java.net.HttpURLConnection;
 import java.util.List;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 
 public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, String> {
 
-    private static final String ENV_API_HOST = "API_HOST";
-    private static final String ENV_CUSTOM_DOMAIN_BASE_PATH = "CUSTOM_DOMAIN_BASE_PATH";
+    private static final String HOST = ENVIRONMENT.readEnv("API_HOST");
+    private static final String PATH = ENVIRONMENT.readEnv("CUSTOM_DOMAIN_BASE_PATH");
 
     public FetchPublicationContextHandler() {
         super(Void.class, new Environment());
@@ -25,10 +26,8 @@ public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, Stri
 
     @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        var host = environment.readEnv(ENV_API_HOST);
-        var path = environment.readEnv(ENV_CUSTOM_DOMAIN_BASE_PATH);
-        var baseUri = UriWrapper.fromHost(host)
-                .addChild(path)
+        var baseUri = UriWrapper.fromHost(HOST)
+                .addChild(PATH)
                 .getUri();
         return Publication.getJsonLdContext(baseUri);
     }
