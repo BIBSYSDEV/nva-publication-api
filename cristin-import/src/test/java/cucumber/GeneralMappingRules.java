@@ -47,6 +47,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.role.RoleType;
@@ -539,7 +540,7 @@ public class GeneralMappingRules {
     @Then("the NVA Resource should have a owner {string} and ownerAffiliation: {string}")
     public void theNVAResourceShouldHaveAOwnerAndOwnerAffiliation(String owner, String ownerAffiliation) {
         var resourceOwner = scenarioContext.getNvaEntry().getResourceOwner();
-        assertThat(resourceOwner, allOf(hasProperty("owner", equalTo(owner)),
+        assertThat(resourceOwner, allOf(hasProperty("owner", equalTo(new Username(owner))),
                                         hasProperty("ownerAffiliation",
                                                     equalTo(UriWrapper.fromUri(ownerAffiliation).getUri()))));
     }

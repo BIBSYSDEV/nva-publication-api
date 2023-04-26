@@ -16,6 +16,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
@@ -159,7 +160,7 @@ public final class TicketTestUtils {
 
     private static Publication randomPublicationWithStatusAndOwner(PublicationStatus status, UserInstance owner) {
         return randomPublicationWithStatus(status).copy()
-                   .withResourceOwner(new ResourceOwner(owner.getUsername(), null))
+                   .withResourceOwner(new ResourceOwner(new Username(owner.getUsername()), null))
                    .build();
     }
 
@@ -175,6 +176,7 @@ public final class TicketTestUtils {
                               .withStatus(status)
                               .build();
         unpublishFiles(publication);
+        publication.getEntityDescription().setApprovedBy(null);
         return publication;
     }
 

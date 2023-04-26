@@ -9,11 +9,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -58,6 +60,19 @@ public class TicketResolver {
         return persistTicket(ticket);
     }
 
+    private static boolean isNotAdministrativeAgreement(AssociatedArtifact artifact) {
+        return artifact instanceof File && !(artifact instanceof AdministrativeAgreement);
+    }
+
+    private static Username getResourceOwner(Publication publication) {
+        return publication.getResourceOwner().getOwner();
+    }
+
+    private static EntityDescription injectApprover(EntityDescription entityDescription, Username resourceOwner) {
+        entityDescription.setApprovedBy(resourceOwner);
+        return entityDescription;
+    }
+
     private TicketEntry resolvePublishingRequest(TicketEntry ticket, Publication publication,
                                                  PublishingRequestCase publishingRequestCase)
         throws ApiGatewayException {
@@ -69,6 +84,11 @@ public class TicketResolver {
             publishMetadata(publication);
         }
         return ticket;
+    }
+
+    private void injectMetadataApprover(Publication publication) {
+        publication.setEntityDescription(injectApprover(publication.getEntityDescription(),
+                                                        getResourceOwner(publication)));
     }
 
     private void approveTicket(TicketEntry ticket) throws ApiGatewayException {
@@ -127,13 +147,16 @@ public class TicketResolver {
 
     private void publishPublicationAndFiles(Publication publication) {
         var updatedPublication = toPublicationWithPublishedFiles(publication);
+        injectMetadataApprover(publication);
         attempt(() -> resourceService.updatePublication(updatedPublication));
         publishPublication(updatedPublication);
     }
 
-    private void publishPublication(Publication updatedPublication) {
-        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(updatedPublication),
-                                                         updatedPublication.getIdentifier()));
+    private void publishPublication(Publication publication) {
+        injectMetadataApprover(publication);
+        attempt(() -> resourceService.updatePublication(publication));
+        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(publication),
+                                                         publication.getIdentifier()));
     }
 
     private void publishMetadata(Publication publication) {
@@ -142,14 +165,22 @@ public class TicketResolver {
 
     private Publication toPublicationWithPublishedFiles(Publication publication) {
         return publication.copy()
-                   .withAssociatedArtifacts(convertFilesToPublished(publication.getAssociatedArtifacts()))
+                   .withAssociatedArtifacts(convertFilesToPublished(publication))
                    .build();
     }
 
-    private List<AssociatedArtifact> convertFilesToPublished(AssociatedArtifactList associatedArtifacts) {
-        return associatedArtifacts.stream()
+    private List<AssociatedArtifact> convertFilesToPublished(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
                    .map(this::updateFileToPublished)
+                   .map(artifact -> injectApprover(artifact, getResourceOwner(publication)))
                    .collect(Collectors.toList());
+    }
+
+    private AssociatedArtifact injectApprover(AssociatedArtifact artifact, Username approver) {
+        if (artifact instanceof PublishedFile) {
+            return ((PublishedFile) artifact).toPublishedFile(approver);
+        }
+        return artifact;
     }
 
     private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
@@ -159,10 +190,6 @@ public class TicketResolver {
         } else {
             return artifact;
         }
-    }
-
-    private static boolean isNotAdministrativeAgreement(AssociatedArtifact artifact) {
-        return artifact instanceof File && !(artifact instanceof AdministrativeAgreement);
     }
 
     private BadGatewayException createBadGatewayException() {

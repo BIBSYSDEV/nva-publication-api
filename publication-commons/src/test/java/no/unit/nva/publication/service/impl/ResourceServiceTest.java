@@ -62,6 +62,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -213,7 +214,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         final Publication sampleResource = randomPublication();
         final Publication collidingResource = sampleResource.copy()
                                                   .withPublisher(anotherPublisher())
-                                                  .withResourceOwner(new ResourceOwner(SOME_OTHER_USER, null))
+                                                  .withResourceOwner(new ResourceOwner(new Username(SOME_OTHER_USER),
+                                                                                       null))
                                                   .build();
         ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers(sampleResource.getIdentifier());
 
@@ -289,7 +291,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
 
-        assertThat(newResource.getResourceOwner().getOwner(), is(equalTo(newOwner.getUsername())));
+        assertThat(newResource.getResourceOwner().getOwner().getValue(), is(equalTo(newOwner.getUsername())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
     }
 
@@ -326,7 +328,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws BadRequestException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
-        resourceUpdate.setResourceOwner(new ResourceOwner(ANOTHER_OWNER, UNIMPORTANT_AFFILIATION));
+        resourceUpdate.setResourceOwner(new ResourceOwner(new Username(ANOTHER_OWNER), UNIMPORTANT_AFFILIATION));
         assertThatUpdateFails(resourceUpdate);
     }
 
@@ -976,7 +978,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                 DoiRequest updatedDoiRequest) {
 
         return DoiRequest.builder()
-                   .withOwner(new User(initialPublication.getResourceOwner().getOwner()))
+                   .withOwner(new User(initialPublication.getResourceOwner().getOwner().getValue()))
                    .withCustomerId(initialPublication.getPublisher().getId())
                    .withIdentifier(initialDoiRequest.getIdentifier())
                    .withCreatedDate(initialDoiRequest.getCreatedDate())
@@ -1074,7 +1076,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
         return publication.copy()
-                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), AFFILIATION_NOT_IMPORTANT))
+                   .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()),
+                                                                     AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
                    .build();
     }
@@ -1082,7 +1085,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication expectedUpdatedResource(Publication originalResource, Publication updatedResource,
                                                 UserInstance expectedOwner) {
         return originalResource.copy()
-                   .withResourceOwner(new ResourceOwner(expectedOwner.getUsername(), AFFILIATION_NOT_IMPORTANT))
+                   .withResourceOwner(new ResourceOwner(new Username(expectedOwner.getUsername()),
+                                                        AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(userOrganization(expectedOwner))
                    .withCreatedDate(originalResource.getCreatedDate())
                    .withModifiedDate(updatedResource.getModifiedDate())

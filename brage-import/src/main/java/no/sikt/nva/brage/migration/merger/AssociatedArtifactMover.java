@@ -86,7 +86,7 @@ public class AssociatedArtifactMover {
                    .withEmbargoDate(file.getEmbargoDate().orElse(null))
                    .withMimeType(mimeType)
                    .withSize(size)
-                   .buildPublishedFile();
+                   .buildPublishedFile(null);
     }
 
     private HeadObjectRequest createHeadObjectRequest(String objectKey) {

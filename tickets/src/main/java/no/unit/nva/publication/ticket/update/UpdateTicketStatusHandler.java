@@ -12,6 +12,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -36,6 +37,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         = "Publication with identifier  %s, does not satisfy DOI requirements";
     public static final String COULD_NOT_CREATE_FINDABLE_DOI = "Could not create findable doi";
     private static final Logger logger = LoggerFactory.getLogger(UpdateTicketStatusHandler.class);
+    public static final String EXCEPTION_MESSAGE = "Creating findable doi failed with exception: {}";
     private final TicketService ticketService;
     private final ResourceService resourceService;
 
@@ -62,7 +64,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
 
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-
+        injectAssignee(requestInfo, ticket);
         if (userIsNotAuthorized(requestInfo, ticket)) {
             throw new ForbiddenException();
         }
@@ -71,6 +73,11 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         }
         ticketService.updateTicketStatus(ticket, input.getStatus());
         return null;
+    }
+
+    private void injectAssignee(RequestInfo requestInfo, TicketEntry ticket) throws UnauthorizedException {
+        ticket.setAssignee(new User(requestInfo.getUserName()));
+        ticket.persistUpdate(ticketService);
     }
 
     @Override
@@ -125,7 +132,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
             var doi = doiClient.createFindableDoi(publication);
             updatePublication(publication, doi);
         } catch (Exception e) {
-            logger.error("Creating findable doi failed with exception: {}", e);
+            logger.error(EXCEPTION_MESSAGE,  e);
             throw new BadGatewayException(COULD_NOT_CREATE_FINDABLE_DOI);
         }
     }

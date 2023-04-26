@@ -8,6 +8,7 @@ import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -36,7 +37,7 @@ public final class TestingUtils extends TestDataSource {
     
     public static Publication createUnpersistedPublication(UserInstance userInstance) {
         return randomPublicationWithoutDoi().copy()
-                   .withResourceOwner(new ResourceOwner(userInstance.getUsername(), randomOrgUnitId()))
+                   .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()), randomOrgUnitId()))
                    .withPublisher(createOrganization(userInstance.getOrganizationUri()))
                    .build();
     }

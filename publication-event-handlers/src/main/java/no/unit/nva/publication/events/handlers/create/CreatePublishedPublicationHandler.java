@@ -14,6 +14,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.create.CreatePublicationRequest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -53,10 +54,15 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     
     private Publication addOwnerAndPublisher(Publication publication) {
         Organization customer = new Organization.Builder().withId(UNIT_CUSTOMER_ID).build();
-        ResourceOwner resourceOwner = new ResourceOwner(randomUnitUser(), HARDCODED_OWNER_AFFILIATION);
+        ResourceOwner resourceOwner = new ResourceOwner(randomUnitUsername(),
+                                                        HARDCODED_OWNER_AFFILIATION);
         return publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
     }
-    
+
+    private Username randomUnitUsername() {
+        return new Username(randomUnitUser());
+    }
+
     private String randomUnitUser() {
         return randomString() + "@unit.no";
     }

@@ -31,8 +31,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.TicketConfig;
@@ -53,6 +55,7 @@ import org.zalando.problem.Problem;
 @WireMockTest(httpsEnabled = true)
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
+    public static final String USER_NAME = randomString();
     private UpdateTicketStatusHandler handler;
 
 
@@ -77,6 +80,21 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
         var modifiedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(modifiedPublication.getDoi(), is(	notNullValue()));
+    }
+
+    @Test
+    void shouldSetAssigneeToCuratorWhoCompletesTheTicket() throws ApiGatewayException, IOException {
+        this.handler = new UpdateTicketStatusHandler(ticketService, resourceService,
+                                                     new FakeDoiClientThrowingException());
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var ticket = TicketEntry.createNewTicket(publication, PublishingRequestCase.class,  SortableIdentifier::next);
+        ticket.setStatus(COMPLETED);
+        ticket.persistNewTicket(ticketService);
+        var request = authorizedUserCompletesTicket(ticket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        var completedTicket = ticketService.fetchTicket(ticket);
+        assertThat(completedTicket.getAssignee(), is(equalTo(new User(USER_NAME))));
     }
 
     @Test
@@ -265,7 +283,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(DoiRequestDto.empty())
                    .withAccessRights(customer, AccessRight.APPROVE_DOI_REQUEST.toString())
-                   .withCustomerId(customer)
+                   .withCurrentCustomer(customer)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               publicationIdentifier,
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticketIdentifier))
@@ -282,7 +300,8 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(TicketDto.fromTicket(ticket))
                    .withAccessRights(customer, accessRight.toString())
-                   .withCustomerId(customer)
+                   .withCurrentCustomer(customer)
+                   .withUserName(USER_NAME)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               ticket.extractPublicationIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,

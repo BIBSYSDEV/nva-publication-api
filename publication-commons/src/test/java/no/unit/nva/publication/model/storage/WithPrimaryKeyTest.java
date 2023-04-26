@@ -18,6 +18,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -71,7 +72,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     }
     
     private static List<Resource> sampleResourcesOfSameOwner() {
-        ResourceOwner commonOwner = new ResourceOwner(randomString(), null);
+        ResourceOwner commonOwner = new ResourceOwner(randomUsername(), null);
         Organization commonPublisher = new Organization.Builder().withId(randomUri()).build();
         return Stream.of(draftPublicationWithoutDoi(), draftPublicationWithoutDoi())
                    .map(Publication::copy)
@@ -81,7 +82,11 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
                    .map(Resource::fromPublication)
                    .collect(Collectors.toList());
     }
-    
+
+    private static Username randomUsername() {
+        return new Username(randomString());
+    }
+
     private static Publication draftPublicationWithoutDoi() {
         return randomPublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
     }
