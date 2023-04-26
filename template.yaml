@@ -511,6 +511,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          CUSTOM_DOMAIN_BASE_PATH: !Ref CustomDomainBasePath
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:

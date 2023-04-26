@@ -2,6 +2,7 @@ package no.unit.nva.publication.fetch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import static com.google.common.net.HttpHeaders.ACCEPT;
+import no.unit.nva.model.Publication;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,11 +15,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.nio.file.Path;
+import java.net.URI;
 import java.util.Map;
 import java.util.stream.Stream;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -34,6 +34,7 @@ class FetchPublicationContextHandlerTest {
     private static final String APPLICATION_JSON = "application/json";
     private static final String DEFAULT_MEDIA_TYPE = "*/*";
     private static final String UNSUPPORTED_ACCEPT_HEADER_MESSAGE = "contains no supported Accept header values.";
+    private static final URI BASE_URI = URI.create("https://api-host.example.com/publication");
     private FetchPublicationContextHandler fetchPublicationContextHandler;
     private Context context;
     private ByteArrayOutputStream output;
@@ -51,7 +52,7 @@ class FetchPublicationContextHandlerTest {
         var request = generateHandlerRequest(Map.of(ACCEPT, APPLICATION_JSON));
         fetchPublicationContextHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, String.class);
-        assertThat(response.getBody(), is(equalTo(stringFromResources(Path.of("publicationContext.json")))));
+        assertThat(response.getBody(), is(equalTo(Publication.getJsonLdContext(BASE_URI))));
     }
 
     @ParameterizedTest(name = "mediaType {0} is invalid")
