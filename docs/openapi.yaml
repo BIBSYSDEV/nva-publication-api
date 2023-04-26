@@ -270,7 +270,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Ticket"
+                $ref: "#/components/schemas/Ticket"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
@@ -299,7 +299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Ticket"
+                $ref: "#/components/schemas/Ticket"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
@@ -322,43 +322,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Ticket"
+                $ref: "#/components/schemas/Ticket"
         400:
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         403:
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         404:
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         405:
           description: Operation not allowed
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         409:
           description: Conflict
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
         502:
           description: Bad gateway
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
@@ -505,7 +505,6 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-
 components:
   schemas:
     Publication:
@@ -636,20 +635,30 @@ components:
       type: object
     Problem:
       type: object
-      description: Problem object model
+      description: NVA error reporting object
+      required:
+        - title
+        - detail
+        - status
       properties:
         title:
           type: string
-          description: Title
-        status:
-          type: integer
-          description: Kind of problem
+          description: Human-readable description of the error status
         detail:
           type: string
-          description: details of problem
+          description: A more detailed error message describing the error and potential mitigations
+        status:
+          type: integer
+          description: The HTTP status code associated with the problem
         requestId:
           type: string
           description: Identifier of the request causing the problem
+        instance:
+          type: string
+          description: The requested path associated with the error
+        type:
+          type: string
+          description: A URI describing the error and mitigations, in generic cases, this is about:blank
     Message:
       description: Message
       type: object
@@ -714,7 +723,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Ticket"
-
   securitySchemes:
     CognitoUserPool:
       type: apiKey
