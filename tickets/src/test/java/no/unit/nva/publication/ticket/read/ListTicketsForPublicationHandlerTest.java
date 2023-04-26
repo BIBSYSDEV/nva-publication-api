@@ -125,8 +125,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))
-                   .withCustomerId(publication.getPublisher().getId())
-                   .withNvaUsername(publication.getResourceOwner().getOwner())
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withUserName(publication.getResourceOwner().getOwner().getValue())
                    .build();
     }
 
@@ -134,8 +134,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))
-                   .withCustomerId(publication.getPublisher().getId())
-                   .withNvaUsername(randomString())
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withUserName(randomString())
                    .build();
     }
 
@@ -149,8 +149,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var customerId = randomUri();
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))
-                   .withCustomerId(customerId)
-                   .withNvaUsername(randomString())
+                   .withCurrentCustomer(customerId)
+                   .withUserName(randomString())
                    .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
                    .build();
     }
@@ -159,8 +159,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))
-                   .withCustomerId(publication.getPublisher().getId())
-                   .withNvaUsername(randomString())
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withUserName(randomString())
                    .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.toString())
                    .build();
     }

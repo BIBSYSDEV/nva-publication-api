@@ -66,7 +66,7 @@ public class DeleteDraftPublicationHandler
         if (nonNull(publication.getDoi())) {
             throwPublicationHasDoiError();
         }
-        return UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
     }
     
     private void throwPublicationHasDoiError() {

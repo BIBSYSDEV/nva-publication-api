@@ -41,7 +41,7 @@ public class PublicationSummary {
         publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
         publicationSummary.setCreatedDate(publication.getCreatedDate());
         publicationSummary.setModifiedDate(publication.getModifiedDate());
-        publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner()));
+        publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
         publicationSummary.setStatus(publication.getStatus());
         if (nonNull(publication.getEntityDescription())) {
             publicationSummary.setTitle(publication.getEntityDescription().getMainTitle());

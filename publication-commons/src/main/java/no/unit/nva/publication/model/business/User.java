@@ -24,7 +24,7 @@ public class User {
     }
     
     public static User fromPublication(Publication publication) {
-        return new User(publication.getResourceOwner().getOwner());
+        return new User(publication.getResourceOwner().getOwner().getValue());
     }
     
     @Override

@@ -86,7 +86,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Expanded resource should not lose information for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
-        throws JsonProcessingException, JSONException, BadRequestException {
+        throws JsonProcessingException, BadRequestException, JSONException {
         var publication = createPublicationWithoutDoi(instanceType);
         var expandedResource = fromPublication(uriRetriever, publication);
 
@@ -99,6 +99,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         JSONAssert.assertEquals(jsonOriginal, jsonActual, false);
     }
+
 
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
     @MethodSource("publicationInstanceProvider")
@@ -292,7 +293,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setCreatedDate(Instant.now());
             requestCase.setCustomerId(publication.getPublisher().getId());
             requestCase.setPublicationDetails(PublicationDetails.create(publication));
-            requestCase.setOwner(new User(publication.getResourceOwner().getOwner()));
+            requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }
     }

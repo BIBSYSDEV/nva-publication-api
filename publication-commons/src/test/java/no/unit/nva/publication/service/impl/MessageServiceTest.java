@@ -70,7 +70,7 @@ class MessageServiceTest extends ResourcesLocalTest {
             messageService.createMessage(ticket, sender, randomString());
         var retrievedMessage = messageService.getMessageByIdentifier(message.getIdentifier())
                                    .orElseThrow();
-        assertThat(retrievedMessage.getRecipient(), is(equalTo(new User(publication.getResourceOwner().getOwner()))));
+        assertThat(retrievedMessage.getRecipient(), is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
     }
 
     //TODO: discuss with product owner what the actual requirements are here.

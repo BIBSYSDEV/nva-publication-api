@@ -53,8 +53,8 @@ import org.zalando.problem.Problem;
 @WireMockTest(httpsEnabled = true)
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
+    public static final String USER_NAME = randomString();
     private UpdateTicketStatusHandler handler;
-
 
     @BeforeEach
     public void setup() {
@@ -76,7 +76,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var actualTicket = ticketService.fetchTicket(ticket);
         assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
         var modifiedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(modifiedPublication.getDoi(), is(	notNullValue()));
+        assertThat(modifiedPublication.getDoi(), is(notNullValue()));
     }
 
     @Test
@@ -93,16 +93,16 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var actualTicket = ticketService.fetchTicket(ticket);
         assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
         var publicationInDatabase = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(publicationInDatabase.getDoi(), is(	equalTo(publication.getDoi())));
+        assertThat(publicationInDatabase.getDoi(), is(equalTo(publication.getDoi())));
     }
-
 
     @Test
     void shouldReturnErrorForDoiTicketCompletedForPublicationNotSatisfyingDoiRequirement()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         publication.getEntityDescription().setMainTitle(null);
-        resourceService.updatePublication(publication.copy().withEntityDescription(publication.getEntityDescription()).build());
+        resourceService.updatePublication(
+            publication.copy().withEntityDescription(publication.getEntityDescription()).build());
         var ticket = createPersistedDoiTicket(publication);
         ticket.setStatus(COMPLETED);
         var request = authorizedUserCompletesTicket(ticket);
@@ -141,24 +141,12 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
     }
 
-    private void mockBadResponseFromDoiRegistrar(URI doi) {
-        stubFor(WireMock.get(urlPathEqualTo("/draft/" + doiPrefix(doi) + "/" + doiSuffix(doi)))
-                    .willReturn(aResponse().withBody("[]").withStatus(HTTP_BAD_GATEWAY)));
-    }
-
-    private String doiSuffix(URI doi) {
-        return doi.getPath().split("/")[2];
-    }
-
-    private String doiPrefix(URI doi) {
-        return doi.getPath().split("/")[1];
-    }
-
     @Test
     void shouldDeleteDraftDoiAndUpdatePublicationSuccessfully()
         throws IOException, ApiGatewayException {
         this.handler = new UpdateTicketStatusHandler(ticketService, resourceService, new FakeDoiClient());
-        var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
+                                                                            resourceService);
         var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
@@ -248,7 +236,20 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
-    private Publication updatePublicationStatus(Publication publication, PublicationStatus newPublicationStatus)
+    private void mockBadResponseFromDoiRegistrar(URI doi) {
+        stubFor(WireMock.get(urlPathEqualTo("/draft/" + doiPrefix(doi) + "/" + doiSuffix(doi)))
+                    .willReturn(aResponse().withBody("[]").withStatus(HTTP_BAD_GATEWAY)));
+    }
+
+    private String doiSuffix(URI doi) {
+        return doi.getPath().split("/")[2];
+    }
+
+    private String doiPrefix(URI doi) {
+        return doi.getPath().split("/")[1];
+    }
+
+    private void updatePublicationStatus(Publication publication, PublicationStatus newPublicationStatus)
         throws ApiGatewayException {
         if (PublicationStatus.PUBLISHED.equals(newPublicationStatus)) {
             resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
@@ -256,7 +257,6 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
             resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
                                                        publication.getIdentifier());
         }
-        return resourceService.getPublication(publication);
     }
 
     private InputStream authorizedUserInputMalformedIdentifier(String publicationIdentifier, String ticketIdentifier)
@@ -265,7 +265,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(DoiRequestDto.empty())
                    .withAccessRights(customer, AccessRight.APPROVE_DOI_REQUEST.toString())
-                   .withCustomerId(customer)
+                   .withCurrentCustomer(customer)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               publicationIdentifier,
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME, ticketIdentifier))
@@ -282,7 +282,8 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(TicketDto.fromTicket(ticket))
                    .withAccessRights(customer, accessRight.toString())
-                   .withCustomerId(customer)
+                   .withCurrentCustomer(customer)
+                   .withUserName(USER_NAME)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               ticket.extractPublicationIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,

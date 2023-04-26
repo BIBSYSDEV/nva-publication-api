@@ -182,7 +182,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertThat(ticket.get().getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(), is(equalTo(TicketStatus.PENDING)));
     }
 
     @Test
@@ -252,7 +252,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         when(getExternalClientResponse.getCustomerUri()).thenReturn(publication.getPublisher().getId());
-        when(getExternalClientResponse.getActingUser()).thenReturn(publication.getResourceOwner().getOwner());
+        when(getExternalClientResponse.getActingUser()).thenReturn(publication.getResourceOwner().getOwner().getValue());
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -463,7 +463,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withPathParameters(pathParameters)
-                   .withCustomerId(randomUri())
+                   .withCurrentCustomer(randomUri())
                    .withBody(publicationUpdate)
                    .build();
     }
@@ -474,10 +474,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         URI customerId = randomUri();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withPathParameters(pathParameters)
-                   .withCustomerId(customerId)
+                   .withCurrentCustomer(customerId)
                    .withBody(publicationUpdate)
                    .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
-                   .withNvaUsername(SOME_CURATOR)
+                   .withUserName(SOME_CURATOR)
                    .build();
     }
 
@@ -486,9 +486,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-                   .withNvaUsername(SOME_CURATOR)
+                   .withUserName(SOME_CURATOR)
                    .withPathParameters(pathParameters)
-                   .withCustomerId(customerId)
+                   .withCurrentCustomer(customerId)
                    .withBody(publicationUpdate)
                    .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
                    .build();
@@ -501,8 +501,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-                   .withNvaUsername(publicationUpdate.getResourceOwner().getOwner())
-                   .withCustomerId(customerId)
+                   .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
+                   .withCurrentCustomer(customerId)
                    .withBody(publicationUpdate)
                    .withPathParameters(pathParameters)
                    .build();

@@ -21,7 +21,6 @@ public class AffiliationGenerator {
 
     public static final String AFFILIATION_TEMPLATE = "framed-json/affiliation_template.json";
     public static final String ID_FIELD = "id";
-    public static final String NAME_FIELD = "name";
     public static final String HAS_PART_FIELD = "hasPart";
     public static final String PART_OF_FIELD = "partOf";
     private static final String CONTEXT = "https://bibsysdev.github.io/src/organization-context.json";

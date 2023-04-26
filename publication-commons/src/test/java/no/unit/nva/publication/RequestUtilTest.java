@@ -106,7 +106,7 @@ class RequestUtilTest {
 
         RequestInfo requestInfo = mock(RequestInfo.class);
         when(requestInfo.getCurrentCustomer()).thenReturn(customer);
-        when(requestInfo.getNvaUsername()).thenReturn(username);
+        when(requestInfo.getUserName()).thenReturn(username);
 
 
         var userInstance = RequestUtil.createInternalUserInstance(requestInfo);

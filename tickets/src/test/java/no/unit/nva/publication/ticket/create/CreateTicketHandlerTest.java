@@ -5,9 +5,12 @@ import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
@@ -42,6 +45,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -194,7 +198,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(publication.getResourceOwner().getOwner(), randomUri());
+        var user = UserInstance.create(getResourceOwner(publication).getValue(), randomUri());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
         handler.handleRequest(input, output, CONTEXT);
 
@@ -265,8 +269,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistedPublishedPublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(DoiRequest.class);
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
-                                                                                                                  secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithUnresolvableClient(),
+                                                            secretsManagerClient));
         this.handler = new CreateTicketHandler(resourceService, ticketResolver);
         var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(firstRequest, output, CONTEXT);
@@ -276,8 +281,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var createdTicket = fetchTicket(response).copy();
         var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         output = new ByteArrayOutputStream();
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
-                                                                                                                  secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithUnresolvableClient(),
+                                                            secretsManagerClient));
         this.handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(secondRequest, output, CONTEXT);
 
@@ -341,85 +347,91 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldPublishPublicationAndSetTicketStatusToApprovedWhenCustomerAllowsPublishing()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublication(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
-                                                                                                                  secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(COMPLETED)));
     }
 
     @Test
     void shouldSetTicketWorkflowWhenCustomerAllowsPublishingMetadataOnly()
-            throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
-                secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
+                                                            secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
-        assertThat(getTicketPublishingWorkflow(publication), is(equalTo(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
+        assertThat(getTicketPublishingWorkflow(publication),
+                   is(equalTo(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
     }
 
     @Test
     void shouldSetTicketWorkflowWhenCustomerRequiresApprovalForMetadataAndFiles()
-            throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithPublisherRequiringApproval(),
-                secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherRequiringApproval(),
+                                                            secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
-        assertThat(getTicketPublishingWorkflow(publication), is(equalTo(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
+        assertThat(getTicketPublishingWorkflow(publication),
+                   is(equalTo(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)));
     }
 
     @Test
     void shouldPublishPublicationAndFileAndSetTicketStatusToApprovedWhenCustomerAllowsPublishing()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PublicationStatus.DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
-                                                                                                                  secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
         assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(PublishedFile.class)));
-        assertThat(publishedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
+        assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(COMPLETED)));
     }
 
     @Test
     void shouldPublishPublicationButNotFilesWhenCustomerAllowsPublishingMetadataOnly()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PublicationStatus.DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
-                                                                                            secretsManagerClient));
+                                                            secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
         assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(UnpublishedFile.class)));
-        assertThat(publishedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
     }
 
@@ -427,7 +439,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     void shouldPublishPublicationButNotFileWhenFileIsAdministrativeAgreement()
         throws ApiGatewayException, IOException {
         var publication =
-            TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(PublicationStatus.DRAFT,
+            TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(DRAFT,
                                                                                   resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
@@ -440,32 +452,36 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
         assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(AdministrativeAgreement.class)));
-        assertThat(publishedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
+        assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(COMPLETED)));
     }
 
     @Test
-    void shouldReturnInternalErrorWhenHttpClientWithNonResolvablePublishingWorkflow() throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+    void shouldReturnInternalErrorWhenHttpClientWithNonResolvablePublishingWorkflow()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithNonResolvedPublishingWorkflow(),
-                secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithNonResolvedPublishingWorkflow(),
+                                                            secretsManagerClient));
         this.handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)));
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
     }
 
     @Test
-    void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow() throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+    void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
-        ticketResolver = new TicketResolver(resourceService, ticketService, getUriRetriever(getHttpClientWithUnresolvableClient(),
-                secretsManagerClient));
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithUnresolvableClient(),
+                                                            secretsManagerClient));
         this.handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
 
@@ -475,7 +491,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var problem = response.getBodyObject(Problem.class);
 
         assertThat(problem.getDetail(), is(equalTo("Unable to fetch customer publishing workflow from upstream")));
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
+    }
+
+    private static Username getResourceOwner(Publication publication) {
+        return publication.getResourceOwner().getOwner();
     }
 
     private static List<AssociatedArtifact> getAssociatedFiles(Publication publishedPublication) {
@@ -483,7 +503,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .stream()
                    .filter(artifact -> artifact instanceof File)
                    .collect(Collectors.toList());
-
     }
 
     private static FakeHttpClient<String> getHttpClientWithUnresolvableClient() {
@@ -498,12 +517,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     private static FakeHttpClient<String> getHttpClientWithCustomerAllowingPublishingMetadataOnly() {
         return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
-                mockIdentityServiceResponseCustomerAllowingPublishingMetadataOnly());
+                                    mockIdentityServiceResponseCustomerAllowingPublishingMetadataOnly());
     }
 
     private static FakeHttpClient<String> getHttpClientWithPublisherRequiringApproval() {
         return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
-                mockIdentityServiceResponseForCustomerRequiringApprovalForPublishing());
+                                    mockIdentityServiceResponseForCustomerRequiringApprovalForPublishing());
     }
 
     private static FakeHttpClient<String> getHttpClientWithNonResolvedPublishingWorkflow() {
@@ -522,23 +541,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     private static FakeHttpResponse<String> mockIdentityServiceResponseCustomerAllowingPublishingMetadataOnly() {
-        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing_metadata_only.json")),
-                HTTP_OK);
+        return FakeHttpResponse.create(
+            IoUtils.stringFromResources(Path.of("customer_allowing_publishing_metadata_only.json")),
+            HTTP_OK);
     }
 
     private static FakeHttpResponse<String> mockIdentityServiceResponseForCustomerRequiringApprovalForPublishing() {
-        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_requires_approval_for_publishing.json")),
-                HTTP_OK);
-    }
-
-    private PublishingWorkflow getTicketPublishingWorkflow(Publication publication) {
-        return getPublishingRequestCase(publication).getWorkflow();
-    }
-
-    private PublishingRequestCase getPublishingRequestCase(Publication publication) {
-        return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
-                publication.getIdentifier(),
-                PublishingRequestCase.class).get();
+        return FakeHttpResponse.create(
+            IoUtils.stringFromResources(Path.of("customer_requires_approval_for_publishing.json")),
+            HTTP_OK);
     }
 
     private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
@@ -563,6 +574,16 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     private static FakeHttpResponse<String> unresolvableCustomer() {
         return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
+    }
+
+    private PublishingWorkflow getTicketPublishingWorkflow(Publication publication) {
+        return getPublishingRequestCase(publication).getWorkflow();
+    }
+
+    private PublishingRequestCase getPublishingRequestCase(Publication publication) {
+        return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                             publication.getIdentifier(),
+                                                             PublishingRequestCase.class).orElse(null);
     }
 
     private AuthorizedBackendUriRetriever getUriRetriever(FakeHttpClient<String> httpClient,

@@ -22,7 +22,7 @@ public final class ReserveDoiRequestValidator {
     }
 
     private static boolean userIsNotOwnerOfPublication(String owner, Publication publication) {
-        return !owner.equals(publication.getResourceOwner().getOwner());
+        return !owner.equals(publication.getResourceOwner().getOwner().getValue());
     }
 
     private static boolean isNotADraft(Publication publication) {

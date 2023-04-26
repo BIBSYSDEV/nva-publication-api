@@ -28,6 +28,7 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -81,8 +82,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(
                                           singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                                      .withNvaUsername(publication.getResourceOwner().getOwner())
-                                      .withCustomerId(publication.getPublisher().getId())
+                                      .withUserName(publication.getResourceOwner().getOwner().getValue())
+                                      .withCurrentCustomer(publication.getPublisher().getId())
                                       .build();
         
         handler.handleRequest(inputStream, outputStream, context);
@@ -120,8 +121,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(
                                           singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                                      .withNvaUsername(publication.getResourceOwner().getOwner())
-                                      .withCustomerId(publication.getPublisher().getId())
+                                      .withUserName(publication.getResourceOwner().getOwner().getValue())
+                                      .withCurrentCustomer(publication.getPublisher().getId())
                                       .build();
         
         handler.handleRequest(inputStream, outputStream, context);
@@ -137,8 +138,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, identifier.toString()))
-                                      .withCustomerId(SOME_CUSTOMER)
-                                      .withNvaUsername(SOME_USER)
+                                      .withCurrentCustomer(SOME_CUSTOMER)
+                                      .withUserName(SOME_USER)
                                       .build();
         
         handler.handleRequest(inputStream, outputStream, context);
@@ -155,8 +156,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
                                           createdPublication.getIdentifier().toString()))
-                                      .withNvaUsername(SOME_USER)
-                                      .withCustomerId(createdPublication.getPublisher().getId())
+                                      .withUserName(SOME_USER)
+                                      .withCurrentCustomer(createdPublication.getPublisher().getId())
                                       .build();
         
         handler.handleRequest(inputStream, outputStream, context);
@@ -218,8 +219,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(
                                           singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                                      .withNvaUsername(publication.getResourceOwner().getOwner())
-                                      .withCustomerId(publication.getPublisher().getId())
+                                      .withUserName(publication.getResourceOwner().getOwner().getValue())
+                                      .withCurrentCustomer(publication.getPublisher().getId())
                                       .build();
         
         handler.handleRequest(inputStream, outputStream, context);
@@ -253,14 +254,14 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createPublication() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance =
-            UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
+            UserInstance.create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
 
     private Publication createPublicationWithExternalOwner() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         var owner = new ResourceOwner(
-            getExternalClientResponse.getActingUser(),
+            new Username(getExternalClientResponse.getActingUser()),
             getExternalClientResponse.getCristinUrgUri()
         );
         var userInstance =
@@ -269,11 +270,11 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private UserInstance createUserInstance(Publication publication) {
-        return UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
     }
     
     private void markForDeletion(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner(),
+        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner().getValue(),
             publication.getPublisher().getId());
         publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
     }
