@@ -164,12 +164,6 @@ public class ResourceService extends ServiceWithTransactions {
         throws ApiGatewayException {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
-
-    public PublishPublicationStatusResponse publishPublicationMetadata(UserInstance userInstance,
-                                                               SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        return updateResourceService.publishPublicationMetadata(userInstance, resourceIdentifier);
-    }
     
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {

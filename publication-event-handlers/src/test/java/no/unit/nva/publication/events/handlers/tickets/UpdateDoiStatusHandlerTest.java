@@ -1,6 +1,8 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusProcess.DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION;
 import static no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusProcess.ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -134,6 +136,38 @@ class UpdateDoiStatusHandlerTest {
                                                () -> handler.handleRequest(eventInputStream, outputStream, context));
             assertThat(actualException.getMessage(), containsString(expectedMessage));
             assertThat(testAppender.getMessages(), containsString(expectedMessage));
+        }
+    }
+
+    @Test
+    void handlerLogsExceptionWhenPublicationAlreadyHasDoiAndDoiIsDifferent() throws NotFoundException, IOException {
+        final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
+        Publication publication = new Builder()
+                                      .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
+                                      .withDoi(randomDoi())
+                                      .build();
+        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
+
+        try (var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT)) {
+            var actualException = assertThrows(RuntimeException.class,
+                                               () -> handler.handleRequest(eventInputStream, outputStream, context));
+            assertThat(actualException.getMessage(), containsString(DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION));
+            assertThat(testAppender.getMessages(), containsString(DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION));
+        }
+    }
+
+    @Test
+    void handlerLogsExceptionWhenUnknownErrorFetchingPublication() throws NotFoundException, IOException {
+        final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
+        var unknownExceptionMessage = "Unknown exception: ";
+        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenThrow(new RuntimeException(
+            unknownExceptionMessage));
+
+        try (var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT)) {
+            var actualException = assertThrows(RuntimeException.class,
+                                               () -> handler.handleRequest(eventInputStream, outputStream, context));
+            assertThat(actualException.getMessage(), containsString(unknownExceptionMessage));
+            assertThat(testAppender.getMessages(), containsString(unknownExceptionMessage));
         }
     }
 

@@ -12,7 +12,6 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -22,6 +21,7 @@ import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -57,30 +57,59 @@ public class AcceptedPublishingRequestEventHandler
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
 
+    // TODO: hasEffectiveChanges method should be implemented in a predecessor eventHandler.
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
-        var latestUpdate = parseInput(eventBlob);
-        if (TicketStatus.COMPLETED.equals(latestUpdate.getStatus()) && publicationIsNotPublished(latestUpdate)) {
-            publishPublication(latestUpdate);
+        var ticketUpdate = parseInput(eventBlob);
+        if (isCompleted(ticketUpdate) && hasEffectiveChanges(eventBlob)) {
+            publishPublicationAndFiles(ticketUpdate);
         }
         return null;
+    }
+
+    private static boolean isCompleted(PublishingRequestCase latestUpdate) {
+        return TicketStatus.COMPLETED.equals(latestUpdate.getStatus());
     }
 
     private static boolean hasDoi(Publication publication) {
         return nonNull(publication.getDoi());
     }
 
-    private void publishPublication(PublishingRequestCase latestUpdate) {
+    private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
+        var newStatus = updateEvent.getNewData().getStatusString();
+        var oldStatus = updateEvent.getOldData().getStatusString();
+        return oldStatus.equals(newStatus);
+    }
+
+    private boolean hasEffectiveChanges(String eventBlob) {
+        return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
+    }
+
+    private void publishPublicationAndFiles(PublishingRequestCase latestUpdate) {
         var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
         var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
         var updatedPublication = toPublicationWithPublishedFiles(publication);
-        attempt(() -> resourceService.updatePublication(updatedPublication));
+        if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
+            publishFiles(updatedPublication);
+        }
+        if (PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
+            latestUpdate.getWorkflow())) {
+            publishFiles(updatedPublication);
+            publishPublication(latestUpdate, userInstance);
+        }
+        createDoiRequestIfNeeded(updatedPublication);
+    }
+
+    private void publishPublication(PublishingRequestCase latestUpdate, UserInstance userInstance) {
         attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
             .orElse(fail -> logError(fail.getException()));
-        createDoiRequestIfNeeded(updatedPublication);
+    }
+
+    private void publishFiles(Publication updatedPublication) {
+        attempt(() -> resourceService.updatePublication(updatedPublication));
     }
 
     private Publication toPublicationWithPublishedFiles(Publication publication) {
@@ -102,12 +131,6 @@ public class AcceptedPublishingRequestEventHandler
         } else {
             return artifact;
         }
-    }
-
-    private boolean publicationIsNotPublished(PublishingRequestCase latestUpdate) {
-        var identifier = latestUpdate.getPublicationDetails().getIdentifier();
-        var publication = attempt(() -> resourceService.getPublicationByIdentifier(identifier)).orElseThrow();
-        return !PublicationStatus.PUBLISHED.equals(publication.getStatus());
     }
 
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier publicationIdentifier) {

@@ -43,10 +43,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     public static final String PUBLISH_COMPLETED = "Publication is published.";
 
-    public static final String PUBLISH_METADATA_COMPLETED = "Publication metadata is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
-    public static final String RESOURCE_LINK_FIELD = "link";
-    
+
     //TODO: fix affiliation update when updating owner
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
     public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
@@ -116,20 +114,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
     }
 
-    PublishPublicationStatusResponse publishPublicationMetadata(UserInstance userInstance,
-                                                                SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
-        if (publicationIsPublished(publication) || publicationMetadataPublished(publication)) {
-            return publishMetadataCompletedStatus();
-        } else if (publicationIsDraftOrPublishedMetadataOnly(publication)) {
-            publishPublicationMetadata(publication);
-            return publishingInProgressStatus();
-        } else {
-            throw new UnsupportedOperationException("Functionality not specified");
-        }
-    }
-
     DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
         throws NotFoundException {
         var publication =
@@ -154,10 +138,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
                                                    HttpURLConnection.HTTP_ACCEPTED);
     }
 
-    private boolean publicationMetadataPublished(Publication publication) {
-        return PublicationStatus.PUBLISHED_METADATA.equals(publication.getStatus());
-    }
-
     private static boolean publicationIsPublished(Publication publication) {
         var status = publication.getStatus();
         return PublicationStatus.PUBLISHED.equals(status);
@@ -171,13 +151,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private void publishPublication(Publication publication) throws InvalidPublicationException {
         assertThatPublicationHasMinimumMandatoryFields(publication);
         publication.setStatus(PublicationStatus.PUBLISHED);
-        publication.setPublishedDate(clockForTimestamps.instant());
-        updatePublicationIncludingStatus(publication);
-    }
-
-    private void publishPublicationMetadata(Publication publication) throws InvalidPublicationException {
-        assertThatPublicationHasMinimumMandatoryFields(publication);
-        publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
         publication.setPublishedDate(clockForTimestamps.instant());
         updatePublicationIncludingStatus(publication);
     }
@@ -240,9 +213,5 @@ public class UpdateResourceService extends ServiceWithTransactions {
     
     private PublishPublicationStatusResponse publishCompletedStatus() {
         return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
-    }
-
-    private PublishPublicationStatusResponse publishMetadataCompletedStatus() {
-        return new PublishPublicationStatusResponse(PUBLISH_METADATA_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
     }
 }

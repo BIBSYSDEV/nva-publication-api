@@ -445,7 +445,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldReturnBadGatewayWhenHttpClientWithNonResolvablePublishingWorkflow() throws ApiGatewayException, IOException {
+    void shouldReturnInternalErrorWhenHttpClientWithNonResolvablePublishingWorkflow() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
@@ -455,11 +455,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
-
-        var problem = response.getBodyObject(Problem.class);
-
-        assertThat(problem.getDetail(), is(equalTo("Unable to resolve customer publishing workflow")));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)));
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PublicationStatus.DRAFT)));
     }
 

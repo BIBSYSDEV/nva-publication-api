@@ -19,6 +19,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -33,16 +35,19 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     
     private ListTicketsForPublicationHandler handler;
-    
+    private MessageService messageService;
+
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new ListTicketsForPublicationHandler(resourceService);
+        this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService);
+        this.messageService = new MessageService(client);
     }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnAllTicketsForPublicationWhenUserIsThePublicationOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldReturnAllTicketsForPublicationWhenUserIsThePublicationOwner(Class<? extends TicketEntry> ticketType,
+                                                                           PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -53,8 +58,22 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws IOException, ApiGatewayException {
+    void shouldReturnAllTicketsWithMessagesForPublicationWhenTicketContainsMessages(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var expectedTicketDto = constructDto(createPersistedTicketWithMessage(ticketType, publication));
+
+        var request = ownerRequestsTicketsForPublication(publication);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+        assertThat(body.getTickets(), containsInAnyOrder(expectedTicketDto));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = nonOwnerRequestsTicketsForPublication(publication);
@@ -65,29 +84,43 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnAllTicketsForPublicationWhenUserIsElevatedUser(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldReturnAllTicketsForPublicationWhenUserIsElevatedUser(Class<? extends TicketEntry> ticketType,
+                                                                    PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = elevatedUserRequestsTicketsForPublication(publication);
-    
+
         handler.handleRequest(request, output, CONTEXT);
         assertThatResponseContainsExpectedTickets(ticket);
     }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenUserIsElevatedUserOfAlienOrganization(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldReturnForbiddenWhenUserIsElevatedUserOfAlienOrganization(Class<? extends TicketEntry> ticketType,
+                                                                        PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = elevatedUserOfAlienOrgRequestsTicketsForPublication(publication);
-        
+
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
-    
+
+    private TicketEntry createPersistedTicketWithMessage(Class<? extends TicketEntry> ticketType,
+                                                         Publication publication) throws ApiGatewayException {
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+        return ticket;
+    }
+
+    private TicketDto constructDto(TicketEntry ticketEntry) {
+        var messages = ticketEntry.fetchMessages(ticketService);
+        return TicketDto.fromTicket(ticketEntry, messages);
+    }
+
     private static InputStream ownerRequestsTicketsForPublication(Publication publication)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
@@ -96,7 +129,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withNvaUsername(publication.getResourceOwner().getOwner())
                    .build();
     }
-    
+
     private static InputStream nonOwnerRequestsTicketsForPublication(Publication publication)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
@@ -105,12 +138,12 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withNvaUsername(randomString())
                    .build();
     }
-    
+
     private static Map<String, String> constructPathParameters(Publication publication) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
             publication.getIdentifier().toString());
     }
-    
+
     private InputStream elevatedUserOfAlienOrgRequestsTicketsForPublication(Publication publication)
         throws JsonProcessingException {
         var customerId = randomUri();
