@@ -154,14 +154,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static JsonNode extractJsonLdContext(Publication publication) {
-        var jsonContext = ridiculousHackToGetRidOfMergingIssues(publication);
+        var jsonContext = publication.getJsonLdContext();
         return attempt(() -> dtoObjectMapper.readTree(jsonContext)).orElseThrow();
-    }
-
-    @Deprecated
-    private static String ridiculousHackToGetRidOfMergingIssues(Publication publication) {
-        return publication.getJsonLdContext().replace("https://nva.sikt.no/ontology/role#",
-                                                      "https://nva.sikt.no/ontology/publication#");
     }
 
     private static String getPublicationContextType(JsonNode root) {

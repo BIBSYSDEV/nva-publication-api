@@ -29,6 +29,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -53,7 +54,7 @@ import org.zalando.problem.Problem;
 @WireMockTest(httpsEnabled = true)
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
-    public static final String USER_NAME = randomString();
+    public static final Username USER_NAME = new Username(randomString());
     private UpdateTicketStatusHandler handler;
 
     @BeforeEach
@@ -77,6 +78,22 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         assertThat(actualTicket.getStatus(), is(equalTo(completedTicket.getStatus())));
         var modifiedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(modifiedPublication.getDoi(), is(notNullValue()));
+    }
+
+    @Test
+    void shouldSetFinalizedValuesWhenCuratorCompletesTheTicketEntry()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistAndPublishPublication();
+        assertThat(publication.getDoi(), is(nullValue()));
+        var ticket = createPersistedDoiTicket(publication);
+        var completedTicket = ticket.complete(publication);
+        var request = authorizedUserCompletesTicket(completedTicket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+        var actualTicket = ticketService.fetchTicket(ticket);
+        assertThat(actualTicket.getFinalizedBy(), is(equalTo(USER_NAME)));
+        assertThat(actualTicket.getFinalizedDate(), is(notNullValue()));
     }
 
     @Test
@@ -186,7 +203,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticketService.updateTicketStatus(ticket, COMPLETED);
+        var completedTicket = ticketService.updateTicketStatus(ticket, COMPLETED, USER_NAME);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -201,7 +218,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticketService.updateTicketStatus(ticket, COMPLETED);
+        ticketService.updateTicketStatus(ticket, COMPLETED, USER_NAME);
         ticket.setStatus(TicketStatus.PENDING);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
@@ -283,7 +300,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
                    .withBody(TicketDto.fromTicket(ticket))
                    .withAccessRights(customer, accessRight.toString())
                    .withCurrentCustomer(customer)
-                   .withUserName(USER_NAME)
+                   .withUserName(USER_NAME.getValue())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               ticket.extractPublicationIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
