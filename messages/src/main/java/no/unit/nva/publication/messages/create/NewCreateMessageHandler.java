@@ -71,7 +71,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     }
 
     private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo, User user) {
-        if (isNull(ticket.getAssignee()) && userIsElevatedUser(requestInfo) ) {
+        if (isNull(ticket.getAssignee()) && userIsElevatedUser(requestInfo)) {
             ticket.setAssignee(user);
         }
     }
