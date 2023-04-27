@@ -45,6 +45,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
@@ -98,7 +99,8 @@ public class ScopusConverter {
     public Publication generatePublication() {
         return new Publication.Builder()
                    .withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
-                   .withResourceOwner(new ResourceOwner("concurrencyT@unit.no", URI.create("https://www.example.org")))
+                   .withResourceOwner(new ResourceOwner(new Username("concurrencyT@unit.no"),
+                                                        URI.create("https://www.example.org")))
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
                    .withModifiedDate(Instant.now())

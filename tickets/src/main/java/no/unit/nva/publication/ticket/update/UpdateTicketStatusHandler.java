@@ -36,9 +36,9 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         = "Publication with identifier  %s, does not satisfy DOI requirements";
     public static final String COULD_NOT_CREATE_FINDABLE_DOI = "Could not create findable doi";
     private static final Logger logger = LoggerFactory.getLogger(UpdateTicketStatusHandler.class);
+    public static final String EXCEPTION_MESSAGE = "Creating findable doi failed with exception: {}";
     private final TicketService ticketService;
     private final ResourceService resourceService;
-
     private final DoiClient doiClient;
 
     @JacocoGenerated
@@ -125,7 +125,7 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
             var doi = doiClient.createFindableDoi(publication);
             updatePublication(publication, doi);
         } catch (Exception e) {
-            logger.error("Creating findable doi failed with exception: {}", e);
+            logger.error(EXCEPTION_MESSAGE,  e);
             throw new BadGatewayException(COULD_NOT_CREATE_FINDABLE_DOI);
         }
     }

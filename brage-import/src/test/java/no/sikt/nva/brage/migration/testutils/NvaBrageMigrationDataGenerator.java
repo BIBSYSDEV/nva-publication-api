@@ -41,6 +41,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
@@ -82,7 +83,7 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private static Function<ResourceOwner, no.unit.nva.model.ResourceOwner> generateResourceOwner() {
-        return resourceOwner -> new no.unit.nva.model.ResourceOwner(resourceOwner.getOwner(),
+        return resourceOwner -> new no.unit.nva.model.ResourceOwner(new Username(resourceOwner.getOwner()),
                                                                     resourceOwner.getOwnerAffiliation());
     }
 

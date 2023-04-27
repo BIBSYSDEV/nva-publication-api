@@ -224,7 +224,7 @@ public class GeneralSupportRequest extends TicketEntry {
     private static User extractOwner(Publication publication) {
         return Optional.of(publication).map(Publication::getResourceOwner)
                    .map(ResourceOwner::getOwner)
-                   .map(User::new)
+                   .map(owner -> new User(owner.getValue()))
                    .orElse(null);
     }
 }

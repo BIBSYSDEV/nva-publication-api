@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import nva.commons.core.JacocoGenerated;
 
 public class Owner {
@@ -31,12 +32,12 @@ public class Owner {
     
     public static Owner fromResourceOwner(ResourceOwner resourceOwner) {
         return Optional.ofNullable(resourceOwner)
-                   .map(owner -> new Owner(new User(owner.getOwner()), owner.getOwnerAffiliation()))
+                   .map(owner -> new Owner(new User(owner.getOwner().toString()), owner.getOwnerAffiliation()))
                    .orElse(null);
     }
     
     public ResourceOwner toResourceOwner() {
-        return new ResourceOwner(user.toString(), ownerAffiliation);
+        return new ResourceOwner(new Username(user.toString()), ownerAffiliation);
     }
     
     public User getUser() {

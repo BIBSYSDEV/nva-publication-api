@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import nva.commons.core.paths.UriWrapper;
 
 @Data
@@ -52,7 +53,7 @@ public class CristinLocale {
     private String groupIdentifier;
 
     public ResourceOwner toResourceOwner() {
-        return new ResourceOwner(extractOwner(), extractOwnerAffiliation());
+        return new ResourceOwner(new Username(extractOwner()), extractOwnerAffiliation());
     }
 
     private URI extractOwnerAffiliation() {

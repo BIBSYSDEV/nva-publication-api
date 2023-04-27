@@ -39,6 +39,7 @@ import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
@@ -230,7 +231,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
 
     private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException, BadRequestException {
         var publication = PublicationGenerator.randomPublication();
-        publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
+        publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
@@ -240,14 +241,14 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     private Publication createNotPersistedDraftPublication() {
         var publication = PublicationGenerator.randomPublication();
         publication.setDoi(null);
-        publication.setResourceOwner(new ResourceOwner(NOT_OWNER, randomUri()));
+        publication.setResourceOwner(new ResourceOwner(new Username(NOT_OWNER), randomUri()));
         return publication;
     }
 
     private Publication createPersistedDraftPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         publication.setDoi(null);
-        publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
+        publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
@@ -257,7 +258,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     private Publication createPersistedPublishedPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         publication.setDoi(null);
-        publication.setResourceOwner(new ResourceOwner(ReserveDoiHandlerTest.OWNER, randomUri()));
+        publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();

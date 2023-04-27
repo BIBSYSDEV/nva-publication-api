@@ -14,6 +14,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -33,8 +34,8 @@ class MessageDaoTest extends ResourcesLocalTest {
     public static final URI SAMPLE_ORG = URI.create("https://example.org/123");
     public static final String SAMPLE_OWNER_USERNAME = "some@owner";
     public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
-    public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SAMPLE_OWNER.getUsername(),
-        SAMPLE_OWNER.getOrganizationUri());
+    public static final ResourceOwner RANDOM_RESOURCE_OWNER =
+         new ResourceOwner(new Username(SAMPLE_OWNER.getUsername()), SAMPLE_OWNER.getOrganizationUri());
     private MessageService messageService;
     private TicketService ticketService;
     private ResourceService resourceService;

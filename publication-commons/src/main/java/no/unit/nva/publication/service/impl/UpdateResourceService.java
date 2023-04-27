@@ -23,6 +23,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -171,7 +172,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .copy()
                    .withPublisher(userOrganization(newOwner))
                    .withResourceOwner(Owner.fromResourceOwner(
-                       new ResourceOwner(newOwner.getUsername(), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
+                       new ResourceOwner(new Username(newOwner.getUsername()), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
                    .withModifiedDate(clockForTimestamps.instant())
                    .build();
     }
