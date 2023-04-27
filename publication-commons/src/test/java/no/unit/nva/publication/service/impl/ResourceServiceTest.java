@@ -123,6 +123,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
     public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
     public static final String RESOURCE_LACKS_DATA = "Resource does not have required data to be published:";
+    public static final String FINALIZED_DATE = "finalizedDate";
+    public static final String ASSIGNEE = "assignee";
+    public static final String FINALIZED_BY = "finalizedBy";
+    public static final String ASSIGNEE1 = "assignee";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -696,8 +700,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
             expectedDoiRequest.getPublicationDetails().update(Resource.fromPublication(updatedPublication)));
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
-
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE1, FINALIZED_BY,
+                                                                                  FINALIZED_DATE)));
     }
 
     @Test
@@ -712,8 +716,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(initialPublication, initialDoiRequest,
                                                                           publicationUpdate, updatedDoiRequest);
 
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+                                                                                  FINALIZED_DATE)));
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+                                                                                   FINALIZED_DATE)));
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }

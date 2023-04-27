@@ -9,7 +9,11 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 
 public final class StorageModelTestUtils {
-    
+
+    public static final String FINALIZED_DATE = "finalizedDate";
+    public static final String FINALIZED_BY = "finalizedBy";
+    public static final String ASSIGNEE = "assignee";
+
     private StorageModelTestUtils() {
     
     }
@@ -28,7 +32,7 @@ public final class StorageModelTestUtils {
         sample.setPublicationDetails(PublicationDetails.create(publication));
         sample.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         sample.setAssignee(null);
-        assertThat(sample, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
+        assertThat(sample, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
         return sample;
     }
     

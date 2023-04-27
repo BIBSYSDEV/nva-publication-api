@@ -31,13 +31,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class PublishingRequestDaoTest extends ResourcesLocalTest {
-    
+
+    public static final String FINALIZED_DATE = "data.finalizedDate";
     private static final String SAMPLE_USER = "some@onwer";
     private static final String SAMPLE_CUSTOMER_IDENTIFIER = "somePublsherId";
     private static final URI SAMPLE_CUSTOMER = URI.create("https://some.example.org/" + SAMPLE_CUSTOMER_IDENTIFIER);
     private static final UserInstance SAMPLE_USER_INSTANCE = UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER);
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
-    
+    public static final String DATA_ASSIGNEE = "data.assignee";
+    public static final String DATA_FINALIZED_BY = "data.finalizedBy";
+
     private ResourceService resourceService;
     private TicketService ticketService;
     
@@ -81,7 +84,8 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @Test
     void shouldCreateDaoWithoutLossOfInformation() {
         var aprDao = sampleApprovePublicationRequestDao();
-        assertThat(aprDao, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
+        assertThat(aprDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY,
+                                                                       FINALIZED_DATE)));
         var dynamoMap = aprDao.toDynamoFormat();
         var parsedDao = parseAttributeValuesMap(dynamoMap, aprDao.getClass());
         assertThat(parsedDao, is(equalTo(aprDao)));
@@ -94,7 +98,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
             publication.getIdentifier());
     
         var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
-        var persistedRequest = ticketService.createTicket(publishingRequest);
+        var persistedRequest = publishingRequest.persistNewTicket(ticketService);
         var queryResult = client.query(query);
         var retrievedByPublicationIdentifier = queryResult.getItems().stream()
                                                    .map(item -> parseAttributeValuesMap(item,

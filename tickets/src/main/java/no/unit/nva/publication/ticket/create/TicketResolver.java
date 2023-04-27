@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -47,12 +48,13 @@ public class TicketResolver {
         this.uriRetriever = uriRetriever;
     }
 
-    public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId)
+    public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId,
+                                               Username username)
         throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
             persistTicket(ticket);
-            return resolvePublishingRequest(ticket, publication, publishingRequestCase);
+            return resolvePublishingRequest(ticket, publication, publishingRequestCase, username);
         }
         return persistTicket(ticket);
     }
@@ -62,10 +64,10 @@ public class TicketResolver {
     }
 
     private TicketEntry resolvePublishingRequest(TicketEntry ticket, Publication publication,
-                                                 PublishingRequestCase publishingRequestCase)
+                                                 PublishingRequestCase publishingRequestCase, Username username)
         throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
-            approveTicket(ticket);
+            approveTicket(ticket, username);
             publishPublicationAndFiles(publication);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
@@ -74,8 +76,8 @@ public class TicketResolver {
         return ticket;
     }
 
-    private void approveTicket(TicketEntry ticket) throws ApiGatewayException {
-        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
+    private void approveTicket(TicketEntry ticket, Username username) throws ApiGatewayException {
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, username);
     }
 
     private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)
@@ -158,8 +160,7 @@ public class TicketResolver {
 
     private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
         if (isNotAdministrativeAgreement(artifact)) {
-            var file = (File) artifact;
-            return file.toPublishedFile();
+            return ((File) artifact).toPublishedFile();
         } else {
             return artifact;
         }

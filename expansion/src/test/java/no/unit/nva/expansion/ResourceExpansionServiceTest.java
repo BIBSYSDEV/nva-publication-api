@@ -58,12 +58,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static final Clock CLOCK = Clock.systemDefaultZone();
+    public static final String FINALIZED_DATE = "finalizedDate";
+    public static final String WORKFLOW = "workflow";
+    public static final String ASSIGNEE = "assignee";
+    public static final String FINALIZED_BY = "finalizedBy";
 
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
     private TicketService ticketService;
-    private UriRetriever uriRetriever;
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -99,8 +102,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var regeneratedTicket = expandedTicket.toTicketEntry();
 
-        assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of("workflow", "assignee")));
         assertThat(regeneratedTicket, is(equalTo(ticket)));
+        assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
+                                                                       FINALIZED_DATE)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
@@ -173,7 +177,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException, JsonProcessingException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication , ticketType, ticketService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
 
         var expectedTitle = publication.getEntityDescription().getMainTitle();
@@ -192,7 +196,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication , ticketType, ticketService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
         var expectedOrgIds = Set.of(publication.getResourceOwner().getOwnerAffiliation());
         var orgIds = expansionService.getOrganizationIds(ticket);
@@ -225,9 +229,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>) ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(
-                DoiRequest.class))
+    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
+        Class<? extends TicketEntry> ticketType) {
+        return (Class<? extends TicketEntry>)
+                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
             .findAny().orElseThrow();
     }
 
@@ -252,7 +257,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client);
         ticketService = new TicketService(client);
-        uriRetriever = mock(UriRetriever.class);
+        UriRetriever uriRetriever = mock(UriRetriever.class);
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 

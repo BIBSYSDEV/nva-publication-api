@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -89,13 +90,13 @@ public class TicketService extends ServiceWithTransactions {
 
     //TODO: should not return anything because we cannot return the persisted entry after a PUT
     // and right now we are returning the input object.
-    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus)
+    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, Username username)
         throws ApiGatewayException {
         switch (ticketStatus) {
             case COMPLETED:
-                return completeTicket(ticketEntry);
+                return completeTicket(ticketEntry, username);
             case CLOSED:
-                return closeTicket(ticketEntry);
+                return closeTicket(ticketEntry, username);
             default:
                 throw new BadRequestException("Cannot update to status " + ticketStatus);
         }
@@ -151,7 +152,7 @@ public class TicketService extends ServiceWithTransactions {
         ticketEntry.toDao().updateExistingEntry(getClient());
     }
 
-    protected TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+    protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
@@ -159,6 +160,7 @@ public class TicketService extends ServiceWithTransactions {
                 .orElseThrow(fail -> notFoundException());
 
         var completed = attempt(() -> existingTicket.complete(publication))
+                            .map(completedTicket -> completedTicket.finalize(username))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
@@ -166,11 +168,11 @@ public class TicketService extends ServiceWithTransactions {
         return completed;
     }
 
-    protected TicketEntry closeTicket(TicketEntry pendingTicket) throws ApiGatewayException {
+    protected TicketEntry closeTicket(TicketEntry pendingTicket, Username username) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
         resourceService.getPublicationByIdentifier(pendingTicket.extractPublicationIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
-        var closedTicket = persistedTicket.close();
+        var closedTicket = persistedTicket.close().finalize(username);
 
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();

@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
@@ -60,7 +59,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class DaoTest extends ResourcesLocalTest {
-    
+
+    public static final String DATA_FINALIZED_BY = "data.finalizedBy";
+    public static final String DATA_FINALIZED_DATE = "data.finalizedDate";
+    public static final String DATA_ASSIGNEE = "data.assignee";
+
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
     }
@@ -181,7 +184,8 @@ class DaoTest extends ResourcesLocalTest {
                 .withKey(originalResource.primaryKey()));
         Dao retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
         
-        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
+        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY,
+                                                                                 DATA_FINALIZED_DATE)));
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }
     
@@ -201,7 +205,8 @@ class DaoTest extends ResourcesLocalTest {
     @MethodSource("instanceProvider")
     void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
         
-        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
+        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY,
+                                                                            DATA_FINALIZED_DATE)));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
@@ -219,7 +224,7 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(dynamoMap, is(equalTo(savedMap)));
     
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
-        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(Set.of("data.assignee")));
+        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE)));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     
