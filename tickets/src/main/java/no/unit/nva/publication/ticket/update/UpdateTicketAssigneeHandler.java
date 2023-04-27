@@ -7,6 +7,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketConfig;
+import no.unit.nva.publication.ticket.TicketDto;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -17,7 +18,7 @@ import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<CreateAssigneeRequest, Void> {
+public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<Void, TicketDto> {
 
     private final TicketService ticketService;
     private static final Logger logger = LoggerFactory.getLogger(UpdateTicketAssigneeHandler.class);
@@ -29,12 +30,12 @@ public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<CreateAssigne
     }
 
     public UpdateTicketAssigneeHandler(TicketService ticketService) {
-        super(CreateAssigneeRequest.class);
+        super(Void.class);
         this.ticketService = ticketService;
     }
 
     @Override
-    protected Void processInput(CreateAssigneeRequest input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected TicketDto processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
 
@@ -42,14 +43,14 @@ public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<CreateAssigne
             throw new ForbiddenException();
         }
         var user = UserInstance.fromRequestInfo(requestInfo);
-        ticketService.updateTicketAssignee(ticket, input.getAssignee());
+        ticketService.updateTicketAssignee(ticket, user.getUser());
         logger.info("Assignee has been set to: {}:" , user.getUsername());
         logger.info("Username from requestInfo: {}:", requestInfo.getUserName());
         return null;
     }
 
     @Override
-    protected Integer getSuccessStatusCode(CreateAssigneeRequest input, Void output) {
+    protected Integer getSuccessStatusCode(Void input, TicketDto output) {
         return HTTP_ACCEPTED;
     }
 
