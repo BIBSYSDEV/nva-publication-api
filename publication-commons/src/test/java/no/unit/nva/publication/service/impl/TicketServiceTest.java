@@ -99,13 +99,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class TicketServiceTest extends ResourcesLocalTest {
 
-    public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
-    public static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
-    public static final Username USERNAME = new Username(randomString());
-    public static final String FINALIZED_DATE = "finalizedDate";
-    public static final String ASSIGNEE = "assignee";
-    public static final String FINALIZED_BY = "finalizedBy";
-    public static final String DOI = "doi";
+    private static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
+    private static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
+    private static final Username USERNAME = new Username(randomString());
+    private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String ASSIGNEE = "assignee";
+    private static final String FINALIZED_BY = "finalizedBy";
+    private static final String DOI = "doi";
 
     private ResourceService resourceService;
     private TicketService ticketService;

@@ -36,13 +36,13 @@ public abstract class TicketEntry implements Entity {
     public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED =
         "Can not create DoiRequest ticket for unpublished publication, use draft doi flow instead.";
-    public static final String VIEWED_BY_FIELD = "viewedBy";
+    private static final String VIEWED_BY_FIELD = "viewedBy";
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR =
         "Ticket without reference to publication";
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
-    public static final String FINALIZED_BY = "finalizedBy";
-    public static final String FINALIZED_DATE = "finalizedDate";
-    public static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
+    private static final String FINALIZED_BY = "finalizedBy";
+    private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(PUBLICATION_DETAILS_FIELD)

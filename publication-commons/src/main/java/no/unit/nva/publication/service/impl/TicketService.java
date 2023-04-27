@@ -90,13 +90,13 @@ public class TicketService extends ServiceWithTransactions {
 
     //TODO: should not return anything because we cannot return the persisted entry after a PUT
     // and right now we are returning the input object.
-    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, Username username)
+    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, Username finalizedBy)
         throws ApiGatewayException {
         switch (ticketStatus) {
             case COMPLETED:
-                return completeTicket(ticketEntry, username);
+                return completeTicket(ticketEntry, finalizedBy);
             case CLOSED:
-                return closeTicket(ticketEntry, username);
+                return closeTicket(ticketEntry, finalizedBy);
             default:
                 throw new BadRequestException("Cannot update to status " + ticketStatus);
         }

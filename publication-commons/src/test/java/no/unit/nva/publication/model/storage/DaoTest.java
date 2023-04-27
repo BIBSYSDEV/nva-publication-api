@@ -60,9 +60,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class DaoTest extends ResourcesLocalTest {
 
-    public static final String DATA_FINALIZED_BY = "data.finalizedBy";
-    public static final String DATA_FINALIZED_DATE = "data.finalizedDate";
-    public static final String DATA_ASSIGNEE = "data.assignee";
+    private static final String DATA_FINALIZED_BY = "data.finalizedBy";
+    private static final String DATA_FINALIZED_DATE = "data.finalizedDate";
+    private static final String DATA_ASSIGNEE = "data.assignee";
 
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);

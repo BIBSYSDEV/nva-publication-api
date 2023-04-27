@@ -1,25 +1,21 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static org.hamcrest.MatcherAssert.assertThat;
-import java.util.Set;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 
 public final class StorageModelTestUtils {
 
-    public static final String FINALIZED_DATE = "finalizedDate";
-    public static final String FINALIZED_BY = "finalizedBy";
-    public static final String ASSIGNEE = "assignee";
-
     private StorageModelTestUtils() {
-    
+
     }
-    
+
     public static PublishingRequestCase randomPublishingRequest(Publication publication) {
-        
+
         var userInstance = UserInstance.fromPublication(publication);
         var sample = new PublishingRequestCase();
         sample.setOwner(userInstance.getUser());
@@ -31,11 +27,12 @@ public final class StorageModelTestUtils {
         sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
         sample.setPublicationDetails(PublicationDetails.create(publication));
         sample.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        sample.setAssignee(null);
-        assertThat(sample, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+        sample.setAssignee(new User(randomString()));
+        sample.setFinalizedBy(new Username(randomString()));
+        sample.setFinalizedDate(Instant.now());
         return sample;
     }
-    
+
     public static PublishingRequestCase randomPublishingRequest() {
         var publication = randomPublication();
         return randomPublishingRequest(publication);

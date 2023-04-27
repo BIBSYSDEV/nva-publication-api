@@ -49,12 +49,12 @@ public class TicketResolver {
     }
 
     public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId,
-                                               Username username)
+                                               Username finalizedBy)
         throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
             persistTicket(ticket);
-            return resolvePublishingRequest(ticket, publication, publishingRequestCase, username);
+            return resolvePublishingRequest(ticket, publication, publishingRequestCase, finalizedBy);
         }
         return persistTicket(ticket);
     }

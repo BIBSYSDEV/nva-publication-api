@@ -57,11 +57,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
-    public static final Clock CLOCK = Clock.systemDefaultZone();
-    public static final String FINALIZED_DATE = "finalizedDate";
-    public static final String WORKFLOW = "workflow";
-    public static final String ASSIGNEE = "assignee";
-    public static final String FINALIZED_BY = "finalizedBy";
+    private static final Clock CLOCK = Clock.systemDefaultZone();
+    private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String WORKFLOW = "workflow";
+    private static final String ASSIGNEE = "assignee";
+    private static final String FINALIZED_BY = "finalizedBy";
 
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
