@@ -6,10 +6,10 @@ import no.unit.nva.model.Publication;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.List;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -19,17 +19,15 @@ public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, Stri
 
     private static final String HOST = ENVIRONMENT.readEnv("API_HOST");
     private static final String PATH = ENVIRONMENT.readEnv("CUSTOM_DOMAIN_BASE_PATH");
+    private static final URI BASE_URI = UriWrapper.fromHost(HOST).addChild(PATH).getUri();
 
     public FetchPublicationContextHandler() {
-        super(Void.class, new Environment());
+        super(Void.class);
     }
 
     @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        var baseUri = UriWrapper.fromHost(HOST)
-                .addChild(PATH)
-                .getUri();
-        return Publication.getJsonLdContext(baseUri);
+        return Publication.getJsonLdContext(BASE_URI);
     }
 
     @Override
