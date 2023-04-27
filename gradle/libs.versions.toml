@@ -107,7 +107,7 @@ jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.re
 jakarta-xml-bind-api = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version.ref = 'jakarta' }
 
 xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '3.0.2' }
-xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '3.0.2' }
+xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '4.0.2' }
 xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359' }
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
 xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
