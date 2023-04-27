@@ -196,5 +196,10 @@
   "topLevelOrganization": {
     "@container": "@set",
     "@embed": "@always"
+  },
+  "resourceOwner": {
+    "ownerAffiliation": {
+      "@embed": "@never"
+    }
   }
 }
