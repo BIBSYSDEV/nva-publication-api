@@ -505,6 +505,33 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+  /context:
+    get:
+      summary: Fetch Publication context
+      tags:
+        - external
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationContextFunction.Arn}:live/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationContext"
+            application/ld+json:
+              schema:
+                $ref: "#/components/schemas/PublicationContext"
+        '415':
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
 components:
   schemas:
     Publication:
@@ -723,6 +750,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Ticket"
+    PublicationContext:
+      type: object
+      description: Publication context
   securitySchemes:
     CognitoUserPool:
       type: apiKey

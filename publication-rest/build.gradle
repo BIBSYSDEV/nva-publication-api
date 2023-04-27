@@ -57,5 +57,6 @@ test {
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
     environment "API_HOST", "https://api-host.example.com"
+    environment "CUSTOM_DOMAIN_BASE_PATH", "publication"
 }
 
