@@ -104,25 +104,28 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
-    public static final String ANOTHER_OWNER = "another@owner.no";
-    public static final String SOME_OTHER_USER = "some_other@user.no";
-
-    public static final String UPDATED_TITLE = "UpdatedTitle";
-    public static final String SOME_INVALID_FIELD = "someInvalidField";
-    public static final String SOME_STRING = "someValue";
-    public static final String MAIN_TITLE_FIELD = "mainTitle";
-    public static final String ANOTHER_TITLE = "anotherTitle";
-    public static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
+    private static final String ANOTHER_OWNER = "another@owner.no";
+    private static final String SOME_OTHER_USER = "some_other@user.no";
+    private static final String UPDATED_TITLE = "UpdatedTitle";
+    private static final String SOME_INVALID_FIELD = "someInvalidField";
+    private static final String SOME_STRING = "someValue";
+    private static final String MAIN_TITLE_FIELD = "mainTitle";
+    private static final String ANOTHER_TITLE = "anotherTitle";
+    private static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
                                                                               + " does not have a field"
                                                                               + MAIN_TITLE_FIELD;
-    public static final Javers JAVERS = JaversBuilder.javers().build();
-    public static final int BIG_PAGE = 10;
-    public static final URI UNIMPORTANT_AFFILIATION = null;
-    public static final URI AFFILIATION_NOT_IMPORTANT = null;
+    private static final Javers JAVERS = JaversBuilder.javers().build();
+    private static final int BIG_PAGE = 10;
+    private static final URI UNIMPORTANT_AFFILIATION = null;
+    private static final URI AFFILIATION_NOT_IMPORTANT = null;
     private static final URI SOME_ORG = randomUri();
-    public static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
+    private static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    public static final String RESOURCE_LACKS_DATA = "Resource does not have required data to be published:";
+    private static final String RESOURCE_LACKS_DATA = "Resource does not have required data to be published:";
+    private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String ASSIGNEE = "assignee";
+    private static final String FINALIZED_BY = "finalizedBy";
+    private static final String ASSIGNEE1 = "assignee";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -696,8 +699,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
             expectedDoiRequest.getPublicationDetails().update(Resource.fromPublication(updatedPublication)));
         var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
-
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE1, FINALIZED_BY,
+                                                                                  FINALIZED_DATE)));
     }
 
     @Test
@@ -712,8 +715,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(initialPublication, initialDoiRequest,
                                                                           publicationUpdate, updatedDoiRequest);
 
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+                                                                                  FINALIZED_DATE)));
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+                                                                                   FINALIZED_DATE)));
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }

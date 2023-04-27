@@ -9,6 +9,7 @@ import java.net.http.HttpClient;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -69,8 +70,12 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         if (ticket instanceof DoiRequest) {
             doiTicketSideEffects(input, requestInfo);
         }
-        ticketService.updateTicketStatus(ticket, input.getStatus());
+        ticketService.updateTicketStatus(ticket, input.getStatus(), getUsername(requestInfo));
         return null;
+    }
+
+    private static Username getUsername(RequestInfo requestInfo) throws UnauthorizedException {
+        return new Username(requestInfo.getUserName());
     }
 
     @Override

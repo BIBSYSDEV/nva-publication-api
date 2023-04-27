@@ -13,6 +13,7 @@ import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -62,7 +63,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var ticketType = input.ticketType();
         var newTicket = TicketEntry.requestNewTicket(publication, ticketType);
         var customer = requestInfo.getCurrentCustomer();
-        var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer);
+        var username = new Username(requestInfo.getUserName());
+        var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer, username);
         var ticketLocation = createTicketLocation(publicationIdentifier, persistedTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
         return null;

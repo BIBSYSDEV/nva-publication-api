@@ -56,6 +56,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -414,9 +415,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
-        this.updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
-                                                                     identityServiceClient,
-                                                                     getUriRetriever(getHttpClientWithUnresolvableClient(), secretsManagerClient));
+        this.updatePublicationHandler = new UpdatePublicationHandler(
+            publicationService, ticketService, environment, identityServiceClient,
+            getUriRetriever(getHttpClientWithUnresolvableClient(), secretsManagerClient));
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         var problem = response.getBodyObject(Problem.class);
@@ -450,7 +451,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private TicketEntry persistCompletedPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
         var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
                                                            SortableIdentifier::next).persistNewTicket(ticketService);
-        return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
+        return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, new Username(randomString()));
     }
 
     private Publication createSamplePublication() throws BadRequestException {

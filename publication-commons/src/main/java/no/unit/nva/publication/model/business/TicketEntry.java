@@ -19,13 +19,14 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
@@ -35,16 +36,23 @@ public abstract class TicketEntry implements Entity {
     public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED =
         "Can not create DoiRequest ticket for unpublished publication, use draft doi flow instead.";
-    public static final String VIEWED_BY_FIELD = "viewedBy";
+    private static final String VIEWED_BY_FIELD = "viewedBy";
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR =
         "Ticket without reference to publication";
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
+    private static final String FINALIZED_BY = "finalizedBy";
+    private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(PUBLICATION_DETAILS_FIELD)
     private PublicationDetails publicationDetails;
-    @JsonProperty("resourceIdentifier")
+    @JsonProperty(RESOURCE_IDENTIFIER)
     private SortableIdentifier resourceIdentifier;
+    @JsonProperty(FINALIZED_BY)
+    private Username finalizedBy;
+    @JsonProperty(FINALIZED_DATE)
+    private Instant finalizedDate;
 
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -113,6 +121,22 @@ public abstract class TicketEntry implements Entity {
         this.resourceIdentifier = resourceIdentifier;
     }
 
+    public Username getFinalizedBy() {
+        return finalizedBy;
+    }
+
+    public Instant getFinalizedDate() {
+        return finalizedDate;
+    }
+
+    public void setFinalizedBy(Username finalizedBy) {
+        this.finalizedBy = finalizedBy;
+    }
+
+    public void setFinalizedDate(Instant finalizedDate) {
+        this.finalizedDate = finalizedDate;
+    }
+
     public Set<User> getViewedBy() {
         return nonNull(viewedBy) ? viewedBy : Collections.emptySet();
     }
@@ -141,6 +165,13 @@ public abstract class TicketEntry implements Entity {
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
         updated.setModifiedDate(Instant.now());
+        return updated;
+    }
+
+    public TicketEntry finalize(Username username) {
+        var updated = this.copy();
+        updated.setFinalizedBy(username);
+        updated.setFinalizedDate(Instant.now());
         return updated;
     }
 

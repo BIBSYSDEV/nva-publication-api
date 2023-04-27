@@ -28,7 +28,6 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -38,8 +37,7 @@ import org.junit.jupiter.params.provider.Arguments;
 
 public final class TicketTestUtils {
 
-    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED,
-                                                                            PUBLISHED_METADATA);
+    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
 
     public static Stream<Arguments> ticketTypeAndPublicationStatusProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, PUBLISHED),
@@ -65,8 +63,7 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
-    public static Publication createPersistedPublicationWithAdministrativeAgreement(PublicationStatus status,
-                                                                             ResourceService resourceService)
+    public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of(administrativeAgreement())).build();
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
@@ -133,16 +130,6 @@ public final class TicketTestUtils {
                    .persistNewTicket(ticketService).close();
     }
 
-    public static TicketEntry createCompletedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
-                                                    TicketService ticketService)
-        throws ApiGatewayException {
-        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                         .persistNewTicket(ticketService);
-        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED);
-
-        return ticketService.fetchTicket(ticket);
-    }
-
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
@@ -179,7 +166,7 @@ public final class TicketTestUtils {
         return publication;
     }
 
-    private static Publication unpublishFiles(Publication publication) {
+    private static void unpublishFiles(Publication publication) {
         var list = publication.getAssociatedArtifacts()
                        .stream()
                        .filter(artifact -> artifact instanceof File)
@@ -187,8 +174,6 @@ public final class TicketTestUtils {
                        .map(File::toUnpublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
-
-        return publication;
     }
 
     private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {
