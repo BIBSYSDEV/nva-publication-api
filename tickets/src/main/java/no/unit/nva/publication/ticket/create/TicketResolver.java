@@ -91,8 +91,8 @@ public class TicketResolver {
         throws BadGatewayException {
         var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
                            .orElseThrow(this::createBadGatewayException);
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
-                                                                 CustomerPublishingWorkflowResponse.class)).orElseThrow();
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CustomerPublishingWorkflowResponse.class))
+                   .orElseThrow();
     }
 
     private boolean isPublishingRequestCase(TicketEntry ticket) {

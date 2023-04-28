@@ -1,50 +1,15 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.CUSTOMER_ID;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.PUBLICATION_ID;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.DOI_REQUEST_HAS_NO_IDENTIFIER;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HANDLER_DOES_NOT_DEAL_WITH_DELETIONS;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.MIN_INTERVAL_FOR_REREQUESTING_A_DOI;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NVA_API_DOMAIN;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.time.Clock;
-import java.util.function.Function;
-import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.exception.InvalidInputException;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
@@ -63,8 +28,30 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.time.Clock;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.*;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.*;
+import static no.unit.nva.testutils.RandomDataGenerator.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
 class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
+    public static final Username USERNAME = new Username(randomString());
     private DoiRequestEventProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
@@ -93,7 +80,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateThatCannotBeReferenced()
-        throws ApiGatewayException, IOException {
+            throws ApiGatewayException, IOException {
 
         var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutIdentifier.setIdentifier(null);
@@ -116,7 +103,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutReferenceToResource()
-        throws ApiGatewayException, IOException {
+            throws ApiGatewayException, IOException {
 
         var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
         doiRequestWithoutResourceIdentifier.setPublicationDetails(null);
@@ -129,7 +116,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
-        throws IOException, BadRequestException {
+            throws IOException, BadRequestException {
         //Given a publication has a public Doi
         var publication = persistPublicationWithDoi();
         var publicationUpdate = updateTitle(publication);
@@ -147,11 +134,11 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void handlerCreatesUpdateDoiEventWhenPublicationHasAFindableDoi()
-        throws IOException {
+            throws IOException {
         var publication = randomPublishedPublication();
         var updatedPublication = updateTitle(publication);
         var event = createEvent(Resource.fromPublication(publication),
-                                Resource.fromPublication(updatedPublication));
+                Resource.fromPublication(updatedPublication));
         this.httpClient = new FakeHttpClient<>(findableDoiResponse());
         this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
 
@@ -162,18 +149,18 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var expectedPublicationId = inferExpectedPublicationId(publication);
         var expectedCustomerId = extractExpectedCustomerId(publication);
         assertThat(actual, allOf(
-            hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
-            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
+                hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
+                hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
 
     @Test
     void shouldCreateUpdateEventWhenPublicationHasNoDoiAndADraftDoiRequestGetsApproved()
-        throws IOException,
-               ApiGatewayException {
+            throws IOException,
+            ApiGatewayException {
         var publication = persistPublicationWithoutDoi(PublicationStatus.PUBLISHED);
         var draftRequest = DoiRequest.fromPublication(publication);
-        var approvedRequest = draftRequest.complete(publication);
+        var approvedRequest = draftRequest.complete(publication, USERNAME);
         var event = createEvent(draftRequest, approvedRequest);
 
         handler.handleRequest(event, outputStream, context);
@@ -182,8 +169,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var expectedPublicationId = inferExpectedPublicationId(publication);
         var expectedCustomerId = extractExpectedCustomerId(publication);
         assertThat(actual, allOf(
-            hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
-            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
+                hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
+                hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
         );
     }
 
@@ -194,8 +181,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         assertThat(publication.getModifiedDate(), is(not(equalTo(publicationUpdate.getModifiedDate()))));
 
         var updateEvent = createEvent(
-            Resource.fromPublication(publication),
-            Resource.fromPublication(publicationUpdate));
+                Resource.fromPublication(publication),
+                Resource.fromPublication(publicationUpdate));
         handler.handleRequest(updateEvent, outputStream, context);
 
         var emittedEvent = outputToPublicationHolder(outputStream);
@@ -205,7 +192,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws IOException, BadRequestException {
+            throws IOException, BadRequestException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);
@@ -217,7 +204,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotSendRequestForDraftingADoiWhenThereHasBeenVeryRecentPreviousDoiRequestButNoDoiHasBeenCreated()
-        throws ApiGatewayException, IOException {
+            throws ApiGatewayException, IOException {
         var publication = persistPublicationWithoutDoi();
         var oldDoiRequest = DoiRequest.fromPublication(publication);
         var tooShortIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.minusSeconds(1);
@@ -235,7 +222,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var publication = createPublicationWithAllRequiredFieldsSetToFaulty();
         var updatedPublication = updateDescription(publication);
         var event = createEvent(Resource.fromPublication(publication),
-                                Resource.fromPublication(updatedPublication));
+                Resource.fromPublication(updatedPublication));
         this.httpClient = new FakeHttpClient<>(findableDoiResponse());
         this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
 
@@ -274,9 +261,9 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     private URI inferExpectedPublicationId(Publication publication) {
         return UriWrapper.fromUri(NVA_API_DOMAIN)
-                   .addChild("publication")
-                   .addChild(publication.getIdentifier().toString())
-                   .getUri();
+                .addChild("publication")
+                .addChild(publication.getIdentifier().toString())
+                .getUri();
     }
 
     private InputStream createEvent(Entity oldImage, Entity newImage) throws IOException {
@@ -307,7 +294,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
         if (PublicationStatus.PUBLISHED.equals(publicationStatus)) {
             resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                               persistedPublication.getIdentifier());
+                    persistedPublication.getIdentifier());
         }
         return resourceService.getPublication(persistedPublication);
     }
@@ -329,11 +316,11 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     private Publication persistPublication(Publication publication) throws BadRequestException {
         return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
+                UserInstance.fromPublication(publication));
     }
 
     private DoiMetadataUpdateEvent outputToPublicationHolder(ByteArrayOutputStream outputStream)
-        throws JsonProcessingException {
+            throws JsonProcessingException {
         String outputString = outputStream.toString();
         return objectMapper.readValue(outputString, DoiMetadataUpdateEvent.class);
     }
