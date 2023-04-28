@@ -3,9 +3,6 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -18,6 +15,10 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.Set;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
@@ -36,7 +37,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     private URI customerId;
     @JsonProperty
     private User owner;
-    
     @JsonProperty("doi")
     private URI doi;
     @JsonProperty(ORGANIZATION_IDS_FIELD)
@@ -77,6 +77,8 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     public URI getCustomerId() {
         return customerId;
     }
+
+
     
     @JacocoGenerated
     public void setCustomerId(URI customerId) {
@@ -114,6 +116,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
     }
+
     
     @Override
     public DoiRequest toTicketEntry() {
@@ -154,16 +157,18 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
     private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService) {
         var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
-        ExpandedDoiRequest request = new ExpandedDoiRequest();
-        request.setPublication(publicationSummary);
-        request.setCreatedDate(doiRequest.getCreatedDate());
-        request.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
-        request.setCustomerId(doiRequest.getCustomerId());
-        request.setModifiedDate(doiRequest.getModifiedDate());
-        request.setOwner(doiRequest.getOwner());
-        request.setStatus(doiRequest.getStatus());
-        request.setViewedBy(doiRequest.getViewedBy());
-        request.setPublication(publicationSummary);
-        return request;
+        ExpandedDoiRequest entry = new ExpandedDoiRequest();
+        entry.setPublication(publicationSummary);
+        entry.setCreatedDate(doiRequest.getCreatedDate());
+        entry.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
+        entry.setCustomerId(doiRequest.getCustomerId());
+        entry.setModifiedDate(doiRequest.getModifiedDate());
+        entry.setOwner(doiRequest.getOwner());
+        entry.setStatus(doiRequest.getStatus());
+        entry.setViewedBy(doiRequest.getViewedBy());
+        entry.setPublication(publicationSummary);
+        entry.setFinalizedBy(doiRequest.getFinalizedBy());
+        entry.setOwner(doiRequest.getOwner());
+        return entry;
     }
 }

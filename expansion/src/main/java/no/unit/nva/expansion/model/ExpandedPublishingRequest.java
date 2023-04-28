@@ -1,28 +1,30 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublicationDetails;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JacocoGenerated;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import no.unit.nva.expansion.ResourceExpansionService;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JacocoGenerated;
+
+import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class ExpandedPublishingRequest extends ExpandedTicket {
     
@@ -37,7 +39,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private User owner;
     private Instant modifiedDate;
     private Instant createdDate;
-
     private PublishingWorkflow workflow;
     
     public ExpandedPublishingRequest() {
@@ -83,6 +84,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         publishingRequest.setModifiedDate(this.getModifiedDate());
         publishingRequest.setCreatedDate(this.getCreatedDate());
         publishingRequest.setStatus(this.getStatus());
+        publishingRequest.setFinalizedBy(this.getFinalizedBy());
         return publishingRequest;
     }
     
@@ -157,6 +159,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setMessages(messages);
         entry.setViewedBy(dataEntry.getViewedBy());
         entry.setWorkflow(workflow);
+        entry.setFinalizedBy(dataEntry.getFinalizedBy());
         return entry;
     }
     
