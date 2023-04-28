@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
 import static nva.commons.core.attempt.Try.attempt;
@@ -18,7 +19,6 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -152,15 +152,25 @@ public class TicketService extends ServiceWithTransactions {
         ticketEntry.toDao().updateExistingEntry(getClient());
     }
 
+    public TicketEntry updateTicketAssignee(TicketEntry ticketEntry, Username assignee) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
+        var updatedAssignee = existingTicket.updateAssignee(publication, assignee);
+
+        var dao = (TicketDao) updatedAssignee.toDao();
+        var putItemRequest = dao.createPutItemRequest();
+        getClient().putItem(putItemRequest);
+        return updatedAssignee;
+    }
+
     protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
                 .orElseThrow(fail -> notFoundException());
-
-        var completed = attempt(() -> existingTicket.complete(publication))
-                            .map(completedTicket -> completedTicket.finalize(username))
+        injectAssigneeWhenUnassigned(existingTicket, username);
+        var completed = attempt(() -> existingTicket.complete(publication).finalize(username))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
@@ -173,15 +183,25 @@ public class TicketService extends ServiceWithTransactions {
         resourceService.getPublicationByIdentifier(pendingTicket.extractPublicationIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
         var closedTicket = persistedTicket.close().finalize(username);
-
+        injectAssigneeWhenUnassigned(closedTicket, username);
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return closedTicket;
     }
 
+    private static boolean isUnassigned(TicketEntry existingTicket) {
+        return isNull(existingTicket.getAssignee());
+    }
+
     private static NotFoundException notFoundException() {
         return new NotFoundException(TICKET_NOT_FOUND);
+    }
+
+    private void injectAssigneeWhenUnassigned(TicketEntry ticketEntry, Username username) {
+        if (isUnassigned(ticketEntry)) {
+            ticketEntry.setAssignee(username);
+        }
     }
 
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
@@ -212,16 +232,5 @@ public class TicketService extends ServiceWithTransactions {
         FunctionWithException<TicketEntry, TicketEntry, NotFoundException>
             fetchTicketProvider = this::fetchTicket;
         return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
-    }
-
-    protected TicketEntry updateTicketAssignee(TicketEntry ticketEntry, User user) throws ApiGatewayException {
-         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
-        var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
-        var updatedAssignee = existingTicket.updateAssignee(publication, user);
-
-        var dao = (TicketDao) updatedAssignee.toDao();
-        var putItemRequest = dao.createPutItemRequest();
-        getClient().putItem(putItemRequest);
-        return updatedAssignee;
     }
 }

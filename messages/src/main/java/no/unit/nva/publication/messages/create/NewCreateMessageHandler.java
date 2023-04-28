@@ -7,11 +7,11 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.messages.MessageApiConfig;
 import no.unit.nva.publication.messages.model.NewMessageDto;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -45,7 +45,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         var ticketIdentifier = extractTicketIdentifier(requestInfo);
         var user = UserInstance.fromRequestInfo(requestInfo);
         var ticket = fetchTicketForUser(requestInfo, ticketIdentifier, user);
-        injectAssigneeWhenUnassignedTicket(ticket, requestInfo, user.getUser());
+        injectAssigneeWhenUnassignedTicket(ticket, requestInfo, new Username(user.getUsername()));
         var message = messageService.createMessage(ticket, user, input.getMessage());
 
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
@@ -70,9 +70,9 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return new SortableIdentifier(identifierString);
     }
 
-    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo, User user) {
+    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo, Username username) {
         if (isNull(ticket.getAssignee()) && userIsElevatedUser(requestInfo)) {
-            ticket.setAssignee(user);
+            ticket.setAssignee(username);
         }
     }
 

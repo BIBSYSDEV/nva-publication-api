@@ -22,6 +22,7 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -60,7 +61,7 @@ public class DoiRequest extends TicketEntry {
     @JsonProperty(OWNER_FIELD)
     private User owner;
     @JsonProperty(ASSIGNEE_FIELD)
-    private User assignee;
+    private Username assignee;
 
     public DoiRequest() {
         super();
@@ -82,7 +83,6 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        doiRequest.setAssignee(null);
         return doiRequest;
     }
 
@@ -97,7 +97,6 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setCreatedDate(now);
         doiRequest.validate();
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        doiRequest.setAssignee(null);
         return doiRequest;
     }
 
@@ -228,12 +227,12 @@ public class DoiRequest extends TicketEntry {
     }
 
     @Override
-    public User getAssignee() {
+    public Username getAssignee() {
         return assignee;
     }
 
     @Override
-    public void setAssignee(User assignee) {
+    public void setAssignee(Username assignee) {
         this.assignee = assignee;
     }
 
@@ -312,7 +311,7 @@ public class DoiRequest extends TicketEntry {
             return this;
         }
 
-        public Builder withAssignee(User assignee) {
+        public Builder withAssignee(Username assignee) {
             doiRequest.setAssignee(assignee);
             return this;
         }

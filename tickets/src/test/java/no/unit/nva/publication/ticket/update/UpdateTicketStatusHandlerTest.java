@@ -55,6 +55,7 @@ import org.zalando.problem.Problem;
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
 
     public static final Username USER_NAME = new Username(randomString());
+    public static final Username ASSIGNEE = new Username("Assignee");
     private UpdateTicketStatusHandler handler;
 
     @BeforeEach
@@ -80,11 +81,58 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         assertThat(modifiedPublication.getDoi(), is(notNullValue()));
     }
 
+    @ParameterizedTest
+    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldSetAssigneeWhenCompletingTicketAndAssigneeIsMissing(
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication,ticketType, ticketService);
+        var completedTicket = ticket.complete(publication);
+        var request = authorizedUserCompletesTicket(completedTicket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+        var actualTicket = ticketService.fetchTicket(ticket);
+        assertThat(actualTicket.getAssignee(), is(equalTo(USER_NAME)));
+    }
+
+    @ParameterizedTest
+    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldSetAssigneeWhenClosingTicketAndAssigneeIsMissing(
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication,ticketType, ticketService);
+        var closedTicket = ticket.close();
+        var request = authorizedUserCompletesTicket(closedTicket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+        var actualTicket = ticketService.fetchTicket(ticket);
+        assertThat(actualTicket.getAssignee(), is(equalTo(USER_NAME)));
+    }
+
+    @ParameterizedTest
+    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldNotSetAssigneeToTheOneWhoFinalizesTheTicketWhenAssigneeIsPresent(
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication,ticketType, ticketService);
+        var completedTicket = ticketService.updateTicketAssignee(ticket, ASSIGNEE).complete(publication);
+        var request = authorizedUserCompletesTicket(completedTicket);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+        var actualTicket = ticketService.fetchTicket(ticket);
+        assertThat(actualTicket.getAssignee(), is(equalTo(ASSIGNEE)));
+    }
+
     @Test
     void shouldSetFinalizedValuesWhenCuratorCompletesTheTicketEntry()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
-        assertThat(publication.getDoi(), is(nullValue()));
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication);
         var request = authorizedUserCompletesTicket(completedTicket);

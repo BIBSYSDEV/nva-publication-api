@@ -197,9 +197,9 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setStatus(TicketStatus ticketStatus);
 
-    public abstract User getAssignee();
+    public abstract Username getAssignee();
 
-    public abstract void setAssignee(User assignee);
+    public abstract void setAssignee(Username assignee);
 
     public final List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);
@@ -312,10 +312,10 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void validateAssigneeRequirements(Publication publication);
 
-    public TicketEntry updateAssignee(Publication publication, User user) {
+    public TicketEntry updateAssignee(Publication publication, Username assignee) {
         var updated = this.copy();
         updated.validateAssigneeRequirements(publication);
-        updated.setAssignee(user);
+        updated.setAssignee(assignee);
         updated.setModifiedDate(Instant.now());
         return updated;
     }

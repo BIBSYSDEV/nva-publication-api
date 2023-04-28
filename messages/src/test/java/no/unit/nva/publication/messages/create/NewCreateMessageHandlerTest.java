@@ -24,6 +24,7 @@ import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
@@ -113,7 +114,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
         assertThatResponseContainsCorrectInformation(response, ticket);
         var ticketWithMessage = ticketService.fetchTicket(ticket);
-        assertThat(ticketWithMessage.getAssignee(), is(equalTo(sender.getUser())));
+        assertThat(ticketWithMessage.getAssignee(), is(equalTo(new Username(sender.getUsername()))));
         var expectedSender = sender.getUser();
         var expectedRecipient = UserInstance.fromPublication(publication).getUser();
         assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
@@ -251,8 +252,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(pathParameters(publication, ticket))
                    .withBody(messageBody(randomString))
-                   .withNvaUsername(userInstance.getUsername())
-                   .withCustomerId(userInstance.getOrganizationUri())
+                   .withUserName(userInstance.getUsername())
+                   .withCurrentCustomer(userInstance.getOrganizationUri())
                    .build();
     }
 
@@ -263,8 +264,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(pathParameters(publication, ticket))
                    .withBody(messageBody(message))
-                   .withNvaUsername(user.getUsername())
-                   .withCustomerId(user.getOrganizationUri())
+                   .withUserName(user.getUsername())
+                   .withCurrentCustomer(user.getOrganizationUri())
                    .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
                    .build();
     }

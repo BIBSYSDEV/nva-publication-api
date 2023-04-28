@@ -18,6 +18,7 @@ import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -55,7 +56,7 @@ public class PublishingRequestCase extends TicketEntry {
     private PublishingWorkflow workflow;
 
     @JsonProperty(ASSIGNEE_FIELD)
-    private User assignee;
+    private Username assignee;
 
     public PublishingRequestCase() {
         super();
@@ -69,8 +70,6 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
-        openingCaseObject.setWorkflow(null);
-        openingCaseObject.setAssignee(null);
         return openingCaseObject;
     }
 
@@ -155,12 +154,12 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
-    public User getAssignee() {
+    public Username getAssignee() {
         return  assignee;
     }
 
     @Override
-    public void setAssignee(User assignee) {
+    public void setAssignee(Username assignee) {
         this.assignee = assignee;
     }
 
