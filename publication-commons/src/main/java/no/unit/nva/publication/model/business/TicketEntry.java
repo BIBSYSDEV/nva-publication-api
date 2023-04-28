@@ -221,6 +221,16 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
 
+    public final TicketEntry markUnreadForEveryone() {
+        viewedBy.forEach(user -> viewedBy.remove(user));
+        return this;
+    }
+
+    public final TicketEntry markReadBySender(User sender) {
+        viewedBy.add(sender);
+        return this;
+    }
+
     public TicketEntry fetch(TicketService ticketService) throws NotFoundException {
         return ticketService.fetchTicket(this);
     }
