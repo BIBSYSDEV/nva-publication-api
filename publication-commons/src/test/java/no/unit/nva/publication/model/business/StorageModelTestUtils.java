@@ -27,7 +27,7 @@ public final class StorageModelTestUtils {
         sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
         sample.setPublicationDetails(PublicationDetails.create(publication));
         sample.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        sample.setAssignee(new User(randomString()));
+        sample.setAssignee(new Username(randomString()));
         sample.setFinalizedBy(new Username(randomString()));
         sample.setFinalizedDate(Instant.now());
         return sample;

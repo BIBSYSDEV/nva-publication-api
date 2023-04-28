@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -49,13 +50,13 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(MESSAGES_FIELD)
     private final List<MessageDto> messages;
     @JsonProperty(ASSIGNEE_FIELD)
-    private final User assignee;
+    private final Username assignee;
     
     protected TicketDto(TicketStatus status,
                         List<MessageDto> messages,
                         Set<User> viewedBy,
                         PublicationSummary publicationSummary,
-                        User assignee) {
+                        Username assignee) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
@@ -103,7 +104,7 @@ public abstract class TicketDto implements JsonSerializable {
         return publicationSummary;
     }
 
-    public User getAssignee() {
+    public Username getAssignee() {
         return assignee;
     }
 
@@ -144,7 +145,7 @@ public abstract class TicketDto implements JsonSerializable {
         private List<MessageDto> messages;
         private ViewedBy viewedBy;
         private PublicationSummary publicationSummary;
-        private User assignee;
+        private Username assignee;
         
         private Builder() {
         }
@@ -179,7 +180,7 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withAssignee(User assignee) {
+        public Builder withAssignee(Username assignee) {
             this.assignee = assignee;
             return this;
         }
