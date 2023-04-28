@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -16,8 +17,14 @@ import nva.commons.core.JacocoGenerated;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
-
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.*;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
 import static nva.commons.core.attempt.Try.attempt;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -50,7 +57,7 @@ public class PublishingRequestCase extends TicketEntry {
     private PublishingWorkflow workflow;
 
     @JsonProperty(ASSIGNEE_FIELD)
-    private User assignee;
+    private Username assignee;
 
     public PublishingRequestCase() {
         super();
@@ -64,8 +71,6 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
-        openingCaseObject.setWorkflow(null);
-        openingCaseObject.setAssignee(null);
         return openingCaseObject;
     }
 
@@ -119,8 +124,8 @@ public class PublishingRequestCase extends TicketEntry {
     }
     
     @Override
-    public PublishingRequestCase complete(Publication publication) {
-        return (PublishingRequestCase) super.complete(publication);
+    public PublishingRequestCase complete(Publication publication, Username finalizedBy) {
+        return (PublishingRequestCase) super.complete(publication, finalizedBy);
     }
     
     @Override
@@ -150,12 +155,12 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
-    public User getAssignee() {
+    public Username getAssignee() {
         return  assignee;
     }
 
     @Override
-    public void setAssignee(User assignee) {
+    public void setAssignee(Username assignee) {
         this.assignee = assignee;
     }
 

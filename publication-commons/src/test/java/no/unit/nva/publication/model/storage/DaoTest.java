@@ -1,54 +1,13 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
-import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.startsWith;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.text.IsEmptyString.emptyString;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -57,6 +16,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.*;
+import java.util.stream.Stream;
+
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.*;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.text.IsEmptyString.emptyString;
 
 class DaoTest extends ResourcesLocalTest {
 
@@ -224,7 +201,8 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(dynamoMap, is(equalTo(savedMap)));
     
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
-        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE)));
+        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(
+                Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE)));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     

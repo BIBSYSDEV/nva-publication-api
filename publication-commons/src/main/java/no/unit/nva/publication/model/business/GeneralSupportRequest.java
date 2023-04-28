@@ -19,6 +19,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.GeneralSupportRequestDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -42,7 +43,7 @@ public class GeneralSupportRequest extends TicketEntry {
     @JsonProperty(STATUS_FIELD)
     private TicketStatus status;
     @JsonProperty(ASSIGNEE_FIELD)
-    private User assignee;
+    private Username assignee;
     
     public GeneralSupportRequest() {
         super();
@@ -59,7 +60,6 @@ public class GeneralSupportRequest extends TicketEntry {
         ticket.setIdentifier(SortableIdentifier.next());
         ticket.setPublicationDetails(PublicationDetails.create(publication));
         ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
-        ticket.setAssignee(null);
         return ticket;
     }
     
@@ -181,12 +181,12 @@ public class GeneralSupportRequest extends TicketEntry {
     }
 
     @Override
-    public User getAssignee() {
+    public Username getAssignee() {
         return assignee;
     }
 
     @Override
-    public void setAssignee(User assignee) {
+    public void setAssignee(Username assignee) {
         this.assignee = assignee;
     }
 
