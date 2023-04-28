@@ -98,7 +98,7 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class TicketServiceTest extends ResourcesLocalTest {
+public class TicketServiceTest extends ResourcesLocalTest {
 
     private static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     private static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;

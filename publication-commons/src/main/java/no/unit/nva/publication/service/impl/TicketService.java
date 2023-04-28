@@ -170,7 +170,7 @@ public class TicketService extends ServiceWithTransactions {
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
                 .orElseThrow(fail -> notFoundException());
         injectAssigneeWhenUnassigned(existingTicket, username);
-        var completed = attempt(() -> existingTicket.complete(publication).finalize(username))
+        var completed = attempt(() -> existingTicket.complete(publication, username))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
@@ -182,7 +182,7 @@ public class TicketService extends ServiceWithTransactions {
         //TODO: can we get both entries at the same time using the single table design?
         resourceService.getPublicationByIdentifier(pendingTicket.extractPublicationIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
-        var closedTicket = persistedTicket.close().finalize(username);
+        var closedTicket = persistedTicket.close(username);
         injectAssigneeWhenUnassigned(closedTicket, username);
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();

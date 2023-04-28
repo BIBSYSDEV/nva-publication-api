@@ -1,20 +1,8 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -25,6 +13,13 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.Objects;
+
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.*;
+import static nva.commons.core.attempt.Try.attempt;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestCase.TYPE)
@@ -123,8 +118,8 @@ public class PublishingRequestCase extends TicketEntry {
     }
     
     @Override
-    public PublishingRequestCase complete(Publication publication) {
-        return (PublishingRequestCase) super.complete(publication);
+    public PublishingRequestCase complete(Publication publication, Username finalizedBy) {
+        return (PublishingRequestCase) super.complete(publication, finalizedBy);
     }
     
     @Override

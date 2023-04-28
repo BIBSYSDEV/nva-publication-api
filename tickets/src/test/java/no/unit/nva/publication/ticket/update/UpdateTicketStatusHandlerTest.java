@@ -1,30 +1,8 @@
 package no.unit.nva.publication.ticket.update;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static java.net.HttpURLConnection.HTTP_ACCEPTED;
-import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
-import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -35,10 +13,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.ticket.DoiRequestDto;
-import no.unit.nva.publication.ticket.TicketConfig;
-import no.unit.nva.publication.ticket.TicketDto;
-import no.unit.nva.publication.ticket.TicketTestLocal;
+import no.unit.nva.publication.ticket.*;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -48,8 +23,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Map;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static java.net.HttpURLConnection.*;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 @WireMockTest(httpsEnabled = true)
 class UpdateTicketStatusHandlerTest extends TicketTestLocal {
@@ -70,7 +62,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         assertThat(publication.getDoi(), is(nullValue()));
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication);
+        var completedTicket = ticket.complete(publication, USER_NAME);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -82,13 +74,12 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @ArgumentsSource(TicketAndPublicationStatusProvider.class)
     void shouldSetAssigneeWhenCompletingTicketAndAssigneeIsMissing(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication,ticketType, ticketService);
-        var completedTicket = ticket.complete(publication);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var completedTicket = ticket.complete(publication, USER_NAME);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -98,13 +89,12 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @ArgumentsSource(TicketAndPublicationStatusProvider.class)
     void shouldSetAssigneeWhenClosingTicketAndAssigneeIsMissing(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication,ticketType, ticketService);
-        var closedTicket = ticket.close();
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var closedTicket = ticket.close(USER_NAME);
         var request = authorizedUserCompletesTicket(closedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -114,13 +104,12 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    @ArgumentsSource(TicketAndPublicationStatusProvider.class)
     void shouldNotSetAssigneeToTheOneWhoFinalizesTheTicketWhenAssigneeIsPresent(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication,ticketType, ticketService);
-        var completedTicket = ticketService.updateTicketAssignee(ticket, ASSIGNEE).complete(publication);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var completedTicket = ticketService.updateTicketAssignee(ticket, ASSIGNEE).complete(publication, USER_NAME);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -134,7 +123,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication);
+        var completedTicket = ticket.complete(publication, USER_NAME);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -150,7 +139,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublicationWithDoi();
         assertThat(publication.getDoi(), is(notNullValue()));
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication);
+        var completedTicket = ticket.complete(publication, USER_NAME);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -183,7 +172,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
                                                      new FakeDoiClientThrowingException());
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication);
+        var completedTicket = ticket.complete(publication, USER_NAME);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -198,7 +187,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(
             PublicationStatus.PUBLISHED, resourceService);
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.close();
+        var completedTicket = ticket.close(USER_NAME);
         mockBadResponseFromDoiRegistrar(publication.getDoi());
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
@@ -222,7 +211,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     void shouldReturnForbiddenWhenRequestingUserIsNotCurator() throws IOException, ApiGatewayException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication);
+        var completedTicket = ticket.complete(publication, USER_NAME);
         var request = createCompleteTicketHttpRequest(
             completedTicket,
             AccessRight.USER,
@@ -238,7 +227,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication);
+        var completedTicket = ticket.complete(publication, USER_NAME);
         var customer = randomUri();
         var request = createCompleteTicketHttpRequest(completedTicket, AccessRight.APPROVE_DOI_REQUEST, customer);
         handler.handleRequest(request, output, CONTEXT);
