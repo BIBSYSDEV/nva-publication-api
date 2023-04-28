@@ -39,8 +39,6 @@ public class MessageDto implements JsonSerializable {
     private Instant createdDate;
     @JsonProperty("messageType")
     private String messageType;
-    @JsonProperty("recipient")
-    private User recipient;
     
     public static MessageDto fromMessage(Message message) {
         MessageDto messageDto = new MessageDto();
@@ -50,7 +48,6 @@ public class MessageDto implements JsonSerializable {
         messageDto.setCreatedDate(message.getCreatedDate());
         messageDto.setMessageId(constructMessageId(message));
         messageDto.setMessageIdentifier(message.getIdentifier());
-        messageDto.setRecipient(message.getRecipient());
         return messageDto;
     }
     
@@ -65,16 +62,6 @@ public class MessageDto implements JsonSerializable {
                        .getUri();
         }
         return null;
-    }
-    
-    @JacocoGenerated
-    public User getRecipient() {
-        return recipient;
-    }
-    
-    @JacocoGenerated
-    public void setRecipient(User recipient) {
-        this.recipient = recipient;
     }
     
     @JacocoGenerated

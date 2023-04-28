@@ -5,7 +5,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,25 +65,6 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldCreateMessageReferencingTicketForPublicationOwnerWithNonSpecificCuratorAsRecipientWhenUserIsTheOwner(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var user = UserInstance.fromTicket(ticket);
-        var expectedText = randomString();
-        var request = createNewMessageRequestForNonElevatedUser(publication, ticket, user, expectedText);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-
-        assertThatResponseContainsCorrectInformation(response, ticket);
-        var expectedSender = UserInstance.fromPublication(publication).getUser();
-        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
-                                                                 SUPPORT_SERVICE_CORRESPONDENT);
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
@@ -115,30 +95,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticketWithMessage = ticketService.fetchTicket(ticket);
         assertThat(ticketWithMessage.getAssignee(), is(equalTo(sender.getUser())));
         var expectedSender = sender.getUser();
-        var expectedRecipient = UserInstance.fromPublication(publication).getUser();
-        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
-                                                                 expectedRecipient);
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
-
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-
-        assertThatResponseContainsCorrectInformation(response, ticket);
-        var expectedSender = sender.getUser();
-        var expectedRecipient = UserInstance.fromPublication(publication).getUser();
-        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
-                                                                 expectedRecipient);
+        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
     }
 
     @ParameterizedTest
@@ -200,12 +157,9 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     private void assertThatMessageContainsTextAndCorrectCorrespondentInfo(String expectedText,
                                                                           TicketEntry ticket,
-                                                                          User expectedSender,
-                                                                          User expectedRecipient) {
+                                                                          User expectedSender) {
         var actualMessage = ticket.fetchMessages(ticketService).stream().collect(SingletonCollector.collect());
         assertThat(actualMessage.getText(), is(equalTo(expectedText)));
-        assertThat("Recepient was:" + actualMessage.getRecipient(), actualMessage.getRecipient(),
-                   is(equalTo(expectedRecipient)));
         assertThat("Sender was:" + actualMessage.getSender(), actualMessage.getSender(),
                    is(equalTo(expectedSender)));
     }
