@@ -250,7 +250,7 @@ class UpdateTicketStatusHandlerTest extends TicketTestLocal {
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should return a Bad Request response when attempting to re-open a ticket.")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedTicket(Class<? extends TicketEntry> ticketType,
+    void shouldReturnBadRequestWhenUserAttemptsToReopenCompletedTicket(Class<? extends TicketEntry> ticketType,
                                                                            PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);

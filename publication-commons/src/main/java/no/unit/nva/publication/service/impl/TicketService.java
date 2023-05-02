@@ -4,11 +4,19 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.TicketDao;
-import nva.commons.apigateway.exceptions.*;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
 
@@ -121,7 +129,7 @@ public class TicketService extends ServiceWithTransactions {
 
     public TicketEntry fetchTicketForElevatedUser(UserInstance user, SortableIdentifier ticketIdentifier)
         throws NotFoundException {
-        var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
+         var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
         return attempt(() -> queryObject.fetchByIdentifier(getClient()))
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast)

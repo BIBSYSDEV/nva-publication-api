@@ -280,7 +280,7 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
 
-  /{publicationIdentifier}/ticket/{tid}/update:
+  /{publicationIdentifier}/ticket/{ticketIdentifier}/update:
     parameters:
       - in: path
         name: publicationIdentifier

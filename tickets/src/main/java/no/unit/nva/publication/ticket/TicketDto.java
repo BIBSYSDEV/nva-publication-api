@@ -9,7 +9,14 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.ViewedBy;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import nva.commons.core.paths.UriWrapper;
 
 import java.net.URI;
