@@ -1,11 +1,17 @@
 package no.unit.nva.publication.ticket;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.business.*;
+import nva.commons.core.paths.UriWrapper;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
@@ -13,19 +19,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import no.unit.nva.commons.json.JsonSerializable;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.ViewedBy;
-import nva.commons.core.paths.UriWrapper;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
@@ -49,13 +45,13 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(MESSAGES_FIELD)
     private final List<MessageDto> messages;
     @JsonProperty(ASSIGNEE_FIELD)
-    private final User assignee;
+    private final Username assignee;
     
     protected TicketDto(TicketStatus status,
                         List<MessageDto> messages,
                         Set<User> viewedBy,
                         PublicationSummary publicationSummary,
-                        User assignee) {
+                        Username assignee) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
@@ -103,7 +99,7 @@ public abstract class TicketDto implements JsonSerializable {
         return publicationSummary;
     }
 
-    public User getAssignee() {
+    public Username getAssignee() {
         return assignee;
     }
 
@@ -144,7 +140,7 @@ public abstract class TicketDto implements JsonSerializable {
         private List<MessageDto> messages;
         private ViewedBy viewedBy;
         private PublicationSummary publicationSummary;
-        private User assignee;
+        private Username assignee;
         
         private Builder() {
         }
@@ -179,7 +175,7 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withAssignee(User assignee) {
+        public Builder withAssignee(Username assignee) {
             this.assignee = assignee;
             return this;
         }

@@ -1,9 +1,17 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
-import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.MessageDao;
+import no.unit.nva.publication.model.storage.TicketDao;
+import nva.commons.apigateway.exceptions.*;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.FunctionWithException;
+
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -11,24 +19,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.MessageDao;
-import no.unit.nva.publication.model.storage.TicketDao;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.FunctionWithException;
+
+import static java.util.Objects.isNull;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class TicketService extends ServiceWithTransactions {
 
@@ -89,13 +84,13 @@ public class TicketService extends ServiceWithTransactions {
 
     //TODO: should not return anything because we cannot return the persisted entry after a PUT
     // and right now we are returning the input object.
-    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus)
+    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, Username finalizedBy)
         throws ApiGatewayException {
         switch (ticketStatus) {
             case COMPLETED:
-                return completeTicket(ticketEntry);
+                return completeTicket(ticketEntry, finalizedBy);
             case CLOSED:
-                return closeTicket(ticketEntry);
+                return closeTicket(ticketEntry, finalizedBy);
             default:
                 throw new BadRequestException("Cannot update to status " + ticketStatus);
         }
@@ -151,14 +146,25 @@ public class TicketService extends ServiceWithTransactions {
         ticketEntry.toDao().updateExistingEntry(getClient());
     }
 
-    protected TicketEntry completeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+    public TicketEntry updateTicketAssignee(TicketEntry ticketEntry, Username assignee) throws ApiGatewayException {
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
+        var updatedAssignee = existingTicket.updateAssignee(publication, assignee);
+
+        var dao = (TicketDao) updatedAssignee.toDao();
+        var putItemRequest = dao.createPutItemRequest();
+        getClient().putItem(putItemRequest);
+        return updatedAssignee;
+    }
+
+    protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
                 .orElseThrow(fail -> notFoundException());
-
-        var completed = attempt(() -> existingTicket.complete(publication))
+        injectAssigneeWhenUnassigned(existingTicket, username);
+        var completed = attempt(() -> existingTicket.complete(publication, username))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
@@ -166,20 +172,30 @@ public class TicketService extends ServiceWithTransactions {
         return completed;
     }
 
-    protected TicketEntry closeTicket(TicketEntry pendingTicket) throws ApiGatewayException {
+    protected TicketEntry closeTicket(TicketEntry pendingTicket, Username username) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
         resourceService.getPublicationByIdentifier(pendingTicket.extractPublicationIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
-        var closedTicket = persistedTicket.close();
-
+        var closedTicket = persistedTicket.close(username);
+        injectAssigneeWhenUnassigned(closedTicket, username);
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return closedTicket;
     }
 
+    private static boolean isUnassigned(TicketEntry existingTicket) {
+        return isNull(existingTicket.getAssignee());
+    }
+
     private static NotFoundException notFoundException() {
         return new NotFoundException(TICKET_NOT_FOUND);
+    }
+
+    private void injectAssigneeWhenUnassigned(TicketEntry ticketEntry, Username username) {
+        if (isUnassigned(ticketEntry)) {
+            ticketEntry.setAssignee(username);
+        }
     }
 
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
@@ -210,16 +226,5 @@ public class TicketService extends ServiceWithTransactions {
         FunctionWithException<TicketEntry, TicketEntry, NotFoundException>
             fetchTicketProvider = this::fetchTicket;
         return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
-    }
-
-    public TicketEntry updateTicketAssignee(TicketEntry ticketEntry, User user) throws ApiGatewayException {
-         var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
-        var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
-        var updatedAssignee = existingTicket.updateAssignee(publication, user);
-
-        var dao = (TicketDao) updatedAssignee.toDao();
-        var putItemRequest = dao.createPutItemRequest();
-        getClient().putItem(putItemRequest);
-        return updatedAssignee;
     }
 }

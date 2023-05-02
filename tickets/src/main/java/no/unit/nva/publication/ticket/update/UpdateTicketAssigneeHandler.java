@@ -1,8 +1,8 @@
 package no.unit.nva.publication.ticket.update;
 
-import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -17,6 +17,8 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<Void, TicketDto> {
 
@@ -43,7 +45,7 @@ public class UpdateTicketAssigneeHandler extends ApiGatewayHandler<Void, TicketD
             throw new ForbiddenException();
         }
         var user = UserInstance.fromRequestInfo(requestInfo);
-        ticketService.updateTicketAssignee(ticket, user.getUser());
+        ticketService.updateTicketAssignee(ticket, new Username(user.getUsername()));
         logger.info("Assignee has been set to: {}:" , user.getUsername());
         logger.info("Username from requestInfo: {}:", requestInfo.getUserName());
         return null;

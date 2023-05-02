@@ -547,7 +547,7 @@ paths:
         - external
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationContextFunction.Arn}:live/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationContextFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY

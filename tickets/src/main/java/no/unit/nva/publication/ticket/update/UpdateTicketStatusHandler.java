@@ -1,14 +1,10 @@
 package no.unit.nva.publication.ticket.update;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.http.HttpClient;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -18,17 +14,19 @@ import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketHandler;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.apigateway.exceptions.BadMethodException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.apigateway.exceptions.*;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.http.HttpClient;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
 
@@ -69,8 +67,12 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
         if (ticket instanceof DoiRequest) {
             doiTicketSideEffects(input, requestInfo);
         }
-        ticketService.updateTicketStatus(ticket, input.getStatus());
+        ticketService.updateTicketStatus(ticket, input.getStatus(), getUsername(requestInfo));
         return null;
+    }
+
+    private static Username getUsername(RequestInfo requestInfo) throws UnauthorizedException {
+        return new Username(requestInfo.getUserName());
     }
 
     @Override

@@ -191,10 +191,18 @@
           "@embed": "@always"
         }
       }
+    },
+    "metadataSource": {
+      "@embed": "@never"
     }
   },
   "topLevelOrganization": {
     "@container": "@set",
     "@embed": "@always"
+  },
+  "resourceOwner": {
+    "ownerAffiliation": {
+      "@embed": "@never"
+    }
   }
 }

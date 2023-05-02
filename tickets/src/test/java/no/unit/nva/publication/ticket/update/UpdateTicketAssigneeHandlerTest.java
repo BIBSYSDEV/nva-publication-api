@@ -1,22 +1,10 @@
 package no.unit.nva.publication.ticket.update;
 
-import static java.net.HttpURLConnection.HTTP_ACCEPTED;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -30,6 +18,21 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Map;
+
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
 
@@ -50,7 +53,7 @@ class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
         assertThat(publication.getDoi(), is(nullValue()));
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var addAssigneeTicket = ticket.updateAssignee(publication, user.getUser());
+        var addAssigneeTicket = ticket.updateAssignee(publication, new Username(user.getUsername()));
         var request = authorizedUserAssigneesTicket(publication, addAssigneeTicket, user);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -65,10 +68,10 @@ class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = createPersistedDoiTicket(publication);
         var assignee = UserInstance.create(SOME_ASSIGNEE, publication.getPublisher().getId());
-        ticket.setAssignee(assignee.getUser());
+        ticket.setAssignee(new Username(assignee.getUsername()));
 
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var addAssigneeTicket = ticket.updateAssignee(publication, user.getUser());
+        var addAssigneeTicket = ticket.updateAssignee(publication, new Username(user.getUsername()));
 
         var request = authorizedUserAssigneesTicket(publication, addAssigneeTicket, user);
         handler.handleRequest(request, output, CONTEXT);
@@ -84,7 +87,7 @@ class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.fromTicket(ticket);
-        var addAssigneeTicket = ticket.updateAssignee(publication, user.getUser());
+        var addAssigneeTicket = ticket.updateAssignee(publication, new Username(user.getUsername()));
         var request = createAssigneeTicketHttpRequest(
             addAssigneeTicket,
             AccessRight.USER,
@@ -101,7 +104,7 @@ class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.fromTicket(ticket);
-        var completedTicket = ticket.updateAssignee(publication, user.getUser());
+        var completedTicket = ticket.updateAssignee(publication, new Username(user.getUsername()));
         var customer = randomUri();
         var request = createAssigneeTicketHttpRequest(completedTicket, AccessRight.APPROVE_DOI_REQUEST, customer);
         handler.handleRequest(request, output, CONTEXT);
@@ -115,7 +118,7 @@ class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var completedTicket = ticketService.updateTicketAssignee(ticket, user.getUser());
+        var completedTicket = ticketService.updateTicketAssignee(ticket, new Username(user.getUsername()));
         var request = authorizedUserAssigneesTicket(publication, completedTicket, user);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -128,7 +131,7 @@ class UpdateTicketAssigneeHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
             .withPathParameters(pathParameters(publication, ticket))
             .withBody(TicketDto.fromTicket(ticket))
-            .withNvaUsername(user.getUsername())
+            .withUserName(user.getUsername())
             .withCurrentCustomer(user.getOrganizationUri())
             .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
             .build();

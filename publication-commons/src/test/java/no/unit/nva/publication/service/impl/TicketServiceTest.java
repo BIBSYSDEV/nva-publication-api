@@ -13,6 +13,7 @@ import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -97,10 +98,15 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class TicketServiceTest extends ResourcesLocalTest {
+public class TicketServiceTest extends ResourcesLocalTest {
 
-    public static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
-    public static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
+    private static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
+    private static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
+    private static final Username USERNAME = new Username(randomString());
+    private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String ASSIGNEE = "assignee";
+    private static final String FINALIZED_BY = "finalizedBy";
+    private static final String DOI = "doi";
 
     private ResourceService resourceService;
     private TicketService ticketService;
@@ -137,7 +143,8 @@ class TicketServiceTest extends ResourcesLocalTest {
 
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("doi", "assignee")));
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI, ASSIGNEE, FINALIZED_BY,
+                                                                                FINALIZED_DATE)));
     }
 
     @ParameterizedTest(name = "Publication status: {0}")
@@ -164,8 +171,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         copyServiceControlledFields(ticket, persistedTicket);
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
-    }
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+                                                                                FINALIZED_DATE)));    }
 
     @Test
     void shouldCreateGeneralSupportCaseForAnyPublication() throws ApiGatewayException {
@@ -175,7 +182,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         copyServiceControlledFields(ticket, persistedTicket);
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
-        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of("assignee")));
+        assertThat(persistedTicket, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+                                                                                FINALIZED_DATE)));
     }
 
     // This action fails with a TransactionFailedException which contains no information about why the transaction
@@ -286,13 +294,13 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, publicationStatus);
         var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
 
-        ticketService.updateTicketStatus(persistedTicket, COMPLETED);
+        ticketService.updateTicketStatus(persistedTicket, COMPLETED, USERNAME);
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
 
         var expectedTicket = persistedTicket.copy();
         expectedTicket.setStatus(COMPLETED);
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
-
+        expectedTicket.setAssignee(USERNAME);
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
     }
@@ -312,7 +320,7 @@ class TicketServiceTest extends ResourcesLocalTest {
     void shouldThrowBadRequestExceptionWhenTryingToCompleteDoiReqeuestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, DoiRequest.class);
-        assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(ticket, COMPLETED));
+        assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(ticket, COMPLETED, USERNAME));
     }
 
     @ParameterizedTest(name = "ticket type:{0}")
@@ -368,7 +376,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var pendingTicket = createPersistedTicket(publication, ticketType);
-        ticketService.updateTicketStatus(pendingTicket, CLOSED);
+        ticketService.updateTicketStatus(pendingTicket, CLOSED, USERNAME);
         var completedTicket = ticketService.fetchTicket(pendingTicket);
         assertThat(completedTicket.getStatus(), is(equalTo(CLOSED)));
     }
@@ -381,8 +389,8 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var pendingTicket = createPersistedTicket(publication, ticketType);
 
-        ticketService.updateTicketStatus(pendingTicket, COMPLETED);
-        assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(pendingTicket, CLOSED));
+        ticketService.updateTicketStatus(pendingTicket, COMPLETED, USERNAME);
+        assertThrows(BadRequestException.class, () -> ticketService.updateTicketStatus(pendingTicket, CLOSED, USERNAME));
         var actualTicket = ticketService.fetchTicket(pendingTicket);
         assertThat(actualTicket.getStatus(), is(equalTo(COMPLETED)));
     }
@@ -408,7 +416,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var nonExisingTicket = createUnpersistedTicket(publication, ticketType);
-        assertThrows(NotFoundException.class, () -> ticketService.completeTicket(nonExisingTicket));
+        assertThrows(NotFoundException.class, () -> ticketService.completeTicket(nonExisingTicket, USERNAME));
     }
 
     //TODO: remove this test when ticket service is in place
@@ -417,10 +425,11 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(DoiRequest.class));
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         var ticketFetchedByResourceIdentifier = legacyQueryObject(publication);
-        var completedTicket = ticketService.completeTicket(ticketFetchedByResourceIdentifier);
+        var completedTicket = ticketService.completeTicket(ticketFetchedByResourceIdentifier, USERNAME);
         var expectedTicket = ticket.copy();
         expectedTicket.setStatus(COMPLETED);
         expectedTicket.setModifiedDate(completedTicket.getModifiedDate());
+        expectedTicket.setAssignee(USERNAME);
         assertThat(completedTicket, is(equalTo(expectedTicket)));
     }
 
@@ -652,20 +661,23 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
         var publication = persistPublication(owner, publicationStatus);
         var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
-        var user = UserInstance.fromTicket(persistedTicket);
-        ticketService.updateTicketAssignee(persistedTicket, user.getUser());
+        ticketService.updateTicketAssignee(persistedTicket, getUsername(publication));
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
 
         var expectedTicket = persistedTicket.copy();
-        expectedTicket.setAssignee(UserInstance.fromPublication(publication).getUser());
+        expectedTicket.setAssignee(getUsername(publication));
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
 
         assertThat(updatedTicket.getAssignee(), is(equalTo(expectedTicket.getAssignee())));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
     }
 
+    private static Username getUsername(Publication publication) {
+        return new Username(UserInstance.fromPublication(publication).getUsername());
+    }
+
     @Test
-    void shouldReturTicketWithNoAssigneeForDoiReqeuestForDraftPublication() throws ApiGatewayException {
+    void shouldReturnTicketWithNoAssigneeForDoiRequestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, DoiRequest.class);
         assertThat(ticket.getAssignee(), is(equalTo(null)));
@@ -680,14 +692,13 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, publicationStatus);
         var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
         var assignee = UserInstance.create(SOME_ASSIGNEE, publication.getPublisher().getId());
-        persistedTicket.setAssignee(assignee.getUser());
+        persistedTicket.setAssignee(getUsername(publication));
 
-        var user = UserInstance.fromTicket(persistedTicket);
-        ticketService.updateTicketAssignee(persistedTicket, user.getUser());
+        ticketService.updateTicketAssignee(persistedTicket, new Username(UserInstance.fromTicket(persistedTicket).getUsername()));
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
 
         var expectedTicket = persistedTicket.copy();
-        expectedTicket.setAssignee(UserInstance.fromPublication(publication).getUser());
+        expectedTicket.setAssignee(getUsername(publication));
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
 
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
@@ -701,10 +712,20 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var pendingTicket = createPersistedTicket(publication, ticketType);
         var assignee = UserInstance.create(SOME_ASSIGNEE, publication.getPublisher().getId());
-        pendingTicket.setAssignee(assignee.getUser());
+        pendingTicket.setAssignee(getUsername(publication));
         ticketService.updateTicketAssignee(pendingTicket, null);
         var actualTicket = ticketService.fetchTicket(pendingTicket);
         assertThat(actualTicket.getAssignee(), is(equalTo(null)));
+    }
+
+    @ParameterizedTest(name = "ticket type:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldThrowBadRequestExceptionWhenUpdatingStatusToPending(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var pendingTicket = createPersistedTicket(publication, ticketType);
+        assertThrows(BadRequestException.class,
+                     () -> ticketService.updateTicketStatus(pendingTicket, PENDING, USERNAME));
     }
 
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {

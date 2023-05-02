@@ -1,14 +1,18 @@
 package no.unit.nva.publication.model.business;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
@@ -16,16 +20,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.service.impl.TicketService;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 
-@SuppressWarnings("PMD.GodClass")
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
+import static nva.commons.core.attempt.Try.attempt;
+
+@SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
@@ -35,16 +38,23 @@ public abstract class TicketEntry implements Entity {
     public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED =
         "Can not create DoiRequest ticket for unpublished publication, use draft doi flow instead.";
-    public static final String VIEWED_BY_FIELD = "viewedBy";
+    private static final String VIEWED_BY_FIELD = "viewedBy";
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR =
         "Ticket without reference to publication";
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
+    private static final String FINALIZED_BY = "finalizedBy";
+    private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(PUBLICATION_DETAILS_FIELD)
     private PublicationDetails publicationDetails;
-    @JsonProperty("resourceIdentifier")
+    @JsonProperty(RESOURCE_IDENTIFIER)
     private SortableIdentifier resourceIdentifier;
+    @JsonProperty(FINALIZED_BY)
+    private Username finalizedBy;
+    @JsonProperty(FINALIZED_DATE)
+    private Instant finalizedDate;
 
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -113,6 +123,22 @@ public abstract class TicketEntry implements Entity {
         this.resourceIdentifier = resourceIdentifier;
     }
 
+    public Username getFinalizedBy() {
+        return finalizedBy;
+    }
+
+    public Instant getFinalizedDate() {
+        return finalizedDate;
+    }
+
+    public void setFinalizedBy(Username finalizedBy) {
+        this.finalizedBy = finalizedBy;
+    }
+
+    public void setFinalizedDate(Instant finalizedDate) {
+        this.finalizedDate = finalizedDate;
+    }
+
     public Set<User> getViewedBy() {
         return nonNull(viewedBy) ? viewedBy : Collections.emptySet();
     }
@@ -136,19 +162,23 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void validateCompletionRequirements(Publication publication);
 
-    public TicketEntry complete(Publication publication) {
+    public TicketEntry complete(Publication publication, Username finalizedBy) {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
         updated.setModifiedDate(Instant.now());
+        updated.setFinalizedBy(finalizedBy);
+        updated.setFinalizedDate(Instant.now());
         return updated;
     }
 
-    public final TicketEntry close() throws ApiGatewayException {
+    public final TicketEntry close(Username finalizedBy) throws ApiGatewayException {
         validateClosingRequirements();
         var updated = this.copy();
         updated.setStatus(TicketStatus.CLOSED);
         updated.setModifiedDate(Instant.now());
+        updated.setFinalizedBy(finalizedBy);
+        updated.setFinalizedDate(Instant.now());
         return updated;
     }
 
@@ -166,9 +196,9 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setStatus(TicketStatus ticketStatus);
 
-    public abstract User getAssignee();
+    public abstract Username getAssignee();
 
-    public abstract void setAssignee(User assignee);
+    public abstract void setAssignee(Username assignee);
 
     public final List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);
@@ -281,10 +311,10 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void validateAssigneeRequirements(Publication publication);
 
-    public TicketEntry updateAssignee(Publication publication, User user) {
+    public TicketEntry updateAssignee(Publication publication, Username assignee) {
         var updated = this.copy();
         updated.validateAssigneeRequirements(publication);
-        updated.setAssignee(user);
+        updated.setAssignee(assignee);
         updated.setModifiedDate(Instant.now());
         return updated;
     }

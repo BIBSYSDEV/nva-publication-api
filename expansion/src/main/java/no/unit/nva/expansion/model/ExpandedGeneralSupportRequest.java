@@ -1,9 +1,6 @@
 package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -16,6 +13,10 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 
+import java.net.URI;
+import java.time.Instant;
+import java.util.Set;
+
 @JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
 public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     
@@ -27,7 +28,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     private URI customerId;
     private TicketStatus status;
     private User owner;
-    
+
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
                                                 TicketService ticketService) throws NotFoundException {
@@ -44,9 +45,11 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setMessages(dataEntry.fetchMessages(ticketService));
         entry.setViewedBy(dataEntry.getViewedBy());
+        entry.setFinalizedBy(dataEntry.getFinalizedBy());
+        entry.setOwner(dataEntry.getOwner());
         return entry;
     }
-    
+
     public Instant getModifiedDate() {
         return modifiedDate;
     }
@@ -91,7 +94,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         this.status = status;
     }
     
-    private User getOwner() {
+    public User getOwner() {
         return this.owner;
     }
     

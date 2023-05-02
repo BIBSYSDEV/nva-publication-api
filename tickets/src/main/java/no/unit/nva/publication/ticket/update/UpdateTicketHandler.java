@@ -4,23 +4,42 @@ import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.ticket.TicketConfig;
 import no.unit.nva.publication.ticket.TicketHandler;
-import no.unit.nva.publication.ticket.model.identityservice.TicketRequest;
+import no.unit.nva.publication.ticket.model.TicketRequest;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.*;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.secrets.SecretsReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.net.http.HttpClient;
+
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     public static final String API_HOST = "API_HOST";
+    public static final String EXCEPTION_MESSAGE = "Creating findable doi failed with exception: {}";
+    public static final String COULD_NOT_CREATE_FINDABLE_DOI = "Could not create findable doi";
+    public static final String PUBLICATION_WITH_IDENTIFIER_S_DOES_NOT_SATISFY_DOI_REQUIREMENTS
+            = "Publication with identifier  %s, does not satisfy DOI requirements";
+    private static final Logger logger = LoggerFactory.getLogger(UpdateTicketHandler.class);
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
@@ -41,24 +60,222 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         this.doiClient = doiClient;
     }
 
+    private static void throwExceptionIfUnauthorized(RequestInfo requestInfo, TicketEntry ticket) throws UnauthorizedException, ForbiddenException {
+        if (userIsNotAuthorized(requestInfo, ticket)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private static boolean statusHasBeenUpdated(TicketEntry ticket, TicketRequest ticketRequest) {
+        return nonNull(ticketRequest.getStatus()) && !ticketRequest.getStatus().equals(ticket.getStatus());
+    }
+
+    private static boolean assigneeHasBeenUpdated(TicketEntry ticket, TicketRequest ticketRequest) {
+        return nonNull(ticketRequest.getAssignee()) &&
+                (!ticketRequest.getAssignee().equals(ticket.getAssignee()) || isNull(ticket.getAssignee()));
+    }
+
+    private static boolean userIsNotAuthorized(RequestInfo requestInfo, TicketEntry ticket)
+            throws UnauthorizedException {
+        return !(isAuthorizedToCompleteTickets(requestInfo) && isUserFromSameCustomerAsTicket(requestInfo, ticket));
+    }
+
+    private static boolean isAuthorizedToCompleteTickets(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+    }
+
+    private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
+            throws UnauthorizedException {
+        return requestInfo.getCurrentCustomer().equals(ticket.getCustomerId());
+    }
+
+    private static Username getUsername(RequestInfo requestInfo) throws UnauthorizedException {
+        return new Username(requestInfo.getUserName());
+    }
+
+    protected static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo)
+            throws NotFoundException {
+        return attempt(() -> requestInfo.getPathParameter(TICKET_IDENTIFIER_PARAMETER_NAME))
+                .map(SortableIdentifier::new)
+                .orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
+    }
+
+    private static boolean elevatedUserCanViewTicket(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+    }
+
     @Override
     protected Void processInput(TicketRequest input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        var ticket = ticketService.fetchTicketByIdentifier(extractTicketIdentifierFromPath(requestInfo));
-        hasEffectiveChanges(ticket, input);
+        var ticket = fetchTicketForElevatedUser(extractTicketIdentifierFromPath(requestInfo), UserInstance.fromRequestInfo(requestInfo));
+        if (hasEffectiveChanges(ticket, input)) {
+            if (incomingUpdateIsStatus(ticket, input)) {
+                throwExceptionIfUnauthorized(requestInfo, ticket);
+                if (ticket instanceof DoiRequest) {
+                    doiTicketSideEffects(input, requestInfo);
+                }
+                ticketService.updateTicketStatus(ticket, input.getStatus(), getUsername(requestInfo));
+            }
+            if (incomingUpdateIsAssignee(ticket, input)) {
+                throwExceptionIfUnauthorized(requestInfo, ticket);
+                ticketService.updateTicketAssignee(ticket, input.getAssignee());
+            }
+            if (incomingUpdateIsViewedStatus(input)) {
+                markTicket(input, ticket, requestInfo);
+            }
+            return null;
+        } else {
+            return null;
+        }
+    }
 
+    private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance userInstance)
+            throws ForbiddenException {
+        return attempt(() -> ticketService.fetchTicketForElevatedUser(userInstance, ticketIdentifier)).orElseThrow(
+                fail -> new ForbiddenException());
+    }
+
+    private void markTicket(TicketRequest ticketRequest, TicketEntry ticketEntry, RequestInfo requestInfo) throws ApiGatewayException {
+        if (elevatedUserCanViewTicket(requestInfo)) {
+            markTicketForElevatedUser(ticketRequest, requestInfo, ticketEntry);
+        } else {
+            markTicketForOwner(ticketRequest, requestInfo, ticketEntry);
+        }
+    }
+
+    private void markTicketForElevatedUser(TicketRequest ticketRequest, RequestInfo requestInfo,
+                                           TicketEntry ticketEntry) throws ApiGatewayException {
+        assertThatPublicationIdentifierInPathReferencesCorrectPublication(ticketEntry, requestInfo);
+        markTicketForElevatedUser(ticketRequest, ticketEntry);
+    }
+
+    private void markTicketForOwner(TicketRequest ticketRequest, RequestInfo requestInfo,
+                                    TicketEntry ticketEntry)
+            throws UnauthorizedException, ForbiddenException {
+        assertThatPublicationIdentifierInPathReferencesCorrectPublication(ticketEntry, requestInfo);
+        markTicketForOwner(ticketRequest, ticketEntry);
+    }
+
+    private void markTicketForOwner(TicketRequest input, TicketEntry ticket) {
+        if (ViewStatus.READ.equals(input.getViewStatus())) {
+            ticket.markReadByOwner().persistUpdate(ticketService);
+        } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
+            ticket.markUnreadByOwner().persistUpdate(ticketService);
+        } else {
+            throw new UnsupportedOperationException("Unknown ViewedStatus");
+        }
+    }
+
+    private void markTicketForElevatedUser(TicketRequest input, TicketEntry ticket) {
+
+        if (ViewStatus.READ.equals(input.getViewStatus())) {
+            ticket.markReadForCurators().persistUpdate(ticketService);
+        } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
+            ticket.markUnreadForCurators().persistUpdate(ticketService);
+        } else {
+            throw new UnsupportedOperationException("Unknown ViewedStatus");
+        }
+    }
+
+    private void assertThatPublicationIdentifierInPathReferencesCorrectPublication(TicketEntry ticket,
+                                                                                   RequestInfo requestInfo)
+            throws ForbiddenException {
+        var suppliedPublicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
+        if (!suppliedPublicationIdentifier.equals(ticket.extractPublicationIdentifier())) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private boolean incomingUpdateIsViewedStatus(TicketRequest input) {
+        return nonNull(input.getViewStatus());
+    }
+
+    private boolean incomingUpdateIsAssignee(TicketEntry ticket, TicketRequest ticketRequest) {
+        if (nonNull(ticketRequest.getAssignee())) {
+            if (isNull(ticket.getAssignee())) {
+                return true;
+            }
+            if (ticket.getAssignee().equals(ticketRequest.getAssignee())) {
+                return false;
+            }
+        }
+        return isNull(ticketRequest.getAssignee()) && nonNull(ticket.getAssignee());
+    }
+
+    private boolean incomingUpdateIsStatus(TicketEntry ticket, TicketRequest ticketRequest) {
+        return !ticket.getStatus().equals(ticketRequest.getStatus());
     }
 
     private boolean hasEffectiveChanges(TicketEntry ticket, TicketRequest ticketRequest) {
-        return ticketRequest.getStatus().equals(ticket.getStatus())
-                && ticketRequest.getAssignee().equals(ticket.getAssignee());
+        return statusHasBeenUpdated(ticket, ticketRequest)
+                || assigneeHasBeenUpdated(ticket, ticketRequest)
+                || viewStatusHasBeenUpdated(ticketRequest);
     }
 
-    private static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo) {
-        return new SortableIdentifier(requestInfo.getPathParameter(TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME));
+    private boolean viewStatusHasBeenUpdated(TicketRequest ticketRequest) {
+        return nonNull(ticketRequest.getViewStatus());
     }
 
     @Override
     protected Integer getSuccessStatusCode(TicketRequest input, Void output) {
-        return null;
+        return HTTP_ACCEPTED;
+    }
+
+    private void doiTicketSideEffects(TicketRequest input, final RequestInfo requestInfo)
+            throws NotFoundException, BadMethodException, BadGatewayException {
+        var status = input.getStatus();
+        if (TicketStatus.COMPLETED.equals(status)) {
+            findableDoiTicketSideEffects(requestInfo);
+        }
+        if (TicketStatus.CLOSED.equals(status) && hasDoi(getPublication(requestInfo))) {
+            deleteDoiTicketSideEffects(getPublication(requestInfo));
+        }
+    }
+
+    private void findableDoiTicketSideEffects(RequestInfo requestInfo)
+            throws NotFoundException, BadMethodException, BadGatewayException {
+        var publication = getPublication(requestInfo);
+        publicationSatisfiesDoiRequirements(publication);
+        createFindableDoiAndPersistDoiOnPublication(publication);
+    }
+
+    private void createFindableDoiAndPersistDoiOnPublication(Publication publication) throws BadGatewayException {
+        try {
+            var doi = doiClient.createFindableDoi(publication);
+            updatePublication(publication, doi);
+        } catch (Exception e) {
+            logger.error(EXCEPTION_MESSAGE, e);
+            throw new BadGatewayException(COULD_NOT_CREATE_FINDABLE_DOI);
+        }
+    }
+
+    private boolean hasDoi(Publication publication) {
+        return nonNull(publication.getDoi());
+    }
+
+    private void deleteDoiTicketSideEffects(Publication publication) {
+        doiClient.deleteDraftDoi(publication);
+        publication.setDoi(null);
+        resourceService.updatePublication(publication);
+    }
+
+    private void updatePublication(Publication publication, URI doi) {
+        if (isNull(publication.getDoi())) {
+            publication.setDoi(doi);
+            resourceService.updatePublication(publication);
+        }
+    }
+
+    private Publication getPublication(RequestInfo requestInfo) throws NotFoundException {
+        var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
+        return resourceService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private void publicationSatisfiesDoiRequirements(Publication publication)
+            throws BadMethodException {
+        if (!publication.satisfiesFindableDoiRequirements()) {
+            throw new BadMethodException(
+                    String.format(PUBLICATION_WITH_IDENTIFIER_S_DOES_NOT_SATISFY_DOI_REQUIREMENTS,
+                            publication.getIdentifier()));
+        }
     }
 }

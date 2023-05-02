@@ -439,8 +439,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     void shouldPublishPublicationButNotFileWhenFileIsAdministrativeAgreement()
         throws ApiGatewayException, IOException {
         var publication =
-            TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(DRAFT,
-                                                                                  resourceService);
+            TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
         ticketResolver = new TicketResolver(resourceService, ticketService,
