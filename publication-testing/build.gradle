@@ -30,7 +30,7 @@ dependencies {
     }
 
     // https://mvnrepository.com/artifact/uk.co.jemos.podam/podam
-    testImplementation group: 'uk.co.jemos.podam', name: 'podam', version: '7.1.0.RELEASE'
+    testImplementation group: 'uk.co.jemos.podam', name: 'podam', version: '7.2.11.RELEASE'
 
 
 }
