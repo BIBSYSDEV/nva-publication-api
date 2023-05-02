@@ -35,7 +35,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static java.net.HttpURLConnection.*;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
-import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -97,7 +96,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private static Map<String, String> createPathParameters(TicketEntry ticket,
                                                             SortableIdentifier publicationIdentifier) {
         return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publicationIdentifier.toString(),
-                TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
+                      TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString());
     }
 
     @BeforeEach
