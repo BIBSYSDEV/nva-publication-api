@@ -102,7 +102,7 @@ public class ViewedBy implements Set<User> {
     @JacocoGenerated
     @Override
     public void clear() {
-        throw new UnsupportedOperationException();
+        views.clear();
     }
     
     @Override

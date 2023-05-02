@@ -221,7 +221,7 @@ public abstract class TicketEntry implements Entity {
     }
 
     public final TicketEntry markUnreadForEveryone() {
-        viewedBy.forEach(user -> viewedBy.remove(user));
+        viewedBy.clear();
         return this;
     }
 
