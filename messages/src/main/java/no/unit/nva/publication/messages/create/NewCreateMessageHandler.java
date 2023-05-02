@@ -27,6 +27,8 @@ import nva.commons.core.JacocoGenerated;
 
 public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
 
+    private static final String ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
+    private static final String ACCESS_RIGHT_APPROVE_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
     private final MessageService messageService;
     private final TicketService ticketService;
 
@@ -59,11 +61,6 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return HttpURLConnection.HTTP_CREATED;
     }
 
-    private static boolean userIsElevatedUser(RequestInfo requestInfo) {
-        return userIsAuthorizedToApproveDoiRequest(requestInfo)
-                || userIsAuthorizedToApprovePublishingRequest(requestInfo);
-    }
-
     private static String createLocationHeader(Message message) {
         return NewMessageDto.constructMessageId(message).toString();
     }
@@ -87,6 +84,11 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
                 : fetchTicketForPublicationOwner(ticketIdentifier, user);
     }
 
+    private static boolean userIsElevatedUser(RequestInfo requestInfo) {
+        return userIsAuthorizedToApproveDoiRequest(requestInfo)
+                || userIsAuthorizedToApprovePublishingRequest(requestInfo);
+    }
+
     private TicketEntry fetchTicketAndValidateAccessRightsForElevatedUser(RequestInfo requestInfo,
                                                                           SortableIdentifier ticketIdentifier,
                                                                           UserInstance user)
@@ -94,6 +96,12 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         var ticketEntry = fetchTicketForElevatedUser(ticketIdentifier, user);
         validateAccessRightsForTicketType(requestInfo, ticketEntry.getClass());
         return ticketEntry;
+    }
+
+    private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, UserInstance user)
+            throws ApiGatewayException {
+        return attempt(() -> ticketService.fetchTicket(user, ticketIdentifier))
+                .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
     }
 
     private void validateAccessRightsForTicketType(RequestInfo requestInfo, Class<? extends TicketEntry> ticketType)
@@ -124,21 +132,11 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     }
 
     private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return isUserIsAuthorized(requestInfo, AccessRight.APPROVE_PUBLISH_REQUEST);
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
     }
 
     private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return isUserIsAuthorized(requestInfo, AccessRight.APPROVE_DOI_REQUEST);
-    }
-
-    private static boolean isUserIsAuthorized(RequestInfo requestInfo, AccessRight accessRight) {
-        return requestInfo.userIsAuthorized(accessRight.toString());
-    }
-
-    private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, UserInstance user)
-        throws ApiGatewayException {
-        return attempt(() -> ticketService.fetchTicket(user, ticketIdentifier))
-                   .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
     }
 
     private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance user)

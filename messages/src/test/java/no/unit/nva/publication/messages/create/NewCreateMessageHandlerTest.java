@@ -80,6 +80,39 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
+    void shouldReturnForbiddenWhenSenderIsElevatedUserWithInvalidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
+                                                                           String accessRights)
+            throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRights);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
+                                                                      PublicationStatus status)
+            throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = UserInstance.create(randomString(), randomUri());
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
+                ACCESS_RIGHT_DOI_REQUEST);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldCreateMessageAndSetCuratorAsAssigneeWhenSenderIsCuratorAndTicketHasNoAssignee(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
@@ -120,39 +153,6 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         assertThat(ticketWithMessage.getAssignee(), is(equalTo(sender.getUser())));
         var expectedSender = sender.getUser();
         assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
-    void shouldReturnForbiddenWhenSenderHasInvalidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
-                                                                           String accessRights)
-            throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRights);
-
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
-                                                                             PublicationStatus status)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), randomUri());
-        var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                ACCESS_RIGHT_DOI_REQUEST);
-
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
     @ParameterizedTest
