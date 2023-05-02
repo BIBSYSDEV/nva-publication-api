@@ -13,6 +13,9 @@
     "Film": "https://nva.sikt.no/ontology/publication#Film",
     "InteractiveFilm": "https://nva.sikt.no/ontology/publication#InteractiveFilm",
     "AugmentedVirtualRealityFilm": "https://nva.sikt.no/ontology/publication#AugmentedVirtualRealityFilm",
+    "partOf": {
+      "@type": "@id"
+    },
     "approvedBy": {
       "@context": {
         "@vocab": "https://nva.sikt.no/ontology/approvals-body#"

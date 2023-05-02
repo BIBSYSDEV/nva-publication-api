@@ -3,6 +3,7 @@ package no.unit.nva.expansion.utils;
 import static java.util.Objects.isNull;
 import com.github.jsonldjava.core.JsonLdOptions;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -26,6 +27,12 @@ public class FramedJsonGenerator {
     public FramedJsonGenerator(List<InputStream> streams, String frame) {
         model = createModel(streams);
         framedJson = getFramedModelJson(frame);
+    }
+
+    public String toRdf(Model model) {
+        var writer = new StringWriter();
+        RDFDataMgr.write(writer, model, Lang.NTRIPLES);
+        return writer.toString();
     }
 
     public String getFramedJson() {

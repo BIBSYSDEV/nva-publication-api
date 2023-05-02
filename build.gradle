@@ -38,5 +38,6 @@ dependencies {
 }
 
 repositories {
+    mavenLocal() // DO NOT COMMIT THIS!!!
     mavenCentral()
 }
