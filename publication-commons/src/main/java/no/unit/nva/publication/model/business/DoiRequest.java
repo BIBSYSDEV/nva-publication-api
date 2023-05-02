@@ -1,27 +1,13 @@
 package no.unit.nva.publication.model.business;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -29,6 +15,23 @@ import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
+
+import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
+import static nva.commons.core.attempt.Try.attempt;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
@@ -60,7 +63,7 @@ public class DoiRequest extends TicketEntry {
     @JsonProperty(OWNER_FIELD)
     private User owner;
     @JsonProperty(ASSIGNEE_FIELD)
-    private User assignee;
+    private Username assignee;
 
     public DoiRequest() {
         super();
@@ -82,7 +85,6 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        doiRequest.setAssignee(null);
         return doiRequest;
     }
 
@@ -97,7 +99,6 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setCreatedDate(now);
         doiRequest.validate();
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        doiRequest.setAssignee(null);
         return doiRequest;
     }
 
@@ -197,8 +198,8 @@ public class DoiRequest extends TicketEntry {
     }
 
     @Override
-    public DoiRequest complete(Publication publication) {
-        return (DoiRequest) super.complete(publication);
+    public DoiRequest complete(Publication publication, Username finalizedBy) {
+        return (DoiRequest) super.complete(publication, finalizedBy);
     }
 
     @Override
@@ -228,12 +229,12 @@ public class DoiRequest extends TicketEntry {
     }
 
     @Override
-    public User getAssignee() {
+    public Username getAssignee() {
         return assignee;
     }
 
     @Override
-    public void setAssignee(User assignee) {
+    public void setAssignee(Username assignee) {
         this.assignee = assignee;
     }
 
@@ -312,7 +313,7 @@ public class DoiRequest extends TicketEntry {
             return this;
         }
 
-        public Builder withAssignee(User assignee) {
+        public Builder withAssignee(Username assignee) {
             doiRequest.setAssignee(assignee);
             return this;
         }

@@ -13,6 +13,7 @@ import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -97,7 +98,7 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class TicketServiceTest extends ResourcesLocalTest {
+public class TicketServiceTest extends ResourcesLocalTest {
 
     private static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     private static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
@@ -299,7 +300,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var expectedTicket = persistedTicket.copy();
         expectedTicket.setStatus(COMPLETED);
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
-
+        expectedTicket.setAssignee(USERNAME);
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
     }
@@ -428,6 +429,7 @@ class TicketServiceTest extends ResourcesLocalTest {
         var expectedTicket = ticket.copy();
         expectedTicket.setStatus(COMPLETED);
         expectedTicket.setModifiedDate(completedTicket.getModifiedDate());
+        expectedTicket.setAssignee(USERNAME);
         assertThat(completedTicket, is(equalTo(expectedTicket)));
     }
 
@@ -659,16 +661,19 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
         var publication = persistPublication(owner, publicationStatus);
         var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
-        var user = UserInstance.fromTicket(persistedTicket);
-        ticketService.updateTicketAssignee(persistedTicket, user.getUser());
+        ticketService.updateTicketAssignee(persistedTicket, getUsername(publication));
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
 
         var expectedTicket = persistedTicket.copy();
-        expectedTicket.setAssignee(UserInstance.fromPublication(publication).getUser());
+        expectedTicket.setAssignee(getUsername(publication));
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
 
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
+    }
+
+    private static Username getUsername(Publication publication) {
+        return new Username(UserInstance.fromPublication(publication).getUsername());
     }
 
     @Test
@@ -687,14 +692,13 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, publicationStatus);
         var persistedTicket = createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
         var assignee = UserInstance.create(SOME_ASSIGNEE, publication.getPublisher().getId());
-        persistedTicket.setAssignee(assignee.getUser());
+        persistedTicket.setAssignee(getUsername(publication));
 
-        var user = UserInstance.fromTicket(persistedTicket);
-        ticketService.updateTicketAssignee(persistedTicket, user.getUser());
+        ticketService.updateTicketAssignee(persistedTicket, new Username(UserInstance.fromTicket(persistedTicket).getUsername()));
         var updatedTicket = ticketService.fetchTicket(persistedTicket);
 
         var expectedTicket = persistedTicket.copy();
-        expectedTicket.setAssignee(UserInstance.fromPublication(publication).getUser());
+        expectedTicket.setAssignee(getUsername(publication));
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
 
         assertThat(updatedTicket, is(equalTo(expectedTicket)));
@@ -708,10 +712,20 @@ class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var pendingTicket = createPersistedTicket(publication, ticketType);
         var assignee = UserInstance.create(SOME_ASSIGNEE, publication.getPublisher().getId());
-        pendingTicket.setAssignee(assignee.getUser());
+        pendingTicket.setAssignee(getUsername(publication));
         ticketService.updateTicketAssignee(pendingTicket, null);
         var actualTicket = ticketService.fetchTicket(pendingTicket);
         assertThat(actualTicket.getAssignee(), is(equalTo(null)));
+    }
+
+    @ParameterizedTest(name = "ticket type:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldThrowBadRequestExceptionWhenUpdatingStatusToPending(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var pendingTicket = createPersistedTicket(publication, ticketType);
+        assertThrows(BadRequestException.class,
+                     () -> ticketService.updateTicketStatus(pendingTicket, PENDING, USERNAME));
     }
 
     private List<TicketEntry> createAllTypesOfTickets(Publication publication) {

@@ -1,21 +1,8 @@
 package no.unit.nva.publication.model.business;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -25,6 +12,21 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
+import static nva.commons.core.attempt.Try.attempt;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -160,26 +162,23 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void validateCompletionRequirements(Publication publication);
 
-    public TicketEntry complete(Publication publication) {
+    public TicketEntry complete(Publication publication, Username finalizedBy) {
         var updated = this.copy();
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
         updated.setModifiedDate(Instant.now());
-        return updated;
-    }
-
-    public TicketEntry finalize(Username username) {
-        var updated = this.copy();
-        updated.setFinalizedBy(username);
+        updated.setFinalizedBy(finalizedBy);
         updated.setFinalizedDate(Instant.now());
         return updated;
     }
 
-    public final TicketEntry close() throws ApiGatewayException {
+    public final TicketEntry close(Username finalizedBy) throws ApiGatewayException {
         validateClosingRequirements();
         var updated = this.copy();
         updated.setStatus(TicketStatus.CLOSED);
         updated.setModifiedDate(Instant.now());
+        updated.setFinalizedBy(finalizedBy);
+        updated.setFinalizedDate(Instant.now());
         return updated;
     }
 
@@ -197,9 +196,9 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setStatus(TicketStatus ticketStatus);
 
-    public abstract User getAssignee();
+    public abstract Username getAssignee();
 
-    public abstract void setAssignee(User assignee);
+    public abstract void setAssignee(Username assignee);
 
     public final List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);
@@ -322,10 +321,10 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void validateAssigneeRequirements(Publication publication);
 
-    public TicketEntry updateAssignee(Publication publication, User user) {
+    public TicketEntry updateAssignee(Publication publication, Username assignee) {
         var updated = this.copy();
         updated.validateAssigneeRequirements(publication);
-        updated.setAssignee(user);
+        updated.setAssignee(assignee);
         updated.setModifiedDate(Instant.now());
         return updated;
     }

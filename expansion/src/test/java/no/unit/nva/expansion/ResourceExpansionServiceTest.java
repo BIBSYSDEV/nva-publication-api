@@ -1,44 +1,23 @@
 package no.unit.nva.expansion;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.collection.IsIn.in;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -54,6 +33,30 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.net.URI;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.collection.IsIn.in;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
@@ -72,6 +75,25 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
 
+    private static URI constructExpectedPublicationId(Publication publication) {
+        return UriWrapper.fromHost(API_HOST)
+                .addChild("publication")
+                .addChild(publication.getIdentifier().toString())
+                .getUri();
+    }
+
+    private static List<Class<?>> listPublicationInstanceTypes() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
+            Class<? extends TicketEntry> ticketType) {
+        return (Class<? extends TicketEntry>)
+                ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
+                        .findAny().orElseThrow();
+    }
+
     @BeforeEach
     void setUp() {
         super.init();
@@ -81,9 +103,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnExpandedTicketContainingTheOrganizationIdOfTheOwnersAffiliationAsIs(
-        Class<? extends TicketEntry> ticketType,
-        PublicationStatus status)
-        throws Exception {
+            Class<? extends TicketEntry> ticketType,
+            PublicationStatus status)
+            throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var userAffiliation = publication.getResourceOwner().getOwnerAffiliation();
@@ -91,12 +113,25 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(userAffiliation, is(in(expandedTicket.getOrganizationIds())));
     }
 
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnExpandedTicketContainingFinalizedByValue(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException,
+            JsonProcessingException {
+
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.setFinalizedBy(new Username(randomString()));
+        var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
+        assertThat(ticket.getFinalizedBy(), is(equalTo(expandedTicket.getFinalizedBy())));
+    }
+
     @DisplayName("should copy all publicly visible fields from Ticket to ExpandedTicket")
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldCopyAllPubliclyVisibleFieldsFromTicketToExpandedTicket(Class<? extends TicketEntry> ticketType,
                                                                       PublicationStatus status)
-        throws ApiGatewayException, JsonProcessingException {
+            throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
@@ -104,7 +139,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
-                                                                       FINALIZED_DATE)));
+                FINALIZED_DATE)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
@@ -114,7 +149,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldExpandAssociatedTicketWhenMessageIsCreated(Class<? extends TicketEntry> ticketType,
                                                           PublicationStatus status)
-        throws ApiGatewayException, JsonProcessingException {
+            throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
@@ -127,10 +162,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should return framed index document for resources. Instance type:{0}")
     @MethodSource("listPublicationInstanceTypes")
     void shouldReturnFramedIndexDocumentFromResource(Class<?> instanceType)
-        throws JsonProcessingException, NotFoundException {
+            throws JsonProcessingException, NotFoundException {
 
         Publication publication = PublicationGenerator.randomPublication(instanceType)
-            .copy().withEntityDescription(new EntityDescription()).build();
+                .copy().withEntityDescription(new EntityDescription()).build();
 
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -143,8 +178,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry
-            .requestNewTicket(publication, GeneralSupportRequest.class)
-            .persistNewTicket(ticketService);
+                .requestNewTicket(publication, GeneralSupportRequest.class)
+                .persistNewTicket(ticketService);
 
         var expectedMessage = messageService.createMessage(ticketToBeExpanded, owner, randomString());
 
@@ -156,16 +191,16 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldExpandAssociatedTicketAndNotTheMessageItselfWhenNewMessageArrivesForExpansion()
-        throws ApiGatewayException, JsonProcessingException {
+            throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry
-            .requestNewTicket(publication, GeneralSupportRequest.class)
-            .persistNewTicket(ticketService);
+                .requestNewTicket(publication, GeneralSupportRequest.class)
+                .persistNewTicket(ticketService);
 
         var messageThatWillLeadToTicketExpansion =
-            messageService.createMessage(ticketToBeExpanded, owner, randomString());
+                messageService.createMessage(ticketToBeExpanded, owner, randomString());
 
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(messageThatWillLeadToTicketExpansion);
         assertThat(expandedTicket.getMessages(), contains(messageThatWillLeadToTicketExpansion));
@@ -174,7 +209,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldAddResourceTitleToExpandedTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException, JsonProcessingException {
+            throws ApiGatewayException, JsonProcessingException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -188,13 +223,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldThrowIfUnsupportedType() {
         var unsupportedImplementation = mock(Entity.class);
         assertThrows(UnsupportedOperationException.class,
-                     () -> expansionService.expandEntry(unsupportedImplementation));
+                () -> expansionService.expandEntry(unsupportedImplementation));
     }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
@@ -207,33 +242,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnEmptySetIfNotTicketEntry() throws NotFoundException {
         var message = Message.builder()
-            .withResourceIdentifier(SortableIdentifier.next())
-            .withTicketIdentifier(SortableIdentifier.next())
-            .withIdentifier(SortableIdentifier.next())
-            .build();
+                .withResourceIdentifier(SortableIdentifier.next())
+                .withTicketIdentifier(SortableIdentifier.next())
+                .withIdentifier(SortableIdentifier.next())
+                .build();
 
         var actual = expansionService.getOrganizationIds(message);
 
         assertThat(actual, is(equalTo(Collections.emptySet())));
-    }
-
-    private static URI constructExpectedPublicationId(Publication publication) {
-        return UriWrapper.fromHost(API_HOST)
-            .addChild("publication")
-            .addChild(publication.getIdentifier().toString())
-            .getUri();
-    }
-
-    private static List<Class<?>> listPublicationInstanceTypes() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
-        Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>)
-                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
-            .findAny().orElseThrow();
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -241,14 +257,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     // This may change in the future, so the warning is suppressed.
     private List<Message> messagesOfDifferentTickets(Publication publication, UserInstance owner,
                                                      Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
 
         var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
-            .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService);
         var firstUnexpectedMessage = messageService.createMessage(differentTicketSameType, owner, randomString());
         var differentTicketType = someOtherTicketTypeBesidesDoiRequest(ticketType);
         var differentTicketDifferentType =
-            TicketEntry.requestNewTicket(publication, differentTicketType).persistNewTicket(ticketService);
+                TicketEntry.requestNewTicket(publication, differentTicketType).persistNewTicket(ticketService);
         var secondUnexpectedMessage = messageService.createMessage(differentTicketDifferentType, owner, randomString());
         return new ArrayList<>(List.of(firstUnexpectedMessage, secondUnexpectedMessage));
     }
@@ -263,11 +279,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
         var publication =
-            randomPublication().copy()
-                .withDoi(null)
-                .withStatus(DRAFT)
-                .build();
+                randomPublication().copy()
+                        .withDoi(null)
+                        .withStatus(DRAFT)
+                        .build();
         return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
+                UserInstance.fromPublication(publication));
     }
 }

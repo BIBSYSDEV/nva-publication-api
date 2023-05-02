@@ -1,15 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import java.net.URI;
-import java.time.Clock;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.PublicationStatus;
@@ -22,12 +13,23 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
+
+import java.net.URI;
+import java.time.Clock;
+
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 class MessageDaoTest extends ResourcesLocalTest {
     
@@ -50,7 +52,8 @@ class MessageDaoTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldBeRetrievableByIdentifier(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+    void shouldBeRetrievableByIdentifier(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+            throws ApiGatewayException {
         var message = insertSampleMessageInDatabase(ticketType, status);
         var retrievedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
         assertThat(retrievedMessage, is(equalTo(message)));
@@ -58,7 +61,8 @@ class MessageDaoTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+    void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var message = insertSampleMessageInDatabase(ticketType, status);
         var queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
         var retrievedMessage = fetchMessageFromDatabase(queryObject);
@@ -84,8 +88,8 @@ class MessageDaoTest extends ResourcesLocalTest {
     private Message insertSampleMessageInDatabase(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, UserInstance.create(RANDOM_RESOURCE_OWNER,
-                                                                                                          publisher.getId()), resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status,
+                UserInstance.create(RANDOM_RESOURCE_OWNER, publisher.getId()), resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
     }

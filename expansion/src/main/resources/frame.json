@@ -191,6 +191,10 @@
           "@embed": "@always"
         }
       }
+    },
+    "metadataSource": {
+      "@embed": "@never",
+      "@default": "@null"
     }
   },
   "topLevelOrganization": {
