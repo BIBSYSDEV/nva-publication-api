@@ -9,7 +9,9 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.messages.MessageApiConfig;
 import no.unit.nva.publication.messages.model.NewMessageDto;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -58,7 +60,8 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     }
 
     private static boolean userIsElevatedUser(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return userIsAuthorizedToApproveDoiRequest(requestInfo)
+                || userIsAuthorizedToApprovePublishingRequest(requestInfo);
     }
 
     private static String createLocationHeader(Message message) {
@@ -80,8 +83,56 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
                                            UserInstance user)
         throws ApiGatewayException {
         return userIsElevatedUser(requestInfo)
-                   ? fetchTicketForElevatedUser(ticketIdentifier, user)
-                   : fetchTicketForPublicationOwner(ticketIdentifier, user);
+                ? fetchTicketAndValidateAccessRightsForElevatedUser(requestInfo, ticketIdentifier, user)
+                : fetchTicketForPublicationOwner(ticketIdentifier, user);
+    }
+
+    private TicketEntry fetchTicketAndValidateAccessRightsForElevatedUser(RequestInfo requestInfo,
+                                                                          SortableIdentifier ticketIdentifier,
+                                                                          UserInstance user)
+            throws ApiGatewayException {
+        var ticketEntry = fetchTicketForElevatedUser(ticketIdentifier, user);
+        validateAccessRightsForTicketType(requestInfo, ticketEntry.getClass());
+        return ticketEntry;
+    }
+
+    private void validateAccessRightsForTicketType(RequestInfo requestInfo, Class<? extends TicketEntry> ticketType)
+            throws ApiGatewayException {
+        if (userIsNotAuthorizedToCreateMessageForDoiRequest(requestInfo, ticketType)
+                || userIsNotAuthorizedToCreateMessageForPublishingRequestCase(requestInfo, ticketType)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private boolean userIsNotAuthorizedToCreateMessageForPublishingRequestCase(
+            RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
+        return ticketType.equals(PublishingRequestCase.class)
+                && userIsNotAuthorizedToApprovePublishingRequest(requestInfo);
+    }
+
+    private boolean userIsNotAuthorizedToCreateMessageForDoiRequest(
+            RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
+        return ticketType.equals(DoiRequest.class) && userIsNotAuthorizedToApproveDoiRequest(requestInfo);
+    }
+
+    private boolean userIsNotAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
+        return !userIsAuthorizedToApprovePublishingRequest(requestInfo);
+    }
+
+    private boolean userIsNotAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
+        return !userIsAuthorizedToApproveDoiRequest(requestInfo);
+    }
+
+    private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
+        return isUserIsAuthorized(requestInfo, AccessRight.APPROVE_PUBLISH_REQUEST);
+    }
+
+    private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
+        return isUserIsAuthorized(requestInfo, AccessRight.APPROVE_DOI_REQUEST);
+    }
+
+    private static boolean isUserIsAuthorized(RequestInfo requestInfo, AccessRight accessRight) {
+        return requestInfo.userIsAuthorized(accessRight.toString());
     }
 
     private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, UserInstance user)

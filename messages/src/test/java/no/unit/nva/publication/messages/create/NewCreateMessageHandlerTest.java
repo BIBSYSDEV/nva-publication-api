@@ -46,6 +46,8 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
+    private static final String ACCESS_RIGHT_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
+    private static final String ACCESS_RIGHT_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
     private ResourceService resourceService;
     private TicketService ticketService;
     private NewCreateMessageHandler handler;
@@ -86,7 +88,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
+                ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -99,6 +102,43 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
+    void shouldCreateMessageWhenCuratorHasValidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
+                                                                        String accessRight)
+            throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRight);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertThatResponseContainsCorrectInformation(response, ticket);
+        var ticketWithMessage = ticketService.fetchTicket(ticket);
+        assertThat(ticketWithMessage.getAssignee(), is(equalTo(sender.getUser())));
+        var expectedSender = sender.getUser();
+        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
+    void shouldReturnForbiddenWhenSenderHasInvalidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
+                                                                           String accessRights)
+            throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRights);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
                                                                              PublicationStatus status)
@@ -107,7 +147,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), randomUri());
         var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
+                ACCESS_RIGHT_DOI_REQUEST);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -123,7 +164,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var curator = UserInstance.create("CURATOR", publication.getPublisher().getId());
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, curator, randomString());
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, curator, randomString(),
+                ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasSize(1));
@@ -202,13 +244,15 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     private InputStream createNewMessageRequestForElevatedUser(Publication publication,
                                                                TicketEntry ticket,
                                                                UserInstance user,
-                                                               String message) throws JsonProcessingException {
+                                                               String message,
+                                                               String... accessRights)
+            throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(pathParameters(publication, ticket))
                    .withBody(messageBody(message))
                    .withNvaUsername(user.getUsername())
                    .withCustomerId(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(user.getOrganizationUri(), accessRights)
                    .build();
     }
 
