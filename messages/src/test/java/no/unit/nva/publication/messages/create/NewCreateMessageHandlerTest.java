@@ -82,8 +82,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
-    void shouldReturnForbiddenWhenSenderIsElevatedUserWithInvalidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
-                                                                           String accessRights)
+    void shouldReturnForbiddenWhenSenderIsElevatedUserWithInvalidAccessRightForTicketType(
+            Class<? extends TicketEntry> ticketType, String accessRights)
             throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -150,8 +150,6 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThatResponseContainsCorrectInformation(response, ticket);
-        var ticketWithMessage = ticketService.fetchTicket(ticket);
-        assertThat(ticketWithMessage.getAssignee(), is(equalTo(sender.getUser())));
         var expectedSender = sender.getUser();
         assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
     }

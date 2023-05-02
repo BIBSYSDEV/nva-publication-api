@@ -73,7 +73,8 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return new SortableIdentifier(identifierString);
     }
 
-    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo) throws UnauthorizedException {
+    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo)
+            throws UnauthorizedException {
         if (isNull(ticket.getAssignee()) && userIsElevatedUser(requestInfo)) {
             ticket.setAssignee(usernameFromRequestInfo(requestInfo));
         }
