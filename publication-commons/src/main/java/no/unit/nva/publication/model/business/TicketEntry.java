@@ -225,8 +225,8 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
 
-    public final TicketEntry markReadBySender(User sender) {
-        viewedBy.add(sender);
+    public final TicketEntry markReadByUser(User user) {
+        viewedBy.add(user);
         return this;
     }
 

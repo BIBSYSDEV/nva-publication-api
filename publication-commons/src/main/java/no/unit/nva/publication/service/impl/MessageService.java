@@ -69,7 +69,7 @@ public class MessageService extends ServiceWithTransactions {
     }
     
     private void markTicketUnreadForEveryoneExceptSender(TicketEntry ticketEntry, UserInstance sender) {
-        ticketEntry.markUnreadForEveryone().markReadBySender(sender.getUser()).persistUpdate(ticketService);
+        ticketEntry.markUnreadForEveryone().markReadByUser(sender.getUser()).persistUpdate(ticketService);
     }
     
     private Map<String, AttributeValue> fetchMessage(MessageDao queryObject) throws NotFoundException {
