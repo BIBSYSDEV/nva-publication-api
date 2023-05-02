@@ -83,8 +83,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
     void shouldReturnForbiddenWhenSenderIsElevatedUserWithInvalidAccessRightForTicketType(
-            Class<? extends TicketEntry> ticketType, String accessRights)
-            throws ApiGatewayException, IOException {
+        Class<? extends TicketEntry> ticketType, String accessRights)
+        throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
@@ -100,13 +100,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
                                                                       PublicationStatus status)
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), randomUri());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                ACCESS_RIGHT_DOI_REQUEST);
+                                                             ACCESS_RIGHT_DOI_REQUEST);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -123,7 +123,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
+                                                             ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -139,7 +139,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
     void shouldCreateMessageWhenCuratorHasValidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
                                                                         String accessRight)
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
@@ -158,13 +158,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @DisplayName("should mark ticket as unread for everyone except curator when curator sends a message")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForEveryoneExceptCuratorWhenCuratorSendsAMessage(
-            Class<? extends TicketEntry> ticketType,PublicationStatus status) throws ApiGatewayException, IOException {
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var curator = UserInstance.create("CURATOR", publication.getPublisher().getId());
         var request = createNewMessageRequestForElevatedUser(publication, ticket, curator, randomString(),
-                ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
+                                                             ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasSize(1));
@@ -175,8 +175,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @DisplayName("should mark ticket as unread for everyone except owner when owner sends a message")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsUnreadForEveryoneExceptOwnerWhenOwnerSendsAMessage(Class<? extends TicketEntry> ticketType,
-                                                                                  PublicationStatus status)
-            throws ApiGatewayException, IOException {
+                                                                              PublicationStatus status)
+        throws ApiGatewayException, IOException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -219,13 +219,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     private String createExpectedLocationHeader(Message actualMessage) {
         return UriWrapper.fromHost(API_HOST)
-                   .addChild("publication")
-                   .addChild(actualMessage.getResourceIdentifier().toString())
-                   .addChild("ticket")
-                   .addChild(actualMessage.getTicketIdentifier().toString())
-                   .addChild("message")
-                   .addChild(actualMessage.getIdentifier().toString())
-                   .toString();
+            .addChild("publication")
+            .addChild(actualMessage.getResourceIdentifier().toString())
+            .addChild("ticket")
+            .addChild(actualMessage.getTicketIdentifier().toString())
+            .addChild("message")
+            .addChild(actualMessage.getIdentifier().toString())
+            .toString();
     }
 
     private InputStream createNewMessageRequestForNonElevatedUser(Publication publication,
@@ -233,11 +233,11 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                   UserInstance userInstance,
                                                                   String randomString) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(pathParameters(publication, ticket))
-                   .withBody(messageBody(randomString))
-                   .withUserName(userInstance.getUsername())
-                   .withCurrentCustomer(userInstance.getOrganizationUri())
-                   .build();
+            .withPathParameters(pathParameters(publication, ticket))
+            .withBody(messageBody(randomString))
+            .withUserName(userInstance.getUsername())
+            .withCurrentCustomer(userInstance.getOrganizationUri())
+            .build();
     }
 
     private InputStream createNewMessageRequestForElevatedUser(Publication publication,
@@ -245,14 +245,14 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                UserInstance user,
                                                                String message,
                                                                String... accessRights)
-            throws JsonProcessingException {
+        throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(pathParameters(publication, ticket))
-                   .withBody(messageBody(message))
-                   .withUserName(user.getUsername())
-                   .withCurrentCustomer(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), accessRights)
-                   .build();
+            .withPathParameters(pathParameters(publication, ticket))
+            .withBody(messageBody(message))
+            .withUserName(user.getUsername())
+            .withCurrentCustomer(user.getOrganizationUri())
+            .withAccessRights(user.getOrganizationUri(), accessRights)
+            .build();
     }
 
     private CreateMessageRequest messageBody(String message) {

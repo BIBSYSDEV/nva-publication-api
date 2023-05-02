@@ -73,61 +73,69 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return new SortableIdentifier(identifierString);
     }
 
+    private static Username usernameFromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
+        return new Username(requestInfo.getUserName());
+    }
+
+    private static boolean userIsElevatedUser(RequestInfo requestInfo) {
+        return userIsAuthorizedToApproveDoiRequest(requestInfo)
+               || userIsAuthorizedToApprovePublishingRequest(requestInfo);
+    }
+
+    private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
+    }
+
+    private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
+    }
+
     private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo)
-            throws UnauthorizedException {
+        throws UnauthorizedException {
         if (isNull(ticket.getAssignee()) && userIsElevatedUser(requestInfo)) {
             ticket.setAssignee(usernameFromRequestInfo(requestInfo));
         }
-    }
-
-    private static Username usernameFromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
-        return new Username(requestInfo.getUserName());
     }
 
     private TicketEntry fetchTicketForUser(RequestInfo requestInfo, SortableIdentifier ticketIdentifier,
                                            UserInstance user)
         throws ApiGatewayException {
         return userIsElevatedUser(requestInfo)
-                ? fetchTicketAndValidateAccessRightsForElevatedUser(requestInfo, ticketIdentifier, user)
-                : fetchTicketForPublicationOwner(ticketIdentifier, user);
-    }
-
-    private static boolean userIsElevatedUser(RequestInfo requestInfo) {
-        return userIsAuthorizedToApproveDoiRequest(requestInfo)
-                || userIsAuthorizedToApprovePublishingRequest(requestInfo);
+                   ? fetchTicketAndValidateAccessRightsForElevatedUser(requestInfo, ticketIdentifier, user)
+                   : fetchTicketForPublicationOwner(ticketIdentifier, user);
     }
 
     private TicketEntry fetchTicketAndValidateAccessRightsForElevatedUser(RequestInfo requestInfo,
                                                                           SortableIdentifier ticketIdentifier,
                                                                           UserInstance user)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         var ticketEntry = fetchTicketForElevatedUser(ticketIdentifier, user);
         validateAccessRightsForTicketType(requestInfo, ticketEntry.getClass());
         return ticketEntry;
     }
 
     private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, UserInstance user)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         return attempt(() -> ticketService.fetchTicket(user, ticketIdentifier))
-                .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
+            .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
     }
 
     private void validateAccessRightsForTicketType(RequestInfo requestInfo, Class<? extends TicketEntry> ticketType)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         if (userIsNotAuthorizedToCreateMessageForDoiRequest(requestInfo, ticketType)
-                || userIsNotAuthorizedToCreateMessageForPublishingRequestCase(requestInfo, ticketType)) {
+            || userIsNotAuthorizedToCreateMessageForPublishingRequestCase(requestInfo, ticketType)) {
             throw new ForbiddenException();
         }
     }
 
     private boolean userIsNotAuthorizedToCreateMessageForPublishingRequestCase(
-            RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
+        RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
         return ticketType.equals(PublishingRequestCase.class)
-                && userIsNotAuthorizedToApprovePublishingRequest(requestInfo);
+               && userIsNotAuthorizedToApprovePublishingRequest(requestInfo);
     }
 
     private boolean userIsNotAuthorizedToCreateMessageForDoiRequest(
-            RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
+        RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
         return ticketType.equals(DoiRequest.class) && userIsNotAuthorizedToApproveDoiRequest(requestInfo);
     }
 
@@ -139,18 +147,10 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return !userIsAuthorizedToApproveDoiRequest(requestInfo);
     }
 
-    private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
-    }
-
-    private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
-    }
-
     private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance user)
         throws ApiGatewayException {
         return attempt(() -> ticketService.fetchTicketForElevatedUser(user, ticketIdentifier))
-                   .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
+            .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
     }
 
     private ApiGatewayException handleFetchingTicketForUserError(Exception exception) {
