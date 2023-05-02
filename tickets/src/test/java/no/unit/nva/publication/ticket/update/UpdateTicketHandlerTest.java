@@ -18,8 +18,6 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,7 +33,7 @@ import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static java.net.HttpURLConnection.*;
-import static no.unit.nva.publication.PublicationServiceConfig.*;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -63,6 +61,45 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         );
     }
 
+    private static void assertThatTicketViewStatusIsUnchanged(TicketEntry ticket) {
+        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
+        assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
+    }
+
+    private static InputStream createOwnerMarksTicket(Publication publication,
+                                                      TicketEntry ticket,
+                                                      ViewStatus viewStatus)
+            throws JsonProcessingException {
+        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
+                .withCurrentCustomer(ticket.getCustomerId())
+                .withUserName(ticket.getOwner().toString())
+                .withBody(new TicketRequest(ticket.getStatus(), null, viewStatus))
+                .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+                .build();
+    }
+
+    //STATUS UPDATE RELATED TESTS
+
+    private static InputStream elevatedUserMarksTicket(Publication publication,
+                                                       TicketEntry ticket,
+                                                       ViewStatus viewStatus,
+                                                       URI customerId)
+            throws JsonProcessingException {
+        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
+                .withCurrentCustomer(customerId)
+                .withUserName(randomString())
+                .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
+                .withBody(new TicketRequest(ticket.getStatus(), null, viewStatus))
+                .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+                .build();
+    }
+
+    private static Map<String, String> createPathParameters(TicketEntry ticket,
+                                                            SortableIdentifier publicationIdentifier) {
+        return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publicationIdentifier.toString(),
+                TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
+    }
+
     @BeforeEach
     public void setup() {
         super.init();
@@ -82,8 +119,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
         assertThat(ticket, is(equalTo(ticketService.fetchTicket(ticket))));
     }
-
-    //STATUS UPDATE RELATED TESTS
 
     @Test
     void shouldCompletePendingDoiRequestWhenUserIsCuratorAndPublicationIsPublished()
@@ -251,6 +286,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
+    //ASSIGNEE RELATED TESTS
+
     @Test
     void shouldReturnForbiddenWhenRequestingUserIsCuratorAtOtherCustomerThanCurrentPublisher()
             throws ApiGatewayException, IOException {
@@ -303,7 +340,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
-    //ASSIGNEE RELATED TESTS
+    //VIEW_STATUS related tests
 
     @Test
     void shouldAddAssigneeToTicketWhenUserIsCuratorAndTicketHasNoAssignee() throws ApiGatewayException, IOException {
@@ -348,7 +385,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var addAssigneeTicket = ticket.updateAssignee(publication, new Username(user.getUsername()));
         var request = createAssigneeTicketHttpRequest(
                 addAssigneeTicket,
-                AccessRight.USER,
                 addAssigneeTicket.getCustomerId()
         );
         handler.handleRequest(request, output, CONTEXT);
@@ -368,9 +404,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
     }
-
-    //ViewStatus related tests
-
 
     @ParameterizedTest
     @DisplayName("should mark ticket as read for owner when user is ticket owner and marks it as read")
@@ -514,11 +547,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
-    private static void assertThatTicketViewStatusIsUnchanged(TicketEntry ticket) {
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-        assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
-    }
-
     private InputStream authorizedUserAssigneesTicket(Publication publication,
                                                       TicketEntry ticket,
                                                       UserInstance user) throws JsonProcessingException {
@@ -532,11 +560,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream createAssigneeTicketHttpRequest(TicketEntry ticket,
-                                                        AccessRight accessRight,
                                                         URI customer) throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                 .withBody(TicketDto.fromTicket(ticket))
-                .withAccessRights(customer, accessRight.toString())
+                .withAccessRights(customer, AccessRight.USER.toString())
                 .withCurrentCustomer(customer)
                 .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                         ticket.extractPublicationIdentifier().toString(),
@@ -580,10 +607,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private InputStream curatorAttemptsToMarkExistingTicketConnectedToWrongPublication(
             TicketEntry ticket,
             SortableIdentifier wrongPublicationIdentifier)
-            throws JsonProcessingException, BadRequestException {
+            throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
-                .withCustomerId(ticket.getCustomerId())
-                .withNvaUsername(randomString())
+                .withCurrentCustomer(ticket.getCustomerId())
+                .withUserName(randomString())
                 .withBody(new TicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
                 .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
                 .withAccessRights(ticket.getCustomerId(), AccessRight.APPROVE_DOI_REQUEST.toString())
@@ -591,73 +618,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus)
-            throws JsonProcessingException, BadRequestException {
+            throws JsonProcessingException {
         return elevatedUserMarksTicket(publication, ticket, viewStatus, ticket.getCustomerId());
     }
 
-    private static InputStream createOwnerMarksTicket(Publication publication,
-                                                      TicketEntry ticket,
-                                                      ViewStatus viewStatus)
-            throws JsonProcessingException, BadRequestException {
-        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
-                .withCurrentCustomer(ticket.getCustomerId())
-                .withUserName(ticket.getOwner().toString())
-                .withBody(new TicketRequest(ticket.getStatus(), null, viewStatus))
-                .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
-                .build();
-    }
-
-    private InputStream requestWithEmptyBody(TicketEntry ticket, String requestBody) throws JsonProcessingException {
-        return new HandlerRequestBuilder<String>(JsonUtils.dtoObjectMapper)
-                .withBody(requestBody)
-                .withCurrentCustomer(ticket.getCustomerId())
-                .withUserName(ticket.getOwner().toString())
-                .withPathParameters(createPathParameters(ticket, ticket.extractPublicationIdentifier()))
-                .build();
-    }
-
-    private static InputStream elevatedUserMarksTicket(Publication publication,
-                                                       TicketEntry ticket,
-                                                       ViewStatus viewStatus,
-                                                       URI customerId)
-            throws JsonProcessingException, BadRequestException {
-        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
-                .withCurrentCustomer(customerId)
-                .withUserName(randomString())
-                .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
-                .withBody(new TicketRequest(ticket.getStatus(), null, viewStatus))
-                .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
-                .build();
-    }
-
-    private void updatePublicationStatus(Publication publication, PublicationStatus newPublicationStatus)
-            throws ApiGatewayException {
-        if (PublicationStatus.PUBLISHED.equals(newPublicationStatus)) {
-            resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        } else if (PublicationStatus.DRAFT_FOR_DELETION.equals(newPublicationStatus)) {
-            resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
-                    publication.getIdentifier());
-        }
-    }
-
-    private static URI createLocationUri(Publication publication, TicketEntry ticket) {
-        return UriWrapper.fromHost(API_HOST)
-                .addChild(PUBLICATION_PATH)
-                .addChild(publication.getIdentifier().toString())
-                .addChild(TICKET_PATH)
-                .addChild(ticket.getIdentifier().toString())
-                .getUri();
-    }
-
     private InputStream alienCuratorMarksTicket(Publication publication, TicketEntry ticket)
-            throws JsonProcessingException, BadRequestException {
+            throws JsonProcessingException {
         return elevatedUserMarksTicket(publication, ticket, ViewStatus.UNREAD, RandomPersonServiceResponse.randomUri());
-    }
-
-    private static Map<String, String> createPathParameters(TicketEntry ticket,
-                                                            SortableIdentifier publicationIdentifier) {
-        return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publicationIdentifier.toString(),
-                TICKET_IDENTIFIER_PARAMETER_NAME, ticket.getIdentifier().toString());
     }
 
     private void mockBadResponseFromDoiRegistrar(URI doi) {

@@ -279,6 +279,61 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+
+  /{publicationIdentifier}/ticket/{tid}/update:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+    put:
+      description: Update existing ticket
+      requestBody:
+        description: A Ticket Object containing the status, assignee and viewedBy
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+      responses:
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        502:
+          description: Bad gateway
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+
   /{publicationIdentifier}/ticket/{ticketIdentifier}:
     parameters:
       - in: path
@@ -505,6 +560,7 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+
   /{publicationIdentifier}/ticket/{ticketIdentifier}/assignee:
     parameters:
       - in: path
@@ -525,13 +581,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Ticket"
+                $ref: "#/components/schemas/Ticket"
         403:
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: "/components/schemas/Problem"
+                $ref: "#/components/schemas/Problem"
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       x-amazon-apigateway-integration:
@@ -744,6 +800,22 @@ components:
       type: object
       properties:
         doi:
+          type: string
+    TicketRequest:
+      type: object
+      properties:
+        ticketStatus:
+          type: string
+          enum:
+            - Pending
+            - Completed
+            - Closed
+        viewStatus:
+          type: string
+          enum:
+            - Read
+            - Unread
+        username:
           type: string
     Ticket:
       type: object

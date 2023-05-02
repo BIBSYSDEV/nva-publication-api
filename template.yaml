@@ -659,6 +659,25 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
+  UpdateTicketHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: tickets
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{tid}/update
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
+
   CreateTicketFunction:
     Type: AWS::Serverless::Function
     Properties:
