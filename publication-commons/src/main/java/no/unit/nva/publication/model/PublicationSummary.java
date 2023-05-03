@@ -25,6 +25,7 @@ import nva.commons.core.paths.UriWrapper;
 public class PublicationSummary {
 
     public static final String TYPE = "Publication";
+    private static final int MAX_SIZE_CONTRIBUTOR_LIST = 5;
 
     @JsonProperty("id")
     private URI publicationId;
@@ -66,7 +67,7 @@ public class PublicationSummary {
                 publicationSummary.setContributors(entityDescription.getContributors()
                                                        .stream()
                                                        .sorted(Comparator.comparing(Contributor::getSequence))
-                                                       .limit(5)
+                                                       .limit(MAX_SIZE_CONTRIBUTOR_LIST)
                                                        .collect(Collectors.toList()));
             }
         }
