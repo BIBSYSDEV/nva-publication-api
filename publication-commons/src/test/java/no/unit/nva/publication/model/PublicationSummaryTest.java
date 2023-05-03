@@ -1,16 +1,19 @@
 package no.unit.nva.publication.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -23,7 +26,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class PublicationSummaryTest extends ResourcesLocalTest {
-    
+
+    private static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
+    private static final String PUBLISHED_DATE_FIELD = "publishedDate";
+    private static final String CONTRIBUTORS_FIELD = "contributors";
+
     @BeforeEach
     public void setup() {
         super.init();
@@ -50,13 +57,19 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
         assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
+        assertThat(summary.getPublicationInstance(), is(equalTo(publication.getEntityDescription().getReference().getPublicationInstance())));
+        assertThat(summary.getPublishedDate(), is(equalTo(publication.getPublishedDate())));
+        assertThat(summary.getContributors(),
+                   containsInAnyOrder(publication.getEntityDescription().getContributors().toArray()));
     }
     
     @Test
     void shouldReturnPublicationSummaryWithoutEmptyFieldsfromPublicationDetails() {
         var publication = PublicationGenerator.publicationWithIdentifier();
         var summary = PublicationSummary.create(PublicationDetails.create(publication));
-        assertThat(summary, doesNotHaveEmptyValues());
+        assertThat(summary, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_INSTANCE_FIELD,
+                                                                        PUBLISHED_DATE_FIELD,
+                                                                        CONTRIBUTORS_FIELD)));
         assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
         assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
