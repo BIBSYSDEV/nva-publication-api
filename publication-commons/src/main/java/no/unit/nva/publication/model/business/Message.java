@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -80,15 +79,6 @@ public class Message implements Entity, JsonSerializable {
     
     public void setTicketIdentifier(SortableIdentifier ticketIdentifier) {
         this.ticketIdentifier = ticketIdentifier;
-    }
-    
-    @JsonProperty("recipient")
-    public User getRecipient() {
-        return owner.equals(sender) ? SUPPORT_SERVICE_CORRESPONDENT : owner;
-    }
-    
-    public void setRecipient(String recipient) {
-        // DO NOTHING
     }
     
     @Override

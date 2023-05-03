@@ -5,14 +5,13 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,6 +47,8 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
+    private static final String ACCESS_RIGHT_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
+    private static final String ACCESS_RIGHT_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
     private ResourceService resourceService;
     private TicketService ticketService;
     private NewCreateMessageHandler handler;
@@ -67,26 +68,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldCreateMessageReferencingTicketForPublicationOwnerWithNonSpecificCuratorAsRecipientWhenUserIsTheOwner(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var user = UserInstance.fromTicket(ticket);
-        var expectedText = randomString();
-        var request = createNewMessageRequestForNonElevatedUser(publication, ticket, user, expectedText);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-
-        assertThatResponseContainsCorrectInformation(response, ticket);
-        var expectedSender = UserInstance.fromPublication(publication).getUser();
-        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
-                                                                 SUPPORT_SERVICE_CORRESPONDENT);
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    public void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(
+    void shouldReturnForbiddenWhenUserAttemptsToAddMessageWhenTheyAreNotThePublicationOwnerOrCurator(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -99,15 +81,49 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
+    void shouldReturnForbiddenWhenSenderIsElevatedUserWithInvalidAccessRightForTicketType(
+        Class<? extends TicketEntry> ticketType, String accessRights)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRights);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    public void shouldCreateMessageAndSetCuratorAsAssigneeWhenSenderIsCuratorAndTicketHasNoAssignee(
+    void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
+                                                                      PublicationStatus status)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = UserInstance.create(randomString(), randomUri());
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
+                                                             ACCESS_RIGHT_DOI_REQUEST);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldCreateMessageAndSetCuratorAsAssigneeWhenSenderIsCuratorAndTicketHasNoAssignee(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
+                                                             ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -116,91 +132,61 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticketWithMessage = ticketService.fetchTicket(ticket);
         assertThat(ticketWithMessage.getAssignee(), is(equalTo(new Username(sender.getUsername()))));
         var expectedSender = sender.getUser();
-        var expectedRecipient = UserInstance.fromPublication(publication).getUser();
-        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
-                                                                 expectedRecipient);
+        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
     }
 
     @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    public void shouldCreateMessageForTicketWithRecipientThePubOwnerAndSenderTheSpecificCuratorWhenSenderIsCurator(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
+    void shouldCreateMessageWhenCuratorHasValidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
+                                                                        String accessRight)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRight);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThatResponseContainsCorrectInformation(response, ticket);
         var expectedSender = sender.getUser();
-        var expectedRecipient = UserInstance.fromPublication(publication).getUser();
-        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender,
-                                                                 expectedRecipient);
+        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
     }
 
     @ParameterizedTest
+    @DisplayName("should mark ticket as unread for everyone except curator when curator sends a message")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    public void shouldReturnForbiddenWhenSenderIsCuratorOfAnAlienInstitution(Class<? extends TicketEntry> ticketType,
-                                                                             PublicationStatus status)
-        throws ApiGatewayException, IOException {
+    void shouldMarkTicketAsUnreadForEveryoneExceptCuratorWhenCuratorSendsAMessage(
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
+
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), randomUri());
-        var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText);
-
+        var curator = UserInstance.create("CURATOR", publication.getPublisher().getId());
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, curator, randomString(),
+                                                             ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
         handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.getViewedBy(), hasSize(1));
+        assertThat(updatedTicket.getViewedBy(), hasItem(curator.getUser()));
     }
 
     @ParameterizedTest
-    @DisplayName("should mark ticket as unread for Publication Owner and mark and as read for curators"
-                 + "when curator sends a message")
+    @DisplayName("should mark ticket as unread for everyone except owner when owner sends a message")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForPublicationOwnerWhenCuratorSendsAMessage(Class<? extends TicketEntry> ticketType,
-                                                                             PublicationStatus status)
+    void shouldMarkTicketAsUnreadForEveryoneExceptOwnerWhenOwnerSendsAMessage(Class<? extends TicketEntry> ticketType,
+                                                                              PublicationStatus status)
         throws ApiGatewayException, IOException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-        assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
-        var sender = UserInstance.create("NOT_EXPECTED", publication.getPublisher().getId());
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
+        var owner = UserInstance.fromPublication(publication);
+        var request = createNewMessageRequestForNonElevatedUser(publication, ticket, owner, randomString());
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getViewedBy(), not(hasItem(ticket.getOwner())));
-        assertThat(updatedTicket.getViewedBy(), hasItem(SUPPORT_SERVICE_CORRESPONDENT));
+        assertThat(updatedTicket.getViewedBy(), hasSize(1));
+        assertThat(updatedTicket.getViewedBy(), hasItem(owner.getUser()));
     }
-
-    @ParameterizedTest
-    @DisplayName("should mark ticket as unread for Curator and read for Publication Owner "
-                 + "when Publication Owner sends a Message")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForCuratorAndReadForPublicationOwnerWhenOwnerSendsAMessage(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException,
-                                                                                            IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.markReadForCurators().persistUpdate(ticketService);
-        ticket.markUnreadByOwner().persistUpdate(ticketService);
-        assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
-        assertThat(ticket.getViewedBy(), hasItem(SUPPORT_SERVICE_CORRESPONDENT));
-
-        var sender = UserInstance.create(ticket.getOwner(), ticket.getCustomerId());
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, randomString());
-        handler.handleRequest(request, output, context);
-        var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
-        assertThat(updatedTicket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
-    }
-
-
 
     private static Map<String, String> pathParameters(Publication publication,
                                                       TicketEntry ticket) {
@@ -212,12 +198,9 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     private void assertThatMessageContainsTextAndCorrectCorrespondentInfo(String expectedText,
                                                                           TicketEntry ticket,
-                                                                          User expectedSender,
-                                                                          User expectedRecipient) {
+                                                                          User expectedSender) {
         var actualMessage = ticket.fetchMessages(ticketService).stream().collect(SingletonCollector.collect());
         assertThat(actualMessage.getText(), is(equalTo(expectedText)));
-        assertThat("Recepient was:" + actualMessage.getRecipient(), actualMessage.getRecipient(),
-                   is(equalTo(expectedRecipient)));
         assertThat("Sender was:" + actualMessage.getSender(), actualMessage.getSender(),
                    is(equalTo(expectedSender)));
     }
@@ -236,13 +219,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     private String createExpectedLocationHeader(Message actualMessage) {
         return UriWrapper.fromHost(API_HOST)
-                   .addChild("publication")
-                   .addChild(actualMessage.getResourceIdentifier().toString())
-                   .addChild("ticket")
-                   .addChild(actualMessage.getTicketIdentifier().toString())
-                   .addChild("message")
-                   .addChild(actualMessage.getIdentifier().toString())
-                   .toString();
+            .addChild("publication")
+            .addChild(actualMessage.getResourceIdentifier().toString())
+            .addChild("ticket")
+            .addChild(actualMessage.getTicketIdentifier().toString())
+            .addChild("message")
+            .addChild(actualMessage.getIdentifier().toString())
+            .toString();
     }
 
     private InputStream createNewMessageRequestForNonElevatedUser(Publication publication,
@@ -250,24 +233,26 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                   UserInstance userInstance,
                                                                   String randomString) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(pathParameters(publication, ticket))
-                   .withBody(messageBody(randomString))
-                   .withUserName(userInstance.getUsername())
-                   .withCurrentCustomer(userInstance.getOrganizationUri())
-                   .build();
+            .withPathParameters(pathParameters(publication, ticket))
+            .withBody(messageBody(randomString))
+            .withUserName(userInstance.getUsername())
+            .withCurrentCustomer(userInstance.getOrganizationUri())
+            .build();
     }
 
     private InputStream createNewMessageRequestForElevatedUser(Publication publication,
                                                                TicketEntry ticket,
                                                                UserInstance user,
-                                                               String message) throws JsonProcessingException {
+                                                               String message,
+                                                               String... accessRights)
+        throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(pathParameters(publication, ticket))
-                   .withBody(messageBody(message))
-                   .withUserName(user.getUsername())
-                   .withCurrentCustomer(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
-                   .build();
+            .withPathParameters(pathParameters(publication, ticket))
+            .withBody(messageBody(message))
+            .withUserName(user.getUsername())
+            .withCurrentCustomer(user.getOrganizationUri())
+            .withAccessRights(user.getOrganizationUri(), accessRights)
+            .build();
     }
 
     private CreateMessageRequest messageBody(String message) {

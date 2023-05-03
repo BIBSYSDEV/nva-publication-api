@@ -14,6 +14,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,6 +38,16 @@ public final class TicketTestUtils {
                          Arguments.of(DoiRequest.class, PUBLISHED_METADATA),
                          Arguments.of(PublishingRequestCase.class, DRAFT),
                          Arguments.of(GeneralSupportRequest.class, DRAFT));
+    }
+
+    public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
+        return Stream.of(Arguments.of(DoiRequest.class, AccessRight.APPROVE_DOI_REQUEST.toString()),
+                Arguments.of(PublishingRequestCase.class, AccessRight.APPROVE_PUBLISH_REQUEST.toString()));
+    }
+
+    public static Stream<Arguments> invalidAccessRightForTicketTypeProvider() {
+        return Stream.of(Arguments.of(DoiRequest.class, AccessRight.APPROVE_PUBLISH_REQUEST.toString()),
+                Arguments.of(PublishingRequestCase.class, AccessRight.APPROVE_DOI_REQUEST.toString()));
     }
 
     public static Publication createNonPersistedPublication(PublicationStatus status) {
