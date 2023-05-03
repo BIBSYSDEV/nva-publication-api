@@ -788,6 +788,7 @@ components:
             - Unread
         assignee:
           type: string
+          description: Username to assign or empty string to deallocate
     Ticket:
       type: object
       properties:

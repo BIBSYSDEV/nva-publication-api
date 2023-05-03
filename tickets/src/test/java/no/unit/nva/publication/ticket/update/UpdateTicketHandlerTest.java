@@ -77,8 +77,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                 .build();
     }
 
-    //STATUS UPDATE RELATED TESTS
-
     private static InputStream elevatedUserMarksTicket(Publication publication,
                                                        TicketEntry ticket,
                                                        ViewStatus viewStatus,
@@ -284,8 +282,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
-
-    //ASSIGNEE RELATED TESTS
 
     @Test
     void shouldReturnForbiddenWhenRequestingUserIsCuratorAtOtherCustomerThanCurrentPublisher()
