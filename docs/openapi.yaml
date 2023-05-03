@@ -786,7 +786,7 @@ components:
           enum:
             - Read
             - Unread
-        username:
+        assignee:
           type: string
     Ticket:
       type: object
