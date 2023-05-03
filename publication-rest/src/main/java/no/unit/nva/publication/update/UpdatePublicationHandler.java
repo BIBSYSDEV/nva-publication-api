@@ -1,20 +1,12 @@
 package no.unit.nva.publication.update;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
-import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
-import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
-import java.time.Clock;
-import java.util.List;
-import java.util.stream.Collectors;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -43,12 +35,24 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
+import java.net.URI;
+import java.time.Clock;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
+import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
+import static nva.commons.core.attempt.Try.attempt;
+
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
-                                                                        + " from upstream";
+            + " from upstream";
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -60,12 +64,12 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     @JacocoGenerated
     public UpdatePublicationHandler() {
         this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
-             TicketService.defaultService(),
-             new Environment(),
-             IdentityServiceClient.prepare(),
-             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
+                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        Clock.systemDefaultZone()),
+                TicketService.defaultService(),
+                new Environment(),
+                IdentityServiceClient.prepare(),
+                new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
     /**
@@ -86,29 +90,9 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         this.uriRetriever = uriRetriever;
     }
 
-    @Override
-    protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-
-        SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
-        validateRequest(identifierInPath, input);
-        Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
-        Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
-        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
-            createPublishingRequestOnFileUpdate(publicationUpdate);
-        }
-        Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
-        return PublicationResponse.fromPublication(updatedPublication);
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_OK;
-    }
-
     private static boolean isAlreadyPublished(Publication existingPublication) {
         return PublicationStatus.PUBLISHED.equals(existingPublication.getStatus())
-               || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
+                || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
     }
 
     private static boolean isPending(TicketEntry publishingRequest) {
@@ -123,37 +107,70 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return publicationUpdate.getPublisher().getId();
     }
 
+    private static boolean userIsContributor(RequestInfo requestInfo, UpdatePublicationRequest input) {
+        return input.getEntityDescription()
+                .getContributors()
+                .stream()
+                .anyMatch(contributor ->
+                        attempt(() -> userIsContributor(requestInfo.getPersonCristinId(), contributor)).orElseThrow());
+    }
+
+    private static boolean userIsContributor(URI cristinId, Contributor contributor) {
+        return contributor.getIdentity().getId().equals(cristinId);
+    }
+
+    @Override
+    protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
+            throws ApiGatewayException {
+
+        SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
+        validateRequest(identifierInPath, input);
+        Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath, input);
+        Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
+        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
+            createPublishingRequestOnFileUpdate(publicationUpdate);
+        }
+        Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
+        return PublicationResponse.fromPublication(updatedPublication);
+    }
+
+    @Override
+    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
+        return HttpStatus.SC_OK;
+    }
+
     private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication) {
         return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
-                   .filter(PublishingRequestCase.class::isInstance)
-                   .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
-                   .filter(UpdatePublicationHandler::isPending)
-                   .findAny()
-                   .isEmpty();
+                .filter(PublishingRequestCase.class::isInstance)
+                .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
+                .filter(UpdatePublicationHandler::isPending)
+                .findAny()
+                .isEmpty();
     }
 
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
         if (containsNewPublishableFiles(publicationUpdate)) {
             attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
-                .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, getCustomerId(publicationUpdate)))
-                .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
-                .orElseThrow(fail -> createBadGatewayException());
+                    .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
+                            getCustomerId(publicationUpdate)))
+                    .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
+                    .orElseThrow(fail -> createBadGatewayException());
         }
     }
 
     private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, URI customerId)
-        throws BadGatewayException {
+            throws BadGatewayException {
         var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
         ticket.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
         return ticket;
     }
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
-        throws BadGatewayException {
+            throws BadGatewayException {
         var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
-                           .orElseThrow(this::createBadGatewayException);
+                .orElseThrow(this::createBadGatewayException);
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
-                                                                 CustomerPublishingWorkflowResponse.class)).orElseThrow();
+                CustomerPublishingWorkflowResponse.class)).orElseThrow();
     }
 
     private BadGatewayException createBadGatewayException() {
@@ -176,8 +193,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private List<AssociatedArtifact> getUnpublishedFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
-                   .filter(this::isUnpublishedFile)
-                   .collect(Collectors.toList());
+                .filter(this::isUnpublishedFile)
+                .collect(Collectors.toList());
     }
 
     private boolean isUnpublishedFile(AssociatedArtifact artifact) {
@@ -185,35 +202,51 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private Publication fetchExistingPublication(RequestInfo requestInfo,
-                                                 SortableIdentifier identifierInPath) throws ApiGatewayException {
+                                                 SortableIdentifier identifierInPath, UpdatePublicationRequest input)
+            throws ApiGatewayException {
         UserInstance userInstance = createUserInstanceFromRequest(requestInfo);
+        if (userCanEditOtherPeoplesPublications(requestInfo)) {
+            return fetchPublicationForPrivilegedUser(identifierInPath, userInstance);
+        }
+        if (userIsContributorWithUpdatingPublicationRights(requestInfo, input)) {
+            return fetchPublicationForContributor(identifierInPath);
+        } else {
+            return fetchPublicationForPublicationOwner(identifierInPath, userInstance);
+        }
+    }
 
-        return userCanEditOtherPeoplesPublications(requestInfo)
-                   ? fetchPublicationForPrivilegedUser(identifierInPath, userInstance)
-                   : fetchPublicationForPublicationOwner(identifierInPath, userInstance);
+    private Publication fetchPublicationForContributor(SortableIdentifier identifierInPath) throws NotFoundException {
+        return attempt(() -> resourceService.getPublicationByIdentifier(identifierInPath))
+                .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+    }
+
+    private boolean userIsContributorWithUpdatingPublicationRights(
+            RequestInfo requestInfo, UpdatePublicationRequest input) {
+        URI cristinId = attempt(requestInfo::getPersonCristinId).orElse(failure -> null);
+        return nonNull(cristinId) && userIsContributor(requestInfo, input);
     }
 
     private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
         return requestInfo.clientIsThirdParty()
-                   ? createExternalUserInstance(requestInfo, identityServiceClient)
-                   : extractUserInstance(requestInfo);
+                ? createExternalUserInstance(requestInfo, identityServiceClient)
+                : extractUserInstance(requestInfo);
     }
 
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(requestInfo::getCurrentCustomer)
-                   .map(customerId -> UserInstance.create(requestInfo.getUserName(), customerId))
-                   .orElseThrow(fail -> new UnauthorizedException());
+                .map(customerId -> UserInstance.create(requestInfo.getUserName(), customerId))
+                .orElseThrow(fail -> new UnauthorizedException());
     }
 
     private Publication fetchPublicationForPublicationOwner(SortableIdentifier identifierInPath,
                                                             UserInstance userInstance)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
         return resourceService.getPublication(userInstance, identifierInPath);
     }
 
     private Publication fetchPublicationForPrivilegedUser(SortableIdentifier identifierInPath,
                                                           UserInstance userInstance)
-        throws NotFoundException, NotAuthorizedException {
+            throws NotFoundException, NotAuthorizedException {
         Publication existingPublication;
         existingPublication = resourceService.getPublicationByIdentifier(identifierInPath);
         checkUserIsInSameInstitutionAsThePublication(userInstance, existingPublication);
@@ -222,7 +255,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private void checkUserIsInSameInstitutionAsThePublication(UserInstance userInstance,
                                                               Publication existingPublication)
-        throws NotAuthorizedException {
+            throws NotAuthorizedException {
         if (!userInstance.getOrganizationUri().equals(getCustomerId(existingPublication))) {
             throw new NotAuthorizedException();
         }
@@ -235,7 +268,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)
-        throws BadRequestException {
+            throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);
         }
