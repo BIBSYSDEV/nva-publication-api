@@ -295,20 +295,26 @@ paths:
     put:
       description: Update existing ticket
       requestBody:
-        description: A Ticket Object containing the status, assignee and viewedBy
+        description: A Ticket Object containing the status, assignee and viewedStatus
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Ticket'
+              $ref: '#/components/schemas/TicketRequest'
       responses:
         202:
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/TicketRequest"
         400:
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        401:
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -769,7 +775,7 @@ components:
     TicketRequest:
       type: object
       properties:
-        ticketStatus:
+        status:
           type: string
           enum:
             - Pending
