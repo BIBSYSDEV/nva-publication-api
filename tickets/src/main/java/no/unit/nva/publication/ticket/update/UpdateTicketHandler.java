@@ -79,7 +79,11 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     private static boolean assigneeHasBeenUpdated(TicketEntry ticket, TicketRequest ticketRequest) {
         return incomingUpdateHasAssignee(ticketRequest) &&
-                (!ticketRequest.getAssignee().equals(ticket.getAssignee()) || assigneeDoesNotExist(ticket));
+                (assigneeDoesNotExist(ticket) || assigneesAreDifferent(ticket, ticketRequest));
+    }
+
+    private static boolean assigneesAreDifferent(TicketEntry ticket, TicketRequest ticketRequest) {
+        return !ticketRequest.getAssignee().equals(ticket.getAssignee());
     }
 
     private static boolean userIsNotAuthorized(RequestInfo requestInfo, TicketEntry ticket)
@@ -221,14 +225,14 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         if (!incomingAssigneeIsPresent(ticketRequest) && !existingAssigneeIsEmpty(ticket)) {
            return true;
         }
-        if (incomingAssigneeIsPresent(ticketRequest) && noEffectiveAssigneeChanges(ticket, ticketRequest)) {
-            return false;
+        if (incomingAssigneeIsPresent(ticketRequest) && thereIsEffectiveAssigneeChanges(ticket, ticketRequest)) {
+            return true;
         }
         return !incomingAssigneeIsPresent(ticketRequest) && !existingAssigneeIsEmpty(ticket);
     }
 
-    private static boolean noEffectiveAssigneeChanges(TicketEntry ticket, TicketRequest ticketRequest) {
-        return ticket.getAssignee().equals(ticketRequest.getAssignee());
+    private static boolean thereIsEffectiveAssigneeChanges(TicketEntry ticket, TicketRequest ticketRequest) {
+        return !ticket.getAssignee().equals(ticketRequest.getAssignee());
     }
 
     private static boolean existingAssigneeIsEmpty(TicketEntry ticket) {

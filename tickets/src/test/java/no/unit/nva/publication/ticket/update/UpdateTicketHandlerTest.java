@@ -315,7 +315,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest(name = "ticket type: {0}")
     @DisplayName("should return a Bad Request response when attempting to re-open a ticket.")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnBadRequestWhenUserAttemptsToDeCompleteCompletedTicket(Class<? extends TicketEntry> ticketType,
+    void shouldReturnBadRequestWhenUserAttemptsToReopenCompletedTicket(Class<? extends TicketEntry> ticketType,
                                                                            PublicationStatus status)
             throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -339,14 +339,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
-    //VIEW_STATUS related tests
-
     @Test
     void shouldAddAssigneeToTicketWhenUserIsCuratorAndTicketHasNoAssignee() throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         assertThat(publication.getDoi(), is(nullValue()));
         var ticket = createPersistedDoiTicket(publication);
-        ticket.setAssignee(USER_NAME);
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
         var request = authorizedUserAssigneesTicket(publication, ticket, user);
         handler.handleRequest(request, output, CONTEXT);
@@ -363,6 +360,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedDoiTicket(publication);
         var assignee = UserInstance.create(SOME_ASSIGNEE, publication.getPublisher().getId());
         ticket.setAssignee(new Username(assignee.getUsername()));
+        ticketService.updateTicket(ticket);
 
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
         var addAssigneeTicket = ticket.updateAssignee(publication, new Username(assignee.getUsername()));
@@ -377,7 +375,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenRequestingUserIsNotCurator() throws IOException, ApiGatewayException {
+    void shouldReturnForbiddenWhenRequestingUserIsNotCurator() throws IOException, ApiGatewayException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.fromTicket(ticket);
@@ -388,7 +386,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         );
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
     @Test
@@ -396,9 +394,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
             throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var completedTicket = ticketService.updateTicketAssignee(ticket, new Username(user.getUsername()));
-        var request = authorizedUserAssigneesTicket(publication, completedTicket, user);
+        ticket.setAssignee(USER_NAME);
+        ticketService.updateTicket(ticket);
+        var newAssignee = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var updatedTicket = ticket.updateAssignee(publication, new Username(newAssignee.getUsername()));
+        var request = authorizedUserAssigneesTicket(publication, updatedTicket, newAssignee);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
@@ -564,6 +564,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                 .withBody(TicketDto.fromTicket(ticket))
                 .withAccessRights(customer, AccessRight.USER.toString())
                 .withCurrentCustomer(customer)
+                .withUserName(USER_NAME.getValue())
                 .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                         ticket.extractPublicationIdentifier().toString(),
                         TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
