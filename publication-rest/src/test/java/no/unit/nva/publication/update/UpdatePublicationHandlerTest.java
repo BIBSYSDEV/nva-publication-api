@@ -86,7 +86,6 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -123,10 +122,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
         return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
-                mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval());
+                mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests());
     }
 
-    private static FakeHttpResponse<String> mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
+    private static FakeHttpResponse<String> mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests() {
         return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing.json")),
                 HTTP_OK);
     }
@@ -223,8 +222,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var tickets =
-                ticketService.fetchTicketsForUser(UserInstance.fromTicket(completedTicket)).collect(Collectors.toList());
+        var tickets = ticketService.fetchTicketsForUser(UserInstance.fromTicket(completedTicket))
+                .collect(Collectors.toList());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -361,7 +360,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
-        assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_NOT_FOUND, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), is(equalTo(RESOURCE_NOT_FOUND_MESSAGE)));
     }
 
@@ -432,14 +431,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateForeignResourceWhenAuthorizedUserIsContributorAndHasCristinId() throws BadRequestException, IOException, NotFoundException {
+    void shouldUpdateForeignResourceWhenAuthorizedUserIsContributorAndHasCristinId()
+            throws BadRequestException, IOException, NotFoundException {
         Publication savedPublication = createSamplePublication();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(savedPublication, contributor);
         Publication publicationUpdate = updateTitle(savedPublication);
 
-        InputStream event = contributorUpdatesPublicationAndHasRightToUpdate(publicationUpdate, contributor);
+        InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, contributor);
         updatePublicationHandler.handleRequest(event, output, context);
 
         Publication updatedPublication =
@@ -453,6 +453,22 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actualTitle, is(equalTo(expectedTitle)));
 
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenContributorUpdatesForeignResourceThatDoesNotExist()
+            throws BadRequestException, IOException {
+        Publication savedPublication = createSamplePublication();
+        var cristinId = randomUri();
+        var contributor = createContributorForPublicationUpdate(cristinId);
+        injectContributor(savedPublication, contributor);
+        Publication nonExistentPublication = savedPublication.copy().withIdentifier(SortableIdentifier.next()).build();
+
+        InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(nonExistentPublication, contributor);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
     }
 
     private void injectContributor(Publication savedPublication, Contributor contributor) {
@@ -536,8 +552,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .build();
     }
 
-    private InputStream contributorUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate,
-                                                                         Contributor contributor)
+    private InputStream contributorUpdatesPublicationAndHasRightsToUpdate(Publication publicationUpdate,
+                                                                          Contributor contributor)
             throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         var customerId = publicationUpdate.getPublisher().getId();
