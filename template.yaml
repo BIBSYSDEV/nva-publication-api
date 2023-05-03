@@ -669,12 +669,14 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/ticket/{tid}/update
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/update
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
