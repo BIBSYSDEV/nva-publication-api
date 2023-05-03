@@ -126,7 +126,8 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     @Override
     protected Void processInput(TicketRequest input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        var ticket = fetchTicketForElevatedUser(extractTicketIdentifierFromPath(requestInfo), UserInstance.fromRequestInfo(requestInfo));
+        var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
+        var ticket = fetchTicketForElevatedUser(ticketIdentifier, UserInstance.fromRequestInfo(requestInfo));
         if (hasEffectiveChanges(ticket, input)) {
             updateTicket(input, requestInfo, ticket);
         }
@@ -230,10 +231,6 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     private boolean incomingUpdateIsAssignee(TicketEntry ticket, TicketRequest ticketRequest) {
         return nonNull(ticketRequest.getAssignee()) && !ticketRequest.getAssignee().equals(ticket.getAssignee());
-    }
-
-    private static boolean thereIsEffectiveAssigneeChanges(TicketEntry ticket, TicketRequest ticketRequest) {
-        return !ticket.getAssignee().equals(ticketRequest.getAssignee());
     }
 
     private static boolean existingAssigneeIsEmpty(TicketEntry ticket) {
