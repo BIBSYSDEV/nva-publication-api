@@ -469,8 +469,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Anthology.class));
-        var actualPartOfUri = ((Anthology) actualPublicationContext).getId();
-        assertThat(actualPartOfUri, is(ScopusConstants.DUMMY_URI));
+        var actualContextUri = ((Anthology) actualPublicationContext).getId();
+        assertThat(actualContextUri, is(ScopusConstants.DUMMY_URI));
     }
 
     @Test
@@ -542,8 +542,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Anthology.class));
-        var actualPartOfUri = ((Anthology) actualPublicationContext).getId();
-        assertThat(actualPartOfUri, is(ScopusConstants.DUMMY_URI));
+        var actualContextUri = ((Anthology) actualPublicationContext).getId();
+        assertThat(actualContextUri, is(ScopusConstants.DUMMY_URI));
     }
 
     @Test
