@@ -9,6 +9,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -29,6 +30,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -107,15 +109,17 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return publicationUpdate.getPublisher().getId();
     }
 
-    private static boolean userIsContributor(RequestInfo requestInfo, UpdatePublicationRequest input) {
-        return input.getEntityDescription()
+    private boolean userIsContributor(RequestInfo requestInfo, Publication publication) {
+        return publication.getEntityDescription()
                 .getContributors()
                 .stream()
                 .anyMatch(contributor ->
-                        attempt(() -> userIsContributor(requestInfo.getPersonCristinId(), contributor)).orElseThrow());
+                        attempt(() -> userIsContributorWithCristinId(requestInfo.getPersonCristinId(), contributor))
+                                .orElseThrow()
+                );
     }
 
-    private static boolean userIsContributor(URI cristinId, Contributor contributor) {
+    private boolean userIsContributorWithCristinId(URI cristinId, Contributor contributor) {
         return contributor.getIdentity().getId().equals(cristinId);
     }
 
@@ -125,7 +129,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
         SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
         validateRequest(identifierInPath, input);
-        Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath, input);
+        Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
         if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate);
@@ -201,29 +205,35 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return artifact instanceof UnpublishedFile;
     }
 
-    private Publication fetchExistingPublication(RequestInfo requestInfo,
-                                                 SortableIdentifier identifierInPath, UpdatePublicationRequest input)
+    private Publication fetchExistingPublication(RequestInfo requestInfo, SortableIdentifier identifierInPath)
             throws ApiGatewayException {
         UserInstance userInstance = createUserInstanceFromRequest(requestInfo);
+        var publication = fetchPublication(identifierInPath);
         if (userCanEditOtherPeoplesPublications(requestInfo)) {
-            return fetchPublicationForPrivilegedUser(identifierInPath, userInstance);
+            checkUserIsInSameInstitutionAsThePublication(userInstance, publication);
+            return publication;
         }
-        if (userIsContributorWithUpdatingPublicationRights(requestInfo, input)) {
-            return fetchPublicationForContributor(identifierInPath);
-        } else {
+        if (userIsContributorWithUpdatingPublicationRights(requestInfo, publication)) {
+            return publication;
+        }
+        if (userIsPublicationOwner(userInstance, publication)) {
             return fetchPublicationForPublicationOwner(identifierInPath, userInstance);
         }
+        throw new ForbiddenException();
     }
 
-    private Publication fetchPublicationForContributor(SortableIdentifier identifierInPath) throws NotFoundException {
+    private boolean userIsPublicationOwner(UserInstance userInstance, Publication publication) {
+        return publication.getResourceOwner().getOwner().equals(new Username(userInstance.getUsername()));
+    }
+
+    private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
         return attempt(() -> resourceService.getPublicationByIdentifier(identifierInPath))
                 .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
-    private boolean userIsContributorWithUpdatingPublicationRights(
-            RequestInfo requestInfo, UpdatePublicationRequest input) {
+    private boolean userIsContributorWithUpdatingPublicationRights(RequestInfo requestInfo, Publication publication) {
         URI cristinId = attempt(requestInfo::getPersonCristinId).orElse(failure -> null);
-        return nonNull(cristinId) && userIsContributor(requestInfo, input);
+        return nonNull(cristinId) && userIsContributor(requestInfo, publication);
     }
 
     private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
@@ -242,15 +252,6 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
                                                             UserInstance userInstance)
             throws ApiGatewayException {
         return resourceService.getPublication(userInstance, identifierInPath);
-    }
-
-    private Publication fetchPublicationForPrivilegedUser(SortableIdentifier identifierInPath,
-                                                          UserInstance userInstance)
-            throws NotFoundException, NotAuthorizedException {
-        Publication existingPublication;
-        existingPublication = resourceService.getPublicationByIdentifier(identifierInPath);
-        checkUserIsInSameInstitutionAsThePublication(userInstance, existingPublication);
-        return existingPublication;
     }
 
     private void checkUserIsInSameInstitutionAsThePublication(UserInstance userInstance,

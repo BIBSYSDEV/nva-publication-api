@@ -402,7 +402,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerThrowsNotFoundWhenExternalClientTriesToUpdateResourcesCreatedByOthers()
+    void handlerReturnsForbiddenWhenExternalClientTriesToUpdateResourcesCreatedByOthers()
             throws IOException, BadRequestException {
         Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
@@ -418,8 +418,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         Problem problem = response.getBodyObject(Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
-        assertThat(problem.getDetail(), is(equalTo(RESOURCE_NOT_FOUND_MESSAGE)));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
 
     @Test
@@ -439,7 +438,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         injectContributor(savedPublication, contributor);
         Publication publicationUpdate = updateTitle(savedPublication);
 
-        InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, contributor);
+        InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId);
         updatePublicationHandler.handleRequest(event, output, context);
 
         Publication updatedPublication =
@@ -464,26 +463,26 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         injectContributor(savedPublication, contributor);
         Publication nonExistentPublication = savedPublication.copy().withIdentifier(SortableIdentifier.next()).build();
 
-        InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(nonExistentPublication, contributor);
+        InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(nonExistentPublication, cristinId);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
     }
 
-    private void injectContributor(Publication savedPublication, Contributor contributor) {
-        var contributors = savedPublication.getEntityDescription().getContributors();
-        contributors.add(contributor);
-        savedPublication.getEntityDescription().setContributors(contributors);
-        publicationService.updatePublication(savedPublication);
-    }
+    @Test
+    void
+    shouldReturnForbiddenForeignResourceWhenUserIsContributorWithoutCristinId()
+            throws BadRequestException, IOException, NotFoundException {
+        Publication savedPublication = createSamplePublication();
+        var contributor = createContributorForPublicationUpdate(null);
+        injectContributor(savedPublication, contributor);
+        Publication publicationUpdate = updateTitle(savedPublication);
 
-    private Contributor createContributorForPublicationUpdate(URI cristinId) {
-        return new Contributor.Builder()
-                .withRole(new RoleType(Role.ARCHITECT))
-                .withIdentity(new Identity.Builder().withId(cristinId).withName(randomString()).build())
-                .build();
-
+        InputStream event = contributorUpdatesPublicationWithoutHavingRights(publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
 
     @Test
@@ -505,6 +504,20 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
         assertThat(problem.getDetail(), Is.is(
                 IsEqual.equalTo(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE)));
+    }
+
+    private void injectContributor(Publication savedPublication, Contributor contributor) {
+        var contributors = savedPublication.getEntityDescription().getContributors();
+        contributors.add(contributor);
+        savedPublication.getEntityDescription().setContributors(contributors);
+        publicationService.updatePublication(savedPublication);
+    }
+
+    private Contributor createContributorForPublicationUpdate(URI cristinId) {
+        return new Contributor.Builder()
+                .withRole(new RoleType(Role.ARCHITECT))
+                .withIdentity(new Identity.Builder().withId(cristinId).withName(randomString()).build())
+                .build();
     }
 
     private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
@@ -553,7 +566,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream contributorUpdatesPublicationAndHasRightsToUpdate(Publication publicationUpdate,
-                                                                          Contributor contributor)
+                                                                          URI cristinId)
             throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         var customerId = publicationUpdate.getPublisher().getId();
@@ -561,7 +574,19 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withUserName(SOME_CURATOR)
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
-                .withPersonCristinId(contributor.getIdentity().getId())
+                .withPersonCristinId(cristinId)
+                .withBody(publicationUpdate)
+                .build();
+    }
+
+    private InputStream contributorUpdatesPublicationWithoutHavingRights(Publication publicationUpdate)
+            throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        var customerId = publicationUpdate.getPublisher().getId();
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                .withUserName(SOME_CURATOR)
+                .withPathParameters(pathParameters)
+                .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
                 .build();
     }
