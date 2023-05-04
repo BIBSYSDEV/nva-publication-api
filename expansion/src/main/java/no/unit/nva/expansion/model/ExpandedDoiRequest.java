@@ -20,6 +20,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Set;
 
+import static java.util.Objects.isNull;
+
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
 public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrganizationScope {
@@ -164,11 +166,19 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setCustomerId(doiRequest.getCustomerId());
         entry.setModifiedDate(doiRequest.getModifiedDate());
         entry.setOwner(doiRequest.getOwner());
-        entry.setStatus(doiRequest.getStatus());
+        entry.setStatus(getNewTicketStatus(doiRequest));
         entry.setViewedBy(doiRequest.getViewedBy());
         entry.setPublication(publicationSummary);
         entry.setFinalizedBy(doiRequest.getFinalizedBy());
         entry.setOwner(doiRequest.getOwner());
         return entry;
+    }
+
+    private static TicketStatus getNewTicketStatus(DoiRequest doiRequest){
+        if(doiRequest.getStatus().equals(TicketStatus.PENDING) && isNull(doiRequest.getAssignee())) {
+            return TicketStatus.NEW;
+        } else {
+            return doiRequest.getStatus();
+        }
     }
 }

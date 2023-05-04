@@ -1,9 +1,8 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Collections.emptySet;
-import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.CLOSED_STATUS;
-import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.COMPLETED_STATUS;
-import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.PENDING_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.*;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
@@ -13,6 +12,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
 public enum TicketStatus {
+    NEW(NEW_STATUS, "NEW"),
     PENDING(PENDING_STATUS, "REQUESTED"),
     COMPLETED(COMPLETED_STATUS, "APPROVED"),
     CLOSED(CLOSED_STATUS, "REJECTED");
@@ -97,7 +97,8 @@ public enum TicketStatus {
     }
     
     public static class TicketStatusConstants {
-        
+
+        public static final String NEW_STATUS = "New";
         public static final String PENDING_STATUS = "Pending";
         public static final String COMPLETED_STATUS = "Completed";
         public static final String CLOSED_STATUS = "Closed";

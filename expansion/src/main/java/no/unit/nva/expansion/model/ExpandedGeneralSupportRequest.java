@@ -4,10 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -16,6 +13,8 @@ import nva.commons.core.paths.UriWrapper;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Set;
+
+import static java.util.Objects.isNull;
 
 @JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
 public class ExpandedGeneralSupportRequest extends ExpandedTicket {
@@ -37,7 +36,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         var publicationSummary = PublicationSummary.create(publication);
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(resourceExpansionService.getOrganizationIds(dataEntry));
-        entry.setStatus(dataEntry.getStatus());
+        entry.setStatus(getNewTicketStatus(dataEntry));
         entry.setOwner(dataEntry.getOwner());
         entry.setModifiedDate(dataEntry.getModifiedDate());
         entry.setCreatedDate(dataEntry.getCreatedDate());
@@ -48,6 +47,14 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setFinalizedBy(dataEntry.getFinalizedBy());
         entry.setOwner(dataEntry.getOwner());
         return entry;
+    }
+
+    private static TicketStatus getNewTicketStatus(GeneralSupportRequest generalSupportRequest){
+        if(generalSupportRequest.getStatus().equals(TicketStatus.PENDING) && isNull(generalSupportRequest.getAssignee())) {
+            return TicketStatus.NEW;
+        } else {
+            return generalSupportRequest.getStatus();
+        }
     }
 
     public Instant getModifiedDate() {

@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -151,7 +152,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(organizationIds);
-        entry.setStatus(dataEntry.getStatus());
+        entry.setStatus(getNewTicketStatus(dataEntry));
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setCreatedDate(dataEntry.getCreatedDate());
         entry.setModifiedDate(dataEntry.getModifiedDate());
@@ -167,5 +168,13 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                 ResourceService resourceService) {
         return attempt(() -> resourceService.getPublicationByIdentifier(
             publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
+    }
+
+    private static TicketStatus getNewTicketStatus(PublishingRequestCase publishingRequestCase){
+        if(publishingRequestCase.getStatus().equals(TicketStatus.PENDING) && isNull(publishingRequestCase.getAssignee())) {
+            return TicketStatus.NEW;
+        } else {
+            return publishingRequestCase.getStatus();
+        }
     }
 }
