@@ -41,7 +41,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
@@ -170,7 +170,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         handler.handleRequest(input, outputStream, CONTEXT);
         var actualChildPublication = getPublicationFromOutputStream(outputStream);
         assertThat(actualChildPublication.getEntityDescription().getReference().getPublicationContext(), hasProperty(
-            "partOf", is(equalTo(expectedChildPartOfURI))));
+            "id", is(equalTo(expectedChildPartOfURI))));
     }
 
     @Test
@@ -227,8 +227,8 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     private static void removePartOfInPublicationContext(Publication publication) {
-        if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Chapter) {
-            publication.getEntityDescription().getReference().setPublicationContext(new Chapter.Builder().build());
+        if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Anthology) {
+            publication.getEntityDescription().getReference().setPublicationContext(new Anthology.Builder().build());
         }
     }
 

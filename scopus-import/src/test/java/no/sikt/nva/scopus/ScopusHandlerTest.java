@@ -139,8 +139,8 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
@@ -468,8 +468,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Chapter.class));
-        var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
+        assertThat(actualPublicationContext, instanceOf(Anthology.class));
+        var actualPartOfUri = ((Anthology) actualPublicationContext).getId();
         assertThat(actualPartOfUri, is(ScopusConstants.DUMMY_URI));
     }
 
@@ -541,8 +541,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createS3Event(uri);
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Chapter.class));
-        var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
+        assertThat(actualPublicationContext, instanceOf(Anthology.class));
+        var actualPartOfUri = ((Anthology) actualPublicationContext).getId();
         assertThat(actualPartOfUri, is(ScopusConstants.DUMMY_URI));
     }
 

@@ -6,7 +6,7 @@ import java.net.URI;
 import no.unit.nva.cristin.patcher.exception.PublicationInstanceMismatchException;
 import no.unit.nva.cristin.patcher.model.ParentAndChild;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -27,8 +27,8 @@ public final class CristinPatcher {
         var parentPublicationInstance =
             parentAndChild.getParentPublication().getEntityDescription().getReference().getPublicationInstance();
         if (parentChildPublicationContextMatch(childContext, parentPublicationInstance)) {
-            var chapter = (Chapter) childContext;
-            chapter.setPartOf(createPartOfUri(parentAndChild.getParentPublication()));
+            var chapter = (Anthology) childContext;
+            chapter.setId(createPartOfUri(parentAndChild.getParentPublication()));
         } else {
             throw new PublicationInstanceMismatchException(
                 String.format(CHILD_PARENT_REFERENCE_MISMATCH,
@@ -40,7 +40,7 @@ public final class CristinPatcher {
 
     private static boolean parentChildPublicationContextMatch(PublicationContext childContext,
                                                               PublicationInstance parentPublicationInstance) {
-        return childContext instanceof Chapter && parentPublicationInstance instanceof BookAnthology;
+        return childContext instanceof Anthology && parentPublicationInstance instanceof BookAnthology;
     }
 
     private static URI createPartOfUri(Publication parentPublication) {

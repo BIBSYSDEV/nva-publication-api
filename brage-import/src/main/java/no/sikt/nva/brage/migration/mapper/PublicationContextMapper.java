@@ -13,10 +13,10 @@ import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
@@ -74,7 +74,7 @@ public final class PublicationContextMapper {
             return buildPublicationContextWhenMap(record);
         }
         if (isChapter(record) || isScientificChapter(record)) {
-            return new Chapter();
+            return new Anthology();
         }
         if (isLecture(record) || isConferencePoster(record)) {
             return buildPublicationContextWhenEvent();

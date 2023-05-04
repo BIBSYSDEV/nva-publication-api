@@ -21,9 +21,9 @@ import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetypeAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -111,9 +111,9 @@ public class PublicationContextCreator {
             () -> new Report(bookSeries, seriesTitle, seriesNumber, publishingHouse, isbnList)).orElseThrow();
     }
 
-    public Chapter createChapter() {
+    public Anthology createChapter() {
         // TODO: We do not have access to partOf URI for chapter yet -> set a dummy URI
-        return attempt(() -> new Chapter.Builder().withPartOf(ScopusConstants.DUMMY_URI).build()).orElseThrow();
+        return attempt(() -> new Anthology.Builder().withId(ScopusConstants.DUMMY_URI).build()).orElseThrow();
     }
 
     private boolean isJournal() {
