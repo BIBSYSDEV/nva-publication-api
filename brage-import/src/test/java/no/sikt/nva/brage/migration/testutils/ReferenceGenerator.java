@@ -8,10 +8,10 @@ import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder;
 import no.sikt.nva.brage.migration.testutils.type.NvaType;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
@@ -187,21 +187,21 @@ public final class ReferenceGenerator {
             }
             if (NvaType.CHAPTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(new Chapter())
+                           .withPublishingContext(new Anthology())
                            .withPublicationInstance(generatePublicationInstanceForChapter(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.SCIENTIFIC_CHAPTER.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(new Chapter())
+                           .withPublishingContext(new Anthology())
                            .withPublicationInstance(generatePublicationInstanceForScientificChapter(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.SCIENTIFIC_ARTICLE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(new Chapter())
+                           .withPublishingContext(new Anthology())
                            .withPublicationInstance(generatePublicationInstanceForScientificArticle(builder))
                            .withDoi(builder.getDoi())
                            .build();

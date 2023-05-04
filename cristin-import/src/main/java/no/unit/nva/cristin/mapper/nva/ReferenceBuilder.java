@@ -21,7 +21,7 @@ import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -117,8 +117,8 @@ public class ReferenceBuilder extends CristinMappingModule {
         return new NvaReportBuilder(cristinObject).buildNvaReport();
     }
 
-    private Chapter buildChapterForPublicationContext() {
-        return new Chapter.Builder().build();
+    private Anthology buildChapterForPublicationContext() {
+        return new Anthology.Builder().build();
     }
 
     private PublicationContext buildEventForPublicationContext() {

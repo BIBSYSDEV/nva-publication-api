@@ -22,6 +22,7 @@ entityDescription.reference.publicationContext.level
 entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.linkedContext
 entityDescription.reference.publicationContext.title
+entityDescription.reference.publicationContext.id
 
 entityDescription.publicationDate
 entityDescription.abstract
