@@ -7,6 +7,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -110,17 +111,15 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private boolean userIsContributor(RequestInfo requestInfo, Publication publication) {
-        return publication.getEntityDescription()
-                .getContributors()
-                .stream()
-                .anyMatch(contributor ->
-                        attempt(() -> userIsContributorWithCristinId(requestInfo.getPersonCristinId(), contributor))
-                                .orElseThrow()
-                );
+        return publication.getEntityDescription().getContributors().stream()
+                .filter(this::hasCristinId)
+                .map(Contributor::getIdentity)
+                .map(Identity::getId)
+                .anyMatch(cristinId -> attempt(() -> cristinId.equals(requestInfo.getPersonCristinId())).orElseThrow());
     }
 
-    private boolean userIsContributorWithCristinId(URI cristinId, Contributor contributor) {
-        return contributor.getIdentity().getId().equals(cristinId);
+    private boolean hasCristinId(Contributor contributor) {
+        return nonNull(contributor.getIdentity()) && nonNull(contributor.getIdentity().getId());
     }
 
     @Override

@@ -430,9 +430,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateForeignResourceWhenAuthorizedUserIsContributorAndHasCristinId()
+    void shouldUpdateResourceWhenAuthorizedUserIsContributorAndHasCristinId()
             throws BadRequestException, IOException, NotFoundException {
         Publication savedPublication = createSamplePublication();
+        injectRandomContributorsWithoutCristinIdAndIdentity(savedPublication);
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(savedPublication, contributor);
@@ -454,8 +455,20 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
 
+    private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
+        var contributorWithoutCristinId = new Contributor.Builder()
+                .withRole(new RoleType(Role.ARCHITECT))
+                .withIdentity(new Identity.Builder().withName(randomString()).build())
+                .build();
+        var contributorWithoutIdentity = new Contributor.Builder()
+                .withRole(new RoleType(Role.ARCHITECT))
+                .build();
+        publication.getEntityDescription().getContributors()
+                .addAll(List.of(contributorWithoutCristinId, contributorWithoutIdentity));
+    }
+
     @Test
-    void shouldReturnNotFoundWhenContributorUpdatesForeignResourceThatDoesNotExist()
+    void shouldReturnNotFoundWhenContributorUpdatesResourceThatDoesNotExist()
             throws BadRequestException, IOException {
         Publication savedPublication = createSamplePublication();
         var cristinId = randomUri();
@@ -472,8 +485,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void
-    shouldReturnForbiddenForeignResourceWhenUserIsContributorWithoutCristinId()
-            throws BadRequestException, IOException, NotFoundException {
+    shouldReturnForbiddenWhenContributorWithoutCristinIdUpdatesResource() throws BadRequestException, IOException {
         Publication savedPublication = createSamplePublication();
         var contributor = createContributorForPublicationUpdate(null);
         injectContributor(savedPublication, contributor);
