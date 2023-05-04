@@ -60,7 +60,7 @@ public class PublicationContextCreator {
             return createJournal();
         }
         if (isChapter()) {
-            return createChapter();
+            return createAnthology();
         }
         if (isBook()) {
             return createBook();
@@ -73,7 +73,7 @@ public class PublicationContextCreator {
         }
         if (isConferenceProceeding()) {
             if (hasIsbn() && hasNoIssn()) {
-                return createChapter();
+                return createAnthology();
             } else {
                 return createJournal();
             }
@@ -111,7 +111,7 @@ public class PublicationContextCreator {
             () -> new Report(bookSeries, seriesTitle, seriesNumber, publishingHouse, isbnList)).orElseThrow();
     }
 
-    public Anthology createChapter() {
+    public Anthology createAnthology() {
         // TODO: We do not have access to partOf URI for chapter yet -> set a dummy URI
         return attempt(() -> new Anthology.Builder().withId(ScopusConstants.DUMMY_URI).build()).orElseThrow();
     }

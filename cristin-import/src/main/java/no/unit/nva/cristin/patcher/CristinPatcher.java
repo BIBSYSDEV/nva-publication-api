@@ -27,8 +27,8 @@ public final class CristinPatcher {
         var parentPublicationInstance =
             parentAndChild.getParentPublication().getEntityDescription().getReference().getPublicationInstance();
         if (parentChildPublicationContextMatch(childContext, parentPublicationInstance)) {
-            var chapter = (Anthology) childContext;
-            chapter.setId(createPartOfUri(parentAndChild.getParentPublication()));
+            var anthology = (Anthology) childContext;
+            anthology.setId(createPartOfUri(parentAndChild.getParentPublication()));
         } else {
             throw new PublicationInstanceMismatchException(
                 String.format(CHILD_PARENT_REFERENCE_MISMATCH,
