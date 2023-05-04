@@ -1,0 +1,39 @@
+{
+  "@context": "https://example.org/person-context.json",
+  "id": "https://api.dev.nva.aws.unit.no/cristin/person/12345",
+  "type": "Person",
+  "identifiers": [
+    {
+      "type": "CristinIdentifier",
+      "value": "myCristinId"
+    }
+  ],
+  "names": [
+    {
+      "type": "LastName",
+      "value": "someLastName"
+    },
+    {
+      "type": "PreferredLastName",
+      "value": "somePreferredLastName"
+    },
+    {
+      "type": "PreferredFirstName",
+      "value": "somePreferredFirstName"
+    },
+    {
+      "type": "FirstName",
+      "value": "someFirstName"
+    }
+  ],
+  "affiliations": [
+    {
+      "type": "Affiliation",
+      "organization": "https://api.dev.nva.aws.unit.no/cristin/organization/myOrganization",
+      "active": true,
+      "role": {
+        "type": "Role"
+      }
+    }
+  ]
+}

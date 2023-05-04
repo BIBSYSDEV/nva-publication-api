@@ -1,5 +1,40 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.events.models.EventReference;
+import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.time.Clock;
+import java.util.Optional;
+
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
 import static no.unit.nva.testutils.EventBridgeEventBuilder.sampleLambdaDestinationsEvent;
@@ -17,38 +52,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.lambda.runtime.Context;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.time.Clock;
-import java.util.Optional;
-import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.events.models.EventReference;
-import no.unit.nva.expansion.ResourceExpansionService;
-import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.expansion.model.ExpandedDoiRequest;
-import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.core.paths.UnixPath;
-import nva.commons.core.paths.UriWrapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     
@@ -147,7 +150,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, fileUri);
     }
     
-    private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
+    private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException, JsonProcessingException {
         Publication samplePublication = insertSamplePublication();
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
         var messages = doiRequest.fetchMessages(ticketService);

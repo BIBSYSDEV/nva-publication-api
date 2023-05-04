@@ -1,6 +1,7 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -11,13 +12,14 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -27,6 +29,7 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,10 +38,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -48,28 +53,33 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
+    public static final URI ORGANIZATION =
+            URI.create("https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
+    public static final UserInstance OWNER = UserInstance.create(new User("12345"), ORGANIZATION);
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
     private static final String FINALIZED_BY = "finalizedBy";
-
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
     private TicketService ticketService;
+    private UriRetriever uriRetriever;
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -252,6 +262,28 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(actual, is(equalTo(Collections.emptySet())));
     }
 
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldAddCristinPersonNameValuesToTicketOwnerAndAssignee(
+            Class<? extends TicketEntry> ticketType, PublicationStatus status)
+            throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, OWNER, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var ticketOwner = ticket.getOwner();
+        uriRetriever = mock(UriRetriever.class);
+        when(uriRetriever.getRawContent(any(), any()))
+                .thenReturn(Optional.of(IoUtils.stringFromResources(Path.of("cristin_person.json"))));
+        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
+        var expandedOwner = expansionService.enrichPerson(ticketOwner);
+        var expectedExpandedOwner = new ExpandedPerson(
+                "someFirstName",
+                "somePreferredFirstName",
+                "someLastName",
+                "somePreferredLastName",
+                ticketOwner);
+        assertThat(expandedOwner, is(equalTo(expectedExpandedOwner)));
+    }
+
     @SuppressWarnings("SameParameterValue")
     //Currently only GeneralSupportCase supports multiple simultaneous entries.
     // This may change in the future, so the warning is suppressed.
@@ -273,7 +305,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client);
         ticketService = new TicketService(client);
-        UriRetriever uriRetriever = mock(UriRetriever.class);
+        uriRetriever = new UriRetriever();
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
