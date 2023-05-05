@@ -9,6 +9,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -19,8 +20,10 @@ import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
@@ -49,10 +52,16 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
             throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
-        expandedDoiRequest.setMessages(doiRequest.fetchMessages(ticketService));
+        expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
         expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
         expandedDoiRequest.setAssignee(expandAssignee(doiRequest, expansionService));
         return expandedDoiRequest;
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
+        return messages.stream()
+                .map(expansionService::expandMessage)
+                .collect(Collectors.toList());
     }
 
     private static ExpandedPerson expandAssignee(DoiRequest doiRequest,

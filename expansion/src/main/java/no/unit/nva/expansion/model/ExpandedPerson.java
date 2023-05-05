@@ -40,6 +40,10 @@ public class ExpandedPerson {
         this.username = username;
     }
 
+    public static ExpandedPerson defaultExpandedPerson(User username) {
+        return new ExpandedPerson(null, null, null, null, username);
+    }
+
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {

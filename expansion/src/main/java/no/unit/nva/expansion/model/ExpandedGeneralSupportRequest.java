@@ -6,6 +6,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -16,8 +17,10 @@ import nva.commons.core.paths.UriWrapper;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
 public class ExpandedGeneralSupportRequest extends ExpandedTicket {
@@ -44,11 +47,17 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setCreatedDate(dataEntry.getCreatedDate());
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
-        entry.setMessages(dataEntry.fetchMessages(ticketService));
+        entry.setMessages(expandMessages(dataEntry.fetchMessages(ticketService), resourceExpansionService));
         entry.setViewedBy(dataEntry.getViewedBy());
         entry.setFinalizedBy(dataEntry.getFinalizedBy());
         entry.setAssignee(expandAssignee(dataEntry, resourceExpansionService));
         return entry;
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
+        return messages.stream()
+                .map(expansionService::expandMessage)
+                .collect(Collectors.toList());
     }
 
     private static ExpandedPerson expandAssignee(GeneralSupportRequest generalSupportRequest,

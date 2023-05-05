@@ -1,6 +1,7 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
@@ -56,6 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
@@ -175,7 +177,23 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
         var messages = expandedTicket.getMessages();
-        assertThat(messages, contains(message));
+        var expectedExpandedMessage = messageToExpandedMessage(message);
+        assertThat(messages, contains(expectedExpandedMessage));
+    }
+
+    private ExpandedMessage messageToExpandedMessage(Message message) {
+        return ExpandedMessage.builder()
+                .withCreatedDate(message.getCreatedDate())
+                .withModifiedDate(message.getModifiedDate())
+                .withOwner(message.getOwner())
+                .withResourceTitle(message.getResourceTitle())
+                .withCustomerId(message.getCustomerId())
+                .withSender(ExpandedPerson.defaultExpandedPerson(message.getSender()))
+                .withText(message.getText())
+                .withTicketIdentifier(message.getTicketIdentifier())
+                .withResourceIdentifier(message.getResourceIdentifier())
+                .withIdentifier(message.getIdentifier())
+                .build();
     }
 
     @ParameterizedTest(name = "should return framed index document for resources. Instance type:{0}")
@@ -200,11 +218,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                 .requestNewTicket(publication, GeneralSupportRequest.class)
                 .persistNewTicket(ticketService);
 
-        var expectedMessage = messageService.createMessage(ticketToBeExpanded, owner, randomString());
-
+        var message = messageService.createMessage(ticketToBeExpanded, owner, randomString());
+        var expectedExpandedMessage = messageToExpandedMessage(message);
         var unexpectedMessages = messagesOfDifferentTickets(publication, owner, GeneralSupportRequest.class);
         var expandedEntry = (ExpandedTicket) expansionService.expandEntry(ticketToBeExpanded);
-        assertThat(expandedEntry.getMessages(), contains(expectedMessage));
+        assertThat(expandedEntry.getMessages(), hasItem(expectedExpandedMessage));
         assertThat(unexpectedMessages, everyItem(not(in(expandedEntry.getMessages()))));
     }
 
@@ -220,9 +238,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         var messageThatWillLeadToTicketExpansion =
                 messageService.createMessage(ticketToBeExpanded, owner, randomString());
-
+        var expectedExpandedMessage = messageToExpandedMessage(messageThatWillLeadToTicketExpansion);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(messageThatWillLeadToTicketExpansion);
-        assertThat(expandedTicket.getMessages(), contains(messageThatWillLeadToTicketExpansion));
+        assertThat(expandedTicket.getMessages(), hasItem(expectedExpandedMessage));
     }
 
     @ParameterizedTest
@@ -301,6 +319,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedAssignee, is(equalTo(expectedExpandedAssignee)));
     }
 
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldCopyAllPubliclyVisibleFieldsFromMessageToExpandedMessage(Class<? extends TicketEntry> ticketType,
+                                                                      PublicationStatus status)
+            throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+        var expandedMessage = expansionService.expandMessage(message);
+        var regeneratedMessage = expandedMessage.toMessage();
+        assertThat(regeneratedMessage, is(equalTo(message)));
+    }
+
     private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
             throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -318,17 +349,20 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @SuppressWarnings("SameParameterValue")
     //Currently only GeneralSupportCase supports multiple simultaneous entries.
     // This may change in the future, so the warning is suppressed.
-    private List<Message> messagesOfDifferentTickets(Publication publication, UserInstance owner,
+    private List<ExpandedMessage> messagesOfDifferentTickets(Publication publication, UserInstance owner,
                                                      Class<? extends TicketEntry> ticketType)
             throws ApiGatewayException {
 
         var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
                 .persistNewTicket(ticketService);
-        var firstUnexpectedMessage = messageService.createMessage(differentTicketSameType, owner, randomString());
+        var firstUnexpectedMessage = ExpandedMessage
+                .createEntry(messageService.createMessage(
+                        differentTicketSameType, owner, randomString()), expansionService);
         var differentTicketType = someOtherTicketTypeBesidesDoiRequest(ticketType);
         var differentTicketDifferentType =
                 TicketEntry.requestNewTicket(publication, differentTicketType).persistNewTicket(ticketService);
-        var secondUnexpectedMessage = messageService.createMessage(differentTicketDifferentType, owner, randomString());
+        var secondUnexpectedMessage = ExpandedMessage.createEntry(
+                messageService.createMessage(differentTicketDifferentType, owner, randomString()), expansionService);
         return new ArrayList<>(List.of(firstUnexpectedMessage, secondUnexpectedMessage));
     }
 
