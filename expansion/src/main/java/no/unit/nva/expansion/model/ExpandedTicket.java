@@ -4,18 +4,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -37,8 +38,10 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public static final String ORGANIZATION_IDS_FIELD = "organizationIds";
     public static final String ID_FIELD = "id";
     public static final String VIEWED_BY_FIELD = "viewedBy";
+    public static final String ASSIGNEE_FIELD = "assignee";
     private static final String MESSAGES_FIELD = "messages";
     public static final String FINALIZED_BY_FIELD = "finalizedBy";
+    public static final String OWNER_FIELD = "owner";
     @JsonProperty(ID_FIELD)
     private URI id;
     @JsonProperty(MESSAGES_FIELD)
@@ -49,11 +52,15 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     private PublicationSummary publication;
     @JsonProperty(FINALIZED_BY_FIELD)
     private Username finalizedBy;
+    @JsonProperty(OWNER_FIELD)
+    private ExpandedPerson owner;
+    @JsonProperty(ASSIGNEE_FIELD)
+    private ExpandedPerson assignee;
 
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
                                            ResourceExpansionService expansionService,
-                                           TicketService ticketService) throws NotFoundException {
+                                           TicketService ticketService) throws NotFoundException, JsonProcessingException {
 
         if (ticketEntry instanceof DoiRequest) {
             return ExpandedDoiRequest.createEntry((DoiRequest) ticketEntry,
@@ -127,7 +134,23 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public final void setMessages(List<Message> messages) {
         this.messages = messages;
     }
-    
+
+    public final ExpandedPerson getOwner() {
+        return this.owner;
+    }
+
+    public final void setOwner(ExpandedPerson owner) {
+        this.owner = owner;
+    }
+
+    public final ExpandedPerson getAssignee() {
+        return assignee;
+    }
+
+    public final void setAssignee(ExpandedPerson assignee) {
+        this.assignee = assignee;
+    }
+
     protected static URI generateId(URI publicationId, SortableIdentifier identifier) {
         return UriWrapper.fromUri(publicationId)
                    .addChild(PublicationServiceConfig.TICKET_PATH)

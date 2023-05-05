@@ -1,5 +1,49 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.events.models.EventReference;
+import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
+import no.unit.nva.expansion.model.ExpandedPerson;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.core.paths.UnixPath;
+import nva.commons.logutils.LogUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -19,46 +63,6 @@ import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.events.models.EventReference;
-import no.unit.nva.expansion.ResourceExpansionService;
-import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.stubs.FakeS3Client;
-import no.unit.nva.testutils.EventBridgeEventBuilder;
-import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
@@ -258,6 +262,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
             @Override
             public Set<URI> getOrganizationIds(Entity dataEntry) {
+                return null;
+            }
+
+            @Override
+            public ExpandedPerson expandPerson(User username) {
                 return null;
             }
         };

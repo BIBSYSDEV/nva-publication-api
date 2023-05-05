@@ -1,24 +1,8 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.stream.Stream;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -49,6 +33,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.skyscreamer.jsonassert.JSONAssert;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ExpandedDataEntryTest extends ResourcesLocalTest {
 
@@ -115,7 +117,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Expanded DOI request should have type DoiRequest for instance type {0}")
     @MethodSource("publicationInstanceProvider")
-    void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
+    void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException, JsonProcessingException {
         var publication = createPublishedPublicationWithoutDoi(instanceType);
         var doiRequest = createDoiRequest(publication);
         var expandedResource =
@@ -126,7 +128,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "should return identifier using a non serializable method:{0}")
     @MethodSource("entryTypes")
-    void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type) throws ApiGatewayException {
+    void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type) throws ApiGatewayException, JsonProcessingException {
         var expandedDataEntry =
                 ExpandedDataEntryWithAssociatedPublication.create(type, resourceExpansionService,
                         resourceService,
@@ -214,7 +216,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 ResourceService resourceService,
                 MessageService messageService,
                 TicketService ticketService,
-                UriRetriever uriRetriever) throws ApiGatewayException {
+                UriRetriever uriRetriever) throws ApiGatewayException, JsonProcessingException {
             var publication = createPublication(resourceService);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
@@ -252,7 +254,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 Publication publication,
                 ResourceService resourceService,
                 ResourceExpansionService resourceExpansionService,
-                TicketService ticketService) throws NotFoundException {
+                TicketService ticketService) throws NotFoundException, JsonProcessingException {
             var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
             return ExpandedGeneralSupportRequest.create(request,
                     resourceService,
@@ -277,7 +279,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 Publication publication,
                 ResourceService resourceService,
                 ResourceExpansionService resourceExpansionService,
-                TicketService ticketService) throws NotFoundException {
+                TicketService ticketService) throws NotFoundException, JsonProcessingException {
             PublishingRequestCase requestCase = createPublishingRequestCase(publication);
             return ExpandedPublishingRequest.create(requestCase,
                     resourceService,
