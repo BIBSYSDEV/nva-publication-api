@@ -1,7 +1,10 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Collections.emptySet;
-import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.*;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.NEW_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.PENDING_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.COMPLETED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.CLOSED_STATUS;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

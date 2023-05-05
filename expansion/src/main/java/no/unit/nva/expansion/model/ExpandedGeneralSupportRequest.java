@@ -4,7 +4,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublicationDetails;
+
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
