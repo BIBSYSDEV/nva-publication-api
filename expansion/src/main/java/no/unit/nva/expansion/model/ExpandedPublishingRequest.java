@@ -1,10 +1,10 @@
 package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublicationDetails;
@@ -12,6 +12,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -21,6 +22,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Objects.nonNull;
@@ -48,14 +50,15 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                         ResourceService resourceService,
                                                         ResourceExpansionService resourceExpansionService,
                                                         TicketService ticketService)
-            throws NotFoundException, JsonProcessingException {
+            throws NotFoundException {
 
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
         var messages = publishingRequestCase.fetchMessages(ticketService);
         var workflow = publishingRequestCase.getWorkflow();
-        var owner = resourceExpansionService.enrichPerson(publishingRequestCase.getOwner());
-        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner);
+        var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
+        var assignee = expandAssignee(publishingRequestCase, resourceExpansionService);
+        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee);
     }
 
     private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
@@ -63,7 +66,8 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                            Set<URI> organizationIds,
                                                            List<Message> messages,
                                                            PublishingWorkflow workflow,
-                                                           ExpandedPerson owner) {
+                                                           ExpandedPerson owner,
+                                                           ExpandedPerson assignee) {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
@@ -78,6 +82,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setWorkflow(workflow);
         entry.setFinalizedBy(dataEntry.getFinalizedBy());
         entry.setOwner(owner);
+        entry.setAssignee(assignee);
         return entry;
     }
 
@@ -85,6 +90,15 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                 ResourceService resourceService) {
         return attempt(() -> resourceService.getPublicationByIdentifier(
                 publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
+    }
+
+    private static ExpandedPerson expandAssignee(PublishingRequestCase publishingRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(publishingRequest.getAssignee())
+                .map(Username::getValue)
+                .map(User::new)
+                .map(expansionService::expandPerson)
+                .orElse(null);
     }
 
     @JacocoGenerated
@@ -118,7 +132,16 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         publishingRequest.setCreatedDate(this.getCreatedDate());
         publishingRequest.setStatus(this.getStatus());
         publishingRequest.setFinalizedBy(this.getFinalizedBy());
+        publishingRequest.setAssignee(extractAssigneeUsername());
         return publishingRequest;
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+                .map(ExpandedPerson::getUsername)
+                .map(User::toString)
+                .map(Username::new)
+                .orElse(null);
     }
 
     @Override

@@ -7,10 +7,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -18,6 +20,7 @@ import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
@@ -48,8 +51,18 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(doiRequest.fetchMessages(ticketService));
-        expandedDoiRequest.setOwner(expansionService.enrichPerson(doiRequest.getOwner()));
+        expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
+        expandedDoiRequest.setAssignee(expandAssignee(doiRequest, expansionService));
         return expandedDoiRequest;
+    }
+
+    private static ExpandedPerson expandAssignee(DoiRequest publishingRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(publishingRequest.getAssignee())
+                .map(Username::getValue)
+                .map(User::new)
+                .map(expansionService::expandPerson)
+                .orElse(null);
     }
 
     private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
@@ -137,7 +150,16 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         doiRequest.setResourceStatus(this.getPublication().getStatus());
         doiRequest.setStatus(this.getStatus());
+        doiRequest.setAssignee(extractAssigneeUsername());
         return doiRequest;
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+                .map(ExpandedPerson::getUsername)
+                .map(User::toString)
+                .map(Username::new)
+                .orElse(null);
     }
 
     @Override

@@ -9,11 +9,12 @@ import java.util.stream.Collectors;
 
 public class CristinPerson {
 
-    @JsonProperty("names")
+    public static final String NAMES_FIELD = "names";
+    @JsonProperty(NAMES_FIELD)
     private final List<NameType> names;
 
     @JsonCreator
-    public CristinPerson(@JsonProperty("names") List<NameType> names) {
+    public CristinPerson(@JsonProperty(NAMES_FIELD) List<NameType> names) {
         this.names = names;
     }
 
@@ -23,15 +24,17 @@ public class CristinPerson {
 
     public final static class NameType {
 
-        @JsonProperty("type")
+        public static final String TYPE_FIELD = "type";
+        public static final String VALUE_FIELD = "value";
+        @JsonProperty(TYPE_FIELD)
         private final String type;
 
-        @JsonProperty("value")
+        @JsonProperty(VALUE_FIELD)
         private final String name;
 
         @JsonCreator
-        public NameType(@JsonProperty("type") String type,
-                        @JsonProperty("value") String name) {
+        public NameType(@JsonProperty(TYPE_FIELD) String type,
+                        @JsonProperty(VALUE_FIELD) String name) {
             this.type = type;
             this.name = name;
         }

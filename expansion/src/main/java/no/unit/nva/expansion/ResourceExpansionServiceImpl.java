@@ -109,7 +109,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public ExpandedPerson enrichPerson(User owner)  {
+    public ExpandedPerson expandPerson(User owner)  {
         return attempt(() -> constructUri(owner))
                 .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
                 .map(response -> toExpandedPerson(response.orElse(null), owner))

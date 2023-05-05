@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -15,6 +17,7 @@ import nva.commons.core.paths.UriWrapper;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 
 @JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
@@ -37,7 +40,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(resourceExpansionService.getOrganizationIds(dataEntry));
         entry.setStatus(dataEntry.getStatus());
-        entry.setOwner(resourceExpansionService.enrichPerson(dataEntry.getOwner()));
+        entry.setOwner(resourceExpansionService.expandPerson(dataEntry.getOwner()));
         entry.setModifiedDate(dataEntry.getModifiedDate());
         entry.setCreatedDate(dataEntry.getCreatedDate());
         entry.setCustomerId(dataEntry.getCustomerId());
@@ -45,7 +48,17 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setMessages(dataEntry.fetchMessages(ticketService));
         entry.setViewedBy(dataEntry.getViewedBy());
         entry.setFinalizedBy(dataEntry.getFinalizedBy());
+        entry.setAssignee(expandAssignee(dataEntry, resourceExpansionService));
         return entry;
+    }
+
+    private static ExpandedPerson expandAssignee(GeneralSupportRequest publishingRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(publishingRequest.getAssignee())
+                .map(Username::getValue)
+                .map(User::new)
+                .map(expansionService::expandPerson)
+                .orElse(null);
     }
 
     public Instant getModifiedDate() {
@@ -80,7 +93,16 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         ticketEntry.setStatus(this.getStatus());
         ticketEntry.setOwner(this.getOwner().getUsername());
+        ticketEntry.setAssignee(extractAssigneeUsername());
         return ticketEntry;
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+                .map(ExpandedPerson::getUsername)
+                .map(User::toString)
+                .map(Username::new)
+                .orElse(null);
     }
 
     @Override

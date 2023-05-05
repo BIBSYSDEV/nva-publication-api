@@ -69,7 +69,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static final URI ORGANIZATION =
             URI.create("https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
-    public static final UserInstance OWNER = UserInstance.create(new User("12345"), ORGANIZATION);
+    public static final UserInstance USER = UserInstance.create(new User("12345"), ORGANIZATION);
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
@@ -102,6 +102,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return (Class<? extends TicketEntry>)
                 ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
                         .findAny().orElseThrow();
+    }
+
+    private static ExpandedPerson getExpectedExpandedPerson(User user) {
+        return new ExpandedPerson(
+                "someFirstName",
+                "somePreferredFirstName",
+                "someLastName",
+                "somePreferredLastName",
+                user);
     }
 
     @BeforeEach
@@ -264,24 +273,46 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldAddCristinPersonNameValuesToTicketOwnerAndAssignee(
-            Class<? extends TicketEntry> ticketType, PublicationStatus status)
-            throws ApiGatewayException, JsonProcessingException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, OWNER, resourceService);
+    void shouldExpandTicketOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+            throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+
+        expansionService = mockedExpansionService();
+
         var ticketOwner = ticket.getOwner();
+        var expandedOwner = expansionService.expandPerson(ticketOwner);
+        var expectedExpandedOwner = getExpectedExpandedPerson(ticketOwner);
+        assertThat(expandedOwner, is(equalTo(expectedExpandedOwner)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldExpandAssigneeWhenPresent(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+            throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
+        var ticket = ticketWithAssignee(ticketType, publication);
+
+        expansionService = mockedExpansionService();
+
+        var assignee = ticket.getAssignee().getValue();
+        var expectedExpandedAssignee = getExpectedExpandedPerson(new User(assignee));
+        var expandedAssignee = expansionService.expandPerson(new User(assignee));
+        assertThat(expandedAssignee, is(equalTo(expectedExpandedAssignee)));
+    }
+
+    private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
+            throws ApiGatewayException {
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticketService.updateTicketAssignee(ticket, new Username(USER.getUsername()));
+        return ticketService.fetchTicket(ticket);
+    }
+
+    private ResourceExpansionService mockedExpansionService() {
         uriRetriever = mock(UriRetriever.class);
         when(uriRetriever.getRawContent(any(), any()))
                 .thenReturn(Optional.of(IoUtils.stringFromResources(Path.of("cristin_person.json"))));
-        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
-        var expandedOwner = expansionService.enrichPerson(ticketOwner);
-        var expectedExpandedOwner = new ExpandedPerson(
-                "someFirstName",
-                "somePreferredFirstName",
-                "someLastName",
-                "somePreferredLastName",
-                ticketOwner);
-        assertThat(expandedOwner, is(equalTo(expectedExpandedOwner)));
+        return new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
     @SuppressWarnings("SameParameterValue")

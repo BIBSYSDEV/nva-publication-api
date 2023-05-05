@@ -266,7 +266,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             }
 
             @Override
-            public ExpandedPerson enrichPerson(User username) {
+            public ExpandedPerson expandPerson(User username) {
                 return null;
             }
         };

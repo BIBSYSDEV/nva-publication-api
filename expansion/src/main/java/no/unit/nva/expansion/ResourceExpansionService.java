@@ -16,5 +16,5 @@ public interface ResourceExpansionService {
 
     Set<URI> getOrganizationIds(Entity dataEntry) throws NotFoundException;
 
-    ExpandedPerson enrichPerson(User username) throws JsonProcessingException;
+    ExpandedPerson expandPerson(User username);
 }

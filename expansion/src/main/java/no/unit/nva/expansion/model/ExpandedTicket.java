@@ -38,6 +38,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public static final String ORGANIZATION_IDS_FIELD = "organizationIds";
     public static final String ID_FIELD = "id";
     public static final String VIEWED_BY_FIELD = "viewedBy";
+    public static final String ASSIGNEE_FIELD = "assignee";
     private static final String MESSAGES_FIELD = "messages";
     public static final String FINALIZED_BY_FIELD = "finalizedBy";
     public static final String OWNER_FIELD = "owner";
@@ -53,6 +54,8 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     private Username finalizedBy;
     @JsonProperty(OWNER_FIELD)
     private ExpandedPerson owner;
+    @JsonProperty(ASSIGNEE_FIELD)
+    private ExpandedPerson assignee;
 
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
@@ -139,7 +142,15 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public final void setOwner(ExpandedPerson owner) {
         this.owner = owner;
     }
-    
+
+    public final ExpandedPerson getAssignee() {
+        return assignee;
+    }
+
+    public final void setAssignee(ExpandedPerson assignee) {
+        this.assignee = assignee;
+    }
+
     protected static URI generateId(URI publicationId, SortableIdentifier identifier) {
         return UriWrapper.fromUri(publicationId)
                    .addChild(PublicationServiceConfig.TICKET_PATH)
