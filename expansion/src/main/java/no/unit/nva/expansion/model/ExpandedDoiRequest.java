@@ -41,7 +41,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     private URI doi;
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     private Set<URI> organizationIds;
-    
+
     public static ExpandedDoiRequest createEntry(DoiRequest doiRequest,
                                                  ResourceExpansionService expansionService,
                                                  ResourceService resourceService,
@@ -129,6 +129,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         doiRequest.setResourceStatus(this.getPublication().getStatus());
         doiRequest.setStatus(this.getStatus());
+        doiRequest.setAssignee(this.getAssignee());
         return doiRequest;
     }
     
@@ -169,6 +170,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setPublication(publicationSummary);
         entry.setFinalizedBy(doiRequest.getFinalizedBy());
         entry.setOwner(doiRequest.getOwner());
+        entry.setAssignee(doiRequest.getAssignee());
         return entry;
     }
 }

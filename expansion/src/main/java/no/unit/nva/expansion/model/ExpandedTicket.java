@@ -49,6 +49,8 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     private PublicationSummary publication;
     @JsonProperty(FINALIZED_BY_FIELD)
     private Username finalizedBy;
+    @JsonProperty
+    private Username assignee;
 
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
@@ -137,5 +139,13 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     
     protected static SortableIdentifier extractIdentifier(URI id) {
         return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
+    }
+
+    public Username getAssignee() {
+        return assignee;
+    }
+
+    public void setAssignee(Username assignee) {
+        this.assignee = assignee;
     }
 }

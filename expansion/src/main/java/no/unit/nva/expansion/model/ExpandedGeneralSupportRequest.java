@@ -47,6 +47,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setViewedBy(dataEntry.getViewedBy());
         entry.setFinalizedBy(dataEntry.getFinalizedBy());
         entry.setOwner(dataEntry.getOwner());
+        entry.setAssignee(dataEntry.getAssignee());
         return entry;
     }
 
@@ -82,6 +83,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         ticketEntry.setStatus(this.getStatus());
         ticketEntry.setOwner(this.getOwner());
+        ticketEntry.setAssignee(this.getAssignee());
         return ticketEntry;
     }
     

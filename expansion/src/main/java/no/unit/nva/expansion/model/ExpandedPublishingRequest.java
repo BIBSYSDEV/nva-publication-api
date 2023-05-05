@@ -40,7 +40,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private Instant modifiedDate;
     private Instant createdDate;
     private PublishingWorkflow workflow;
-    
+
     public ExpandedPublishingRequest() {
         super();
     }
@@ -85,6 +85,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         publishingRequest.setCreatedDate(this.getCreatedDate());
         publishingRequest.setStatus(this.getStatus());
         publishingRequest.setFinalizedBy(this.getFinalizedBy());
+        publishingRequest.setAssignee(this.getAssignee());
         return publishingRequest;
     }
     
@@ -160,6 +161,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setViewedBy(dataEntry.getViewedBy());
         entry.setWorkflow(workflow);
         entry.setFinalizedBy(dataEntry.getFinalizedBy());
+        entry.setAssignee(dataEntry.getAssignee());
         return entry;
     }
     
