@@ -11,13 +11,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -250,6 +244,23 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var actual = expansionService.getOrganizationIds(message);
 
         assertThat(actual, is(equalTo(Collections.emptySet())));
+    }
+
+    @DisplayName("should not update ExpandedTicket status when ticket status is not pending")
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldNotUpdateExpandedTicketStatusWhenTicketStatusIsNotPending(Class<? extends TicketEntry> ticketType,
+                                                                      PublicationStatus status)
+            throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.setStatus(TicketStatus.COMPLETED);
+        var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
+        var regeneratedTicket = expandedTicket.toTicketEntry();
+
+        assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
+                FINALIZED_DATE)));
+        assertThat(regeneratedTicket.getStatus(), is(equalTo(ticket.getStatus())));
     }
 
     @SuppressWarnings("SameParameterValue")
