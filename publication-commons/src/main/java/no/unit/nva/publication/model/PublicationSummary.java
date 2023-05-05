@@ -1,18 +1,21 @@
 package no.unit.nva.publication.model;
 
-import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -57,20 +60,9 @@ public class PublicationSummary {
         publicationSummary.setPublishedDate(publication.getPublishedDate());
         publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
         publicationSummary.setStatus(publication.getStatus());
-        var entityDescription = publication.getEntityDescription();
-        if (nonNull(entityDescription)) {
-            publicationSummary.setTitle(entityDescription.getMainTitle());
-            if (nonNull(entityDescription.getReference())) {
-                publicationSummary.setPublicationInstance(entityDescription.getReference().getPublicationInstance());
-            }
-            if (nonNull(entityDescription.getContributors())) {
-                publicationSummary.setContributors(entityDescription.getContributors()
-                                                       .stream()
-                                                       .sorted(Comparator.comparing(Contributor::getSequence))
-                                                       .limit(MAX_SIZE_CONTRIBUTOR_LIST)
-                                                       .collect(Collectors.toList()));
-            }
-        }
+        publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
+        publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
+        publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
         return publicationSummary;
     }
 
@@ -206,6 +198,30 @@ public class PublicationSummary {
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
                && Objects.equals(getContributors(), that.getContributors());
+    }
+
+    private static String extractTitle(EntityDescription entityDescription) {
+        return Optional.ofNullable(entityDescription)
+            .map(EntityDescription::getMainTitle)
+            .orElse(null);
+    }
+
+    private static List<Contributor> extractContributors(EntityDescription entityDescription) {
+        return Optional.ofNullable(entityDescription)
+            .map(EntityDescription::getContributors)
+            .orElse(Collections.emptyList())
+            .stream()
+            .sorted(Comparator.comparing(Contributor::getSequence))
+            .limit(MAX_SIZE_CONTRIBUTOR_LIST)
+            .collect(Collectors.toList());
+    }
+
+    private static PublicationInstance<? extends Pages> extractPublicationInstance(
+        EntityDescription entityDescription) {
+        return Optional.ofNullable(entityDescription)
+            .map(EntityDescription::getReference)
+            .map(Reference::getPublicationInstance)
+            .orElse(null);
     }
 
     private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
