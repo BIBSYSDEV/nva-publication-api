@@ -34,7 +34,7 @@ build {
 }
 
 dependencies {
-    implementation 'com.github.bibsysdev:logutils:1.27.2'
+    implementation 'com.github.bibsysdev:logutils:1.28.2'
 }
 
 repositories {
