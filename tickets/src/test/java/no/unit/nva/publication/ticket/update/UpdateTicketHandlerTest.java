@@ -12,7 +12,7 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.*;
-import no.unit.nva.publication.ticket.model.TicketRequest;
+import no.unit.nva.publication.ticket.model.UpdateTicketRequest;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -69,10 +69,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                       TicketEntry ticket,
                                                       ViewStatus viewStatus)
             throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
+        return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper)
                 .withCurrentCustomer(ticket.getCustomerId())
                 .withUserName(ticket.getOwner().toString())
-                .withBody(new TicketRequest(ticket.getStatus(), null, viewStatus))
+                .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
                 .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                 .build();
     }
@@ -82,11 +82,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                        ViewStatus viewStatus,
                                                        URI customerId)
             throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
+        return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper)
                 .withCurrentCustomer(customerId)
                 .withUserName(randomString())
                 .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
-                .withBody(new TicketRequest(ticket.getStatus(), null, viewStatus))
+                .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
                 .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                 .build();
     }
@@ -604,10 +604,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
             TicketEntry ticket,
             SortableIdentifier wrongPublicationIdentifier)
             throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
+        return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper)
                 .withCurrentCustomer(ticket.getCustomerId())
                 .withUserName(randomString())
-                .withBody(new TicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
+                .withBody(new UpdateTicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
                 .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
                 .withAccessRights(ticket.getCustomerId(), AccessRight.APPROVE_DOI_REQUEST.toString())
                 .build();
@@ -639,8 +639,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private InputStream ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(
             TicketEntry ticket, SortableIdentifier wrongPublicationIdentifier)
             throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketRequest>(JsonUtils.dtoObjectMapper)
-                .withBody(new TicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
+        return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper)
+                .withBody(new UpdateTicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
                 .withCurrentCustomer(ticket.getCustomerId())
                 .withUserName(ticket.getOwner().toString())
                 .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))

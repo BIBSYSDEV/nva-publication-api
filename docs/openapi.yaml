@@ -299,14 +299,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TicketRequest'
+              $ref: '#/components/schemas/UpdateTicketRequest'
       responses:
         202:
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TicketRequest"
+                $ref: "#/components/schemas/UpdateTicketRequest"
         400:
           description: Bad Request
           content:
@@ -772,7 +772,8 @@ components:
       properties:
         doi:
           type: string
-    TicketRequest:
+    UpdateTicketRequest:
+      description: Only few fields of Ticket are exposed for update
       type: object
       properties:
         status:

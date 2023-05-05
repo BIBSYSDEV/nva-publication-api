@@ -13,7 +13,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
-import no.unit.nva.publication.ticket.model.TicketRequest;
+import no.unit.nva.publication.ticket.model.UpdateTicketRequest;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -39,7 +39,7 @@ import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARA
 import static nva.commons.core.attempt.Try.attempt;
 
 @SuppressWarnings("PMD.GodClass")
-public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
+public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void> {
 
     public static final String API_HOST = "API_HOST";
     public static final String EXCEPTION_MESSAGE = "Creating findable doi failed with exception: {}";
@@ -62,7 +62,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService,
                                   DoiClient doiClient) {
-        super(TicketRequest.class);
+        super(UpdateTicketRequest.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
         this.doiClient = doiClient;
@@ -75,16 +75,16 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         }
     }
 
-    private static boolean statusHasBeenUpdated(TicketEntry ticket, TicketRequest ticketRequest) {
+    private static boolean statusHasBeenUpdated(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
         return nonNull(ticketRequest.getStatus()) && !ticketRequest.getStatus().equals(ticket.getStatus());
     }
 
-    private static boolean assigneeHasBeenUpdated(TicketEntry ticket, TicketRequest ticketRequest) {
+    private static boolean assigneeHasBeenUpdated(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
         return incomingAssigneeIsPresent(ticketRequest)
                 && (assigneeDoesNotExist(ticket) || assigneesAreDifferent(ticket, ticketRequest));
     }
 
-    private static boolean assigneesAreDifferent(TicketEntry ticket, TicketRequest ticketRequest) {
+    private static boolean assigneesAreDifferent(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
         return !ticketRequest.getAssignee().equals(ticket.getAssignee());
     }
 
@@ -121,7 +121,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         return existingAssigneeIsEmpty(ticket);
     }
 
-    private static boolean assigneeIsEmptyString(TicketRequest ticketRequest) {
+    private static boolean assigneeIsEmptyString(UpdateTicketRequest ticketRequest) {
         return StringUtils.EMPTY_STRING.equals(ticketRequest.getAssignee().getValue());
     }
 
@@ -129,12 +129,12 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         return isNull(ticket.getAssignee());
     }
 
-    private static boolean incomingAssigneeIsPresent(TicketRequest ticketRequest) {
+    private static boolean incomingAssigneeIsPresent(UpdateTicketRequest ticketRequest) {
         return nonNull(ticketRequest.getAssignee());
     }
 
     @Override
-    protected Void processInput(TicketRequest input, RequestInfo requestInfo, Context context)
+    protected Void processInput(UpdateTicketRequest input, RequestInfo requestInfo, Context context)
             throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = fetchTicketForElevatedUser(ticketIdentifier, UserInstance.fromRequestInfo(requestInfo));
@@ -144,7 +144,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         return null;
     }
 
-    private void updateTicket(TicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
+    private void updateTicket(UpdateTicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
             throws ApiGatewayException {
         if (incomingUpdateIsStatus(ticket, ticketRequest)) {
             updateStatus(ticketRequest, requestInfo, ticket);
@@ -157,7 +157,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         }
     }
 
-    private void updateAssignee(TicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
+    private void updateAssignee(UpdateTicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
             throws ApiGatewayException {
         throwExceptionIfUnauthorized(requestInfo, ticket);
         if (assigneeIsEmptyString(ticketRequest)) {
@@ -168,7 +168,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     }
 
-    private void updateStatus(TicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
+    private void updateStatus(UpdateTicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
             throws ApiGatewayException {
         throwExceptionIfUnauthorized(requestInfo, ticket);
         if (ticket instanceof DoiRequest) {
@@ -183,7 +183,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
                 .orElseThrow(fail -> new ForbiddenException());
     }
 
-    private void updateTicketViewedBy(TicketRequest ticketRequest, TicketEntry ticketEntry, RequestInfo requestInfo)
+    private void updateTicketViewedBy(UpdateTicketRequest ticketRequest, TicketEntry ticketEntry, RequestInfo requestInfo)
             throws ApiGatewayException {
         if (elevatedUserCanViewTicket(requestInfo)) {
             markTicketForElevatedUser(ticketRequest, requestInfo, ticketEntry);
@@ -192,20 +192,20 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         }
     }
 
-    private void markTicketForElevatedUser(TicketRequest ticketRequest, RequestInfo requestInfo,
+    private void markTicketForElevatedUser(UpdateTicketRequest ticketRequest, RequestInfo requestInfo,
                                            TicketEntry ticketEntry) throws ApiGatewayException {
         assertThatPublicationIdentifierInPathReferencesCorrectPublication(ticketEntry, requestInfo);
         markTicketForElevatedUser(ticketRequest, ticketEntry);
     }
 
-    private void markTicketForOwner(TicketRequest ticketRequest, RequestInfo requestInfo,
+    private void markTicketForOwner(UpdateTicketRequest ticketRequest, RequestInfo requestInfo,
                                     TicketEntry ticketEntry)
             throws ForbiddenException {
         assertThatPublicationIdentifierInPathReferencesCorrectPublication(ticketEntry, requestInfo);
         markTicketForOwner(ticketRequest, ticketEntry);
     }
 
-    private void markTicketForOwner(TicketRequest input, TicketEntry ticket) {
+    private void markTicketForOwner(UpdateTicketRequest input, TicketEntry ticket) {
         if (ViewStatus.READ.equals(input.getViewStatus())) {
             ticket.markReadByOwner().persistUpdate(ticketService);
         } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
@@ -215,7 +215,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         }
     }
 
-    private void markTicketForElevatedUser(TicketRequest input, TicketEntry ticket) {
+    private void markTicketForElevatedUser(UpdateTicketRequest input, TicketEntry ticket) {
 
         if (ViewStatus.READ.equals(input.getViewStatus())) {
             ticket.markReadForCurators().persistUpdate(ticketService);
@@ -235,34 +235,34 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         }
     }
 
-    private boolean incomingUpdateIsViewedStatus(TicketRequest input) {
+    private boolean incomingUpdateIsViewedStatus(UpdateTicketRequest input) {
         return nonNull(input.getViewStatus());
     }
 
-    private boolean incomingUpdateIsAssignee(TicketEntry ticket, TicketRequest ticketRequest) {
+    private boolean incomingUpdateIsAssignee(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
         return nonNull(ticketRequest.getAssignee()) && !ticketRequest.getAssignee().equals(ticket.getAssignee());
     }
 
-    private boolean incomingUpdateIsStatus(TicketEntry ticket, TicketRequest ticketRequest) {
+    private boolean incomingUpdateIsStatus(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
         return nonNull(ticketRequest.getStatus()) && !ticket.getStatus().equals(ticketRequest.getStatus());
     }
 
-    private boolean hasEffectiveChanges(TicketEntry ticket, TicketRequest ticketRequest) {
+    private boolean hasEffectiveChanges(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
         return statusHasBeenUpdated(ticket, ticketRequest)
                 || assigneeHasBeenUpdated(ticket, ticketRequest)
                 || viewStatusHasBeenUpdated(ticketRequest);
     }
 
-    private boolean viewStatusHasBeenUpdated(TicketRequest ticketRequest) {
+    private boolean viewStatusHasBeenUpdated(UpdateTicketRequest ticketRequest) {
         return nonNull(ticketRequest.getViewStatus());
     }
 
     @Override
-    protected Integer getSuccessStatusCode(TicketRequest input, Void output) {
+    protected Integer getSuccessStatusCode(UpdateTicketRequest input, Void output) {
         return HTTP_ACCEPTED;
     }
 
-    private void doiTicketSideEffects(TicketRequest input, final RequestInfo requestInfo)
+    private void doiTicketSideEffects(UpdateTicketRequest input, final RequestInfo requestInfo)
             throws NotFoundException, BadMethodException, BadGatewayException {
         var status = input.getStatus();
         if (TicketStatus.COMPLETED.equals(status)) {
