@@ -416,6 +416,8 @@ Resources:
             Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}/index/*
 
   S3AccessPermsisions:
     Type: AWS::IAM::Policy
