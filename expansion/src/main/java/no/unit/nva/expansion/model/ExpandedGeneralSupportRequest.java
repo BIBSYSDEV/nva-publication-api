@@ -1,7 +1,6 @@
 package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
@@ -33,7 +32,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
 
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
-                                                TicketService ticketService) throws NotFoundException, JsonProcessingException {
+                                                TicketService ticketService) throws NotFoundException {
         var publication = resourceService.getPublicationByIdentifier(dataEntry.extractPublicationIdentifier());
         var entry = new ExpandedGeneralSupportRequest();
         var publicationSummary = PublicationSummary.create(publication);
@@ -52,9 +51,9 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         return entry;
     }
 
-    private static ExpandedPerson expandAssignee(GeneralSupportRequest publishingRequest,
+    private static ExpandedPerson expandAssignee(GeneralSupportRequest generalSupportRequest,
                                                  ResourceExpansionService expansionService) {
-        return Optional.ofNullable(publishingRequest.getAssignee())
+        return Optional.ofNullable(generalSupportRequest.getAssignee())
                 .map(Username::getValue)
                 .map(User::new)
                 .map(expansionService::expandPerson)

@@ -3,7 +3,6 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -47,7 +46,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
                                                  ResourceExpansionService expansionService,
                                                  ResourceService resourceService,
                                                  TicketService ticketService)
-            throws NotFoundException, JsonProcessingException {
+            throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(doiRequest.fetchMessages(ticketService));
@@ -56,9 +55,9 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return expandedDoiRequest;
     }
 
-    private static ExpandedPerson expandAssignee(DoiRequest publishingRequest,
+    private static ExpandedPerson expandAssignee(DoiRequest doiRequest,
                                                  ResourceExpansionService expansionService) {
-        return Optional.ofNullable(publishingRequest.getAssignee())
+        return Optional.ofNullable(doiRequest.getAssignee())
                 .map(Username::getValue)
                 .map(User::new)
                 .map(expansionService::expandPerson)
