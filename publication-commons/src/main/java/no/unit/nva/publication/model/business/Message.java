@@ -236,7 +236,7 @@ public class Message implements Entity, JsonSerializable {
     
         private final Message message;
         
-        public Builder() {
+        private Builder() {
             message = new Message();
         }
         
