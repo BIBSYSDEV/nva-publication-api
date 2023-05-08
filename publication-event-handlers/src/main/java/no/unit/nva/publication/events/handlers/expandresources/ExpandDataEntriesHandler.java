@@ -1,26 +1,16 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static java.util.Objects.isNull;
-import static no.unit.nva.model.PublicationStatus.DELETED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.time.Clock;
-import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
@@ -34,6 +24,18 @@ import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.net.URI;
+import java.time.Clock;
+import java.util.Optional;
+
+import static java.util.Objects.isNull;
+import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class ExpandDataEntriesHandler
     extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
@@ -69,7 +71,6 @@ public class ExpandDataEntriesHandler
                                                  Context context) {
 
         var blobObject = readBlobFromS3(input);
-
         if (shouldBeDeleted(blobObject.getNewData())) {
             return createDeleteEventReference(blobObject.getNewData());
         } else if (shouldBeEnriched(blobObject.getNewData())) {

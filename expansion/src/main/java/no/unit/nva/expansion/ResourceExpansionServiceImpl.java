@@ -40,6 +40,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String CRISTIN = "cristin";
     public static final String PERSON = "person";
     public static final String API_HOST = "API_HOST";
+    public static final String CRISTIN_ID_DELIMITER = "@";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final UriRetriever uriRetriever;
@@ -124,6 +125,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
                 .addChild(CRISTIN)
                 .addChild(PERSON)
-                .addChild(owner.toString()).getUri();
+                .addChild(extractCristinId(owner))
+                .getUri();
+    }
+
+    private static String extractCristinId(User owner) {
+        return owner.toString().split(CRISTIN_ID_DELIMITER)[0];
     }
 }
