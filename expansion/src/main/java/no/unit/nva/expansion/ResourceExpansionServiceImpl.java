@@ -18,8 +18,6 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Collection;
@@ -42,7 +40,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String CRISTIN = "cristin";
     public static final String PERSON = "person";
     public static final String API_HOST = "API_HOST";
-    private static final Logger logger = LoggerFactory.getLogger(ResourceExpansionServiceImpl.class);
+    public static final String CRISTIN_ID_DELIMITER = "@";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final UriRetriever uriRetriever;
@@ -65,7 +63,6 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private ExpandedPerson toExpandedPerson(String response, User owner) throws JsonProcessingException {
         var cristinPerson = JsonUtils.dtoObjectMapper.readValue(response, CristinPerson.class);
         var nameMap = cristinPerson.getNameTypeMap();
-        logger.info("Person has been expanded: {}", cristinPerson);
         return new ExpandedPerson.Builder()
                 .withFirstName(nameMap.get(FIRST_NAME))
                 .withPreferredFirstName(nameMap.get(PREFERRED_FIRST_NAME))
@@ -114,17 +111,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public ExpandedPerson expandPerson(User owner)  {
-        logger.info("Uri to retrieve: {}, ", constructUri(owner));
         return attempt(() -> constructUri(owner))
                 .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
-                .map(s -> logg(s))
                 .map(response -> toExpandedPerson(response.orElse(null), owner))
                 .orElse(failure -> defaultExpandedPerson(owner));
-    }
-
-    private Optional<String> logg(Optional<String> s) {
-        logger.info("Person cristin response: {}, ", s.get());
-        return s;
     }
 
     private ExpandedPerson defaultExpandedPerson(User owner) {
@@ -135,6 +125,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
                 .addChild(CRISTIN)
                 .addChild(PERSON)
-                .addChild(owner.toString()).getUri();
+                .addChild(extractCristinId(owner))
+                .getUri();
+    }
+
+    private static String extractCristinId(User owner) {
+        return owner.toString().split(CRISTIN_ID_DELIMITER)[0];
     }
 }
