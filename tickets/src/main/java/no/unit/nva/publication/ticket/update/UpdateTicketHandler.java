@@ -51,6 +51,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
+    private static final String ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
+    private static final String ACCESS_RIGHT_APPROVE_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
 
     @JacocoGenerated
     public UpdateTicketHandler() {
@@ -94,7 +96,16 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean isAuthorizedToCompleteTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return userIsAuthorizedToApproveDoiRequest(requestInfo)
+                || userIsAuthorizedToApprovePublishingRequest(requestInfo);
+    }
+
+    private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
+    }
+
+    private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
