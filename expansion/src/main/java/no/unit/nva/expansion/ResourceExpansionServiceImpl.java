@@ -3,6 +3,7 @@ package no.unit.nva.expansion;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
+import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
@@ -110,15 +111,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public ExpandedPerson expandPerson(User owner)  {
+    public ExpandedPerson expandPerson(User owner) {
         return attempt(() -> constructUri(owner))
                 .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
                 .map(response -> toExpandedPerson(response.orElse(null), owner))
-                .orElse(failure -> defaultExpandedPerson(owner));
+                .orElse(failure -> ExpandedPerson.defaultExpandedPerson(owner));
     }
 
-    private ExpandedPerson defaultExpandedPerson(User owner) {
-        return new ExpandedPerson(null, null, null, null, owner);
+    @Override
+    public ExpandedMessage expandMessage(Message message) {
+        return ExpandedMessage.createEntry(message, this);
     }
 
     private URI constructUri(User owner) {

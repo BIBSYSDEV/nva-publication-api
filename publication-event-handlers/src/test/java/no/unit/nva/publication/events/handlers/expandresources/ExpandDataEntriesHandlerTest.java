@@ -7,6 +7,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
+import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -267,6 +268,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
             @Override
             public ExpandedPerson expandPerson(User username) {
+                return null;
+            }
+
+            @Override
+            public ExpandedMessage expandMessage(Message messages) {
                 return null;
             }
         };

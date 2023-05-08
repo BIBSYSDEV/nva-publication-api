@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
@@ -54,17 +55,23 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
-        var messages = publishingRequestCase.fetchMessages(ticketService);
+        var messages = expandMessages(publishingRequestCase.fetchMessages(ticketService), resourceExpansionService);
         var workflow = publishingRequestCase.getWorkflow();
         var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
         var assignee = expandAssignee(publishingRequestCase, resourceExpansionService);
         return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee);
     }
 
+    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
+        return messages.stream()
+                .map(expansionService::expandMessage)
+                .collect(Collectors.toList());
+    }
+
     private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
                                                            Publication publication,
                                                            Set<URI> organizationIds,
-                                                           List<Message> messages,
+                                                           List<ExpandedMessage> messages,
                                                            PublishingWorkflow workflow,
                                                            ExpandedPerson owner,
                                                            ExpandedPerson assignee) {

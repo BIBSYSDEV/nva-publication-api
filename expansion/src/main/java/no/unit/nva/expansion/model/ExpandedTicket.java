@@ -12,7 +12,6 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -45,7 +44,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     @JsonProperty(ID_FIELD)
     private URI id;
     @JsonProperty(MESSAGES_FIELD)
-    private List<Message> messages;
+    private List<ExpandedMessage> messages;
     @JsonProperty(VIEWED_BY_FIELD)
     private Set<User> viewedBy;
     @JsonProperty(PUBLICATION_FIELD)
@@ -127,11 +126,11 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     
     public abstract TicketStatus getStatus();
     
-    public final List<Message> getMessages() {
+    public final List<ExpandedMessage> getMessages() {
         return this.messages;
     }
     
-    public final void setMessages(List<Message> messages) {
+    public final void setMessages(List<ExpandedMessage> messages) {
         this.messages = messages;
     }
 
