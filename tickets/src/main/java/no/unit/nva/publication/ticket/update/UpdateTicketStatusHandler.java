@@ -41,6 +41,8 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
+    private static final String ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
+    private static final String ACCESS_RIGHT_APPROVE_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
 
     @JacocoGenerated
     public UpdateTicketStatusHandler() {
@@ -94,7 +96,16 @@ public class UpdateTicketStatusHandler extends TicketHandler<TicketDto, Void> {
     }
 
     private static boolean isAuthorizedToCompleteTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return userIsAuthorizedToApproveDoiRequest(requestInfo)
+                || userIsAuthorizedToApprovePublishingRequest(requestInfo);
+    }
+
+    private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
+    }
+
+    private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
     }
 
     private void doiTicketSideEffects(TicketDto input, final RequestInfo requestInfo)
