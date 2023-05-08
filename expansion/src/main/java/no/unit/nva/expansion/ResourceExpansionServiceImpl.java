@@ -1,6 +1,18 @@
 package no.unit.nva.expansion;
 
+import static no.unit.nva.expansion.model.ExpandedPerson.FIRST_NAME;
+import static no.unit.nva.expansion.model.ExpandedPerson.LAST_NAME;
+import static no.unit.nva.expansion.model.ExpandedPerson.PREFERRED_FIRST_NAME;
+import static no.unit.nva.expansion.model.ExpandedPerson.PREFERRED_LAST_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -19,22 +31,8 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-
-import java.net.URI;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static no.unit.nva.expansion.model.ExpandedPerson.FIRST_NAME;
-import static no.unit.nva.expansion.model.ExpandedPerson.LAST_NAME;
-import static no.unit.nva.expansion.model.ExpandedPerson.PREFERRED_FIRST_NAME;
-import static no.unit.nva.expansion.model.ExpandedPerson.PREFERRED_LAST_NAME;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
@@ -45,6 +43,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String PERSON = "person";
     public static final String API_HOST = "API_HOST";
     public static final String CRISTIN_ID_DELIMITER = "@";
+    private static final String EXPAND_PERSON_CRISTIN_ERROR = "Could not retrieve Cristin Person. Creating default "
+                                                              + "expanded person for owner";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final UriRetriever uriRetriever;
@@ -67,7 +67,6 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private ExpandedPerson toExpandedPerson(String response, User owner) throws JsonProcessingException {
         var cristinPerson = JsonUtils.dtoObjectMapper.readValue(response, CristinPerson.class);
         var nameMap = cristinPerson.getNameTypeMap();
-        logger.info("cristinPerson was retrieved: {}", nameMap.get(FIRST_NAME));
         return new ExpandedPerson.Builder()
                 .withFirstName(nameMap.get(FIRST_NAME))
                 .withPreferredFirstName(nameMap.get(PREFERRED_FIRST_NAME))
@@ -116,15 +115,14 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public ExpandedPerson expandPerson(User owner) {
-        logger.info("expandPerson called with {}", owner);
         return attempt(() -> constructUri(owner))
                 .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
                 .map(response -> toExpandedPerson(response.orElse(null), owner))
-                .orElse(failure -> getExpandedPerson(owner));
+                .orElse(failure -> getDefaultExpandedPerson(owner));
     }
 
-    private ExpandedPerson getExpandedPerson(User owner) {
-        logger.info("Creating default expanded person object for owner");
+    private ExpandedPerson getDefaultExpandedPerson(User owner) {
+        logger.info(EXPAND_PERSON_CRISTIN_ERROR);
         return ExpandedPerson.defaultExpandedPerson(owner);
     }
 
