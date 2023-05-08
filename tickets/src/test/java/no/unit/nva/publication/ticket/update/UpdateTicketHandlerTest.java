@@ -400,6 +400,22 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
     }
 
+    @Test
+    void shouldResetAssigneeWhenAssigneeFromRequestIsEmptyString()
+            throws ApiGatewayException, IOException {
+        var publication = createPersistAndPublishPublication();
+        var ticket = createPersistedDoiTicket(publication);
+        ticket.setAssignee(USER_NAME);
+        ticketService.updateTicket(ticket);
+        var newAssignee = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var ticketWithNoAssignee = ticket.updateAssignee(publication, new Username(""));
+        var request = authorizedUserAssigneesTicket(publication, ticketWithNoAssignee, newAssignee);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(ticketService.fetchTicket(ticket).getAssignee(), is(nullValue()));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+    }
+
     @ParameterizedTest
     @DisplayName("should mark ticket as read for owner when user is ticket owner and marks it as read")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
