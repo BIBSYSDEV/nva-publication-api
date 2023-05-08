@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static no.unit.nva.expansion.model.ExpandedPerson.FIRST_NAME;
 import static no.unit.nva.expansion.model.ExpandedPerson.LAST_NAME;
@@ -36,6 +38,7 @@ import static nva.commons.core.attempt.Try.attempt;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
+    public static final Logger logger = LoggerFactory.getLogger(ResourceExpansionServiceImpl.class);
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNSUPPORTED_TYPE = "Expansion is not supported for type:";
     public static final String CRISTIN = "cristin";
@@ -64,6 +67,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private ExpandedPerson toExpandedPerson(String response, User owner) throws JsonProcessingException {
         var cristinPerson = JsonUtils.dtoObjectMapper.readValue(response, CristinPerson.class);
         var nameMap = cristinPerson.getNameTypeMap();
+        logger.info("cristinPerson was retrieved: {}", nameMap.get(FIRST_NAME));
         return new ExpandedPerson.Builder()
                 .withFirstName(nameMap.get(FIRST_NAME))
                 .withPreferredFirstName(nameMap.get(PREFERRED_FIRST_NAME))
@@ -112,10 +116,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public ExpandedPerson expandPerson(User owner) {
+        logger.info("expandPerson called with {}", owner);
         return attempt(() -> constructUri(owner))
                 .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
                 .map(response -> toExpandedPerson(response.orElse(null), owner))
-                .orElse(failure -> ExpandedPerson.defaultExpandedPerson(owner));
+                .orElse(failure -> getExpandedPerson(owner));
+    }
+
+    private ExpandedPerson getExpandedPerson(User owner) {
+        logger.info("Creating default expanded person object for owner");
+        return ExpandedPerson.defaultExpandedPerson(owner);
     }
 
     @Override
