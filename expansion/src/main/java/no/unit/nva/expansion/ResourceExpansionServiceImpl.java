@@ -43,8 +43,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String PERSON = "person";
     public static final String API_HOST = "API_HOST";
     public static final String CRISTIN_ID_DELIMITER = "@";
-    private static final String EXPAND_PERSON_CRISTIN_ERROR = "Could not retrieve Cristin Person. Creating default "
-                                                              + "expanded person for owner";
+    private static final String EXPAND_PERSON_DEFAULT_INFO = "Could not retrieve Cristin Person. Creating default "
+                                                             + "expanded person for owner";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final UriRetriever uriRetriever;
@@ -122,7 +122,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     private ExpandedPerson getDefaultExpandedPerson(User owner) {
-        logger.info(EXPAND_PERSON_CRISTIN_ERROR);
+        logger.info(EXPAND_PERSON_DEFAULT_INFO);
         return ExpandedPerson.defaultExpandedPerson(owner);
     }
 
