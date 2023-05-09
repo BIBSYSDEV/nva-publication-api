@@ -4,8 +4,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublicationDetails;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -15,7 +22,9 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -31,7 +40,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     @JsonProperty(STATUS_FIELD)
     private ExpandedTicketStatus status;
     private URI customerId;
-    private User owner;
     private Instant modifiedDate;
     private Instant createdDate;
     private PublishingWorkflow workflow;
@@ -48,9 +56,57 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
-        var messages = publishingRequestCase.fetchMessages(ticketService);
+        var messages = expandMessages(publishingRequestCase.fetchMessages(ticketService), resourceExpansionService);
         var workflow = publishingRequestCase.getWorkflow();
-        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow);
+        var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
+        var assignee = expandAssignee(publishingRequestCase, resourceExpansionService);
+        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee);
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
+        return messages.stream()
+                .map(expansionService::expandMessage)
+                .collect(Collectors.toList());
+    }
+
+    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
+                                                           Publication publication,
+                                                           Set<URI> organizationIds,
+                                                           List<ExpandedMessage> messages,
+                                                           PublishingWorkflow workflow,
+                                                           ExpandedPerson owner,
+                                                           ExpandedPerson assignee) throws NotFoundException {
+        var publicationSummary = PublicationSummary.create(publication);
+        var entry = new ExpandedPublishingRequest();
+        entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
+        entry.setPublication(publicationSummary);
+        entry.setOrganizationIds(organizationIds);
+        entry.setStatus(getExpandedTicketStatus(dataEntry));
+        entry.setCustomerId(dataEntry.getCustomerId());
+        entry.setCreatedDate(dataEntry.getCreatedDate());
+        entry.setModifiedDate(dataEntry.getModifiedDate());
+        entry.setMessages(messages);
+        entry.setViewedBy(dataEntry.getViewedBy());
+        entry.setWorkflow(workflow);
+        entry.setFinalizedBy(dataEntry.getFinalizedBy());
+        entry.setOwner(owner);
+        entry.setAssignee(assignee);
+        return entry;
+    }
+
+    private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
+                                                ResourceService resourceService) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(
+                publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
+    }
+
+    private static ExpandedPerson expandAssignee(PublishingRequestCase publishingRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(publishingRequest.getAssignee())
+                .map(Username::getValue)
+                .map(User::new)
+                .map(expansionService::expandPerson)
+                .orElse(null);
     }
 
     @JacocoGenerated
@@ -69,18 +125,31 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         return nonNull(organizationIds) ? organizationIds : Collections.emptySet();
     }
 
+    public void setOrganizationIds(Set<URI> organizationIds) {
+        this.organizationIds = organizationIds;
+    }
+
     @Override
     public TicketEntry toTicketEntry() {
         var publishingRequest = new PublishingRequestCase();
         publishingRequest.setPublicationDetails(PublicationDetails.create(getPublication()));
         publishingRequest.setCustomerId(this.getCustomerId());
         publishingRequest.setIdentifier(extractIdentifier(this.getId()));
-        publishingRequest.setOwner(this.getOwner());
+        publishingRequest.setOwner(this.getOwner().getUsername());
         publishingRequest.setModifiedDate(this.getModifiedDate());
         publishingRequest.setCreatedDate(this.getCreatedDate());
-        publishingRequest.setStatus(getTicketStatusParse());
+        publishingRequest.setStatus(getTicketStatus());
         publishingRequest.setFinalizedBy(this.getFinalizedBy());
+        publishingRequest.setAssignee(extractAssigneeUsername());
         return publishingRequest;
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+                .map(ExpandedPerson::getUsername)
+                .map(User::toString)
+                .map(Username::new)
+                .orElse(null);
     }
 
     @Override
@@ -90,10 +159,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setStatus(ExpandedTicketStatus status) {
         this.status = status;
-    }
-
-    public void setOrganizationIds(Set<URI> organizationIds) {
-        this.organizationIds = organizationIds;
     }
 
     public Instant getCreatedDate() {
@@ -112,14 +177,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         this.modifiedDate = modifiedDate;
     }
 
-    public User getOwner() {
-        return this.owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
-    }
-
     public URI getCustomerId() {
         return customerId;
     }
@@ -136,35 +193,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         this.workflow = workflow;
     }
 
-    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
-                                                           Publication publication,
-                                                           Set<URI> organizationIds,
-                                                           List<Message> messages,
-                                                           PublishingWorkflow workflow) {
-        var publicationSummary = PublicationSummary.create(publication);
-        var entry = new ExpandedPublishingRequest();
-        entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
-        entry.setPublication(publicationSummary);
-        entry.setOrganizationIds(organizationIds);
-        entry.setStatus(getExpandedTicketStatus(dataEntry));
-        entry.setCustomerId(dataEntry.getCustomerId());
-        entry.setCreatedDate(dataEntry.getCreatedDate());
-        entry.setModifiedDate(dataEntry.getModifiedDate());
-        entry.setOwner(dataEntry.getOwner());
-        entry.setMessages(messages);
-        entry.setViewedBy(dataEntry.getViewedBy());
-        entry.setWorkflow(workflow);
-        entry.setFinalizedBy(dataEntry.getFinalizedBy());
-        return entry;
-    }
-
-    private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
-                                                ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(
-                publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
-    }
-
-    private static ExpandedTicketStatus getExpandedTicketStatus(PublishingRequestCase publishingRequestCase) {
+    private static ExpandedTicketStatus getExpandedTicketStatus(PublishingRequestCase publishingRequestCase) throws NotFoundException {
         switch (publishingRequestCase.getStatus()) {
             case PENDING:
                 return getNewTicketStatus(publishingRequestCase);
@@ -172,8 +201,9 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                 return ExpandedTicketStatus.COMPLETED;
             case CLOSED:
                 return ExpandedTicketStatus.CLOSED;
+            default:
+                throw new NotFoundException ("Invalid PublishingRequestCase status " + publishingRequestCase.getStatus());
         }
-        return null;
     }
 
     private static ExpandedTicketStatus getNewTicketStatus(PublishingRequestCase publishingRequestCase) {
@@ -184,7 +214,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         }
     }
 
-    private TicketStatus getTicketStatusParse() {
+    private TicketStatus getTicketStatus() {
         if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
             return TicketStatus.parse(this.getStatus().toString());
         }

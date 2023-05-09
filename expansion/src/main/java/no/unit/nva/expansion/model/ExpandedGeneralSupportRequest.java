@@ -3,9 +3,13 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.*;
-
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublicationDetails;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -13,7 +17,10 @@ import nva.commons.core.paths.UriWrapper;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 
@@ -27,7 +34,6 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     private Instant createdDate;
     private URI customerId;
     private ExpandedTicketStatus status;
-    private User owner;
 
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
@@ -38,43 +44,31 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(resourceExpansionService.getOrganizationIds(dataEntry));
         entry.setStatus(getExpandedTicketStatus(dataEntry));
-        entry.setOwner(dataEntry.getOwner());
+        entry.setOwner(resourceExpansionService.expandPerson(dataEntry.getOwner()));
         entry.setModifiedDate(dataEntry.getModifiedDate());
         entry.setCreatedDate(dataEntry.getCreatedDate());
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
-        entry.setMessages(dataEntry.fetchMessages(ticketService));
+        entry.setMessages(expandMessages(dataEntry.fetchMessages(ticketService), resourceExpansionService));
         entry.setViewedBy(dataEntry.getViewedBy());
         entry.setFinalizedBy(dataEntry.getFinalizedBy());
-        entry.setOwner(dataEntry.getOwner());
+        entry.setAssignee(expandAssignee(dataEntry, resourceExpansionService));
         return entry;
     }
 
-    private static ExpandedTicketStatus getExpandedTicketStatus(GeneralSupportRequest generalSupportRequest) {
-        switch (generalSupportRequest.getStatus()) {
-            case PENDING:
-                return getNewTicketStatus(generalSupportRequest);
-            case COMPLETED:
-                return ExpandedTicketStatus.COMPLETED;
-            case CLOSED:
-                return ExpandedTicketStatus.CLOSED;
-        }
-        return null;
+    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
+        return messages.stream()
+                .map(expansionService::expandMessage)
+                .collect(Collectors.toList());
     }
 
-    private static ExpandedTicketStatus getNewTicketStatus(GeneralSupportRequest generalSupportRequest) {
-        if (isNull(generalSupportRequest.getAssignee())) {
-            return ExpandedTicketStatus.NEW;
-        } else {
-            return ExpandedTicketStatus.PENDING;
-        }
-    }
-
-    private TicketStatus getTicketStatusParse() {
-        if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
-            return TicketStatus.parse(this.getStatus().toString());
-        }
-        return null;
+    private static ExpandedPerson expandAssignee(GeneralSupportRequest generalSupportRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(generalSupportRequest.getAssignee())
+                .map(Username::getValue)
+                .map(User::new)
+                .map(expansionService::expandPerson)
+                .orElse(null);
     }
 
     public Instant getModifiedDate() {
@@ -107,9 +101,18 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         ticketEntry.setCustomerId(this.getCustomerId());
         ticketEntry.setIdentifier(extractIdentifier(this.getId()));
         ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublication()));
-        ticketEntry.setStatus(getTicketStatusParse());
-        ticketEntry.setOwner(this.getOwner());
+        ticketEntry.setStatus( getTicketStatus());
+        ticketEntry.setOwner(this.getOwner().getUsername());
+        ticketEntry.setAssignee(extractAssigneeUsername());
         return ticketEntry;
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+                .map(ExpandedPerson::getUsername)
+                .map(User::toString)
+                .map(Username::new)
+                .orElse(null);
     }
 
     @Override
@@ -119,14 +122,6 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
 
     public void setStatus(ExpandedTicketStatus status) {
         this.status = status;
-    }
-
-    public User getOwner() {
-        return this.owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 
     private URI getCustomerId() {
@@ -143,5 +138,33 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
 
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
+    }
+
+    private static ExpandedTicketStatus getExpandedTicketStatus(GeneralSupportRequest generalSupportRequest) throws NotFoundException {
+        switch (generalSupportRequest.getStatus()) {
+            case PENDING:
+                return getNewTicketStatus(generalSupportRequest);
+            case COMPLETED:
+                return ExpandedTicketStatus.COMPLETED;
+            case CLOSED:
+                return ExpandedTicketStatus.CLOSED;
+            default:
+                throw new NotFoundException ("Invalid GeneralSupportRequest status " + generalSupportRequest.getStatus());
+        }
+    }
+
+    private static ExpandedTicketStatus getNewTicketStatus(GeneralSupportRequest generalSupportRequest) {
+        if (isNull(generalSupportRequest.getAssignee())) {
+            return ExpandedTicketStatus.NEW;
+        } else {
+            return ExpandedTicketStatus.PENDING;
+        }
+    }
+
+    private TicketStatus getTicketStatus() {
+        if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
+            return TicketStatus.parse(this.getStatus().toString());
+        }
+        return null;
     }
 }

@@ -6,8 +6,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -18,7 +20,10 @@ import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 
@@ -37,8 +42,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     private Instant createdDate;
     @JsonProperty
     private URI customerId;
-    @JsonProperty
-    private User owner;
     @JsonProperty("doi")
     private URI doi;
     @JsonProperty(ORGANIZATION_IDS_FIELD)
@@ -51,8 +54,47 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
             throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
-        expandedDoiRequest.setMessages(doiRequest.fetchMessages(ticketService));
+        expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
+        expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
+        expandedDoiRequest.setAssignee(expandAssignee(doiRequest, expansionService));
         return expandedDoiRequest;
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
+        return messages.stream()
+                .map(expansionService::expandMessage)
+                .collect(Collectors.toList());
+    }
+
+    private static ExpandedPerson expandAssignee(DoiRequest doiRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(doiRequest.getAssignee())
+                .map(Username::getValue)
+                .map(User::new)
+                .map(expansionService::expandPerson)
+                .orElse(null);
+    }
+
+    private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
+                                                                ResourceExpansionService resourceExpansionService)
+            throws NotFoundException {
+        return resourceExpansionService.getOrganizationIds(doiRequest);
+    }
+
+    // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
+    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService) throws NotFoundException {
+        var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
+        ExpandedDoiRequest entry = new ExpandedDoiRequest();
+        entry.setPublication(publicationSummary);
+        entry.setCreatedDate(doiRequest.getCreatedDate());
+        entry.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
+        entry.setCustomerId(doiRequest.getCustomerId());
+        entry.setModifiedDate(doiRequest.getModifiedDate());
+        entry.setStatus(getExpandedTicketStatus(doiRequest));
+        entry.setViewedBy(doiRequest.getViewedBy());
+        entry.setPublication(publicationSummary);
+        entry.setFinalizedBy(doiRequest.getFinalizedBy());
+        return entry;
     }
 
     @JacocoGenerated
@@ -80,20 +122,9 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return customerId;
     }
 
-
     @JacocoGenerated
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
-    }
-
-    @JacocoGenerated
-    public User getOwner() {
-        return owner;
-    }
-
-    @JacocoGenerated
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 
     @JacocoGenerated
@@ -118,7 +149,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         this.organizationIds = organizationIds;
     }
 
-
     @Override
     public DoiRequest toTicketEntry() {
         DoiRequest doiRequest = new DoiRequest();
@@ -126,11 +156,20 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         doiRequest.setIdentifier(this.identifyExpandedEntry());
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
-        doiRequest.setOwner(this.getOwner());
+        doiRequest.setOwner(this.getOwner().getUsername());
         doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         doiRequest.setResourceStatus(this.getPublication().getStatus());
-        doiRequest.setStatus(getTicketStatusParse());
+        doiRequest.setStatus(getTicketStatus());
+        doiRequest.setAssignee(extractAssigneeUsername());
         return doiRequest;
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+                .map(ExpandedPerson::getUsername)
+                .map(User::toString)
+                .map(Username::new)
+                .orElse(null);
     }
 
     @Override
@@ -149,31 +188,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return extractIdentifier(getId());
     }
 
-    private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
-                                                                ResourceExpansionService resourceExpansionService)
-            throws NotFoundException {
-        return resourceExpansionService.getOrganizationIds(doiRequest);
-    }
-
-    // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
-    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService) {
-        var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
-        ExpandedDoiRequest entry = new ExpandedDoiRequest();
-        entry.setPublication(publicationSummary);
-        entry.setCreatedDate(doiRequest.getCreatedDate());
-        entry.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
-        entry.setCustomerId(doiRequest.getCustomerId());
-        entry.setModifiedDate(doiRequest.getModifiedDate());
-        entry.setOwner(doiRequest.getOwner());
-        entry.setStatus(getExpandedTicketStatus(doiRequest));
-        entry.setViewedBy(doiRequest.getViewedBy());
-        entry.setPublication(publicationSummary);
-        entry.setFinalizedBy(doiRequest.getFinalizedBy());
-        entry.setOwner(doiRequest.getOwner());
-        return entry;
-    }
-
-    private static ExpandedTicketStatus getExpandedTicketStatus(DoiRequest doiRequest) {
+    private static ExpandedTicketStatus getExpandedTicketStatus(DoiRequest doiRequest) throws NotFoundException {
         switch (doiRequest.getStatus()) {
             case PENDING:
                 return getNewTicketStatus(doiRequest);
@@ -181,8 +196,9 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
                 return ExpandedTicketStatus.COMPLETED;
             case CLOSED:
                 return ExpandedTicketStatus.CLOSED;
+            default:
+                throw new NotFoundException ("Invalid DoiRequest status " + doiRequest.getStatus());
         }
-        return null;
     }
 
     private static ExpandedTicketStatus getNewTicketStatus(DoiRequest doiRequest) {
@@ -193,7 +209,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         }
     }
 
-    private TicketStatus getTicketStatusParse() {
+    private TicketStatus getTicketStatus() {
         if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
             return TicketStatus.parse(this.getStatus().toString());
         }
