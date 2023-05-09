@@ -37,7 +37,6 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
