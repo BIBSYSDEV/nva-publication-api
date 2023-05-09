@@ -74,7 +74,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
-    public static final int MAX_SIZE_OF_BATCH_REQUEST = 20;
+    public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
     private final String tableName;
