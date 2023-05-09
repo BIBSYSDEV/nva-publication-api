@@ -65,17 +65,17 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
-    
+    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
-    
+
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
-    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
     private final String tableName;
     private final Clock clockForTimestamps;
@@ -315,12 +315,17 @@ public class ResourceService extends ServiceWithTransactions {
     private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
         return refreshedEntries.stream()
                    .map(Entity::toDao)
+                   .peek(this::logDao)
                    .map(Dao::toDynamoFormat)
                    .map(item -> new PutRequest().withItem(item))
                    .map(WriteRequest::new)
                    .collect(Collectors.toList());
     }
-    
+
+    private void logDao(Dao dao) {
+        logger.info("Refreshing resource {} of type {}", dao.getIdentifier(), dao.getData().getType());
+    }
+
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
                                                                        Map<String, AttributeValue> startMarker) {
         return new ScanRequest()
