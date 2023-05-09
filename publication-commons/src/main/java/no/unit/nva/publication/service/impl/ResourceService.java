@@ -192,15 +192,15 @@ public class ResourceService extends ServiceWithTransactions {
     public void refreshResources(List<Entity> dataEntries) {
         final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
-        attempt(()->writeToDynamoInBatches(writeRequests))
-          .orElseThrow(
-            fail->new BatchUpdateFailureException(collectFailingEntriesIdentifiers(dataEntries)));
+        attempt(() -> writeToDynamoInBatches(writeRequests))
+            .orElseThrow(fail -> new BatchUpdateFailureException(collectFailingEntriesIdentifiers(dataEntries)));
     }
 
     private List<String> collectFailingEntriesIdentifiers(List<Entity> dataEntries) {
         return dataEntries.stream()
-          .map(entry->entry.getIdentifier().toString())
-          .collect(Collectors.toList());
+                   .map(Entity::getIdentifier)
+                   .map(SortableIdentifier::toString)
+                   .collect(Collectors.toList());
     }
 
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)

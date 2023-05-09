@@ -867,7 +867,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var failingClient = new FailingDynamoClient(this.client);
         resourceService = new ResourceService(failingClient, clock);
 
-        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
+        var userInstance = UserInstance.create(randomString(), randomUri());
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
         var resources = userResources.stream()
           .map(Resource::fromPublication)
