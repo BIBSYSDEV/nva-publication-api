@@ -1,9 +1,6 @@
 package no.sikt.nva.scopus.conversion.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.github.bibsysdev.ResourcesBuildConfig;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -18,25 +15,19 @@ import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static java.util.Objects.hash;
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
 public class ImportCandidate extends Publication {
 
-    private static final String MODEL_VERSION = ResourcesBuildConfig.RESOURCES_MODEL_VERSION;
     private ImportStatus importStatus;
 
     public ImportCandidate() {
-        // Default constructor, use setters.
+        super();
     }
 
     public ImportStatus getImportStatus() {
@@ -73,53 +64,18 @@ public class ImportCandidate extends Publication {
 
     @JacocoGenerated
     @Override
-    public int hashCode() {
-        return hash(getIdentifier(), getStatus(), getPublisher(), getCreatedDate(), getModifiedDate(),
-                getPublishedDate(), getIndexedDate(), getHandle(), getDoi(), getLink(),
-                getEntityDescription(), getProjects(), getFundings(), getAdditionalIdentifiers(), getSubjects(),
-                getAssociatedArtifacts(), getRightsHolder());
+    public boolean equals(Object o) {
+        if (this == o) {return true;}
+        if (o == null || getClass() != o.getClass()) {return false;}
+        if (!super.equals(o)) {return false;}
+        ImportCandidate that = (ImportCandidate) o;
+        return getImportStatus() == that.getImportStatus();
     }
 
     @JacocoGenerated
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ImportCandidate)) {
-            return false;
-        }
-        ImportCandidate that = (ImportCandidate) o;
-        boolean firstHalf = Objects.equals(getIdentifier(), that.getIdentifier())
-                && getStatus() == that.getStatus()
-                && Objects.equals(getResourceOwner(), that.getResourceOwner())
-                && Objects.equals(getPublisher(), that.getPublisher())
-                && Objects.equals(getCreatedDate(), that.getCreatedDate())
-                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-                && Objects.equals(getPublishedDate(), that.getPublishedDate());
-        boolean secondHalf = Objects.equals(getIndexedDate(), that.getIndexedDate())
-                && Objects.equals(getHandle(), that.getHandle())
-                && Objects.equals(getDoi(), that.getDoi())
-                && Objects.equals(getLink(), that.getLink())
-                && Objects.equals(getEntityDescription(), that.getEntityDescription())
-                && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
-                && Objects.equals(getProjects(), that.getProjects())
-                && Objects.equals(getFundings(), that.getFundings())
-                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
-                && Objects.equals(getSubjects(), that.getSubjects())
-                && Objects.equals(getRightsHolder(), that.getRightsHolder());
-        return firstHalf && secondHalf;
-    }
-
-    @Override
-    public String toString() {
-        return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(this)).orElseThrow();
-    }
-
-    @JsonIgnore
-    @Deprecated
-    public String getJsonLdContext() {
-        return stringFromResources(Path.of("publicationContextDeprecated.json"));
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getImportStatus());
     }
 
     public static final class Builder {
