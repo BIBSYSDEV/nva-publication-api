@@ -15,7 +15,6 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -27,12 +26,12 @@ import java.util.Set;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
-    @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
-    @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class)
+        @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
+        @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
+        @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class)
 })
 public abstract class ExpandedTicket implements ExpandedDataEntry {
-    
+
     public static final String PUBLICATION_FIELD = "publication";
     public static final String ORGANIZATION_IDS_FIELD = "organizationIds";
     public static final String ID_FIELD = "id";
@@ -57,23 +56,23 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
 
         if (ticketEntry instanceof DoiRequest) {
             return ExpandedDoiRequest.createEntry((DoiRequest) ticketEntry,
-                expansionService,
-                resourceService,
-                ticketService);
+                    expansionService,
+                    resourceService,
+                    ticketService);
         }
         if (ticketEntry instanceof PublishingRequestCase) {
             return ExpandedPublishingRequest.createEntry(
-                (PublishingRequestCase) ticketEntry,
-                resourceService,
-                expansionService,
-                ticketService);
+                    (PublishingRequestCase) ticketEntry,
+                    resourceService,
+                    expansionService,
+                    ticketService);
         }
         if (ticketEntry instanceof GeneralSupportRequest) {
             return ExpandedGeneralSupportRequest.createEntry(
-                (GeneralSupportRequest) ticketEntry,
-                resourceService,
-                expansionService,
-                ticketService
+                    (GeneralSupportRequest) ticketEntry,
+                    resourceService,
+                    expansionService,
+                    ticketService
             );
         }
         throw new UnsupportedOperationException();
@@ -99,42 +98,42 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public final PublicationSummary getPublication() {
         return this.publication;
     }
-    
+
     public final void setPublication(PublicationSummary publication) {
         this.publication = publication;
     }
-    
+
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     public abstract Set<URI> getOrganizationIds();
-    
+
     public abstract TicketEntry toTicketEntry();
-    
+
     @JsonProperty(ID_FIELD)
     public final URI getId() {
         return this.id;
     }
-    
+
     public final void setId(URI id) {
         this.id = id;
     }
-    
-    public abstract TicketStatus getStatus();
-    
+
+    public abstract ExpandedTicketStatus getStatus();
+
     public final List<Message> getMessages() {
         return this.messages;
     }
-    
+
     public final void setMessages(List<Message> messages) {
         this.messages = messages;
     }
-    
+
     protected static URI generateId(URI publicationId, SortableIdentifier identifier) {
         return UriWrapper.fromUri(publicationId)
-                   .addChild(PublicationServiceConfig.TICKET_PATH)
-                   .addChild(identifier.toString())
-                   .getUri();
+                .addChild(PublicationServiceConfig.TICKET_PATH)
+                .addChild(identifier.toString())
+                .getUri();
     }
-    
+
     protected static SortableIdentifier extractIdentifier(URI id) {
         return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
     }

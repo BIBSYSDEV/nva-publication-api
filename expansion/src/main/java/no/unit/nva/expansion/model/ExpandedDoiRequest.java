@@ -25,11 +25,11 @@ import static java.util.Objects.isNull;
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
 public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrganizationScope {
-    
+
     public static final String TYPE = "DoiRequest";
-    
+
     @JsonProperty()
-    private TicketStatus status;
+    private ExpandedTicketStatus status;
     @JsonProperty
     private Instant modifiedDate;
     @JsonProperty
@@ -43,83 +43,82 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     private URI doi;
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     private Set<URI> organizationIds;
-    
+
     public static ExpandedDoiRequest createEntry(DoiRequest doiRequest,
                                                  ResourceExpansionService expansionService,
                                                  ResourceService resourceService,
                                                  TicketService ticketService)
-        throws NotFoundException {
+            throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(doiRequest.fetchMessages(ticketService));
         return expandedDoiRequest;
     }
-    
+
     @JacocoGenerated
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-    
+
     @JacocoGenerated
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
-    
+
     @JacocoGenerated
     public Instant getCreatedDate() {
         return createdDate;
     }
-    
+
     @JacocoGenerated
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-    
+
     @JacocoGenerated
     public URI getCustomerId() {
         return customerId;
     }
 
 
-    
     @JacocoGenerated
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
-    
+
     @JacocoGenerated
     public User getOwner() {
         return owner;
     }
-    
+
     @JacocoGenerated
     public void setOwner(User owner) {
         this.owner = owner;
     }
-    
+
     @JacocoGenerated
     public URI getDoi() {
         return doi;
     }
-    
+
     @JacocoGenerated
     public void setDoi(URI doi) {
         this.doi = doi;
     }
-    
+
     @JacocoGenerated
     @Override
     public Set<URI> getOrganizationIds() {
         return organizationIds;
     }
-    
+
     @JacocoGenerated
     @Override
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
     }
 
-    
+
     @Override
     public DoiRequest toTicketEntry() {
         DoiRequest doiRequest = new DoiRequest();
@@ -130,32 +129,32 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         doiRequest.setOwner(this.getOwner());
         doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         doiRequest.setResourceStatus(this.getPublication().getStatus());
-        doiRequest.setStatus(this.getStatus());
+        doiRequest.setStatus(getTicketStatusParse());
         return doiRequest;
     }
-    
+
     @Override
     @JacocoGenerated
-    public TicketStatus getStatus() {
+    public ExpandedTicketStatus getStatus() {
         return status;
     }
-    
+
     @JacocoGenerated
-    public void setStatus(TicketStatus status) {
+    public void setStatus(ExpandedTicketStatus status) {
         this.status = status;
     }
-    
+
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return extractIdentifier(getId());
     }
-    
+
     private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
                                                                 ResourceExpansionService resourceExpansionService)
-        throws NotFoundException {
+            throws NotFoundException {
         return resourceExpansionService.getOrganizationIds(doiRequest);
     }
-    
+
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
     private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService) {
         var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
@@ -166,7 +165,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setCustomerId(doiRequest.getCustomerId());
         entry.setModifiedDate(doiRequest.getModifiedDate());
         entry.setOwner(doiRequest.getOwner());
-        entry.setStatus(getNewTicketStatus(doiRequest));
+        entry.setStatus(getExpandedTicketStatus(doiRequest));
         entry.setViewedBy(doiRequest.getViewedBy());
         entry.setPublication(publicationSummary);
         entry.setFinalizedBy(doiRequest.getFinalizedBy());
@@ -174,11 +173,30 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return entry;
     }
 
-    private static TicketStatus getNewTicketStatus(DoiRequest doiRequest){
-        if(doiRequest.getStatus().equals(TicketStatus.PENDING) && isNull(doiRequest.getAssignee())) {
-            return TicketStatus.NEW;
-        } else {
-            return doiRequest.getStatus();
+    private static ExpandedTicketStatus getExpandedTicketStatus(DoiRequest doiRequest) {
+        switch (doiRequest.getStatus()) {
+            case PENDING:
+                return getNewTicketStatus(doiRequest);
+            case COMPLETED:
+                return ExpandedTicketStatus.COMPLETED;
+            case CLOSED:
+                return ExpandedTicketStatus.CLOSED;
         }
+        return null;
+    }
+
+    private static ExpandedTicketStatus getNewTicketStatus(DoiRequest doiRequest) {
+        if (isNull(doiRequest.getAssignee())) {
+            return ExpandedTicketStatus.NEW;
+        } else {
+            return ExpandedTicketStatus.PENDING;
+        }
+    }
+
+    private TicketStatus getTicketStatusParse() {
+        if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
+            return TicketStatus.parse(this.getStatus().toString());
+        }
+        return null;
     }
 }
