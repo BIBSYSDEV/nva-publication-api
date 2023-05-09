@@ -37,6 +37,8 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Clock;
@@ -56,6 +58,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
             + " from upstream";
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
+
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -110,12 +114,14 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return publicationUpdate.getPublisher().getId();
     }
 
-    private boolean userIsContributor(RequestInfo requestInfo, Publication publication) {
+    private boolean userIsContributor(URI cristinId, Publication publication) {
+        logger.info("Publication to update {}, ", publication.toString());
+        logger.info("CristinId of user {}, ", cristinId);
         return publication.getEntityDescription().getContributors().stream()
                 .filter(this::hasCristinId)
                 .map(Contributor::getIdentity)
                 .map(Identity::getId)
-                .anyMatch(cristinId -> attempt(() -> cristinId.equals(requestInfo.getPersonCristinId())).orElseThrow());
+                .anyMatch(id -> attempt(() -> id.equals(cristinId)).orElseThrow());
     }
 
     private boolean hasCristinId(Contributor contributor) {
@@ -232,7 +238,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private boolean userIsContributorWithUpdatingPublicationRights(RequestInfo requestInfo, Publication publication) {
         URI cristinId = attempt(requestInfo::getPersonCristinId).orElse(failure -> null);
-        return nonNull(cristinId) && userIsContributor(requestInfo, publication);
+        return nonNull(cristinId) && userIsContributor(cristinId, publication);
     }
 
     private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
