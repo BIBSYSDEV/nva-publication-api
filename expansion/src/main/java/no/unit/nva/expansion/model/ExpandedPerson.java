@@ -3,36 +3,39 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
 import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeName(ExpandedPerson.TYPE)
 public class ExpandedPerson {
 
-    public static final String PREFERRED_FIRST_NAME = "PreferredFirstName";
-    public static final String FIRST_NAME = "FirstName";
-    public static final String PREFERRED_LAST_NAME = "PreferredLastName";
-    public static final String LAST_NAME = "LastName";
-    public static final String USERNAME = "username";
-    @JsonProperty(LAST_NAME)
+    public static final String TYPE = "Person";
+    public static final String PREFERRED_FIRST_NAME_FIELD = "preferredFirstName";
+    public static final String FIRST_NAME_FIELD = "firstName";
+    public static final String PREFERRED_LAST_NAME_FIELD = "preferredLastName";
+    public static final String LAST_NAME_FIELD = "lastName";
+    public static final String USERNAME_FIELD = "username";
+    @JsonProperty(LAST_NAME_FIELD)
     private final String lastName;
-    @JsonProperty(PREFERRED_LAST_NAME)
+    @JsonProperty(PREFERRED_LAST_NAME_FIELD)
     private final String preferredLastName;
-    @JsonProperty(FIRST_NAME)
+    @JsonProperty(FIRST_NAME_FIELD)
     private final String firstName;
-    @JsonProperty(PREFERRED_FIRST_NAME)
+    @JsonProperty(PREFERRED_FIRST_NAME_FIELD)
     private final String preferredFirstName;
-    @JsonProperty(USERNAME)
+    @JsonProperty(USERNAME_FIELD)
     private final User username;
 
     @JsonCreator
-    public ExpandedPerson(@JsonProperty(FIRST_NAME) String firstName,
-                          @JsonProperty(PREFERRED_FIRST_NAME) String preferredFirstName,
-                          @JsonProperty(LAST_NAME) String lastName,
-                          @JsonProperty(PREFERRED_LAST_NAME) String preferredLastName,
-                          @JsonProperty(USERNAME) User username) {
+    public ExpandedPerson(@JsonProperty(FIRST_NAME_FIELD) String firstName,
+                          @JsonProperty(PREFERRED_FIRST_NAME_FIELD) String preferredFirstName,
+                          @JsonProperty(LAST_NAME_FIELD) String lastName,
+                          @JsonProperty(PREFERRED_LAST_NAME_FIELD) String preferredLastName,
+                          @JsonProperty(USERNAME_FIELD) User username) {
         this.lastName = lastName;
         this.preferredLastName = preferredLastName;
         this.firstName = firstName;
