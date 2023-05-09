@@ -192,9 +192,17 @@ public class ResourceService extends ServiceWithTransactions {
     public void refreshResources(List<Entity> dataEntries) {
         final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
-        writeToDynamoInBatches(writeRequests);
+        attempt(() -> writeToDynamoInBatches(writeRequests))
+            .orElseThrow(fail -> new BatchUpdateFailureException(collectFailingEntriesIdentifiers(dataEntries)));
     }
-    
+
+    private List<String> collectFailingEntriesIdentifiers(List<Entity> dataEntries) {
+        return dataEntries.stream()
+                   .map(Entity::getIdentifier)
+                   .map(SortableIdentifier::toString)
+                   .collect(Collectors.toList());
+    }
+
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         return readResourceService.getPublication(userInstance, resourceIdentifier);
@@ -305,11 +313,12 @@ public class ResourceService extends ServiceWithTransactions {
         return dataEntry;
     }
     
-    private void writeToDynamoInBatches(List<WriteRequest> writeRequests) {
+    private Void writeToDynamoInBatches(List<WriteRequest> writeRequests) {
         Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
             .stream()
             .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
             .forEach(getClient()::batchWriteItem);
+        return null;
     }
     
     private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
