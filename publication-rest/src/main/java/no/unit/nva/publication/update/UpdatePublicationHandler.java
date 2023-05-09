@@ -110,12 +110,12 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return publicationUpdate.getPublisher().getId();
     }
 
-    private boolean userIsContributor(RequestInfo requestInfo, Publication publication) {
+    private boolean userIsContributor(URI cristinId, Publication publication) {
         return publication.getEntityDescription().getContributors().stream()
                 .filter(this::hasCristinId)
                 .map(Contributor::getIdentity)
                 .map(Identity::getId)
-                .anyMatch(cristinId -> attempt(() -> cristinId.equals(requestInfo.getPersonCristinId())).orElseThrow());
+                .anyMatch(id -> attempt(() -> id.equals(cristinId)).orElseThrow());
     }
 
     private boolean hasCristinId(Contributor contributor) {
@@ -232,7 +232,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private boolean userIsContributorWithUpdatingPublicationRights(RequestInfo requestInfo, Publication publication) {
         URI cristinId = attempt(requestInfo::getPersonCristinId).orElse(failure -> null);
-        return nonNull(cristinId) && userIsContributor(requestInfo, publication);
+        return nonNull(cristinId) && userIsContributor(cristinId, publication);
     }
 
     private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
