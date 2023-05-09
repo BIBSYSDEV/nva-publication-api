@@ -156,7 +156,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
         newResource.setStatus(PublicationStatus.PUBLISHED);
-        return insertResource(newResource);
+        return insertResourceFromImportCandidate(newResource);
     }
     
     public Publication insertPreexistingPublication(Publication publication) {
@@ -232,7 +232,11 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toPublication();
     }
-    
+
+    public ImportCandidate getImportCandidateByIdentifier(SortableIdentifier identifier) throws NotFoundException {
+        return getResourceByIdentifier(identifier).toImportCandidate();
+    }
+
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
         throws NotFoundException {
         updateResourceService.updateOwner(identifier, oldOwner, newOwner);
@@ -361,7 +365,21 @@ public class ResourceService extends ServiceWithTransactions {
         
         return fetchSavedPublication(newResource);
     }
-    
+
+    private Publication insertResourceFromImportCandidate(Resource newResource) {
+        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
+        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
+        sendTransactionWriteRequest(putRequest);
+
+        return fetchSavedImportCandidate(newResource);
+    }
+
+    private Publication fetchSavedImportCandidate(Resource newResource) {
+        return Optional.ofNullable(fetchSavedResource(newResource))
+                .map(Resource::toImportCandidate)
+                .orElse(null);
+    }
+
     private Publication fetchSavedPublication(Resource newResource) {
         return Optional.ofNullable(fetchSavedResource(newResource))
                    .map(Resource::toPublication)

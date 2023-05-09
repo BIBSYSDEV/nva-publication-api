@@ -233,6 +233,30 @@ public class Resource implements Entity {
                    .build();
     }
 
+    public ImportCandidate toImportCandidate() {
+        return new ImportCandidate.Builder()
+                .withIdentifier(getIdentifier())
+                .withResourceOwner(extractResourceOwner())
+                .withStatus(getStatus())
+                .withCreatedDate(getCreatedDate())
+                .withModifiedDate(getModifiedDate())
+                .withIndexedDate(getIndexedDate())
+                .withPublisher(getPublisher())
+                .withPublishedDate(getPublishedDate())
+                .withLink(getLink())
+                .withProjects(getProjects())
+                .withEntityDescription(getEntityDescription())
+                .withDoi(getDoi())
+                .withHandle(getHandle())
+                .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                .withAssociatedArtifacts(getAssociatedArtifacts())
+                .withSubjects(getSubjects())
+                .withFundings(getFundings())
+                .withRightsHolder(getRightsHolder())
+                .withImportStatus(getImportStatus())
+                .build();
+    }
+
     private ResourceOwner extractResourceOwner() {
         return Optional.ofNullable(getResourceOwner()).map(Owner::toResourceOwner).orElse(null);
     }

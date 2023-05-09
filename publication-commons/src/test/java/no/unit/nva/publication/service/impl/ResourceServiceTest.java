@@ -865,11 +865,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateResourceFromImportCandidate() {
+    void shouldCreateResourceFromImportCandidate() throws NotFoundException {
         var importCandidate = randomImportCandidate();
-        resourceService.createImportCandidateFromImportedEntry(importCandidate);
-        Resource.fromImportCandidate(importCandidate);
-        assertThat(true, is(equalTo(true)));
+        var persistedImportCandidate = resourceService.createImportCandidateFromImportedEntry(importCandidate);
+        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
     }
 
     private ImportCandidate randomImportCandidate() {
@@ -878,14 +878,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
                 .withImportStatus(ImportStatus.NOT_IMPORTED)
                 .withLink(randomUri())
                 .withDoi(randomDoi())
-                .withIndexedDate(Instant.now())
-                .withPublishedDate(Instant.now())
                 .withHandle(randomUri())
-                .withModifiedDate(Instant.now())
-                .withCreatedDate(Instant.now())
                 .withPublisher(new Organization.Builder().withId(randomUri()).build())
                 .withSubjects(List.of(randomUri()))
-                .withIdentifier(SortableIdentifier.next())
                 .withRightsHolder(randomString())
                 .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
                 .withFundings(List.of())
