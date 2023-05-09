@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.conversion.model;
+package no.unit.nva.publication.model.business;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -86,97 +86,97 @@ public class ImportCandidate extends Publication {
             importCandidate = new ImportCandidate();
         }
 
-        public ImportCandidate.Builder withImportStatus(ImportStatus importStatus) {
+        public Builder withImportStatus(ImportStatus importStatus) {
             importCandidate.setImportStatus(importStatus);
             return this;
         }
 
-        public ImportCandidate.Builder withIdentifier(SortableIdentifier identifier) {
+        public Builder withIdentifier(SortableIdentifier identifier) {
             importCandidate.setIdentifier(identifier);
             return this;
         }
 
-        public ImportCandidate.Builder withStatus(PublicationStatus status) {
+        public Builder withStatus(PublicationStatus status) {
             importCandidate.setStatus(status);
             return this;
         }
 
-        public ImportCandidate.Builder withPublisher(Organization publisher) {
+        public Builder withPublisher(Organization publisher) {
             importCandidate.setPublisher(publisher);
             return this;
         }
 
-        public ImportCandidate.Builder withCreatedDate(Instant createdDate) {
+        public Builder withCreatedDate(Instant createdDate) {
             importCandidate.setCreatedDate(createdDate);
             return this;
         }
 
-        public ImportCandidate.Builder withModifiedDate(Instant modifiedDate) {
+        public Builder withModifiedDate(Instant modifiedDate) {
             importCandidate.setModifiedDate(modifiedDate);
             return this;
         }
 
-        public ImportCandidate.Builder withPublishedDate(Instant publishedDate) {
+        public Builder withPublishedDate(Instant publishedDate) {
             importCandidate.setPublishedDate(publishedDate);
             return this;
         }
 
-        public ImportCandidate.Builder withIndexedDate(Instant indexedDate) {
+        public Builder withIndexedDate(Instant indexedDate) {
             importCandidate.setIndexedDate(indexedDate);
             return this;
         }
 
-        public ImportCandidate.Builder withHandle(URI handle) {
+        public Builder withHandle(URI handle) {
             importCandidate.setHandle(handle);
             return this;
         }
 
-        public ImportCandidate.Builder withDoi(URI doi) {
+        public Builder withDoi(URI doi) {
             importCandidate.setDoi(doi);
             return this;
         }
 
-        public ImportCandidate.Builder withLink(URI link) {
+        public Builder withLink(URI link) {
             importCandidate.setLink(link);
             return this;
         }
 
-        public ImportCandidate.Builder withEntityDescription(EntityDescription entityDescription) {
+        public Builder withEntityDescription(EntityDescription entityDescription) {
             importCandidate.setEntityDescription(entityDescription);
             return this;
         }
 
-        public ImportCandidate.Builder withAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+        public Builder withAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
             importCandidate.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
             return this;
         }
 
-        public ImportCandidate.Builder withProjects(List<ResearchProject> projects) {
+        public Builder withProjects(List<ResearchProject> projects) {
             importCandidate.setProjects(projects);
             return this;
         }
 
-        public ImportCandidate.Builder withFundings(List<Funding> fundings) {
+        public Builder withFundings(List<Funding> fundings) {
             importCandidate.setFundings(fundings);
             return this;
         }
 
-        public ImportCandidate.Builder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
             importCandidate.setAdditionalIdentifiers(additionalIdentifiers);
             return this;
         }
 
-        public ImportCandidate.Builder withSubjects(List<URI> subjects) {
+        public Builder withSubjects(List<URI> subjects) {
             importCandidate.setSubjects(subjects);
             return this;
         }
 
-        public ImportCandidate.Builder withResourceOwner(ResourceOwner randomResourceOwner) {
+        public Builder withResourceOwner(ResourceOwner randomResourceOwner) {
             importCandidate.setResourceOwner(randomResourceOwner);
             return this;
         }
 
-        public ImportCandidate.Builder withRightsHolder(String rightsHolder) {
+        public Builder withRightsHolder(String rightsHolder) {
             this.importCandidate.setRightsHolder(rightsHolder);
             return this;
         }

@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.conversion.model;
+package no.unit.nva.publication.model.business;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import no.unit.nva.model.PublicationStatus;

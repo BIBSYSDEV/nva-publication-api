@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.conversion.model;
+package no.unit.nva.publication.model.business;
 
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;

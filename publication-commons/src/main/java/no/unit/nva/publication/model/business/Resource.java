@@ -74,6 +74,8 @@ public class Resource implements Entity {
     private List<Funding> fundings;
     @JsonProperty
     private String rightsHolder;
+    @JsonProperty
+    private ImportStatus importStatus;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
@@ -130,8 +132,38 @@ public class Resource implements Entity {
                    .build();
     }
 
+    private static Resource convertToResource(ImportCandidate importCandidate) {
+        return Resource.builder()
+                .withIdentifier(importCandidate.getIdentifier())
+                .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
+                .withCreatedDate(importCandidate.getCreatedDate())
+                .withModifiedDate(importCandidate.getModifiedDate())
+                .withIndexedDate(importCandidate.getIndexedDate())
+                .withPublishedDate(importCandidate.getPublishedDate())
+                .withStatus(importCandidate.getStatus())
+                .withPublishedDate(importCandidate.getPublishedDate())
+                .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
+                .withPublisher(importCandidate.getPublisher())
+                .withLink(importCandidate.getLink())
+                .withProjects(importCandidate.getProjects())
+                .withEntityDescription(importCandidate.getEntityDescription())
+                .withDoi(importCandidate.getDoi())
+                .withHandle(importCandidate.getHandle())
+                .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+                .withSubjects(importCandidate.getSubjects())
+                .withFundings(importCandidate.getFundings())
+                .withRightsHolder(importCandidate.getRightsHolder())
+                .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .build();
+    }
+
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
+    }
+
+    public static Resource fromImportCandidate(ImportCandidate importCandidate) {
+        return Optional.ofNullable(importCandidate).map(Resource::convertToResource).orElse(null);
+
     }
 
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
@@ -163,6 +195,14 @@ public class Resource implements Entity {
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
+    }
+
+    public ImportStatus getImportStatus() {
+        return importStatus;
+    }
+
+    public void setImportStatus(ImportStatus importStatus) {
+        this.importStatus = importStatus;
     }
 
     @Override

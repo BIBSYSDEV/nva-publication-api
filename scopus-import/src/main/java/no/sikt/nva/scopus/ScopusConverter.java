@@ -1,22 +1,6 @@
 package no.sikt.nva.scopus;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
-import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.INF_END;
-import static no.sikt.nva.scopus.ScopusConstants.INF_START;
-import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
-import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
-import static nva.commons.core.StringUtils.isEmpty;
 import jakarta.xml.bind.JAXBElement;
-import java.net.URI;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -40,19 +24,40 @@ import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusConstants.INF_END;
+import static no.sikt.nva.scopus.ScopusConstants.INF_START;
+import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
+import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
+import static nva.commons.core.StringUtils.isEmpty;
 
 public class ScopusConverter {
 
     public static final URI HARDCODED_ID = URI.create("https://api.sandbox.nva.aws.unit"
-                                                      + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
+            + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
+    public static final ResourceOwner HARDCODED_RESOURCE_OWNER = new ResourceOwner(new Username("concurrencyT@unit.no"),
+            URI.create("https://www.example.org"));
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
@@ -75,8 +80,8 @@ public class ScopusConverter {
             return extractContentString(((InfTp) content).getContent());
         } else {
             return ((ArrayList<?>) content).stream()
-                       .map(ScopusConverter::extractContentString)
-                       .collect(Collectors.joining());
+                    .map(ScopusConverter::extractContentString)
+                    .collect(Collectors.joining());
         }
     }
 
@@ -91,21 +96,21 @@ public class ScopusConverter {
             return INF_START + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + INF_END;
         } else {
             return ((ArrayList<?>) content).stream()
-                       .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-                       .collect(Collectors.joining());
+                    .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                    .collect(Collectors.joining());
         }
     }
 
-    public Publication generatePublication() {
-        return new Publication.Builder()
-                   .withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
-                   .withResourceOwner(new ResourceOwner(new Username("concurrencyT@unit.no"),
-                                                        URI.create("https://www.example.org")))
-                   .withAdditionalIdentifiers(generateAdditionalIdentifiers())
-                   .withEntityDescription(generateEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withStatus(PublicationStatus.DRAFT)
-                   .build();
+    public ImportCandidate generateImportCandidate() {
+        return new ImportCandidate.Builder()
+                .withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
+                .withResourceOwner(HARDCODED_RESOURCE_OWNER)
+                .withAdditionalIdentifiers(generateAdditionalIdentifiers())
+                .withEntityDescription(generateEntityDescription())
+                .withModifiedDate(Instant.now())
+                .withStatus(PublicationStatus.PUBLISHED)
+                .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .build();
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
@@ -122,8 +127,8 @@ public class ScopusConverter {
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(
-            new ContributorExtractor(extractCorrespondence(), extractAuthorGroup(), piaConnection,
-                                     cristinConnection).generateContributors());
+                new ContributorExtractor(extractCorrespondence(), extractAuthorGroup(), piaConnection,
+                        cristinConnection).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setPublicationDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
@@ -137,9 +142,9 @@ public class ScopusConverter {
     private PublicationDate extractPublicationDate() {
         var publicationDate = getDateSortTp();
         return new PublicationDate.Builder().withDay(publicationDate.getDay())
-                   .withMonth(publicationDate.getMonth())
-                   .withYear(publicationDate.getYear())
-                   .build();
+                .withMonth(publicationDate.getMonth())
+                .withYear(publicationDate.getYear())
+                .build();
     }
 
     /*
@@ -153,16 +158,16 @@ public class ScopusConverter {
 
     private String extractMainAbstract() {
         return getMainAbstract()
-                   .flatMap(this::extractAbstractStringOrReturnNull)
-                   .map(this::trim)
-                   .orElse(null);
+                .flatMap(this::extractAbstractStringOrReturnNull)
+                .map(this::trim)
+                .orElse(null);
     }
 
     private String trim(String string) {
         return Optional.ofNullable(string)
-                   .map(s -> s.replaceAll("\\n\\r", StringUtils.SPACE))
-                   .map(s -> s.replaceAll(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
-                   .orElse(null);
+                .map(s -> s.replaceAll("\\n\\r", StringUtils.SPACE))
+                .map(s -> s.replaceAll(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
+                .orElse(null);
     }
 
     private Optional<String> returnNullInsteadOfEmptyString(String input) {
@@ -175,14 +180,14 @@ public class ScopusConverter {
 
     private String extractAbstractString(AbstractTp abstractTp) {
         return abstractTp.getPara()
-                   .stream()
-                   .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
-                   .collect(Collectors.joining());
+                .stream()
+                .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
+                .collect(Collectors.joining());
     }
 
     private Optional<AbstractTp> getMainAbstract() {
         return nonNull(getAbstracts()) ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
-                   : Optional.empty();
+                : Optional.empty();
     }
 
     private List<AbstractTp> getAbstracts() {
@@ -199,16 +204,16 @@ public class ScopusConverter {
 
     private List<String> extractKeywordsAsStrings(AuthorKeywordsTp authorKeywordsTp) {
         return authorKeywordsTp.getAuthorKeyword()
-                   .stream()
-                   .map(this::extractConcatenatedKeywordString)
-                   .collect(Collectors.toList());
+                .stream()
+                .map(this::extractConcatenatedKeywordString)
+                .collect(Collectors.toList());
     }
 
     private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
         return keyword.getContent()
-                   .stream()
-                   .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-                   .collect(Collectors.joining());
+                .stream()
+                .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                .collect(Collectors.joining());
     }
 
     private String extractMainTitle() {
@@ -223,15 +228,15 @@ public class ScopusConverter {
         Reference reference = new Reference();
         reference.setPublicationContext(new PublicationContextCreator(docTp).getPublicationContext());
         reference.setPublicationInstance(
-            new PublicationInstanceCreator(docTp, reference.getPublicationContext()).getPublicationInstance());
+                new PublicationInstanceCreator(docTp, reference.getPublicationContext()).getPublicationInstance());
         reference.setDoi(extractDOI());
         return reference;
     }
 
     private URI extractDOI() {
         return nonNull(docTp.getMeta().getDoi()) ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT)
-                                                       .addChild(docTp.getMeta().getDoi())
-                                                       .getUri() : null;
+                .addChild(docTp.getMeta().getDoi())
+                .getUri() : null;
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {

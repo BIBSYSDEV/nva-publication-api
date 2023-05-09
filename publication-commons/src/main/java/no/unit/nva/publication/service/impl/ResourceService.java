@@ -40,6 +40,7 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
@@ -140,6 +141,16 @@ public class ResourceService extends ServiceWithTransactions {
     
     public Publication createPublicationFromImportedEntry(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setPublishedDate(inputData.getPublishedDate());
+        newResource.setCreatedDate(inputData.getCreatedDate());
+        newResource.setModifiedDate(inputData.getModifiedDate());
+        newResource.setStatus(PublicationStatus.PUBLISHED);
+        return insertResource(newResource);
+    }
+
+    public Publication createImportCandidateFromImportedEntry(ImportCandidate inputData) {
+        Resource newResource = Resource.fromImportCandidate(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
