@@ -348,9 +348,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
+        ExpandedTicketStatus expandedTicketStatus = getExpandedTicketStatus(expandedTicket);
+        assertThat(expandedTicketStatus, is(equalTo(ExpandedTicketStatus.NEW)));
+    }
+
+    private ExpandedTicketStatus getExpandedTicketStatus(ExpandedTicket expandedTicket) {
         ExpandedTicketStatusQueries expandedTicketStatusQueries = new ExpandedTicketStatusQueries();
-        var result = expandedTicketStatusQueries.getExpandedTicketStatus(expandedTicket.toTicketEntry());
-        assertThat(result, is(equalTo(ExpandedTicketStatus.NEW)));
+        var expandedTicketStatus = expandedTicketStatusQueries.getExpandedTicketStatus(expandedTicket.toTicketEntry());
+        return expandedTicketStatus;
     }
 
     private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
