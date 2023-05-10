@@ -336,7 +336,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     @JacocoGenerated
     private String extractIdentifierAndType(WriteRequest writeRequest) {
-        var identifier = writeRequest.getPutRequest().getItem().get("identifier");
+        var identifier = writeRequest.getPutRequest().getItem().get("PK0");
         var type = writeRequest.getPutRequest().getItem().get("type");
 
         return String.format("%s: %s", type, identifier);
