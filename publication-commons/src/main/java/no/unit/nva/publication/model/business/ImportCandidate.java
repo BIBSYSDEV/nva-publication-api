@@ -39,27 +39,7 @@ public class ImportCandidate extends Publication {
     }
 
     public Publication toPublication() {
-        return new Publication.Builder()
-                .withIdentifier(getIdentifier())
-                .withStatus(PublicationStatus.PUBLISHED)
-                .withResourceOwner(getResourceOwner())
-                .withPublisher(getPublisher())
-                .withCreatedDate(getCreatedDate())
-                .withModifiedDate(getModifiedDate())
-                .withPublishedDate(getPublishedDate())
-                .withIndexedDate(getIndexedDate())
-                .withHandle(getHandle())
-                .withDoi(getDoi())
-                .withLink(getLink())
-                .withEntityDescription(getEntityDescription())
-                .withProjects(getProjects())
-                .withFundings(getFundings())
-                .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                .withAssociatedArtifacts(getAssociatedArtifacts())
-                .withSubjects(getSubjects())
-                .withFundings(getFundings())
-                .withRightsHolder(getRightsHolder())
-                .build();
+        return this.copy().build();
     }
 
     @JacocoGenerated
