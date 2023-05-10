@@ -2,8 +2,9 @@ package no.unit.nva.publication.ticket.update;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.Arrays;
 import nva.commons.core.SingletonCollector;
+
+import java.util.Arrays;
 
 public enum ViewStatus {
     READ("Read"),
@@ -22,11 +23,7 @@ public enum ViewStatus {
                    .collect(SingletonCollector.tryCollect())
                    .orElseThrow();
     }
-    
-    public static String legalValues() {
-        return Arrays.toString(ViewStatus.values());
-    }
-    
+
     @JsonValue
     @Override
     public String toString() {

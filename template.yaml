@@ -717,23 +717,25 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
-  UpdateTicketViewStatusHandler:
+  UpdateTicketHandler:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: tickets
-      Handler: no.unit.nva.publication.ticket.update.UpdateTicketViewStatusHandler::handleRequest
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketHandler::handleRequest
       Runtime: java11
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
-            Method: post
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Method: put
             RestApiId: !Ref NvaPublicationApi
 
   CreateTicketFunction:
@@ -776,29 +778,6 @@ Resources:
           Properties:
             Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
             Method: get
-            RestApiId: !Ref NvaPublicationApi
-
-  UpdateTicketFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: tickets
-      Handler: no.unit.nva.publication.ticket.update.UpdateTicketStatusHandler::handleRequest
-      Runtime: java11
-      Timeout: 30
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-          API_HOST: !Ref ApiDomain
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
-            Method: put
             RestApiId: !Ref NvaPublicationApi
 
   ListTicketsForPublicationHandler:

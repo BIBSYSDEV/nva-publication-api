@@ -279,6 +279,7 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+
   /{publicationIdentifier}/ticket/{ticketIdentifier}:
     parameters:
       - in: path
@@ -291,40 +292,29 @@ paths:
         schema:
           type: string
         required: true
-    get:
-      description: Get an existing ticket
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Ticket"
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      x-amazon-apigateway-integration:
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
-        responses: { }
-        httpMethod: POST
-        type: AWS_PROXY
     put:
-      description: Update the status of an existing ticket
+      description: Update existing ticket
       requestBody:
-        description: A Ticket Object containing the new ticket status
+        description: A Ticket Object containing the status, assignee and viewedStatus
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Ticket'
+              $ref: '#/components/schemas/UpdateTicketRequest'
       responses:
         202:
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/UpdateTicketRequest"
         400:
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        401:
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -335,24 +325,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        404:
-          description: Not Found
+        502:
+          description: Bad gateway
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        405:
-          description: Operation not allowed
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+    get:
+      description: Get an existing ticket
+      responses:
+        200:
+          description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Problem"
-        409:
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Problem"
+                $ref: "#/components/schemas/Ticket"
         502:
           description: Bad gateway
           content:
@@ -408,47 +403,7 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-  /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed:
-    parameters:
-      - in: path
-        name: publicationIdentifier
-        schema:
-          type: string
-        required: true
-      - in: path
-        name: ticketIdentifier
-        schema:
-          type: string
-        required: true
-    post:
-      description: Update Ticket viewed status.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateViewStatusRequest'
-      responses:
-        '303':
-          description: "See other"
-          headers:
-            "Location":
-              description: The URI of the updated ticket
-              schema:
-                type: string
-        '403':
-          description: "Forbidden"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      x-amazon-apigateway-integration:
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketViewStatusHandler.Arn}/invocations
-        responses: { }
-        httpMethod: POST
-        type: AWS_PROXY
+
   /tickets:
     get:
       description: List tickets for user
@@ -505,6 +460,7 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+
   /context:
     get:
       summary: Fetch Publication context
@@ -710,6 +666,24 @@ components:
       properties:
         doi:
           type: string
+    UpdateTicketRequest:
+      description: Only few fields of Ticket are exposed for update
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - Pending
+            - Completed
+            - Closed
+        viewStatus:
+          type: string
+          enum:
+            - Read
+            - Unread
+        assignee:
+          type: string
+          description: Username to assign or empty string to deallocate
     Ticket:
       type: object
       properties:
@@ -729,18 +703,6 @@ components:
             - Pending
             - Completed
             - Closed
-    UpdateViewStatusRequest:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - UpdateViewStatusRequest
-        viewedStatus:
-          type: string
-          enum:
-            - Read
-            - Unread
     TicketCollection:
       type: object
       properties:
