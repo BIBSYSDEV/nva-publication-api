@@ -1,17 +1,17 @@
 [versions]
 
 
-nva = { strictly = '1.27.10' }
-nvaDatamodel = { strictly = '0.20.17' }
+nva = { strictly = '1.28.4' }
+nvaDatamodel = { strictly = '0.20.19' }
 nvaDoiPartnerData = { strictly = '0.5.0' }
 jackson = { strictly = '2.14.1' }
-awsSdk = { strictly = '1.12.369' }
-awsSdk2 = { strictly = '2.19.15' }
+awsSdk = { strictly = '1.12.462' }
+awsSdk2 = { strictly = '2.20.60' }
 log4j = { strictly = '2.17.2' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.27.1' }
-awsLambdaCore = { strictly = '1.2.1' }
-awsLambdaEvents = { strictly = '3.9.0' }
+awsLambdaCore = { strictly = '1.2.2' }
+awsLambdaEvents = { strictly = '3.11.1' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '1.15.0' }
