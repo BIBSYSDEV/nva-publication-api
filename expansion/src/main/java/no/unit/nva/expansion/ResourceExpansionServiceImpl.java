@@ -81,11 +81,15 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
+        var identifier = dataEntry.getIdentifier();
         if (dataEntry instanceof Resource) {
+            logger.info("Expanding Resource: {}", identifier);
             return ExpandedResource.fromPublication(uriRetriever, dataEntry.toPublication(resourceService));
         } else if (dataEntry instanceof TicketEntry) {
+            logger.info("Expanding TicketEntry: {}", identifier);
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
         } else if (dataEntry instanceof Message) {
+            logger.info("Expanding Message: {}", identifier);
             var message = (Message) dataEntry;
             var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
             return expandEntry(ticket);

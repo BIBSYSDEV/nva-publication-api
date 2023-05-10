@@ -35,6 +35,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 @JsonTypeName(ExpandedResource.TYPE)
