@@ -1,7 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
 import java.util.List;
+import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class BatchUpdateFailureException extends RuntimeException {
 
   public BatchUpdateFailureException(List<String> failingEntriesIdentifiers) {
