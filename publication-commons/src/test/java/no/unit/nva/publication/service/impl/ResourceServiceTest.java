@@ -872,6 +872,31 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
     }
 
+    @Test
+    void shouldReturnIdentifiersOfItemsThatFailedToBeRefreshed() {
+        var failingClient = new FailingDynamoClient(this.client);
+        resourceService = new ResourceService(failingClient, clock);
+
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        var userResources = createSamplePublicationsOfSingleOwner(userInstance);
+        var resources = userResources.stream()
+          .map(Resource::fromPublication)
+          .map(Entity.class::cast)
+          .collect(Collectors.toList());
+
+        var expectedIdentifiers = userResources.stream()
+          .map(Publication::getIdentifier)
+          .collect(Collectors.toList());
+
+        var exception =
+          assertThrows(BatchUpdateFailureException.class,
+            () -> resourceService.refreshResources(resources));
+
+        for (var identifier : expectedIdentifiers) {
+            assertThat(exception.getMessage(), containsString(identifier.toString()));
+        }
+    }
+
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
                 .withStatus(PublicationStatus.PUBLISHED)
