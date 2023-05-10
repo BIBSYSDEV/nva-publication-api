@@ -553,8 +553,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private TicketEntry setUpPersistedTicketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
         throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var assigneeUsername = new Username(randomString());
-        ticket.setAssignee(assigneeUsername);
+        ticket.setAssignee(new Username(SOME_ASSIGNEE));
         ticket.persistUpdate(ticketService);
         return ticket;
     }
