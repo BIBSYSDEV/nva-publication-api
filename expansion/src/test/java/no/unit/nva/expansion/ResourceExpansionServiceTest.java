@@ -1,10 +1,8 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import no.unit.nva.expansion.model.ExpandedMessage;
-import no.unit.nva.expansion.model.ExpandedPerson;
-import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedTicket;
+import no.unit.nva.expansion.model.*;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusQueries;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -340,6 +338,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(ticket, doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
                 FINALIZED_DATE)));
         assertThat(regeneratedTicket.getStatus(), is(equalTo(ticket.getStatus())));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldUpdateExpandedTicketStatusWhenTicketStatusIsPendingWithoutAssignee(Class<? extends TicketEntry> ticketType,
+                                                                                  PublicationStatus status)
+            throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
+        ExpandedTicketStatusQueries expandedTicketStatusQueries = new ExpandedTicketStatusQueries();
+        var result = expandedTicketStatusQueries.getExpandedTicketStatus(expandedTicket.toTicketEntry());
+        assertThat(result, is(equalTo(ExpandedTicketStatus.NEW)));
     }
 
     private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)

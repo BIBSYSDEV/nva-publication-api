@@ -2,6 +2,7 @@ package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusQueries;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
@@ -11,7 +12,6 @@ import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -81,7 +80,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(organizationIds);
-        entry.setStatus(getExpandedTicketStatus(dataEntry));
+        entry.setStatus(ExpandedTicketStatusQueries.getExpandedTicketStatus(dataEntry));
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setCreatedDate(dataEntry.getCreatedDate());
         entry.setModifiedDate(dataEntry.getModifiedDate());
@@ -138,7 +137,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         publishingRequest.setOwner(this.getOwner().getUsername());
         publishingRequest.setModifiedDate(this.getModifiedDate());
         publishingRequest.setCreatedDate(this.getCreatedDate());
-        publishingRequest.setStatus(getTicketStatus());
+        publishingRequest.setStatus(ExpandedTicketStatusQueries.getTicketStatus(this.getStatus()));
         publishingRequest.setFinalizedBy(this.getFinalizedBy());
         publishingRequest.setAssignee(extractAssigneeUsername());
         return publishingRequest;
@@ -191,33 +190,5 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setWorkflow(PublishingWorkflow workflow) {
         this.workflow = workflow;
-    }
-
-    private static ExpandedTicketStatus getExpandedTicketStatus(PublishingRequestCase publishingRequestCase) throws NotFoundException {
-        switch (publishingRequestCase.getStatus()) {
-            case PENDING:
-                return getNewTicketStatus(publishingRequestCase);
-            case COMPLETED:
-                return ExpandedTicketStatus.COMPLETED;
-            case CLOSED:
-                return ExpandedTicketStatus.CLOSED;
-            default:
-                throw new NotFoundException ("Invalid PublishingRequestCase status " + publishingRequestCase.getStatus());
-        }
-    }
-
-    private static ExpandedTicketStatus getNewTicketStatus(PublishingRequestCase publishingRequestCase) {
-        if (isNull(publishingRequestCase.getAssignee())) {
-            return ExpandedTicketStatus.NEW;
-        } else {
-            return ExpandedTicketStatus.PENDING;
-        }
-    }
-
-    private TicketStatus getTicketStatus() {
-        if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
-            return TicketStatus.parse(this.getStatus().toString());
-        }
-        return null;
     }
 }

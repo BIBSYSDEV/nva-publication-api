@@ -2,13 +2,13 @@ package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusQueries;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.isNull;
 
 @JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
 public class ExpandedGeneralSupportRequest extends ExpandedTicket {
@@ -43,7 +42,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         var publicationSummary = PublicationSummary.create(publication);
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(resourceExpansionService.getOrganizationIds(dataEntry));
-        entry.setStatus(getExpandedTicketStatus(dataEntry));
+        entry.setStatus(ExpandedTicketStatusQueries.getExpandedTicketStatus(dataEntry));
         entry.setOwner(resourceExpansionService.expandPerson(dataEntry.getOwner()));
         entry.setModifiedDate(dataEntry.getModifiedDate());
         entry.setCreatedDate(dataEntry.getCreatedDate());
@@ -101,7 +100,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         ticketEntry.setCustomerId(this.getCustomerId());
         ticketEntry.setIdentifier(extractIdentifier(this.getId()));
         ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublication()));
-        ticketEntry.setStatus( getTicketStatus());
+        ticketEntry.setStatus(ExpandedTicketStatusQueries.getTicketStatus(this.getStatus()));
         ticketEntry.setOwner(this.getOwner().getUsername());
         ticketEntry.setAssignee(extractAssigneeUsername());
         return ticketEntry;
@@ -138,33 +137,5 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
 
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
-    }
-
-    private static ExpandedTicketStatus getExpandedTicketStatus(GeneralSupportRequest generalSupportRequest) throws NotFoundException {
-        switch (generalSupportRequest.getStatus()) {
-            case PENDING:
-                return getNewTicketStatus(generalSupportRequest);
-            case COMPLETED:
-                return ExpandedTicketStatus.COMPLETED;
-            case CLOSED:
-                return ExpandedTicketStatus.CLOSED;
-            default:
-                throw new NotFoundException ("Invalid GeneralSupportRequest status " + generalSupportRequest.getStatus());
-        }
-    }
-
-    private static ExpandedTicketStatus getNewTicketStatus(GeneralSupportRequest generalSupportRequest) {
-        if (isNull(generalSupportRequest.getAssignee())) {
-            return ExpandedTicketStatus.NEW;
-        } else {
-            return ExpandedTicketStatus.PENDING;
-        }
-    }
-
-    private TicketStatus getTicketStatus() {
-        if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
-            return TicketStatus.parse(this.getStatus().toString());
-        }
-        return null;
     }
 }

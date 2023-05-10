@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusQueries;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.isNull;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
@@ -90,7 +88,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
         entry.setCustomerId(doiRequest.getCustomerId());
         entry.setModifiedDate(doiRequest.getModifiedDate());
-        entry.setStatus(getExpandedTicketStatus(doiRequest));
+        entry.setStatus(ExpandedTicketStatusQueries.getExpandedTicketStatus(doiRequest));
         entry.setViewedBy(doiRequest.getViewedBy());
         entry.setPublication(publicationSummary);
         entry.setFinalizedBy(doiRequest.getFinalizedBy());
@@ -159,7 +157,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         doiRequest.setOwner(this.getOwner().getUsername());
         doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublication()));
         doiRequest.setResourceStatus(this.getPublication().getStatus());
-        doiRequest.setStatus(getTicketStatus());
+        doiRequest.setStatus(ExpandedTicketStatusQueries.getTicketStatus(this.getStatus()));
         doiRequest.setAssignee(extractAssigneeUsername());
         return doiRequest;
     }
@@ -188,31 +186,4 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return extractIdentifier(getId());
     }
 
-    private static ExpandedTicketStatus getExpandedTicketStatus(DoiRequest doiRequest) throws NotFoundException {
-        switch (doiRequest.getStatus()) {
-            case PENDING:
-                return getNewTicketStatus(doiRequest);
-            case COMPLETED:
-                return ExpandedTicketStatus.COMPLETED;
-            case CLOSED:
-                return ExpandedTicketStatus.CLOSED;
-            default:
-                throw new NotFoundException ("Invalid DoiRequest status " + doiRequest.getStatus());
-        }
-    }
-
-    private static ExpandedTicketStatus getNewTicketStatus(DoiRequest doiRequest) {
-        if (isNull(doiRequest.getAssignee())) {
-            return ExpandedTicketStatus.NEW;
-        } else {
-            return ExpandedTicketStatus.PENDING;
-        }
-    }
-
-    private TicketStatus getTicketStatus() {
-        if (!this.getStatus().equals(ExpandedTicketStatus.NEW)) {
-            return TicketStatus.parse(this.getStatus().toString());
-        }
-        return null;
-    }
 }
