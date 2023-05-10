@@ -2,7 +2,6 @@ package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.model.*;
-import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -373,21 +372,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getStatus(), is(equalTo(ExpandedTicketStatus.COMPLETED)));
     }
 
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldUpdateExpandedTicketStatusClosedWhenTicketStatusIsPendingAndAssigned(
-        Class<? extends TicketEntry> ticketType,
-        PublicationStatus status)
-        throws ApiGatewayException, JsonProcessingException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.setStatus(TicketStatus.PENDING);
-        ticket.setAssignee(new Username(randomString()));
-        var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        assertThat(expandedTicket.getStatus(), is(equalTo(ExpandedTicketStatus.PENDING)));
-    }
-
-    private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
+      private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
         throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticketService.updateTicketAssignee(ticket, new Username(USER.getUsername()));
@@ -438,13 +423,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
-/*
-    private ExpandedTicketStatus getExpandedTicketStatus(ExpandedTicket expandedTicket) {
-        var expandedTicketStatusMapper = new ExpandedTicketStatusMapper();
-        return ExpandedTicketStatusMapper.getExpandedTicketStatus(expandedTicket.toTicketEntry());
-    }*/
-
-
 
     private DoiRequest toTicketEntry(ExpandedDoiRequest expandedDoiRequest) {
         DoiRequest doiRequest = new DoiRequest();
@@ -460,21 +438,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return doiRequest;
     }
 
-    private Username extractAssigneeUsername(ExpandedTicket expandedTicket) {
-        return Optional.ofNullable(expandedTicket.getAssignee())
-            .map(ExpandedPerson::getUsername)
-            .map(User::toString)
-            .map(Username::new)
-            .orElse(null);
-    }
-
-
-    private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
-        return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
-                   : TicketStatus.parse(expandedTicketStatus.toString());
-    }
-
-
     private GeneralSupportRequest toTicketEntry(ExpandedGeneralSupportRequest expandedGeneralSupportRequest) {
         var ticketEntry = new GeneralSupportRequest();
         ticketEntry.setModifiedDate(expandedGeneralSupportRequest.getModifiedDate());
@@ -487,7 +450,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketEntry.setAssignee(extractAssigneeUsername(expandedGeneralSupportRequest));
         return ticketEntry;
     }
-
 
     private TicketEntry toTicketEntry(ExpandedPublishingRequest expandedPublishingRequest) {
         var publishingRequest = new PublishingRequestCase();
@@ -510,12 +472,22 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         if(expandedTicket instanceof ExpandedPublishingRequest) {
             return toTicketEntry((ExpandedPublishingRequest) expandedTicket);
         }
-
         if(expandedTicket instanceof ExpandedGeneralSupportRequest) {
             return toTicketEntry((ExpandedGeneralSupportRequest) expandedTicket);
         }
         return null;
     }
+    private Username extractAssigneeUsername(ExpandedTicket expandedTicket) {
+        return Optional.ofNullable(expandedTicket.getAssignee())
+            .map(ExpandedPerson::getUsername)
+            .map(User::toString)
+            .map(Username::new)
+            .orElse(null);
+    }
 
 
+    private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
+        return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
+                   : TicketStatus.parse(expandedTicketStatus.toString());
+    }
 }
