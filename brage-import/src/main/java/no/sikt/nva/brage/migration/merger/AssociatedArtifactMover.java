@@ -106,8 +106,7 @@ public class AssociatedArtifactMover {
         Path path = Paths.get(recordObjectKey);
         var directory = path.getParent();
         if (Objects.nonNull(directory)) {
-            //return directory + "/";
-            return directory.toString().replace("\\","/") + "/";
+            return directory + "/";
         } else {
             return StringUtils.EMPTY_STRING;
         }
