@@ -1,23 +1,8 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import no.unit.nva.expansion.ResourceExpansionService;
-import no.unit.nva.expansion.utils.ExpandedTicketStatusQueries;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
-import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JacocoGenerated;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
@@ -25,9 +10,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
+import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JacocoGenerated;
 
 public class ExpandedPublishingRequest extends ExpandedTicket {
 
@@ -51,7 +47,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                         ResourceService resourceService,
                                                         ResourceExpansionService resourceExpansionService,
                                                         TicketService ticketService)
-            throws NotFoundException {
+        throws NotFoundException {
 
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
@@ -60,52 +56,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
         var assignee = expandAssignee(publishingRequestCase, resourceExpansionService);
         return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee);
-    }
-
-    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
-        return messages.stream()
-                .map(expansionService::expandMessage)
-                .collect(Collectors.toList());
-    }
-
-    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
-                                                           Publication publication,
-                                                           Set<URI> organizationIds,
-                                                           List<ExpandedMessage> messages,
-                                                           PublishingWorkflow workflow,
-                                                           ExpandedPerson owner,
-                                                           ExpandedPerson assignee) throws NotFoundException {
-        var publicationSummary = PublicationSummary.create(publication);
-        var entry = new ExpandedPublishingRequest();
-        entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
-        entry.setPublication(publicationSummary);
-        entry.setOrganizationIds(organizationIds);
-        entry.setStatus(ExpandedTicketStatusQueries.getExpandedTicketStatus(dataEntry));
-        entry.setCustomerId(dataEntry.getCustomerId());
-        entry.setCreatedDate(dataEntry.getCreatedDate());
-        entry.setModifiedDate(dataEntry.getModifiedDate());
-        entry.setMessages(messages);
-        entry.setViewedBy(dataEntry.getViewedBy());
-        entry.setWorkflow(workflow);
-        entry.setFinalizedBy(dataEntry.getFinalizedBy());
-        entry.setOwner(owner);
-        entry.setAssignee(assignee);
-        return entry;
-    }
-
-    private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
-                                                ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(
-                publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
-    }
-
-    private static ExpandedPerson expandAssignee(PublishingRequestCase publishingRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(publishingRequest.getAssignee())
-                .map(Username::getValue)
-                .map(User::new)
-                .map(expansionService::expandPerson)
-                .orElse(null);
     }
 
     @JacocoGenerated
@@ -126,29 +76,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
-    }
-
-    @Override
-    public TicketEntry toTicketEntry() {
-        var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setPublicationDetails(PublicationDetails.create(getPublication()));
-        publishingRequest.setCustomerId(this.getCustomerId());
-        publishingRequest.setIdentifier(extractIdentifier(this.getId()));
-        publishingRequest.setOwner(this.getOwner().getUsername());
-        publishingRequest.setModifiedDate(this.getModifiedDate());
-        publishingRequest.setCreatedDate(this.getCreatedDate());
-        publishingRequest.setStatus(ExpandedTicketStatusQueries.getTicketStatus(this.getStatus()));
-        publishingRequest.setFinalizedBy(this.getFinalizedBy());
-        publishingRequest.setAssignee(extractAssigneeUsername());
-        return publishingRequest;
-    }
-
-    private Username extractAssigneeUsername() {
-        return Optional.ofNullable(this.getAssignee())
-                .map(ExpandedPerson::getUsername)
-                .map(User::toString)
-                .map(Username::new)
-                .orElse(null);
     }
 
     @Override
@@ -190,5 +117,52 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setWorkflow(PublishingWorkflow workflow) {
         this.workflow = workflow;
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages,
+                                                        ResourceExpansionService expansionService) {
+        return messages.stream()
+            .map(expansionService::expandMessage)
+            .collect(Collectors.toList());
+    }
+
+    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
+                                                           Publication publication,
+                                                           Set<URI> organizationIds,
+                                                           List<ExpandedMessage> messages,
+                                                           PublishingWorkflow workflow,
+                                                           ExpandedPerson owner,
+                                                           ExpandedPerson assignee) throws NotFoundException {
+        var publicationSummary = PublicationSummary.create(publication);
+        var entry = new ExpandedPublishingRequest();
+        entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
+        entry.setPublication(publicationSummary);
+        entry.setOrganizationIds(organizationIds);
+        entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(dataEntry));
+        entry.setCustomerId(dataEntry.getCustomerId());
+        entry.setCreatedDate(dataEntry.getCreatedDate());
+        entry.setModifiedDate(dataEntry.getModifiedDate());
+        entry.setMessages(messages);
+        entry.setViewedBy(dataEntry.getViewedBy());
+        entry.setWorkflow(workflow);
+        entry.setFinalizedBy(dataEntry.getFinalizedBy());
+        entry.setOwner(owner);
+        entry.setAssignee(assignee);
+        return entry;
+    }
+
+    private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
+                                                ResourceService resourceService) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(
+            publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
+    }
+
+    private static ExpandedPerson expandAssignee(PublishingRequestCase publishingRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(publishingRequest.getAssignee())
+            .map(Username::getValue)
+            .map(User::new)
+            .map(expansionService::expandPerson)
+            .orElse(null);
     }
 }

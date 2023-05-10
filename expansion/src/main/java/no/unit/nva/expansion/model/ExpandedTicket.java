@@ -112,7 +112,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     public abstract Set<URI> getOrganizationIds();
 
-    public abstract TicketEntry toTicketEntry();
+    //public abstract TicketEntry toTicketEntry();
 
     @JsonProperty(ID_FIELD)
     public final URI getId() {
@@ -156,7 +156,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
                 .getUri();
     }
 
-    protected static SortableIdentifier extractIdentifier(URI id) {
+    public static SortableIdentifier extractIdentifier(URI id) {
         return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
     }
 }
