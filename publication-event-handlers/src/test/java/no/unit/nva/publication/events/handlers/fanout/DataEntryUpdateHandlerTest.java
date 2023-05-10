@@ -5,7 +5,6 @@ import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.AWS_REGION;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -51,7 +50,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 public class DataEntryUpdateHandlerTest {
-    
+
+    public static final String DYNAMODB_UPDATE_EVENT_TOPIC = "PublicationService.Database.Update";
     private OutputStream outputStream;
     private Context context;
     private DataEntryUpdateHandler handler;

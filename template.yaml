@@ -467,7 +467,9 @@ Resources:
               - dynamodb:DescribeStream
               - dynamodb:ListStreams
               - dynamodb:GetRecords
-            Resource: !GetAtt NvaResourcesTable.StreamArn
+            Resource:
+              - !GetAtt NvaResourcesTable.StreamArn
+              - !GetAtt NvaImportCandidatesTable.StreamArn
 
 
   EventsLambdaPermissions:
@@ -1224,11 +1226,38 @@ Resources:
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          OUTPUT_EVENT_TOPIC: 'PublicationService.Database.Update'
       Events:
         FanoutSource:
           Type: DynamoDB
           Properties:
             Stream: !GetAtt NvaResourcesTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+            Enabled: true
+
+  ImportCandidateDynamodbStreamToEventBridgeHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
+      Timeout: 360
+      Runtime: java11
+      Tracing: Active
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
+          MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          OUTPUT_EVENT_TOPIC: 'ImportCandidate.Database.Update'
+      Events:
+        FanoutSource:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt NvaImportCandidatesTable.StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
