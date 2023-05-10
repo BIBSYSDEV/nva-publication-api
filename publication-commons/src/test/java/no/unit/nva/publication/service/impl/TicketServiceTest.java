@@ -527,25 +527,36 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsReadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldMarkTicketAsReadForAssignee(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
-        ticket.markReadForCurators().persistUpdate(ticketService);
-        assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
+        var ticket = setUpPersistedTicketWithAssignee(ticketType, publication);
+        var expectedAssigneeUsername = new User(ticket.getAssignee().toString());
+        assertThat(ticket.getViewedBy(), not(hasItem(expectedAssigneeUsername)));
+        ticket.markReadForAssignee().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), hasItem(expectedAssigneeUsername));
     }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForCurator(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldMarkTicketAsUnreadForAssignee(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+        var ticket = setUpPersistedTicketWithAssignee(ticketType, publication);
+        ticket.markReadForAssignee().persistUpdate(ticketService);
+        var expectedAssigneeUsername = new User(ticket.getAssignee().toString());
+        assertThat(ticket.getViewedBy(), hasItem(expectedAssigneeUsername));
+        ticket.markUnReadForAssignee().persistUpdate(ticketService);
+        assertThat(ticket.getViewedBy(), not(hasItem(expectedAssigneeUsername)));
+    }
+
+    private TicketEntry setUpPersistedTicketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
+        throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.markReadForCurators().persistUpdate(ticketService);
-        assertThat(ticket.getViewedBy(), hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT));
-        ticket.markUnreadForCurators().persistUpdate(ticketService);
-        assertThat(ticket.getViewedBy(), not(hasItem(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT)));
+        var assigneeUsername = new Username(randomString());
+        ticket.setAssignee(assigneeUsername);
+        ticket.persistUpdate(ticketService);
+        return ticket;
     }
 
     @Test
