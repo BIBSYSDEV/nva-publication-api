@@ -21,8 +21,6 @@ import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class IndexDocumentWrapperLinkedData {
     public static final String PART_OF_FIELD = "/partOf";
