@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.AmazonServiceException;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -79,6 +79,8 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
+    private static final String SEPARATOR_ITEM = ",";
+    private static final String SEPARATOR_TABLE = ";";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -313,33 +315,30 @@ public class ResourceService extends ServiceWithTransactions {
             .forEach(this::writeBatchToDynamo);
     }
 
-    @JacocoGenerated
     private void writeBatchToDynamo(BatchWriteItemRequest batchWriteItemRequest) {
         try {
             getClient().batchWriteItem(batchWriteItemRequest);
         } catch (Exception e) {
-            var resources = batchWriteItemRequest.getRequestItems()
-                                .entrySet().stream()
-                                .map(this::extractAllIdentifiersAndTypes)
-                                .collect(Collectors.joining("; "));
-            logger.info("Failed to write batch to dynamo for the following resources: " + resources, e);
-            // continue;
+            var recordIdentifiers = extractRecordIdentifiers(batchWriteItemRequest);
+            logger.warn("Failed to write batch to dynamo for the following resources: " + recordIdentifiers, e);
+            // intentionally swallowing this exception to continue writing next batches
         }
     }
 
-    @JacocoGenerated
-    private String extractAllIdentifiersAndTypes(Entry<String, List<WriteRequest>> entry) {
-        return entry.getValue().stream()
-            .map(this::extractIdentifierAndType)
-            .collect(Collectors.joining(", "));
+    private String extractRecordIdentifiers(BatchWriteItemRequest batchWriteItemRequest) {
+        return batchWriteItemRequest.getRequestItems().values().stream()
+                   .map(this::extractRecordIdentifiers)
+                   .collect(Collectors.joining(SEPARATOR_TABLE));
     }
 
-    @JacocoGenerated
-    private String extractIdentifierAndType(WriteRequest writeRequest) {
-        var identifier = writeRequest.getPutRequest().getItem().get("PK0");
-        var type = writeRequest.getPutRequest().getItem().get("type");
+    private String extractRecordIdentifiers(List<WriteRequest> writeRequests) {
+        return writeRequests.stream()
+                   .map(this::extractPrimaryKeySortKey)
+                   .collect(Collectors.joining(SEPARATOR_ITEM));
+    }
 
-        return String.format("%s: %s", type, identifier);
+    private String extractPrimaryKeySortKey(WriteRequest writeRequest) {
+        return writeRequest.getPutRequest().getItem().get(PRIMARY_KEY_SORT_KEY_NAME).getS();
     }
 
     private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
