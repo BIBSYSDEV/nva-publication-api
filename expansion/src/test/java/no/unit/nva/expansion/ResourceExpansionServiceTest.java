@@ -142,9 +142,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.setFinalizedBy(new Username(randomString()));
-        var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        assertThat(ticket.getFinalizedBy(), is(equalTo(expandedTicket.getFinalizedBy())));
+
+       ticket.setFinalizedBy(new Username(randomString()));
+        expansionService = mockedExpansionService();
+       var assignee = ticket.getFinalizedBy().getValue();
+        var expectedExpandedAssignee = getExpectedExpandedPerson(new User(assignee));
+        var expandedAssignee = expansionService.expandPerson(new User(assignee));
+        assertThat(expandedAssignee, is(equalTo(expectedExpandedAssignee)));
     }
 
     @DisplayName("should copy all publicly visible fields from Ticket to ExpandedTicket")

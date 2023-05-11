@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -50,7 +49,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     @JsonProperty(PUBLICATION_FIELD)
     private PublicationSummary publication;
     @JsonProperty(FINALIZED_BY_FIELD)
-    private Username finalizedBy;
+    private ExpandedPerson finalizedBy;
     @JsonProperty(OWNER_FIELD)
     private ExpandedPerson owner;
     @JsonProperty(ASSIGNEE_FIELD)
@@ -85,11 +84,11 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
         throw new UnsupportedOperationException();
     }
 
-    public Username getFinalizedBy() {
+    public ExpandedPerson getFinalizedBy() {
         return finalizedBy;
     }
 
-    public void setFinalizedBy(Username finalizedBy) {
+    public void setFinalizedBy(ExpandedPerson finalizedBy) {
         this.finalizedBy = finalizedBy;
     }
 

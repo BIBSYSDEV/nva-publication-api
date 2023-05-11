@@ -50,11 +50,12 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
                                                  ResourceService resourceService,
                                                  TicketService ticketService)
             throws NotFoundException {
-        var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
+        var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService, expansionService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
         expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
         expandedDoiRequest.setAssignee(expandAssignee(doiRequest, expansionService));
+        expandedDoiRequest.setAssignee(expandFinalizedBy(doiRequest, expansionService));
         return expandedDoiRequest;
     }
 
@@ -73,6 +74,15 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
                 .orElse(null);
     }
 
+    private static ExpandedPerson expandFinalizedBy(DoiRequest doiRequest,
+                                                 ResourceExpansionService expansionService) {
+        return Optional.ofNullable(doiRequest.getFinalizedBy())
+            .map(Username::getValue)
+            .map(User::new)
+            .map(expansionService::expandPerson)
+            .orElse(null);
+    }
+
     private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
                                                                 ResourceExpansionService resourceExpansionService)
             throws NotFoundException {
@@ -80,7 +90,8 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
-    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService) {
+    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService,
+                                                     ResourceExpansionService resourceExpansionService) {
         var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
         ExpandedDoiRequest entry = new ExpandedDoiRequest();
         entry.setPublication(publicationSummary);
@@ -91,8 +102,17 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setStatus(doiRequest.getStatus());
         entry.setViewedBy(doiRequest.getViewedBy());
         entry.setPublication(publicationSummary);
-        entry.setFinalizedBy(doiRequest.getFinalizedBy());
+        entry.setFinalizedBy(expandFinalzedBy(doiRequest, resourceExpansionService));
         return entry;
+    }
+
+    private static ExpandedPerson expandFinalzedBy(DoiRequest doiRequest,
+                                                   ResourceExpansionService resourceExpansionService) {
+        return Optional.ofNullable(doiRequest.getFinalizedBy())
+            .map(Username::getValue)
+            .map(User::new)
+            .map(resourceExpansionService::expandPerson)
+            .orElse(null);
     }
 
     @JacocoGenerated
