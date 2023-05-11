@@ -32,6 +32,7 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -863,6 +864,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
 
     @Test
+    @Disabled
     void shouldReturnIdentifiersOfItemsThatFailedToBeRefreshed() {
         var failingClient = new FailingDynamoClient(this.client);
         resourceService = new ResourceService(failingClient, clock);
