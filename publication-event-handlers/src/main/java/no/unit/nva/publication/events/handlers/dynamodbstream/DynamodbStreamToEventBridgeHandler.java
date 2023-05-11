@@ -20,8 +20,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -42,7 +40,6 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     private static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
-    private static final Logger logger = LoggerFactory.getLogger(DynamodbStreamToEventBridgeHandler.class);
 
     private final String dynamoDbUpdateEventTopic;
 
@@ -76,7 +73,6 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     private PutEventsResponse sendEvent(EventReference eventReference, Context context) {
         var eventRequest = createPutEventRequest(context, eventReference);
-        logger.info("Emitting event: " + eventReference.toJsonString());
         return eventBridgeClient.putEvents(eventRequest);
     }
 
