@@ -5,15 +5,15 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
@@ -61,6 +61,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -72,6 +73,8 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -886,6 +889,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldCreateResourceFromImportCandidate() throws NotFoundException {
+        var importCandidate = randomImportCandidate();
+        var persistedImportCandidate = resourceService.createImportCandidateFromImportedEntry(importCandidate);
+        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(
+            persistedImportCandidate.getIdentifier());
+        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
+    }
+
+    @Test
     void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
         var failingClient = new FailingDynamoClient(this.client);
         resourceService = new ResourceService(failingClient, clock);
@@ -912,6 +924,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
             var expected = "Resource:" + publication.getIdentifier().toString();
             assertThat(testAppender.getMessages(), containsString(expected));
         });
+    }
+
+    private ImportCandidate randomImportCandidate() {
+        return new ImportCandidate.Builder()
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withLink(randomUri())
+                   .withDoi(randomDoi())
+                   .withHandle(randomUri())
+                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                   .withSubjects(List.of(randomUri()))
+                   .withRightsHolder(randomString())
+                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
+                   .withFundings(List.of())
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                   .withAssociatedArtifacts(List.of())
+                   .build();
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

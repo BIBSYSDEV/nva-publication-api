@@ -41,6 +41,7 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
@@ -152,6 +153,16 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    public Publication createImportCandidateFromImportedEntry(ImportCandidate inputData) {
+        Resource newResource = Resource.fromImportCandidate(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setPublishedDate(inputData.getPublishedDate());
+        newResource.setCreatedDate(inputData.getCreatedDate());
+        newResource.setModifiedDate(inputData.getModifiedDate());
+        newResource.setStatus(PublicationStatus.PUBLISHED);
+        return insertResourceFromImportCandidate(newResource);
+    }
+
     public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);
@@ -223,6 +234,10 @@ public class ResourceService extends ServiceWithTransactions {
     // TODO rename to getPublicationForUsageWithElevatedRights
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toPublication();
+    }
+
+    public ImportCandidate getImportCandidateByIdentifier(SortableIdentifier identifier) throws NotFoundException {
+        return getResourceByIdentifier(identifier).toImportCandidate();
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -378,6 +393,20 @@ public class ResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(putRequest);
 
         return fetchSavedPublication(newResource);
+    }
+
+    private Publication insertResourceFromImportCandidate(Resource newResource) {
+        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
+        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
+        sendTransactionWriteRequest(putRequest);
+
+        return fetchSavedImportCandidate(newResource);
+    }
+
+    private Publication fetchSavedImportCandidate(Resource newResource) {
+        return Optional.ofNullable(fetchSavedResource(newResource))
+                .map(Resource::toImportCandidate)
+                .orElse(null);
     }
 
     private Publication fetchSavedPublication(Resource newResource) {

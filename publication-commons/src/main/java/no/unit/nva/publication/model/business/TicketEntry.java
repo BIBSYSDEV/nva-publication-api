@@ -35,7 +35,6 @@ import static nva.commons.core.attempt.Try.attempt;
     @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)})
 public abstract class TicketEntry implements Entity {
 
-    public static final User SUPPORT_SERVICE_CORRESPONDENT = new User("SupportService");
     public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED =
         "Can not create DoiRequest ticket for unpublished publication, use draft doi flow instead.";
     private static final String VIEWED_BY_FIELD = "viewedBy";
@@ -239,13 +238,13 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
 
-    public TicketEntry markReadForCurators() {
-        viewedBy.add(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT);
+    public TicketEntry markReadForAssignee() {
+        viewedBy.add(new User(getAssignee().toString()));
         return this;
     }
 
-    public TicketEntry markUnreadForCurators() {
-        viewedBy.remove(TicketEntry.SUPPORT_SERVICE_CORRESPONDENT);
+    public TicketEntry markUnReadForAssignee() {
+        viewedBy.remove(new User(getAssignee().toString()));
         return this;
     }
 

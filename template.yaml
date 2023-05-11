@@ -137,6 +137,7 @@ Resources:
   # NB! for compatibility reasons (ResourceService is re-used) NvaImportCandidatesTable should be a copy of NvaResourcesTable
   # Any changes done to the structure of NvaResourcesTable should be duplicated in NvaImportCandidatesTable
   # Remove this message if they no longer need to be compatible.
+
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
@@ -297,6 +298,8 @@ Resources:
   DoiRequestEventProducerDLQ:
     Type: "AWS::SQS::Queue"
   ResourceExpansionHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  ImportCandidateExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
 
 
@@ -1143,6 +1146,40 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
+  EventBasedImportCandidateBatchScanHandlerTest:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          TABLE_NAME: !Ref NvaImportCandidatesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "ImportCandidates.DataEntry.ScanAndUpdateRowVersion" ]
+
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+
   DataEntryUpdateHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -1396,6 +1433,24 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
+          OUTPUT_EVENT_TOPIC: 'PublicationService.DataEntry.ScanAndUpdateRowVersion'
+
+  ImportCandidatesBatchScanStartHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
+      Runtime: java11
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          OUTPUT_EVENT_TOPIC: 'ImportCandidates.DataEntry.ScanAndUpdateRowVersion'
 
   StartCristinImportButton:
     Type: AWS::Serverless::Function

@@ -9,7 +9,6 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.model.business.TicketEntry.SUPPORT_SERVICE_CORRESPONDENT;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
@@ -232,7 +231,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @DisplayName("should mark ticket as read for the publication owner when publication owner creates new ticket")
+    @DisplayName("should mark ticket as read for only the publication owner when publication owner creates new "
+                 + "ticket")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
@@ -243,22 +243,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(input, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         TicketEntry ticket = fetchTicket(response);
+        assertThat(ticket.getViewedBy().size(), is(equalTo(1)));
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-    }
-
-    @ParameterizedTest
-    @DisplayName("should mark ticket as Unread for the Curators when publication owner creates new ticket")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnReadForTheCuratorsWhenPublicationOwnerCreatesNewTicket(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var owner = UserInstance.fromPublication(publication);
-        var requestBody = constructDto(ticketType);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        TicketEntry ticket = fetchTicket(response);
-        assertThat(ticket.getViewedBy(), not(hasItem(SUPPORT_SERVICE_CORRESPONDENT)));
     }
 
     @DisplayName("should update existing DoiRequest when new DOI is requested but a DoiRequest that has not been "
