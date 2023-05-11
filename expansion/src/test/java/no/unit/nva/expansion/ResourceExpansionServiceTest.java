@@ -1,7 +1,14 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import no.unit.nva.expansion.model.*;
+import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
+import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.ExpandedPerson;
+import no.unit.nva.expansion.model.ExpandedPublishingRequest;
+import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.model.ExpandedTicket;
+import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
