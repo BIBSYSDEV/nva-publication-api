@@ -11,14 +11,13 @@ dependencies {
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb
     implementation libs.bundles.jena
+    implementation libs.bundles.logging
 
     testImplementation(project(':publication-testing'))
     testImplementation project(path: ':tickets-test')
     testImplementation libs.nva.testutils
     testImplementation libs.bundles.testing
     testImplementation libs.jsonassert
-
-
 }
 
 test {
