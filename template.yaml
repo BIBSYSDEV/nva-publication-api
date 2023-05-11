@@ -137,6 +137,7 @@ Resources:
   # NB! for compatibility reasons (ResourceService is re-used) NvaImportCandidatesTable should be a copy of NvaResourcesTable
   # Any changes done to the structure of NvaResourcesTable should be duplicated in NvaImportCandidatesTable
   # Remove this message if they no longer need to be compatible.
+
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain

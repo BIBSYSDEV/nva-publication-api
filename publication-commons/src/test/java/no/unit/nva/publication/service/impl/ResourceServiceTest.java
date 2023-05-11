@@ -15,6 +15,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -59,8 +60,10 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
@@ -862,6 +865,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
     }
 
+    @Test
+    void shouldCreateResourceFromImportCandidate() throws NotFoundException {
+        var importCandidate = randomImportCandidate();
+        var persistedImportCandidate = resourceService.createImportCandidateFromImportedEntry(importCandidate);
+        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
+    }
 
     @Test
     @Disabled
@@ -887,6 +897,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
         for (var identifier : expectedIdentifiers) {
             assertThat(exception.getMessage(), containsString(identifier.toString()));
         }
+    }
+
+    private ImportCandidate randomImportCandidate() {
+        return new ImportCandidate.Builder()
+                .withStatus(PublicationStatus.PUBLISHED)
+                .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .withLink(randomUri())
+                .withDoi(randomDoi())
+                .withHandle(randomUri())
+                .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                .withSubjects(List.of(randomUri()))
+                .withRightsHolder(randomString())
+                .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
+                .withFundings(List.of())
+                .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                .withAssociatedArtifacts(List.of())
+                .build();
+
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

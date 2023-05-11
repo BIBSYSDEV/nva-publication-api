@@ -34,6 +34,7 @@ public final class ResourceBuilder {
     private List<URI> subjects;
     private List<Funding> fundings;
     private String rightsHolder;
+    private ImportStatus importStatus;
 
     ResourceBuilder() {
     }
@@ -128,6 +129,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withImportStatus(ImportStatus importStatus) {
+        this.importStatus = importStatus;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -148,6 +154,7 @@ public final class ResourceBuilder {
         resource.setSubjects(subjects);
         resource.setFundings(fundings);
         resource.setRightsHolder(rightsHolder);
+        resource.setImportStatus(importStatus);
         return resource;
     }
 }
