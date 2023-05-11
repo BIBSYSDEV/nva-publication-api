@@ -298,6 +298,8 @@ Resources:
     Type: "AWS::SQS::Queue"
   ResourceExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  ImportCandidateExpansionHandlerDLQ:
+    Type: "AWS::SQS::Queue"
 
 
 
@@ -1142,6 +1144,40 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+
+  EventBasedImportCandidateBatchScanHandlerTest:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          TABLE_NAME: !Ref NvaImportCandidatesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "ImportCandidates.DataEntry.ScanAndUpdateRowVersion" ]
+
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
 
   DataEntryUpdateHandler:
     DependsOn: EventsLambdaPermissions

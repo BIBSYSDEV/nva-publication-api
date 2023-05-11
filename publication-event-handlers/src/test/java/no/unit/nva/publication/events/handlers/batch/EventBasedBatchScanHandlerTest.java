@@ -112,7 +112,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         
         var expectedStaringPointForNextEvent = getLatestEmittedStartingPoint();
-        var secondScanRequest = new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, expectedStaringPointForNextEvent);
+        var secondScanRequest = new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, expectedStaringPointForNextEvent, null);
         handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
         
         var scanStartingPointSentToTheService =
@@ -124,7 +124,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldNotGoIntoInfiniteLoop() throws ApiGatewayException {
         createRandomResources(20);
-        pushInitialEntryInEventBridge(new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, START_FROM_BEGINNING));
+        pushInitialEntryInEventBridge(new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, START_FROM_BEGINNING, null));
         while (thereAreMoreEventsInEventBridge()) {
             var currentRequest = consumeLatestEmittedEvent();
             handler.handleRequest(eventToInputStream(currentRequest), output, context);
@@ -200,7 +200,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
     
     private InputStream createInitialScanRequest(int pageSize) {
-        return eventToInputStream(new ScanDatabaseRequest(pageSize, START_FROM_BEGINNING));
+        return eventToInputStream(new ScanDatabaseRequest(pageSize, START_FROM_BEGINNING, null));
     }
     
     private InputStream eventToInputStream(ScanDatabaseRequest scanDatabaseRequest) {
