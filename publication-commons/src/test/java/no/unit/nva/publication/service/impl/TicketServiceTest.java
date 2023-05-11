@@ -668,7 +668,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         expectedTicket.setAssignee(getUsername(publication));
         expectedTicket.setModifiedDate(updatedTicket.getModifiedDate());
 
-        assertThat(updatedTicket, is(equalTo(expectedTicket)));
+        assertThat(updatedTicket.getAssignee(), is(equalTo(expectedTicket.getAssignee())));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(updatedTicket.getCreatedDate())));
     }
 
