@@ -1,6 +1,7 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -47,6 +48,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String PREFERRED_FIRST_NAME_CRISTIN_TYPE = "PreferredFirstName";
     public static final String LAST_NAME_CRISTIN_TYPE = "LastName";
     public static final String PREFERRED_LAST_NAME_CRISTIN_TYPE = "PreferredLastName";
+    public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final UriRetriever uriRetriever;
@@ -67,7 +69,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     private ExpandedPerson toExpandedPerson(String response, User owner) throws JsonProcessingException {
-        var cristinPerson = JsonUtils.dtoObjectMapper.readValue(response, CristinPerson.class);
+        var cristinPerson = MAPPER.readValue(response, CristinPerson.class);
         var nameMap = cristinPerson.getNameTypeMap();
         return new ExpandedPerson.Builder()
                 .withFirstName(nameMap.get(FIRST_NAME_CRISTIN_TYPE))
@@ -93,9 +95,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             var message = (Message) dataEntry;
             var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
             return expandEntry(ticket);
+        } else {
+            // will throw exception if we want to index a new type that we are not handling yet
+            logger.info(attempt(() -> MAPPER.writeValueAsString(dataEntry)).orElseThrow());
+            throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
         }
-        // will throw exception if we want to index a new type that we are not handling yet
-        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
     }
 
     @Override
