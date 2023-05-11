@@ -868,7 +868,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreateResourceFromImportCandidate() throws NotFoundException {
         var importCandidate = randomImportCandidate();
-        var persistedImportCandidate = resourceService.createImportCandidateFromImportedEntry(importCandidate);
+        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
         assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
     }
