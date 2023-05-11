@@ -1432,6 +1432,24 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
+          OUTPUT_EVENT_TOPIC: 'PublicationService.DataEntry.ScanAndUpdateRowVersion'
+
+  ImportCandidatesBatchScanStartHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
+      Runtime: java11
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          OUTPUT_EVENT_TOPIC: 'ImportCandidates.DataEntry.ScanAndUpdateRowVersion'
 
   StartCristinImportButton:
     Type: AWS::Serverless::Function
