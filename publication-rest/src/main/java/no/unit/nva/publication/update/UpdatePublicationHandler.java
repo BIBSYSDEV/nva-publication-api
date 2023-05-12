@@ -7,6 +7,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -37,12 +38,12 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Clock;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
@@ -58,8 +59,6 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
             + " from upstream";
-    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
-
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -115,9 +114,9 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private boolean userIsContributor(URI cristinId, Publication publication) {
-        logger.info("Publication to update {}, ", publication.toString());
-        logger.info("CristinId of user {}, ", cristinId);
-        return publication.getEntityDescription().getContributors().stream()
+        return Optional.ofNullable(publication.getEntityDescription())
+                .map(EntityDescription::getContributors).stream()
+                .flatMap(Collection::stream)
                 .filter(this::hasCristinId)
                 .map(Contributor::getIdentity)
                 .map(Identity::getId)

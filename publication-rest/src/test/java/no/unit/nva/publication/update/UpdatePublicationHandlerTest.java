@@ -498,6 +498,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnForbiddenWhenContributorUpdatesResourceWithoutEntityDescription() throws BadRequestException, IOException {
+        var savedPublication = Resource.fromPublication(new Publication())
+                .persistNew(publicationService, UserInstance.fromPublication(publication));
+        var cristinId = randomUri();
+
+        InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(savedPublication, cristinId);
+        updatePublicationHandler.handleRequest(event, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+    }
+
+    @Test
     void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow()
             throws IOException, ApiGatewayException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,

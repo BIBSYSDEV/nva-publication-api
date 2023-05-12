@@ -15,6 +15,7 @@ import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -64,7 +65,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     @Override
     public Publication handleRequest(S3Event event, Context context) {
-        return attempt(() -> createPublication(event))
+        return attempt(() -> createImportCandidate(event))
                    .flatMap(this::persistInDatabase)
                    .map(publication -> storeSuccessReport(publication, event))
                    .orElseThrow(fail -> handleSavingError(fail, event));
@@ -165,10 +166,10 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return s3Event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
     }
 
-    private Try<Publication> persistInDatabase(Publication publication) {
-        Try<Publication> attemptSave = tryPersistingInDatabase(publication);
+    private Try<Publication> persistInDatabase(ImportCandidate importCandidate) {
+        Try<Publication> attemptSave = tryPersistingInDatabase(importCandidate);
         for (int efforts = 0; shouldTryAgain(attemptSave, efforts); efforts++) {
-            attemptSave = tryPersistingInDatabase(publication);
+            attemptSave = tryPersistingInDatabase(importCandidate);
             avoidCongestionInDatabase();
         }
         return attemptSave;
@@ -191,15 +192,15 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return attemptSave.isFailure() && efforts < MAX_EFFORTS;
     }
 
-    private Try<Publication> tryPersistingInDatabase(Publication publication) {
-        return attempt(() -> createPublication(publication));
+    private Try<Publication> tryPersistingInDatabase(ImportCandidate importCandidate) {
+        return attempt(() -> createImportCandidate(importCandidate));
     }
 
-    private Publication createPublication(Publication publication) {
-        return resourceService.createPublicationFromImportedEntry(publication);
+    private Publication createImportCandidate(ImportCandidate importCandidate) {
+        return resourceService.persistImportCandidate(importCandidate);
     }
 
-    private Publication createPublication(S3Event event) {
+    private ImportCandidate createImportCandidate(S3Event event) {
         return attempt(() -> readFile(event)).map(this::parseXmlFile)
                    .map(this::generatePublication)
                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
@@ -214,9 +215,9 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
     }
 
-    private Publication generatePublication(DocTp docTp) {
+    private ImportCandidate generatePublication(DocTp docTp) {
         var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection);
-        return scopusConverter.generatePublication();
+        return scopusConverter.generateImportCandidate();
     }
 
     private String readFile(S3Event event) {

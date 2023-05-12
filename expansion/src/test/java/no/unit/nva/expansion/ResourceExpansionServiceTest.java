@@ -1,6 +1,5 @@
 package no.unit.nva.expansion;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -9,6 +8,41 @@ import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
+import no.unit.nva.publication.model.business.PublicationDetails;
+import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.TicketStatus;
+
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsIn.in;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -17,16 +51,12 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
-
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -40,41 +70,13 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
-
-import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.collection.IsIn.in;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
@@ -342,6 +344,18 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"Resource", "TicketEntry", "Message"})
+    void shouldLogTypeAndIdentifierWhenEntityIsExpanded(String type)
+        throws ApiGatewayException, JsonProcessingException {
+        final var logAppender = LogUtils.getTestingAppender(ResourceExpansionServiceImpl.class);
+
+        var entity = findEntity(type);
+        expansionService.expandEntry(entity);
+
+        assertThat(logAppender.getMessages(), containsString(type + ": " + entity.getIdentifier().toString()));
+    }
+
+    @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldUpdateExpandedTicketStatusNewWhenTicketStatusIsPendingWithoutAssignee(
         Class<? extends TicketEntry> ticketType,
@@ -379,7 +393,24 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getStatus(), is(equalTo(ExpandedTicketStatus.COMPLETED)));
     }
 
-      private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
+    private Entity findEntity(String type) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(PUBLISHED, USER, resourceService);
+        publication.setEntityDescription(new EntityDescription());
+        var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+
+        switch (type) {
+            case "Resource":
+                return Resource.fromPublication(publication);
+            case "TicketEntry":
+                return ticket;
+            case "Message":
+                return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+            default:
+                throw new IllegalArgumentException("Unknown Entity type");
+        }
+    }
+
+    private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)
         throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticketService.updateTicketAssignee(ticket, new Username(USER.getUsername()));

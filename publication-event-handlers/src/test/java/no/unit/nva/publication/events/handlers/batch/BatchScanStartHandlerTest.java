@@ -1,11 +1,5 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import java.io.IOException;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.stubs.FakeContext;
@@ -13,8 +7,16 @@ import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+
 class BatchScanStartHandlerTest {
-    
+
     public static final int NOT_SET_PAGE_SIZE = 0;
     private final FakeContext context = new FakeContext() {
         @Override
@@ -22,7 +24,7 @@ class BatchScanStartHandlerTest {
             return randomString();
         }
     };
-    
+
     @Test
     void shouldSendInitialScanMessageWithDefaultPageSizeWhenPageSizeIsNotSet() throws IOException {
         var client = new FakeEventBridgeClient();
@@ -35,7 +37,7 @@ class BatchScanStartHandlerTest {
         var sentRequest = JsonUtils.dtoObjectMapper.readValue(eventDetail, ScanDatabaseRequest.class);
         assertThat(sentRequest.getPageSize(), is(equalTo(ScanDatabaseRequest.DEFAULT_PAGE_SIZE)));
     }
-    
+
     @Test
     void shouldSendInitialScanMessageForInitiatingBatchScanning() throws IOException {
         FakeEventBridgeClient client = new FakeEventBridgeClient();

@@ -134,12 +134,88 @@ Resources:
 
   #===========================DynamoDB Table========================================================
 
+  # NB! for compatibility reasons (ResourceService is re-used) NvaImportCandidatesTable should be a copy of NvaResourcesTable
+  # Any changes done to the structure of NvaResourcesTable should be duplicated in NvaImportCandidatesTable
+  # Remove this message if they no longer need to be compatible.
+
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
     DeletionPolicy: Delete # DeletionPolicy should be added on main branch stacks through use of stack policy
     Properties:
       TableName: !Sub nva-resources-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK0
+          AttributeType: S
+        - AttributeName: SK0
+          AttributeType: S
+        - AttributeName: PK1
+          AttributeType: S
+        - AttributeName: SK1
+          AttributeType: S
+        - AttributeName: PK2
+          AttributeType: S
+        - AttributeName: SK2
+          AttributeType: S
+        - AttributeName: PK3
+          AttributeType: S
+        - AttributeName: SK3
+          AttributeType: S
+        - AttributeName: PK4
+          AttributeType: S
+        - AttributeName: SK4
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK0
+          KeyType: HASH
+        - AttributeName: SK0
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ByTypeCustomerStatus
+          KeySchema:
+            - AttributeName: PK1
+              KeyType: HASH
+            - AttributeName: SK1
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ByCustomerResource
+          KeySchema:
+            - AttributeName: PK2
+              KeyType: HASH
+            - AttributeName: SK2
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ResourcesByIdentifier
+          KeySchema:
+            - AttributeName: PK3
+              KeyType: HASH
+            - AttributeName: SK3
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ResourceByCristinId
+          KeySchema:
+            - AttributeName: PK4
+              KeyType: HASH
+            - AttributeName: SK4
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
+  NvaImportCandidatesTable:
+    Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete # DeletionPolicy should be added on main branch stacks through use of stack policy
+    Properties:
+      TableName: !Sub nva-import-candidates-${AWS::StackName}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: PK0
@@ -222,6 +298,8 @@ Resources:
   DoiRequestEventProducerDLQ:
     Type: "AWS::SQS::Queue"
   ResourceExpansionHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  ImportCandidateExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
 
 
@@ -341,6 +419,8 @@ Resources:
             Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}/index/*
 
   S3AccessPermsisions:
     Type: AWS::IAM::Policy
@@ -390,7 +470,9 @@ Resources:
               - dynamodb:DescribeStream
               - dynamodb:ListStreams
               - dynamodb:GetRecords
-            Resource: !GetAtt NvaResourcesTable.StreamArn
+            Resource:
+              - !GetAtt NvaResourcesTable.StreamArn
+              - !GetAtt NvaImportCandidatesTable.StreamArn
 
 
   EventsLambdaPermissions:
@@ -640,23 +722,25 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
-  UpdateTicketViewStatusHandler:
+  UpdateTicketHandler:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: tickets
-      Handler: no.unit.nva.publication.ticket.update.UpdateTicketViewStatusHandler::handleRequest
+      Handler: no.unit.nva.publication.ticket.update.UpdateTicketHandler::handleRequest
       Runtime: java11
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/viewed
-            Method: post
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
+            Method: put
             RestApiId: !Ref NvaPublicationApi
 
   CreateTicketFunction:
@@ -699,29 +783,6 @@ Resources:
           Properties:
             Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
             Method: get
-            RestApiId: !Ref NvaPublicationApi
-
-  UpdateTicketFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: tickets
-      Handler: no.unit.nva.publication.ticket.update.UpdateTicketStatusHandler::handleRequest
-      Runtime: java11
-      Timeout: 30
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-          API_HOST: !Ref ApiDomain
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
-            Method: put
             RestApiId: !Ref NvaPublicationApi
 
   ListTicketsForPublicationHandler:
@@ -785,7 +846,7 @@ Resources:
       Environment:
         Variables:
           API_HOST: !Ref ApiDomain
-          TABLE_NAME: !Ref NvaResourcesTable
+          TABLE_NAME: !Ref NvaImportCandidatesTable
           PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
           PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
           PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
@@ -1087,6 +1148,40 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
+  EventBasedImportCandidateBatchScanHandlerTest:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          TABLE_NAME: !Ref NvaImportCandidatesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "ImportCandidates.DataEntry.ScanAndUpdateRowVersion" ]
+
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+
   DataEntryUpdateHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -1168,11 +1263,38 @@ Resources:
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          OUTPUT_EVENT_TOPIC: 'PublicationService.Database.Update'
       Events:
         FanoutSource:
           Type: DynamoDB
           Properties:
             Stream: !GetAtt NvaResourcesTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+            Enabled: true
+
+  ImportCandidateDynamodbStreamToEventBridgeHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
+      Timeout: 360
+      Runtime: java11
+      Tracing: Active
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
+          MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          OUTPUT_EVENT_TOPIC: 'ImportCandidate.Database.Update'
+      Events:
+        FanoutSource:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt NvaImportCandidatesTable.StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
@@ -1340,6 +1462,24 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
+          OUTPUT_EVENT_TOPIC: 'PublicationService.DataEntry.ScanAndUpdateRowVersion'
+
+  ImportCandidatesBatchScanStartHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
+      Runtime: java11
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          OUTPUT_EVENT_TOPIC: 'ImportCandidates.DataEntry.ScanAndUpdateRowVersion'
 
   StartCristinImportButton:
     Type: AWS::Serverless::Function

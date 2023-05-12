@@ -1,18 +1,6 @@
 package no.unit.nva.expansion;
 
-import static no.unit.nva.expansion.model.ExpandedPerson.FIRST_NAME;
-import static no.unit.nva.expansion.model.ExpandedPerson.LAST_NAME;
-import static no.unit.nva.expansion.model.ExpandedPerson.PREFERRED_FIRST_NAME;
-import static no.unit.nva.expansion.model.ExpandedPerson.PREFERRED_LAST_NAME;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -34,6 +22,16 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static nva.commons.core.attempt.Try.attempt;
+
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     public static final Logger logger = LoggerFactory.getLogger(ResourceExpansionServiceImpl.class);
@@ -45,6 +43,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String CRISTIN_ID_DELIMITER = "@";
     private static final String EXPAND_PERSON_DEFAULT_INFO = "Could not retrieve Cristin Person. Creating default "
                                                              + "expanded person for owner";
+    public static final String FIRST_NAME_CRISTIN_TYPE = "FirstName";
+    public static final String PREFERRED_FIRST_NAME_CRISTIN_TYPE = "PreferredFirstName";
+    public static final String LAST_NAME_CRISTIN_TYPE = "LastName";
+    public static final String PREFERRED_LAST_NAME_CRISTIN_TYPE = "PreferredLastName";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final UriRetriever uriRetriever;
@@ -68,10 +70,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         var cristinPerson = JsonUtils.dtoObjectMapper.readValue(response, CristinPerson.class);
         var nameMap = cristinPerson.getNameTypeMap();
         return new ExpandedPerson.Builder()
-                .withFirstName(nameMap.get(FIRST_NAME))
-                .withPreferredFirstName(nameMap.get(PREFERRED_FIRST_NAME))
-                .withLastName(nameMap.get(LAST_NAME))
-                .withPreferredLastName(nameMap.get(PREFERRED_LAST_NAME))
+                .withFirstName(nameMap.get(FIRST_NAME_CRISTIN_TYPE))
+                .withPreferredFirstName(nameMap.get(PREFERRED_FIRST_NAME_CRISTIN_TYPE))
+                .withLastName(nameMap.get(LAST_NAME_CRISTIN_TYPE))
+                .withPreferredLastName(nameMap.get(PREFERRED_LAST_NAME_CRISTIN_TYPE))
                 .withUser(owner)
                 .build();
 
@@ -79,11 +81,15 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
+        var identifier = dataEntry.getIdentifier();
         if (dataEntry instanceof Resource) {
+            logger.info("Expanding Resource: {}", identifier);
             return ExpandedResource.fromPublication(uriRetriever, dataEntry.toPublication(resourceService));
         } else if (dataEntry instanceof TicketEntry) {
+            logger.info("Expanding TicketEntry: {}", identifier);
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
         } else if (dataEntry instanceof Message) {
+            logger.info("Expanding Message: {}", identifier);
             var message = (Message) dataEntry;
             var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
             return expandEntry(ticket);
