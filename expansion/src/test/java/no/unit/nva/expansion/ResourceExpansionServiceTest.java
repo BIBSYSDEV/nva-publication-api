@@ -24,12 +24,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
@@ -50,6 +53,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -79,6 +83,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
     private static final String FINALIZED_BY = "finalizedBy";
+    public static final String HAPPY_DAYS = "Happy days!";
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
@@ -258,13 +263,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getPublication().getTitle(), is(equalTo(expectedTitle)));
     }
 
-    @Test
-    void shouldThrowIfUnsupportedType() {
-        var unsupportedImplementation = mock(Entity.class);
-        assertThrows(UnsupportedOperationException.class,
-                () -> expansionService.expandEntry(unsupportedImplementation));
-    }
-
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
@@ -346,6 +344,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(logAppender.getMessages(), containsString(type + ": " + entity.getIdentifier().toString()));
     }
 
+    @Test
+    void shouldLogAndThrowExceptionWhenInputIsUnknownType() throws JsonProcessingException {
+        final var logAppender = LogUtils.getTestingAppender(ResourceExpansionServiceImpl.class);
+        var entity = new FakeEntity(HAPPY_DAYS, new SortableIdentifier(UUID.randomUUID().toString()));
+        var expectedMessage = JsonUtils.dtoObjectMapper.writeValueAsString(entity);
+        assertThrows(UnsupportedOperationException.class, () -> expansionService.expandEntry(entity));
+        assertThat(logAppender.getMessages(), containsString(expectedMessage));
+    }
+
     private Entity findEntity(String type) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(PUBLISHED, USER, resourceService);
         publication.setEntityDescription(new EntityDescription());
@@ -413,5 +420,80 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                         .build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                 UserInstance.fromPublication(publication));
+    }
+
+    private class FakeEntity implements Entity {
+
+        private final String comment;
+        private final SortableIdentifier identifier;
+
+        public FakeEntity(String comment, SortableIdentifier identifier) {
+            this.comment = comment;
+            this.identifier = identifier;
+        }
+
+        @Override
+        public SortableIdentifier getIdentifier() {
+            return identifier;
+        }
+
+        @Override
+        public void setIdentifier(SortableIdentifier identifier) {
+
+        }
+
+        @Override
+        public Publication toPublication(ResourceService resourceService) {
+            return null;
+        }
+
+        @Override
+        public String getType() {
+            return null;
+        }
+
+        @Override
+        public Instant getCreatedDate() {
+            return null;
+        }
+
+        @Override
+        public void setCreatedDate(Instant now) {
+
+        }
+
+        @Override
+        public Instant getModifiedDate() {
+            return null;
+        }
+
+        @Override
+        public void setModifiedDate(Instant now) {
+
+        }
+
+        @Override
+        public User getOwner() {
+            return null;
+        }
+
+        @Override
+        public URI getCustomerId() {
+            return null;
+        }
+
+        @Override
+        public Dao toDao() {
+            return null;
+        }
+
+        @Override
+        public String getStatusString() {
+            return null;
+        }
+
+        public String getComment() {
+            return comment;
+        }
     }
 }
