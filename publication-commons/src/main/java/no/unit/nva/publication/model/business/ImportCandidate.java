@@ -66,6 +66,28 @@ public class ImportCandidate extends Publication {
             importCandidate = new ImportCandidate();
         }
 
+        public Builder withPublication(Publication publication) {
+            importCandidate.setIdentifier(publication.getIdentifier());
+            importCandidate.setStatus(publication.getStatus());
+            importCandidate.setPublisher(publication.getPublisher());
+            importCandidate.setCreatedDate(publication.getCreatedDate());
+            importCandidate.setModifiedDate(publication.getModifiedDate());
+            importCandidate.setPublishedDate(publication.getPublishedDate());
+            importCandidate.setIndexedDate(publication.getIndexedDate());
+            importCandidate.setHandle(publication.getHandle());
+            importCandidate.setDoi(publication.getDoi());
+            importCandidate.setLink(publication.getLink());
+            importCandidate.setEntityDescription(publication.getEntityDescription());
+            importCandidate.setAssociatedArtifacts(publication.getAssociatedArtifacts());
+            importCandidate.setProjects(publication.getProjects());
+            importCandidate.setFundings(publication.getFundings());
+            importCandidate.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
+            importCandidate.setSubjects(publication.getSubjects());
+            importCandidate.setResourceOwner(publication.getResourceOwner());
+            importCandidate.setRightsHolder(publication.getRightsHolder());
+            return this;
+        }
+
         public Builder withImportStatus(ImportStatus importStatus) {
             importCandidate.setImportStatus(importStatus);
             return this;
