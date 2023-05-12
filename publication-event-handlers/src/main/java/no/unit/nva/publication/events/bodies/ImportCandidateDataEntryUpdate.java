@@ -1,7 +1,9 @@
 package no.unit.nva.publication.events.bodies;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.business.ImportCandidate;
@@ -41,6 +43,11 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
 
     public ImportCandidate getNewData() {
         return newData;
+    }
+
+    @JsonIgnore
+    public boolean notEmpty() {
+        return nonNull(oldData) || nonNull(newData);
     }
 
     @JsonProperty("topic")

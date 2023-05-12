@@ -53,15 +53,6 @@ import org.mockito.Mockito;
 
 public class ImportCandidateDataEntryUpdateHandlerTest {
 
-    /*
-    Kun én ting som skal implementeres: at det kommer en oppdatering på en ImportPublication.
-    1. lage eventen som det skal lyttes på
-    2. avgjøre at eventen har rett type.
-    3. avgjøre at eventen skal videre til persistence.
-
-    Hvis ikke emit zero event.
-     */
-
     private final Context context = Mockito.mock(Context.class);
     private OutputStream outputStream;
     private S3Driver s3Driver;
@@ -72,7 +63,7 @@ public class ImportCandidateDataEntryUpdateHandlerTest {
         outputStream = new ByteArrayOutputStream();
         var s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
-        handler = new ImportCandidateDataEntryUpdateHandler();
+        handler = new ImportCandidateDataEntryUpdateHandler(s3Client);
     }
 
     @ParameterizedTest(name = "should convert a DynamoDbStream to a DataEntryUpdate event")
