@@ -1,61 +1,11 @@
 package no.unit.nva.publication.service.impl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.*;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.ListingResult;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.model.business.*;
-import no.unit.nva.publication.model.business.ImportStatus;
-import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import no.unit.nva.testutils.RandomDataGenerator;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.SingletonCollector;
-import nva.commons.core.attempt.Try;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
-import org.hamcrest.Matchers;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.EnumSource.Mode;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.*;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
@@ -80,6 +30,80 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.ListingResult;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.PublicationDetails;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.testutils.RandomDataGenerator;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.SingletonCollector;
+import nva.commons.core.attempt.Try;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
+import org.hamcrest.Matchers;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
+import org.javers.core.diff.Diff;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -91,8 +115,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final String MAIN_TITLE_FIELD = "mainTitle";
     private static final String ANOTHER_TITLE = "anotherTitle";
     private static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
-                                                                              + " does not have a field"
-                                                                              + MAIN_TITLE_FIELD;
+                                                                               + " does not have a field"
+                                                                               + MAIN_TITLE_FIELD;
     private static final Javers JAVERS = JaversBuilder.javers().build();
     private static final int BIG_PAGE = 10;
     private static final URI UNIMPORTANT_AFFILIATION = null;
@@ -111,7 +135,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private MessageService messageService;
     private Instant now;
     private Clock clock;
-
 
     @BeforeEach
     public void init() {
@@ -793,7 +816,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker(
-            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
@@ -874,48 +897,50 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    @Disabled
-    void shouldReturnIdentifiersOfItemsThatFailedToBeRefreshed() {
+    void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
         var failingClient = new FailingDynamoClient(this.client);
         resourceService = new ResourceService(failingClient, clock);
 
         var userInstance = UserInstance.create(randomString(), randomUri());
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
+        // correctness of this test rely on number of publications generated above does not exceed
+        // ResourceService.MAX_SIZE_OF_BATCH_REQUEST
         var resources = userResources.stream()
-          .map(Resource::fromPublication)
-          .map(Entity.class::cast)
-          .collect(Collectors.toList());
+                            .map(Resource::fromPublication)
+                            .map(Entity.class::cast)
+                            .collect(Collectors.toList());
 
-        var expectedIdentifiers = userResources.stream()
-          .map(Publication::getIdentifier)
-          .collect(Collectors.toList());
+        var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        var exception =
-          assertThrows(BatchUpdateFailureException.class,
-            () -> resourceService.refreshResources(resources));
+        resourceService.refreshResources(resources);
 
-        for (var identifier : expectedIdentifiers) {
-            assertThat(exception.getMessage(), containsString(identifier.toString()));
-        }
+        assertThatFailedBatchScanLogsProperly(testAppender, userResources);
+    }
+
+    private void assertThatFailedBatchScanLogsProperly(TestAppender testAppender, Set<Publication> userResources) {
+        assertThat(testAppender.getMessages(), containsString("AmazonDynamoDBException"));
+        userResources.forEach(publication -> {
+            var expected = "Resource:" + publication.getIdentifier().toString();
+            assertThat(testAppender.getMessages(), containsString(expected));
+        });
     }
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                .withStatus(PublicationStatus.PUBLISHED)
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
-                .withLink(randomUri())
-                .withDoi(randomDoi())
-                .withHandle(randomUri())
-                .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                .withSubjects(List.of(randomUri()))
-                .withRightsHolder(randomString())
-                .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                .withFundings(List.of())
-                .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                .withAssociatedArtifacts(List.of())
-                .build();
-
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withLink(randomUri())
+                   .withDoi(randomDoi())
+                   .withHandle(randomUri())
+                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                   .withSubjects(List.of(randomUri()))
+                   .withRightsHolder(randomString())
+                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
+                   .withFundings(List.of())
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                   .withAssociatedArtifacts(List.of())
+                   .build();
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
@@ -1115,7 +1140,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication injectOwner(UserInstance userInstance, Publication publication) {
         return publication.copy()
                    .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()),
-                                                                     AFFILIATION_NOT_IMPORTANT))
+                                                        AFFILIATION_NOT_IMPORTANT))
                    .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
                    .build();
     }
@@ -1138,7 +1163,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private Publication updateResourceTitle(Publication resource) {
         EntityDescription newEntityDescription = new EntityDescription.Builder().withMainTitle(UPDATED_TITLE).build();
-        
+
         assertThatNewEntityDescriptionDiffersOnlyInTitle(resource.getEntityDescription(), newEntityDescription);
         return resource.copy().withEntityDescription(newEntityDescription).build();
     }
@@ -1150,7 +1175,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         int mainTitleChanges = diff.getPropertyChanges(mainTitleFieldName).size();
         assertThat(mainTitleChanges, is(equalTo(1)));
     }
-    
+
     private String fetchMainTitleFieldName() {
         return attempt(() -> EntityDescription.class.getDeclaredField(MAIN_TITLE_FIELD).getName()).orElseThrow(
             fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));

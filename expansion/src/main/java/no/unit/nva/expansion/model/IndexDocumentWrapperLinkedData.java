@@ -23,7 +23,6 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
 
 public class IndexDocumentWrapperLinkedData {
-
     public static final String PART_OF_FIELD = "/partOf";
     public static final String ID_FIELD = "/id";
     private final UriRetriever uriRetriever;
@@ -57,7 +56,8 @@ public class IndexDocumentWrapperLinkedData {
 
     private List<InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
         return extractAffiliationUris(indexDocument)
-                   .stream().flatMap(this::fetchContentRecursively)
+                   .stream()
+                   .flatMap(this::fetchContentRecursively)
                    .map(IoUtils::stringToStream)
                    .collect(Collectors.toList());
     }
