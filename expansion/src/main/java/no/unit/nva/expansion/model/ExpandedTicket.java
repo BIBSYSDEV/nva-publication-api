@@ -14,7 +14,6 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -45,7 +44,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     @JsonProperty(MESSAGES_FIELD)
     private List<ExpandedMessage> messages;
     @JsonProperty(VIEWED_BY_FIELD)
-    private Set<User> viewedBy;
+    private Set<ExpandedPerson> viewedBy;
     @JsonProperty(PUBLICATION_FIELD)
     private PublicationSummary publication;
     @JsonProperty(FINALIZED_BY_FIELD)
@@ -92,11 +91,11 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
         this.finalizedBy = finalizedBy;
     }
 
-    public final Set<User> getViewedBy() {
+    public final Set<ExpandedPerson> getViewedBy() {
         return viewedBy;
     }
 
-    public final void setViewedBy(Set<User> viewedBy) {
+    public final void setViewedBy(Set<ExpandedPerson> viewedBy) {
         this.viewedBy = viewedBy;
     }
 

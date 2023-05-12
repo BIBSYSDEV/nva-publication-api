@@ -60,8 +60,9 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
         var assignee = expandAssignee(publishingRequestCase, resourceExpansionService);
         var finalzedBy = expandFinalzedBy(publishingRequestCase, resourceExpansionService);
+        var viewedBy = expandViewedBy(publishingRequestCase.getViewedBy(), resourceExpansionService);
         return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee
-            , finalzedBy);
+            , finalzedBy, viewedBy);
     }
 
     private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
@@ -77,7 +78,8 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                            PublishingWorkflow workflow,
                                                            ExpandedPerson owner,
                                                            ExpandedPerson assignee,
-                                                           ExpandedPerson finalizedBy) {
+                                                           ExpandedPerson finalizedBy,
+                                                           Set<ExpandedPerson> viewedBy) {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
@@ -88,7 +90,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setCreatedDate(dataEntry.getCreatedDate());
         entry.setModifiedDate(dataEntry.getModifiedDate());
         entry.setMessages(messages);
-        entry.setViewedBy(dataEntry.getViewedBy());
+        entry.setViewedBy(viewedBy);
         entry.setWorkflow(workflow);
         entry.setFinalizedBy(finalizedBy);
         entry.setOwner(owner);
@@ -118,6 +120,13 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
             .map(User::new)
             .map(expansionService::expandPerson)
             .orElse(null);
+    }
+
+    private static Set<ExpandedPerson> expandViewedBy(Set<User> users,
+                                                      ResourceExpansionService resourceExpansionService) {
+        return users.stream()
+            .map(resourceExpansionService::expandPerson)
+            .collect(Collectors.toSet());
     }
 
     @JacocoGenerated

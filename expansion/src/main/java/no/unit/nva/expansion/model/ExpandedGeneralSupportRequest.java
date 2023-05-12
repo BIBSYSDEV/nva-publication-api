@@ -48,7 +48,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setMessages(expandMessages(dataEntry.fetchMessages(ticketService), resourceExpansionService));
-        entry.setViewedBy(dataEntry.getViewedBy());
+        entry.setViewedBy(expandViewedBy(dataEntry.getViewedBy(), resourceExpansionService));
         entry.setFinalizedBy(expandFinalizedBy(dataEntry, resourceExpansionService));
         entry.setAssignee(expandAssignee(dataEntry, resourceExpansionService));
         return entry;
@@ -76,6 +76,13 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
             .map(User::new)
             .map(expansionService::expandPerson)
             .orElse(null);
+    }
+
+    private static Set<ExpandedPerson> expandViewedBy(Set<User> users,
+                                                      ResourceExpansionService resourceExpansionService) {
+        return users.stream()
+            .map(resourceExpansionService::expandPerson)
+            .collect(Collectors.toSet());
     }
 
     public Instant getModifiedDate() {

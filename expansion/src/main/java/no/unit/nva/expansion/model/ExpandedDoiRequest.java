@@ -55,7 +55,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
         expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
         expandedDoiRequest.setAssignee(expandAssignee(doiRequest, expansionService));
-        expandedDoiRequest.setAssignee(expandFinalizedBy(doiRequest, expansionService));
+        expandedDoiRequest.setFinalizedBy(expandFinalizedBy(doiRequest, expansionService));
         return expandedDoiRequest;
     }
 
@@ -100,7 +100,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setCustomerId(doiRequest.getCustomerId());
         entry.setModifiedDate(doiRequest.getModifiedDate());
         entry.setStatus(doiRequest.getStatus());
-        entry.setViewedBy(doiRequest.getViewedBy());
+        entry.setViewedBy(expandViewedBy(doiRequest.getViewedBy(), resourceExpansionService));
         entry.setPublication(publicationSummary);
         entry.setFinalizedBy(expandFinalzedBy(doiRequest, resourceExpansionService));
         return entry;
@@ -113,6 +113,13 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
             .map(User::new)
             .map(resourceExpansionService::expandPerson)
             .orElse(null);
+    }
+
+    private static Set<ExpandedPerson> expandViewedBy(Set<User> users,
+                                                      ResourceExpansionService resourceExpansionService) {
+        return users.stream()
+            .map(resourceExpansionService::expandPerson)
+            .collect(Collectors.toSet());
     }
 
     @JacocoGenerated
