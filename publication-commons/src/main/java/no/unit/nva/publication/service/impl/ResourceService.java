@@ -68,20 +68,18 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
-
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
+    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -153,13 +151,18 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createImportCandidateFromImportedEntry(ImportCandidate inputData) {
+    /**
+     * Persists importCandidate with updated database metadata fields.
+     *
+     * @param inputData importCandidate from external source
+     * @return updated importCandidate that has been sent to persistence
+     */
+    public ImportCandidate persistImportCandidate(ImportCandidate inputData) {
         Resource newResource = Resource.fromImportCandidate(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
-        newResource.setStatus(PublicationStatus.PUBLISHED);
         return insertResourceFromImportCandidate(newResource);
     }
 
@@ -395,7 +398,7 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedPublication(newResource);
     }
 
-    private Publication insertResourceFromImportCandidate(Resource newResource) {
+    private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
@@ -403,10 +406,10 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedImportCandidate(newResource);
     }
 
-    private Publication fetchSavedImportCandidate(Resource newResource) {
+    private ImportCandidate fetchSavedImportCandidate(Resource newResource) {
         return Optional.ofNullable(fetchSavedResource(newResource))
-                .map(Resource::toImportCandidate)
-                .orElse(null);
+                   .map(Resource::toImportCandidate)
+                   .orElse(null);
     }
 
     private Publication fetchSavedPublication(Resource newResource) {

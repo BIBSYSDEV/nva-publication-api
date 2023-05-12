@@ -8,7 +8,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -31,6 +30,10 @@ import static org.hamcrest.Matchers.is;
 
 public class ImportCandidateTest {
 
+    private static Funding randomFunding() {
+        return new FundingBuilder().withId(randomUri()).build();
+    }
+
     @Test
     void shouldCreatePublicationFromImportCandidate() {
         var randomImportCandidate = randomImportCandidate();
@@ -43,7 +46,6 @@ public class ImportCandidateTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                .withStatus(PublicationStatus.PUBLISHED)
                 .withImportStatus(ImportStatus.NOT_IMPORTED)
                 .withEntityDescription(randomEntityDescription())
                 .withLink(randomUri())
@@ -66,10 +68,6 @@ public class ImportCandidateTest {
 
     }
 
-    private static Funding randomFunding() {
-        return new FundingBuilder().withId(randomUri()).build();
-    }
-
     private EntityDescription randomEntityDescription() {
         return new EntityDescription.Builder()
                 .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
@@ -89,7 +87,6 @@ public class ImportCandidateTest {
 
     private Publication createExpectedPublication(ImportCandidate randomImportCandidate) {
         return new Publication.Builder()
-                .withStatus(PublicationStatus.PUBLISHED)
                 .withAssociatedArtifacts(randomImportCandidate.getAssociatedArtifacts())
                 .withEntityDescription(randomImportCandidate.getEntityDescription())
                 .withAdditionalIdentifiers(randomImportCandidate.getAdditionalIdentifiers())

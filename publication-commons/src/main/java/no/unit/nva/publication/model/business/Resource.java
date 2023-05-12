@@ -197,8 +197,12 @@ public class Resource implements Entity {
         this.identifier = identifier;
     }
 
-    public ImportStatus getImportStatus() {
-        return importStatus;
+    /**
+     * This gets the import status for importCandidate and should be null in other context.
+     * @return importStatus if Resource is an ImportCandidate
+     */
+    public Optional<ImportStatus> getImportStatus() {
+        return Optional.ofNullable(importStatus);
     }
 
     public void setImportStatus(ImportStatus importStatus) {
@@ -253,7 +257,7 @@ public class Resource implements Entity {
                 .withSubjects(getSubjects())
                 .withFundings(getFundings())
                 .withRightsHolder(getRightsHolder())
-                .withImportStatus(getImportStatus())
+                .withImportStatus(getImportStatus().orElse(null))
                 .build();
     }
 

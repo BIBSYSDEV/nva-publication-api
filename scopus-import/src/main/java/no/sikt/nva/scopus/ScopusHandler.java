@@ -197,7 +197,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private Publication createImportCandidate(ImportCandidate importCandidate) {
-        return resourceService.createImportCandidateFromImportedEntry(importCandidate);
+        return resourceService.persistImportCandidate(importCandidate);
     }
 
     private ImportCandidate createImportCandidate(S3Event event) {
