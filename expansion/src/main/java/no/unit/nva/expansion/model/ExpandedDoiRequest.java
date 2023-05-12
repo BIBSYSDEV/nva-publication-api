@@ -3,6 +3,12 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -17,13 +23,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
@@ -49,77 +48,15 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
                                                  ResourceExpansionService expansionService,
                                                  ResourceService resourceService,
                                                  TicketService ticketService)
-            throws NotFoundException {
+        throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService, expansionService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
         expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
-        expandedDoiRequest.setAssignee(expandAssignee(doiRequest, expansionService));
-        expandedDoiRequest.setFinalizedBy(expandFinalizedBy(doiRequest, expansionService));
+        expandedDoiRequest.setAssignee(extractPersonUsername(doiRequest.getAssignee(), expansionService));
+        expandedDoiRequest.setFinalizedBy(extractPersonUsername(doiRequest.getFinalizedBy(), expansionService));
+        expandedDoiRequest.setViewedBy(expandPersonViewedByUsername(doiRequest.getViewedBy(), expansionService));
         return expandedDoiRequest;
-    }
-
-    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
-        return messages.stream()
-                .map(expansionService::expandMessage)
-                .collect(Collectors.toList());
-    }
-
-    private static ExpandedPerson expandAssignee(DoiRequest doiRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(doiRequest.getAssignee())
-                .map(Username::getValue)
-                .map(User::new)
-                .map(expansionService::expandPerson)
-                .orElse(null);
-    }
-
-    private static ExpandedPerson expandFinalizedBy(DoiRequest doiRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(doiRequest.getFinalizedBy())
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
-    }
-
-    private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
-                                                                ResourceExpansionService resourceExpansionService)
-            throws NotFoundException {
-        return resourceExpansionService.getOrganizationIds(doiRequest);
-    }
-
-    // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
-    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService,
-                                                     ResourceExpansionService resourceExpansionService) {
-        var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
-        ExpandedDoiRequest entry = new ExpandedDoiRequest();
-        entry.setPublication(publicationSummary);
-        entry.setCreatedDate(doiRequest.getCreatedDate());
-        entry.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
-        entry.setCustomerId(doiRequest.getCustomerId());
-        entry.setModifiedDate(doiRequest.getModifiedDate());
-        entry.setStatus(doiRequest.getStatus());
-        entry.setViewedBy(expandViewedBy(doiRequest.getViewedBy(), resourceExpansionService));
-        entry.setPublication(publicationSummary);
-        entry.setFinalizedBy(expandFinalzedBy(doiRequest, resourceExpansionService));
-        return entry;
-    }
-
-    private static ExpandedPerson expandFinalzedBy(DoiRequest doiRequest,
-                                                   ResourceExpansionService resourceExpansionService) {
-        return Optional.ofNullable(doiRequest.getFinalizedBy())
-            .map(Username::getValue)
-            .map(User::new)
-            .map(resourceExpansionService::expandPerson)
-            .orElse(null);
-    }
-
-    private static Set<ExpandedPerson> expandViewedBy(Set<User> users,
-                                                      ResourceExpansionService resourceExpansionService) {
-        return users.stream()
-            .map(resourceExpansionService::expandPerson)
-            .collect(Collectors.toSet());
     }
 
     @JacocoGenerated
@@ -189,14 +126,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return doiRequest;
     }
 
-    private Username extractAssigneeUsername() {
-        return Optional.ofNullable(this.getAssignee())
-                .map(ExpandedPerson::getUsername)
-                .map(User::toString)
-                .map(Username::new)
-                .orElse(null);
-    }
-
     @Override
     @JacocoGenerated
     public TicketStatus getStatus() {
@@ -211,5 +140,59 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return extractIdentifier(getId());
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages,
+                                                        ResourceExpansionService expansionService) {
+        return messages.stream()
+            .map(expansionService::expandMessage)
+            .collect(Collectors.toList());
+    }
+
+    private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
+                                                                ResourceExpansionService resourceExpansionService)
+        throws NotFoundException {
+        return resourceExpansionService.getOrganizationIds(doiRequest);
+    }
+
+    // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
+    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService,
+                                                     ResourceExpansionService resourceExpansionService) {
+        var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
+        ExpandedDoiRequest entry = new ExpandedDoiRequest();
+        entry.setPublication(publicationSummary);
+        entry.setCreatedDate(doiRequest.getCreatedDate());
+        entry.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
+        entry.setCustomerId(doiRequest.getCustomerId());
+        entry.setModifiedDate(doiRequest.getModifiedDate());
+        entry.setStatus(doiRequest.getStatus());
+        entry.setViewedBy(expandPersonViewedByUsername(doiRequest.getViewedBy(), resourceExpansionService));
+        entry.setPublication(publicationSummary);
+        entry.setFinalizedBy(extractPersonUsername(doiRequest.getFinalizedBy(), resourceExpansionService));
+        return entry;
+    }
+
+    private static ExpandedPerson extractPersonUsername(Username username,
+                                                        ResourceExpansionService expansionService) {
+        return Optional.ofNullable(username)
+            .map(Username::getValue)
+            .map(User::new)
+            .map(expansionService::expandPerson)
+            .orElse(null);
+    }
+
+    private static Set<ExpandedPerson> expandPersonViewedByUsername(Set<User> users,
+                                                                    ResourceExpansionService resourceExpansionService) {
+        return users.stream()
+            .map(resourceExpansionService::expandPerson)
+            .collect(Collectors.toSet());
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+            .map(ExpandedPerson::getUsername)
+            .map(User::toString)
+            .map(Username::new)
+            .orElse(null);
     }
 }

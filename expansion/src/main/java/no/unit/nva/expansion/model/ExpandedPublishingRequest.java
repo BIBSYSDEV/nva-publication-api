@@ -1,6 +1,15 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -17,17 +26,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ExpandedPublishingRequest extends ExpandedTicket {
 
@@ -51,82 +49,18 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                         ResourceService resourceService,
                                                         ResourceExpansionService resourceExpansionService,
                                                         TicketService ticketService)
-            throws NotFoundException {
+        throws NotFoundException {
 
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
         var messages = expandMessages(publishingRequestCase.fetchMessages(ticketService), resourceExpansionService);
         var workflow = publishingRequestCase.getWorkflow();
         var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
-        var assignee = expandAssignee(publishingRequestCase, resourceExpansionService);
-        var finalzedBy = expandFinalzedBy(publishingRequestCase, resourceExpansionService);
-        var viewedBy = expandViewedBy(publishingRequestCase.getViewedBy(), resourceExpansionService);
+        var assignee = extractPersonUsername(publishingRequestCase.getAssignee(), resourceExpansionService);
+        var finalzedBy = extractPersonUsername(publishingRequestCase.getFinalizedBy(), resourceExpansionService);
+        var viewedBy = expandPersonViewedByUsername(publishingRequestCase.getViewedBy(), resourceExpansionService);
         return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee
             , finalzedBy, viewedBy);
-    }
-
-    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
-        return messages.stream()
-                .map(expansionService::expandMessage)
-                .collect(Collectors.toList());
-    }
-
-    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
-                                                           Publication publication,
-                                                           Set<URI> organizationIds,
-                                                           List<ExpandedMessage> messages,
-                                                           PublishingWorkflow workflow,
-                                                           ExpandedPerson owner,
-                                                           ExpandedPerson assignee,
-                                                           ExpandedPerson finalizedBy,
-                                                           Set<ExpandedPerson> viewedBy) {
-        var publicationSummary = PublicationSummary.create(publication);
-        var entry = new ExpandedPublishingRequest();
-        entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
-        entry.setPublication(publicationSummary);
-        entry.setOrganizationIds(organizationIds);
-        entry.setStatus(dataEntry.getStatus());
-        entry.setCustomerId(dataEntry.getCustomerId());
-        entry.setCreatedDate(dataEntry.getCreatedDate());
-        entry.setModifiedDate(dataEntry.getModifiedDate());
-        entry.setMessages(messages);
-        entry.setViewedBy(viewedBy);
-        entry.setWorkflow(workflow);
-        entry.setFinalizedBy(finalizedBy);
-        entry.setOwner(owner);
-        entry.setAssignee(assignee);
-        return entry;
-    }
-
-    private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
-                                                ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(
-                publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
-    }
-
-    private static ExpandedPerson expandAssignee(PublishingRequestCase publishingRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(publishingRequest.getAssignee())
-                .map(Username::getValue)
-                .map(User::new)
-                .map(expansionService::expandPerson)
-                .orElse(null);
-    }
-
-    private static ExpandedPerson expandFinalzedBy(PublishingRequestCase publishingRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(publishingRequest.getFinalizedBy())
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
-    }
-
-    private static Set<ExpandedPerson> expandViewedBy(Set<User> users,
-                                                      ResourceExpansionService resourceExpansionService) {
-        return users.stream()
-            .map(resourceExpansionService::expandPerson)
-            .collect(Collectors.toSet());
     }
 
     @JacocoGenerated
@@ -162,14 +96,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         publishingRequest.setFinalizedBy(extractPersonUsername(this.getFinalizedBy()));
         publishingRequest.setAssignee(extractPersonUsername(this.getAssignee()));
         return publishingRequest;
-    }
-
-    private Username extractPersonUsername(ExpandedPerson expandedPerson) {
-        return Optional.ofNullable(expandedPerson)
-                .map(ExpandedPerson::getUsername)
-                .map(User::toString)
-                .map(Username::new)
-                .orElse(null);
     }
 
     @Override
@@ -211,5 +137,69 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setWorkflow(PublishingWorkflow workflow) {
         this.workflow = workflow;
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages,
+                                                        ResourceExpansionService expansionService) {
+        return messages.stream()
+            .map(expansionService::expandMessage)
+            .collect(Collectors.toList());
+    }
+
+    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
+                                                           Publication publication,
+                                                           Set<URI> organizationIds,
+                                                           List<ExpandedMessage> messages,
+                                                           PublishingWorkflow workflow,
+                                                           ExpandedPerson owner,
+                                                           ExpandedPerson assignee,
+                                                           ExpandedPerson finalizedBy,
+                                                           Set<ExpandedPerson> viewedBy) {
+        var publicationSummary = PublicationSummary.create(publication);
+        var entry = new ExpandedPublishingRequest();
+        entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
+        entry.setPublication(publicationSummary);
+        entry.setOrganizationIds(organizationIds);
+        entry.setStatus(dataEntry.getStatus());
+        entry.setCustomerId(dataEntry.getCustomerId());
+        entry.setCreatedDate(dataEntry.getCreatedDate());
+        entry.setModifiedDate(dataEntry.getModifiedDate());
+        entry.setMessages(messages);
+        entry.setViewedBy(viewedBy);
+        entry.setWorkflow(workflow);
+        entry.setFinalizedBy(finalizedBy);
+        entry.setOwner(owner);
+        entry.setAssignee(assignee);
+        return entry;
+    }
+
+    private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
+                                                ResourceService resourceService) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(
+            publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
+    }
+
+    private static ExpandedPerson extractPersonUsername(Username username,
+                                                        ResourceExpansionService expansionService) {
+        return Optional.ofNullable(username)
+            .map(Username::getValue)
+            .map(User::new)
+            .map(expansionService::expandPerson)
+            .orElse(null);
+    }
+
+    private static Set<ExpandedPerson> expandPersonViewedByUsername(Set<User> users,
+                                                                    ResourceExpansionService resourceExpansionService) {
+        return users.stream()
+            .map(resourceExpansionService::expandPerson)
+            .collect(Collectors.toSet());
+    }
+
+    private Username extractPersonUsername(ExpandedPerson expandedPerson) {
+        return Optional.ofNullable(expandedPerson)
+            .map(ExpandedPerson::getUsername)
+            .map(User::toString)
+            .map(Username::new)
+            .orElse(null);
     }
 }

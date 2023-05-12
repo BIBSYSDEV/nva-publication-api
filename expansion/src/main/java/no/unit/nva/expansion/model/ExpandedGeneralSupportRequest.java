@@ -1,6 +1,12 @@
 package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
@@ -14,13 +20,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
 public class ExpandedGeneralSupportRequest extends ExpandedTicket {
@@ -48,41 +47,10 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setMessages(expandMessages(dataEntry.fetchMessages(ticketService), resourceExpansionService));
-        entry.setViewedBy(expandViewedBy(dataEntry.getViewedBy(), resourceExpansionService));
-        entry.setFinalizedBy(expandFinalizedBy(dataEntry, resourceExpansionService));
-        entry.setAssignee(expandAssignee(dataEntry, resourceExpansionService));
+        entry.setViewedBy(expandPersonViewedByUsername(dataEntry.getViewedBy(), resourceExpansionService));
+        entry.setFinalizedBy(extractPersonUsername(dataEntry.getFinalizedBy(), resourceExpansionService));
+        entry.setAssignee(extractPersonUsername(dataEntry.getAssignee(), resourceExpansionService));
         return entry;
-    }
-
-    private static List<ExpandedMessage> expandMessages(List<Message> messages, ResourceExpansionService expansionService) {
-        return messages.stream()
-                .map(expansionService::expandMessage)
-                .collect(Collectors.toList());
-    }
-
-    private static ExpandedPerson expandAssignee(GeneralSupportRequest generalSupportRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(generalSupportRequest.getAssignee())
-                .map(Username::getValue)
-                .map(User::new)
-                .map(expansionService::expandPerson)
-                .orElse(null);
-    }
-
-    private static ExpandedPerson expandFinalizedBy(GeneralSupportRequest generalSupportRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(generalSupportRequest.getFinalizedBy())
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
-    }
-
-    private static Set<ExpandedPerson> expandViewedBy(Set<User> users,
-                                                      ResourceExpansionService resourceExpansionService) {
-        return users.stream()
-            .map(resourceExpansionService::expandPerson)
-            .collect(Collectors.toSet());
     }
 
     public Instant getModifiedDate() {
@@ -121,14 +89,6 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         return ticketEntry;
     }
 
-    private Username extractAssigneeUsername() {
-        return Optional.ofNullable(this.getAssignee())
-                .map(ExpandedPerson::getUsername)
-                .map(User::toString)
-                .map(Username::new)
-                .orElse(null);
-    }
-
     @Override
     public TicketStatus getStatus() {
         return this.status;
@@ -136,6 +96,37 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
 
     public void setStatus(TicketStatus status) {
         this.status = status;
+    }
+
+    private static List<ExpandedMessage> expandMessages(List<Message> messages,
+                                                        ResourceExpansionService expansionService) {
+        return messages.stream()
+            .map(expansionService::expandMessage)
+            .collect(Collectors.toList());
+    }
+
+    private static ExpandedPerson extractPersonUsername(Username username,
+                                                        ResourceExpansionService expansionService) {
+        return Optional.ofNullable(username)
+            .map(Username::getValue)
+            .map(User::new)
+            .map(expansionService::expandPerson)
+            .orElse(null);
+    }
+
+    private static Set<ExpandedPerson> expandPersonViewedByUsername(Set<User> users,
+                                                                    ResourceExpansionService resourceExpansionService) {
+        return users.stream()
+            .map(resourceExpansionService::expandPerson)
+            .collect(Collectors.toSet());
+    }
+
+    private Username extractAssigneeUsername() {
+        return Optional.ofNullable(this.getAssignee())
+            .map(ExpandedPerson::getUsername)
+            .map(User::toString)
+            .map(Username::new)
+            .orElse(null);
     }
 
     private URI getCustomerId() {
