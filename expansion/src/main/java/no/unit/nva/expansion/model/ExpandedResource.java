@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -74,7 +75,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return uris;
     }
 
-    public static List<URI> extractAffiliationUris(JsonNode indexDocument) {
+    public static Set<URI> extractAffiliationUris(JsonNode indexDocument) {
         var contributors = getContributors(indexDocument);
         return getAffiliationsIdsFromJsonNode(contributors);
     }
@@ -194,11 +195,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return (ArrayNode) root.at(CONTRIBUTORS_POINTER);
     }
 
-    private static List<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
+    private static Set<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
         return StreamSupport.stream(contributorsRoot.spliterator(), false)
                    .flatMap(ExpandedResource::extractAffiliations)
                    .flatMap(ExpandedResource::extractAffiliationId)
-                   .collect(Collectors.toList());
+                   .collect(Collectors.toSet());
     }
 
     private static Stream<URI> extractAffiliationId(JsonNode child) {
