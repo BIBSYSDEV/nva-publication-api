@@ -1172,7 +1172,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
             }
 
-            public  Publication createImportCandidateFromImportedEntry(ImportCandidate importCandidate) {
+            public  ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
             }
         };

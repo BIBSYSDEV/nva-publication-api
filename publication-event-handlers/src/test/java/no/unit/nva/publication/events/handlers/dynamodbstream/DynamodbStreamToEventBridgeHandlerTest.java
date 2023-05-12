@@ -39,6 +39,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 class DynamodbStreamToEventBridgeHandlerTest {
+
+    public static final String DYNAMODB_UPDATE_EVENT_TOPIC = "PublicationService.Database.Update";
     
     public static final String EXPECTED_EXCEPTION_MESSAGE = "expected exception message";
     private FakeS3Client s3Client;
@@ -57,7 +59,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
                 return randomString();
             }
         };
-        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient);
+        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient, DYNAMODB_UPDATE_EVENT_TOPIC);
     }
     
     @Test
@@ -72,7 +74,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
     @Test
     void shouldThrowExceptionWhenStoringAnyEventRecordInS3Fails() {
         var event = randomEventWithMultipleDynamoRecords();
-        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventBridgeClient);
+        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventBridgeClient, DYNAMODB_UPDATE_EVENT_TOPIC);
         Executable action = () -> handler.handleRequest(event, context);
         var exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), containsString(EXPECTED_EXCEPTION_MESSAGE));

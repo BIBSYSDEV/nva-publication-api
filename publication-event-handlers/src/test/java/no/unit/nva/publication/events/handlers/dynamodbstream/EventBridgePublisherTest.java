@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
-import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -23,10 +22,9 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry.Builder;
 
 public class EventBridgePublisherTest {
-    
+    public static final String DYNAMODB_UPDATE_EVENT_TOPIC = "PublicationService.Database.Update";
     public static final String EXPECTED_DETAIL_TEMPLATE = "{\"eventSourceARN\":\"%s\"}";
     public static final String FAILED_EVENT_NAME = "Failed";
-    public static final String SUCCESS_EVENT_NAME = "Success";
     public static final String RECORD_STRING_TEMPLATE = "{\"eventName\":\"%s\",\"eventSourceARN\":\"%s\"}";
     private static final String EVENT_BUS = UUID.randomUUID().toString();
     private static final Instant NOW = Instant.now();
@@ -85,7 +83,7 @@ public class EventBridgePublisherTest {
                    .eventBusName(EVENT_BUS)
                    .time(NOW)
                    .source(EventBridgePublisher.EVENT_SOURCE)
-                   .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
+                   .detailType(DYNAMODB_UPDATE_EVENT_TOPIC)
                    .resources(EVENT_SOURCE_ARN);
     }
     
@@ -119,7 +117,7 @@ public class EventBridgePublisherTest {
                                 .eventBusName(EVENT_BUS)
                                 .time(NOW)
                                 .source(EventBridgePublisher.EVENT_SOURCE)
-                                .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
+                                .detailType(DYNAMODB_UPDATE_EVENT_TOPIC)
                                 .detail(expectedDetail)
                                 .resources(EventBridgePublisherTest.EVENT_SOURCE_ARN)
                                 .build())

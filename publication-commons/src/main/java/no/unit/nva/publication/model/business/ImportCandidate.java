@@ -26,6 +26,11 @@ public class ImportCandidate extends Publication {
 
     private ImportStatus importStatus;
 
+    @Override
+    public PublicationStatus getStatus() {
+        return null;
+    }
+
     public ImportCandidate() {
         super();
     }

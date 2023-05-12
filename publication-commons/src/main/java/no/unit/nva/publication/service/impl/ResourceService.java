@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.AmazonServiceException;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -68,18 +68,18 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
-
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
+    private static final String SEPARATOR_ITEM = ",";
+    private static final String SEPARATOR_TABLE = ";";
+    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -151,13 +151,18 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createImportCandidateFromImportedEntry(ImportCandidate inputData) {
+    /**
+     * Persists importCandidate with updated database metadata fields.
+     *
+     * @param inputData importCandidate from external source
+     * @return updated importCandidate that has been sent to persistence
+     */
+    public ImportCandidate persistImportCandidate(ImportCandidate inputData) {
         Resource newResource = Resource.fromImportCandidate(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
-        newResource.setStatus(PublicationStatus.PUBLISHED);
         return insertResourceFromImportCandidate(newResource);
     }
 
@@ -328,33 +333,30 @@ public class ResourceService extends ServiceWithTransactions {
             .forEach(this::writeBatchToDynamo);
     }
 
-    @JacocoGenerated
     private void writeBatchToDynamo(BatchWriteItemRequest batchWriteItemRequest) {
         try {
             getClient().batchWriteItem(batchWriteItemRequest);
         } catch (Exception e) {
-            var resources = batchWriteItemRequest.getRequestItems()
-                                .entrySet().stream()
-                                .map(this::extractAllIdentifiersAndTypes)
-                                .collect(Collectors.joining("; "));
-            logger.info("Failed to write batch to dynamo for the following resources: " + resources, e);
-            // continue;
+            var recordIdentifiers = extractRecordIdentifiers(batchWriteItemRequest);
+            logger.warn("Failed to write batch to dynamo for the following resources: " + recordIdentifiers, e);
+            // intentionally swallowing this exception to continue writing next batches
         }
     }
 
-    @JacocoGenerated
-    private String extractAllIdentifiersAndTypes(Entry<String, List<WriteRequest>> entry) {
-        return entry.getValue().stream()
-            .map(this::extractIdentifierAndType)
-            .collect(Collectors.joining(", "));
+    private String extractRecordIdentifiers(BatchWriteItemRequest batchWriteItemRequest) {
+        return batchWriteItemRequest.getRequestItems().values().stream()
+                   .map(this::extractRecordIdentifiers)
+                   .collect(Collectors.joining(SEPARATOR_TABLE));
     }
 
-    @JacocoGenerated
-    private String extractIdentifierAndType(WriteRequest writeRequest) {
-        var identifier = writeRequest.getPutRequest().getItem().get("PK0");
-        var type = writeRequest.getPutRequest().getItem().get("type");
+    private String extractRecordIdentifiers(List<WriteRequest> writeRequests) {
+        return writeRequests.stream()
+                   .map(this::extractPrimaryKeySortKey)
+                   .collect(Collectors.joining(SEPARATOR_ITEM));
+    }
 
-        return String.format("%s: %s", type, identifier);
+    private String extractPrimaryKeySortKey(WriteRequest writeRequest) {
+        return writeRequest.getPutRequest().getItem().get(PRIMARY_KEY_SORT_KEY_NAME).getS();
     }
 
     private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
@@ -396,7 +398,7 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedPublication(newResource);
     }
 
-    private Publication insertResourceFromImportCandidate(Resource newResource) {
+    private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
@@ -404,10 +406,10 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedImportCandidate(newResource);
     }
 
-    private Publication fetchSavedImportCandidate(Resource newResource) {
+    private ImportCandidate fetchSavedImportCandidate(Resource newResource) {
         return Optional.ofNullable(fetchSavedResource(newResource))
-                .map(Resource::toImportCandidate)
-                .orElse(null);
+                   .map(Resource::toImportCandidate)
+                   .orElse(null);
     }
 
     private Publication fetchSavedPublication(Resource newResource) {
