@@ -10,8 +10,8 @@ import no.unit.nva.publication.model.business.ImportCandidate;
 
 public class ImportCandidateDataEntryUpdate implements JsonSerializable {
 
-    public static final String IMPORT_CANDIDATE_UPDATE = "ImportCandidate.DataEntry.Update";
-    public static final String IMPORT_CANDIDATE_DELETION = "ImportCandidate.DataEntry.Delete";
+    public static final String IMPORT_CANDIDATE_UPDATE = "ImportCandidates.DataEntry.Update";
+    public static final String IMPORT_CANDIDATE_DELETION = "ImportCandidates.DataEntry.Delete";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";

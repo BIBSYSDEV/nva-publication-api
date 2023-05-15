@@ -53,7 +53,7 @@ public class ImportCandidateDataEntryUpdateHandler extends EventHandler<EventRef
                                           Context context) {
         var s3Content = readBlobFromS3(input);
         var dynamoDbRecord = parseDynamoDbRecord(s3Content);
-        var importCandidateDataEntryUpdate = convertToDataEntryUpdateEvent(dynamoDbRecord);
+        var importCandidateDataEntryUpdate = convertToUpdateEvent(dynamoDbRecord);
         return attempt(() -> saveBlobToS3(importCandidateDataEntryUpdate))
                    .toOptional()
                    .map(blobUri -> new EventReference(importCandidateDataEntryUpdate.getTopic(), blobUri))
@@ -73,7 +73,7 @@ public class ImportCandidateDataEntryUpdateHandler extends EventHandler<EventRef
                    : BLOB_IS_EMPTY;
     }
 
-    private ImportCandidateDataEntryUpdate convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
+    private ImportCandidateDataEntryUpdate convertToUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
         return new ImportCandidateDataEntryUpdate(
             dynamoDbRecord.getEventName(),
             getImportCandidate(dynamoDbRecord.getDynamodb().getOldImage()),

@@ -46,7 +46,7 @@ public class ImportCandidateTest {
 
     @Test
     void builderShouldAcceptPublication() {
-        Publication randomPublication = createPublicationWithoutStatus();
+        var randomPublication = createPublicationWithoutStatus();
         var importCandidate =
             new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
                 .withImportStatus(ImportStatus.NOT_IMPORTED)
