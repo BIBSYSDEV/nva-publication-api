@@ -1275,6 +1275,9 @@ Resources:
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
+    DependsOn:
+      - LambdaRole
+      - DatabaseAccessLambdaPermissions
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
