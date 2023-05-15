@@ -128,7 +128,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String ASSIGNEE = "assignee";
     private static final String FINALIZED_BY = "finalizedBy";
-    private static final String ASSIGNEE1 = "assignee";
     private ResourceService resourceService;
 
     private TicketService ticketService;

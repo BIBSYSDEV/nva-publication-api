@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
@@ -31,31 +30,28 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class MigrationTests extends ResourcesLocalTest {
-    
+
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private ResourceService resourceService;
-    private TicketService ticketService;
-    
+
     @BeforeEach
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, CLOCK);
-        this.ticketService = new TicketService(client);
     }
-    
+
     @Test
-    void shouldWriteBackEntryAsIsWhenMigrating()
-        throws NotFoundException {
+    void shouldWriteBackEntryAsIsWhenMigrating() throws NotFoundException {
         var publication = PublicationGenerator.randomPublication();
         var savedPublication = resourceService.insertPreexistingPublication(publication);
         migrateResources();
-    
+
         var migratedResource = resourceService.getResourceByIdentifier(savedPublication.getIdentifier());
         var migratedPublication = migratedResource.toPublication();
         assertThat(migratedPublication, is(equalTo(publication)));
     }
-    
+
     @Test
     void shouldMigrateDoiRequestsToTickets() {
         var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
@@ -79,7 +75,7 @@ class MigrationTests extends ResourcesLocalTest {
         var itemMap = ItemUtils.toAttributeValues(item);
         client.putItem(new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(itemMap));
     }
-    
+
     private void createPublicationForOldDoiRequestFormatInResources(SortableIdentifier hardCodedIdentifier) {
         var publication = randomPublication();
         publication.setIdentifier(hardCodedIdentifier);
@@ -87,7 +83,7 @@ class MigrationTests extends ResourcesLocalTest {
         var dao = resource.toDao();
         client.putItem(new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
     }
-    
+
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING);
         resourceService.refreshResources(scanResources.getDatabaseEntries());

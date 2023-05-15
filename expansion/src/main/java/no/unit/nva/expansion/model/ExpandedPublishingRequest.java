@@ -46,8 +46,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     public static ExpandedPublishingRequest createEntry(PublishingRequestCase publishingRequestCase,
                                                         ResourceService resourceService,
                                                         ResourceExpansionService resourceExpansionService,
-                                                        TicketService ticketService)
-        throws NotFoundException {
+                                                        TicketService ticketService) throws NotFoundException {
 
         var publication = fetchPublication(publishingRequestCase, resourceService);
         var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
@@ -121,18 +120,13 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     private static List<ExpandedMessage> expandMessages(List<Message> messages,
                                                         ResourceExpansionService expansionService) {
-        return messages.stream()
-            .map(expansionService::expandMessage)
-            .collect(Collectors.toList());
+        return messages.stream().map(expansionService::expandMessage).collect(Collectors.toList());
     }
 
-    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
-                                                           Publication publication,
-                                                           Set<URI> organizationIds,
-                                                           List<ExpandedMessage> messages,
-                                                           PublishingWorkflow workflow,
-                                                           ExpandedPerson owner,
-                                                           ExpandedPerson assignee) throws NotFoundException {
+    private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry, Publication publication,
+                                                           Set<URI> organizationIds, List<ExpandedMessage> messages,
+                                                           PublishingWorkflow workflow, ExpandedPerson owner,
+                                                           ExpandedPerson assignee) {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
@@ -160,9 +154,9 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private static ExpandedPerson expandAssignee(PublishingRequestCase publishingRequest,
                                                  ResourceExpansionService expansionService) {
         return Optional.ofNullable(publishingRequest.getAssignee())
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
+                   .map(Username::getValue)
+                   .map(User::new)
+                   .map(expansionService::expandPerson)
+                   .orElse(null);
     }
 }
