@@ -25,7 +25,7 @@ class TicketEntryTest {
         var expectedUserInstance = getExpectedUserInstance(publication);
 
         assertThat(ticket.getClass(), is(equalTo(ticketType)));
-        assertThat(ticket.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(actualUserInstance, is(equalTo(expectedUserInstance)));
     }
 

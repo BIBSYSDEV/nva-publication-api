@@ -171,7 +171,7 @@ public class DoiRequestEventProducer
     }
 
     private boolean eventHasNoPublication(DoiRequest doiRequest) {
-        return isNull(doiRequest.getPublicationDetails());
+        return isNull(doiRequest.getResourceIdentifier());
     }
 
     private boolean eventIsADeletion(DataEntryUpdateEvent event) {

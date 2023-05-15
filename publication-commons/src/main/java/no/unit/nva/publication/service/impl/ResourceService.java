@@ -43,7 +43,6 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -284,11 +283,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private Entity migrateOther(Entity dataEntry) {
-        if (dataEntry instanceof TicketEntry) {
-            var ticket = (TicketEntry) dataEntry;
-            var resourceIdentifier = ticket.extractPublicationIdentifier();
-            var resource = attempt(() -> getResourceByIdentifier(resourceIdentifier)).orElseThrow();
-            ticket.setPublicationDetails(PublicationDetails.create(resource));
+        if (dataEntry instanceof TicketEntry ticket) {
             return ticket;
         }
         return dataEntry;

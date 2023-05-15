@@ -28,6 +28,7 @@ import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
@@ -40,21 +41,18 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class UpdateResourceService extends ServiceWithTransactions {
-    
-    
+
     public static final String PUBLISH_COMPLETED = "Publication is published.";
 
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
-
-    //TODO: fix affiliation update when updating owner
-    private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
     public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
     public static final String DELETION_IN_PROGRESS = "Deletion in progress. This may take a while";
-
+    //TODO: fix affiliation update when updating owner
+    private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
-    
+
     public UpdateResourceService(AmazonDynamoDB client,
                                  String tableName,
                                  Clock clockForTimestamps,
@@ -64,7 +62,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         this.clockForTimestamps = clockForTimestamps;
         this.readResourceService = readResourceService;
     }
-    
+
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
         var originalPublication = fetchExistingPublication(publication);
         if (originalPublication.getStatus().equals(publication.getStatus())) {
@@ -72,13 +70,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
         throw new IllegalStateException("Attempting to update publication status when it is not allowed");
     }
-    
+
     public Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
         var persistedPublication = fetchExistingPublication(publicationUpdate);
         publicationUpdate.setCreatedDate(persistedPublication.getCreatedDate());
         publicationUpdate.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publicationUpdate);
-        
+
         var updateResourceTransactionItem = updateResource(resource);
         var updateTicketsTransactionItems = updateTickets(resource);
         var transactionItems = new ArrayList<TransactWriteItem>();
@@ -87,7 +85,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
-        
+
         return publicationUpdate;
     }
 
@@ -100,7 +98,17 @@ public class UpdateResourceService extends ServiceWithTransactions {
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         sendTransactionWriteRequest(request);
     }
-    
+
+    protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
+        return new DeletePublicationStatusResponse(RESOURCE_ALREADY_DELETED,
+                                                   HttpURLConnection.HTTP_NO_CONTENT);
+    }
+
+    protected static DeletePublicationStatusResponse deletionStatusChangeInProgress() {
+        return new DeletePublicationStatusResponse(DELETION_IN_PROGRESS,
+                                                   HttpURLConnection.HTTP_ACCEPTED);
+    }
+
     PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
@@ -129,24 +137,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
     }
 
-    protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
-        return new DeletePublicationStatusResponse(RESOURCE_ALREADY_DELETED,
-                                                   HttpURLConnection.HTTP_NO_CONTENT);
-    }
-
-    protected static DeletePublicationStatusResponse deletionStatusChangeInProgress() {
-        return new DeletePublicationStatusResponse(DELETION_IN_PROGRESS,
-                                                   HttpURLConnection.HTTP_ACCEPTED);
-    }
-
     private static boolean publicationIsPublished(Publication publication) {
         var status = publication.getStatus();
         return PublicationStatus.PUBLISHED.equals(status);
     }
 
     /**
-     * Associated artifacts are NOT updated anymore. For now all files are just files,
-     * i.e. we do not use Published/Unpublished temporary.
+     * Associated artifacts are NOT updated anymore. For now all files are just files, i.e. we do not use
+     * Published/Unpublished temporary.
      **/
 
     private void publishPublication(Publication publication) throws InvalidPublicationException {
@@ -155,18 +153,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
         publication.setPublishedDate(clockForTimestamps.instant());
         updatePublicationIncludingStatus(publication);
     }
-    
+
     private boolean publicationIsDraftOrPublishedMetadataOnly(Publication publication) {
         var status = publication.getStatus();
         return PublicationStatus.DRAFT.equals(status)
                || PublicationStatus.PUBLISHED_METADATA.equals(status);
     }
-    
+
     private Publication fetchExistingPublication(Publication publication) {
         return attempt(() -> readResourceService.getPublication(publication))
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
-    
+
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource
                    .copy()
@@ -176,13 +174,15 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .withModifiedDate(clockForTimestamps.instant())
                    .build();
     }
-    
+
     private List<TransactWriteItem> updateTickets(Resource resource) {
         var dao = new ResourceDao(resource);
         var ticketDaos = dao.fetchAllTickets(getClient());
         return ticketDaos.stream()
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast)
+                   .filter(ticketEntry -> ticketEntry instanceof DoiRequest)
+                   .map(DoiRequest.class::cast)
                    .map(ticket -> ticket.update(resource))
                    .map(Entity::toDao)
                    .map(DynamoEntry::toDynamoFormat)
@@ -190,28 +190,28 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .map(put -> new TransactWriteItem().withPut(put))
                    .collect(Collectors.toList());
     }
-    
+
     private TransactWriteItem updateResource(Resource resourceUpdate) {
-        
+
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
-        
+
         Map<String, AttributeValue> primaryKeyConditionAttributeValues =
             primaryKeyEqualityConditionAttributeValues(resourceDao);
-        
+
         Put put = new Put()
                       .withItem(resourceDao.toDynamoFormat())
                       .withTableName(tableName)
                       .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
                       .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
-        
+
         return new TransactWriteItem().withPut(put);
     }
-    
+
     private PublishPublicationStatusResponse publishingInProgressStatus() {
         return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpURLConnection.HTTP_ACCEPTED);
     }
-    
+
     private PublishPublicationStatusResponse publishCompletedStatus() {
         return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
     }

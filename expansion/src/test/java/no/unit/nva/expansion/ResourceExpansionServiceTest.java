@@ -469,7 +469,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         doiRequest.setCustomerId(expandedDoiRequest.getCustomerId());
         doiRequest.setModifiedDate(expandedDoiRequest.getModifiedDate());
         doiRequest.setOwner(expandedDoiRequest.getOwner().getUsername());
-        doiRequest.setPublicationDetails(PublicationDetails.create(expandedDoiRequest.getPublication()));
+        doiRequest.setResourceIdentifier(expandedDoiRequest.getPublication().getIdentifier());
         doiRequest.setResourceStatus(expandedDoiRequest.getPublication().getStatus());
         doiRequest.setStatus(getTicketStatus(expandedDoiRequest.getStatus()));
         doiRequest.setAssignee(extractAssigneeUsername(expandedDoiRequest));
@@ -482,7 +482,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketEntry.setCreatedDate(expandedGeneralSupportRequest.getCreatedDate());
         ticketEntry.setCustomerId(expandedGeneralSupportRequest.getCustomerId());
         ticketEntry.setIdentifier(extractIdentifier(expandedGeneralSupportRequest.getId()));
-        ticketEntry.setPublicationDetails(PublicationDetails.create(expandedGeneralSupportRequest.getPublication()));
+        ticketEntry.setResourceIdentifier(expandedGeneralSupportRequest.getPublication().getIdentifier());
         ticketEntry.setStatus(getTicketStatus(expandedGeneralSupportRequest.getStatus()));
         ticketEntry.setOwner(expandedGeneralSupportRequest.getOwner().getUsername());
         ticketEntry.setAssignee(extractAssigneeUsername(expandedGeneralSupportRequest));
@@ -491,7 +491,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private TicketEntry toTicketEntry(ExpandedPublishingRequest expandedPublishingRequest) {
         var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setPublicationDetails(PublicationDetails.create(expandedPublishingRequest.getPublication()));
+        publishingRequest.setResourceIdentifier(expandedPublishingRequest.getPublication().getIdentifier());
         publishingRequest.setCustomerId(expandedPublishingRequest.getCustomerId());
         publishingRequest.setIdentifier(extractIdentifier(expandedPublishingRequest.getId()));
         publishingRequest.setOwner(expandedPublishingRequest.getOwner().getUsername());

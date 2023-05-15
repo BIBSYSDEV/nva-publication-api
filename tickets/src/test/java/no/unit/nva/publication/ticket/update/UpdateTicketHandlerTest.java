@@ -621,7 +621,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(customer)
                    .withUserName(USER_NAME.getValue())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
-                                              ticket.extractPublicationIdentifier().toString(),
+                                              ticket.getResourceIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                               ticket.getIdentifier().toString()))
                    .build();
@@ -638,7 +638,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(customer)
                    .withUserName(USER_NAME.getValue())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
-                                              ticket.extractPublicationIdentifier().toString(),
+                                              ticket.getResourceIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                               ticket.getIdentifier().toString()))
                    .build();

@@ -101,7 +101,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public Set<URI> getOrganizationIds(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry) {
-            var resourceIdentifier = ((TicketEntry) dataEntry).extractPublicationIdentifier();
+            var resourceIdentifier = ((TicketEntry) dataEntry).getResourceIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
                     .stream()

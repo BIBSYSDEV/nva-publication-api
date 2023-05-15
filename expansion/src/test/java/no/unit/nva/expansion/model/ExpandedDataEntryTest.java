@@ -294,7 +294,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setModifiedDate(Instant.now());
             requestCase.setCreatedDate(Instant.now());
             requestCase.setCustomerId(publication.getPublisher().getId());
-            requestCase.setPublicationDetails(PublicationDetails.create(publication));
+            requestCase.setResourceIdentifier(publication.getIdentifier());
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }

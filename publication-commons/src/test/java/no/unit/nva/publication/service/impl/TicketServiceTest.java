@@ -578,27 +578,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateDenormalizedPublicationTitleInTicketsWhenPublicationIsUpdated() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var originalTickets = createAllTypesOfTickets(publication);
-
-        var updatedPublication = updatePublicationTile(publication);
-        var expectedUpdatedTitle = updatedPublication.getEntityDescription().getMainTitle();
-        resourceService.updatePublication(updatedPublication);
-
-        var updatedTicketTitle = originalTickets
-            .stream()
-            .map(attempt(ticket -> ticket.fetch(ticketService)))
-            .map(Try::orElseThrow)
-            .map(TicketEntry::extractPublicationTitle)
-            .collect(Collectors.toSet())
-            .stream()
-            .collect(SingletonCollector.collect());
-
-        assertThat(updatedTicketTitle, is(equalTo(expectedUpdatedTitle)));
-    }
-
-    @Test
     void shouldReturnAllTicketsForPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var originalTickets = createAllTypesOfTickets(publication);
@@ -763,7 +742,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private TicketEntry legacyQueryObject(Publication publication) {
         return DoiRequest.builder()
             .withCustomerId(publication.getPublisher().getId())
-            .withPublicationDetails(PublicationDetails.create(publication))
+            .withResourceIdentifier(publication.getIdentifier())
             .build();
     }
 
@@ -811,7 +790,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                                              TicketEntry actualDoiRequest) {
         return DoiRequest.builder()
             .withIdentifier(actualDoiRequest.getIdentifier())
-            .withPublicationDetails(PublicationDetails.create(emptyPublication))
+            .withResourceIdentifier(emptyPublication.getIdentifier())
             .withOwner(new User(emptyPublication.getResourceOwner().getOwner().getValue()))
             .withCustomerId(emptyPublication.getPublisher().getId())
             .withStatus(TicketStatus.PENDING)
@@ -858,7 +837,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var request = new PublishingRequestCase();
         request.setIdentifier(SortableIdentifier.next());
         request.setOwner(new User(randomString()));
-        request.setPublicationDetails(PublicationDetails.create(randomPublication()));
+        request.setResourceIdentifier(SortableIdentifier.next());
         request.setStatus(COMPLETED);
         request.setCreatedDate(randomInstant());
         request.setModifiedDate(randomInstant());

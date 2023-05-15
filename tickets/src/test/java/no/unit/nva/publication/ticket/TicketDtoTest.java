@@ -34,20 +34,6 @@ class TicketDtoTest extends ResourcesLocalTest {
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
     }
 
-    @ParameterizedTest
-    @DisplayName("should include all publication summary fields")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldIncludeAllPublicationSummaryFields(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
-        var dto = TicketDto.fromTicket(ticket);
-        var publicationSummary = dto.getPublicationSummary();
-        assertThat(publicationSummary, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_INSTANCE_FIELD,
-                                                                                   PUBLISHED_DATE_FIELD,
-                                                                                   CONTRIBUTORS_FIELD)));
-    }
-
     @ParameterizedTest(name = "should accept both date (legacy) and createdDate: {0}")
     @ValueSource(strings = {"date", "createdDate"})
     void shouldAcceptBothLegacyDateAndCreatedDate(String field) {

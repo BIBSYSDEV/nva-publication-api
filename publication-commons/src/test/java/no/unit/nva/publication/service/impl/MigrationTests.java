@@ -68,7 +68,7 @@ class MigrationTests extends ResourcesLocalTest {
                              .filter(dao -> dao instanceof DoiRequestDao)
                              .map(Dao::getData)
                              .map(entry -> (DoiRequest) entry)
-                             .filter(entry -> nonNull(entry.getPublicationDetails()))
+                             .filter(entry -> nonNull(entry.getResourceIdentifier()))
                              .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(1));
     }

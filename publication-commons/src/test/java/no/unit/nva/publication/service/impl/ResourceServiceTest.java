@@ -685,27 +685,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void updateResourceUpdatesLinkedDoiRequestUponUpdate() throws ApiGatewayException {
-        var resource = createPersistedPublicationWithoutDoi();
-        final var expectedDoi = randomDoi();
-        final var originalDoiRequest = createDoiRequest(resource);
-
-        resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
-        resource.setDoi(expectedDoi);
-        var updatedPublication = resourceService.updatePublication(resource);
-
-        var updatedDoiRequest = ticketService.fetchTicket(originalDoiRequest);
-
-        var expectedDoiRequest = originalDoiRequest.copy();
-        expectedDoiRequest.setPublicationDetails(
-            expectedDoiRequest.getPublicationDetails().update(Resource.fromPublication(updatedPublication)));
-        var diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
-        assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE1, FINALIZED_BY,
-                                                                                  FINALIZED_DATE)));
-    }
-
-    @Test
     void updateResourceUpdatesAllFieldsInDoiRequest() throws ApiGatewayException {
         var initialPublication = createPersistedPublicationWithoutDoi();
         var initialDoiRequest = createDoiRequest(initialPublication);
@@ -1048,7 +1027,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withModifiedDate(updatedDoiRequest.getModifiedDate())
                    .withStatus(TicketStatus.PENDING)
                    .withResourceStatus(publicationUpdate.getStatus())
-                   .withPublicationDetails(PublicationDetails.create(publicationUpdate))
+                   .withResourceIdentifier(publicationUpdate.getIdentifier())
                    .withViewedBy(initialDoiRequest.getViewedBy())
                    .build();
     }

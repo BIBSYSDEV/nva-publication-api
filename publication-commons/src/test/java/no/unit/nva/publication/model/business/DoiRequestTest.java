@@ -34,7 +34,7 @@ class DoiRequestTest {
     
     @Test
     void doiRequestHasReferenceToResource() {
-        assertThat(sampleDoiRequest.extractPublicationIdentifier(), is(notNullValue()));
+        assertThat(sampleDoiRequest.getResourceIdentifier(), is(notNullValue()));
     }
     
     @Test
@@ -42,37 +42,6 @@ class DoiRequestTest {
         var exception = assertThrows(IllegalStateException.class,
             this::doiRequestWithoutResourceReference);
         assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
-    }
-    
-    @Test
-    void doiRequestContainsResourcesMainTitle() {
-        Publication publication = PublicationGenerator.publicationWithIdentifier();
-        Resource resource = Resource.fromPublication(publication);
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource, fixedClock().instant());
-        assertThat(doiRequest.extractPublicationTitle(),
-            is(equalTo(publication.getEntityDescription().getMainTitle())));
-    }
-    
-    @Test
-    void updateReturnsNewAndUpdatedDoiRequest() {
-        Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
-        
-        String newTitle = "newTitle";
-        Resource updatedResource = updateResource(resource, newTitle);
-        
-        DoiRequest updatedDoiRequest = doiRequest.update(updatedResource);
-        assertThat(updatedDoiRequest.getPublicationDetails().getTitle(), is(equalTo(newTitle)));
-    }
-    
-    @Test
-    void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
-        Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
-        
-        Resource updatedResource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
-        
-        assertThrows(IllegalDoiRequestUpdate.class, () -> doiRequest.update(updatedResource));
     }
     
     private static Clock fixedClock() {

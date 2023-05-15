@@ -155,7 +155,7 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     public TicketEntry updateTicketAssignee(TicketEntry ticketEntry, Username assignee) throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
         var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
         var updatedAssignee = existingTicket.updateAssignee(publication, assignee);
 
@@ -166,7 +166,7 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(ticketEntry.extractPublicationIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
@@ -182,7 +182,7 @@ public class TicketService extends ServiceWithTransactions {
 
     protected TicketEntry closeTicket(TicketEntry pendingTicket, Username username) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
-        resourceService.getPublicationByIdentifier(pendingTicket.extractPublicationIdentifier());
+        resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
         var closedTicket = persistedTicket.close(username);
         injectAssigneeWhenUnassigned(closedTicket, username);
@@ -213,13 +213,13 @@ public class TicketService extends ServiceWithTransactions {
     //TODO: should try to fetch ticket only by ticket identifier
     private TicketEntry fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(TicketEntry ticketEntry) {
         return fetchTicketByResourceIdentifier(ticketEntry.getCustomerId(),
-                                               ticketEntry.extractPublicationIdentifier(),
+                                               ticketEntry.getResourceIdentifier(),
                                                ticketEntry.getClass()).orElseThrow();
     }
 
     private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) throws ForbiddenException {
         var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
-        return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.extractPublicationIdentifier()))
+        return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
                    .orElseThrow(fail -> new ForbiddenException());
     }
 

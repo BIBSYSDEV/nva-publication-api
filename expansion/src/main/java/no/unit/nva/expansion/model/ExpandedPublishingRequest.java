@@ -154,7 +154,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
                                                 ResourceService resourceService) {
         return attempt(() -> resourceService.getPublicationByIdentifier(
-            publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
+            publishingRequestCase.getResourceIdentifier())).orElseThrow();
     }
 
     private static ExpandedPerson expandAssignee(PublishingRequestCase publishingRequest,
