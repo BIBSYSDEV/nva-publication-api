@@ -15,6 +15,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -41,7 +42,25 @@ public class ImportCandidateTest {
         var actualImportedPublication = randomImportCandidate.toPublication();
         assertThat(randomImportCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
         assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
+    }
 
+    @Test
+    void builderShouldAcceptPublication() {
+        Publication randomPublication = createPublicationWithoutStatus();
+        var importCandidate =
+            new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
+                .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .build();
+        assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+        var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
+
+        assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
+    }
+
+    private static Publication createPublicationWithoutStatus() {
+        var randomPublication = PublicationGenerator.randomPublication();
+        randomPublication.setStatus(null);
+        return randomPublication;
     }
 
     private ImportCandidate randomImportCandidate() {
