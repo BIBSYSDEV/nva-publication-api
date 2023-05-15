@@ -18,7 +18,6 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.AccessRight;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -82,6 +81,7 @@ import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -584,7 +584,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.toString())
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -624,7 +624,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.toString())
                 .build();
     }
 

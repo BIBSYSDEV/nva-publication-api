@@ -1,10 +1,6 @@
 package no.sikt.nva.brage.migration.merger;
 
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -12,11 +8,14 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
+import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+
+import java.util.stream.Collectors;
 
 public class AssociatedArtifactMover {
 
@@ -58,11 +57,11 @@ public class AssociatedArtifactMover {
                 logger.info("sourceKey {}", objectKeyPath + objectKey);
                 logger.info("destinationKey {}", objectKey);
                 var copyObjRequest = CopyObjectRequest.builder()
-                                         .sourceBucket(sourceBucket)
-                                         .destinationBucket(persistedStorageBucket)
-                                         .sourceKey(objectKeyPath + objectKey)
-                                         .destinationKey(objectKey)
-                                         .build();
+                    .sourceBucket(sourceBucket)
+                    .destinationBucket(persistedStorageBucket)
+                    .sourceKey(objectKeyPath + objectKey)
+                    .destinationKey(objectKey)
+                    .build();
                 s3Client.copyObject(copyObjRequest);
                 return extractMimeTypeAndSize(file, objectKey);
             } else {
@@ -79,22 +78,22 @@ public class AssociatedArtifactMover {
         var mimeType = headObjectResponse.contentType();
 
         return File.builder()
-                   .withName(file.getName())
-                   .withIdentifier(file.getIdentifier())
-                   .withLicense(file.getLicense())
-                   .withPublisherAuthority(file.isPublisherAuthority())
-                   .withEmbargoDate(file.getEmbargoDate().orElse(null))
-                   .withMimeType(mimeType)
-                   .withSize(size)
-                   .buildPublishedFile();
+            .withName(file.getName())
+            .withIdentifier(file.getIdentifier())
+            .withLicense(file.getLicense())
+            .withPublisherAuthority(file.isPublisherAuthority())
+            .withEmbargoDate(file.getEmbargoDate().orElse(null))
+            .withMimeType(mimeType)
+            .withSize(size)
+            .buildPublishedFile();
     }
 
     private HeadObjectRequest createHeadObjectRequest(String objectKey) {
         return HeadObjectRequest
-                   .builder()
-                   .bucket(persistedStorageBucket)
-                   .key(objectKey)
-                   .build();
+            .builder()
+            .bucket(persistedStorageBucket)
+            .key(objectKey)
+            .build();
     }
 
     private String getSourceBucket() {
@@ -102,14 +101,11 @@ public class AssociatedArtifactMover {
     }
 
     private String getObjectKeyPath() {
-        var recordObjectKey = getRecordObjectKey();
-        Path path = Paths.get(recordObjectKey);
-        var directory = path.getParent();
-        if (Objects.nonNull(directory)) {
-            return directory + "/";
-        } else {
-            return StringUtils.EMPTY_STRING;
-        }
+        var directory = UnixPath.of(getRecordObjectKey())
+            .getParent();
+        return directory
+            .map(unixPath -> unixPath + "/")
+            .orElse(StringUtils.EMPTY_STRING);
     }
 
     private String getRecordObjectKey() {
