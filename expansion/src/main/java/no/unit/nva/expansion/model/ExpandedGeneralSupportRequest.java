@@ -8,13 +8,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -30,7 +29,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     private Set<URI> organizationIds;
     private Instant createdDate;
     private URI customerId;
-    private TicketStatus status;
+    private ExpandedTicketStatus status;
 
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
@@ -40,7 +39,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         var publicationSummary = PublicationSummary.create(publication);
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(resourceExpansionService.getOrganizationIds(dataEntry));
-        entry.setStatus(dataEntry.getStatus());
+        entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(dataEntry));
         entry.setOwner(resourceExpansionService.expandPerson(dataEntry.getOwner()));
         entry.setModifiedDate(dataEntry.getModifiedDate());
         entry.setCreatedDate(dataEntry.getCreatedDate());
@@ -76,26 +75,28 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     }
 
     @Override
-    public GeneralSupportRequest toTicketEntry() {
-        var ticketEntry = new GeneralSupportRequest();
-        ticketEntry.setModifiedDate(this.getModifiedDate());
-        ticketEntry.setCreatedDate(this.getCreatedDate());
-        ticketEntry.setCustomerId(this.getCustomerId());
-        ticketEntry.setIdentifier(extractIdentifier(this.getId()));
-        ticketEntry.setPublicationDetails(PublicationDetails.create(this.getPublication()));
-        ticketEntry.setStatus(this.getStatus());
-        ticketEntry.setOwner(this.getOwner().getUsername());
-        ticketEntry.setAssignee(extractAssigneeUsername());
-        return ticketEntry;
-    }
-
-    @Override
-    public TicketStatus getStatus() {
+    public ExpandedTicketStatus getStatus() {
         return this.status;
     }
 
-    public void setStatus(TicketStatus status) {
+    public void setStatus(ExpandedTicketStatus status) {
         this.status = status;
+    }
+
+    public URI getCustomerId() {
+        return this.customerId;
+    }
+
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
+    }
+
+    public Instant getCreatedDate() {
+        return this.createdDate;
+    }
+
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
     }
 
     private static List<ExpandedMessage> expandMessages(List<Message> messages,
@@ -119,29 +120,5 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         return users.stream()
             .map(resourceExpansionService::expandPerson)
             .collect(Collectors.toSet());
-    }
-
-    private Username extractAssigneeUsername() {
-        return Optional.ofNullable(this.getAssignee())
-            .map(ExpandedPerson::getUsername)
-            .map(User::toString)
-            .map(Username::new)
-            .orElse(null);
-    }
-
-    private URI getCustomerId() {
-        return this.customerId;
-    }
-
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
-    }
-
-    private Instant getCreatedDate() {
-        return this.createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
     }
 }

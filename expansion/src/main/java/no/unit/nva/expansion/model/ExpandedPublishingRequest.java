@@ -11,16 +11,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -35,7 +33,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     @JsonProperty("organizationIds")
     private Set<URI> organizationIds;
     @JsonProperty(STATUS_FIELD)
-    private TicketStatus status;
+    private ExpandedTicketStatus status;
     private URI customerId;
     private Instant modifiedDate;
     private Instant createdDate;
@@ -59,8 +57,8 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var assignee = extractPersonUsername(publishingRequestCase.getAssignee(), resourceExpansionService);
         var finalzedBy = extractPersonUsername(publishingRequestCase.getFinalizedBy(), resourceExpansionService);
         var viewedBy = expandPersonViewedByUsername(publishingRequestCase.getViewedBy(), resourceExpansionService);
-        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee
-            , finalzedBy, viewedBy);
+        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee,
+                             finalzedBy, viewedBy);
     }
 
     @JacocoGenerated
@@ -84,26 +82,11 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     }
 
     @Override
-    public TicketEntry toTicketEntry() {
-        var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setPublicationDetails(PublicationDetails.create(getPublication()));
-        publishingRequest.setCustomerId(this.getCustomerId());
-        publishingRequest.setIdentifier(extractIdentifier(this.getId()));
-        publishingRequest.setOwner(this.getOwner().getUsername());
-        publishingRequest.setModifiedDate(this.getModifiedDate());
-        publishingRequest.setCreatedDate(this.getCreatedDate());
-        publishingRequest.setStatus(this.getStatus());
-        publishingRequest.setFinalizedBy(extractPersonUsername(this.getFinalizedBy()));
-        publishingRequest.setAssignee(extractPersonUsername(this.getAssignee()));
-        return publishingRequest;
-    }
-
-    @Override
-    public TicketStatus getStatus() {
+    public ExpandedTicketStatus getStatus() {
         return status;
     }
 
-    public void setStatus(TicketStatus status) {
+    public void setStatus(ExpandedTicketStatus status) {
         this.status = status;
     }
 
@@ -154,13 +137,13 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                            ExpandedPerson owner,
                                                            ExpandedPerson assignee,
                                                            ExpandedPerson finalizedBy,
-                                                           Set<ExpandedPerson> viewedBy) {
+                                                           Set<ExpandedPerson> viewedBy) throws NotFoundException {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setPublication(publicationSummary);
         entry.setOrganizationIds(organizationIds);
-        entry.setStatus(dataEntry.getStatus());
+        entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(dataEntry));
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setCreatedDate(dataEntry.getCreatedDate());
         entry.setModifiedDate(dataEntry.getModifiedDate());
@@ -193,13 +176,5 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         return users.stream()
             .map(resourceExpansionService::expandPerson)
             .collect(Collectors.toSet());
-    }
-
-    private Username extractPersonUsername(ExpandedPerson expandedPerson) {
-        return Optional.ofNullable(expandedPerson)
-            .map(ExpandedPerson::getUsername)
-            .map(User::toString)
-            .map(Username::new)
-            .orElse(null);
     }
 }

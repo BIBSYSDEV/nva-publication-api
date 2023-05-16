@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.util.List;
+import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -13,15 +16,10 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Set;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
@@ -30,15 +28,15 @@ import java.util.Set;
     @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class)
 })
 public abstract class ExpandedTicket implements ExpandedDataEntry {
-    
+
     public static final String PUBLICATION_FIELD = "publication";
     public static final String ORGANIZATION_IDS_FIELD = "organizationIds";
     public static final String ID_FIELD = "id";
     public static final String VIEWED_BY_FIELD = "viewedBy";
     public static final String ASSIGNEE_FIELD = "assignee";
-    private static final String MESSAGES_FIELD = "messages";
     public static final String FINALIZED_BY_FIELD = "finalizedBy";
     public static final String OWNER_FIELD = "owner";
+    private static final String MESSAGES_FIELD = "messages";
     @JsonProperty(ID_FIELD)
     private URI id;
     @JsonProperty(MESSAGES_FIELD)
@@ -57,13 +55,14 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
                                            ResourceExpansionService expansionService,
-                                           TicketService ticketService) throws NotFoundException, JsonProcessingException {
+                                           TicketService ticketService)
+        throws NotFoundException, JsonProcessingException {
 
         if (ticketEntry instanceof DoiRequest) {
             return ExpandedDoiRequest.createEntry((DoiRequest) ticketEntry,
-                expansionService,
-                resourceService,
-                ticketService);
+                                                  expansionService,
+                                                  resourceService,
+                                                  ticketService);
         }
         if (ticketEntry instanceof PublishingRequestCase) {
             return ExpandedPublishingRequest.createEntry(
@@ -81,6 +80,10 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
             );
         }
         throw new UnsupportedOperationException();
+    }
+
+    public static SortableIdentifier extractIdentifier(URI id) {
+        return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
     }
 
     public ExpandedPerson getFinalizedBy() {
@@ -103,31 +106,31 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     public final PublicationSummary getPublication() {
         return this.publication;
     }
-    
+
     public final void setPublication(PublicationSummary publication) {
         this.publication = publication;
     }
-    
+
+    //public abstract TicketEntry toTicketEntry();
+
     @JsonProperty(ORGANIZATION_IDS_FIELD)
     public abstract Set<URI> getOrganizationIds();
-    
-    public abstract TicketEntry toTicketEntry();
-    
+
     @JsonProperty(ID_FIELD)
     public final URI getId() {
         return this.id;
     }
-    
+
     public final void setId(URI id) {
         this.id = id;
     }
-    
-    public abstract TicketStatus getStatus();
-    
+
+    public abstract ExpandedTicketStatus getStatus();
+
     public final List<ExpandedMessage> getMessages() {
         return this.messages;
     }
-    
+
     public final void setMessages(List<ExpandedMessage> messages) {
         this.messages = messages;
     }
@@ -150,12 +153,8 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
 
     protected static URI generateId(URI publicationId, SortableIdentifier identifier) {
         return UriWrapper.fromUri(publicationId)
-                   .addChild(PublicationServiceConfig.TICKET_PATH)
-                   .addChild(identifier.toString())
-                   .getUri();
-    }
-    
-    protected static SortableIdentifier extractIdentifier(URI id) {
-        return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
+            .addChild(PublicationServiceConfig.TICKET_PATH)
+            .addChild(identifier.toString())
+            .getUri();
     }
 }

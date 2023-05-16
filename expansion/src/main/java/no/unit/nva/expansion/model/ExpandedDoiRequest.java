@@ -11,13 +11,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
+import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -31,7 +30,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     public static final String TYPE = "DoiRequest";
 
     @JsonProperty()
-    private TicketStatus status;
+    private ExpandedTicketStatus status;
     @JsonProperty
     private Instant modifiedDate;
     @JsonProperty
@@ -112,28 +111,13 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     }
 
     @Override
-    public DoiRequest toTicketEntry() {
-        DoiRequest doiRequest = new DoiRequest();
-        doiRequest.setCreatedDate(this.getCreatedDate());
-        doiRequest.setIdentifier(this.identifyExpandedEntry());
-        doiRequest.setCustomerId(this.getCustomerId());
-        doiRequest.setModifiedDate(this.getModifiedDate());
-        doiRequest.setOwner(this.getOwner().getUsername());
-        doiRequest.setPublicationDetails(PublicationDetails.create(this.getPublication()));
-        doiRequest.setResourceStatus(this.getPublication().getStatus());
-        doiRequest.setStatus(this.getStatus());
-        doiRequest.setAssignee(extractAssigneeUsername());
-        return doiRequest;
-    }
-
-    @Override
     @JacocoGenerated
-    public TicketStatus getStatus() {
+    public ExpandedTicketStatus getStatus() {
         return status;
     }
 
     @JacocoGenerated
-    public void setStatus(TicketStatus status) {
+    public void setStatus(ExpandedTicketStatus status) {
         this.status = status;
     }
 
@@ -165,7 +149,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setId(generateId(publicationSummary.getPublicationId(), doiRequest.getIdentifier()));
         entry.setCustomerId(doiRequest.getCustomerId());
         entry.setModifiedDate(doiRequest.getModifiedDate());
-        entry.setStatus(doiRequest.getStatus());
+        entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(doiRequest));
         entry.setViewedBy(expandPersonViewedByUsername(doiRequest.getViewedBy(), resourceExpansionService));
         entry.setPublication(publicationSummary);
         entry.setFinalizedBy(extractPersonUsername(doiRequest.getFinalizedBy(), resourceExpansionService));
@@ -186,13 +170,5 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return users.stream()
             .map(resourceExpansionService::expandPerson)
             .collect(Collectors.toSet());
-    }
-
-    private Username extractAssigneeUsername() {
-        return Optional.ofNullable(this.getAssignee())
-            .map(ExpandedPerson::getUsername)
-            .map(User::toString)
-            .map(Username::new)
-            .orElse(null);
     }
 }
