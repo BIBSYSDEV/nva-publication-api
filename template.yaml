@@ -419,7 +419,7 @@ Resources:
               - sqs:ChangeMessageVisibility
             Resource:
               - !GetAtt CristinImportDataEntryQueue.Arn
-              - !GetAtt CristinImportPatchQueue
+              - !GetAtt CristinImportPatchQueue.Arn
 
   DatabaseAccessLambdaPermissions:
     Type: AWS::IAM::Policy
