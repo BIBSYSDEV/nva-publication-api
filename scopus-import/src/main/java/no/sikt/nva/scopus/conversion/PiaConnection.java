@@ -104,6 +104,12 @@ public class PiaConnection {
     }
 
     private URI createCristinUriFromCristinOrganization(Affiliation affiliation) {
+        return nonNull(affiliation.getUnitIdentifier())
+                   ? constructUri(affiliation)
+                   : null;
+    }
+
+    private URI constructUri(Affiliation affiliation) {
         return attempt(() -> new URIBuilder()
                                  .setHost(cristinProxyHost)
                                  .setPath(CRISTIN_ORGANIZATION_PATH + affiliation.getUnitIdentifier())
@@ -144,12 +150,18 @@ public class PiaConnection {
     }
 
     private URI createCristinUriFromCristinNumber(Integer cristinNumber) {
+        return nonNull(cristinNumber)
+                   ? constructUri(cristinNumber)
+                   : null;
+    }
+
+    private URI constructUri(Integer cristinNumber) {
         return attempt(() -> new URIBuilder()
-                                       .setHost(cristinProxyHost)
-                                       .setPath(CRISTIN_PERSON_PATH + cristinNumber)
-                                       .setScheme(HTTPS_SCHEME)
-                                       .build())
-                         .orElseThrow();
+                                 .setHost(cristinProxyHost)
+                                 .setPath(CRISTIN_PERSON_PATH + cristinNumber)
+                                 .setScheme(HTTPS_SCHEME)
+                                 .build())
+                   .orElseThrow();
     }
 
     private HttpRequest createRequest(URI uri) {
