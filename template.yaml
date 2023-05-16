@@ -1213,6 +1213,36 @@ Resources:
             Type: SQS
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
+  ImportCandidateDataEntryUpdateHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.fanout.ImportCandidateDataEntryUpdateHandler::handleRequest
+      Runtime: java11
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "ImportCandidates.Database.Update" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+
 
   DeleteDraftPublicationHandler:
     DependsOn: EventsLambdaPermissions
@@ -1292,7 +1322,7 @@ Resources:
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          OUTPUT_EVENT_TOPIC: 'ImportCandidate.Database.Update'
+          OUTPUT_EVENT_TOPIC: 'ImportCandidates.Database.Update'
       Events:
         FanoutSource:
           Type: DynamoDB
