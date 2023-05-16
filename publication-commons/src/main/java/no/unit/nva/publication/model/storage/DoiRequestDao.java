@@ -91,9 +91,10 @@ public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSe
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DoiRequestDao that)) {
+        if (!(o instanceof DoiRequestDao)) {
             return false;
         }
+        DoiRequestDao that = (DoiRequestDao) o;
         return Objects.equals(getData(), that.getData());
     }
 

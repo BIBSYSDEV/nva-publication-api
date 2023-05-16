@@ -269,9 +269,10 @@ public class DoiRequest extends TicketEntry {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DoiRequest that)) {
+        if (!(o instanceof DoiRequest)) {
             return false;
         }
+        DoiRequest that = (DoiRequest) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
                && getStatus() == that.getStatus()
                && getResourceStatus() == that.getResourceStatus()

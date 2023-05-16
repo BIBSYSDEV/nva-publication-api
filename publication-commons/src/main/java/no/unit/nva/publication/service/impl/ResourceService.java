@@ -256,7 +256,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Entity migrate(Entity dataEntry) {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
-                   : migrateOther(dataEntry);
+                   : dataEntry;
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -280,13 +280,6 @@ public class ResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var resource = fetchResourceForElevatedUser(userInstance.getOrganizationUri(), publicationIdentifier);
         return resource.fetchAllTickets(this);
-    }
-
-    private Entity migrateOther(Entity dataEntry) {
-        if (dataEntry instanceof TicketEntry ticket) {
-            return ticket;
-        }
-        return dataEntry;
     }
 
     private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
