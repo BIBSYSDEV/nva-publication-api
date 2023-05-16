@@ -15,6 +15,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.Organization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,8 @@ public class CristinConnection {
     public static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
     public static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
     public static final String QUERY_PARAM_DEPTH_NONE = "?depth=none";
+    public static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
+    public static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     private final HttpClient httpClient;
 
@@ -52,11 +55,15 @@ public class CristinConnection {
                          .map(this::getCristinResponse)
                          .map(this::getBodyFromOrganizationResponse)
                          .map(this::convertToOrganization)
-                         .orElse(failure -> null);
+                         .orElse(this::loggExceptionAndReturnNull);
+    }
+
+    private Organization loggExceptionAndReturnNull(Failure<Organization> failure) {
+        logger.info(COULD_NOT_FETCH_ORGANIZATION, failure.getException().toString());
+        return null;
     }
 
     private String getBodyFromOrganizationResponse(HttpResponse<String> response) {
-        logger.info("Organization response: {}", response.body());
         if (response.statusCode() != HTTP_OK) {
             logger.info(CRISTIN_ORGANIZATION_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
@@ -66,7 +73,7 @@ public class CristinConnection {
 
     private Organization convertToOrganization(String body) throws JsonProcessingException {
         var organization = JsonUtils.dtoObjectMapper.readValue(body, Organization.class);
-        logger.info("Organization from response: {}", organization);
+        logger.info(ORGANIZATION_SUCCESSFULLY_FETCHED, organization.toJsonString());
         return organization;
     }
 
@@ -101,7 +108,6 @@ public class CristinConnection {
 
     private HttpRequest createOrganizationRequest(URI uri) {
         var organizationUri = URI.create(uri + QUERY_PARAM_DEPTH_NONE);
-        logger.info("Organization request: {}", organizationUri);
         return HttpRequest.newBuilder()
                    .uri(organizationUri)
                    .GET()
