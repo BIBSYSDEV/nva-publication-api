@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
@@ -19,7 +18,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -27,7 +25,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.core.paths.UriWrapper;
@@ -37,9 +34,6 @@ import org.junit.jupiter.api.Test;
 
 class PublicationSummaryTest extends ResourcesLocalTest {
 
-    private static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
-    private static final String PUBLISHED_DATE_FIELD = "publishedDate";
-    private static final String CONTRIBUTORS_FIELD = "contributors";
     private static final int MAX_SIZE_CONTRIBUTOR_LIST = 5;
 
     @BeforeEach
@@ -52,8 +46,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     void objectMapperCanWriteAndReadPublicationSummary() throws JsonProcessingException {
         var publicationSummary = publicationSummary();
         var content = dtoObjectMapper.writeValueAsString(publicationSummary);
-        var processedPublicationSummary =
-            dtoObjectMapper.readValue(content, PublicationSummary.class);
+        var processedPublicationSummary = dtoObjectMapper.readValue(content, PublicationSummary.class);
 
         assertEquals(publicationSummary, processedPublicationSummary);
     }
@@ -90,27 +83,12 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         var entityDescription = publication.getEntityDescription();
         entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
         PublicationSummary summary = PublicationSummary.create(publication);
-        assertThat(summary.getContributors(),
-                   containsInAnyOrder(entityDescription.getContributors()
-                                          .stream()
-                                          .sorted(Comparator.comparing(Contributor::getSequence))
-                                          .limit(MAX_SIZE_CONTRIBUTOR_LIST)
-                                          .toArray())
-        );
-    }
-
-    @Test
-    void shouldReturnPublicationSummaryWithoutEmptyFieldsfromPublicationDetails() {
-        var publication = PublicationGenerator.publicationWithIdentifier();
-        var summary = PublicationSummary.create(PublicationDetails.create(publication));
-        assertThat(summary, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_INSTANCE_FIELD,
-                                                                        PUBLISHED_DATE_FIELD,
-                                                                        CONTRIBUTORS_FIELD)));
-        assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
-        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
-        assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
-        assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
+        assertThat(summary.getContributors(), containsInAnyOrder(entityDescription.getContributors()
+                                                                     .stream()
+                                                                     .sorted(
+                                                                         Comparator.comparing(Contributor::getSequence))
+                                                                     .limit(MAX_SIZE_CONTRIBUTOR_LIST)
+                                                                     .toArray()));
     }
 
     @Test
@@ -137,11 +115,8 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     }
 
     private Contributor getRandomContributor(int sequenceNumber) {
-        return new Contributor(getRandomIdentity(),
-                               getListOfRandomOrganizations(),
-                               new RoleType(Role.OTHER),
-                               sequenceNumber,
-                               randomBoolean());
+        return new Contributor(getRandomIdentity(), getListOfRandomOrganizations(), new RoleType(Role.OTHER),
+                               sequenceNumber, randomBoolean());
     }
 
     private List<Organization> getListOfRandomOrganizations() {

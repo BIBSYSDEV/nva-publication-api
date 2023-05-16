@@ -13,6 +13,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import org.junit.jupiter.api.Test;
 
 class DoiRequestTest {
@@ -36,9 +37,18 @@ class DoiRequestTest {
 
     @Test
     void doiRequestCannotBeCreatedWithoutReferenceToResource() {
-        var exception = assertThrows(IllegalStateException.class,
-                                     this::doiRequestWithoutResourceReference);
+        var exception = assertThrows(IllegalStateException.class, this::doiRequestWithoutResourceReference);
         assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
+    }
+
+    @Test
+    void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
+        Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
+        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
+
+        Resource updatedResource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
+
+        assertThrows(IllegalDoiRequestUpdate.class, () -> doiRequest.update(updatedResource));
     }
 
     private static Clock fixedClock() {

@@ -19,7 +19,6 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -63,18 +62,6 @@ public class PublicationSummary {
         publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
         publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
         publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
-        return publicationSummary;
-    }
-
-    public static PublicationSummary create(PublicationDetails publicationDetails) {
-        var publicationSummary = new PublicationSummary();
-        publicationSummary.setIdentifier(publicationDetails.getIdentifier());
-        publicationSummary.setPublicationId(toPublicationId(publicationDetails.getIdentifier()));
-        publicationSummary.setCreatedDate(publicationDetails.getCreatedDate());
-        publicationSummary.setModifiedDate(publicationDetails.getModifiedDate());
-        publicationSummary.setOwner(new User(publicationDetails.getOwner().toString()));
-        publicationSummary.setStatus(publicationDetails.getStatus());
-        publicationSummary.setTitle(publicationDetails.getTitle());
         return publicationSummary;
     }
 
@@ -201,27 +188,25 @@ public class PublicationSummary {
     }
 
     private static String extractTitle(EntityDescription entityDescription) {
-        return Optional.ofNullable(entityDescription)
-            .map(EntityDescription::getMainTitle)
-            .orElse(null);
+        return Optional.ofNullable(entityDescription).map(EntityDescription::getMainTitle).orElse(null);
     }
 
     private static List<Contributor> extractContributors(EntityDescription entityDescription) {
         return Optional.ofNullable(entityDescription)
-            .map(EntityDescription::getContributors)
-            .orElse(Collections.emptyList())
-            .stream()
-            .sorted(Comparator.comparing(Contributor::getSequence))
-            .limit(MAX_SIZE_CONTRIBUTOR_LIST)
-            .collect(Collectors.toList());
+                   .map(EntityDescription::getContributors)
+                   .orElse(Collections.emptyList())
+                   .stream()
+                   .sorted(Comparator.comparing(Contributor::getSequence))
+                   .limit(MAX_SIZE_CONTRIBUTOR_LIST)
+                   .collect(Collectors.toList());
     }
 
     private static PublicationInstance<? extends Pages> extractPublicationInstance(
         EntityDescription entityDescription) {
         return Optional.ofNullable(entityDescription)
-            .map(EntityDescription::getReference)
-            .map(Reference::getPublicationInstance)
-            .orElse(null);
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationInstance)
+                   .orElse(null);
     }
 
     private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
@@ -230,7 +215,7 @@ public class PublicationSummary {
 
     private static URI toPublicationId(SortableIdentifier identifier) {
         return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
-            .addChild(identifier.toString())
-            .getUri();
+                   .addChild(identifier.toString())
+                   .getUri();
     }
 }
