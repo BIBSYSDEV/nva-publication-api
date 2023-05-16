@@ -83,6 +83,8 @@ test {
     environment "DOMAIN_NAME", "api.test.nva.aws.unit.no"
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "EVENTS_BUCKET", "eventsBucket"
+    environment "CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+    environment "CRISTIN_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
 }
 
 configurations {

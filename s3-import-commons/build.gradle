@@ -64,6 +64,8 @@ test {
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "EVENTS_BUCKET", "theEventsBucket"
     environment "TABLE_NAME", "someTable"
+    environment "CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+    environment "CRISTIN_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
 }
 
 

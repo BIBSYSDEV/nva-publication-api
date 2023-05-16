@@ -402,6 +402,25 @@ Resources:
               - lambda:InvokeFunction
             Resource: "*"
 
+  SQSPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ChangeMessageVisibility
+            Resource:
+              - !GetAtt CristinImportDataEntryQueue.Arn
+              - !GetAtt CristinImportPatchQueue
+
   DatabaseAccessLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -1387,59 +1406,6 @@ Resources:
                 topic: [ "PublicationService.DataImport.Filename" ]
                 subtopic: [ "PublicationService.CristinData.DataEntry" ]
 
-  CristinEntriesEventConsumer:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: cristin-import
-      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
-      Runtime: java11
-      Timeout: 30 #  30 sec timeout
-      Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 10
-      Environment:
-        Variables:
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-          TABLE_NAME: !Ref NvaResourcesTable
-          BATCH_EMISSION_INTERVAL_MILLIS: 0
-          DOMAIN_NAME: !Ref ApiDomain
-          SHOULD_CREATE_CONTRIBUTOR_ID: false
-      Events:
-        EventBridgeEvent:
-          Type: EventBridgeRule
-          Properties:
-            EventBusName: !GetAtt InternalBus.Name
-            Pattern:
-              detail:
-                topic: [ "PublicationService.DataImport.DataEntry" ]
-                subtopic: [ "PublicationService.CristinData.DataEntry" ]
-
-  CristinEntriesPatchEventConsumer:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: cristin-import
-      Handler: no.unit.nva.cristin.lambda.CristinPatchEventConsumer::handleRequest
-      Runtime: java11
-      Timeout: 30 #  30 sec timeout
-      Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 10
-      Environment:
-        Variables:
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-          TABLE_NAME: !Ref NvaResourcesTable
-          BATCH_EMISSION_INTERVAL_MILLIS: 0
-          DOMAIN_NAME: !Ref ApiDomain
-      Events:
-        EventBridgeEvent:
-          Type: EventBridgeRule
-          Properties:
-            EventBusName: !GetAtt InternalBus.Name
-            Pattern:
-              detail:
-                topic: [ "PublicationService.DataImport.Filename" ]
-                subtopic: [ "PublicationService.CristinData.PatchEntry" ]
-
 
   CreatePublishedPublicationHandler:
     Type: AWS::Serverless::Function
@@ -1517,6 +1483,7 @@ Resources:
   StartCristinImportButton:
     Type: AWS::Serverless::Function
     Properties:
+      DependsOn: SQSPermissions
       Description: 'Starts Cristin Import. Accepts Json object with "uri" field'
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
@@ -1530,6 +1497,9 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
+          CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
+          CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
+
 
   LogicallyDeleteImportedPublicationsButton:
     Type: AWS::Serverless::Function
@@ -1626,6 +1596,71 @@ Resources:
                   - Name: suffix
                     Value: '.zip'
 
+  #============================ SQS QUEUE LAMBDAS =====================================================================#
+  # Lambdas triggered by push messages to SQS queues
+  #====================================================================================================================#
+
+  CristinImportDataEntryQueue:
+    Type: "AWS::SQS::Queue"
+  CristinImportPatchQueue:
+    Type: "AWS::SQS::Queue"
+
+  CristinEntriesEventConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cristin-import
+      Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
+      Runtime: java11
+      Timeout: 30 #  30 sec timeout
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          BATCH_EMISSION_INTERVAL_MILLIS: 0
+          DOMAIN_NAME: !Ref ApiDomain
+          SHOULD_CREATE_CONTRIBUTOR_ID: false
+          CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
+
+  CristinEntriesEventConsumerSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      DependsOn: SQSPermissions
+      BatchSize: 1
+      Enabled: true
+      EventSourceArn: !GetAtt CristinImportDataEntryQueue.Arn
+      FunctionName: !GetAtt CristinEntriesEventConsumer.Arn
+
+
+  CristinEntriesPatchEventConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cristin-import
+      Handler: no.unit.nva.cristin.lambda.CristinPatchEventConsumer::handleRequest
+      Runtime: java11
+      Timeout: 30 #  30 sec timeout
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          BATCH_EMISSION_INTERVAL_MILLIS: 0
+          DOMAIN_NAME: !Ref ApiDomain
+          CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
+
+  CristinEntriesPatchEventConsumerSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      DependsOn:
+        - SQSPermissions
+      BatchSize: 1
+      Enabled: true
+      EventSourceArn: !GetAtt CristinImportPatchQueue.Arn
+      FunctionName: !GetAtt CristinEntriesPatchEventConsumer.Arn
 
 
   #============================ Deploy API ============================================================================#
