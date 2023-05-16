@@ -102,15 +102,15 @@ public class DoiRequestDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DoiRequestDto that)) {
+        if (!(o instanceof DoiRequestDto)) {
             return false;
         }
+        DoiRequestDto that = (DoiRequestDto) o;
         return getStatus() == that.getStatus()
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getPublicationIdentifier(),
-                                 that.getPublicationIdentifier())
+               && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee());

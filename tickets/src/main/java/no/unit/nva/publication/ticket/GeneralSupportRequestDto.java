@@ -104,16 +104,16 @@ public class GeneralSupportRequestDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof GeneralSupportRequestDto that)) {
+        if (!(o instanceof GeneralSupportRequestDto)) {
             return false;
         }
+        GeneralSupportRequestDto that = (GeneralSupportRequestDto) o;
         return Objects.equals(getId(), that.getId())
                && getStatus() == that.getStatus()
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getPublicationIdentifier(),
-                                 that.getPublicationIdentifier())
+               && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee());
     }
