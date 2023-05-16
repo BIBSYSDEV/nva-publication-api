@@ -1,23 +1,22 @@
 package no.unit.nva.expansion.model;
 
+import static no.unit.nva.expansion.utils.ExpansionUtil.expandPerson;
+import static no.unit.nva.expansion.utils.ExpansionUtil.expandPersonViewedBy;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -154,21 +153,5 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setPublication(publicationSummary);
         entry.setFinalizedBy(expandPerson(doiRequest.getFinalizedBy(), resourceExpansionService));
         return entry;
-    }
-
-    private static ExpandedPerson expandPerson(Username username,
-                                                        ResourceExpansionService expansionService) {
-        return Optional.ofNullable(username)
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
-    }
-
-    private static Set<ExpandedPerson> expandPersonViewedBy(Set<User> users,
-                                                                    ResourceExpansionService resourceExpansionService) {
-        return users.stream()
-            .map(resourceExpansionService::expandPerson)
-            .collect(Collectors.toSet());
     }
 }

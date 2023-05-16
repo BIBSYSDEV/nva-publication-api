@@ -128,9 +128,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         expansionService = mockedExpansionService();
 
         var finalizedBy = ticket.getFinalizedBy().getValue();
-        var expectedExpandedfinalizedBy = getExpectedExpandedPerson(new User(finalizedBy));
-        var expandedfinalizedBy = expansionService.expandPerson(new User(finalizedBy));
-        assertThat(expandedfinalizedBy, is(equalTo(expectedExpandedfinalizedBy)));
+        var expectedExpandedFinalizedBy = getExpectedExpandedPerson(new User(finalizedBy));
+        var expandedFinalizedBy = expansionService.expandPerson(new User(finalizedBy));
+        assertThat(expandedFinalizedBy, is(equalTo(expectedExpandedFinalizedBy)));
     }
 
     @DisplayName("should copy all publicly visible fields from Ticket to ExpandedTicket")
@@ -360,7 +360,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        Set<User> viewedBySet = Set.of(new User(randomString()));
+        var viewedBySet = Set.of(new User(randomString()));
         ticket.setViewedBy(viewedBySet);
 
         expansionService = mockedExpansionService();
@@ -369,7 +369,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var viewedBy = ticket.getViewedBy();
         var expectedExpandedViewedBy = getExpectedExpandedPerson(new User(viewedBy.toString()));
         assert expandedTicket.getViewedBy().contains(expectedExpandedViewedBy);
-        Set<ExpandedPerson> expectedExpandedViewedBySet = Set.of(expectedExpandedViewedBy);
+        var expectedExpandedViewedBySet = Set.of(expectedExpandedViewedBy);
         assertThat(expandedTicket.getViewedBy(), is(equalTo(expectedExpandedViewedBySet)));
     }
 
@@ -500,7 +500,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         doiRequest.setPublicationDetails(PublicationDetails.create(expandedDoiRequest.getPublication()));
         doiRequest.setResourceStatus(expandedDoiRequest.getPublication().getStatus());
         doiRequest.setStatus(getTicketStatus(expandedDoiRequest.getStatus()));
-        doiRequest.setAssignee(expandPerson(expandedDoiRequest.getAssignee()));
+        doiRequest.setAssignee(extractUsername(expandedDoiRequest.getAssignee()));
         return doiRequest;
     }
 
@@ -513,7 +513,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketEntry.setPublicationDetails(PublicationDetails.create(expandedGeneralSupportRequest.getPublication()));
         ticketEntry.setStatus(getTicketStatus(expandedGeneralSupportRequest.getStatus()));
         ticketEntry.setOwner(expandedGeneralSupportRequest.getOwner().getUsername());
-        ticketEntry.setAssignee(expandPerson(expandedGeneralSupportRequest.getAssignee()));
+        ticketEntry.setAssignee(extractUsername(expandedGeneralSupportRequest.getAssignee()));
         return ticketEntry;
     }
 
@@ -526,8 +526,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setModifiedDate(expandedPublishingRequest.getModifiedDate());
         publishingRequest.setCreatedDate(expandedPublishingRequest.getCreatedDate());
         publishingRequest.setStatus(getTicketStatus(expandedPublishingRequest.getStatus()));
-        publishingRequest.setFinalizedBy(expandPerson(expandedPublishingRequest.getFinalizedBy()));
-        publishingRequest.setAssignee(expandPerson(expandedPublishingRequest.getAssignee()));
+        publishingRequest.setFinalizedBy(extractUsername(expandedPublishingRequest.getFinalizedBy()));
+        publishingRequest.setAssignee(extractUsername(expandedPublishingRequest.getAssignee()));
         return publishingRequest;
     }
 
@@ -544,7 +544,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return null;
     }
 
-    private Username expandPerson(ExpandedPerson expandedPerson) {
+    private Username extractUsername(ExpandedPerson expandedPerson) {
         return Optional.ofNullable(expandedPerson)
             .map(ExpandedPerson::getUsername)
             .map(User::toString)
