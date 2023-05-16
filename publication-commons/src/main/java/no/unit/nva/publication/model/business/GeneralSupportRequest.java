@@ -202,15 +202,15 @@ public class GeneralSupportRequest extends TicketEntry {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof GeneralSupportRequest that)) {
+        if (!(o instanceof GeneralSupportRequest)) {
             return false;
         }
+        GeneralSupportRequest that = (GeneralSupportRequest) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
                && getStatus() == that.getStatus()
                && Objects.equals(getAssignee(), that.getAssignee());
     }

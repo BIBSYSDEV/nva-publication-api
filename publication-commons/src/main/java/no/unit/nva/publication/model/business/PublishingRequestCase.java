@@ -245,9 +245,10 @@ public class PublishingRequestCase extends TicketEntry {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublishingRequestCase that)) {
+        if (!(o instanceof PublishingRequestCase)) {
             return false;
         }
+        PublishingRequestCase that = (PublishingRequestCase) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
                && getStatus() == that.getStatus()
                && Objects.equals(getCustomerId(), that.getCustomerId())

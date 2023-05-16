@@ -93,9 +93,10 @@ public class Message implements Entity, JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Message message)) {
+        if (!(o instanceof Message)) {
             return false;
         }
+        Message message = (Message) o;
         return Objects.equals(getIdentifier(), message.getIdentifier())
                && Objects.equals(getOwner(), message.getOwner())
                && Objects.equals(getCustomerId(), message.getCustomerId())
