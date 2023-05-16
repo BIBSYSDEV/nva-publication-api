@@ -46,9 +46,9 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setMessages(expandMessages(dataEntry.fetchMessages(ticketService), resourceExpansionService));
-        entry.setViewedBy(expandPersonViewedByUsername(dataEntry.getViewedBy(), resourceExpansionService));
-        entry.setFinalizedBy(extractPersonUsername(dataEntry.getFinalizedBy(), resourceExpansionService));
-        entry.setAssignee(extractPersonUsername(dataEntry.getAssignee(), resourceExpansionService));
+        entry.setViewedBy(expandPersonViewedBy(dataEntry.getViewedBy(), resourceExpansionService));
+        entry.setFinalizedBy(expandPerson(dataEntry.getFinalizedBy(), resourceExpansionService));
+        entry.setAssignee(expandPerson(dataEntry.getAssignee(), resourceExpansionService));
         return entry;
     }
 
@@ -106,7 +106,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
             .collect(Collectors.toList());
     }
 
-    private static ExpandedPerson extractPersonUsername(Username username,
+    private static ExpandedPerson expandPerson(Username username,
                                                         ResourceExpansionService expansionService) {
         return Optional.ofNullable(username)
             .map(Username::getValue)
@@ -115,7 +115,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
             .orElse(null);
     }
 
-    private static Set<ExpandedPerson> expandPersonViewedByUsername(Set<User> users,
+    private static Set<ExpandedPerson> expandPersonViewedBy(Set<User> users,
                                                                     ResourceExpansionService resourceExpansionService) {
         return users.stream()
             .map(resourceExpansionService::expandPerson)

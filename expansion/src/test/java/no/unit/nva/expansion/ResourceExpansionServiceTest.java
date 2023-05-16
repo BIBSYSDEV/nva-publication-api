@@ -500,7 +500,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         doiRequest.setPublicationDetails(PublicationDetails.create(expandedDoiRequest.getPublication()));
         doiRequest.setResourceStatus(expandedDoiRequest.getPublication().getStatus());
         doiRequest.setStatus(getTicketStatus(expandedDoiRequest.getStatus()));
-        doiRequest.setAssignee(extractPersonUsername(expandedDoiRequest.getAssignee()));
+        doiRequest.setAssignee(expandPerson(expandedDoiRequest.getAssignee()));
         return doiRequest;
     }
 
@@ -513,7 +513,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketEntry.setPublicationDetails(PublicationDetails.create(expandedGeneralSupportRequest.getPublication()));
         ticketEntry.setStatus(getTicketStatus(expandedGeneralSupportRequest.getStatus()));
         ticketEntry.setOwner(expandedGeneralSupportRequest.getOwner().getUsername());
-        ticketEntry.setAssignee(extractPersonUsername(expandedGeneralSupportRequest.getAssignee()));
+        ticketEntry.setAssignee(expandPerson(expandedGeneralSupportRequest.getAssignee()));
         return ticketEntry;
     }
 
@@ -526,8 +526,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setModifiedDate(expandedPublishingRequest.getModifiedDate());
         publishingRequest.setCreatedDate(expandedPublishingRequest.getCreatedDate());
         publishingRequest.setStatus(getTicketStatus(expandedPublishingRequest.getStatus()));
-        publishingRequest.setFinalizedBy(extractPersonUsername(expandedPublishingRequest.getFinalizedBy()));
-        publishingRequest.setAssignee(extractPersonUsername(expandedPublishingRequest.getAssignee()));
+        publishingRequest.setFinalizedBy(expandPerson(expandedPublishingRequest.getFinalizedBy()));
+        publishingRequest.setAssignee(expandPerson(expandedPublishingRequest.getAssignee()));
         return publishingRequest;
     }
 
@@ -544,7 +544,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return null;
     }
 
-    private Username extractPersonUsername(ExpandedPerson expandedPerson) {
+    private Username expandPerson(ExpandedPerson expandedPerson) {
         return Optional.ofNullable(expandedPerson)
             .map(ExpandedPerson::getUsername)
             .map(User::toString)

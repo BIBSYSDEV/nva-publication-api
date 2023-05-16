@@ -52,9 +52,9 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
         expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
-        expandedDoiRequest.setAssignee(extractPersonUsername(doiRequest.getAssignee(), expansionService));
-        expandedDoiRequest.setFinalizedBy(extractPersonUsername(doiRequest.getFinalizedBy(), expansionService));
-        expandedDoiRequest.setViewedBy(expandPersonViewedByUsername(doiRequest.getViewedBy(), expansionService));
+        expandedDoiRequest.setAssignee(expandPerson(doiRequest.getAssignee(), expansionService));
+        expandedDoiRequest.setFinalizedBy(expandPerson(doiRequest.getFinalizedBy(), expansionService));
+        expandedDoiRequest.setViewedBy(expandPersonViewedBy(doiRequest.getViewedBy(), expansionService));
         return expandedDoiRequest;
     }
 
@@ -150,13 +150,13 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setCustomerId(doiRequest.getCustomerId());
         entry.setModifiedDate(doiRequest.getModifiedDate());
         entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(doiRequest));
-        entry.setViewedBy(expandPersonViewedByUsername(doiRequest.getViewedBy(), resourceExpansionService));
+        entry.setViewedBy(expandPersonViewedBy(doiRequest.getViewedBy(), resourceExpansionService));
         entry.setPublication(publicationSummary);
-        entry.setFinalizedBy(extractPersonUsername(doiRequest.getFinalizedBy(), resourceExpansionService));
+        entry.setFinalizedBy(expandPerson(doiRequest.getFinalizedBy(), resourceExpansionService));
         return entry;
     }
 
-    private static ExpandedPerson extractPersonUsername(Username username,
+    private static ExpandedPerson expandPerson(Username username,
                                                         ResourceExpansionService expansionService) {
         return Optional.ofNullable(username)
             .map(Username::getValue)
@@ -165,7 +165,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
             .orElse(null);
     }
 
-    private static Set<ExpandedPerson> expandPersonViewedByUsername(Set<User> users,
+    private static Set<ExpandedPerson> expandPersonViewedBy(Set<User> users,
                                                                     ResourceExpansionService resourceExpansionService) {
         return users.stream()
             .map(resourceExpansionService::expandPerson)

@@ -54,11 +54,11 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var messages = expandMessages(publishingRequestCase.fetchMessages(ticketService), resourceExpansionService);
         var workflow = publishingRequestCase.getWorkflow();
         var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
-        var assignee = extractPersonUsername(publishingRequestCase.getAssignee(), resourceExpansionService);
-        var finalzedBy = extractPersonUsername(publishingRequestCase.getFinalizedBy(), resourceExpansionService);
-        var viewedBy = expandPersonViewedByUsername(publishingRequestCase.getViewedBy(), resourceExpansionService);
+        var assignee = expandPerson(publishingRequestCase.getAssignee(), resourceExpansionService);
+        var finalizedBy = expandPerson(publishingRequestCase.getFinalizedBy(), resourceExpansionService);
+        var viewedBy = expandPersonViewedBy(publishingRequestCase.getViewedBy(), resourceExpansionService);
         return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee,
-                             finalzedBy, viewedBy);
+                             finalizedBy, viewedBy);
     }
 
     @JacocoGenerated
@@ -162,7 +162,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
             publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
     }
 
-    private static ExpandedPerson extractPersonUsername(Username username,
+    private static ExpandedPerson expandPerson(Username username,
                                                         ResourceExpansionService expansionService) {
         return Optional.ofNullable(username)
             .map(Username::getValue)
@@ -171,7 +171,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
             .orElse(null);
     }
 
-    private static Set<ExpandedPerson> expandPersonViewedByUsername(Set<User> users,
+    private static Set<ExpandedPerson> expandPersonViewedBy(Set<User> users,
                                                                     ResourceExpansionService resourceExpansionService) {
         return users.stream()
             .map(resourceExpansionService::expandPerson)
