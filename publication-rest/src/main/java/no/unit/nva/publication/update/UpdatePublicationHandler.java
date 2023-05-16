@@ -31,12 +31,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWorkflowResponse;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.apigateway.exceptions.*;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -229,12 +224,13 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     private Publication fetchExistingPublication(RequestInfo requestInfo, SortableIdentifier identifierInPath)
         throws ApiGatewayException {
 
+        var userInstance = createUserInstanceFromRequest(requestInfo);
         var publication = fetchPublication(identifierInPath);
+
         if (isThesis(publication) && userUnauthorizedToPublishThesis(requestInfo)) {
             throw new ForbiddenException();
         }
 
-        var userInstance = createUserInstanceFromRequest(requestInfo);
         if (userCanEditOtherPeoplesPublications(requestInfo)) {
             checkUserIsInSameInstitutionAsThePublication(userInstance, publication);
             return publication;
