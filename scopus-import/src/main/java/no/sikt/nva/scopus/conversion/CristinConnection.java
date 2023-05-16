@@ -1,11 +1,10 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -23,8 +22,8 @@ public class CristinConnection {
 
     public static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
     public static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
-    private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     public static final String QUERY_PARAM_DEPTH_NONE = "?depth=none";
+    private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     private final HttpClient httpClient;
 
     public CristinConnection(HttpClient httpClient) {
@@ -57,7 +56,8 @@ public class CristinConnection {
     }
 
     private String getBodyFromOrganizationResponse(HttpResponse<String> response) {
-        if (response.statusCode() != HttpURLConnection.HTTP_OK) {
+        logger.info("Organization response: {}", response.body());
+        if (response.statusCode() != HTTP_OK) {
             logger.info(CRISTIN_ORGANIZATION_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
         }
@@ -65,7 +65,9 @@ public class CristinConnection {
     }
 
     private Organization convertToOrganization(String body) throws JsonProcessingException {
-        return new ObjectMapper().readValue(body, Organization.class);
+        var organization = JsonUtils.dtoObjectMapper.readValue(body, Organization.class);
+        logger.info("Organization from response: {}", organization);
+        return organization;
     }
 
     private Person getCristinPersonResponse(String json) throws JsonProcessingException {
@@ -73,7 +75,7 @@ public class CristinConnection {
     }
 
     private String getBodyFromPersonResponse(HttpResponse<String> response) {
-        if (response.statusCode() != HttpURLConnection.HTTP_OK) {
+        if (response.statusCode() != HTTP_OK) {
             logger.info(CRISTIN_PERSON_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
         }
@@ -81,6 +83,12 @@ public class CristinConnection {
     }
 
     private HttpResponse<String> getCristinResponse(HttpRequest httpRequest) throws IOException, InterruptedException {
+        for (int i = 0; i < 3; i++) {
+            var response = httpClient.send(httpRequest, BodyHandlers.ofString());
+            if (response.statusCode() == HTTP_OK) {
+                return response;
+            }
+        }
         return httpClient.send(httpRequest, BodyHandlers.ofString());
     }
 
@@ -93,6 +101,7 @@ public class CristinConnection {
 
     private HttpRequest createOrganizationRequest(URI uri) {
         var organizationUri = URI.create(uri + QUERY_PARAM_DEPTH_NONE);
+        logger.info("Organization request: {}", organizationUri);
         return HttpRequest.newBuilder()
                    .uri(organizationUri)
                    .GET()

@@ -51,7 +51,7 @@ public class UserInstance implements JsonSerializable {
     }
 
     public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
-        var userName = requestInfo.getNvaUsername();
+        var userName = requestInfo.getUserName();
         var customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(userName, customerId);
     }
