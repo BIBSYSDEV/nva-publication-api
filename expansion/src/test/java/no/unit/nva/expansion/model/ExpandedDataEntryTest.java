@@ -52,6 +52,7 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportCandidate.Builder;
 import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -122,7 +123,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var importCandidate = randomImportCandidate(publicationContext);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
 
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.getIdentifier())));
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
     }
 
     @ParameterizedTest(name = "Expanded resource should not lose information for instance type {0}")
@@ -308,6 +309,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             var publication = createPublication(resourceService);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
+            } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
+                return createExpandedImportCandidate(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 resourceService.publishPublication(UserInstance.fromPublication(publication),
                                                    publication.getIdentifier());
@@ -355,6 +358,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             publication = Resource.fromPublication(publication)
                               .persistNew(resourceService, UserInstance.fromPublication(publication));
             return publication;
+        }
+
+        private static ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(Publication publication,
+                                                                                         UriRetriever uriRetriever) {
+            var importCandidate = new Builder().withPublication(publication).build();
+            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
+            return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
         }
 
         private static ExpandedDataEntryWithAssociatedPublication createExpandedResource(Publication publication,

@@ -2,6 +2,9 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
@@ -10,12 +13,28 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
+import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
+import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
@@ -46,9 +65,11 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.IMPORT_CANDIDATES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -108,8 +129,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     void shouldEmitEventContainingS3UriToPersistedExpandedResourceWhenItCannotRetrieveCustomerPublishingWorkflow()
         throws ApiGatewayException, IOException {
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
-        var entryUpdate =
-            generateExpandedPublishingRequestWithWorkflowSetToNull();
+        var entryUpdate = generateExpandedPublishingRequestWithWorkflowSetToNull();
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
         EventReference outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
@@ -164,6 +184,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException, ApiGatewayException {
         if (ExpandedResource.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX);
+        } else if (ExpandedImportCandidate.class.equals(expandedEntryType)) {
+            return new PersistedEntryWithExpectedType(randomExpandedImportCandidate(), IMPORT_CANDIDATES_INDEX);
         } else if (ExpandedDoiRequest.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomDoiRequest(), TICKETS_INDEX);
         } else if (ExpandedPublishingRequest.class.equals(expandedEntryType)) {
@@ -172,6 +194,49 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
             return new PersistedEntryWithExpectedType(randomGeneralSupportRequest(), TICKETS_INDEX);
         }
         throw new RuntimeException();
+    }
+
+    private ImportCandidate randomImportCandidate() {
+        return new ImportCandidate.Builder()
+                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withEntityDescription(randomEntityDescription())
+                   .withLink(randomUri())
+                   .withIndexedDate(Instant.now())
+                   .withPublishedDate(Instant.now())
+                   .withHandle(randomUri())
+                   .withModifiedDate(Instant.now())
+                   .withCreatedDate(Instant.now())
+                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                   .withSubjects(List.of(randomUri()))
+                   .withIdentifier(SortableIdentifier.next())
+                   .withRightsHolder(randomString())
+                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
+                   .withFundings(List.of(new FundingBuilder().withId(randomUri()).build()))
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                   .withAssociatedArtifacts(List.of())
+                   .build();
+    }
+
+    private EntityDescription randomEntityDescription() {
+        return new EntityDescription.Builder()
+                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
+                   .withAbstract(randomString())
+                   .withDescription(randomString())
+                   .withContributors(List.of(randomContributor()))
+                   .withMainTitle(randomString())
+                   .build();
+    }
+
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .build();
+    }
+
+    private ExpandedDataEntry randomExpandedImportCandidate() {
+        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate());
     }
 
     private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()

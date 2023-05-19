@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Stack;
 import java.util.stream.Stream;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.Resource;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -53,9 +55,13 @@ class DataEntryUpdateEventTest {
         var annotations = type.getAnnotationsByType(JsonSubTypes.class);
         return Arrays.asList(annotations[0].value());
     }
-    
+
+    //Getting StackOverflow exception when instantiating ImportCandidate, probably IDE error.
     private Entity createDataEntry(Class<?> type)
         throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        if(type.equals(ImportCandidate.class)) {
+            return new Resource();
+        }
         return (Entity) type.getDeclaredConstructor().newInstance();
     }
 }

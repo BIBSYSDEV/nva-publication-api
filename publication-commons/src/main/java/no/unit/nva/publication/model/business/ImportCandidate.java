@@ -1,6 +1,11 @@
 package no.unit.nva.publication.model.business;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -12,27 +17,48 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
-public class ImportCandidate extends Publication {
+public class ImportCandidate extends Publication implements Entity {
 
+    public static final String TYPE = "ImportCandidate";
+    public static final String HARDCODED_OWNER = "hardcodedOwner";
     private ImportStatus importStatus;
+
+    public ImportCandidate() {
+        super();
+    }
 
     @Override
     public PublicationStatus getStatus() {
         return null;
     }
 
-    public ImportCandidate() {
-        super();
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getImportStatus());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        ImportCandidate that = (ImportCandidate) o;
+        return getImportStatus() == that.getImportStatus();
     }
 
     public ImportStatus getImportStatus() {
@@ -49,18 +75,38 @@ public class ImportCandidate extends Publication {
 
     @JacocoGenerated
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {return true;}
-        if (o == null || getClass() != o.getClass()) {return false;}
-        if (!super.equals(o)) {return false;}
-        ImportCandidate that = (ImportCandidate) o;
-        return getImportStatus() == that.getImportStatus();
+    public Publication toPublication(ResourceService resourceService) {
+        return this.copy().build();
     }
 
     @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getImportStatus());
+    public String getType() {
+        return TYPE;
+    }
+
+    @JacocoGenerated
+    @Override
+    public User getOwner() {
+        return new User(HARDCODED_OWNER);
+    }
+
+    @JacocoGenerated
+    @Override
+    public URI getCustomerId() {
+        return super.getPublisher().getId();
+    }
+
+    @JacocoGenerated
+    @Override
+    public Dao toDao() {
+        return new ResourceDao(Resource.fromImportCandidate(this));
+    }
+
+    @JacocoGenerated
+    @Override
+    public String getStatusString() {
+        return super.getStatus().getValue();
     }
 
     public static final class Builder {
@@ -191,6 +237,5 @@ public class ImportCandidate extends Publication {
         public ImportCandidate build() {
             return importCandidate;
         }
-
     }
 }

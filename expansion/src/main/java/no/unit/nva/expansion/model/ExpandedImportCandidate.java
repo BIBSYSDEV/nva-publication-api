@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.List;
@@ -11,6 +12,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
@@ -22,28 +24,56 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.ImportStatus;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
+import org.joda.time.DateTime;
 
 @JsonTypeName(ExpandedImportCandidate.TYPE)
-public class ExpandedImportCandidate {
+public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public static final String TYPE = "ImportCandidate";
-    private SortableIdentifier identifier;
+    public static final String API_HOST = "API_HOST";
+    public static final String HOST = new Environment().readEnv(API_HOST);
+    public static final String PUBLICATION = "publication";
+    public static final String ID_FIELD = "id";
+    public static final String ADDITIONAL_IDENTIFIERS_FIELD = "additionalIdentifiers";
+    public static final String DOI_FIELD = "doi";
+    public static final String MAIN_TITLE_FIELD = "mainTitle";
+    public static final String PUBLISHER_FIELD = "publisher";
+    public static final String JOURNAL_FIELD = "journal";
+    public static final String VERIFIED_CONTRIBUTORS_NUMBER_FIELD = "verifiedContributorsNumber";
+    public static final String CONTRIBUTORS_NUMBER_FIELD = "contributorsNumber";
+    public static final String ORGANIZATIONS_FIELD = "organizations";
+    public static final String IMPORT_STATUS_FIELD = "importStatus";
+    public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
+    @JsonProperty(ID_FIELD)
+    private URI identifier;
+    @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
     private Set<AdditionalIdentifier> additionalIdentifiers;
+    @JsonProperty(DOI_FIELD)
     private URI doi;
     private PublicationInstance<? extends Pages> publicationInstance;
+    @JsonProperty(MAIN_TITLE_FIELD)
     private String mainTitle;
+    @JsonProperty(PUBLISHER_FIELD)
     private PublishingHouse publisher;
+    @JsonProperty(JOURNAL_FIELD)
     private Journal journal;
+    @JsonProperty(VERIFIED_CONTRIBUTORS_NUMBER_FIELD)
     private int numberOfVerifiedContributors;
+    @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
     private int totalNumberOfContributors;
+    @JsonProperty(ORGANIZATIONS_FIELD)
     private List<Organization> organizations;
+    @JsonProperty(IMPORT_STATUS_FIELD)
     private ImportStatus importStatus;
-    private int publicationYear;
+    @JsonProperty(PUBLICATION_YEAR_FIELD)
+    private String publicationYear;
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate) {
         return new ExpandedImportCandidate.Builder()
-                   .withIdentifier(importCandidate.getIdentifier())
+                   .withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
                    .withImportStatus(importCandidate.getImportStatus())
@@ -59,11 +89,11 @@ public class ExpandedImportCandidate {
     }
 
     @JacocoGenerated
-    public SortableIdentifier getIdentifier() {
+    public URI getIdentifier() {
         return identifier;
     }
 
-    public void setIdentifier(SortableIdentifier identifier) {
+    public void setIdentifier(URI identifier) {
         this.identifier = identifier;
     }
 
@@ -159,12 +189,29 @@ public class ExpandedImportCandidate {
     }
 
     @JacocoGenerated
-    public int getPublicationYear() {
+    public String getPublicationYear() {
         return publicationYear;
     }
 
-    public void setPublicationYear(int publicationYear) {
+    public void setPublicationYear(String publicationYear) {
         this.publicationYear = publicationYear;
+    }
+
+    @Override
+    public String toJsonString() {
+        return ExpandedDataEntry.super.toJsonString();
+    }
+
+    @Override
+    public SortableIdentifier identifyExpandedEntry() {
+        return new SortableIdentifier(UriWrapper.fromUri(this.identifier).getLastPathElement());
+    }
+
+    private static URI generateIdentifier(SortableIdentifier identifier) {
+        return UriWrapper.fromHost(HOST)
+                   .addChild(PUBLICATION)
+                   .addChild(identifier.toString())
+                   .getUri();
     }
 
     private static PublicationInstance<? extends Pages> extractPublicationInstance(ImportCandidate importCandidate) {
@@ -243,8 +290,11 @@ public class ExpandedImportCandidate {
                    .orElse(null);
     }
 
-    private static int extractPublicationYear(ImportCandidate importCandidate) {
-        return Integer.parseInt(importCandidate.getEntityDescription().getPublicationDate().getYear());
+    private static String extractPublicationYear(ImportCandidate importCandidate) {
+        return Optional.ofNullable(importCandidate.getEntityDescription())
+                   .map(EntityDescription::getPublicationDate)
+                   .map(PublicationDate::getYear)
+                   .orElse(String.valueOf(new DateTime().getYear()));
     }
 
     private static List<Organization> extractOrganizations(ImportCandidate importCandidate) {
@@ -262,7 +312,7 @@ public class ExpandedImportCandidate {
             expandedImportCandidate = new ExpandedImportCandidate();
         }
 
-        public Builder withIdentifier(SortableIdentifier identifier) {
+        public Builder withIdentifier(URI identifier) {
             expandedImportCandidate.setIdentifier(identifier);
             return this;
         }
@@ -318,7 +368,7 @@ public class ExpandedImportCandidate {
             return this;
         }
 
-        public Builder withPublicationYear(int publicationYear) {
+        public Builder withPublicationYear(String publicationYear) {
             expandedImportCandidate.setPublicationYear(publicationYear);
             return this;
         }
