@@ -39,10 +39,6 @@ public class PublicationSummary {
     @JsonProperty
     private User owner;
     @JsonProperty
-    private Instant createdDate;
-    @JsonProperty
-    private Instant modifiedDate;
-    @JsonProperty
     private PublicationStatus status;
     @JsonProperty
     private PublicationInstance<? extends Pages> publicationInstance;
@@ -55,8 +51,6 @@ public class PublicationSummary {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setIdentifier(publication.getIdentifier());
         publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
-        publicationSummary.setCreatedDate(publication.getCreatedDate());
-        publicationSummary.setModifiedDate(publication.getModifiedDate());
         publicationSummary.setPublishedDate(publication.getPublishedDate());
         publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
         publicationSummary.setStatus(publication.getStatus());
@@ -70,8 +64,6 @@ public class PublicationSummary {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setIdentifier(publicationDetails.getIdentifier());
         publicationSummary.setPublicationId(toPublicationId(publicationDetails.getIdentifier()));
-        publicationSummary.setCreatedDate(publicationDetails.getCreatedDate());
-        publicationSummary.setModifiedDate(publicationDetails.getModifiedDate());
         publicationSummary.setOwner(new User(publicationDetails.getOwner().toString()));
         publicationSummary.setStatus(publicationDetails.getStatus());
         publicationSummary.setTitle(publicationDetails.getTitle());
@@ -134,22 +126,6 @@ public class PublicationSummary {
         this.title = title;
     }
 
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
     public User getOwner() {
         return owner;
     }
@@ -173,8 +149,8 @@ public class PublicationSummary {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getCreatedDate(),
-                            getModifiedDate(), getStatus(), getPublicationInstance(), getPublishedDate(),
+        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
+                            getPublicationInstance(), getPublishedDate(),
                             getContributors());
     }
 
@@ -192,8 +168,6 @@ public class PublicationSummary {
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getTitle(), that.getTitle())
                && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && getStatus() == that.getStatus()
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
@@ -202,26 +176,26 @@ public class PublicationSummary {
 
     private static String extractTitle(EntityDescription entityDescription) {
         return Optional.ofNullable(entityDescription)
-            .map(EntityDescription::getMainTitle)
-            .orElse(null);
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
     }
 
     private static List<Contributor> extractContributors(EntityDescription entityDescription) {
         return Optional.ofNullable(entityDescription)
-            .map(EntityDescription::getContributors)
-            .orElse(Collections.emptyList())
-            .stream()
-            .sorted(Comparator.comparing(Contributor::getSequence))
-            .limit(MAX_SIZE_CONTRIBUTOR_LIST)
-            .collect(Collectors.toList());
+                   .map(EntityDescription::getContributors)
+                   .orElse(Collections.emptyList())
+                   .stream()
+                   .sorted(Comparator.comparing(Contributor::getSequence))
+                   .limit(MAX_SIZE_CONTRIBUTOR_LIST)
+                   .collect(Collectors.toList());
     }
 
     private static PublicationInstance<? extends Pages> extractPublicationInstance(
         EntityDescription entityDescription) {
         return Optional.ofNullable(entityDescription)
-            .map(EntityDescription::getReference)
-            .map(Reference::getPublicationInstance)
-            .orElse(null);
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationInstance)
+                   .orElse(null);
     }
 
     private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
@@ -230,7 +204,7 @@ public class PublicationSummary {
 
     private static URI toPublicationId(SortableIdentifier identifier) {
         return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
-            .addChild(identifier.toString())
-            .getUri();
+                   .addChild(identifier.toString())
+                   .getUri();
     }
 }
