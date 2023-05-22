@@ -74,7 +74,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     void shouldProduceAnExpandedDataEntryWhenInputHasNewImage() throws IOException {
         var oldImage = randomImportCandidate();
         var newImage = updatedVersionOfImportCandidate(oldImage);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
         handler.handleRequest(request, output, CONTEXT);
         var response = objectMapper.readValue(output.toString(), EventReference.class);
         var eventBlobStoredInS3 = s3Driver.readEvent(response.getUri());
@@ -85,7 +85,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldNotProduceAnExpandedDataEntryWhenInputHasNoNewImage() throws IOException {
         var oldImage = randomImportCandidate();
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, null);
+        var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, null);
         handler.handleRequest(request, output, CONTEXT);
         var eventReference = JsonUtils.dtoObjectMapper.readValue(output.toString(), EventReference.class);
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
@@ -140,16 +140,16 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream emulateEventEmittedByDataEntryUpdateHandler(ImportCandidate oldImage, ImportCandidate newImage)
+    private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage, ImportCandidate newImage)
         throws IOException {
         var blobUri = createSampleBlob(oldImage, newImage);
-        var event = new EventReference("ImportCandidates.DataEntry.Update", blobUri);
+        var event = new EventReference("ImportCandidates.Resource.Update", blobUri);
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
     }
 
     private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
         var dataEntryUpdateEvent =
-            new DataEntryUpdateEvent("ImportCandidates.DataEntry.Update", oldImage, newImage);
+            new DataEntryUpdateEvent("ImportCandidates.Resource.Update", oldImage, newImage);
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }
