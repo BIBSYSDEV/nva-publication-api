@@ -24,6 +24,7 @@ import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
+import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -37,7 +38,8 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
+import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.ImportStatus;
@@ -54,20 +56,22 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     public static final Context CONTEXT = mock(Context.class);
     private ByteArrayOutputStream output;
     private ExpandImportCandidateHandler handler;
-    private S3Driver s3Driver;
-    private FakeS3Client s3Client;
+    private S3Driver s3Reader;
+    private S3Driver s3Writer;
 
     @BeforeEach
     public void init() {
         super.init();
         this.output = new ByteArrayOutputStream();
-        s3Client = new FakeS3Client();
+        var eventsBucket = new FakeS3Client();
+        var indexBucket = new FakeS3Client();
+        s3Writer = new S3Driver(eventsBucket, "eventsBucket");
+        s3Reader = new S3Driver(indexBucket, "indexBucket");
 
         var mockUriRetriever = mock(UriRetriever.class);
         when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 
-        this.handler = new ExpandImportCandidateHandler(s3Client);
-        this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
+        this.handler = new ExpandImportCandidateHandler(s3Writer, s3Reader);
     }
 
     @Test
@@ -77,9 +81,9 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
         handler.handleRequest(request, output, CONTEXT);
         var response = objectMapper.readValue(output.toString(), EventReference.class);
-        var eventBlobStoredInS3 = s3Driver.readEvent(response.getUri());
-        var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, ExpandedDataEntry.class);
-        assertThat(blobObject.identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
+        var eventBlobStoredInS3 = s3Reader.readEvent(response.getUri());
+        var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, PersistedDocument.class);
+        assertThat(blobObject.getBody().identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
     }
 
     @Test
@@ -90,7 +94,6 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         var eventReference = JsonUtils.dtoObjectMapper.readValue(output.toString(), EventReference.class);
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
     }
-
 
     private EventReference emptyEvent(Instant timestamp) {
         return new EventReference(EMPTY_EVENT_TOPIC, null, null, timestamp);
@@ -140,7 +143,8 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage, ImportCandidate newImage)
+    private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage,
+                                                                          ImportCandidate newImage)
         throws IOException {
         var blobUri = createSampleBlob(oldImage, newImage);
         var event = new EventReference("ImportCandidates.Resource.Update", blobUri);
@@ -149,8 +153,8 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
         var dataEntryUpdateEvent =
-            new DataEntryUpdateEvent("ImportCandidates.Resource.Update", oldImage, newImage);
+            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update", oldImage, newImage);
         var filePath = UnixPath.of(UUID.randomUUID().toString());
-        return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
+        return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }
 }

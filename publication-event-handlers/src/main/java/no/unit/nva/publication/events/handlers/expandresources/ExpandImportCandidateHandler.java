@@ -1,43 +1,44 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate.IMPORT_CANDIDATE_PERSISTENCE;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
+import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
+import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.io.IOException;
 import java.net.URI;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
-import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
+import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
-import software.amazon.awssdk.services.s3.S3Client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExpandImportCandidateHandler extends
-                                            DestinationsEventBridgeEventHandler<EventReference, EventReference> {
+                                          DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String EVENTS_BUCKET = "EVENTS_BUCKET";
-    public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
-    public static final String EVENT_TOPIC = "ImportCandidates.ExpandedDataEntry.Update";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    private final S3Driver s3Driver;
+    private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
+    private final S3Driver s3Reader;
+    private final S3Driver s3Writer;
 
     @JacocoGenerated
     protected ExpandImportCandidateHandler() {
-        this(new S3Driver(EVENTS_BUCKET));
+        this(new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
     }
 
-    public ExpandImportCandidateHandler(S3Client s3Client) {
-        this(new S3Driver(s3Client, new Environment().readEnv(EVENTS_BUCKET)));
-    }
-
-    private ExpandImportCandidateHandler(S3Driver s3Driver) {
+    public ExpandImportCandidateHandler(S3Driver s3Driver, S3Driver s3Writer) {
         super(EventReference.class);
-        this.s3Driver = s3Driver;
+        this.s3Reader = s3Driver;
+        this.s3Writer = s3Writer;
     }
 
     @Override
@@ -47,8 +48,7 @@ public class ExpandImportCandidateHandler extends
         var blob = readBlobFromS3(input);
         var importCandidate = (ImportCandidate) blob.getNewData();
         return attempt(() -> ExpandedImportCandidate.fromImportCandidate(importCandidate))
-                   .map(this::proceedEvent)
-                   .map(this::toEventReference)
+                   .map(this::createOutPutEventAndPersistDocument)
                    .orElse(failure -> emptyEvent());
     }
 
@@ -56,16 +56,30 @@ public class ExpandImportCandidateHandler extends
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
-    private EventReference toEventReference(URI uri) {
-        return new EventReference(EVENT_TOPIC, uri);
+    private ImportCandidateDataEntryUpdate readBlobFromS3(EventReference input) {
+        var blobString = s3Reader.readEvent(input.getUri());
+        return ImportCandidateDataEntryUpdate.fromJson(blobString);
     }
 
-    private URI proceedEvent(ExpandedImportCandidate expandedImportCandidate) throws IOException {
-        return s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), expandedImportCandidate.toJsonString());
+    private EventReference createOutPutEventAndPersistDocument(ExpandedImportCandidate expandedImportCandidate) {
+        var indexDocument = createIndexDocument(expandedImportCandidate);
+        var uri = writeEntryToS3(indexDocument);
+        var outputEvent = new EventReference(IMPORT_CANDIDATE_PERSISTENCE, uri);
+        logger.info(outputEvent.toJsonString());
+        return outputEvent;
     }
 
-    private DataEntryUpdateEvent readBlobFromS3(EventReference input) {
-        var blobString = s3Driver.readEvent(input.getUri());
-        return DataEntryUpdateEvent.fromJson(blobString);
+    private URI writeEntryToS3(PersistedDocument indexDocument) {
+        var filePath = createFilePath(indexDocument);
+        return attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
+    }
+
+    private UnixPath createFilePath(PersistedDocument indexDocument) {
+        return UnixPath.of(createPathBasedOnIndexName(indexDocument))
+                   .addChild(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString() + GZIP_ENDING);
+    }
+
+    private String createPathBasedOnIndexName(PersistedDocument indexDocument) {
+        return indexDocument.getConsumptionAttributes().getIndex();
     }
 }

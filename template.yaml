@@ -1053,7 +1053,7 @@ Resources:
               detail:
                 responsePayload:
                   topic:
-                    - "ImportCandidates.Resource.Update"
+                    - "ImportCandidate.Database.Update"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
