@@ -7,19 +7,17 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
+import no.unit.nva.expansion.utils.ExpansionUtil;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -54,9 +52,10 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var messages = expandMessages(publishingRequestCase.fetchMessages(ticketService), resourceExpansionService);
         var workflow = publishingRequestCase.getWorkflow();
         var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
-        var assignee = expandPerson(publishingRequestCase.getAssignee(), resourceExpansionService);
-        var finalizedBy = expandPerson(publishingRequestCase.getFinalizedBy(), resourceExpansionService);
-        var viewedBy = expandPersonViewedBy(publishingRequestCase.getViewedBy(), resourceExpansionService);
+        var assignee = ExpansionUtil.expandPerson(publishingRequestCase.getAssignee(), resourceExpansionService);
+        var finalizedBy = ExpansionUtil.expandPerson(publishingRequestCase.getFinalizedBy(), resourceExpansionService);
+        var viewedBy = ExpansionUtil.expandPersonViewedBy(publishingRequestCase.getViewedBy(),
+                                                          resourceExpansionService);
         return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee,
                              finalizedBy, viewedBy);
     }
@@ -160,21 +159,5 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                 ResourceService resourceService) {
         return attempt(() -> resourceService.getPublicationByIdentifier(
             publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
-    }
-
-    private static ExpandedPerson expandPerson(Username username,
-                                                        ResourceExpansionService expansionService) {
-        return Optional.ofNullable(username)
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
-    }
-
-    private static Set<ExpandedPerson> expandPersonViewedBy(Set<User> users,
-                                                                    ResourceExpansionService resourceExpansionService) {
-        return users.stream()
-            .map(resourceExpansionService::expandPerson)
-            .collect(Collectors.toSet());
     }
 }
