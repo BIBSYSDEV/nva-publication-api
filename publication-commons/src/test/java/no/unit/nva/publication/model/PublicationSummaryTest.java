@@ -137,11 +137,13 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     }
 
     private Contributor getRandomContributor(int sequenceNumber) {
-        return new Contributor(getRandomIdentity(),
-                               getListOfRandomOrganizations(),
-                               new RoleType(Role.OTHER),
-                               sequenceNumber,
-                               randomBoolean());
+        return new Contributor.Builder()
+                   .withIdentity(getRandomIdentity())
+                   .withAffiliations(getListOfRandomOrganizations())
+                   .withRole(new RoleType(Role.OTHER))
+                   .withSequence(sequenceNumber)
+                   .withCorrespondingAuthor(randomBoolean())
+                   .build();
     }
 
     private List<Organization> getListOfRandomOrganizations() {

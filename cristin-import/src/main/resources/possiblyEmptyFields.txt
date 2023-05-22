@@ -9,6 +9,7 @@ entityDescription.reference.publicationInstance.issue
 entityDescription.reference.publicationInstance.volume
 entityDescription.reference.publicationContext.disseminationChannel
 entityDescription.reference.publicationContext.format
+entityDescription.contributors.contributorVerificationStatus
 
 entityDescription.reference.publicationContext.onlineIssn
 entityDescription.reference.publicationContext.printIssn

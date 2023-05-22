@@ -110,11 +110,14 @@ public class ContributorExtractor {
                                                           Organization newAffiliation) {
         List<Organization> affiliations = new ArrayList<>(existingContributor.getAffiliations());
         affiliations.add(newAffiliation);
-        return new Contributor(existingContributor.getIdentity(),
-                               affiliations,
-                               existingContributor.getRole(),
-                               existingContributor.getSequence(),
-                               existingContributor.isCorrespondingAuthor());
+
+        return new Contributor.Builder()
+                   .withIdentity(existingContributor.getIdentity())
+                   .withAffiliations(affiliations)
+                   .withRole(existingContributor.getRole())
+                   .withSequence(existingContributor.getSequence())
+                   .withCorrespondingAuthor(existingContributor.isCorrespondingAuthor())
+                   .build();
     }
 
     private boolean compareContributorToAuthorOrCollaboration(Contributor contributor, Object authorOrCollaboration) {
@@ -178,13 +181,13 @@ public class ContributorExtractor {
         AuthorTp author, AuthorGroupTp authorGroup,
         PersonalnameType correspondencePerson,
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
-        var identity = generateContributorIdentityFromAuthorTp(author);
-        var affiliation = generateAffiliation(organization, authorGroup);
-        return new Contributor(identity,
-                               affiliation.map(List::of).orElse(List.of()),
-                               new RoleType(Role.CREATOR),
-                               getSequenceNumber(author),
-                               isCorrespondingAuthor(author, correspondencePerson));
+        return new Contributor.Builder()
+                   .withIdentity(generateContributorIdentityFromAuthorTp(author))
+                   .withAffiliations(generateAffiliation(organization, authorGroup).map(List::of).orElse(List.of()))
+                   .withRole(new RoleType(Role.CREATOR))
+                   .withSequence(getSequenceNumber(author))
+                   .withCorrespondingAuthor(isCorrespondingAuthor(author, correspondencePerson))
+                   .build();
     }
 
     private Optional<Organization> generateAffiliationFromCristinOrganization(
@@ -198,15 +201,19 @@ public class ContributorExtractor {
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
                                                         AuthorGroupTp authorGroupTp,
                                                         PersonalnameType correspondencePerson) {
-        var identity = new Identity();
-        identity.setName(determineContributorName(collaboration));
-        var cristinOrganizationUri =
-            piaConnection.getCristinOrganizationIdentifier(authorGroupTp.getAffiliation().getAfid());
+        var cristinOrganizationUri = piaConnection
+                                         .getCristinOrganizationIdentifier(authorGroupTp.getAffiliation().getAfid());
         var cristinOrganization = cristinConnection.getCristinOrganizationByCristinId(cristinOrganizationUri);
-        var affiliation = generateAffiliation(cristinOrganization, authorGroupTp);
-        var newContributor = new Contributor(identity, affiliation.map(List::of).orElse(List.of()), null,
-                                             getSequenceNumber(collaboration),
-                                             isCorrespondingAuthor(collaboration, correspondencePerson));
+        var newContributor = new Contributor.Builder()
+                                 .withIdentity(
+                                     new Identity.Builder().withName(determineContributorName(collaboration)).build())
+                                 .withAffiliations(
+                                     generateAffiliation(cristinOrganization, authorGroupTp).map(List::of)
+                                         .orElse(List.of()))
+                                 .withRole(new RoleType(Role.OTHER))
+                                 .withSequence(getSequenceNumber(collaboration))
+                                 .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, correspondencePerson))
+                                 .build();
         contributors.add(newContributor);
     }
 
