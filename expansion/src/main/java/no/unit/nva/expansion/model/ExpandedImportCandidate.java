@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -10,6 +11,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -82,7 +84,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withDoi(extractDoi(importCandidate))
                    .withMainTitle(extractMainTitle(importCandidate))
                    .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
-                   .withNumberOfVerifiedContributors(extractNumberOfContributors(importCandidate))
+                   .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
                    .withJournal(extractJournal(importCandidate))
                    .withPublisher(extractPublisher(importCandidate))
                    .build();
@@ -205,6 +207,17 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return new SortableIdentifier(UriWrapper.fromUri(this.identifier).getLastPathElement());
+    }
+
+    private static int extractNumberOfVerifiedContributors(ImportCandidate importCandidate) {
+        return (int) importCandidate.getEntityDescription().getContributors().stream()
+                         .filter(ExpandedImportCandidate::isVerifiedContributor)
+                         .count();
+    }
+
+    private static boolean isVerifiedContributor(Contributor contributor) {
+        return nonNull(contributor.getContributorVerificationStatus()) &&
+               ContributorVerificationStatus.VERIFIED.equals(contributor.getContributorVerificationStatus());
     }
 
     private static URI generateIdentifier(SortableIdentifier identifier) {

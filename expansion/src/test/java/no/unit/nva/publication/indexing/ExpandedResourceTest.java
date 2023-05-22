@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
+import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
@@ -299,7 +300,7 @@ class ExpandedResourceTest {
     private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
         return new Contributor(contributor.getIdentity(), List.of(new Organization()),
                                contributor.getRole(), contributor.getSequence(),
-                               contributor.isCorrespondingAuthor());
+                               contributor.isCorrespondingAuthor(), ContributorVerificationStatus.NOT_VERIFIED);
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {
