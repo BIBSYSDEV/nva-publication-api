@@ -402,25 +402,6 @@ Resources:
               - lambda:InvokeFunction
             Resource: "*"
 
-  SQSPermissions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - sqs:ReceiveMessage
-              - sqs:DeleteMessage
-              - sqs:GetQueueAttributes
-              - sqs:ChangeMessageVisibility
-            Resource:
-              - !GetAtt CristinImportDataEntryQueue.Arn
-              - !GetAtt CristinImportPatchQueue.Arn
-
   DatabaseAccessLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -510,6 +491,8 @@ Resources:
               - sqs:SendMessage
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ChangeMessageVisibility
             Resource: "*"
   InternalAccessToIdentityServicePermissions:
     Type: AWS::IAM::Policy
@@ -1481,7 +1464,6 @@ Resources:
           OUTPUT_EVENT_TOPIC: 'ImportCandidates.DataEntry.ScanAndUpdateRowVersion'
 
   StartCristinImportButton:
-    DependsOn: SQSPermissions
     Type: AWS::Serverless::Function
     Properties:
       Description: 'Starts Cristin Import. Accepts Json object with "uri" field'
@@ -1607,6 +1589,7 @@ Resources:
 
   CristinEntriesEventConsumer:
     Type: AWS::Serverless::Function
+    DependsOn: LambdaRole
     Properties:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
@@ -1616,13 +1599,11 @@ Resources:
       ReservedConcurrentExecutions: 10
       Environment:
         Variables:
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
           SHOULD_CREATE_CONTRIBUTOR_ID: false
-          CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
       Events:
         SqsEvent:
           Type: SQS
@@ -1647,7 +1628,6 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
-          CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
       Events:
         SqsEvent:
           Type: SQS
