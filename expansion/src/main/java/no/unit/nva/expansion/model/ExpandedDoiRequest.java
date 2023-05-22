@@ -6,18 +6,16 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
+import no.unit.nva.expansion.utils.ExpansionUtil;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -48,11 +46,13 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
                                                  ResourceService resourceService,
                                                  TicketService ticketService)
         throws NotFoundException {
-        var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService);
+        var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService, expansionService);
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
         expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
-        expandedDoiRequest.setAssignee(expandAssignee(doiRequest, expansionService));
+        expandedDoiRequest.setAssignee(ExpansionUtil.expandPerson(doiRequest.getAssignee(), expansionService));
+        expandedDoiRequest.setFinalizedBy(ExpansionUtil.expandPerson(doiRequest.getFinalizedBy(), expansionService));
+        expandedDoiRequest.setViewedBy(ExpansionUtil.expandPersonViewedBy(doiRequest.getViewedBy(), expansionService));
         return expandedDoiRequest;
     }
 
@@ -131,15 +131,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
             .collect(Collectors.toList());
     }
 
-    private static ExpandedPerson expandAssignee(DoiRequest doiRequest,
-                                                 ResourceExpansionService expansionService) {
-        return Optional.ofNullable(doiRequest.getAssignee())
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
-    }
-
     private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
                                                                 ResourceExpansionService resourceExpansionService)
         throws NotFoundException {
@@ -147,8 +138,8 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
-    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService)
-        throws NotFoundException {
+    private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest, ResourceService resourceService,
+                                                     ResourceExpansionService resourceExpansionService) {
         var publicationSummary = PublicationSummary.create(doiRequest.toPublication(resourceService));
         ExpandedDoiRequest entry = new ExpandedDoiRequest();
         entry.setPublication(publicationSummary);
@@ -157,9 +148,9 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         entry.setCustomerId(doiRequest.getCustomerId());
         entry.setModifiedDate(doiRequest.getModifiedDate());
         entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(doiRequest));
-        entry.setViewedBy(doiRequest.getViewedBy());
+        entry.setViewedBy(ExpansionUtil.expandPersonViewedBy(doiRequest.getViewedBy(), resourceExpansionService));
         entry.setPublication(publicationSummary);
-        entry.setFinalizedBy(doiRequest.getFinalizedBy());
+        entry.setFinalizedBy(ExpansionUtil.expandPerson(doiRequest.getFinalizedBy(), resourceExpansionService));
         return entry;
     }
 }
