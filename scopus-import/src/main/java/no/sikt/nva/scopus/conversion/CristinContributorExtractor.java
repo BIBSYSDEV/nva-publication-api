@@ -36,10 +36,13 @@ public final class CristinContributorExtractor {
         PersonalnameType correspondencePerson,
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
 
-        return new Contributor(generateContributorIdentityFromCristinPerson(person),
-                               generateOrganizationsFromCristinAffiliations(person.getAffiliations(), organization),
-                               new RoleType(Role.CREATOR),
-                               getSequenceNumber(authorTp), isCorrespondingAuthor(authorTp, correspondencePerson));
+        return new Contributor.Builder()
+                   .withIdentity(generateContributorIdentityFromCristinPerson(person))
+                   .withAffiliations(generateOrganizations(person.getAffiliations(), organization))
+                   .withRole(new RoleType(Role.CREATOR))
+                   .withSequence(getSequenceNumber(authorTp))
+                   .withCorrespondingAuthor(isCorrespondingAuthor(authorTp, correspondencePerson))
+                   .build();
     }
 
     private static Identity generateContributorIdentityFromCristinPerson(Person cristinPerson) {
@@ -55,7 +58,7 @@ public final class CristinContributorExtractor {
         return identity;
     }
 
-    private static List<Organization> generateOrganizationsFromCristinAffiliations(
+    private static List<Organization> generateOrganizations(
         Set<Affiliation> affiliations,
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
 
