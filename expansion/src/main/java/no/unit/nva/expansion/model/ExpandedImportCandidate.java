@@ -18,7 +18,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
@@ -44,8 +43,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String MAIN_TITLE_FIELD = "mainTitle";
     public static final String PUBLISHER_FIELD = "publisher";
     public static final String JOURNAL_FIELD = "journal";
-    public static final String VERIFIED_CONTRIBUTORS_NUMBER_FIELD = "verifiedContributorsNumber";
-    public static final String CONTRIBUTORS_NUMBER_FIELD = "contributorsNumber";
+    public static final String VERIFIED_CONTRIBUTORS_NUMBER_FIELD = "totalVerifiedContributors";
+    public static final String CONTRIBUTORS_NUMBER_FIELD = "totalContributors";
     public static final String ORGANIZATIONS_FIELD = "organizations";
     public static final String IMPORT_STATUS_FIELD = "importStatus";
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
@@ -244,8 +243,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     /**
-     * For now importCandidate is an object constructed by scopusConverter only, which supports only two
-     * PublicationContext types where PublishingHouse is present: Book and Report.
+     * For now, importCandidate is an object constructed only by scopusConverter, which supports two PublicationContext
+     * types where PublishingHouse is present: Book and Report.
      */
 
     private static PublishingHouse extractPublishingHouse(PublicationContext publicationContext) {
@@ -267,24 +266,24 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Journal extractJournal(ImportCandidate importCandidate) {
-        return isOfTypeMediaContribution(importCandidate)
+        return isJournalContent(importCandidate)
                    ? getPublicationContext(importCandidate)
                    : null;
     }
 
-    private static MediaContributionPeriodical getPublicationContext(ImportCandidate importCandidate) {
+    private static Journal getPublicationContext(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
-                   .map(MediaContributionPeriodical.class::cast)
+                   .map(Journal.class::cast)
                    .orElse(null);
     }
 
-    private static boolean isOfTypeMediaContribution(ImportCandidate importCandidate) {
+    private static boolean isJournalContent(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
-                   .map(MediaContributionPeriodical.class::isInstance)
+                   .map(Journal.class::isInstance)
                    .orElse(false);
     }
 

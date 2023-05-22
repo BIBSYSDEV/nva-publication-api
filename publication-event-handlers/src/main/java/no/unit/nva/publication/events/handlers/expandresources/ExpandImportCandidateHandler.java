@@ -24,9 +24,9 @@ import org.slf4j.LoggerFactory;
 public class ExpandImportCandidateHandler extends
                                           DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
+    private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     public static final String EVENTS_BUCKET = "EVENTS_BUCKET";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
 
