@@ -1623,15 +1623,12 @@ Resources:
           DOMAIN_NAME: !Ref ApiDomain
           SHOULD_CREATE_CONTRIBUTOR_ID: false
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
-
-  CristinEntriesEventConsumerSourceMapping:
-    DependsOn: SQSPermissions
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      BatchSize: 1
-      Enabled: true
-      EventSourceArn: !GetAtt CristinImportDataEntryQueue.Arn
-      FunctionName: !GetAtt CristinEntriesEventConsumer.Arn
+      Events:
+        SqsEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt CristinImportDataEntryQueue.Arn
+            BatchSize: 1
 
 
   CristinEntriesPatchEventConsumer:
@@ -1651,15 +1648,12 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
           CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
-
-  CristinEntriesPatchEventConsumerSourceMapping:
-    DependsOn: SQSPermissions
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      BatchSize: 1
-      Enabled: true
-      EventSourceArn: !GetAtt CristinImportPatchQueue.Arn
-      FunctionName: !GetAtt CristinEntriesPatchEventConsumer.Arn
+      Events:
+        SqsEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt CristinImportPatchQueue.Arn
+            BatchSize: 1
 
 
   #============================ Deploy API ============================================================================#

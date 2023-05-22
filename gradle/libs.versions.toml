@@ -77,6 +77,7 @@ aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', 
 aws-sdk-dynamodb = { group = 'com.amazonaws', name = 'aws-java-sdk-dynamodb', version.ref = 'awsSdk' }
 aws-java-sdk-core = { group = 'com.amazonaws', name = 'aws-java-sdk-core', version.ref = 'awsSdk' }
 aws-sdk-apigateway = { group = 'com.amazonaws', name = 'aws-java-sdk-api-gateway', version.ref = 'awsSdk' }
+aws-sdk-sqs = {group = 'com.amazonaws', name = 'aws-java-sdk-sqs', version.ref = 'awsSdk'}
 
 httpcore = { group = 'org.apache.httpcomponents', name = 'httpcore', version.ref = 'httpcore' }
 

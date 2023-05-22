@@ -28,6 +28,8 @@ dependencies {
     runtimeOnly libs.jackson.datatype.jdk8
 
     implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk.sqs
+    implementation libs.aws.lambda.events
     implementation libs.aws.java.sdk.core
     implementation libs.aws.sdk2.core
     implementation libs.aws.sdk2.httpClientApi
