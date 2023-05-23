@@ -38,10 +38,6 @@ public class PublicationSummary {
     @JsonProperty
     private User owner;
     @JsonProperty
-    private Instant createdDate;
-    @JsonProperty
-    private Instant modifiedDate;
-    @JsonProperty
     private PublicationStatus status;
     @JsonProperty
     private PublicationInstance<? extends Pages> publicationInstance;
@@ -54,14 +50,22 @@ public class PublicationSummary {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setIdentifier(publication.getIdentifier());
         publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
-        publicationSummary.setCreatedDate(publication.getCreatedDate());
-        publicationSummary.setModifiedDate(publication.getModifiedDate());
         publicationSummary.setPublishedDate(publication.getPublishedDate());
         publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
         publicationSummary.setStatus(publication.getStatus());
         publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
         publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
         publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
+        return publicationSummary;
+    }
+
+    public static PublicationSummary create(PublicationDetails publicationDetails) {
+        var publicationSummary = new PublicationSummary();
+        publicationSummary.setIdentifier(publicationDetails.getIdentifier());
+        publicationSummary.setPublicationId(toPublicationId(publicationDetails.getIdentifier()));
+        publicationSummary.setOwner(new User(publicationDetails.getOwner().toString()));
+        publicationSummary.setStatus(publicationDetails.getStatus());
+        publicationSummary.setTitle(publicationDetails.getTitle());
         return publicationSummary;
     }
 
@@ -121,22 +125,6 @@ public class PublicationSummary {
         this.title = title;
     }
 
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
     public User getOwner() {
         return owner;
     }
@@ -160,8 +148,8 @@ public class PublicationSummary {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getCreatedDate(),
-                            getModifiedDate(), getStatus(), getPublicationInstance(), getPublishedDate(),
+        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
+                            getPublicationInstance(), getPublishedDate(),
                             getContributors());
     }
 
@@ -179,8 +167,6 @@ public class PublicationSummary {
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getTitle(), that.getTitle())
                && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && getStatus() == that.getStatus()
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
@@ -188,7 +174,9 @@ public class PublicationSummary {
     }
 
     private static String extractTitle(EntityDescription entityDescription) {
-        return Optional.ofNullable(entityDescription).map(EntityDescription::getMainTitle).orElse(null);
+        return Optional.ofNullable(entityDescription)
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
     }
 
     private static List<Contributor> extractContributors(EntityDescription entityDescription) {

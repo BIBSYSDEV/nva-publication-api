@@ -10,6 +10,7 @@ entityDescription.contributors.identity.id
 entityDescription.contributors.identity.arpId
 entityDescription.contributors.identity.nameType
 entityDescription.contributors.identity.orcId
+entityDescription.contributors.contributorVerificationStatus
 entityDescription.contributors.sequence
 entityDescription.contributors.affiliations
 entityDescription.contributors.email
