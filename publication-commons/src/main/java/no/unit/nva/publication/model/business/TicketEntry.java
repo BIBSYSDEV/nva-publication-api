@@ -1,8 +1,19 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -13,21 +24,6 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Supplier;
-
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.PUBLICATION_DETAILS_FIELD;
-import static nva.commons.core.attempt.Try.attempt;
-
 @SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
@@ -35,19 +31,18 @@ import static nva.commons.core.attempt.Try.attempt;
     @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)})
 public abstract class TicketEntry implements Entity {
 
-    public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED =
-        "Can not create DoiRequest ticket for unpublished publication, use draft doi flow instead.";
+    public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED = "Can not create DoiRequest ticket "
+                                                                                  + "for unpublished publication, use"
+                                                                                  + " draft doi flow instead.";
+    public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR = "Ticket without reference to "
+                                                                               + "publication";
     private static final String VIEWED_BY_FIELD = "viewedBy";
-    public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR =
-        "Ticket without reference to publication";
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
-    @JsonProperty(PUBLICATION_DETAILS_FIELD)
-    private PublicationDetails publicationDetails;
     @JsonProperty(RESOURCE_IDENTIFIER)
     private SortableIdentifier resourceIdentifier;
     @JsonProperty(FINALIZED_BY)
@@ -81,10 +76,8 @@ public abstract class TicketEntry implements Entity {
     public static <T extends TicketEntry> T createQueryObject(URI customerId, SortableIdentifier resourceIdentifier,
                                                               Class<T> ticketType) {
         if (DoiRequest.class.equals(ticketType)) {
-            return ticketType.cast(DoiRequest.builder()
-                                       .withPublicationDetails(PublicationDetails.create(resourceIdentifier))
-                                       .withCustomerId(customerId)
-                                       .build());
+            return ticketType.cast(
+                DoiRequest.builder().withResourceIdentifier(resourceIdentifier).withCustomerId(customerId).build());
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
             return ticketType.cast(PublishingRequestCase.createQueryObject(resourceIdentifier, customerId));
@@ -111,11 +104,16 @@ public abstract class TicketEntry implements Entity {
         return ticket;
     }
 
-    //TODO: Delete resourceIdentifier field ASAP.
+    public static void setServiceControlledFields(TicketEntry ticketEntry,
+                                                  Supplier<SortableIdentifier> identifierProvider) {
+        var now = Instant.now();
+        ticketEntry.setCreatedDate(now);
+        ticketEntry.setModifiedDate(now);
+        ticketEntry.setIdentifier(identifierProvider.get());
+    }
+
     public SortableIdentifier getResourceIdentifier() {
-        return Optional.ofNullable(resourceIdentifier)
-                   .or(() -> Optional.ofNullable(getPublicationDetails()).map(PublicationDetails::getIdentifier))
-                   .orElse(null);
+        return resourceIdentifier;
     }
 
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
@@ -126,12 +124,12 @@ public abstract class TicketEntry implements Entity {
         return finalizedBy;
     }
 
-    public Instant getFinalizedDate() {
-        return finalizedDate;
-    }
-
     public void setFinalizedBy(Username finalizedBy) {
         this.finalizedBy = finalizedBy;
+    }
+
+    public Instant getFinalizedDate() {
+        return finalizedDate;
     }
 
     public void setFinalizedDate(Instant finalizedDate) {
@@ -148,13 +146,6 @@ public abstract class TicketEntry implements Entity {
 
     public void persistUpdate(TicketService ticketService) {
         ticketService.updateTicket(this);
-    }
-
-    public final SortableIdentifier extractPublicationIdentifier() {
-        return Optional.ofNullable(getPublicationDetails())
-                   .map(PublicationDetails::getIdentifier)
-                   .or(() -> Optional.ofNullable(getResourceIdentifier()))
-                   .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
     }
 
     public abstract void validateCreationRequirements(Publication publication) throws ConflictException;
@@ -248,23 +239,14 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
 
-    public final String extractPublicationTitle() {
-        return Optional.of(this.getPublicationDetails()).map(PublicationDetails::getTitle).orElse(null);
-    }
+    public abstract void validateAssigneeRequirements(Publication publication);
 
-    public PublicationDetails getPublicationDetails() {
-        return publicationDetails;
-    }
-
-    public void setPublicationDetails(PublicationDetails publicationDetails) {
-        this.publicationDetails = publicationDetails;
-    }
-
-    public TicketEntry update(Resource resource) {
-        this.getPublicationDetails().update(resource);
-        this.setPublicationDetails(
-            this.getPublicationDetails().update(resource));
-        return this;
+    public TicketEntry updateAssignee(Publication publication, Username assignee) {
+        var updated = this.copy();
+        updated.validateAssigneeRequirements(publication);
+        updated.setAssignee(assignee);
+        updated.setModifiedDate(Instant.now());
+        return updated;
     }
 
     private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
@@ -275,10 +257,9 @@ public abstract class TicketEntry implements Entity {
         }
     }
 
-    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
-        Publication publication,
-        Class<T> ticketType,
-        Supplier<SortableIdentifier> identifierProvider) {
+    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(Publication publication,
+                                                                            Class<T> ticketType,
+                                                                            Supplier<SortableIdentifier> identifierProvider) {
 
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);
@@ -299,14 +280,6 @@ public abstract class TicketEntry implements Entity {
         return doiRequest;
     }
 
-    public static void setServiceControlledFields(TicketEntry ticketEntry,
-                                                  Supplier<SortableIdentifier> identifierProvider) {
-        var now = Instant.now();
-        ticketEntry.setCreatedDate(now);
-        ticketEntry.setModifiedDate(now);
-        ticketEntry.setIdentifier(identifierProvider.get());
-    }
-
     private static TicketEntry createNewPublishingRequestEntry(Publication publication,
                                                                Supplier<SortableIdentifier> identifierProvider) {
         var entry = createOpeningCaseObject(publication);
@@ -318,16 +291,6 @@ public abstract class TicketEntry implements Entity {
         return PUBLISHED_STATUSES.contains(publication.getStatus());
     }
 
-    public abstract void validateAssigneeRequirements(Publication publication);
-
-    public TicketEntry updateAssignee(Publication publication, Username assignee) {
-        var updated = this.copy();
-        updated.validateAssigneeRequirements(publication);
-        updated.setAssignee(assignee);
-        updated.setModifiedDate(Instant.now());
-        return updated;
-    }
-
     public static final class Constants {
 
         public static final String STATUS_FIELD = "status";
@@ -335,7 +298,7 @@ public abstract class TicketEntry implements Entity {
         public static final String CREATED_DATE_FIELD = "createdDate";
         public static final String OWNER_FIELD = "owner";
         public static final String CUSTOMER_ID_FIELD = "customerId";
-        public static final String PUBLICATION_DETAILS_FIELD = "publicationDetails";
+        public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
         public static final String IDENTIFIER_FIELD = "identifier";
         public static final String WORKFLOW = "workflow";
         public static final String ASSIGNEE_FIELD = "assignee";

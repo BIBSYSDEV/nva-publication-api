@@ -117,7 +117,6 @@ public class Resource implements Entity {
                    .withIndexedDate(publication.getIndexedDate())
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
-                   .withPublishedDate(publication.getPublishedDate())
                    .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())

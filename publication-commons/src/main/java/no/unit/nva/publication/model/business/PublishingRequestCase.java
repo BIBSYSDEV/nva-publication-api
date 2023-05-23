@@ -1,8 +1,20 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -14,32 +26,19 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.Objects;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
-import static nva.commons.core.attempt.Try.attempt;
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestCase.TYPE)
 //TODO fix God class
 @SuppressWarnings("PMD.GodClass")
 public class PublishingRequestCase extends TicketEntry {
-    
+
     public static final String RESOURCE_LACKS_REQUIRED_DATA = "Resource does not have required data to be "
                                                               + "published: ";
-    
+
     public static final String TYPE = "PublishingRequestCase";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
-    
+
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
     @JsonProperty(STATUS_FIELD)
@@ -70,7 +69,7 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
-        openingCaseObject.setPublicationDetails(PublicationDetails.create(publication));
+        openingCaseObject.setResourceIdentifier(publication.getIdentifier());
         return openingCaseObject;
     }
 
@@ -82,14 +81,14 @@ public class PublishingRequestCase extends TicketEntry {
             publicationIdentifier,
             publishingRequestIdentifier);
     }
-    
+
     public static PublishingRequestCase createQueryObject(SortableIdentifier resourceIdentifier, URI customerId) {
         var queryObject = new PublishingRequestCase();
-        queryObject.setPublicationDetails(PublicationDetails.create(resourceIdentifier));
+        queryObject.setResourceIdentifier(resourceIdentifier);
         queryObject.setCustomerId(customerId);
         return queryObject;
     }
-    
+
     public static void assertThatPublicationHasMinimumMandatoryFields(Publication resource)
         throws InvalidPublicationException {
 
@@ -114,41 +113,37 @@ public class PublishingRequestCase extends TicketEntry {
         }
         assertThatPublicationHasMinimumMandatoryFields(publication);
     }
-    
+
     @Override
     public void validateCompletionRequirements(Publication publication) {
     }
 
     @Override
-    public void validateAssigneeRequirements(Publication publication) {
-    }
-    
-    @Override
     public PublishingRequestCase complete(Publication publication, Username finalizedBy) {
         return (PublishingRequestCase) super.complete(publication, finalizedBy);
     }
-    
+
     @Override
     public PublishingRequestCase copy() {
         var copy = new PublishingRequestCase();
         copy.setIdentifier(this.getIdentifier());
+        copy.setResourceIdentifier(this.getResourceIdentifier());
         copy.setStatus(this.getStatus());
         copy.setModifiedDate(this.getModifiedDate());
         copy.setCreatedDate(this.getCreatedDate());
         copy.setCustomerId(this.getCustomerId());
         copy.setOwner(this.getOwner());
         copy.setViewedBy(this.getViewedBy());
-        copy.setPublicationDetails(this.getPublicationDetails());
         copy.setWorkflow(this.getWorkflow());
         copy.setAssignee(this.getAssignee());
         return copy;
     }
-    
+
     @Override
     public TicketStatus getStatus() {
         return status;
     }
-    
+
     @Override
     public void setStatus(TicketStatus status) {
         this.status = status;
@@ -156,7 +151,7 @@ public class PublishingRequestCase extends TicketEntry {
 
     @Override
     public Username getAssignee() {
-        return  assignee;
+        return assignee;
     }
 
     @Override
@@ -165,81 +160,85 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
+    public void validateAssigneeRequirements(Publication publication) {
+    }
+
+    @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-    
+
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-    
+
     @Override
     public Publication toPublication(ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(extractPublicationIdentifier()))
+        return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier()))
                    .orElseThrow();
     }
-    
+
     @Override
     public String getType() {
         return PublishingRequestCase.TYPE;
     }
-    
+
     @Override
     public Instant getCreatedDate() {
         return createdDate;
     }
-    
+
     @Override
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-    
+
     @Override
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-    
+
     @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
-    
+
     @Override
     public User getOwner() {
         return owner;
     }
-    
+
     @Override
     public URI getCustomerId() {
         return customerId;
     }
-    
+
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
-    
+
     @Override
     public TicketDao toDao() {
         return new PublishingRequestDao(this);
     }
-    
+
     @Override
     public String getStatusString() {
         return status.toString();
     }
-    
+
     public void setOwner(User owner) {
         this.owner = owner;
     }
-    
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
-            getCreatedDate(), getAssignee(), getWorkflow());
+                            getCreatedDate(), getAssignee(), getWorkflow());
     }
-    
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -259,16 +258,16 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getAssignee(), that.getAssignee());
     }
-    
+
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
         UserInstance userInstance,
         SortableIdentifier publicationIdentifier,
         SortableIdentifier publishingRequestIdentifier) {
-        
+
         var newPublishingRequest = new PublishingRequestCase();
         newPublishingRequest.setOwner(userInstance.getUser());
         newPublishingRequest.setCustomerId(userInstance.getOrganizationUri());
-        newPublishingRequest.setPublicationDetails(PublicationDetails.create(publicationIdentifier));
+        newPublishingRequest.setResourceIdentifier(publicationIdentifier);
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);
         return newPublishingRequest;
     }

@@ -4,6 +4,18 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -17,6 +29,10 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.stream.Stream;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -54,7 +70,6 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.ImportCandidate.Builder;
 import no.unit.nva.publication.model.business.ImportStatus;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -124,6 +139,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
     @ParameterizedTest(name = "Expanded resource should not lose information for instance type {0}")
@@ -143,11 +159,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         JSONAssert.assertEquals(jsonOriginal, jsonActual, false);
     }
 
+
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized(
-        Class<?> instanceType
-    ) throws JsonProcessingException {
+        Class<?> instanceType) throws JsonProcessingException {
 
         var publication = randomPublication(instanceType);
         var expandedResource = fromPublication(uriRetriever, publication);
@@ -392,7 +408,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setModifiedDate(Instant.now());
             requestCase.setCreatedDate(Instant.now());
             requestCase.setCustomerId(publication.getPublisher().getId());
-            requestCase.setPublicationDetails(PublicationDetails.create(publication));
+            requestCase.setResourceIdentifier(publication.getIdentifier());
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }

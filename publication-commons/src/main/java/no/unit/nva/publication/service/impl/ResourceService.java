@@ -43,7 +43,6 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -257,7 +256,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Entity migrate(Entity dataEntry) {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
-                   : migrateOther(dataEntry);
+                   : dataEntry;
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -281,17 +280,6 @@ public class ResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var resource = fetchResourceForElevatedUser(userInstance.getOrganizationUri(), publicationIdentifier);
         return resource.fetchAllTickets(this);
-    }
-
-    private Entity migrateOther(Entity dataEntry) {
-        if (dataEntry instanceof TicketEntry) {
-            var ticket = (TicketEntry) dataEntry;
-            var resourceIdentifier = ticket.extractPublicationIdentifier();
-            var resource = attempt(() -> getResourceByIdentifier(resourceIdentifier)).orElseThrow();
-            ticket.setPublicationDetails(PublicationDetails.create(resource));
-            return ticket;
-        }
-        return dataEntry;
     }
 
     private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)

@@ -90,7 +90,7 @@ public class AcceptedPublishingRequestEventHandler
 
     private void publishPublicationAndFiles(PublishingRequestCase latestUpdate) {
         var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
-        var publication = fetchPublication(userInstance, latestUpdate.extractPublicationIdentifier());
+        var publication = fetchPublication(userInstance, latestUpdate.getResourceIdentifier());
         var updatedPublication = toPublicationWithPublishedFiles(publication);
         if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
             publishFiles(updatedPublication);
@@ -104,7 +104,7 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private void publishPublication(PublishingRequestCase latestUpdate, UserInstance userInstance) {
-        attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.extractPublicationIdentifier()))
+        attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.getResourceIdentifier()))
             .orElse(fail -> logError(fail.getException()));
     }
 

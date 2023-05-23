@@ -237,7 +237,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                                                                                    RequestInfo requestInfo)
         throws ForbiddenException {
         var suppliedPublicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
-        if (!suppliedPublicationIdentifier.equals(ticket.extractPublicationIdentifier())) {
+        if (!suppliedPublicationIdentifier.equals(ticket.getResourceIdentifier())) {
             throw new ForbiddenException();
         }
     }

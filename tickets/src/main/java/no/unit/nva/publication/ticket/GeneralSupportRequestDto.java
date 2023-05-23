@@ -11,9 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -22,7 +20,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(GeneralSupportRequestDto.TYPE)
 public class GeneralSupportRequestDto extends TicketDto {
-    
+
     public static final String TYPE = "GeneralSupportCase";
     public static final String STATUS_FIELD = "status";
     public static final String CREATED_DATE_FIELD = "createdDate";
@@ -37,69 +35,69 @@ public class GeneralSupportRequestDto extends TicketDto {
     private final Instant modifiedDate;
     @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
-    
+
     public GeneralSupportRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
                                     @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                     @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                     @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                                    @JsonProperty(PUBLICATION_FIELD) PublicationSummary publicationSummary,
+                                    @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
                                     @JsonProperty(ID_FIELD) URI id,
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                     @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                     @JsonProperty(ASSIGNEE_FIELD) Username assignee) {
-        super(status, messages, viewedBy, publicationSummary, assignee);
+        super(status, messages, viewedBy, assignee, publicationIdentifier);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
         this.id = id;
     }
-    
+
     public static GeneralSupportRequestDto empty() {
         return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null);
     }
-    
+
     public URI getId() {
         return id;
     }
-    
+
     public Instant getCreatedDate() {
         return createdDate;
     }
-    
+
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-    
+
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-    
+
     @JacocoGenerated
     @Override
     public Class<? extends TicketEntry> ticketType() {
         return GeneralSupportRequest.class;
     }
-    
+
     @Override
     public TicketEntry toTicket() {
         var request = new GeneralSupportRequest();
         request.setIdentifier(this.getIdentifier());
         request.setStatus(this.getStatus());
-        request.setPublicationDetails(PublicationDetails.create(this.getPublicationSummary()));
+        request.setResourceIdentifier(this.getPublicationIdentifier());
         request.setCreatedDate(this.getCreatedDate());
         request.setModifiedDate(this.getModifiedDate());
         request.setViewedBy(this.getViewedBy());
         request.setAssignee(this.getAssignee());
         return request;
     }
-    
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getId(), getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-            getPublicationSummary().getPublicationId(), getMessages(), getAssignee());
+                            getPublicationIdentifier(), getMessages(), getAssignee());
     }
-    
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -115,8 +113,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getPublicationSummary().getPublicationId(),
-            that.getPublicationSummary().getPublicationId())
+               && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee());
     }
