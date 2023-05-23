@@ -18,8 +18,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 
 class BatchScanStartHandlerTest {
 
-    public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
-    public static final String TOPIC = new Environment().readEnv(OUTPUT_EVENT_TOPIC);
+    public static final String TOPIC = "OUTPUT_EVENT_TOPIC";
 
     public static final int NOT_SET_PAGE_SIZE = 0;
     private final FakeContext context = new FakeContext() {
