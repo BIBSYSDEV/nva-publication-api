@@ -1,5 +1,8 @@
 package no.sikt.nva.brage.migration;
 
+import nva.commons.core.JacocoGenerated;
+
+@JacocoGenerated
 public enum NvaType {
     BOOK("Book"),
     CHAPTER("Chapter"),
@@ -21,11 +24,12 @@ public enum NvaType {
     RECORDING_ORAL("Lydopptak, verbalt"),
     PLAN_OR_BLUEPRINT("Architecture"),
     MAP("Map"),
+    INTERVIEW("Interview"),
     CONFERENCE_POSTER("ConferencePoster"),
+    PRESENTATION_OTHER("Other presentation"),
     SCIENTIFIC_MONOGRAPH("Vitenskapelig monografi"),
     SCIENTIFIC_CHAPTER("Vitenskapelig kapittel"),
     SCIENTIFIC_ARTICLE("Vitenskapelig artikkel");
-
     private final String value;
 
     NvaType(String value) {

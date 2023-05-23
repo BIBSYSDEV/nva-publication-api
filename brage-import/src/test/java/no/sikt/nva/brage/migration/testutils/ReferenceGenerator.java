@@ -3,10 +3,10 @@ package no.sikt.nva.brage.migration.testutils;
 import static java.util.Objects.nonNull;
 import java.util.Collections;
 import java.util.Optional;
+import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder;
-import no.sikt.nva.brage.migration.testutils.type.NvaType;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
@@ -16,6 +16,7 @@ import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
@@ -23,6 +24,9 @@ import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
+import no.unit.nva.model.contexttypes.media.MediaFormat;
+import no.unit.nva.model.contexttypes.media.MediaSubType;
+import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -44,10 +48,12 @@ import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -231,6 +237,21 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublishingContext(new Event.Builder().build())
                            .withPublicationInstance(generatePublicationInstanceForConferencePoster())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.INTERVIEW.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new MediaContribution.Builder().withFormat(MediaFormat.TEXT)
+                                                      .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER)).build())
+                           .withPublicationInstance(new MediaInterview())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.PRESENTATION_OTHER.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Event.Builder().build())
+                           .withPublicationInstance(new OtherPresentation())
                            .withDoi(builder.getDoi())
                            .build();
             }

@@ -7,8 +7,10 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConf
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isInterview;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherPresentation;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPlanOrBlueprint;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
@@ -41,9 +43,11 @@ import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -121,9 +125,24 @@ public final class PublicationInstanceMapper {
         }
         if (isReportWorkingPaper(record)) {
             return buildPublicationInstanceWhenReportWorkingPaper(record);
-        } else {
+        }
+        if (isInterview(record)) {
+            return buildPublicationInstanceWhenMediaInterview();
+        }
+        if (isOtherPresentation(record)) {
+           return buildPublicationInstanceWhenOtherPresentation();
+        }
+        else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherPresentation() {
+        return new OtherPresentation();
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMediaInterview() {
+        return new MediaInterview();
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferencePoster() {

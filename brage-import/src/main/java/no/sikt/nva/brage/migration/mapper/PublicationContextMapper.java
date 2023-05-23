@@ -21,6 +21,7 @@ import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
@@ -30,6 +31,9 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
+import no.unit.nva.model.contexttypes.media.MediaFormat;
+import no.unit.nva.model.contexttypes.media.MediaSubType;
+import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -76,7 +80,7 @@ public final class PublicationContextMapper {
         if (isChapter(record) || isScientificChapter(record)) {
             return new Anthology();
         }
-        if (isLecture(record) || isConferencePoster(record)) {
+        if (isLecture(record) || isConferencePoster(record) || isOtherPresentation(record)) {
             return buildPublicationContextWhenEvent();
         }
         if (isDesignProduct(record) || isMusic(record) || isPlanOrBlueprint(record)) {
@@ -84,9 +88,23 @@ public final class PublicationContextMapper {
         }
         if (isDataset(record)) {
             return buildPublicationContextWhenDataSet(record);
+        }
+        if (isInterview(record)) {
+            return buildPublicationContextWhenMediaContribution();
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
+    }
+
+    public static boolean isOtherPresentation(Record record) {
+        return NvaType.PRESENTATION_OTHER.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenMediaContribution() {
+        return new MediaContribution.Builder()
+                   .withFormat(MediaFormat.TEXT)
+                   .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER))
+                   .build();
     }
 
     public static boolean isSupportedReportType(Record record) {
@@ -155,6 +173,10 @@ public final class PublicationContextMapper {
 
     public static boolean isConferencePoster(Record record) {
         return NvaType.CONFERENCE_POSTER.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isInterview(Record record) {
+        return NvaType.INTERVIEW.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isReport(Record record) {
