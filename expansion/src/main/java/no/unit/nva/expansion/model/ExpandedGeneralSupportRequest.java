@@ -32,7 +32,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
                                                 TicketService ticketService) throws NotFoundException {
-        var publication = resourceService.getPublicationByIdentifier(dataEntry.extractPublicationIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(dataEntry.getResourceIdentifier());
         var entry = new ExpandedGeneralSupportRequest();
         var publicationSummary = PublicationSummary.create(publication);
         entry.setPublication(publicationSummary);

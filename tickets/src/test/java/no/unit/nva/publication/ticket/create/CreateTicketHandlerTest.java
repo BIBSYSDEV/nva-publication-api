@@ -600,7 +600,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = fetchPublication(ticketUri);
         var ticketIdentifier = extractTicketIdentifierFromLocation(ticketUri);
         var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        assertThat(ticket.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(ticket.getIdentifier(), is(equalTo(ticketIdentifier)));
     }
 

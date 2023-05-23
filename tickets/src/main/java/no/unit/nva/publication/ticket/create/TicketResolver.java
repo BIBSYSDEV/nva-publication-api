@@ -106,7 +106,7 @@ public class TicketResolver {
 
     private TicketEntry updateAlreadyExistingTicket(TicketEntry newTicket) {
         var customerId = newTicket.getCustomerId();
-        var resourceIdentifier = newTicket.extractPublicationIdentifier();
+        var resourceIdentifier = newTicket.getResourceIdentifier();
         return ticketService.fetchTicketByResourceIdentifier(customerId, resourceIdentifier, newTicket.getClass())
                    .map(this::updateTicket)
                    .orElseThrow();

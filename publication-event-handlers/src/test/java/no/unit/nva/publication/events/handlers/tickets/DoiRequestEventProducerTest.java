@@ -106,7 +106,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
             throws ApiGatewayException, IOException {
 
         var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
-        doiRequestWithoutResourceIdentifier.setPublicationDetails(null);
+        doiRequestWithoutResourceIdentifier.setResourceIdentifier(null);
         try (var event = createEvent(null, doiRequestWithoutResourceIdentifier)) {
             Executable action = () -> handler.handleRequest(event, outputStream, context);
             IllegalStateException exception = assertThrows(IllegalStateException.class, action);

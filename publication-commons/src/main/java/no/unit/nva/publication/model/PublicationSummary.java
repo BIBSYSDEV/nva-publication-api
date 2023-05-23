@@ -19,7 +19,6 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -57,16 +56,6 @@ public class PublicationSummary {
         publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
         publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
         publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
-        return publicationSummary;
-    }
-
-    public static PublicationSummary create(PublicationDetails publicationDetails) {
-        var publicationSummary = new PublicationSummary();
-        publicationSummary.setIdentifier(publicationDetails.getIdentifier());
-        publicationSummary.setPublicationId(toPublicationId(publicationDetails.getIdentifier()));
-        publicationSummary.setOwner(new User(publicationDetails.getOwner().toString()));
-        publicationSummary.setStatus(publicationDetails.getStatus());
-        publicationSummary.setTitle(publicationDetails.getTitle());
         return publicationSummary;
     }
 

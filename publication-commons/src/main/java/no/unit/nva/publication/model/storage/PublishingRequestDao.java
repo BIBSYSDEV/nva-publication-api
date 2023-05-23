@@ -108,7 +108,7 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     
     @Override
     public SortableIdentifier getResourceIdentifier() {
-        return getTicketEntry().extractPublicationIdentifier();
+        return getTicketEntry().getResourceIdentifier();
     }
     
     @Override
