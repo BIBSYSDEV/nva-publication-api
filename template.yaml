@@ -1606,6 +1606,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
           SHOULD_CREATE_CONTRIBUTOR_ID: false
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
       Events:
         SqsEvent:
           Type: SQS
@@ -1613,7 +1614,7 @@ Resources:
             Queue: !GetAtt CristinImportDataEntryQueue.Arn
             BatchSize: 1
       EventInvokeConfig:
-        MaximumRetryAttempts: 1
+        MaximumRetryAttempts: 0
         DestinationConfig:
           OnFailure:
             Type: SQS
