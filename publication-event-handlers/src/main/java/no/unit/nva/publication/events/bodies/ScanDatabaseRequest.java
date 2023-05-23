@@ -22,7 +22,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
     @JsonProperty(PAGE_SIZE)
     private final int pageSize;
     @JsonProperty(TOPIC)
-    private final String topic;
+    private String topic;
 
     @JsonCreator
     public ScanDatabaseRequest(@JsonProperty(PAGE_SIZE) int pageSize,
@@ -70,6 +70,10 @@ public class ScanDatabaseRequest implements JsonSerializable {
                    .time(Instant.now())
                    .source(invokedFunctionArn)
                    .build();
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 
     private boolean pageSizeWithinLimits(int pageSize) {
