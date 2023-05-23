@@ -273,10 +273,6 @@ class ExpandedResourceTest {
                    .build();
     }
 
-    private static Stream<Class<?>> publicationInstanceProvider() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
-    }
-
     private static void addPublicationChannelPublisherToMockUriRetriever(UriRetriever mockUriRetriever,
                                                                          URI journalId,
                                                                          String journalName,
@@ -289,6 +285,10 @@ class ExpandedResourceTest {
         String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
         when(mockUriRetriever.getRawContent(eq(publisherId), any()))
             .thenReturn(Optional.of(publicationChannelSamplePublisher));
+    }
+
+    private static Stream<Class<?>> publicationInstanceProvider() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
 
     private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {

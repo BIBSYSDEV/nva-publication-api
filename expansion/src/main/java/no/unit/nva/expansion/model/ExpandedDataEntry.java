@@ -11,7 +11,8 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = ExpandedResource.TYPE, value = ExpandedResource.class),
-    @JsonSubTypes.Type(ExpandedTicket.class)
+    @JsonSubTypes.Type(ExpandedTicket.class),
+    @JsonSubTypes.Type(name = ExpandedImportCandidate.TYPE, value = ExpandedImportCandidate.class)
 })
 public interface ExpandedDataEntry extends JsonSerializable {
     

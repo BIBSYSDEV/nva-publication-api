@@ -1,6 +1,13 @@
 package no.unit.nva.publication.model.business;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -14,25 +21,48 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
-public class ImportCandidate extends Publication {
+public class ImportCandidate extends Publication implements JsonSerializable {
 
+    public static final String TYPE = "ImportCandidate";
+    @JsonProperty("importStatus")
     private ImportStatus importStatus;
+
+    public ImportCandidate() {
+        super();
+    }
 
     @Override
     public PublicationStatus getStatus() {
         return null;
     }
 
-    public ImportCandidate() {
-        super();
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getImportStatus());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        ImportCandidate that = (ImportCandidate) o;
+        return getImportStatus() == that.getImportStatus();
+    }
+
+    @Override
+    public String toString() {
+        return this.toJsonString();
     }
 
     public ImportStatus getImportStatus() {
@@ -45,22 +75,6 @@ public class ImportCandidate extends Publication {
 
     public Publication toPublication() {
         return this.copy().build();
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {return true;}
-        if (o == null || getClass() != o.getClass()) {return false;}
-        if (!super.equals(o)) {return false;}
-        ImportCandidate that = (ImportCandidate) o;
-        return getImportStatus() == that.getImportStatus();
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getImportStatus());
     }
 
     public static final class Builder {
@@ -191,6 +205,5 @@ public class ImportCandidate extends Publication {
         public ImportCandidate build() {
             return importCandidate;
         }
-
     }
 }

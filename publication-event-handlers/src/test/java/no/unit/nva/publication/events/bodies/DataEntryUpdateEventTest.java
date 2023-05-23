@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Stack;
 import java.util.stream.Stream;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.Resource;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -53,7 +55,7 @@ class DataEntryUpdateEventTest {
         var annotations = type.getAnnotationsByType(JsonSubTypes.class);
         return Arrays.asList(annotations[0].value());
     }
-    
+
     private Entity createDataEntry(Class<?> type)
         throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         return (Entity) type.getDeclaredConstructor().newInstance();

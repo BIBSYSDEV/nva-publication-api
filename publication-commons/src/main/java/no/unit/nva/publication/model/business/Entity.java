@@ -23,7 +23,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
     @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
 })
 public interface Entity {
-    
+
     @JsonProperty("identifier")
     SortableIdentifier getIdentifier();
     

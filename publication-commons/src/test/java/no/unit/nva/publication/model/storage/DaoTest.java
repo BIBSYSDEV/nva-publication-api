@@ -4,10 +4,24 @@ import com.amazonaws.services.dynamodbv2.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
+import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -26,7 +40,9 @@ import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDb
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.*;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.Is.is;
@@ -258,6 +274,8 @@ class DaoTest extends ResourcesLocalTest {
         
         if (Resource.class.equals(entityType)) {
             return Resource.fromPublication(randomPublication());
+        } else if (ImportCandidate.class.equals(entityType)) {
+            return Resource.fromImportCandidate(randomImportCandidate());
         } else if (DoiRequest.class.equals(entityType)) {
             return createTicket((Class<? extends TicketEntry>) entityType);
         } else if (PublishingRequestCase.class.equals(entityType)) {
@@ -270,7 +288,47 @@ class DaoTest extends ResourcesLocalTest {
         }
         throw new UnsupportedOperationException();
     }
-    
+
+    private ImportCandidate randomImportCandidate() {
+        return new ImportCandidate.Builder()
+                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withEntityDescription(randomEntityDescription())
+                   .withLink(randomUri())
+                   .withDoi(randomDoi())
+                   .withIndexedDate(Instant.now())
+                   .withPublishedDate(Instant.now())
+                   .withHandle(randomUri())
+                   .withModifiedDate(Instant.now())
+                   .withCreatedDate(Instant.now())
+                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                   .withSubjects(List.of(randomUri()))
+                   .withIdentifier(SortableIdentifier.next())
+                   .withRightsHolder(randomString())
+                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
+                   .withFundings(List.of(new FundingBuilder().withIdentifier(randomString()).build()))
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                   .withAssociatedArtifacts(List.of())
+                   .build();
+    }
+
+    private EntityDescription randomEntityDescription() {
+        return new EntityDescription.Builder()
+                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
+                   .withAbstract(randomString())
+                   .withDescription(randomString())
+                   .withContributors(List.of(randomContributor()))
+                   .withMainTitle(randomString())
+                   .build();
+    }
+
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .build();
+    }
+
     private QueryRequest queryByTypeCustomerStatusIndex(Dao originalResource) {
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)

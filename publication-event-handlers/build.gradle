@@ -68,4 +68,5 @@ test {
     environment "BACKEND_CLIENT_SECRET_NAME", "secret"
     environment "DOMAIN_NAME", "api.test.nva.aws.unit.no"
     environment "OUTPUT_EVENT_TOPIC", "someEvent"
+    environment "API_HOST", "api.dev.nva.aws.unit.no"
 }
