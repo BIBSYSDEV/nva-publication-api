@@ -1587,7 +1587,7 @@ Resources:
   CristinImportPatchQueue:
     Type: "AWS::SQS::Queue"
 
-  CristinEntriesEventConsumer:
+  CristinEntriesSQSConsumer:
     Type: AWS::Serverless::Function
     DependsOn: LambdaRole
     Properties:
@@ -1596,7 +1596,7 @@ Resources:
       Runtime: java11
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 10
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
