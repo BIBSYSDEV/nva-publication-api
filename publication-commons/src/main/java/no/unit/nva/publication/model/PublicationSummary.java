@@ -59,16 +59,6 @@ public class PublicationSummary {
         return publicationSummary;
     }
 
-    public static PublicationSummary create(PublicationDetails publicationDetails) {
-        var publicationSummary = new PublicationSummary();
-        publicationSummary.setIdentifier(publicationDetails.getIdentifier());
-        publicationSummary.setPublicationId(toPublicationId(publicationDetails.getIdentifier()));
-        publicationSummary.setOwner(new User(publicationDetails.getOwner().toString()));
-        publicationSummary.setStatus(publicationDetails.getStatus());
-        publicationSummary.setTitle(publicationDetails.getTitle());
-        return publicationSummary;
-    }
-
     public static PublicationSummary create(URI publicationId, String publicationTitle) {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setIdentifier(extractPublicationIdentifier(publicationId));
