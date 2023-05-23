@@ -1,8 +1,6 @@
 package no.unit.nva.publication.create;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstanceType;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
@@ -46,7 +44,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
-import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -120,7 +118,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
-    
+
     @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
         throws Exception {
@@ -255,6 +253,17 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnForbiddenWhenNoAccessRight() throws IOException {
+        var thesisPublication = samplePublication.copy()
+                .withEntityDescription(thesisPublishableEntityDescription())
+                .build();
+        var event = requestWithoutAccessRights(CreatePublicationRequest.fromPublication(thesisPublication));
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+    }
+
+    @Test
     void shouldReturnUnauthorizedWhenRequestIsFromExternalClientAndClientIdIsMissing() throws IOException {
         var event = requestFromExternalClientWithoutClientId(createEmptyPublicationRequest());
         handler.handleRequest(event, outputStream, context);
@@ -360,6 +369,16 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
+    private InputStream requestWithoutAccessRights(CreatePublicationRequest request) throws JsonProcessingException {
+
+        return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
+                .withUserName(testUserName)
+                .withCurrentCustomer(testOrgId)
+                .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                .withBody(request)
+                .build();
+    }
+
     private InputStream createPublicationRequestFromString(String request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<String>(dtoObjectMapper)
@@ -404,5 +423,17 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                            .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
                            .build())
                    .build();
+    }
+
+    private EntityDescription thesisPublishableEntityDescription() {
+        return new EntityDescription.Builder()
+                .withMainTitle(RandomDataGenerator.randomString())
+                .withReference(
+                        new Reference.Builder()
+                                .withDoi(RandomDataGenerator.randomDoi())
+                                .withPublicationInstance(
+                                        PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
+                                .build())
+                .build();
     }
 }

@@ -231,7 +231,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         var publication = fetchPublication(identifierInPath);
         var isOwner = userIsPublicationOwner(userInstance, publication);
 
-        if (isThesis(publication) && (userUnauthorizedToPublishThesis(requestInfo) || !isOwner)) {
+        if (isThesis(publication) && userUnauthorizedToPublishThesis(requestInfo) && !isOwner) {
             logger.info("thesis={} unauthorized={} isOwner={}",
                 isThesis(publication),
                 userUnauthorizedToPublishThesis(requestInfo),
@@ -240,11 +240,12 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
             throw new ForbiddenException();
         }
 
-        if (userCanEditOtherPeoplesPublications(requestInfo)) {
-            checkUserIsInSameInstitutionAsThePublication(userInstance, publication);
+        if (userIsContributorWithUpdatingPublicationRights(requestInfo, publication)) {
+            logger.info("userIsContributorWithUpdatingPublicationRights");
             return publication;
         }
-        if (userIsContributorWithUpdatingPublicationRights(requestInfo, publication)) {
+        if (userCanEditOtherPeoplesPublications(requestInfo)) {
+            checkUserIsInSameInstitutionAsThePublication(userInstance, publication);
             return publication;
         }
         if (isOwner) {
