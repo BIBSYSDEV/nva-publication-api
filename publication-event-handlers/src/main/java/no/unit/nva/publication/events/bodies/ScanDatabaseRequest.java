@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonSerializable;
-import nva.commons.core.Environment;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class ScanDatabaseRequest implements JsonSerializable {
@@ -17,34 +16,36 @@ public class ScanDatabaseRequest implements JsonSerializable {
     public static final String PAGE_SIZE = "pageSize";
     public static final int DEFAULT_PAGE_SIZE = 700; // Choosing for safety 3/4 of max page size.
     public static final int MAX_PAGE_SIZE = 1000;
-    public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
+    public static final String TOPIC = "topic";
     @JsonProperty(START_MARKER)
     private final Map<String, AttributeValue> startMarker;
     @JsonProperty(PAGE_SIZE)
     private final int pageSize;
+    @JsonProperty(TOPIC)
     private final String topic;
 
     @JsonCreator
     public ScanDatabaseRequest(@JsonProperty(PAGE_SIZE) int pageSize,
-                               @JsonProperty(START_MARKER) Map<String, AttributeValue> startMarker) {
+                               @JsonProperty(START_MARKER) Map<String, AttributeValue> startMarker,
+                               @JsonProperty(TOPIC) String topic) {
         this.pageSize = pageSize;
         this.startMarker = startMarker;
-        this.topic = new Environment().readEnv(OUTPUT_EVENT_TOPIC);
+        this.topic = topic;
     }
 
     public static ScanDatabaseRequest fromJson(String detail) throws JsonProcessingException {
         return objectMapper.readValue(detail, ScanDatabaseRequest.class);
     }
 
-    @JsonProperty("topic")
+    @JsonProperty(TOPIC)
     public String getTopic() {
         return topic;
     }
 
     public int getPageSize() {
         return pageSizeWithinLimits(pageSize)
-                ? pageSize
-                : DEFAULT_PAGE_SIZE;
+                   ? pageSize
+                   : DEFAULT_PAGE_SIZE;
     }
 
     public Map<String, AttributeValue> getStartMarker() {
@@ -52,23 +53,23 @@ public class ScanDatabaseRequest implements JsonSerializable {
     }
 
     public ScanDatabaseRequest newScanDatabaseRequest(Map<String, AttributeValue> newStartMarker) {
-        return new ScanDatabaseRequest(this.getPageSize(), newStartMarker);
+        return new ScanDatabaseRequest(this.getPageSize(), newStartMarker, topic);
     }
 
     public PutEventsRequestEntry createNewEventEntry(
-            String eventBusName,
-            String detailType,
-            String invokedFunctionArn
+        String eventBusName,
+        String detailType,
+        String invokedFunctionArn
     ) {
         return PutEventsRequestEntry
-                .builder()
-                .eventBusName(eventBusName)
-                .detail(this.toJsonString())
-                .detailType(detailType)
-                .resources(invokedFunctionArn)
-                .time(Instant.now())
-                .source(invokedFunctionArn)
-                .build();
+                   .builder()
+                   .eventBusName(eventBusName)
+                   .detail(this.toJsonString())
+                   .detailType(detailType)
+                   .resources(invokedFunctionArn)
+                   .time(Instant.now())
+                   .source(invokedFunctionArn)
+                   .build();
     }
 
     private boolean pageSizeWithinLimits(int pageSize) {

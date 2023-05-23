@@ -39,6 +39,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +53,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     public static final int LARGE_PAGE = 10;
     public static final int ONE_ENTRY_PER_EVENT = 1;
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
+    public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
+    public static final String TOPIC = new Environment().readEnv(OUTPUT_EVENT_TOPIC);
     private EventBasedBatchScanHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
@@ -112,7 +115,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         
         var expectedStaringPointForNextEvent = getLatestEmittedStartingPoint();
-        var secondScanRequest = new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, expectedStaringPointForNextEvent);
+        var secondScanRequest = new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, expectedStaringPointForNextEvent, TOPIC);
         handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
         
         var scanStartingPointSentToTheService =
@@ -124,7 +127,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldNotGoIntoInfiniteLoop() throws ApiGatewayException {
         createRandomResources(20);
-        pushInitialEntryInEventBridge(new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, START_FROM_BEGINNING));
+        pushInitialEntryInEventBridge(new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, START_FROM_BEGINNING, TOPIC));
         while (thereAreMoreEventsInEventBridge()) {
             var currentRequest = consumeLatestEmittedEvent();
             handler.handleRequest(eventToInputStream(currentRequest), output, context);
@@ -200,7 +203,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
     
     private InputStream createInitialScanRequest(int pageSize) {
-        return eventToInputStream(new ScanDatabaseRequest(pageSize, START_FROM_BEGINNING));
+        return eventToInputStream(new ScanDatabaseRequest(pageSize, START_FROM_BEGINNING, TOPIC));
     }
     
     private InputStream eventToInputStream(ScanDatabaseRequest scanDatabaseRequest) {
