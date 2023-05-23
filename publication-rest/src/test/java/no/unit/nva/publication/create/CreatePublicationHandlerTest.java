@@ -1,6 +1,8 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstanceType;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
@@ -8,6 +10,8 @@ import static no.unit.nva.publication.service.impl.ResourceService.NOT_PUBLISHAB
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+import static nva.commons.apigateway.AccessRight.PUBLISH_THESIS;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,6 +46,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -208,6 +214,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var associatedArtifactsInPublication = randomPublication().getAssociatedArtifacts();
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
+        request.setEntityDescription(randomPublishableEntityDescription());
         
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
@@ -349,6 +356,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(testOrgId)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withBody(request)
+                   .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                    .build();
     }
 
@@ -359,6 +367,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                 .withCurrentCustomer(testOrgId)
                 .withTopLevelCristinOrgId(topLevelCristinOrgId)
                 .withBody(request)
+                .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                 .build();
     }
 
@@ -390,7 +399,10 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         return new EntityDescription.Builder()
                    .withMainTitle(RandomDataGenerator.randomString())
                    .withReference(
-                       new Reference.Builder().withDoi(RandomDataGenerator.randomDoi()).build())
+                       new Reference.Builder()
+                           .withDoi(RandomDataGenerator.randomDoi())
+                           .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
+                           .build())
                    .build();
     }
 }

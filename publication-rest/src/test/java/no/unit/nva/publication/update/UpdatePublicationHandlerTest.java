@@ -82,6 +82,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+import static nva.commons.apigateway.AccessRight.PUBLISH_THESIS;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -499,8 +500,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnForbiddenWhenContributorUpdatesResourceWithoutEntityDescription() throws BadRequestException, IOException {
-        var savedPublication = Resource.fromPublication(new Publication())
-                .persistNew(publicationService, UserInstance.fromPublication(publication));
+        var savedPublication = Resource
+            .fromPublication(new Publication())
+            .persistNew(publicationService, UserInstance.fromPublication(publication));
         var cristinId = randomUri();
 
         InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(savedPublication, cristinId);
@@ -545,7 +547,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
-        var statuses = tickets.stream().map(TicketEntry::getStatus).collect(Collectors.toList());
+        var statuses = tickets.stream().map(TicketEntry::getStatus).toList();
         return statuses.stream().anyMatch(TicketStatus.COMPLETED::equals)
                 && statuses.stream().anyMatch(TicketStatus.PENDING::equals);
     }
@@ -600,6 +602,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withCurrentCustomer(customerId)
                 .withPersonCristinId(cristinId)
                 .withBody(publicationUpdate)
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                 .build();
     }
 
@@ -624,7 +627,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                 .build();
     }
 
@@ -638,6 +641,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                 .withPathParameters(pathParameters)
                 .build();
     }

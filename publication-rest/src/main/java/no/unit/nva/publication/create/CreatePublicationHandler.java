@@ -1,11 +1,13 @@
 package no.unit.nva.publication.create;
 
+import static nva.commons.apigateway.AccessRight.PUBLISH_THESIS;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
@@ -22,6 +24,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -30,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
-    
+
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
@@ -45,12 +48,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     @JacocoGenerated
     public CreatePublicationHandler() {
         this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
-             new Environment(),
-             IdentityServiceClient.prepare());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                Clock.systemDefaultZone()),
+            new Environment(),
+            IdentityServiceClient.prepare());
     }
-    
+
     /**
      * Constructor for CreatePublicationHandler.
      *
@@ -65,19 +68,21 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         this.apiHost = environment.readEnv(API_HOST);
         this.identityServiceClient = identityServiceClient;
     }
-    
+
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
         logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
-        
-        var userInstance = createUserInstanceFromLoginInformation(requestInfo);
+        if (isThesisAndHasNotPublishThesis(requestInfo, input)) {
+            throw new ForbiddenException();
+        }
         var newPublication = Optional.ofNullable(input)
-                                 .map(CreatePublicationRequest::toPublication)
-                                 .orElseGet(Publication::new);
+            .map(CreatePublicationRequest::toPublication)
+            .orElseGet(Publication::new);
+        var userInstance = createUserInstanceFromLoginInformation(requestInfo);
         var createdPublication = Resource.fromPublication(newPublication).persistNew(publicationService, userInstance);
         setLocationHeader(createdPublication.getIdentifier());
-    
+
         return PublicationResponse.fromPublication(createdPublication);
     }
 
@@ -85,7 +90,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
         return HttpStatus.SC_CREATED;
     }
-    
+
     protected URI getLocation(SortableIdentifier identifier) {
         return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
     }
@@ -99,21 +104,33 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
     private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws UnauthorizedException {
         return requestInfo.clientIsThirdParty()
-                   ? RequestUtil.createExternalUserInstance(requestInfo, identityServiceClient)
-                   : createUserInstanceForInternalUser(requestInfo);
+            ? RequestUtil.createExternalUserInstance(requestInfo, identityServiceClient)
+            : createUserInstanceForInternalUser(requestInfo);
     }
-    
+
     private ResourceOwner createInternalResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(() -> requestInfo.getTopLevelOrgCristinId().orElseThrow())
-                   .map(topLevelOrgCristinId -> new ResourceOwner(new Username(requestInfo.getUserName()),
-                                                                               topLevelOrgCristinId))
-                   .orElseThrow(fail -> new UnauthorizedException());
+            .map(topLevelOrgCristinId -> new ResourceOwner(new Username(requestInfo.getUserName()),
+                topLevelOrgCristinId))
+            .orElseThrow(fail -> new UnauthorizedException());
     }
-    
+
     private void setLocationHeader(SortableIdentifier identifier) {
         addAdditionalHeaders(() -> Map.of(
             HttpHeaders.LOCATION,
             getLocation(identifier).toString())
         );
+    }
+
+    private boolean isThesisAndHasNotPublishThesis(RequestInfo requestInfo, CreatePublicationRequest request) {
+        var thesisKinds = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd");
+        var kind =
+            attempt(() -> request.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
+                .toOptional();
+
+        if (kind.isPresent() && thesisKinds.contains(kind.get())) {
+            return !requestInfo.userIsAuthorized(PUBLISH_THESIS.name());
+        }
+        return false;
     }
 }

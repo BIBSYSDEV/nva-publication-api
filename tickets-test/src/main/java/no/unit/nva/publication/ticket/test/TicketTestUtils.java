@@ -57,9 +57,9 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatus(status);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
+        var persistedPublication = Resource
+            .fromPublication(publication)
+            .persistNew(resourceService,UserInstance.fromPublication(publication));
         if (isPublished(publication)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());

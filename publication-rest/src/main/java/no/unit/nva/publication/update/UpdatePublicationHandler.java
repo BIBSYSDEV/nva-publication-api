@@ -6,12 +6,7 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Username;
+import no.unit.nva.model.*;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -31,10 +26,17 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWorkflowResponse;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.*;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Clock;
@@ -59,6 +61,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
         + " from upstream";
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -226,8 +229,14 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
         var userInstance = createUserInstanceFromRequest(requestInfo);
         var publication = fetchPublication(identifierInPath);
+        var isOwner = userIsPublicationOwner(userInstance, publication);
 
-        if (isThesis(publication) && userUnauthorizedToPublishThesis(requestInfo)) {
+        if (isThesis(publication) && (userUnauthorizedToPublishThesis(requestInfo) || !isOwner)) {
+            logger.info("thesis={} unauthorized={} isOwner={}",
+                isThesis(publication),
+                userUnauthorizedToPublishThesis(requestInfo),
+                isOwner);
+
             throw new ForbiddenException();
         }
 
@@ -238,7 +247,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         if (userIsContributorWithUpdatingPublicationRights(requestInfo, publication)) {
             return publication;
         }
-        if (userIsPublicationOwner(userInstance, publication)) {
+        if (isOwner) {
             return fetchPublicationForPublicationOwner(identifierInPath, userInstance);
         }
         throw new ForbiddenException();
