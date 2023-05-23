@@ -56,12 +56,8 @@ class DataEntryUpdateEventTest {
         return Arrays.asList(annotations[0].value());
     }
 
-    //Getting StackOverflow exception when instantiating ImportCandidate, probably IDE error.
     private Entity createDataEntry(Class<?> type)
         throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        if(type.equals(ImportCandidate.class)) {
-            return new Resource();
-        }
         return (Entity) type.getDeclaredConstructor().newInstance();
     }
 }

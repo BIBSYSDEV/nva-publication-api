@@ -1,5 +1,16 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -18,22 +29,7 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Set;
-
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
 public class ImportCandidateTest {
-
-    private static Funding randomFunding() {
-        return new FundingBuilder().withId(randomUri()).build();
-    }
 
     @Test
     void shouldCreatePublicationFromImportCandidate() {
@@ -57,6 +53,18 @@ public class ImportCandidateTest {
         assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
     }
 
+    @Test
+    void shouldDoRoundTripWithoutLosingData() throws JsonProcessingException {
+        var randomImportCandidate = randomImportCandidate();
+        var json = randomImportCandidate.toString();
+        var regeneratedImportCandidate = JsonUtils.dtoObjectMapper.readValue(json, ImportCandidate.class);
+        assertThat(regeneratedImportCandidate, is(equalTo(regeneratedImportCandidate)));
+    }
+
+    private static Funding randomFunding() {
+        return new FundingBuilder().withId(randomUri()).build();
+    }
+
     private static Publication createPublicationWithoutStatus() {
         var randomPublication = PublicationGenerator.randomPublication();
         randomPublication.setStatus(null);
@@ -65,64 +73,63 @@ public class ImportCandidateTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
-                .withEntityDescription(randomEntityDescription())
-                .withLink(randomUri())
-                .withDoi(randomDoi())
-                .withIndexedDate(Instant.now())
-                .withPublishedDate(Instant.now())
-                .withHandle(randomUri())
-                .withModifiedDate(Instant.now())
-                .withCreatedDate(Instant.now())
-                .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                .withSubjects(List.of(randomUri()))
-                .withIdentifier(SortableIdentifier.next())
-                .withRightsHolder(randomString())
-                .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                .withFundings(List.of(randomFunding()))
-                .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                .withAssociatedArtifacts(List.of())
-                .build();
-
+                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withEntityDescription(randomEntityDescription())
+                   .withLink(randomUri())
+                   .withDoi(randomDoi())
+                   .withIndexedDate(Instant.now())
+                   .withPublishedDate(Instant.now())
+                   .withHandle(randomUri())
+                   .withModifiedDate(Instant.now())
+                   .withCreatedDate(Instant.now())
+                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                   .withSubjects(List.of(randomUri()))
+                   .withIdentifier(SortableIdentifier.next())
+                   .withRightsHolder(randomString())
+                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
+                   .withFundings(List.of(randomFunding()))
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                   .withAssociatedArtifacts(List.of())
+                   .build();
     }
 
     private EntityDescription randomEntityDescription() {
         return new EntityDescription.Builder()
-                .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
-                .withAbstract(randomString())
-                .withDescription(randomString())
-                .withContributors(List.of(randomContributor()))
-                .withMainTitle(randomString())
-                .build();
+                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
+                   .withAbstract(randomString())
+                   .withDescription(randomString())
+                   .withContributors(List.of(randomContributor()))
+                   .withMainTitle(randomString())
+                   .build();
     }
 
     private Contributor randomContributor() {
         return new Contributor.Builder()
-                .withIdentity(new Identity.Builder().withName(randomString()).build())
-                .withRole(new RoleType(Role.ACTOR))
-                .build();
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .build();
     }
 
     private Publication createExpectedPublication(ImportCandidate randomImportCandidate) {
         return new Publication.Builder()
-                .withAssociatedArtifacts(randomImportCandidate.getAssociatedArtifacts())
-                .withEntityDescription(randomImportCandidate.getEntityDescription())
-                .withAdditionalIdentifiers(randomImportCandidate.getAdditionalIdentifiers())
-                .withCreatedDate(randomImportCandidate.getCreatedDate())
-                .withDoi(randomImportCandidate.getDoi())
-                .withFundings(randomImportCandidate.getFundings())
-                .withSubjects(randomImportCandidate.getSubjects())
-                .withIdentifier(randomImportCandidate.getIdentifier())
-                .withLink(randomImportCandidate.getLink())
-                .withModifiedDate(randomImportCandidate.getModifiedDate())
-                .withProjects(randomImportCandidate.getProjects())
-                .withPublisher(randomImportCandidate.getPublisher())
-                .withResourceOwner(randomImportCandidate.getResourceOwner())
-                .withRightsHolder(randomImportCandidate.getRightsHolder())
-                .withHandle(randomImportCandidate.getHandle())
-                .withIndexedDate(randomImportCandidate.getIndexedDate())
-                .withPublishedDate(randomImportCandidate.getPublishedDate())
-                .build();
+                   .withAssociatedArtifacts(randomImportCandidate.getAssociatedArtifacts())
+                   .withEntityDescription(randomImportCandidate.getEntityDescription())
+                   .withAdditionalIdentifiers(randomImportCandidate.getAdditionalIdentifiers())
+                   .withCreatedDate(randomImportCandidate.getCreatedDate())
+                   .withDoi(randomImportCandidate.getDoi())
+                   .withFundings(randomImportCandidate.getFundings())
+                   .withSubjects(randomImportCandidate.getSubjects())
+                   .withIdentifier(randomImportCandidate.getIdentifier())
+                   .withLink(randomImportCandidate.getLink())
+                   .withModifiedDate(randomImportCandidate.getModifiedDate())
+                   .withProjects(randomImportCandidate.getProjects())
+                   .withPublisher(randomImportCandidate.getPublisher())
+                   .withResourceOwner(randomImportCandidate.getResourceOwner())
+                   .withRightsHolder(randomImportCandidate.getRightsHolder())
+                   .withHandle(randomImportCandidate.getHandle())
+                   .withIndexedDate(randomImportCandidate.getIndexedDate())
+                   .withPublishedDate(randomImportCandidate.getPublishedDate())
+                   .build();
     }
 }

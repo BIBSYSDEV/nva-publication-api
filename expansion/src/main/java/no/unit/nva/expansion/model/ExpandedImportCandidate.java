@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -215,8 +214,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static boolean isVerifiedContributor(Contributor contributor) {
-        return nonNull(contributor.getContributorVerificationStatus()) &&
-               ContributorVerificationStatus.VERIFIED.equals(contributor.getContributorVerificationStatus());
+        return ContributorVerificationStatus.VERIFIED.equals(contributor.getContributorVerificationStatus());
     }
 
     private static URI generateIdentifier(SortableIdentifier identifier) {

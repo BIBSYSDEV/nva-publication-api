@@ -1,11 +1,13 @@
 package no.unit.nva.publication.model.business;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -17,17 +19,14 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
-import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
-public class ImportCandidate extends Publication implements Entity {
+public class ImportCandidate extends Publication implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
-    public static final String HARDCODED_OWNER = "hardcodedOwner";
+    @JsonProperty("importStatus")
     private ImportStatus importStatus;
 
     public ImportCandidate() {
@@ -61,6 +60,11 @@ public class ImportCandidate extends Publication implements Entity {
         return getImportStatus() == that.getImportStatus();
     }
 
+    @Override
+    public String toString() {
+        return this.toJsonString();
+    }
+
     public ImportStatus getImportStatus() {
         return importStatus;
     }
@@ -71,42 +75,6 @@ public class ImportCandidate extends Publication implements Entity {
 
     public Publication toPublication() {
         return this.copy().build();
-    }
-
-    @JacocoGenerated
-    @Override
-    public Publication toPublication(ResourceService resourceService) {
-        return this.copy().build();
-    }
-
-    @JacocoGenerated
-    @Override
-    public String getType() {
-        return TYPE;
-    }
-
-    @JacocoGenerated
-    @Override
-    public User getOwner() {
-        return new User(HARDCODED_OWNER);
-    }
-
-    @JacocoGenerated
-    @Override
-    public URI getCustomerId() {
-        return super.getPublisher().getId();
-    }
-
-    @JacocoGenerated
-    @Override
-    public Dao toDao() {
-        return new ResourceDao(Resource.fromImportCandidate(this));
-    }
-
-    @JacocoGenerated
-    @Override
-    public String getStatusString() {
-        return super.getStatus().getValue();
     }
 
     public static final class Builder {

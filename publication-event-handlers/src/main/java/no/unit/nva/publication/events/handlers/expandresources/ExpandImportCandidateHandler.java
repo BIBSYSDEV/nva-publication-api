@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate.IMPORT_CANDIDATE_PERSISTENCE;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
 import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
@@ -14,7 +13,6 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
-import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
@@ -24,9 +22,10 @@ import org.slf4j.LoggerFactory;
 public class ExpandImportCandidateHandler extends
                                           DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
-    private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
+    public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
     public static final String EVENTS_BUCKET = "EVENTS_BUCKET";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
+    private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
 
@@ -46,8 +45,7 @@ public class ExpandImportCandidateHandler extends
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var blob = readBlobFromS3(input);
-        var importCandidate = (ImportCandidate) blob.getNewData();
-        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(importCandidate))
+        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData()))
                    .map(this::createOutPutEventAndPersistDocument)
                    .orElse(failure -> emptyEvent());
     }
