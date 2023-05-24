@@ -596,7 +596,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
-        var statuses = tickets.stream().map(TicketEntry::getStatus).toList();
+        var statuses = tickets.stream().map(TicketEntry::getStatus).collect(Collectors.toList());
         return statuses.stream().anyMatch(TicketStatus.COMPLETED::equals)
                 && statuses.stream().anyMatch(TicketStatus.PENDING::equals);
     }
