@@ -299,9 +299,10 @@ Resources:
     Type: "AWS::SQS::Queue"
   ResourceExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  ImportCandidateBatchScanDLQ:
+    Type: "AWS::SQS::Queue"
   ImportCandidateExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
-
 
 
   #==============================ROLES=======================================================================
@@ -1028,6 +1029,38 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
+  ImportCandidateExpansionHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandImportCandidateHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 64
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          TABLE_NAME: !Ref NvaImportCandidatesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - "ImportCandidate.Database.Update"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+
   ExpandedResourcesPersistenceHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -1180,7 +1213,7 @@ Resources:
             Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+            Destination: !GetAtt ImportCandidateBatchScanDLQ.Arn
 
   DataEntryUpdateHandler:
     DependsOn: EventsLambdaPermissions

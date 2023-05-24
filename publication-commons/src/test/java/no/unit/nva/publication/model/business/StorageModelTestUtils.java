@@ -21,11 +21,11 @@ public final class StorageModelTestUtils {
         sample.setOwner(userInstance.getUser());
         sample.setCustomerId(userInstance.getOrganizationUri());
         sample.setIdentifier(SortableIdentifier.next());
+        sample.setResourceIdentifier(SortableIdentifier.next());
         sample.setCreatedDate(randomInstant());
         sample.setModifiedDate(randomInstant());
         sample.setStatus(TicketStatus.COMPLETED);
         sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
-        sample.setPublicationDetails(PublicationDetails.create(publication));
         sample.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         sample.setAssignee(new Username(randomString()));
         sample.setFinalizedBy(new Username(randomString()));

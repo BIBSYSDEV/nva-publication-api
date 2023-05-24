@@ -51,7 +51,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -95,6 +94,34 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
+    }
+
+    private static URI constructExpectedPublicationId(Publication publication) {
+        return UriWrapper.fromHost(API_HOST)
+            .addChild("publication")
+            .addChild(publication.getIdentifier().toString())
+            .getUri();
+    }
+
+    private static List<Class<?>> listPublicationInstanceTypes() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
+        Class<? extends TicketEntry> ticketType) {
+        return (Class<? extends TicketEntry>)
+                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
+                       .findAny().orElseThrow();
+    }
+
+    private static ExpandedPerson getExpectedExpandedPerson(User user) {
+        return new ExpandedPerson(
+            "someFirstName",
+            "somePreferredFirstName",
+            "someLastName",
+            "somePreferredLastName",
+            user);
     }
 
     @BeforeEach
@@ -373,34 +400,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getViewedBy(), is(equalTo(expectedExpandedViewedBySet)));
     }
 
-    private static URI constructExpectedPublicationId(Publication publication) {
-        return UriWrapper.fromHost(API_HOST)
-            .addChild("publication")
-            .addChild(publication.getIdentifier().toString())
-            .getUri();
-    }
-
-    private static List<Class<?>> listPublicationInstanceTypes() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
-        Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>)
-                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
-                       .findAny().orElseThrow();
-    }
-
-    private static ExpandedPerson getExpectedExpandedPerson(User user) {
-        return new ExpandedPerson(
-            "someFirstName",
-            "somePreferredFirstName",
-            "someLastName",
-            "somePreferredLastName",
-            user);
-    }
-
     private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
         return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
                    : TicketStatus.parse(expandedTicketStatus.toString());
@@ -460,10 +459,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
 
         var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
-            .persistNewTicket(ticketService);
+                                          .persistNewTicket(ticketService);
         var firstUnexpectedMessage = ExpandedMessage
-            .createEntry(messageService.createMessage(
-                differentTicketSameType, owner, randomString()), expansionService);
+                                         .createEntry(messageService.createMessage(
+                                             differentTicketSameType, owner, randomString()), expansionService);
         var differentTicketType = someOtherTicketTypeBesidesDoiRequest(ticketType);
         var differentTicketDifferentType =
             TicketEntry.requestNewTicket(publication, differentTicketType).persistNewTicket(ticketService);
@@ -497,7 +496,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         doiRequest.setCustomerId(expandedDoiRequest.getCustomerId());
         doiRequest.setModifiedDate(expandedDoiRequest.getModifiedDate());
         doiRequest.setOwner(expandedDoiRequest.getOwner().getUsername());
-        doiRequest.setPublicationDetails(PublicationDetails.create(expandedDoiRequest.getPublication()));
+        doiRequest.setResourceIdentifier(expandedDoiRequest.getPublication().getIdentifier());
         doiRequest.setResourceStatus(expandedDoiRequest.getPublication().getStatus());
         doiRequest.setStatus(getTicketStatus(expandedDoiRequest.getStatus()));
         doiRequest.setAssignee(extractUsername(expandedDoiRequest.getAssignee()));
@@ -510,7 +509,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketEntry.setCreatedDate(expandedGeneralSupportRequest.getCreatedDate());
         ticketEntry.setCustomerId(expandedGeneralSupportRequest.getCustomerId());
         ticketEntry.setIdentifier(extractIdentifier(expandedGeneralSupportRequest.getId()));
-        ticketEntry.setPublicationDetails(PublicationDetails.create(expandedGeneralSupportRequest.getPublication()));
+        ticketEntry.setResourceIdentifier(expandedGeneralSupportRequest.getPublication().getIdentifier());
         ticketEntry.setStatus(getTicketStatus(expandedGeneralSupportRequest.getStatus()));
         ticketEntry.setOwner(expandedGeneralSupportRequest.getOwner().getUsername());
         ticketEntry.setAssignee(extractUsername(expandedGeneralSupportRequest.getAssignee()));
@@ -519,7 +518,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private TicketEntry toTicketEntry(ExpandedPublishingRequest expandedPublishingRequest) {
         var publishingRequest = new PublishingRequestCase();
-        publishingRequest.setPublicationDetails(PublicationDetails.create(expandedPublishingRequest.getPublication()));
+        publishingRequest.setResourceIdentifier(expandedPublishingRequest.getPublication().getIdentifier());
         publishingRequest.setCustomerId(expandedPublishingRequest.getCustomerId());
         publishingRequest.setIdentifier(extractIdentifier(expandedPublishingRequest.getId()));
         publishingRequest.setOwner(expandedPublishingRequest.getOwner().getUsername());

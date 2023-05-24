@@ -2,10 +2,12 @@ package no.unit.nva.publication.events.bodies;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.model.business.ImportCandidate;
 
 public class ImportCandidateDataEntryUpdate implements JsonSerializable {
@@ -31,6 +33,11 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
         this.action = action;
         this.oldData = oldData;
         this.newData = newData;
+    }
+
+    public static ImportCandidateDataEntryUpdate fromJson(String json) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(json, ImportCandidateDataEntryUpdate.class))
+                   .orElseThrow();
     }
 
     public String getAction() {

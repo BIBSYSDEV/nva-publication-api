@@ -123,9 +123,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     private static List<ExpandedMessage> expandMessages(List<Message> messages,
                                                         ResourceExpansionService expansionService) {
-        return messages.stream()
-            .map(expansionService::expandMessage)
-            .collect(Collectors.toList());
+        return messages.stream().map(expansionService::expandMessage).collect(Collectors.toList());
     }
 
     private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
@@ -158,6 +156,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
                                                 ResourceService resourceService) {
         return attempt(() -> resourceService.getPublicationByIdentifier(
-            publishingRequestCase.extractPublicationIdentifier())).orElseThrow();
+            publishingRequestCase.getResourceIdentifier())).orElseThrow();
     }
 }

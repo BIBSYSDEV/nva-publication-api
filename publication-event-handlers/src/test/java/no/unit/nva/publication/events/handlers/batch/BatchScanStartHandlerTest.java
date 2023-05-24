@@ -4,6 +4,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
+import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +18,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 
 class BatchScanStartHandlerTest {
 
+    public static final String TOPIC = "OUTPUT_EVENT_TOPIC";
+
     public static final int NOT_SET_PAGE_SIZE = 0;
     private final FakeContext context = new FakeContext() {
         @Override
@@ -29,7 +32,7 @@ class BatchScanStartHandlerTest {
     void shouldSendInitialScanMessageWithDefaultPageSizeWhenPageSizeIsNotSet() throws IOException {
         var client = new FakeEventBridgeClient();
         var handler = new BatchScanStartHandler(client);
-        var scanDatabaseRequest = new ScanDatabaseRequest(NOT_SET_PAGE_SIZE, null);
+        var scanDatabaseRequest = new ScanDatabaseRequest(NOT_SET_PAGE_SIZE, null, TOPIC);
         var request = IoUtils.stringToStream(scanDatabaseRequest.toJsonString());
         handler.handleRequest(request, null, context);
         assertThat(client.getRequestEntries(), hasSize(1));
@@ -42,7 +45,7 @@ class BatchScanStartHandlerTest {
     void shouldSendInitialScanMessageForInitiatingBatchScanning() throws IOException {
         FakeEventBridgeClient client = new FakeEventBridgeClient();
         BatchScanStartHandler handler = new BatchScanStartHandler(client);
-        ScanDatabaseRequest scanDatabaseRequest = new ScanDatabaseRequest(1, null);
+        ScanDatabaseRequest scanDatabaseRequest = new ScanDatabaseRequest(1, null, TOPIC);
         var request = IoUtils.stringToStream(scanDatabaseRequest.toJsonString());
         handler.handleRequest(request, null, context);
         assertThat(client.getRequestEntries(), hasSize(1));

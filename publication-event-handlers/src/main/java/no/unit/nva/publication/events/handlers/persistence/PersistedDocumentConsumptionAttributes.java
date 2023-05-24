@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
+import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -13,7 +14,7 @@ public class PersistedDocumentConsumptionAttributes {
     
     public static final String RESOURCES_INDEX = "resources";
     public static final String TICKETS_INDEX = "tickets";
-    
+    public static final String IMPORT_CANDIDATES_INDEX = "importCandidates";
     public static final String INDEX_FIELD = "index";
     public static final String DOCUMENT_IDENTIFIER = "documentIdentifier";
     public static final String UNSUPPORTED_TYPE_ERROR_MESSAGE = "Currently unsupported type of entry:";
@@ -34,6 +35,9 @@ public class PersistedDocumentConsumptionAttributes {
     public static PersistedDocumentConsumptionAttributes createAttributes(ExpandedDataEntry expandedEntry) {
         if (expandedEntry instanceof ExpandedResource) {
             return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.identifyExpandedEntry());
+        } else if (expandedEntry instanceof ExpandedImportCandidate) {
+            return new PersistedDocumentConsumptionAttributes(IMPORT_CANDIDATES_INDEX,
+                                                              expandedEntry.identifyExpandedEntry());
         } else if (expandedEntry instanceof ExpandedTicket) {
             return new PersistedDocumentConsumptionAttributes(TICKETS_INDEX, expandedEntry.identifyExpandedEntry());
         }

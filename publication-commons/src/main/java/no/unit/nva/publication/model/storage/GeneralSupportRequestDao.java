@@ -51,6 +51,6 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
     
     @Override
     public SortableIdentifier getResourceIdentifier() {
-        return getTicketEntry().extractPublicationIdentifier();
+        return getTicketEntry().getResourceIdentifier();
     }
 }
