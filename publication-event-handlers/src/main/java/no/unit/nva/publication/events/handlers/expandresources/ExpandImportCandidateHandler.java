@@ -55,6 +55,7 @@ public class ExpandImportCandidateHandler extends
     }
 
     private ImportCandidateDataEntryUpdate readBlobFromS3(EventReference input) {
+        logger.info("Event to proceed: {}", input.getUri());
         var blobString = s3Reader.readEvent(input.getUri());
         return ImportCandidateDataEntryUpdate.fromJson(blobString);
     }
