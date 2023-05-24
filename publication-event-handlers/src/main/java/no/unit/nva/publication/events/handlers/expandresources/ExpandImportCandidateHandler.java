@@ -30,7 +30,7 @@ public class ExpandImportCandidateHandler extends
     private final S3Driver s3Writer;
 
     @JacocoGenerated
-    protected ExpandImportCandidateHandler() {
+    public ExpandImportCandidateHandler() {
         this(new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
     }
 
