@@ -1051,7 +1051,7 @@ Resources:
               detail:
                 responsePayload:
                   topic:
-                    - "ImportCandidate.Database.Update"
+                    - "ImportCandidates.Database.Update"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
