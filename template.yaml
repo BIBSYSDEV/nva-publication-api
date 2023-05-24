@@ -1041,6 +1041,7 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
           TABLE_NAME: !Ref NvaImportCandidatesTable
       Events:
         EventBridgeEvent:
