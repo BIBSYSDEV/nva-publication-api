@@ -86,6 +86,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     @Override
     protected PutSqsMessageResult processInput(EventReference input, AwsEventBridgeEvent<EventReference> event,
                                                Context context) {
+        logger.info("Input event: " + input.toJsonString());
         validateEvent(event);
         return attemptTPlaceMessagesOnQueue(input);
     }
