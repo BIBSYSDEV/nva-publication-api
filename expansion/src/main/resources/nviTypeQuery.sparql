@@ -17,6 +17,7 @@ CONSTRUCT {
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
     ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?level .
     ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?level .
+    ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:journal/nva:level ?level .
 
     BIND(IF (?instanceType = nva:AcademicMonograph
              || ?instanceType = nva:AcademicChapter
@@ -25,8 +26,8 @@ CONSTRUCT {
 
     BIND(IF(?publicationStatus = nva:PUBLISHED
             && ?isNviInstance = "true"^^xsd:boolean
-            && (?level = "1" || ?level = "2"), "true"^^xsd:boolean, "false"^^xsd:boolean  AS ?nviCandidate)
+            && (?level = "1" || ?level = "2"), "true"^^xsd:boolean, "false"^^xsd:boolean)  AS ?nviCandidate)
 
   FILTER NOT EXISTS { ?top_org nva:partOf ?e } .
-  FILTER ( starts(str(?org), "http") ) .
+  FILTER ( strstarts(str(?org), "http") ) .
 }

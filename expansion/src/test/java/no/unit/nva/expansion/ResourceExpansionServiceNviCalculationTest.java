@@ -43,7 +43,6 @@ import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
@@ -78,7 +77,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     void shouldIncludeNviTypeFieldForAllExpandedResources()
         throws JsonProcessingException, NotFoundException {
 
-        var publication = randomPublication().copy().withEntityDescription(new EntityDescription()).build();;
+        var publication = randomPublication().copy().withEntityDescription(new EntityDescription()).build();
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -317,7 +316,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                                                 getRandomInstantInCurrentYear());
     }
 
-
     private Publication publicationWithEntityDescription(
         PublicationInstance<? extends Pages> publicationInstance,
         PublicationContext publicationContext,
@@ -346,6 +344,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withContributorVerificationStatus(verificationStatus)
                    .build();
     }
+
     private void initializeServices() {
         ResourceService resourceService = new ResourceService(client, CLOCK);
         UriRetriever uriRetriever = new UriRetriever();
