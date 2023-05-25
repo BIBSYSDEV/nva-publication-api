@@ -77,13 +77,16 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     void shouldIncludeNviTypeFieldForAllExpandedResources()
         throws JsonProcessingException, NotFoundException {
 
-        var publication = randomPublication().copy().withEntityDescription(new EntityDescription()).build();
+        var publication = randomPublication(AcademicArticle.class).copy()
+                              .withEntityDescription(new EntityDescription())
+                              .build();
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var framedResultNode = expandedResource.asJsonNode();
+        var actualNviType = framedResultNode.at("/nviType");
 
-        var nviTypeObject = expandedResource.getAllFields().get(NVI_TYPE_FIELD_NAME);
-        assertThat(nviTypeObject, isNotNull());
+        assertThat(actualNviType, isNotNull());
     }
 
     @ParameterizedTest

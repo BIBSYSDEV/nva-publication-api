@@ -6,7 +6,7 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 CONSTRUCT {
   ?publication nva:topLevelOrganization ?top_org ;
-               nva:nvi ?nviCandidate .
+               nva:nviType ?nviCandidate .
   } WHERE {
   ?publication a nva:Publication .
   ?affiliation nva:affiliation ?org .
