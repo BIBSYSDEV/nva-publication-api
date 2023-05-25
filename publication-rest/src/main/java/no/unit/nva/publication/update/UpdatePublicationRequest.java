@@ -2,24 +2,28 @@ package no.unit.nva.publication.update;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.URI;
-import java.util.List;
-import java.util.Objects;
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.funding.Funding;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.JacocoGenerated;
+
+import java.net.URI;
+import java.util.List;
+import java.util.Objects;
+
+import static java.util.Objects.isNull;
 
 public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
     
-    public static final String WRONG_PUBLICATION_UDPATE_ERROR = "Trying to update a publication with different "
+    public static final String WRONG_PUBLICATION_UPDATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";
     private SortableIdentifier identifier;
     private EntityDescription entityDescription;
@@ -31,21 +35,29 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     private List<Funding> fundings;
     private String rightsHolder;
     
-    public Publication generatePublicationUpdate(Publication existingPublication) {
+    public Publication generatePublicationUpdate(Publication existingPublication) throws ForbiddenException {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
             throw new IllegalArgumentException(
-                WRONG_PUBLICATION_UDPATE_ERROR + existingPublication.getIdentifier());
+                WRONG_PUBLICATION_UPDATE_ERROR + existingPublication.getIdentifier());
         }
-        return existingPublication.copy()
+        return validateNonNulls(existingPublication.copy()
                    .withEntityDescription(this.entityDescription)
                    .withAssociatedArtifacts(this.associatedArtifacts)
                    .withProjects(this.projects)
                    .withSubjects(this.subjects)
                    .withFundings(this.fundings)
                    .withRightsHolder(this.rightsHolder)
-                   .build();
+                   .build());
     }
-    
+
+    private Publication validateNonNulls(Publication publication)
+        throws ForbiddenException {
+        if (isNull(publication.getEntityDescription())) {
+            throw new ForbiddenException();
+        }
+        return publication;
+    }
+
     @JacocoGenerated
     @Override
     public SortableIdentifier getIdentifier() {

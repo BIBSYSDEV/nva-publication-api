@@ -8,17 +8,20 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.AccessRight;
+import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -34,6 +37,7 @@ import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -82,6 +86,8 @@ import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+import static nva.commons.apigateway.AccessRight.PUBLISH_THESIS;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -201,7 +207,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
-
                 publicationUpdate.getIdentifier(),
                 PublishingRequestCase.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
@@ -276,8 +281,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream =
                 externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
-        when(getExternalClientResponse.getCustomerUri()).thenReturn(publication.getPublisher().getId());
-        when(getExternalClientResponse.getActingUser()).thenReturn(publication.getResourceOwner().getOwner().getValue());
+        when(getExternalClientResponse.getCustomerUri())
+                .thenReturn(publication.getPublisher().getId());
+        when(getExternalClientResponse.getActingUser())
+                .thenReturn(publication.getResourceOwner().getOwner().getValue());
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -484,8 +491,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void
-    shouldReturnForbiddenWhenContributorWithoutCristinIdUpdatesResource() throws BadRequestException, IOException {
+    void shouldReturnForbiddenWhenContributorWithoutCristinIdUpdatesResource()
+            throws BadRequestException, IOException {
         Publication savedPublication = createSamplePublication();
         var contributor = createContributorForPublicationUpdate(null);
         injectContributor(savedPublication, contributor);
@@ -498,15 +505,59 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenContributorUpdatesResourceWithoutEntityDescription() throws BadRequestException, IOException {
-        var savedPublication = Resource.fromPublication(new Publication())
-                .persistNew(publicationService, UserInstance.fromPublication(publication));
+    void shouldReturnForbiddenWhenContributorUpdatesResourceWithoutEntityDescription()
+            throws BadRequestException, IOException {
+        var savedPublication = Resource
+            .fromPublication(new Publication())
+            .persistNew(publicationService, UserInstance.fromPublication(publication));
         var cristinId = randomUri();
 
         InputStream event = contributorUpdatesPublicationAndHasRightsToUpdate(savedPublication, cristinId);
         updatePublicationHandler.handleRequest(event, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+    }
+
+    @Test
+    @DisplayName("Handler returns Forbidden when thesis and no PUBLISH_THESIS ")
+    void shouldReturnForbiddenWhenNoAccessRight() throws IOException, BadRequestException {
+        var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
+        var savedThesis = Resource
+                .fromPublication(thesisPublication)
+                .persistNew(publicationService, UserInstance.fromPublication(publication));
+        var updatedPublication = updateTitle(savedThesis);
+        var event = contributorUpdatesPublicationWithoutHavingRights(updatedPublication);
+        updatePublicationHandler.handleRequest(event, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+    }
+
+    @Test
+    @DisplayName("Handler returns OK when thesis and is owner")
+    void shouldReturnOKWhenUserIsOwner() throws IOException, BadRequestException {
+        var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
+        var savedThesis = Resource
+                .fromPublication(thesisPublication)
+                .persistNew(publicationService, UserInstance.fromPublication(publication));
+        var updatedPublication = updateTitle(savedThesis);
+        var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
+        updatePublicationHandler.handleRequest(input, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_OK)));
+    }
+
+    @Test
+    @DisplayName("Handler returns OK when thesis and user has PUBLISH_THESIS")
+    void shouldReturnOKWhenUserHasPublishThesis() throws IOException, BadRequestException {
+        var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
+        var savedThesis = Resource
+                .fromPublication(thesisPublication)
+                .persistNew(publicationService, UserInstance.fromPublication(publication));
+        var updatedPublication = updateTitle(savedThesis);
+        var input = userUpdatesPublicationAndHasRightToUpdate(updatedPublication);
+        updatePublicationHandler.handleRequest(input, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_OK)));
     }
 
     @Test
@@ -584,7 +635,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.toString())
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -600,6 +651,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withCurrentCustomer(customerId)
                 .withPersonCristinId(cristinId)
                 .withBody(publicationUpdate)
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                 .build();
     }
 
@@ -624,7 +676,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                 .build();
     }
 
@@ -638,6 +690,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
                 .withPathParameters(pathParameters)
                 .build();
     }
@@ -720,4 +773,17 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 secretsManagerClient,
                 BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
     }
+
+    private EntityDescription thesisPublishableEntityDescription() {
+        return new EntityDescription.Builder()
+                .withMainTitle(RandomDataGenerator.randomString())
+                .withReference(
+                        new Reference.Builder()
+                                .withDoi(RandomDataGenerator.randomDoi())
+                                .withPublicationInstance(
+                                        PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
+                                .build())
+                .build();
+    }
+
 }

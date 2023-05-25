@@ -90,8 +90,8 @@ public class PublishPublicationHandlerTest {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
                                 .withHeaders(getRequestHeaders())
-                                .withNvaUsername(randomString())
-                                .withCustomerId(randomUri())
+                                .withUserName(randomString())
+                                .withCurrentCustomer(randomUri())
                                 .withPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, identifier.toString()))
                                 .withQueryParameters(Collections.emptyMap())
                                 .build();

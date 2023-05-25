@@ -253,8 +253,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     
     private Publication createPublication() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
-        var userInstance =
-            UserInstance.create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
+        var userInstance = UserInstance
+                .create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
 
@@ -270,7 +270,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private UserInstance createUserInstance(Publication publication) {
-        return UserInstance.create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
+        return UserInstance
+                .create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
     }
     
     private void markForDeletion(Publication publication) throws ApiGatewayException {
