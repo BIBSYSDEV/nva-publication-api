@@ -49,7 +49,7 @@ public class NviCalculator {
     private static void addNviType(Model model) {
         try (var qexec = QueryExecutionFactory.create(NVI_TYPE, model)) {
             var nviType = qexec.execConstruct();
-            model.union(nviType);
+            model.add(nviType);
         }
     }
 

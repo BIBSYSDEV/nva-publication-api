@@ -5,29 +5,30 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 CONSTRUCT {
-  ?publication nva:topLevelOrganization ?top_org ;
-               nva:nviType ?nviCandidate .
+  ?publication nva:nviType ?nviCandidate .
   } WHERE {
   ?publication a nva:Publication .
-  ?affiliation nva:affiliation ?org .
-  ?org nva:partOf* ?top_org .
 
     ?publication nva:status ?publicationStatus .
 
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
-    ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?level .
-    ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?level .
-    ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:journal/nva:level ?level .
+    #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?publisherLevel .
+    #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?seriesLevel .
+    #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:journal/nva:level ?journalLevel .
+
+    #BIND(IF (BOUND(?seriesLevel), ?seriesLevel, ?publisherLevel) AS ?seriesOrPublisherLevel)
+
+    #BIND(IF (BOUND(?seriesOrPublisherLevel), ?seriesOrPublisherLevel, ?journalLevel) AS ?level)
 
     BIND(IF (?instanceType = nva:AcademicMonograph
              || ?instanceType = nva:AcademicChapter
              || ?instanceType = nva:AcademicArticle
              || ?instanceType = nva:AcademicLiteratureReview, "true"^^xsd:boolean, "false"^^xsd:boolean) AS ?isNviInstance)
 
-    BIND(IF(?publicationStatus = nva:PUBLISHED
-            && ?isNviInstance = "true"^^xsd:boolean
-            && (?level = "1" || ?level = "2"), "true"^^xsd:boolean, "false"^^xsd:boolean)  AS ?nviCandidate)
+    #BIND(IF(?publicationStatus = nva:PUBLISHED
+    #         && ?isNviInstance = "true"^^xsd:boolean
+    #         && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 
-  FILTER NOT EXISTS { ?top_org nva:partOf ?e } .
-  FILTER ( strstarts(str(?org), "http") ) .
+    BIND(IF(?publicationStatus = nva:PUBLISHED
+      && ?isNviInstance = "true"^^xsd:boolean, nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 }

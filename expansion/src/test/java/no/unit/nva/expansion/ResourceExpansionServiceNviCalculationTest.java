@@ -5,6 +5,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomFundings;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
 import static no.unit.nva.testutils.RandomDataGenerator.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -13,15 +15,24 @@ import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -29,20 +40,26 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
@@ -67,26 +84,28 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private ResourceExpansionService expansionService;
 
+    private UriRetriever uriRetriever;
+
     @BeforeEach
     void setUp() {
         super.init();
-        initializeServices();
+        var resourceService = new ResourceService(client, CLOCK);
+        uriRetriever = mock(UriRetriever.class);
+        var ticketService = new TicketService(client);
+        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
     @Test
-    void shouldIncludeNviTypeFieldForAllExpandedResources()
-        throws JsonProcessingException, NotFoundException {
-
-        var publication = randomPublication(AcademicArticle.class).copy()
-                              .withEntityDescription(new EntityDescription())
-                              .build();
+    void shouldIncludeNviTypeFieldForAllExpandedResources() throws IOException, NotFoundException {
+        var publication = randomPublication();
+        mockUriRetriever(uriRetriever);
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         var framedResultNode = expandedResource.asJsonNode();
         var actualNviType = framedResultNode.at("/nviType");
 
-        assertThat(actualNviType, isNotNull());
+        assertThat(actualNviType, is(notNullValue()));
     }
 
     @ParameterizedTest
@@ -207,6 +226,26 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         assertThat(objectMapper.writeValueAsString(nviTypeObject), is(equalTo(expectedNviTypeJsonString)));
     }
 
+    private static void addPublicationChannelPublisherToMockUriRetriever(UriRetriever mockUriRetriever,
+                                                                         URI seriesId,
+                                                                         String seriesName,
+                                                                         URI publisherId,
+                                                                         String publisherName)
+        throws IOException {
+        String publicationChannelSampleJournal = getPublicationChannelSampleSeries(seriesId, seriesName);
+        when(mockUriRetriever.getRawContent(eq(seriesId), any()))
+            .thenReturn(Optional.of(publicationChannelSampleJournal));
+        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
+        when(mockUriRetriever.getRawContent(eq(publisherId), any()))
+            .thenReturn(Optional.of(publicationChannelSamplePublisher));
+    }
+
+    private static void mockUriRetriever(UriRetriever mockUriRetriever)
+        throws IOException {
+        when(mockUriRetriever.getRawContent(any(), any()))
+            .thenReturn(Optional.empty());
+    }
+
     private static Stream<Arguments> nviCandidatePublicationInstanceAndPublicationContextProvider() {
         return Stream.of(Arguments.of(new AcademicArticle(null, randomString(), randomString(), randomString()),
                                       new Journal(randomUri())));
@@ -271,6 +310,37 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withCreatedDate(randomInstant())
                    .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
                    .build();
+    }
+
+    private Publication randomBookWithConfirmedPublisher() {
+        return PublicationGenerator.randomPublication(BookMonograph.class);
+    }
+
+    private URI extractSeriesUri(Publication publication) {
+        Book book = extractBook(publication);
+        Series confirmedSeries = (Series) book.getSeries();
+        return confirmedSeries.getId();
+    }
+
+    private Book extractBook(Publication publication) {
+        return (Book) publication.getEntityDescription().getReference().getPublicationContext();
+    }
+
+    private URI extractPublisherUri(Publication publication) {
+        Book book = extractBook(publication);
+        Publisher publisher = extractPublisher(book);
+        return publisher.getId();
+    }
+
+    private List<URI> extractAffiliationsUris(Publication publication) {
+        return publication.getEntityDescription().getContributors()
+                   .stream().flatMap(contributor ->
+                                         contributor.getAffiliations().stream().map(Organization::getId))
+                   .collect(Collectors.toList());
+    }
+
+    private Publisher extractPublisher(Book book) {
+        return (Publisher) book.getPublisher();
     }
 
     private Publication getPublicationPublishedInYearBeforeCurrentYear(
@@ -346,12 +416,5 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withRole(new RoleType(role))
                    .withContributorVerificationStatus(verificationStatus)
                    .build();
-    }
-
-    private void initializeServices() {
-        ResourceService resourceService = new ResourceService(client, CLOCK);
-        UriRetriever uriRetriever = new UriRetriever();
-        TicketService ticketService = new TicketService(client);
-        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 }
