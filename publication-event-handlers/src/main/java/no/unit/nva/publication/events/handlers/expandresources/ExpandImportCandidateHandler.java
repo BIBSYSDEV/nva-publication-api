@@ -13,6 +13,7 @@ import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
@@ -22,9 +23,10 @@ public class ExpandImportCandidateHandler extends
                                           DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
-    public static final String EVENTS_BUCKET = "EVENTS_BUCKET";
+    public static final Environment ENVIRONMENT = new Environment();
+    public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
+    public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    public static final String PERSISTED_ENTRIES_BUCKET = "PERSISTED_ENTRIES_BUCKET";
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
