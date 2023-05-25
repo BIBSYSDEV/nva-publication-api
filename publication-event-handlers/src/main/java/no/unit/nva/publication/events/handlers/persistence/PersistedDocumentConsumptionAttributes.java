@@ -14,7 +14,7 @@ public class PersistedDocumentConsumptionAttributes {
     
     public static final String RESOURCES_INDEX = "resources";
     public static final String TICKETS_INDEX = "tickets";
-    public static final String IMPORT_CANDIDATES_INDEX = "importCandidates";
+    public static final String IMPORT_CANDIDATES_INDEX = "import-candidates";
     public static final String INDEX_FIELD = "index";
     public static final String DOCUMENT_IDENTIFIER = "documentIdentifier";
     public static final String UNSUPPORTED_TYPE_ERROR_MESSAGE = "Currently unsupported type of entry:";
