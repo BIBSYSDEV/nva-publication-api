@@ -12,6 +12,7 @@ entityDescription.contributors.identity.id
 entityDescription.contributors.identity.arpId
 entityDescription.contributors.identity.nameType
 entityDescription.contributors.identity.orcId
+entityDescription.contributors.contributorVerificationStatus
 entityDescription.contributors.email
 entityDescription.publicationDate.day
 entityDescription.publicationDate.month

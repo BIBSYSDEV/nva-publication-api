@@ -2,7 +2,7 @@
 
 
 nva = { strictly = '1.28.4' }
-nvaDatamodel = { strictly = '0.20.19' }
+nvaDatamodel = { strictly = '0.20.21' }
 nvaDoiPartnerData = { strictly = '0.5.0' }
 jackson = { strictly = '2.14.1' }
 awsSdk = { strictly = '1.12.462' }

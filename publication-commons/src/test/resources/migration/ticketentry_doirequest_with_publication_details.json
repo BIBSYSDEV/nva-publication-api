@@ -1,0 +1,23 @@
+{
+  "data": {
+    "owner": "1136263@20754.0.0.0",
+    "identifier": "0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+    "resourceStatus": "PUBLISHED",
+    "createdDate": "2022-09-29T12:17:34.306717Z",
+    "resourceIdentifier": "0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438",
+    "modifiedDate": "2022-09-29T12:21:02.208558Z",
+    "customerId": "https://api.dev.nva.aws.unit.no/customer/bb3d0c0c-5065-4623-9b98-5810983c2478",
+    "type": "DoiRequest",
+    "status": "Pending"
+  },
+  "PK0": "Ticket:bb3d0c0c-5065-4623-9b98-5810983c2478:1136263@20754.0.0.0",
+  "PK2": "Customer:bb3d0c0c-5065-4623-9b98-5810983c2478:Resource:0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438",
+  "PK1": "Ticket:Customer:bb3d0c0c-5065-4623-9b98-5810983c2478:Status:Pending",
+  "SK1": "Ticket:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "SK0": "Ticket:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "PK3": "Ticket:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "SK3": "Ticket:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "SK2": "b:DoiRequest:0183892e4462-53f47817-a823-40c9-af60-d1b48d37664c",
+  "type": "DoiRequest",
+  "version": "ff1d4d97-a5a7-40e2-bf42-b59d577f326c"
+}

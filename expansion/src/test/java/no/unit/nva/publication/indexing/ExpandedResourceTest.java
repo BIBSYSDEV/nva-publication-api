@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -51,6 +50,7 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -254,14 +254,6 @@ class ExpandedResourceTest {
         assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
     }
 
-
-    private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
-        var node = framedResultNode.at("/topLevelOrganization");
-        StreamSupport.stream(node.spliterator(), false)
-            .flatMap(ExpandedResourceTest::getFieldNameStream)
-            .forEach(ExpandedResourceTest::assertFieldNameIsMemberOfAcceptableFieldNames);
-    }
-
     private static Stream<String> getFieldNameStream(JsonNode topOrg) {
         var spliterator = Spliterators.spliteratorUnknownSize(topOrg.fieldNames(), Spliterator.ORDERED);
         return StreamSupport.stream(spliterator, false);
@@ -269,6 +261,41 @@ class ExpandedResourceTest {
 
     private static void assertFieldNameIsMemberOfAcceptableFieldNames(String fieldName) {
         assert ACCEPTABLE_FIELD_NAMES.contains(fieldName);
+    }
+
+    private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
+        return new Contributor.Builder()
+                   .withIdentity(contributor.getIdentity())
+                   .withAffiliations(List.of(new Organization()))
+                   .withRole(contributor.getRole())
+                   .withSequence(contributor.getSequence())
+                   .withCorrespondingAuthor(contributor.isCorrespondingAuthor())
+                   .build();
+    }
+
+    private static void addPublicationChannelPublisherToMockUriRetriever(UriRetriever mockUriRetriever,
+                                                                         URI journalId,
+                                                                         String journalName,
+                                                                         URI publisherId,
+                                                                         String publisherName)
+        throws IOException {
+        String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
+        when(mockUriRetriever.getRawContent(eq(journalId), any()))
+            .thenReturn(Optional.of(publicationChannelSampleJournal));
+        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
+        when(mockUriRetriever.getRawContent(eq(publisherId), any()))
+            .thenReturn(Optional.of(publicationChannelSamplePublisher));
+    }
+
+    private static Stream<Class<?>> publicationInstanceProvider() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
+    }
+
+    private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
+        var node = framedResultNode.at("/topLevelOrganization");
+        StreamSupport.stream(node.spliterator(), false)
+            .flatMap(ExpandedResourceTest::getFieldNameStream)
+            .forEach(ExpandedResourceTest::assertFieldNameIsMemberOfAcceptableFieldNames);
     }
 
     private URI getTopLevelUri(int depth, URI affiliationToBeExpandedId, UriRetriever mockUriRetriever) {
@@ -290,34 +317,10 @@ class ExpandedResourceTest {
         publication.setStatus(PUBLISHED);
         var entityDescription = publication.getEntityDescription();
         var contributors = entityDescription.getContributors().stream()
-            .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
-            .collect(Collectors.toList());
+                               .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
+                               .collect(Collectors.toList());
         entityDescription.setContributors(contributors);
         return publication;
-    }
-
-    private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
-        return new Contributor(contributor.getIdentity(), List.of(new Organization()),
-                               contributor.getRole(), contributor.getSequence(),
-                               contributor.isCorrespondingAuthor());
-    }
-
-    private static Stream<Class<?>> publicationInstanceProvider() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
-    }
-
-    private static void addPublicationChannelPublisherToMockUriRetriever(UriRetriever mockUriRetriever,
-                                                                         URI journalId,
-                                                                         String journalName,
-                                                                         URI publisherId,
-                                                                         String publisherName)
-        throws IOException {
-        String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
-        when(mockUriRetriever.getRawContent(eq(journalId), any()))
-            .thenReturn(Optional.of(publicationChannelSampleJournal));
-        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
-        when(mockUriRetriever.getRawContent(eq(publisherId), any()))
-            .thenReturn(Optional.of(publicationChannelSamplePublisher));
     }
 
     private Journal extractJournal(Publication publication) {
@@ -336,9 +339,9 @@ class ExpandedResourceTest {
 
     private List<URI> extractAffiliationsUris(Publication publication) {
         return publication.getEntityDescription().getContributors()
-            .stream().flatMap(contributor ->
-                                  contributor.getAffiliations().stream().map(Organization::getId))
-            .collect(Collectors.toList());
+                   .stream().flatMap(contributor ->
+                                         contributor.getAffiliations().stream().map(Organization::getId))
+                   .collect(Collectors.toList());
     }
 
     private URI extractSeriesUri(Publication publication) {

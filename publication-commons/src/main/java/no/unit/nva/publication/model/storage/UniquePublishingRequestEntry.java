@@ -19,7 +19,7 @@ public class UniquePublishingRequestEntry extends UniquenessEntry {
     }
     
     public static UniquePublishingRequestEntry create(PublishingRequestCase publishingRequest) {
-        return new UniquePublishingRequestEntry(publishingRequest.extractPublicationIdentifier().toString());
+        return new UniquePublishingRequestEntry(publishingRequest.getResourceIdentifier().toString());
     }
     
     @Override

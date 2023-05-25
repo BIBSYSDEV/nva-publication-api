@@ -7,18 +7,17 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.PublicationDetails;
 import org.junit.jupiter.api.Test;
 
 public class UniqueDoiRequestEntryTest {
-    
+
     public static final SortableIdentifier SAMPLE_IDENTIFIER = SortableIdentifier.next();
     public static final SortableIdentifier RESOURCE_IDENTIFIER = SortableIdentifier.next();
     public static final URI SAMPLE_CUSTOMER_ID = URI.create("https://some.example.org/1234");
-    
+
     @Test
     public void createReturnObjectWithPartitionKeyContainingTheInputEntryIdentifier() {
-        
+
         DoiRequestDao dao = sampleDoiRequestDao();
         UniqueDoiRequestEntry uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(dao);
         String expectedIdentifierPartitionKey = uniqueDoiRequestEntry.getType()
@@ -26,11 +25,11 @@ public class UniqueDoiRequestEntryTest {
                                                 + RESOURCE_IDENTIFIER;
         assertThat(uniqueDoiRequestEntry.getPrimaryKeyPartitionKey(), is(equalTo(expectedIdentifierPartitionKey)));
     }
-    
+
     private DoiRequestDao sampleDoiRequestDao() {
         DoiRequest doiRequest = DoiRequest.builder()
                                     .withIdentifier(SAMPLE_IDENTIFIER)
-                                    .withPublicationDetails(PublicationDetails.create(RESOURCE_IDENTIFIER))
+                                    .withResourceIdentifier(RESOURCE_IDENTIFIER)
                                     .withCustomerId(SAMPLE_CUSTOMER_ID)
                                     .build();
         return new DoiRequestDao(doiRequest);

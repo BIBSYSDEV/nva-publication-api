@@ -131,8 +131,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnOkResponseWithDataCiteXmlBodyOnValidInput(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException,
-                                                                                            ApiGatewayException {
+    void shouldReturnOkResponseWithDataCiteXmlBodyOnValidInput(WireMockRuntimeInfo wireMockRuntimeInfo)
+            throws IOException, ApiGatewayException {
         var createdPublication = createPublicationWithPublisher(wireMockRuntimeInfo);
         var publicationIdentifier = createdPublication.getIdentifier().toString();
 
@@ -147,7 +147,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertTrue(gatewayResponse.getBody().contains(DATACITE_XML_RESOURCE_ELEMENT));
     }
 
-    private Publication createPublicationWithPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException {
+    private Publication createPublicationWithPublisher(WireMockRuntimeInfo wireMockRuntimeInfo)
+            throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
         publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
         UserInstance userInstance = UserInstance.fromPublication(publication);
