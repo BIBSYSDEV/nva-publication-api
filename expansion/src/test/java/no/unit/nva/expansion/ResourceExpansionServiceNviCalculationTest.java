@@ -1,7 +1,12 @@
 package no.unit.nva.expansion;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomAdditionalIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.randomFundings;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
+import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.objectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
@@ -16,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -27,6 +33,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -35,6 +43,8 @@ import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -52,7 +62,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     public static final int NUMBER_OF_DAYS_IN_YEAR = 365;
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_OF_MONTH = 1;
-    public static final String NON_NVI_CANDIDATE_JSON = "non_nvi_type_nvi_candidate.json";
+    public static final String NON_NVI_CANDIDATE_JSON = "non_nvi_type_nvi_ candidate.json";
     public static final String NVI_CANDIDATE_JSON = "nvi_type_nvi_candidate.json";
     public static final String NVI_TYPE_FIELD_NAME = "nviType";
     private static final Clock CLOCK = Clock.systemDefaultZone();
@@ -68,7 +78,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     void shouldIncludeNviTypeFieldForAllExpandedResources()
         throws JsonProcessingException, NotFoundException {
 
-        var publication = randomPublication();
+        var publication = randomPublication().copy().withEntityDescription(new EntityDescription()).build();;
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -245,6 +255,19 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withStatus(status)
                    .withPublishedDate(dateInCurrentYear)
                    .withEntityDescription(entityDescription)
+                   .withRightsHolder(randomString())
+                   .withPublisher(randomOrganization())
+                   .withSubjects(List.of(randomUri()))
+                   .withModifiedDate(randomInstant())
+                   .withAdditionalIdentifiers(Set.of(randomAdditionalIdentifier()))
+                   .withProjects(randomProjects())
+                   .withFundings(randomFundings())
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                   .withLink(randomUri())
+                   .withIndexedDate(randomInstant())
+                   .withHandle(randomUri())
+                   .withCreatedDate(randomInstant())
+                   .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
                    .build();
     }
 
@@ -294,12 +317,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                                                 getRandomInstantInCurrentYear());
     }
 
-    private void initializeServices() {
-        ResourceService resourceService = new ResourceService(client, CLOCK);
-        UriRetriever uriRetriever = new UriRetriever();
-        TicketService ticketService = new TicketService(client);
-        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
-    }
 
     private Publication publicationWithEntityDescription(
         PublicationInstance<? extends Pages> publicationInstance,
@@ -328,5 +345,11 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withRole(new RoleType(role))
                    .withContributorVerificationStatus(verificationStatus)
                    .build();
+    }
+    private void initializeServices() {
+        ResourceService resourceService = new ResourceService(client, CLOCK);
+        UriRetriever uriRetriever = new UriRetriever();
+        TicketService ticketService = new TicketService(client);
+        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 }
