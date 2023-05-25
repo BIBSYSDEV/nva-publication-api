@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
-import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -25,6 +24,7 @@ public class ExpandImportCandidateHandler extends
     public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
     public static final String EVENTS_BUCKET = "EVENTS_BUCKET";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
+    public static final String PERSISTED_ENTRIES_BUCKET = "PERSISTED_ENTRIES_BUCKET";
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
