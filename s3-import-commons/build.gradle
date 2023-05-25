@@ -26,6 +26,7 @@ dependencies {
     implementation libs.aws.sdk2.regions
     implementation libs.aws.sdk2.httpClientApi
     implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk.sqs
 
     implementation libs.aws.ion
 
