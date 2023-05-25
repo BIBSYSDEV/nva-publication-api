@@ -34,9 +34,9 @@ public class ExpandImportCandidateHandler extends
         this(new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
     }
 
-    public ExpandImportCandidateHandler(S3Driver s3Driver, S3Driver s3Writer) {
+    public ExpandImportCandidateHandler(S3Driver s3Reader, S3Driver s3Writer) {
         super(EventReference.class);
-        this.s3Reader = s3Driver;
+        this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;
     }
 
