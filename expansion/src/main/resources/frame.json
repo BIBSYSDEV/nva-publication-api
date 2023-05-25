@@ -201,10 +201,6 @@
     "@container": "@set",
     "@embed": "@always"
   },
-  "nviType": {
-    "@embed": "@always",
-    "@default": "@null"
-  },
   "resourceOwner": {
     "ownerAffiliation": {
       "@embed": "@never"
