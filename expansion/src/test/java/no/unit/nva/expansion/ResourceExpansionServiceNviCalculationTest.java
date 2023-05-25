@@ -11,25 +11,24 @@ import static no.unit.nva.testutils.RandomDataGenerator.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -78,10 +77,12 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     public static final int NUMBER_OF_DAYS_IN_YEAR = 365;
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_OF_MONTH = 1;
-    public static final String NON_NVI_CANDIDATE_JSON = "non_nvi_type_nvi_ candidate.json";
-    public static final String NVI_CANDIDATE_JSON = "nvi_type_nvi_candidate.json";
-    public static final String NVI_TYPE_FIELD_NAME = "nviType";
+    public static final String NVI_TYPE_JSON_POINTER = "/nviType";
+    public static final String NVA_ONTOLOGY_NVI_CANDIDATE = "https://nva.sikt.no/ontology/publication#NviCandidate";
+    public static final String NVI_TYPE_ID_FIELD_NAME = "id";
     private static final Clock CLOCK = Clock.systemDefaultZone();
+    private static final String NVA_ONTOLOGY_NON_NVI_CANDIDATE = "https://nva.sikt"
+                                                                 + ".no/ontology/publication#NviCandidate";
     private ResourceExpansionService expansionService;
 
     private UriRetriever uriRetriever;
@@ -102,12 +103,12 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var framedResultNode = expandedResource.asJsonNode();
-        var actualNviType = framedResultNode.at("/nviType");
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER);
 
         assertThat(actualNviType, is(notNullValue()));
     }
 
+    @Test
     @ParameterizedTest
     @MethodSource("nviCandidatePublicationInstanceAndPublicationContextProvider")
     void shouldSetNviTypeNviCandidateWhenResourceMeetsAllNviCandidacyRequirements(
@@ -118,12 +119,11 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
 
-        var nviTypeObject = expandedResource.getAllFields().get(NVI_TYPE_FIELD_NAME);
-        assertThat(nviTypeObject, isNotNull());
-
-        var expectedNviTypeJsonString = stringFromResources(Path.of(NVI_CANDIDATE_JSON));
-        assertThat(objectMapper.writeValueAsString(nviTypeObject), is(equalTo(expectedNviTypeJsonString)));
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -136,13 +136,11 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var nviTypeObject = expandedResource.getAllFields().get(NVI_TYPE_FIELD_NAME);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
 
-        assertThat(nviTypeObject, isNotNull());
-
-        var expectedNviTypeJsonString = stringFromResources(Path.of(NON_NVI_CANDIDATE_JSON));
-
-        assertThat(objectMapper.writeValueAsString(nviTypeObject), is(equalTo(expectedNviTypeJsonString)));
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -159,13 +157,11 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var nviTypeObject = expandedResource.getAllFields().get(NVI_TYPE_FIELD_NAME);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
 
-        assertThat(nviTypeObject, isNotNull());
-
-        var expectedNviTypeJsonString = stringFromResources(Path.of(NON_NVI_CANDIDATE_JSON));
-
-        assertThat(objectMapper.writeValueAsString(nviTypeObject), is(equalTo(expectedNviTypeJsonString)));
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -178,13 +174,11 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var nviTypeObject = expandedResource.getAllFields().get(NVI_TYPE_FIELD_NAME);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
 
-        assertThat(nviTypeObject, isNotNull());
-
-        var expectedNviTypeJsonString = stringFromResources(Path.of(NON_NVI_CANDIDATE_JSON));
-
-        assertThat(objectMapper.writeValueAsString(nviTypeObject), is(equalTo(expectedNviTypeJsonString)));
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -198,13 +192,11 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var nviTypeObject = expandedResource.getAllFields().get(NVI_TYPE_FIELD_NAME);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
 
-        assertThat(nviTypeObject, isNotNull());
-
-        var expectedNviTypeJsonString = stringFromResources(Path.of(NON_NVI_CANDIDATE_JSON));
-
-        assertThat(objectMapper.writeValueAsString(nviTypeObject), is(equalTo(expectedNviTypeJsonString)));
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -217,13 +209,15 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var nviTypeObject = expandedResource.getAllFields().get(NVI_TYPE_FIELD_NAME);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
 
-        assertThat(nviTypeObject, isNotNull());
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
+    }
 
-        var expectedNviTypeJsonString = stringFromResources(Path.of(NON_NVI_CANDIDATE_JSON));
-
-        assertThat(objectMapper.writeValueAsString(nviTypeObject), is(equalTo(expectedNviTypeJsonString)));
+    private static URI randomPublicationChannelsUri() {
+        return URI.create("https://api.dev.nva.aws.unit.no/publication-channels/" + randomString());
     }
 
     private static void addPublicationChannelPublisherToMockUriRetriever(UriRetriever mockUriRetriever,

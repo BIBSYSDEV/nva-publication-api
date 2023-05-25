@@ -1,5 +1,3 @@
 {
-  "nviType": {
-    "type": "NonNviCandidate"
-  }
+  "id" : "https://nva.sikt.no/ontology/publication#NonNviCandidate"
 }
