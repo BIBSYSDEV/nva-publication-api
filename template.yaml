@@ -1399,6 +1399,9 @@ Resources:
 
   CristinEntriesEventEmitter:
     Type: AWS::Serverless::Function
+    DependsOn:
+      - CristinImportDataEntryQueue
+      - CristinImportPatchQueue
     Properties:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
@@ -1412,6 +1415,8 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
+          CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
+          CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
