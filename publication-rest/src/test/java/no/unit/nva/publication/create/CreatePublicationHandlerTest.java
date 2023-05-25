@@ -63,7 +63,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
 
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
-    
+
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
@@ -80,7 +80,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private GetExternalClientResponse getExternalClientResponse;
-    
+
     /**
      * Setting up test environment.
      */
@@ -88,7 +88,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     public void setUp() throws NotFoundException {
         super.init();
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID, "someone@123", randomUri(),
-                                                                      randomUri());
+            randomUri());
         var environmentMock = mock(Environment.class);
         var identityServiceClient = mock(IdentityServiceClient.class);
 
@@ -119,24 +119,23 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
-    @Test
-    void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
+    @Test void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
         throws Exception {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
-        
+
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
-    
+
     @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestContainsEmptyResource() throws Exception {
         var request = createEmptyPublicationRequest();
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
-        
+
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
@@ -157,7 +156,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "requestToHandlerWithStatusFromAnExternalClientShouldPersistDocumentWithSameStatus with"
-                              + " status: \"{0}\"")
+        + " status: \"{0}\"")
     @ValueSource(strings = {"DRAFT", "PUBLISHED"})
     void shouldPersistProvidedStatusWhenMachineUserPersistsPublicationWithAnyStatus(String statusString)
         throws Exception {
@@ -206,44 +205,44 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(expectedOwnerAffiliation)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(expectedPublisherId)));
     }
-    
+
     @Test
     void shouldReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
         var associatedArtifactsInPublication = randomPublication().getAssociatedArtifacts();
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
         request.setEntityDescription(randomPublishableEntityDescription());
-        
+
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
-        
+
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertThat(publicationResponse.getAssociatedArtifacts(), is(equalTo(associatedArtifactsInPublication)));
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
-    
+
     @Test
     void shouldSaveAllSuppliedInformationOfPublicationRequestExceptForInternalInformationDecidedByService()
         throws Exception {
         var request = CreatePublicationRequest.fromPublication(samplePublication);
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
-        
+
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        
+
         var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
-        
+
         var expectedPublicationResponse =
             constructResponseSettingFieldsThatAreNotCopiedByTheRequest(samplePublication, actualPublicationResponse);
-        
+
         var diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
         assertThat(actualPublicationResponse.getIdentifier(), is(equalTo(expectedPublicationResponse.getIdentifier())));
         assertThat(actualPublicationResponse.getPublisher(), is(equalTo(expectedPublicationResponse.getPublisher())));
         assertThat(diff.prettyPrint(), actualPublicationResponse, is(equalTo(expectedPublicationResponse)));
     }
-    
+
     @Test
     void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
         var event = requestWithoutUsername(createEmptyPublicationRequest());
@@ -255,8 +254,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnForbiddenWhenNoAccessRight() throws IOException {
         var thesisPublication = samplePublication.copy()
-                .withEntityDescription(thesisPublishableEntityDescription())
-                .build();
+            .withEntityDescription(thesisPublishableEntityDescription())
+            .build();
         var event = requestWithoutAccessRights(CreatePublicationRequest.fromPublication(thesisPublication));
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -288,15 +287,15 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private static void
-        updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
-            throws JsonProcessingException {
+    updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
+        throws JsonProcessingException {
         var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
         associatedArtifacts.add(createNullAssociatedArtifact());
     }
 
     private ObjectNode createCreatePublicationRequestAsJsonObject() throws JsonProcessingException {
         var publicationRequest =
-                dtoObjectMapper.writeValueAsString(CreatePublicationRequest.fromPublication(samplePublication));
+            dtoObjectMapper.writeValueAsString(CreatePublicationRequest.fromPublication(samplePublication));
         return (ObjectNode) dtoObjectMapper.readTree(publicationRequest);
     }
 
@@ -308,47 +307,47 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private CreatePublicationRequest createEmptyPublicationRequest() {
         return new CreatePublicationRequest();
     }
-    
+
     private PublicationResponse constructResponseSettingFieldsThatAreNotCopiedByTheRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         var expectedPublication = setAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication,
             actualPublicationResponse);
         return PublicationResponse.fromPublication(expectedPublication);
     }
-    
+
     private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         return attempt(() -> removeAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication))
-                   .map(publication ->
-                            setAllFieldsThatAreAutomaticallySetByResourceService(publication,
-                                actualPublicationResponse))
-                   .orElseThrow();
+            .map(publication ->
+                setAllFieldsThatAreAutomaticallySetByResourceService(publication,
+                    actualPublicationResponse))
+            .orElseThrow();
     }
-    
+
     private Publication setAllFieldsThatAreAutomaticallySetByResourceService(
         Publication samplePublication,
         PublicationResponse actualPublicationResponse) {
         return samplePublication.copy()
-                   .withIdentifier(actualPublicationResponse.getIdentifier())
-                   .withCreatedDate(actualPublicationResponse.getCreatedDate())
-                   .withModifiedDate(actualPublicationResponse.getModifiedDate())
-                   .withIndexedDate(actualPublicationResponse.getIndexedDate())
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withResourceOwner(actualPublicationResponse.getResourceOwner())
-                   .build();
+            .withIdentifier(actualPublicationResponse.getIdentifier())
+            .withCreatedDate(actualPublicationResponse.getCreatedDate())
+            .withModifiedDate(actualPublicationResponse.getModifiedDate())
+            .withIndexedDate(actualPublicationResponse.getIndexedDate())
+            .withStatus(PublicationStatus.DRAFT)
+            .withResourceOwner(actualPublicationResponse.getResourceOwner())
+            .build();
     }
-    
+
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
         return samplePublication.copy()
-                   .withDoi(null)
-                   .withHandle(null)
-                   .withLink(null)
-                   .withPublishedDate(null)
-                   .withPublisher(new Organization.Builder().withLabels(null).withId(testOrgId).build())
-                   .withResourceOwner(null)
-                   .build();
+            .withDoi(null)
+            .withHandle(null)
+            .withLink(null)
+            .withPublishedDate(null)
+            .withPublisher(new Organization.Builder().withLabels(null).withId(testOrgId).build())
+            .withResourceOwner(null)
+            .build();
     }
-    
+
     private void assertExistenceOfMinimumRequiredFields(PublicationResponse publicationResponse) {
         assertThat(publicationResponse.getIdentifier(), is(not(nullValue())));
         assertThat(publicationResponse.getIdentifier(), is(instanceOf(SortableIdentifier.class)));
@@ -357,83 +356,83 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
     }
-    
+
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
-    
+
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withUserName(testUserName)
-                   .withCurrentCustomer(testOrgId)
-                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
-                   .withBody(request)
-                   .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
-                   .build();
+            .withUserName(testUserName)
+            .withCurrentCustomer(testOrgId)
+            .withTopLevelCristinOrgId(topLevelCristinOrgId)
+            .withBody(request)
+            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
+            .build();
     }
 
     private InputStream requestWithoutAccessRights(CreatePublicationRequest request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                .withUserName(testUserName)
-                .withCurrentCustomer(testOrgId)
-                .withTopLevelCristinOrgId(topLevelCristinOrgId)
-                .withBody(request)
-                .build();
+            .withUserName(testUserName)
+            .withCurrentCustomer(testOrgId)
+            .withTopLevelCristinOrgId(topLevelCristinOrgId)
+            .withBody(request)
+            .build();
     }
 
     private InputStream createPublicationRequestFromString(String request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<String>(dtoObjectMapper)
-                .withUserName(testUserName)
-                .withCurrentCustomer(testOrgId)
-                .withTopLevelCristinOrgId(topLevelCristinOrgId)
-                .withBody(request)
-                .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
-                .build();
+            .withUserName(testUserName)
+            .withCurrentCustomer(testOrgId)
+            .withTopLevelCristinOrgId(topLevelCristinOrgId)
+            .withBody(request)
+            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
+            .build();
     }
 
     private InputStream requestFromExternalClient(CreatePublicationRequest request) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withBody(request)
-                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
-                   .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
-                   .build();
+            .withBody(request)
+            .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+            .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+            .build();
     }
 
     private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withBody(request)
-                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
-                   .build();
+            .withBody(request)
+            .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+            .build();
     }
 
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
-    
+
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-                   .withCurrentCustomer(testOrgId)
-                   .withBody(request)
-                   .build();
+            .withCurrentCustomer(testOrgId)
+            .withBody(request)
+            .build();
     }
 
     private EntityDescription randomPublishableEntityDescription() {
         return new EntityDescription.Builder()
-                   .withMainTitle(RandomDataGenerator.randomString())
-                   .withReference(
-                       new Reference.Builder()
-                           .withDoi(RandomDataGenerator.randomDoi())
-                           .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
-                           .build())
-                   .build();
+            .withMainTitle(RandomDataGenerator.randomString())
+            .withReference(
+                new Reference.Builder()
+                    .withDoi(RandomDataGenerator.randomDoi())
+                    .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
+                    .build())
+            .build();
     }
 
     private EntityDescription thesisPublishableEntityDescription() {
         return new EntityDescription.Builder()
-                .withMainTitle(RandomDataGenerator.randomString())
-                .withReference(
-                        new Reference.Builder()
-                                .withDoi(RandomDataGenerator.randomDoi())
-                                .withPublicationInstance(
-                                        PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
-                                .build())
-                .build();
+            .withMainTitle(RandomDataGenerator.randomString())
+            .withReference(
+                new Reference.Builder()
+                    .withDoi(RandomDataGenerator.randomDoi())
+                    .withPublicationInstance(
+                        PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
+                    .build())
+            .build();
     }
 }

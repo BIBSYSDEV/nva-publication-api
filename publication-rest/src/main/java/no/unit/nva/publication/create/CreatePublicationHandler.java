@@ -38,6 +38,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
+    private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd");
     private final ResourceService publicationService;
     private final String apiHost;
     private final IdentityServiceClient identityServiceClient;
@@ -73,7 +74,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
         logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
-        if (isThesisAndHasNotPublishThesis(requestInfo, input)) {
+        if (isThesisAndHasNoRightsToPublishThesis(input, requestInfo)) {
             throw new ForbiddenException();
         }
         var newPublication = Optional.ofNullable(input)
@@ -122,15 +123,16 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         );
     }
 
-    private boolean isThesisAndHasNotPublishThesis(RequestInfo requestInfo, CreatePublicationRequest request) {
-        var thesisKinds = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd");
-        var kind =
+    private boolean isThesisAndHasNoRightsToPublishThesis(CreatePublicationRequest request, RequestInfo requestInfo) {
+
+        return isThesis(request) && !requestInfo.userIsAuthorized(PUBLISH_THESIS.name());
+    }
+
+    private boolean isThesis(CreatePublicationRequest request) {
+        var requestInstanceType =
             attempt(() -> request.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
                 .toOptional();
 
-        if (kind.isPresent() && thesisKinds.contains(kind.get())) {
-            return !requestInfo.userIsAuthorized(PUBLISH_THESIS.name());
-        }
-        return false;
+        return requestInstanceType.isPresent() && THESIS_INSTANCE_TYPES.contains(requestInstanceType.get());
     }
 }

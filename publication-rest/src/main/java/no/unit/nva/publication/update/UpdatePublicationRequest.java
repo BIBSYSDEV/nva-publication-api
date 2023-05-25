@@ -23,7 +23,7 @@ import static java.util.Objects.isNull;
 
 public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
     
-    public static final String WRONG_PUBLICATION_UDPATE_ERROR = "Trying to update a publication with different "
+    public static final String WRONG_PUBLICATION_UPDATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";
     private SortableIdentifier identifier;
     private EntityDescription entityDescription;
@@ -38,7 +38,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     public Publication generatePublicationUpdate(Publication existingPublication) throws ForbiddenException {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
             throw new IllegalArgumentException(
-                WRONG_PUBLICATION_UDPATE_ERROR + existingPublication.getIdentifier());
+                WRONG_PUBLICATION_UPDATE_ERROR + existingPublication.getIdentifier());
         }
         return validateNonNulls(existingPublication.copy()
                    .withEntityDescription(this.entityDescription)
