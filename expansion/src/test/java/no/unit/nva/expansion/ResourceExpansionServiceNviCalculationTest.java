@@ -84,7 +84,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     public static final String NVI_TYPE_ID_FIELD_NAME = "id";
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String NVA_ONTOLOGY_NON_NVI_CANDIDATE = "https://nva.sikt"
-                                                                 + ".no/ontology/publication#NviCandidate";
+                                                                 + ".no/ontology/publication#NonNviCandidate";
     private ResourceExpansionService expansionService;
 
     private UriRetriever uriRetriever;
