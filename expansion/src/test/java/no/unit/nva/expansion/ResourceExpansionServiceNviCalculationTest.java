@@ -114,14 +114,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     void shouldSetNviTypeNviCandidateWhenAcademicChapterMeetsAllNviCandidacyRequirements()
         throws IOException, NotFoundException {
 
-        var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicChapter(null),
-                                                                           new Anthology.Builder()
-                                                                               .withId(randomUri()).build());
-        var publisherUri = extractAnthologyUri(publication);
-        var publisherName = randomString();
-
-        addPublisherToMockUriRetriever(uriRetriever, publisherUri, publisherName);
-
+        Publication publication = setupAndMockAcademicChapterMeetingAllNviCandidacyRequirements();
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -136,21 +129,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     void shouldSetNviTypeNviCandidateWhenAcademicMonographMeetsAllNviCandidacyRequirements()
         throws IOException, NotFoundException, InvalidIsbnException {
 
-        var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicMonograph(null),
-                                                                           new Book.BookBuilder()
-                                                                               .withSeries(new Series(
-                                                                                   randomPublicationChannelsUri()))
-                                                                               .withPublisher(new Publisher(
-                                                                                   randomPublicationChannelsUri()))
-                                                                               .build());
-        var seriesUri = extractSeriesUri(publication);
-        var publisherUri = extractPublisherUri(publication);
-        var publisherName = randomString();
-        var seriesName = randomString();
-
-        addSeriesToMockUriRetriever(uriRetriever, seriesUri, seriesName);
-        addPublisherToMockUriRetriever(uriRetriever, publisherUri, publisherName);
-
+        var publication = setupAndMockAcademicMonographMeetingAllNviCandidacyRequirements();
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -167,12 +146,8 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
         throws IOException, NotFoundException {
 
-        var publication = getPublicationMeetingAllNviCandidacyRequirements(publicationInstance, publicationContext);
-        var journalUri = extractJournalUri(publication);
-        var journalName = randomString();
-
-        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
-
+        var publication = setupAndMockPublicationInJournalMeetingAllNviCandidacyRequirements(publicationInstance,
+                                                                                             publicationContext);
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -385,6 +360,47 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withCreatedDate(randomInstant())
                    .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
                    .build();
+    }
+
+    private Publication setupAndMockAcademicChapterMeetingAllNviCandidacyRequirements() throws IOException {
+        var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicChapter(null),
+                                                                           new Anthology.Builder()
+                                                                               .withId(randomUri()).build());
+        var publisherUri = extractAnthologyUri(publication);
+        var publisherName = randomString();
+
+        addPublisherToMockUriRetriever(uriRetriever, publisherUri, publisherName);
+        return publication;
+    }
+
+    private Publication setupAndMockAcademicMonographMeetingAllNviCandidacyRequirements()
+        throws InvalidIsbnException, IOException {
+        var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicMonograph(null),
+                                                                           new Book.BookBuilder()
+                                                                               .withSeries(new Series(
+                                                                                   randomPublicationChannelsUri()))
+                                                                               .withPublisher(new Publisher(
+                                                                                   randomPublicationChannelsUri()))
+                                                                               .build());
+        var seriesUri = extractSeriesUri(publication);
+        var publisherUri = extractPublisherUri(publication);
+        var publisherName = randomString();
+        var seriesName = randomString();
+
+        addSeriesToMockUriRetriever(uriRetriever, seriesUri, seriesName);
+        addPublisherToMockUriRetriever(uriRetriever, publisherUri, publisherName);
+        return publication;
+    }
+
+    private Publication setupAndMockPublicationInJournalMeetingAllNviCandidacyRequirements(
+        PublicationInstance<? extends Pages> publicationInstance,
+        PublicationContext publicationContext) throws IOException {
+        var publication = getPublicationMeetingAllNviCandidacyRequirements(publicationInstance, publicationContext);
+        var journalUri = extractJournalUri(publication);
+        var journalName = randomString();
+
+        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
+        return publication;
     }
 
     private URI extractSeriesUri(Publication publication) {
