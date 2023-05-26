@@ -28,16 +28,23 @@ public class NviCalculator {
     public static final String NVI_TYPE = IoUtils.stringFromResources(Path.of("nviTypeQuery.sparql"));
     private static final Logger logger = LoggerFactory.getLogger(NviCalculator.class);
 
+    public static final String FRAME_SRC = IoUtils.stringFromResources(Path.of("nviFrame.json"));
+
     private NviCalculator() {
     }
 
     public static ExpandedResource calculateNviType(ExpandedResource expandedResource) throws JsonProcessingException {
-        var inputStreams = List.of(stringToStream(objectMapper.writeValueAsString(expandedResource)));
-        var model = createModel(inputStreams);
-        addNviType(model);
+        var model = createModelWithNviType(expandedResource);
         var expandedResourceJsonWithNviType = getFramedModelJson(model);
         return attempt(
             () -> objectMapper.readValue(expandedResourceJsonWithNviType, ExpandedResource.class)).orElseThrow();
+    }
+
+    private static Model createModelWithNviType(ExpandedResource expandedResource) throws JsonProcessingException {
+        var inputStreams = List.of(stringToStream(objectMapper.writeValueAsString(expandedResource)));
+        var model = createModel(inputStreams);
+        addNviType(model);
+        return model;
     }
 
     private static Model createModel(List<InputStream> inputStreams) {
@@ -65,7 +72,7 @@ public class NviCalculator {
     private static JsonLDWriteContext getJsonLdWriteContext() {
         var context = new JsonLDWriteContext();
         context.setOptions(getJsonLdOptions());
-        context.setFrame(SearchIndexFrame.FRAME_SRC);
+        context.setFrame(FRAME_SRC);
         return context;
     }
 

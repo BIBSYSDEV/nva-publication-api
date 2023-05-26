@@ -303,8 +303,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
             .thenReturn(Optional.of(publicationChannelSampleSeries));
     }
 
-    private static void mockUriRetriever(UriRetriever mockUriRetriever)
-        throws IOException {
+    private static void mockUriRetriever(UriRetriever mockUriRetriever) {
         when(mockUriRetriever.getRawContent(any(), any()))
             .thenReturn(Optional.empty());
     }
