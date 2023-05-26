@@ -5,10 +5,9 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomFundings;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
-import static no.unit.nva.testutils.RandomDataGenerator.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -21,15 +20,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -41,6 +36,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
@@ -76,16 +72,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTest {
 
-    public static final int NUMBER_OF_DAYS_IN_YEAR = 365;
-    public static final int FIRST_MONTH_IN_YEAR = 1;
-    public static final int FIRST_DAY_OF_MONTH = 1;
-    public static final String NVI_TYPE_JSON_POINTER = "/nviType";
-    public static final String NVA_ONTOLOGY_NVI_CANDIDATE = "https://nva.sikt.no/ontology/publication#NviCandidate";
-    public static final String NVI_TYPE_ID_FIELD_NAME = "id";
+    private static final String NVI_TYPE_JSON_POINTER = "/nviType";
+    private static final String NVI_CANDIDATE = "NviCandidate";
+    private static final String NON_NVI_CANDIDATE = "NonNviCandidate";
+    private static final String PUBLICATION_CHANNELS_BASE_URI = "https://api.dev.nva.aws.unit.no/publication-channels/";
     private static final Clock CLOCK = Clock.systemDefaultZone();
-    private static final String NVA_ONTOLOGY_NON_NVI_CANDIDATE = "https://nva.sikt"
-                                                                 + ".no/ontology/publication#NonNviCandidate";
-    public static final String PUBLICATION_CHANNELS_BASE_URI = "https://api.dev.nva.aws.unit.no/publication-channels/";
+    private static final int CURRENT_NVI_YEAR = 2023;
     private ResourceExpansionService expansionService;
 
     private UriRetriever uriRetriever;
@@ -112,6 +104,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     }
 
     @Test
+        //TODO: fix setup level
     void shouldSetNviTypeNviCandidateWhenAcademicChapterMeetsAllNviCandidacyRequirements()
         throws IOException, NotFoundException {
 
@@ -119,11 +112,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NVI_CANDIDATE)));
     }
 
     @Test
@@ -134,11 +125,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -152,11 +141,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -166,15 +153,13 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         throws JsonProcessingException, NotFoundException {
 
         var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
-                                                                     getRandomInstantBeforeCurrentYear());
+                                                                     getPublicationDateBeforeCurrentNviYear());
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -184,15 +169,13 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         throws JsonProcessingException, NotFoundException {
 
         var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
-                                                                     getRandomInstantAfterCurrentYear());
+                                                                     getPublicationDateAfterCurrentNviYear());
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -202,15 +185,13 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         throws JsonProcessingException, NotFoundException {
 
         var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
-                                                                     getRandomInstantInCurrentYear());
+                                                                     getCurrentNviPublicationDate());
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -223,11 +204,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -241,11 +220,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
     @ParameterizedTest
@@ -258,11 +235,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
 
-        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
+        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
     private static URI extractAnthologyUri(Publication publication) {
@@ -288,7 +263,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                                                      String journalName)
         throws IOException {
 
-        var publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
+        var publicationChannelSampleJournal = getPublicationChannelJournal(journalId, journalName);
         when(mockUriRetriever.getRawContent(eq(journalId), any()))
             .thenReturn(Optional.of(publicationChannelSampleJournal));
     }
@@ -310,16 +285,16 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
 
     private static Stream<Arguments> nviCandidateJournalProvider() {
         return Stream.of(Arguments.of(new AcademicArticle(null, randomString(), randomString(), randomString()),
-                                      new Journal(randomUri())),
+                                      new Journal(randomPublicationChannelsUri())),
                          Arguments.of(new AcademicLiteratureReview(null, randomString(), randomString(),
                                                                    randomString()),
-                                      new Journal(randomUri()))
+                                      new Journal(randomPublicationChannelsUri()))
         );
     }
 
     private static Stream<Arguments> nonNviCandidatePublicationInstanceAndPublicationContextProvider() {
         return Stream.of(Arguments.of(new ConferenceAbstract(randomString(), randomString(), randomString(), null),
-                                      new Journal(randomUri())));
+                                      new Journal(randomPublicationChannelsUri())));
     }
 
     private static Reference getReferenceWithPublicationInstanceAndContext(
@@ -331,41 +306,38 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     }
 
     private static EntityDescription getEntityDescriptionWithReferenceAndContributors(Reference reference,
-                                                                                      List<Contributor> contributors) {
+                                                                                      List<Contributor> contributors,
+                                                                                      PublicationDate publicationDate) {
         var entityDescription = new EntityDescription();
         entityDescription.setReference(reference);
         entityDescription.setContributors(contributors);
+        entityDescription.setPublicationDate(publicationDate);
         return entityDescription;
     }
 
-    private static Instant getRandomInstantInCurrentYear() {
-        var currentYear = LocalDate.now().getYear();
-        return getRandomInstantInYear(currentYear);
+    private static PublicationDate getCurrentNviPublicationDate() {
+        return new PublicationDate.Builder().withYear(String.valueOf(CURRENT_NVI_YEAR)).build();
     }
 
-    private static Instant getRandomInstantBeforeCurrentYear() {
-        var randomYearBeforeCurrentYear = LocalDate.now().minusYears((long) (Math.random() * 10)).getYear();
-        return getRandomInstantInYear(randomYearBeforeCurrentYear);
+    private static PublicationDate getPublicationDateBeforeCurrentNviYear() {
+        var randomYearBeforeCurrentYear = LocalDate.of(CURRENT_NVI_YEAR, 1, 1)
+                                              .minusYears((long) (Math.random() * 10))
+                                              .getYear();
+        return new PublicationDate.Builder().withYear(String.valueOf(randomYearBeforeCurrentYear)).build();
     }
 
-    private static Instant getRandomInstantAfterCurrentYear() {
-        var randomYearBeforeCurrentYear = LocalDate.now().plusYears((long) (Math.random() * 10)).getYear();
-        return getRandomInstantInYear(randomYearBeforeCurrentYear);
+    private static PublicationDate getPublicationDateAfterCurrentNviYear() {
+        var randomYearAfterCurrentYear =
+            LocalDate.of(CURRENT_NVI_YEAR, 1, 1).plusYears((long) (Math.random() * 10)).getYear();
+        return new PublicationDate.Builder().withYear(String.valueOf(randomYearAfterCurrentYear)).build();
     }
 
-    private static Instant getRandomInstantInYear(int currentYear) {
-        var startOfYear = LocalDate.of(currentYear, FIRST_MONTH_IN_YEAR, FIRST_DAY_OF_MONTH);
-        var randomDays = (long) (Math.random() * NUMBER_OF_DAYS_IN_YEAR);
-        var randomDateInCurrentYear = startOfYear.plusDays(randomDays);
-        return randomDateInCurrentYear.atStartOfDay().toInstant(ZoneOffset.UTC);
-    }
-
-    private static Publication getPublication(EntityDescription entityDescription, Instant dateInCurrentYear,
+    private static Publication getPublication(EntityDescription entityDescription,
                                               PublicationStatus status) {
         return new Builder()
                    .withIdentifier(SortableIdentifier.next())
                    .withStatus(status)
-                   .withPublishedDate(dateInCurrentYear)
+                   .withPublishedDate(randomInstant())
                    .withEntityDescription(entityDescription)
                    .withRightsHolder(randomString())
                    .withPublisher(randomOrganization())
@@ -386,7 +358,8 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     private Publication setupAndMockAcademicChapterMeetingAllNviCandidacyRequirements() throws IOException {
         var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicChapter(null),
                                                                            new Anthology.Builder()
-                                                                               .withId(randomUri()).build());
+                                                                               .withId(randomPublicationChannelsUri())
+                                                                               .build());
         var publisherUri = extractAnthologyUri(publication);
         var publisherName = randomString();
 
@@ -451,12 +424,12 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
 
     private Publication getPublishedPublicationWithVerifiedCreator(
         PublicationInstance<? extends Pages> publicationInstance,
-        PublicationContext publicationContext, Instant publishedDate) {
+        PublicationContext publicationContext, PublicationDate publicationDate) {
         return publicationWithEntityDescription(publicationInstance,
                                                 publicationContext,
                                                 PublicationStatus.PUBLISHED,
                                                 List.of(getVerifiedCreator()),
-                                                publishedDate);
+                                                publicationDate);
     }
 
     private Publication getPublicationWithStatusDraft(PublicationInstance<? extends Pages> publicationInstance,
@@ -465,7 +438,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                                                 publicationContext,
                                                 PublicationStatus.DRAFT,
                                                 List.of(getVerifiedCreator()),
-                                                getRandomInstantInCurrentYear());
+                                                getCurrentNviPublicationDate());
     }
 
     private Publication getPublicationWithNonVerifiedCreator(PublicationInstance<? extends Pages> publicationInstance,
@@ -474,7 +447,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                                                 publicationContext,
                                                 PublicationStatus.PUBLISHED,
                                                 List.of(getNonVerifiedCreator()),
-                                                getRandomInstantInCurrentYear());
+                                                getCurrentNviPublicationDate());
     }
 
     private Publication getPublicationWithoutCreator(PublicationInstance<? extends Pages> publicationInstance,
@@ -482,14 +455,14 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         return publicationWithEntityDescription(publicationInstance, publicationContext,
                                                 PublicationStatus.PUBLISHED, List.of(
                 createContributor(Role.EDITOR, ContributorVerificationStatus.VERIFIED)),
-                                                getRandomInstantInCurrentYear());
+                                                getCurrentNviPublicationDate());
     }
 
     private Publication getPublicationMeetingAllNviCandidacyRequirements(
         PublicationInstance<? extends Pages> publicationInstance,
         PublicationContext publicationContext) {
         return getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
-                                                          getRandomInstantInCurrentYear());
+                                                          getCurrentNviPublicationDate());
     }
 
     private Publication publicationWithEntityDescription(
@@ -497,12 +470,13 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         PublicationContext publicationContext,
         PublicationStatus publicationStatus,
         List<Contributor> contributorList,
-        Instant publishedDate) {
+        PublicationDate publicationDate) {
 
         var reference = getReferenceWithPublicationInstanceAndContext(publicationInstance, publicationContext);
-        var entityDescription = getEntityDescriptionWithReferenceAndContributors(reference, contributorList);
+        var entityDescription = getEntityDescriptionWithReferenceAndContributors(reference, contributorList,
+                                                                                 publicationDate);
 
-        return getPublication(entityDescription, publishedDate, publicationStatus);
+        return getPublication(entityDescription, publicationStatus);
     }
 
     private Contributor getVerifiedCreator() {
