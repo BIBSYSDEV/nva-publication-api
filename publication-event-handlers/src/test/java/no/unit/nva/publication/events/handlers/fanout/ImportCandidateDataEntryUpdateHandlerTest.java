@@ -206,7 +206,7 @@ public class ImportCandidateDataEntryUpdateHandlerTest {
     private InputStream emulateEventSentByDynamoDbStreamToEventBridgeHandler(DynamodbStreamRecord dynamoRecord)
         throws IOException {
         var blobUri = saveBlobInS3(dynamoRecord);
-        var eventBody = new EventReference("ImportCandidate.Database.Update", blobUri);
+        var eventBody = new EventReference("ImportCandidates.Database.Update", blobUri);
         return EventBridgeEventBuilder.sampleEvent(eventBody);
     }
 

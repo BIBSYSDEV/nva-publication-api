@@ -97,6 +97,7 @@ public class ImportCandidateDataEntryUpdateHandler extends EventHandler<EventRef
     }
 
     private String readBlobFromS3(EventReference input) {
+        logger.info("Event to proceed: {}", input.getUri());
         var filePath = UriWrapper.fromUri(input.getUri()).toS3bucketPath();
         return s3Driver.getFile(filePath);
     }
