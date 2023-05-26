@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 
 public class NviCalculator {
 
-    public static final String NVI_TYPE = IoUtils.stringFromResources(Path.of("nviTypeQuery.sparql"));
+    private static final String NVI_TYPE = IoUtils.stringFromResources(Path.of("nviTypeQuery.sparql"));
     private static final Logger logger = LoggerFactory.getLogger(NviCalculator.class);
 
-    public static final String FRAME_SRC = IoUtils.stringFromResources(Path.of("nviFrame.json"));
+    private static final String FRAME_SRC = IoUtils.stringFromResources(Path.of("nviFrame.json"));
 
     private NviCalculator() {
     }
