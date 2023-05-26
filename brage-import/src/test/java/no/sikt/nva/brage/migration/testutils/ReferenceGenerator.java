@@ -2,7 +2,9 @@ package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.nonNull;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import javax.print.attribute.standard.Media;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
@@ -37,7 +39,13 @@ import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtypeEnum;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
@@ -54,6 +62,7 @@ import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
+import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -82,6 +91,13 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublishingContext(generatePublicationContextForBook(builder))
                            .withPublicationInstance(generatePublicationInstanceForBook(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.ANTHOLOGY.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(generatePublicationContextForBook(builder))
+                           .withPublicationInstance(generatePublicationInstanceForAnthology(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }
@@ -242,8 +258,7 @@ public final class ReferenceGenerator {
             }
             if (NvaType.INTERVIEW.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(new MediaContribution.Builder().withFormat(MediaFormat.TEXT)
-                                                      .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER)).build())
+                           .withPublishingContext(generateMediaContribution())
                            .withPublicationInstance(new MediaInterview())
                            .withDoi(builder.getDoi())
                            .build();
@@ -255,17 +270,57 @@ public final class ReferenceGenerator {
                            .withDoi(builder.getDoi())
                            .build();
             }
+            if (NvaType.PERFORMING_ARTS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Artistic())
+                           .withPublicationInstance(generatePerformingArts())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.PROFESSIONAL_ARTICLE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(generateJournal(builder))
+                           .withPublicationInstance(new ProfessionalArticle(generateRange(builder), null, null, null))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.READER_OPINION.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(generateMediaContribution())
+                           .withPublicationInstance(new MediaReaderOpinion(null, null, null, null))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.VISUAL_ARTS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublishingContext(new Artistic())
+                           .withPublicationInstance(new VisualArts(VisualArtsSubtype.createOther(null),null, null))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
             return new Reference.Builder().build();
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
     }
 
+    @NotNull
+    private static MediaContribution generateMediaContribution() {
+        return new MediaContribution.Builder().withFormat(MediaFormat.TEXT)
+                   .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER)).build();
+    }
+
+    private static PerformingArts generatePerformingArts() {
+        return new PerformingArts(PerformingArtsSubtype.createOther(null), null, List.of());    }
+
+    private static PublicationInstance<? extends Pages> generatePublicationInstanceForAnthology(Builder builder) {
+        return new BookAnthology(constructMonographPages(builder));
+    }
+
     private static ConferencePoster generatePublicationInstanceForConferencePoster() {
         return new ConferencePoster();
     }
 
-    @NotNull
     private static OtherStudentWork generatePublicationInstanceForStudentPaper(Builder builder) {
         return new OtherStudentWork(builder.getMonographPages(), builder.getPublicationDateForPublication());
     }
@@ -280,13 +335,11 @@ public final class ReferenceGenerator {
         return new NonFictionChapter(generateRange(builder));
     }
 
-    @NotNull
     private static ArtisticDesign generatePublicationInstanceForDesignProduct() {
         return new ArtisticDesign(ArtisticDesignSubtype.createOther(
             null), null, Collections.emptyList());
     }
 
-    @NotNull
     private static Architecture generatePublicationInstanceForArchitecture() {
         return new Architecture(ArchitectureSubtype.createOther(null), null,
                                 Collections.emptyList());
@@ -412,8 +465,8 @@ public final class ReferenceGenerator {
 
     private static ReportResearch generatePublicationInstanceForResearchReport(Builder builder) {
         return new ReportResearch(new MonographPages.Builder()
-                                  .withPages(builder.getPages().getPages())
-                                  .withIllustrated(false).build());
+                                      .withPages(builder.getPages().getPages())
+                                      .withIllustrated(false).build());
     }
 
     private static Book generatePublicationContextForBook(Builder builder) throws InvalidIsbnException {
@@ -424,10 +477,14 @@ public final class ReferenceGenerator {
     }
 
     private static BookMonograph generatePublicationInstanceForBook(Builder builder) {
-        var monographPages = new MonographPages.Builder().withIllustrated(false)
-                                 .withPages(builder.getPages().getPages())
-                                 .build();
+        var monographPages = constructMonographPages(builder);
         return new NonFictionMonograph(monographPages);
+    }
+
+    private static MonographPages constructMonographPages(Builder builder) {
+        return new MonographPages.Builder().withIllustrated(false)
+                   .withPages(builder.getPages().getPages())
+                   .build();
     }
 
     private static Degree generatePublicationContextForDegree(Builder builder)

@@ -8,6 +8,7 @@ public enum NvaType {
     CHAPTER("Chapter"),
     DATASET("DataSet"),
     JOURNAL_ARTICLE("JournalArticle"),
+    PROFESSIONAL_ARTICLE("Professional article"),
     REPORT("Other report"),
     BACHELOR_THESIS("DegreeBachelor"),
     MASTER_THESIS("DegreeMaster"),
@@ -27,6 +28,10 @@ public enum NvaType {
     INTERVIEW("Interview"),
     CONFERENCE_POSTER("ConferencePoster"),
     PRESENTATION_OTHER("Other presentation"),
+    ANTHOLOGY("Anthology"),
+    PERFORMING_ARTS("Performing arts"),
+    READER_OPINION("Reader opinion"),
+    VISUAL_ARTS("Visual arts"),
     SCIENTIFIC_MONOGRAPH("Vitenskapelig monografi"),
     SCIENTIFIC_CHAPTER("Vitenskapelig kapittel"),
     SCIENTIFIC_ARTICLE("Vitenskapelig artikkel");

@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.mapper;
 
 import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescription;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isAnthology;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isChapter;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConferencePoster;
@@ -12,14 +13,19 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLect
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherPresentation;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPerformingArts;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPlanOrBlueprint;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isProfessionalArticle;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReaderOpinion;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificChapter;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isVisualArts;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Record;
@@ -33,7 +39,12 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
@@ -48,6 +59,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
+import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -129,12 +141,46 @@ public final class PublicationInstanceMapper {
         if (isInterview(record)) {
             return buildPublicationInstanceWhenMediaInterview();
         }
-        if (isOtherPresentation(record)) {
-           return buildPublicationInstanceWhenOtherPresentation();
+        if (isReaderOpinion(record)) {
+            return buildPublicationInstanceWhenMediaReaderOpinion(record);
         }
-        else {
+        if (isOtherPresentation(record)) {
+            return buildPublicationInstanceWhenOtherPresentation();
+        }
+        if (isAnthology(record)) {
+            return buildPublicationInstanceWhenAnthology(record);
+        }
+        if (isPerformingArts(record)) {
+            return buildPublicationInstanceWhenPerformingArts();
+        }
+        if (isProfessionalArticle(record)) {
+            return buildPublicationInstanceWhenProfessionalArticle(record);
+        }
+        if (isVisualArts(record)) {
+            return buildPublicationInstanceWhenVisualArts();
+        } else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenVisualArts() {
+        return new VisualArts(VisualArtsSubtype.createOther(null), null, null);
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMediaReaderOpinion(Record record) {
+        return new MediaReaderOpinion(extractVolume(record), extractIssue(record), null, extractPages(record));
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenProfessionalArticle(Record record) {
+        return new ProfessionalArticle(extractPages(record), extractVolume(record), extractIssue(record), null);
+    }
+
+    private static PerformingArts buildPublicationInstanceWhenPerformingArts() {
+        return new PerformingArts(PerformingArtsSubtype.createOther(null), null, List.of());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenAnthology(Record record) {
+        return new BookAnthology(extractMonographPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherPresentation() {

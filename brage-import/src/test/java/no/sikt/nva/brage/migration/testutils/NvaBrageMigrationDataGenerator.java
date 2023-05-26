@@ -89,7 +89,7 @@ public class NvaBrageMigrationDataGenerator {
 
     private static Set<AdditionalIdentifier> generateCristinIdentifier(Builder builder) {
         if (isNull(builder.getCristinIdentifier())) {
-            return null;
+            return Set.of();
         } else {
             return Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, builder.cristinIdentifier));
         }
@@ -121,6 +121,9 @@ public class NvaBrageMigrationDataGenerator {
                    .withResourceOwner(getResourceOwnerIfPresent(builder))
                    .withAdditionalIdentifiers(generateCristinIdentifier(builder))
                    .withRightsHolder(builder.getRightsHolder())
+                   .withProjects(Collections.emptyList())
+                   .withSubjects(Collections.emptyList())
+                   .withFundings(Collections.emptyList())
                    .build();
     }
 

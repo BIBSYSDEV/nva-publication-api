@@ -59,7 +59,7 @@ public final class PublicationContextMapper {
     @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
     public static PublicationContext buildPublicationContext(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record) || isStudentPaper(record)) {
+        if (mapsToBook(record)) {
             return buildPublicationContextWhenBook(record);
         }
         if (isSupportedReportType(record)) {
@@ -68,8 +68,8 @@ public final class PublicationContextMapper {
         if (isUnconfirmedJournal(record) || isUnconfirmedScientificArticle(record)) {
             return buildPublicationContextForUnconfirmedJournalArticle(record);
         }
-        if (isJournalArticle(record) || isScientificArticle(record) || isFeatureArticle(record)) {
-            return buildPublicationContextWhenJournalArticle(record);
+        if (isArticle(record)) {
+            return buildPublicationContextWhenArticle(record);
         }
         if (isDegree(record)) {
             return buildPublicationContextWhenDegree(record);
@@ -83,28 +83,25 @@ public final class PublicationContextMapper {
         if (isLecture(record) || isConferencePoster(record) || isOtherPresentation(record)) {
             return buildPublicationContextWhenEvent();
         }
-        if (isDesignProduct(record) || isMusic(record) || isPlanOrBlueprint(record)) {
+        if (isArtistic(record)) {
             return new Artistic();
         }
         if (isDataset(record)) {
             return buildPublicationContextWhenDataSet(record);
         }
-        if (isInterview(record)) {
+        if (isInterview(record) || isReaderOpinion(record)) {
             return buildPublicationContextWhenMediaContribution();
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
     }
 
-    public static boolean isOtherPresentation(Record record) {
-        return NvaType.PRESENTATION_OTHER.getValue().equals(record.getType().getNva());
+    public static boolean isPerformingArts(Record record) {
+        return NvaType.PERFORMING_ARTS.getValue().equals(record.getType().getNva());
     }
 
-    private static PublicationContext buildPublicationContextWhenMediaContribution() {
-        return new MediaContribution.Builder()
-                   .withFormat(MediaFormat.TEXT)
-                   .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER))
-                   .build();
+    public static boolean isOtherPresentation(Record record) {
+        return NvaType.PRESENTATION_OTHER.getValue().equals(record.getType().getNva());
     }
 
     public static boolean isSupportedReportType(Record record) {
@@ -179,6 +176,52 @@ public final class PublicationContextMapper {
         return NvaType.INTERVIEW.getValue().equals(record.getType().getNva());
     }
 
+    public static boolean isAnthology(Record record) {
+        return NvaType.ANTHOLOGY.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isProfessionalArticle(Record record) {
+        return NvaType.PROFESSIONAL_ARTICLE.getValue().equals(record.getType().getNva());
+    }
+
+    public static boolean isReaderOpinion(Record record) {
+        return NvaType.READER_OPINION.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean mapsToBook(Record record) {
+        return isBook(record)
+               || isScientificMonograph(record)
+               || isOtherStudentWork(record)
+               || isStudentPaper(record)
+               || isAnthology(record);
+    }
+
+    private static boolean isArticle(Record record) {
+        return isJournalArticle(record)
+               || isScientificArticle(record)
+               || isFeatureArticle(record)
+               || isProfessionalArticle(record);
+    }
+
+    private static boolean isArtistic(Record record) {
+        return isDesignProduct(record)
+               || isMusic(record)
+               || isPlanOrBlueprint(record)
+               || isPerformingArts(record)
+               || isVisualArts(record);
+    }
+
+    public static boolean isVisualArts(Record record) {
+        return NvaType.VISUAL_ARTS.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenMediaContribution() {
+        return new MediaContribution.Builder()
+                   .withFormat(MediaFormat.TEXT)
+                   .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER))
+                   .build();
+    }
+
     private static boolean isReport(Record record) {
         return NvaType.REPORT.getValue().equals(record.getType().getNva());
     }
@@ -226,8 +269,9 @@ public final class PublicationContextMapper {
         return UriWrapper.fromUri(HTTPS_PREFIX + basePath).addChild(PUBLICATION_CHANNELS_PATH).getUri();
     }
 
-    private static PublicationContext buildPublicationContextWhenJournalArticle(Record record) {
-        return extractJournal(record);
+    private static PublicationContext buildPublicationContextWhenArticle(Record record) {
+        var j = extractJournal(record);
+        return j;
     }
 
     private static boolean isJournalArticle(Record record) {

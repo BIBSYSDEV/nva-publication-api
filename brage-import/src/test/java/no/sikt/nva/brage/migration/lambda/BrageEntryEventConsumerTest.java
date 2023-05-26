@@ -115,9 +115,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_SCIENTIFIC_MONOGRAPH = new Type(List.of(NvaType.SCIENTIFIC_MONOGRAPH.getValue()),
                                                                   NvaType.SCIENTIFIC_MONOGRAPH.getValue());
     public static final Type TYPE_INTERVIEW = new Type(List.of(NvaType.INTERVIEW.getValue()),
-                                                                  NvaType.INTERVIEW.getValue());
+                                                       NvaType.INTERVIEW.getValue());
     public static final Type TYPE_PRESENTATION_OTHER = new Type(List.of(NvaType.PRESENTATION_OTHER.getValue()),
-                                                       NvaType.PRESENTATION_OTHER.getValue());
+                                                                NvaType.PRESENTATION_OTHER.getValue());
+    public static final Type TYPE_ANTHOLOGY = new Type(List.of(NvaType.ANTHOLOGY.getValue()),
+                                                       NvaType.ANTHOLOGY.getValue());
+    public static final Type TYPE_PERFORMING_ARTS = new Type(List.of(NvaType.PERFORMING_ARTS.getValue()),
+                                                             NvaType.PERFORMING_ARTS.getValue());
+    public static final Type TYPE_PROFESSIONAL_ARTICLE = new Type(List.of(NvaType.PROFESSIONAL_ARTICLE.getValue()),
+                                                                  NvaType.PROFESSIONAL_ARTICLE.getValue());
+    public static final Type TYPE_READER_OPINION = new Type(List.of(NvaType.READER_OPINION.getValue()),
+                                                            NvaType.READER_OPINION.getValue());
+    public static final Type TYPE_VISUAL_ARTS = new Type(List.of(NvaType.VISUAL_ARTS.getValue()),
+                                                         NvaType.VISUAL_ARTS.getValue());
     public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
     public static final Type TYPE_JOURNAL_ARTICLE = new Type(List.of(NvaType.JOURNAL_ARTICLE.getValue()),
                                                              NvaType.JOURNAL_ARTICLE.getValue());
@@ -600,6 +610,64 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldConvertPresentationOtherToPublication() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_PRESENTATION_OTHER)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertAnthologyToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_ANTHOLOGY)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertPerformingArtsToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_PERFORMING_ARTS)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertProfessionalArticleToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_PROFESSIONAL_ARTICLE)
+                                 .withJournalId(randomString())
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertReaderOpinionToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_READER_OPINION)
+                                 .withJournalId(randomString())
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertVisualArtsToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_VISUAL_ARTS)
+                                 .withJournalId(randomString())
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());

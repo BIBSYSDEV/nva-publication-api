@@ -27,6 +27,8 @@ entityDescription.reference.publicationContext.agent
 entityDescription.reference.publicationInstance.contentType
 entityDescription.reference.publicationInstance.content
 entityDescription.reference.publicationInstance.corrigendumFor
+entityDescription.reference.publicationInstance.outputs
+.entityDescription.reference.publicationInstance.subtype.description
 entityDescription.reference.publicationContext.disseminationChannel
 entityDescription.alternativeTitles
 entityDescription.description
