@@ -6,36 +6,28 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 CONSTRUCT {
   ?publication nva:nviType ?nviCandidate .
-  } WHERE {
+} WHERE {
   ?publication a nva:Publication .
-
     ?publication nva:status ?publicationStatus .
-
-    ?publication nva:publishedDate ?publishedDate .
-
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
-    #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?publisherLevel .
-    #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?seriesLevel .
-    #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:journal/nva:level ?journalLevel .
 
-    #BIND(IF (BOUND(?seriesLevel), ?seriesLevel, ?publisherLevel) AS ?seriesOrPublisherLevel)
+    OPTIONAL { ?publication nva:entityDescription/nva:publicationDate/nva:year ?publicationYear . }
 
-    #BIND(IF (BOUND(?seriesOrPublisherLevel), ?seriesOrPublisherLevel, ?journalLevel) AS ?level)
+    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?publisherLevel . }
+    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?seriesLevel . }
+    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:journal/nva:level ?journalLevel .  }
 
-    BIND(IF (?publishedDate > "2023-01-01T00:00:00+00:00"^^xsd:dateTime
-             && ?publishedDate < "2023-12-31T23:59:59+00:00"^^xsd:dateTime,
-             "true"^^xsd:boolean, "false"^^xsd:boolean) AS ?publishedInCurrentYear)
+    BIND(IF (BOUND(?seriesLevel), ?seriesLevel, ?publisherLevel) AS ?seriesOrPublisherLevel)
+    BIND(IF (BOUND(?journalLevel), ?journalLevel, ?seriesOrPublisherLevel) AS ?optionalLevel)
+    BIND(IF (BOUND(?optionalLevel), ?optionalLevel, "0") AS ?level)
 
     BIND(IF (?instanceType = nva:AcademicMonograph
              || ?instanceType = nva:AcademicChapter
              || ?instanceType = nva:AcademicArticle
              || ?instanceType = nva:AcademicLiteratureReview, "true"^^xsd:boolean, "false"^^xsd:boolean) AS ?isNviInstance)
 
-    #BIND(IF(?publicationStatus = nva:PUBLISHED
-    #         && ?isNviInstance = "true"^^xsd:boolean
-    #         && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
-
-    BIND(IF(?publicationStatus = nva:PUBLISHED
+    BIND(IF (?publicationStatus = nva:PUBLISHED
       && ?isNviInstance = "true"^^xsd:boolean
-      && ?publishedInCurrentYear = "true"^^xsd:boolean, nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
-}
+      && ?publicationYear = "2023"
+      && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
+} GROUP BY ?publication ?nviCandidate
