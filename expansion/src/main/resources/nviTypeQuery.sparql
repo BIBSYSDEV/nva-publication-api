@@ -11,6 +11,8 @@ CONSTRUCT {
 
     ?publication nva:status ?publicationStatus .
 
+    ?publication nva:publishedDate ?publishedDate .
+
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
     #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?publisherLevel .
     #?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?seriesLevel .
@@ -19,6 +21,10 @@ CONSTRUCT {
     #BIND(IF (BOUND(?seriesLevel), ?seriesLevel, ?publisherLevel) AS ?seriesOrPublisherLevel)
 
     #BIND(IF (BOUND(?seriesOrPublisherLevel), ?seriesOrPublisherLevel, ?journalLevel) AS ?level)
+
+    BIND(IF (?publishedDate > "2023-01-01T00:00:00+00:00"^^xsd:dateTime
+             && ?publishedDate < "2023-12-31T23:59:59+00:00"^^xsd:dateTime,
+             "true"^^xsd:boolean, "false"^^xsd:boolean) AS ?publishedInCurrentYear)
 
     BIND(IF (?instanceType = nva:AcademicMonograph
              || ?instanceType = nva:AcademicChapter
@@ -30,5 +36,6 @@ CONSTRUCT {
     #         && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 
     BIND(IF(?publicationStatus = nva:PUBLISHED
-      && ?isNviInstance = "true"^^xsd:boolean, nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
+      && ?isNviInstance = "true"^^xsd:boolean
+      && ?publishedInCurrentYear = "true"^^xsd:boolean, nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 }
