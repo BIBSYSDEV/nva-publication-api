@@ -31,6 +31,12 @@ public class PublicationChannelGenerator {
         return objectMapper.writeValueAsString(channelRoot);
     }
 
+    public static String getPublicationChannelJournal(URI identifier, String publisherName)
+        throws JsonProcessingException {
+        var publisherMap = getPublicationChannelMap(identifier, publisherName);
+        return objectMapper.writeValueAsString(publisherMap);
+    }
+
     public static String getPublicationChannelSamplePublisher(URI identifier, String publisherName)
         throws JsonProcessingException {
         var publisherMap = getPublicationChannelMap(identifier, publisherName);
