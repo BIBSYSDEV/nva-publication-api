@@ -15,7 +15,11 @@ public class PublicationChannelGenerator {
     public static final String SAMPLE_JSON_FILENAME = "framed-json/publication_channel_sample.json";
     public static final String FIELD_NAME = "name";
     public static final String FIELD_ID = "id";
-    
+    public static final String FIELD_LEVEL = "level";
+    public static final String FIELD_CONTEXT = "@context";
+    public static final String PUBLICATION_CHANNEL_CONTEXT = "https://bibsysdev.github"
+                                                             + ".io/src/publication-channel/channel-context.json";
+
     public static String getPublicationChannelSampleJournal(URI journalId, String journalName)
         throws JsonProcessingException {
         String publicationChannelSample = stringFromResources(Path.of(SAMPLE_JSON_FILENAME));
@@ -23,26 +27,27 @@ public class PublicationChannelGenerator {
         
         ((ObjectNode) channelRoot).put(FIELD_ID, journalId.toString());
         ((ObjectNode) channelRoot).put(FIELD_NAME, journalName);
+        ((ObjectNode) channelRoot).put(FIELD_LEVEL, "1");
         return objectMapper.writeValueAsString(channelRoot);
     }
 
     public static String getPublicationChannelSamplePublisher(URI identifier, String publisherName)
         throws JsonProcessingException {
-        Map<String, String> publisherMap = Map.ofEntries(
-            entry("@context", "https://bibsysdev.github.io/src/publication-channel/channel-context.json"),
-            entry("id", identifier.toString()),
-            entry("name", publisherName),
-            entry("level", "1"));
+        var publisherMap = getPublicationChannelMap(identifier, publisherName);
         return objectMapper.writeValueAsString(publisherMap);
     }
 
     public static String getPublicationChannelSampleSeries(URI seriesId, String seriesName)
         throws JsonProcessingException {
-        Map<String, String> seriesMap = Map.ofEntries(
-            entry("@context", "https://bibsysdev.github.io/src/publication-channel/channel-context.json"),
-            entry("id", seriesId.toString()),
-            entry("name", seriesName),
-            entry("level", "1"));
+        var seriesMap = getPublicationChannelMap(seriesId, seriesName);
         return objectMapper.writeValueAsString(seriesMap);
+    }
+
+    private static Map<String, String> getPublicationChannelMap(URI channelId, String channelName) {
+        return Map.ofEntries(
+            entry(FIELD_CONTEXT, PUBLICATION_CHANNEL_CONTEXT),
+            entry(FIELD_ID, channelId.toString()),
+            entry(FIELD_NAME, channelName),
+            entry(FIELD_LEVEL, "1"));
     }
 }

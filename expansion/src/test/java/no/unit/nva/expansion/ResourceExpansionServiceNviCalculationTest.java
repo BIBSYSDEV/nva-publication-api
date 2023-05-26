@@ -5,6 +5,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomFundings;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
 import static no.unit.nva.testutils.RandomDataGenerator.objectMapper;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -39,26 +39,28 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
@@ -109,13 +111,46 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     }
 
     @Test
-    @ParameterizedTest
-    @MethodSource("nviCandidatePublicationInstanceAndPublicationContextProvider")
-    void shouldSetNviTypeNviCandidateWhenResourceMeetsAllNviCandidacyRequirements(
-        PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws JsonProcessingException, NotFoundException {
+    void shouldSetNviTypeNviCandidateWhenAcademicChapterMeetsAllNviCandidacyRequirements()
+        throws IOException, NotFoundException {
 
-        var publication = getPublicationMeetingAllNviCandidacyRequirements(publicationInstance, publicationContext);
+        var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicChapter(null),
+                                                                           new Anthology.Builder()
+                                                                               .withId(randomUri()).build());
+        var publisherUri = extractAnthologyUri(publication);
+        var publisherName = randomString();
+
+        addPublisherToMockUriRetriever(uriRetriever, publisherUri, publisherName);
+
+        var resourceUpdate = Resource.fromPublication(publication);
+
+        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NVI_CANDIDATE)));
+    }
+
+    @Test
+    void shouldSetNviTypeNviCandidateWhenAcademicMonographMeetsAllNviCandidacyRequirements()
+        throws IOException, NotFoundException, InvalidIsbnException {
+
+        var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicMonograph(null),
+                                                                           new Book.BookBuilder()
+                                                                               .withSeries(new Series(
+                                                                                   randomPublicationChannelsUri()))
+                                                                               .withPublisher(new Publisher(
+                                                                                   randomPublicationChannelsUri()))
+                                                                               .build());
+        var seriesUri = extractSeriesUri(publication);
+        var publisherUri = extractPublisherUri(publication);
+        var publisherName = randomString();
+        var seriesName = randomString();
+
+        addSeriesToMockUriRetriever(uriRetriever, seriesUri, seriesName);
+        addPublisherToMockUriRetriever(uriRetriever, publisherUri, publisherName);
+
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -127,7 +162,29 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     }
 
     @ParameterizedTest
-    @MethodSource("nviCandidatePublicationInstanceAndPublicationContextProvider")
+    @MethodSource("nviCandidateJournalProvider")
+    void shouldSetNviTypeNviCandidateWhenPublicationInJournalMeetsAllNviCandidacyRequirements(
+        PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
+        throws IOException, NotFoundException {
+
+        var publication = getPublicationMeetingAllNviCandidacyRequirements(publicationInstance, publicationContext);
+        var journalUri = extractJournalUri(publication);
+        var journalName = randomString();
+
+        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
+
+        var resourceUpdate = Resource.fromPublication(publication);
+
+        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var actualNviType = objectMapper.convertValue(expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      }).get(NVI_TYPE_ID_FIELD_NAME);
+
+        assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NVI_CANDIDATE)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceIsNotPublishedInCurrentYear(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
         throws JsonProcessingException, NotFoundException {
@@ -165,7 +222,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     }
 
     @ParameterizedTest
-    @MethodSource("nviCandidatePublicationInstanceAndPublicationContextProvider")
+    @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceIsNotPublished(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
         throws JsonProcessingException, NotFoundException {
@@ -182,7 +239,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     }
 
     @ParameterizedTest
-    @MethodSource("nviCandidatePublicationInstanceAndPublicationContextProvider")
+    @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceContainsNonVerifiedContributorCreator(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
         throws JsonProcessingException, NotFoundException {
@@ -200,7 +257,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     }
 
     @ParameterizedTest
-    @MethodSource("nviCandidatePublicationInstanceAndPublicationContextProvider")
+    @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceDoesNotContainContributorCreator(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
         throws JsonProcessingException, NotFoundException {
@@ -216,22 +273,42 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         assertThat(actualNviType, is(equalTo(NVA_ONTOLOGY_NON_NVI_CANDIDATE)));
     }
 
+    private static URI extractAnthologyUri(Publication publication) {
+        var test = (Anthology) publication.getEntityDescription().getReference().getPublicationContext();
+        return test.getId();
+    }
+
     private static URI randomPublicationChannelsUri() {
         return URI.create("https://api.dev.nva.aws.unit.no/publication-channels/" + randomString());
     }
 
-    private static void addPublicationChannelPublisherToMockUriRetriever(UriRetriever mockUriRetriever,
-                                                                         URI seriesId,
-                                                                         String seriesName,
-                                                                         URI publisherId,
-                                                                         String publisherName)
+    private static void addPublisherToMockUriRetriever(UriRetriever mockUriRetriever,
+                                                       URI publisherId,
+                                                       String publisherName)
         throws IOException {
-        String publicationChannelSampleJournal = getPublicationChannelSampleSeries(seriesId, seriesName);
-        when(mockUriRetriever.getRawContent(eq(seriesId), any()))
-            .thenReturn(Optional.of(publicationChannelSampleJournal));
-        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
+        var publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
         when(mockUriRetriever.getRawContent(eq(publisherId), any()))
             .thenReturn(Optional.of(publicationChannelSamplePublisher));
+    }
+
+    private static void addJournalToMockUriRetriever(UriRetriever mockUriRetriever,
+                                                     URI journalId,
+                                                     String journalName)
+        throws IOException {
+
+        var publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
+        when(mockUriRetriever.getRawContent(eq(journalId), any()))
+            .thenReturn(Optional.of(publicationChannelSampleJournal));
+    }
+
+    private static void addSeriesToMockUriRetriever(UriRetriever mockUriRetriever,
+                                                    URI seriesId,
+                                                    String seriesName)
+        throws IOException {
+
+        var publicationChannelSampleSeries = getPublicationChannelSampleSeries(seriesId, seriesName);
+        when(mockUriRetriever.getRawContent(eq(seriesId), any()))
+            .thenReturn(Optional.of(publicationChannelSampleSeries));
     }
 
     private static void mockUriRetriever(UriRetriever mockUriRetriever)
@@ -240,9 +317,13 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
             .thenReturn(Optional.empty());
     }
 
-    private static Stream<Arguments> nviCandidatePublicationInstanceAndPublicationContextProvider() {
+    private static Stream<Arguments> nviCandidateJournalProvider() {
         return Stream.of(Arguments.of(new AcademicArticle(null, randomString(), randomString(), randomString()),
-                                      new Journal(randomUri())));
+                                      new Journal(randomUri())),
+                         Arguments.of(new AcademicLiteratureReview(null, randomString(), randomString(),
+                                                                   randomString()),
+                                      new Journal(randomUri()))
+        );
     }
 
     private static Stream<Arguments> nonNviCandidatePublicationInstanceAndPublicationContextProvider() {
@@ -306,10 +387,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .build();
     }
 
-    private Publication randomBookWithConfirmedPublisher() {
-        return PublicationGenerator.randomPublication(BookMonograph.class);
-    }
-
     private URI extractSeriesUri(Publication publication) {
         Book book = extractBook(publication);
         Series confirmedSeries = (Series) book.getSeries();
@@ -326,11 +403,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         return publisher.getId();
     }
 
-    private List<URI> extractAffiliationsUris(Publication publication) {
-        return publication.getEntityDescription().getContributors()
-                   .stream().flatMap(contributor ->
-                                         contributor.getAffiliations().stream().map(Organization::getId))
-                   .collect(Collectors.toList());
+    private URI extractJournalUri(Publication publication) {
+        var journal = (Journal) publication.getEntityDescription().getReference().getPublicationContext();
+        return journal.getId();
     }
 
     private Publisher extractPublisher(Book book) {
