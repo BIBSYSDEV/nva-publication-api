@@ -1,18 +1,30 @@
 package no.unit.nva.publication.fetch;
 
+import static com.google.common.net.HttpHeaders.ACCEPT;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
+import static no.unit.nva.publication.fetch.FetchImportCandidateHandler.IMPORT_CANDIDATE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -29,28 +41,30 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.ImportStatus;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 @WireMockTest(httpsEnabled = true)
 public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
 
+    public static final String IDENTIFIER = "importCandidateIdentifier";
     private ByteArrayOutputStream output;
     private Context context;
-    private Environment environment;
     private ResourceService resourceService;
     private FetchImportCandidateHandler handler;
 
     @BeforeEach
     public void setUp() {
         super.init();
-        environment = mock(Environment.class);
+        Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
@@ -60,9 +74,34 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnImportCandidateOnValidInput() throws NotFoundException {
+    void shouldReturnImportCandidateSuccessfully() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var identifier = importCandidate.getIdentifier();
+        var request = createRequest(importCandidate.getIdentifier());
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
+        var responseImportCandidate = response.getBodyObject(ImportCandidate.class);
+
+        assertThat(importCandidate.getIdentifier(), is(equalTo(responseImportCandidate.getIdentifier())));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenImportCandidateDoesNotExist() throws IOException {
+        var request = createRequest(SortableIdentifier.next());
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        var detail = response.getBodyObject(Problem.class).getDetail();
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+        assertThat(detail, containsString(IMPORT_CANDIDATE_NOT_FOUND_MESSAGE));
+    }
+
+    private InputStream createRequest(SortableIdentifier identifier) throws JsonProcessingException {
+        var pathParameters = Map.of(IDENTIFIER, identifier.toString());
+        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        return new HandlerRequestBuilder<InputStream>(restApiMapper)
+                   .withHeaders(headers)
+                   .withPathParameters(pathParameters)
+                   .build();
     }
 
     private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
