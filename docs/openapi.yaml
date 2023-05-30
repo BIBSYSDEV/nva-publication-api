@@ -492,8 +492,6 @@ paths:
   /import-candidate/{importCandidateIdentifier}:
     get:
       summary: Fetch Import candidate by Identifier
-      tags:
-        - external
       parameters:
         - in: path
           name: importCandidateIdentifier
