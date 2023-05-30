@@ -538,7 +538,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource should have a owner {string} and ownerAffiliation: {string}")
-    public void theNVAResourceShouldHaveAOwnerAndOwnerAffiliation(String owner, String ownerAffiliation) {
+    public void theNvaResourceShouldHaveAOwnerAndOwnerAffiliation(String owner, String ownerAffiliation) {
         var resourceOwner = scenarioContext.getNvaEntry().getResourceOwner();
         assertThat(resourceOwner, allOf(hasProperty("owner", equalTo(new Username(owner))),
                                         hasProperty("ownerAffiliation",

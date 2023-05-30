@@ -26,7 +26,6 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.Range;
 import nva.commons.core.SingletonCollector;
 
 public class BookFeatures {
@@ -266,12 +265,12 @@ public class BookFeatures {
     }
 
     @And("the Book Report has an ISBN field with value {string}")
-    public void theBookReportHasAnISBNFieldWithValue(String cristinIsbn) {
+    public void theBookReportHasAnIsbnFieldWithValue(String cristinIsbn) {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(cristinIsbn);
     }
 
     @Then("the NVA Resource has a PublicationContext with an empty ISBN list")
-    public void theNVAResourceHasAPublicationContextWithAnEmptyISBNList() {
+    public void theNvaResourceHasAPublicationContextWithAnEmptyIsbnList() {
         Book bookContext = extractNvaBook();
         var actualIsbnList = bookContext.getIsbnList();
         assertThat(actualIsbnList, hasSize(0));

@@ -200,7 +200,7 @@ public final class CristinDataGenerator {
             case PROGRAM_MANAGEMENT:
                 return randomMedia(category);
             case PROGRAM_PARTICIPATION:
-                return randomTVOMedia(category);
+                return randomTvOrMedia(category);
             case WRITTEN_INTERVIEW:
                 return randomWrittenInterview();
             default:
@@ -336,7 +336,7 @@ public final class CristinDataGenerator {
         return createRandomJournalWithSpecifiedSecondaryCategory(WRITTEN_INTERVIEW);
     }
 
-    private static CristinObject randomTVOMedia(CristinSecondaryCategory category) {
+    private static CristinObject randomTvOrMedia(CristinSecondaryCategory category) {
         var cristinObject = createRandomMediaWithSpecifiedSecondaryCategory(category);
         cristinObject.getMediaContribution()
             .setCristinMediumType(CristinMediumType.builder().withMediumTypeCode(CristinMediumTypeCode.TV).build());

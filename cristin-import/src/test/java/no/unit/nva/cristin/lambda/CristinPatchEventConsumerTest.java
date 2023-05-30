@@ -86,8 +86,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var actualReport = extractActualReportFromS3Client(eventReference,
                                                            NotFoundException.class.getSimpleName(),
                                                            childPublicationIdentifier.toString());
-        assertThat(actualReport.getInput().getNvaPublicationIdentifier(), is(equalTo(childPublicationIdentifier.toString())));
-   }
+        assertThat(actualReport.getInput().getNvaPublicationIdentifier(),
+                   is(equalTo(childPublicationIdentifier.toString())));
+    }
 
     @Test
     void shouldStoreErrorReportWhenSearchingForNvaPublicationByCristinIdentifierReturnsMoreThanOnePublication()
@@ -229,8 +230,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         return partOf.toJsonString();
     }
 
-    private Publication createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(String cristinId,
-                                                                                            Class<?> publicationInstanceClass)
+    private Publication createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(
+        String cristinId,
+        Class<?> publicationInstanceClass)
         throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication(publicationInstanceClass);
         publication.setAdditionalIdentifiers(createAdditionalIdentifiersWithCristinId(cristinId));

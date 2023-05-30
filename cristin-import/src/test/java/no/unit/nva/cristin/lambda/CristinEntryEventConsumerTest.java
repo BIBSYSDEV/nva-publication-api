@@ -251,7 +251,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventReference = createEventReference(eventBody);
 
         handler.handleRequest(eventReference, CONTEXT);
-        var actualReport = extractActualReportFromS3Client(eventBody, UnsupportedSecondaryCategoryException.class.getSimpleName());
+        var actualReport = extractActualReportFromS3Client(eventBody,
+                                                           UnsupportedSecondaryCategoryException.class.getSimpleName());
         assertThat(actualReport.getException(),
                    containsString(UnsupportedSecondaryCategoryException.ERROR_PARSING_SECONDARY_CATEGORY));
     }
@@ -399,8 +400,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(objectWithUnknownProperty);
         var eventReference = createEventReference(eventBody);
         handler.handleRequest(eventReference, CONTEXT);
-        UnixPath expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
-                                                                                      IllegalArgumentException.class.getSimpleName());
+        UnixPath expectedFilePath =
+            constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+                                                              IllegalArgumentException.class.getSimpleName());
 
         S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         String file = s3Driver.getFile(expectedFilePath);
