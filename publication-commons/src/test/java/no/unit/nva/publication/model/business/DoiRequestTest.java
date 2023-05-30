@@ -12,8 +12,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import no.unit.nva.model.role.Role;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
+import nva.commons.apigateway.AccessRight;
 import org.junit.jupiter.api.Test;
 
 class DoiRequestTest {

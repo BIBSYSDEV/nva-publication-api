@@ -30,6 +30,8 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -82,7 +84,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResourceTransactionItem);
         transactionItems.addAll(updateTicketsTransactionItems);
-        
+
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
 
@@ -135,6 +137,19 @@ public class UpdateResourceService extends ServiceWithTransactions {
             updatePublicationIncludingStatus(publication);
             return deletionStatusChangeInProgress();
         }
+    }
+
+    ImportCandidate updateNotImportedStatusToImported(SortableIdentifier identifier)
+        throws NotFoundException {
+        var importCandidate = readResourceService.getResourceByIdentifier(identifier).toImportCandidate();
+        importCandidate.setImportStatus(ImportStatus.IMPORTED);
+        var resource = Resource.fromImportCandidate(importCandidate);
+        var updateResourceTransactionItem = updateResource(resource);
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(updateResourceTransactionItem);
+        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        sendTransactionWriteRequest(request);
+        return importCandidate;
     }
 
     private static boolean publicationIsPublished(Publication publication) {

@@ -58,5 +58,7 @@ test {
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
     environment "API_HOST", "https://api-host.example.com"
     environment "CUSTOM_DOMAIN_BASE_PATH", "publication"
+    environment "IMPORT_CANDIDATES_TABLE", "import-candidates-table"
+    environment "PUBLICATIONS_TABLE", "publications-table"
 }
 

@@ -105,8 +105,9 @@ public class ServiceWithTransactions {
     }
     
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {
-        attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
-            .orElseThrow(this::handleTransactionFailure);
+        getClient().transactWriteItems(transactWriteItemsRequest);
+//        attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
+//            .orElseThrow(this::handleTransactionFailure);
     }
     
     private Void waitBeforeFetching() throws InterruptedException {

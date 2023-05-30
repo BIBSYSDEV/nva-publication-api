@@ -49,6 +49,12 @@ public class ResourcesLocalTest extends TestDataSource {
         client.createTable(request);
     }
 
+    public void initTwoTables(String resourceTable, String importCandidateTable) {
+        client = DynamoDBEmbedded.create().amazonDynamoDB();
+        client.createTable(createTableRequest(resourceTable));
+        client.createTable(createTableRequest(importCandidateTable));
+    }
+
     @AfterEach
     public void shutdown() {
         client.shutdown();
@@ -57,6 +63,15 @@ public class ResourcesLocalTest extends TestDataSource {
     private CreateTableRequest createTableRequest() {
         return new CreateTableRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
+                   .withAttributeDefinitions(attributeDefinitions())
+                   .withKeySchema(primaryKeySchema())
+                   .withGlobalSecondaryIndexes(globalSecondaryIndexes())
+                   .withBillingMode(BillingMode.PAY_PER_REQUEST);
+    }
+
+    private CreateTableRequest createTableRequest(String tableName) {
+        return new CreateTableRequest()
+                   .withTableName(tableName)
                    .withAttributeDefinitions(attributeDefinitions())
                    .withKeySchema(primaryKeySchema())
                    .withGlobalSecondaryIndexes(globalSecondaryIndexes())

@@ -97,6 +97,18 @@ public class ResourceService extends ServiceWithTransactions {
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
     }
 
+    public ResourceService(AmazonDynamoDB client,
+                           Clock clock,
+                           String tableName) {
+        super(client);
+        this.tableName = tableName;
+        this.clockForTimestamps = clock;
+        this.identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
+        this.readResourceService = new ReadResourceService(client, tableName);
+        this.updateResourceService =
+            new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
+    }
+
     public ResourceService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
@@ -104,6 +116,11 @@ public class ResourceService extends ServiceWithTransactions {
     @JacocoGenerated
     public static ResourceService defaultService() {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+    }
+
+    @JacocoGenerated
+    public static ResourceService defaultService(String tableName) {
+        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone(), tableName);
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData)
@@ -240,6 +257,10 @@ public class ResourceService extends ServiceWithTransactions {
 
     public ImportCandidate getImportCandidateByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toImportCandidate();
+    }
+
+    public ImportCandidate updateImportStatus(SortableIdentifier identifier) throws NotFoundException {
+        return updateResourceService.updateNotImportedStatusToImported(identifier);
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)

@@ -74,7 +74,9 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     }
 
     public Publication toPublication() {
-        return this.copy().build();
+        return this.copy()
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .build();
     }
 
     public static final class Builder {
