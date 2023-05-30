@@ -1043,6 +1043,7 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
           TABLE_NAME: !Ref NvaImportCandidatesTable
       Events:
         EventBridgeEvent:
@@ -1053,12 +1054,12 @@ Resources:
               detail:
                 responsePayload:
                   topic:
-                    - "ImportCandidate.Database.Update"
+                    - "ImportCandidates.DataEntry.Update"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !GetAtt InternalBus.Arn
+            Destination: !Ref NewNvaEventBusArn
           OnFailure:
             Type: SQS
             Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn

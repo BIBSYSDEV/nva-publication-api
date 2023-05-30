@@ -47,12 +47,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String ORGANIZATIONS_FIELD = "organizations";
     public static final String IMPORT_STATUS_FIELD = "importStatus";
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
+    public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
     private Set<AdditionalIdentifier> additionalIdentifiers;
     @JsonProperty(DOI_FIELD)
     private URI doi;
+    @JsonProperty(PUBLICATION_INSTANCE_FIELD)
     private PublicationInstance<? extends Pages> publicationInstance;
     @JsonProperty(MAIN_TITLE_FIELD)
     private String mainTitle;
