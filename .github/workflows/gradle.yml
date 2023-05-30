@@ -10,10 +10,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    permissions:
-      checks: write
-      pull-requests: write
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 1.11
@@ -34,16 +30,14 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew build --info
+      - name: Unit tests results
+        uses: actions/upload-artifact@v1
+        with:
+          name: unit-tests-results
+          path: home/runner/work/nva-publication-api/nva-publication-api/expansion/build/reports/tests/test/index.html
 
       - name: Codacy Coverage Reporter
         uses: codacy/codacy-coverage-reporter-action@v1
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: $(pwd)/build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml
-
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          files: |
-            test-results/**/*.xml
