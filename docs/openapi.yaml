@@ -489,14 +489,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 
-  /import-candidate/{identifier}:
+  /import-candidate/{importCandidateIdentifier}:
     get:
       summary: Fetch Import candidate by Identifier
       tags:
         - external
       parameters:
         - in: path
-          name: identifier
+          name: importCandidateIdentifier
           schema:
             type: string
             format: uuid
