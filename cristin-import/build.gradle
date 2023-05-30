@@ -87,6 +87,7 @@ test {
     environment "EVENTS_BUCKET", "eventsBucket"
     environment "CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
     environment "CRISTIN_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+    environment "TABLE_NAME", "sometable"
 }
 
 configurations {

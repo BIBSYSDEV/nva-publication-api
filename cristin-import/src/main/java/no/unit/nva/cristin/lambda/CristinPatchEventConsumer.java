@@ -7,13 +7,18 @@ import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToStrin
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import java.time.Clock;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.patcher.CristinPatcher;
 import no.unit.nva.cristin.patcher.exception.ParentPublicationException;
 import no.unit.nva.cristin.patcher.model.ParentAndChild;
-import no.unit.nva.events.handlers.EventHandler;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -29,12 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class CristinPatchEventConsumer extends EventHandler<EventReference, Publication> {
-
-    public static final String TOPIC = "PublicationService.DataImport.Filename";
-    public static final String SUBTOPIC = "PublicationService.CristinData.PatchEntry";
-
-    public static final String WRONG_SUBTOPIC_ERROR_TEMPLATE = "Unexpected subtopic: %s. Expected subtopic is: %s.";
+public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<Publication>> {
 
     public static final String INVALID_PARENT_MESSAGE = "Could not retrieve a single valid parent publciation";
     public static final String ERROR_PATCHING_CHILD_PUBLICATION = "Error patching child publication: ";
@@ -56,20 +56,35 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
     }
 
     public CristinPatchEventConsumer(ResourceService resourceService, S3Client s3Client) {
-        super(EventReference.class);
         this.resourceService = resourceService;
         this.s3Client = s3Client;
     }
 
     @Override
-    protected Publication processInput(EventReference input, AwsEventBridgeEvent<EventReference> event,
-                                       Context context) {
-        validateEvent(event);
+    public List<Publication> handleRequest(SQSEvent input, Context context) {
+        return input.getRecords()
+                   .stream()
+                   .map(this::processMessage)
+                   .flatMap(Optional::stream)
+                   .collect(Collectors.toList());
+    }
+
+    protected Publication processEvent(EventReference input) {
         var eventBody = readEventBody(input);
         return attempt(() -> retrieveChildAndParentPublications(eventBody))
                    .map(CristinPatcher::updateChildPublication)
                    .map(ParentAndChild::getChildPublication)
                    .orElseThrow(fail -> saveErrorReport(fail, input, eventBody));
+    }
+
+    private Optional<Publication> processMessage(SQSMessage message) {
+        logger.info("received message: " + message.getBody());
+        return attempt(() -> getEventReferenceFromBody(message.getBody())).map(this::processEvent)
+                   .toOptional();
+    }
+
+    private EventReference getEventReferenceFromBody(String body) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, EventReference.class)).orElseThrow();
     }
 
     private RuntimeException saveErrorReport(Failure<Publication> fail, EventReference input,
@@ -134,26 +149,5 @@ public class CristinPatchEventConsumer extends EventHandler<EventReference, Publ
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         var json = s3Driver.readEvent(input.getUri());
         return NvaPublicationPartOfCristinPublication.fromJson(json);
-    }
-
-    private void validateEvent(AwsEventBridgeEvent<EventReference> event) {
-        if (!TOPIC.equalsIgnoreCase(event.getDetail().getTopic())) {
-            String errorMessage = messageIndicatingTheCorrectTopicType(event);
-            logger.info(event.toJsonString());
-            throw new IllegalArgumentException(errorMessage);
-        }
-        if (!SUBTOPIC.equalsIgnoreCase(event.getDetail().getSubtopic())) {
-            String errorMessage = messageIndicatingTheCorrectSubtopicType(event);
-            logger.info(event.toJsonString());
-            throw new IllegalArgumentException(errorMessage);
-        }
-    }
-
-    private String messageIndicatingTheCorrectTopicType(AwsEventBridgeEvent<EventReference> event) {
-        return String.format("Unexpected topic: %s. Expected topic is: %s", event.getDetail().getTopic(), TOPIC);
-    }
-
-    private String messageIndicatingTheCorrectSubtopicType(AwsEventBridgeEvent<EventReference> event) {
-        return String.format(WRONG_SUBTOPIC_ERROR_TEMPLATE, event.getDetail().getSubtopic(), SUBTOPIC);
     }
 }
