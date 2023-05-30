@@ -15,7 +15,7 @@ CONSTRUCT {
 
     OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?publisherLevel . }
     OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?seriesLevel . }
-    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:journal/nva:level ?journalLevel .  }
+    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:level ?journalLevel .  }
 
     BIND(IF (BOUND(?seriesLevel), ?seriesLevel, ?publisherLevel) AS ?seriesOrPublisherLevel)
     BIND(IF (BOUND(?journalLevel), ?journalLevel, ?seriesOrPublisherLevel) AS ?optionalLevel)
