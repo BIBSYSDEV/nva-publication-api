@@ -28,6 +28,8 @@ dependencies {
     runtimeOnly libs.jackson.datatype.jdk8
 
     implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk.sqs
+    implementation libs.aws.lambda.events
     implementation libs.aws.java.sdk.core
     implementation libs.aws.sdk2.core
     implementation libs.aws.sdk2.httpClientApi
@@ -83,6 +85,9 @@ test {
     environment "DOMAIN_NAME", "api.test.nva.aws.unit.no"
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "EVENTS_BUCKET", "eventsBucket"
+    environment "CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+    environment "CRISTIN_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+    environment "TABLE_NAME", "sometable"
 }
 
 configurations {

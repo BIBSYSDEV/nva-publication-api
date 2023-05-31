@@ -26,6 +26,7 @@ dependencies {
     implementation libs.aws.sdk2.regions
     implementation libs.aws.sdk2.httpClientApi
     implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk.sqs
 
     implementation libs.aws.ion
 
@@ -64,6 +65,8 @@ test {
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "EVENTS_BUCKET", "theEventsBucket"
     environment "TABLE_NAME", "someTable"
+    environment "CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+    environment "CRISTIN_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
 }
 
 

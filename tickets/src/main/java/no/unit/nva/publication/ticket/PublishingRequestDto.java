@@ -13,6 +13,7 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -20,6 +21,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestDto.TYPE)
+@SuppressWarnings("PMD.ExcessiveParameterList")
 public class PublishingRequestDto extends TicketDto {
 
     public static final String TYPE = "PublishingRequest";
@@ -29,6 +31,7 @@ public class PublishingRequestDto extends TicketDto {
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String ID_FIELD = "id";
+    public static final String WORKFLOW_FIELD = "publishingWorkflow";
 
     @JsonProperty(CREATED_DATE_FIELD)
     private final Instant createdDate;
@@ -39,6 +42,9 @@ public class PublishingRequestDto extends TicketDto {
     @JsonProperty(ID_FIELD)
     private final URI id;
 
+    @JsonProperty(WORKFLOW_FIELD)
+    private final PublishingWorkflow publishingWorkflow;
+
     @JsonCreator
     public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
                                 @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
@@ -48,16 +54,18 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(ID_FIELD) URI id,
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                 @JsonProperty(VIEWED_BY) Set<User> viewedBy,
-                                @JsonProperty(ASSIGNEE_FIELD) Username assignee) {
+                                @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                                @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow publishingWorkflow) {
         super(status, messages, viewedBy, assignee, publicationIdentifier);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
         this.id = id;
+        this.publishingWorkflow = publishingWorkflow;
     }
 
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null);
+        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null);
     }
 
     public Instant getCreatedDate() {
@@ -114,6 +122,11 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages())
-               && Objects.equals(getAssignee(), that.getAssignee());
+               && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getPublishingWorkflow(), that.getPublishingWorkflow());
+    }
+
+    public PublishingWorkflow getPublishingWorkflow() {
+        return publishingWorkflow;
     }
 }

@@ -38,7 +38,7 @@ public class MediaContributionFeatures {
     }
 
     @Then("the NVA resource has a MediaContribution with medium {string}")
-    public void theNVAResourceHasAMediaContributionWithMedium(String mediumType) {
+    public void theNvaResourceHasAMediaContributionWithMedium(String mediumType) {
         var context = scenarioContext.getNvaEntry()
                           .getEntityDescription()
                           .getReference()
@@ -49,7 +49,7 @@ public class MediaContributionFeatures {
     }
 
     @And("the NVA resource has a MediaContribution with format {string}")
-    public void theNVAResourceHasAMediaContributionWithFormat(String format) {
+    public void theNvaResourceHasAMediaContributionWithFormat(String format) {
         var nullString = "NULL";
         var context = scenarioContext.getNvaEntry()
                           .getEntityDescription()
