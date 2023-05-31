@@ -488,6 +488,85 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
+
+  /import-candidate/{importCandidateIdentifier}:
+    get:
+      summary: Fetch Import candidate by Identifier
+      parameters:
+        - in: path
+          name: importCandidateIdentifier
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID identifier of the import candidate to fetch.
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchImportCandidateFunction.Arn}:live/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportCandidate'
+        '404':
+          description: Import candidate not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    post:
+      summary: Create Publication from Import candidate
+      parameters:
+        - in: path
+          name: importCandidateIdentifier
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID identifier of the import candidate to publish.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportCandidate'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreatePublicationFromImportCandidateFunction.Arn}:live/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
 components:
   schemas:
     Publication:
@@ -612,6 +691,18 @@ components:
             type: string
         title:
           type: string
+    ImportCandidate:
+      type: object
+      description: Complete ImportCandidate entity
+      properties:
+        allOf:
+          $ref: "#/components/schemas/Publication"
+        importStatus:
+          type: string
+          enum:
+            - IMPORTED
+            - NOT_IMPORTED
+            - NOT_APPLICABLE
     PublicationDataCiteXml:
       type: object
     PublicationSchemaOrg:

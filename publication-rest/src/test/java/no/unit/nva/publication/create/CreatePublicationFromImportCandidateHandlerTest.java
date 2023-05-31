@@ -4,6 +4,7 @@ import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_CANDIDATES_TABLE;
+import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_PROCESS_WENT_WRONG;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.PUBLICATIONS_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
 import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.ACCEPT;
@@ -107,8 +108,10 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         var notUpdatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
             importCandidate.getIdentifier());
+
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
         assertThat(notUpdatedImportCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+        assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(IMPORT_PROCESS_WENT_WRONG));
     }
 
     @Test
@@ -118,10 +121,11 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var request = createRequest(importCandidate);
         importCandidateService = mock(ResourceService.class);
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
-        when(importCandidateService.updateImportStatus(any(), any())).thenThrow(
-            new TransactionFailedException(new Exception()));
+        when(importCandidateService.updateImportStatus(any(), any()))
+            .thenThrow(new TransactionFailedException(new Exception()));
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
     }
 
@@ -133,6 +137,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
     }
 
@@ -142,6 +147,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var request = createRequestWithoutAccessRights(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
         assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
@@ -152,11 +158,14 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         publicationService = mock(ResourceService.class);
         importCandidateService = mock(ResourceService.class);
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
-        when(publicationService.updatePublication(any())).thenThrow(new TransactionFailedException(new Exception()));
-        when(importCandidateService.updateImportStatus(any(), any())).thenCallRealMethod()
+        when(publicationService.updatePublication(any()))
+            .thenThrow(new TransactionFailedException(new Exception()));
+        when(importCandidateService.updateImportStatus(any(), any()))
+            .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
         assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(ROLLBACK_WENT_WRONG_MESSAGE));
     }
