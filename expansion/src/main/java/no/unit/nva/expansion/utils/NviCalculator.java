@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 import no.unit.nva.expansion.model.ExpandedResource;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.rdf.model.Model;
@@ -23,7 +24,7 @@ import org.apache.jena.riot.RiotException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NviCalculator {
+public final class NviCalculator {
 
     private static final String NVI_TYPE = IoUtils.stringFromResources(Path.of("nviTypeQuery.sparql"));
     private static final Logger logger = LoggerFactory.getLogger(NviCalculator.class);
@@ -85,6 +86,7 @@ public class NviCalculator {
         return jsonLdOptions;
     }
 
+    @JacocoGenerated
     private static void loadDataIntoModel(Model model, InputStream inputStream) {
         if (isNull(inputStream)) {
             return;
@@ -96,6 +98,7 @@ public class NviCalculator {
         }
     }
 
+    @JacocoGenerated
     private static void logInvalidJsonLdInput(Exception exception) {
         logger.warn("Invalid JSON LD input encountered: ", exception);
     }
