@@ -21,6 +21,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -85,7 +86,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
                    .withAssignee(ticket.getAssignee())
-                   .build(ticket.getClass());
+                   .build(ticket);
     }
 
     public static Builder builder() {
@@ -185,13 +186,14 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        public TicketDto build(Class<? extends TicketEntry> ticketType) {
+        public TicketDto build(TicketEntry ticketEntry) {
 
-            if (DoiRequest.class.equals(ticketType)) {
+            var ticketClass = ticketEntry.getClass();
+            if (DoiRequest.class.equals(ticketClass)) {
                 return createDoiRequestDto();
-            } else if (PublishingRequestCase.class.equals(ticketType)) {
-                return createPublishingRequestDto();
-            } else if (GeneralSupportRequest.class.equals(ticketType)) {
+            } else if (PublishingRequestCase.class.equals(ticketClass)) {
+                return createPublishingRequestDto(((PublishingRequestCase) ticketEntry).getWorkflow());
+            } else if (GeneralSupportRequest.class.equals(ticketClass)) {
                 return new GeneralSupportRequestDto(status,
                                                     createdDate,
                                                     modifiedDate,
@@ -210,7 +212,7 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        private PublishingRequestDto createPublishingRequestDto() {
+        private PublishingRequestDto createPublishingRequestDto(PublishingWorkflow workflow) {
             return new PublishingRequestDto(status,
                                             createdDate,
                                             modifiedDate,
@@ -219,7 +221,8 @@ public abstract class TicketDto implements JsonSerializable {
                                             id,
                                             messages,
                                             viewedBy,
-                                            assignee);
+                                            assignee,
+                                            workflow);
         }
 
         private DoiRequestDto createDoiRequestDto() {
