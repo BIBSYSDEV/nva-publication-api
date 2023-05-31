@@ -20,8 +20,8 @@ import nva.commons.core.JacocoGenerated;
 public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandler<ImportCandidate,
                                                                                       PublicationResponse> {
 
-    public static final String IMPORT_CANDIDATES_TABLE = new Environment().readEnv("IMPORT_CANDIDATES_TABLE");
-    public static final String PUBLICATIONS_TABLE = new Environment().readEnv("TABLE_NAME");
+    public static final String IMPORT_CANDIDATES_TABLE =
+        new Environment().readEnv("IMPORT_CANDIDATES_TABLE");
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
     private final ResourceService importCandidatesService;
@@ -48,7 +48,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                    .map(ImportCandidate::toPublication)
                    .map(publicationService::autoImportPublication)
                    .map(PublicationResponse::fromPublication)
-                   .orElseThrow(failure -> attempt(() -> rollbackAllUpdates(input)).orElse(fail -> rollbackWentWrong()));
+                   .orElseThrow(failure -> rollbackAndThrowException(input));
     }
 
     @Override
@@ -60,8 +60,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
     }
 
-    private BadGatewayException rollbackWentWrong() {
-        return new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE);
+    private BadGatewayException rollbackAndThrowException(ImportCandidate input) {
+        return attempt(() -> rollbackImportStatusUpdate(input))
+                   .orElse(fail -> new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE));
     }
 
     private void validateAccessRight(RequestInfo requestInfo) throws NotAuthorizedException {
@@ -70,7 +71,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         }
     }
 
-    private BadGatewayException rollbackAllUpdates(ImportCandidate importCandidate)
+    private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)
         throws NotFoundException {
         importCandidatesService.updateImportStatus(importCandidate.getIdentifier(), ImportStatus.NOT_IMPORTED);
         return new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);
