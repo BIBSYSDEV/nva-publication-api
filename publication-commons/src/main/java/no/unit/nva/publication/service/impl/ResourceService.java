@@ -42,6 +42,7 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -84,7 +85,6 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
-
     public ResourceService(AmazonDynamoDB client,
                            Clock clock,
                            Supplier<SortableIdentifier> identifierSupplier) {
@@ -99,10 +99,21 @@ public class ResourceService extends ServiceWithTransactions {
 
     public ResourceService(AmazonDynamoDB client,
                            Clock clock,
+                           Supplier<SortableIdentifier> identifierSupplier,
                            String tableName) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
+        this.identifierSupplier = identifierSupplier;
+        this.readResourceService = new ReadResourceService(client, tableName);
+        this.updateResourceService =
+            new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
+    }
+
+    public ResourceService(AmazonDynamoDB client, String tableName) {
+        super(client);
+        this.tableName = tableName;
+        this.clockForTimestamps = Clock.systemDefaultZone();
         this.identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
         this.readResourceService = new ReadResourceService(client, tableName);
         this.updateResourceService =
@@ -120,7 +131,11 @@ public class ResourceService extends ServiceWithTransactions {
 
     @JacocoGenerated
     public static ResourceService defaultService(String tableName) {
-        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone(), tableName);
+        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, tableName);
+    }
+
+    public String getTableName() {
+        return tableName;
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData)
@@ -199,6 +214,20 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
+    public Publication autoImportPublication(Publication inputData)
+        throws ApiGatewayException {
+        Instant currentTime = clockForTimestamps.instant();
+        var userInstance = UserInstance.fromPublication(inputData);
+        Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setResourceOwner(createResourceOwner(userInstance));
+        newResource.setPublisher(createOrganization(userInstance));
+        newResource.setCreatedDate(currentTime);
+        newResource.setModifiedDate(currentTime);
+        newResource.setStatus(PublicationStatus.PUBLISHED);
+        return insertResource(newResource);
+    }
+
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         List<Dao> daos = readResourceService
@@ -259,8 +288,8 @@ public class ResourceService extends ServiceWithTransactions {
         return getResourceByIdentifier(identifier).toImportCandidate();
     }
 
-    public ImportCandidate updateImportStatus(SortableIdentifier identifier) throws NotFoundException {
-        return updateResourceService.updateNotImportedStatusToImported(identifier);
+    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status) throws NotFoundException {
+        return updateResourceService.updateStatus(identifier, status);
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -408,11 +437,18 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
-        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
+        TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
 
         return fetchSavedImportCandidate(newResource);
+    }
+
+    private TransactWriteItem[] transactionItemsForNewImportCandidateInsertion(Resource newResource) {
+        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(newResource), tableName);
+        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource,
+                                                                                                          tableName);
+        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
     private ImportCandidate fetchSavedImportCandidate(Resource newResource) {
@@ -562,5 +598,10 @@ public class ResourceService extends ServiceWithTransactions {
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
         return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
+    }
+
+    private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource,
+                                                                                      String tableName) {
+        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
     }
 }

@@ -1,5 +1,7 @@
 package no.unit.nva.publication.create;
 
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_CANDIDATES_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.PUBLICATIONS_TABLE;
@@ -11,6 +13,7 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -31,23 +34,27 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
 
@@ -59,38 +66,68 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
 
     @BeforeEach
     public void setUp() {
-        super.initTwoTables(PUBLICATIONS_TABLE, IMPORT_CANDIDATES_TABLE);
+        super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        importCandidateService = new ResourceService(client, Clock.systemDefaultZone(), IMPORT_CANDIDATES_TABLE);
-        publicationService = new ResourceService(client, Clock.systemDefaultZone(), PUBLICATIONS_TABLE);
+        importCandidateService = new ResourceService(client, Clock.systemDefaultZone(), SortableIdentifier::next,
+                                                     IMPORT_CANDIDATES_TABLE);
+        publicationService = new ResourceService(client, Clock.systemDefaultZone(), SortableIdentifier::next);
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
     }
 
     @Test
-    void shouldReturnPublicationResponseWhenPublicationHasBeenCreated() throws NotFoundException,
-                                                                               IOException {
+    void shouldReturnPublicationResponseWhenPublicationHasBeenCreated() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = importCandidateService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
         var updatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
             importCandidate.getIdentifier());
 
         assertThat(updatedImportCandidate.getImportStatus(), is(equalTo(ImportStatus.IMPORTED)));
-        assertThat(publication.getStatus(), is(equalTo(publication.getStatus())));
+        assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
-    void shouldReturnBadGatewayWhenCanNotAccessImportCandidateTable() throws NotFoundException,
-                                                                             IOException {
+    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails()
+        throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
+        publicationService = mock(ResourceService.class);
+        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
+        when(publicationService.autoImportPublication(any())).thenThrow(new TransactionFailedException(new Exception()));
         handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        var notUpdatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+        assertThat(notUpdatedImportCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+    }
+
+    @Test
+    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails()
+        throws IOException, ApiGatewayException {
+        var importCandidate = createPersistedImportCandidate();
+        var request = createRequest(importCandidate);
+        importCandidateService = mock(ResourceService.class);
+        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
+        when(importCandidateService.updateImportStatus(any(), any())).thenThrow(new TransactionFailedException(new Exception()));
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenCanNotAccessImportCandidate()
+        throws IOException {
+        var importCandidate = createImportCandidate();
+        importCandidateService = new ResourceService(client, Clock.systemDefaultZone());
+        var request = createRequest(importCandidate);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
@@ -107,7 +144,8 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
     }
 
     private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
-        var importCandidate = importCandidateService.persistImportCandidate(createImportCandidate());
+        var candidate = createImportCandidate();
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 

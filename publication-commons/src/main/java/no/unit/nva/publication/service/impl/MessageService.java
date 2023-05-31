@@ -58,7 +58,7 @@ public class MessageService extends ServiceWithTransactions {
     
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
-        return attempt(() -> queryObject.fetchByIdentifier(getClient()))
+        return attempt(() -> queryObject.fetchByIdentifier(getClient(), tableName))
                    .map(Dao::getData)
                    .map(Message.class::cast)
                    .toOptional();

@@ -19,6 +19,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -130,6 +131,7 @@ public class ImportCandidateTest {
                    .withHandle(randomImportCandidate.getHandle())
                    .withIndexedDate(randomImportCandidate.getIndexedDate())
                    .withPublishedDate(randomImportCandidate.getPublishedDate())
+                   .withStatus(PublicationStatus.PUBLISHED)
                    .build();
     }
 }

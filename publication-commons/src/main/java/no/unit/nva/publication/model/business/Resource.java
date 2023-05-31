@@ -152,7 +152,7 @@ public class Resource implements Entity {
                 .withSubjects(importCandidate.getSubjects())
                 .withFundings(importCandidate.getFundings())
                 .withRightsHolder(importCandidate.getRightsHolder())
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .withImportStatus(importCandidate.getImportStatus())
                 .build();
     }
 

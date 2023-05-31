@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class TicketService extends ServiceWithTransactions {
@@ -40,6 +41,7 @@ public class TicketService extends ServiceWithTransactions {
 
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
+    private final String tableName;
 
     public TicketService(AmazonDynamoDB client) {
         this(client, DEFAULT_IDENTIFIER_PROVIDER);
@@ -49,6 +51,7 @@ public class TicketService extends ServiceWithTransactions {
                             Supplier<SortableIdentifier> identifierProvider) {
         super(client);
         this.identifierProvider = identifierProvider;
+        tableName = RESOURCES_TABLE_NAME;
         resourceService = new ResourceService(client, Clock.systemDefaultZone(), identifierProvider);
     }
 
@@ -130,7 +133,7 @@ public class TicketService extends ServiceWithTransactions {
     public TicketEntry fetchTicketForElevatedUser(UserInstance user, SortableIdentifier ticketIdentifier)
         throws NotFoundException {
          var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
-        return attempt(() -> queryObject.fetchByIdentifier(getClient()))
+        return attempt(() -> queryObject.fetchByIdentifier(getClient(), tableName))
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast)
                    .toOptional()
@@ -146,7 +149,7 @@ public class TicketService extends ServiceWithTransactions {
     public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)
         throws NotFoundException {
         var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
-        var queryResult = queryObject.fetchByIdentifier(getClient());
+        var queryResult = queryObject.fetchByIdentifier(getClient(), tableName);
         return (TicketEntry) queryResult.getData();
     }
 

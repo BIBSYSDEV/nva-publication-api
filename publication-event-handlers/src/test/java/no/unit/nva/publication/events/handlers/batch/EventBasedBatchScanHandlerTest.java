@@ -55,6 +55,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
     public static final String TOPIC = new Environment().readEnv(OUTPUT_EVENT_TOPIC);
+    private static final String RESOURCES_TABLE_NAME = new Environment().readEnv("TABLE_NAME");
     private EventBasedBatchScanHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
@@ -83,10 +84,10 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         Publication createdPublication = createPublication(PublicationGenerator.randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client);
+        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client);
+        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
     
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));

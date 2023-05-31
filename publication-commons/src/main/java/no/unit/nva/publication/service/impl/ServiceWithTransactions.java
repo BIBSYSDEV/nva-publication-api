@@ -32,7 +32,7 @@ import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.FunctionWithException;
 
 public class ServiceWithTransactions {
-    
+
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
@@ -40,31 +40,34 @@ public class ServiceWithTransactions {
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
     public static final String ASSOCIATED_ARIFACTS_FIELD = "associatedArtifacts";
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
-    
+
     private final AmazonDynamoDB client;
-    
+
     protected ServiceWithTransactions(AmazonDynamoDB client) {
         this.client = client;
     }
-    
+
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
-        
+        return newPutTransactionItem(data, RESOURCES_TABLE_NAME);
+    }
+
+    protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
         Put put = new Put()
                       .withItem(data.toDynamoFormat())
-                      .withTableName(RESOURCES_TABLE_NAME)
+                      .withTableName(tableName)
                       .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
     }
-    
+
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
         return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
-    
+
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
         return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
-    
+
     protected <T extends Entity, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
         T dynamoEntry,
         FunctionWithException<T, T, E> nonEventuallyConsistentFetch) {
@@ -75,54 +78,53 @@ public class ServiceWithTransactions {
         }
         return Optional.ofNullable(savedEntry);
     }
-    
+
     protected final AmazonDynamoDB getClient() {
         return client;
     }
-    
+
     protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
         return new TransactWriteItem()
                    .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
     }
-    
+
     protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
             return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT));
         }
         return Optional.empty();
     }
-    
+
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos) || onlyResourceExists(daos)) {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
-    
+
     protected String nowAsString() {
         String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(Instant.now())).orElseThrow();
         return jsonString.replace(DOUBLE_QUOTES, EMPTY_STRING);
     }
-    
+
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {
-        getClient().transactWriteItems(transactWriteItemsRequest);
-//        attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
-//            .orElseThrow(this::handleTransactionFailure);
+        attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
+            .orElseThrow(this::handleTransactionFailure);
     }
-    
+
     private Void waitBeforeFetching() throws InterruptedException {
         Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
         return null;
     }
-    
+
     private TransactionFailedException handleTransactionFailure(Failure<TransactWriteItemsResult> fail) {
         return new TransactionFailedException(fail.getException());
     }
-    
+
     private boolean onlyResourceExists(List<Dao> daos) {
         return daos.size() == 1;
     }
-    
+
     private boolean doiRequestExists(List<Dao> daos) {
         return daos.size() == 2;
     }

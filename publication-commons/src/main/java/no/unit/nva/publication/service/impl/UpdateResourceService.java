@@ -139,15 +139,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
     }
 
-    ImportCandidate updateNotImportedStatusToImported(SortableIdentifier identifier)
+    ImportCandidate updateStatus(SortableIdentifier identifier, ImportStatus status)
         throws NotFoundException {
         var importCandidate = readResourceService.getResourceByIdentifier(identifier).toImportCandidate();
-        importCandidate.setImportStatus(ImportStatus.IMPORTED);
+        importCandidate.setImportStatus(status);
         var resource = Resource.fromImportCandidate(importCandidate);
         var updateResourceTransactionItem = updateResource(resource);
-        var transactionItems = new ArrayList<TransactWriteItem>();
-        transactionItems.add(updateResourceTransactionItem);
-        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
         sendTransactionWriteRequest(request);
         return importCandidate;
     }
