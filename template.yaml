@@ -806,6 +806,8 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+
+
   #==========================Event Lambda functions====================================================
 
   BrageMigrationEventConsumer:
