@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -313,6 +314,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return importCandidate.getEntityDescription().getContributors().stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
+                   .filter(organization -> nonNull(organization.getId()))
                    .collect(Collectors.toList());
     }
 

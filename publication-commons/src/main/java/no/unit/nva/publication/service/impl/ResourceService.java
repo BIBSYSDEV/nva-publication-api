@@ -85,6 +85,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
+
     public ResourceService(AmazonDynamoDB client,
                            Clock clock,
                            Supplier<SortableIdentifier> identifierSupplier) {
@@ -95,19 +96,6 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
-    }
-
-    public ResourceService(AmazonDynamoDB client,
-                           Clock clock,
-                           Supplier<SortableIdentifier> identifierSupplier,
-                           String tableName) {
-        super(client);
-        this.tableName = tableName;
-        this.clockForTimestamps = clock;
-        this.identifierSupplier = identifierSupplier;
-        this.readResourceService = new ReadResourceService(client, tableName);
-        this.updateResourceService =
-            new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
     }
 
     public ResourceService(AmazonDynamoDB client, String tableName) {
@@ -132,10 +120,6 @@ public class ResourceService extends ServiceWithTransactions {
     @JacocoGenerated
     public static ResourceService defaultService(String tableName) {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, tableName);
-    }
-
-    public String getTableName() {
-        return tableName;
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData)
@@ -214,8 +198,7 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
-    public Publication autoImportPublication(Publication inputData)
-        throws ApiGatewayException {
+    public Publication autoImportPublication(Publication inputData) {
         Instant currentTime = clockForTimestamps.instant();
         var userInstance = UserInstance.fromPublication(inputData);
         Resource newResource = Resource.fromPublication(inputData);
@@ -288,7 +271,8 @@ public class ResourceService extends ServiceWithTransactions {
         return getResourceByIdentifier(identifier).toImportCandidate();
     }
 
-    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status) throws NotFoundException {
+    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status)
+        throws NotFoundException {
         return updateResourceService.updateStatus(identifier, status);
     }
 

@@ -44,13 +44,12 @@ public class ImportCandidateTest {
     @Test
     void builderShouldAcceptPublication() {
         var randomPublication = createPublicationWithoutStatus();
-        var importCandidate =
-            new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
-                .build();
-        assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+        var importCandidate = new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
+                                  .withImportStatus(ImportStatus.NOT_IMPORTED)
+                                  .build();
         var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
 
+        assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
         assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
     }
 

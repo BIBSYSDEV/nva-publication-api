@@ -1,16 +1,18 @@
 package no.unit.nva.publication.create;
 
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_CANDIDATES_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.PUBLICATIONS_TABLE;
+import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
 import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.ACCEPT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,9 +46,11 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -69,8 +73,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        importCandidateService = new ResourceService(client, Clock.systemDefaultZone(), SortableIdentifier::next,
-                                                     IMPORT_CANDIDATES_TABLE);
+        importCandidateService = new ResourceService(client, IMPORT_CANDIDATES_TABLE);
         publicationService = new ResourceService(client, Clock.systemDefaultZone(), SortableIdentifier::next);
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
@@ -98,11 +101,13 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var request = createRequest(importCandidate);
         publicationService = mock(ResourceService.class);
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
-        when(publicationService.autoImportPublication(any())).thenThrow(new TransactionFailedException(new Exception()));
+        when(publicationService.autoImportPublication(any())).thenThrow(
+            new TransactionFailedException(new Exception()));
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        var notUpdatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+        var notUpdatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
+            importCandidate.getIdentifier());
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
         assertThat(notUpdatedImportCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
     }
 
@@ -113,21 +118,47 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var request = createRequest(importCandidate);
         importCandidateService = mock(ResourceService.class);
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
-        when(importCandidateService.updateImportStatus(any(), any())).thenThrow(new TransactionFailedException(new Exception()));
+        when(importCandidateService.updateImportStatus(any(), any())).thenThrow(
+            new TransactionFailedException(new Exception()));
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
     }
 
     @Test
-    void shouldReturnNotFoundWhenCanNotAccessImportCandidate()
+    void shouldReturnBadGatewayWhenCanNotAccessImportCandidate()
         throws IOException {
         var importCandidate = createImportCandidate();
         importCandidateService = new ResourceService(client, Clock.systemDefaultZone());
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUserHasNoValidAccessRights() throws NotFoundException, IOException {
+        var importCandidate = createPersistedImportCandidate();
+        var request = createRequestWithoutAccessRights(importCandidate);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldReturnBadGatewayWhenRollbackFails() throws NotFoundException, IOException {
+        var importCandidate = createPersistedImportCandidate();
+        var request = createRequest(importCandidate);
+        publicationService = mock(ResourceService.class);
+        importCandidateService = mock(ResourceService.class);
+        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
+        when(publicationService.updatePublication(any())).thenThrow(new TransactionFailedException(new Exception()));
+        when(importCandidateService.updateImportStatus(any(), any())).thenCallRealMethod()
+            .thenThrow(new NotFoundException(""));
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+        assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(ROLLBACK_WENT_WRONG_MESSAGE));
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
@@ -135,11 +166,25 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         return response.getBodyObject(PublicationResponse.class);
     }
 
-    private InputStream createRequest(ImportCandidate importCandidate) throws JsonProcessingException {
+    private InputStream createRequestWithoutAccessRights(ImportCandidate importCandidate) throws
+                                                                                          JsonProcessingException {
         var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        var user = UserInstance.create(randomString(), importCandidate.getPublisher().getId());
         return new HandlerRequestBuilder<ImportCandidate>(restApiMapper)
                    .withHeaders(headers)
                    .withBody(importCandidate)
+                   .withCurrentCustomer(user.getOrganizationUri())
+                   .build();
+    }
+
+    private InputStream createRequest(ImportCandidate importCandidate) throws JsonProcessingException {
+        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        var user = UserInstance.create(randomString(), importCandidate.getPublisher().getId());
+        return new HandlerRequestBuilder<ImportCandidate>(restApiMapper)
+                   .withHeaders(headers)
+                   .withBody(importCandidate)
+                   .withCurrentCustomer(user.getOrganizationUri())
+                   .withAccessRights(user.getOrganizationUri(), AccessRight.PROCESS_IMPORT_CANDIDATE.name())
                    .build();
     }
 

@@ -45,12 +45,13 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init() {
         client = DynamoDBEmbedded.create().amazonDynamoDB();
-        CreateTableRequest request = new CreateTableRequest()
-                                         .withTableName(RESOURCES_TABLE_NAME)
-                                         .withAttributeDefinitions(attributeDefinitions())
-                                         .withKeySchema(primaryKeySchema())
-                                         .withGlobalSecondaryIndexes(globalSecondaryIndexes())
-                                         .withBillingMode(BillingMode.PAY_PER_REQUEST);
+        CreateTableRequest request = createTableRequest(RESOURCES_TABLE_NAME);
+        client.createTable(request);
+    }
+
+    public void init(String tableName) {
+        client = DynamoDBEmbedded.create().amazonDynamoDB();
+        CreateTableRequest request = createTableRequest(tableName);
         client.createTable(request);
     }
 
