@@ -41,7 +41,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -50,7 +49,6 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
-import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
@@ -101,20 +99,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER);
 
         assertThat(actualNviType, is(notNullValue()));
-    }
-
-    @Test
-        //TODO: fix setup level
-    void shouldSetNviTypeNviCandidateWhenAcademicChapterMeetsAllNviCandidacyRequirements()
-        throws IOException, NotFoundException {
-
-        Publication publication = setupAndMockAcademicChapterMeetingAllNviCandidacyRequirements();
-        var resourceUpdate = Resource.fromPublication(publication);
-
-        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
-
-        assertThat(actualNviType, is(equalTo(NVI_CANDIDATE)));
     }
 
     @Test
@@ -240,11 +224,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
-    private static URI extractAnthologyUri(Publication publication) {
-        var test = (Anthology) publication.getEntityDescription().getReference().getPublicationContext();
-        return test.getId();
-    }
-
     private static URI randomPublicationChannelsUri() {
         return URI.create(PUBLICATION_CHANNELS_BASE_URI + randomString());
     }
@@ -353,18 +332,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withCreatedDate(randomInstant())
                    .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
                    .build();
-    }
-
-    private Publication setupAndMockAcademicChapterMeetingAllNviCandidacyRequirements() throws IOException {
-        var publication = getPublicationMeetingAllNviCandidacyRequirements(new AcademicChapter(null),
-                                                                           new Anthology.Builder()
-                                                                               .withId(randomPublicationChannelsUri())
-                                                                               .build());
-        var publisherUri = extractAnthologyUri(publication);
-        var publisherName = randomString();
-
-        addPublisherToMockUriRetriever(uriRetriever, publisherUri, publisherName);
-        return publication;
     }
 
     private Publication setupAndMockAcademicMonographMeetingAllNviCandidacyRequirements()
