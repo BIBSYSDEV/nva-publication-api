@@ -74,14 +74,14 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnImportCandidateSuccessfully() throws NotFoundException, IOException {
+    void shouldReturnImportCandidateSuccessfullyWhenImportCandidateIsInDatabase()
+        throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate.getIdentifier());
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
         var responseImportCandidate = response.getBodyObject(ImportCandidate.class);
-
-        assertThat(importCandidate.getIdentifier(), is(equalTo(responseImportCandidate.getIdentifier())));
+        assertThat(importCandidate, is(equalTo(responseImportCandidate)));
     }
 
     @Test
@@ -125,7 +125,6 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(List.of(new FundingBuilder().build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
