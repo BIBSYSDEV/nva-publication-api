@@ -517,8 +517,11 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
 
     private Contributor createContributor(Role role, ContributorVerificationStatus verificationStatus) {
         return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().withName(randomString()).withVerificationStatus(verificationStatus).build())
+                   .withIdentity(new Identity.Builder().withName(randomString())
+                                     .withVerificationStatus(verificationStatus)
+                                     .build())
                    .withRole(new RoleType(role))
+                   .withAffiliations(List.of(randomOrganization()))
                    .build();
     }
 }

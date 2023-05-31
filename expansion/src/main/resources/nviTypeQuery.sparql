@@ -11,6 +11,9 @@ CONSTRUCT {
     ?publication nva:status ?publicationStatus .
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
 
+    ?publication nva:entityDescription/nva:contributor/nva:role/rdf:type ?roleType .
+    ?publication nva:entityDescription/nva:contributor/nva:identity/nva:verificationStatus ?verificationStatus
+
     OPTIONAL { ?publication nva:entityDescription/nva:publicationDate/nva:year ?publicationYear . }
 
     OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?publisherLevel . }
@@ -29,5 +32,7 @@ CONSTRUCT {
     BIND(IF (?publicationStatus = nva:PUBLISHED
       && ?isNviInstance = "true"^^xsd:boolean
       && ?publicationYear = "2023"
+      && ?roleType = nva:Creator
+      && ?verificationStatus = "Verified"
       && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 } GROUP BY ?publication ?nviCandidate
