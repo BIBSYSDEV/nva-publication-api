@@ -62,7 +62,6 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -127,7 +126,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var event = createEventReference(eventBody);
         handler.handleRequest(event, CONTEXT);
 
-        Integer cristinIdentifier = cristinObject.getId();
+        var cristinIdentifier = cristinObject.getId();
         assertThat(appender.getMessages(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
         assertThat(appender.getMessages(), containsString(RESOURCE_EXCEPTION_MESSAGE));
     }
@@ -176,7 +175,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var expectedPublication = cristinObject.toPublication();
         injectValuesThatAreCreatedWhenSavingInDynamo(actualPublication, expectedPublication);
 
-        Diff diff = JAVERS.compare(expectedPublication, actualPublication);
+        var diff = JAVERS.compare(expectedPublication, actualPublication);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
     }
 
@@ -219,11 +218,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         handler.handleRequest(eventReference, CONTEXT);
         var expectedExceptionName = RuntimeException.class.getSimpleName();
-        UnixPath expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+        var expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
                                                                                       expectedExceptionName);
 
-        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        String file = s3Driver.getFile(expectedFilePath);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedFilePath);
 
         assertThat(file, is(not(emptyString())));
         assertThat(file, containsString(expectedExceptionName));
@@ -259,7 +258,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     void shouldStoreInvalidIsbnRuntimeExceptionWhenTheIsbnIsInvalid() throws IOException {
-        JsonNode cristinObjectWithInvalidIsbn = CristinDataGenerator.objectWithInvalidIsbn();
+        var cristinObjectWithInvalidIsbn = CristinDataGenerator.objectWithInvalidIsbn();
         var eventBody = createEventBody(cristinObjectWithInvalidIsbn);
         var eventReference = createEventReference(eventBody);
 
@@ -273,7 +272,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     void shouldStoreIssnRuntimeExceptionWhenTheBookIssnIsInvalid() throws
                                                                           IOException {
-        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.bookObjectWithInvalidIssn();
+        var cristinObjectWithInvalidIssn = CristinDataGenerator.bookObjectWithInvalidIssn();
         var eventBody = createEventBody(cristinObjectWithInvalidIssn);
         var eventReference = createEventReference(eventBody);
 
@@ -318,11 +317,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler.handleRequest(eventReference, CONTEXT);
         var expectedExceptionName = ContributorWithoutAffiliationException.class.getSimpleName();
 
-        UnixPath expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+        var expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
                                                                                       expectedExceptionName);
 
-        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        String file = s3Driver.getFile(expectedFilePath);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedFilePath);
 
         assertThat(file, is(not(emptyString())));
         assertThat(file, containsString(expectedExceptionName));
@@ -331,7 +330,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     void handlerStoresAffiliationWithoutARoleExceptionWhenTheCristinObjectHasAffiliationsWithoutRoles()
         throws IOException {
-        JsonNode cristinObjectWithAffiliationWithoutRoles = CristinDataGenerator
+        var cristinObjectWithAffiliationWithoutRoles = CristinDataGenerator
                                                                 .objectWithAffiliationWithoutRole();
         var eventBody = createEventBody(cristinObjectWithAffiliationWithoutRoles);
         var eventReference = createEventReference(eventBody);
@@ -339,10 +338,10 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler.handleRequest(eventReference, CONTEXT);
 
         var expectedExceptionName = AffiliationWithoutRoleException.class.getSimpleName();
-        UnixPath expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+        var expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
                                                                                       expectedExceptionName);
-        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        String file = s3Driver.getFile(expectedFilePath);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedFilePath);
 
         assertThat(file, is(not(emptyString())));
         assertThat(file, containsString(expectedExceptionName));
@@ -350,17 +349,17 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     void handlerCreatesFileWithCustomNameWhenCristinIdIsNotFound() throws IOException {
-        JsonNode cristinObjectWithoutId = CristinDataGenerator.objectWithoutId();
+        var cristinObjectWithoutId = CristinDataGenerator.objectWithoutId();
         var eventBody = createEventBody(cristinObjectWithoutId);
         var eventReference = createEventReference(eventBody);
 
         handler.handleRequest(eventReference, CONTEXT);
 
-        S3Driver s3Driver = new S3Driver(s3Client, IGNORED_VALUE);
-        UnixPath errorReportFile = s3Driver.listAllFiles(ERRORS_FOLDER)
+        var s3Driver = new S3Driver(s3Client, IGNORED_VALUE);
+        var errorReportFile = s3Driver.listAllFiles(ERRORS_FOLDER)
                                        .stream()
                                        .collect(SingletonCollector.collect());
-        String errorReport = s3Driver.getFile(errorReportFile);
+        var errorReport = s3Driver.getFile(errorReportFile);
 
         ImportResult<FileContentsEvent<JsonNode>> actualReport =
             eventHandlerObjectMapper.readValue(errorReport, IMPORT_RESULT_JAVA_TYPE);
@@ -400,12 +399,12 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(objectWithUnknownProperty);
         var eventReference = createEventReference(eventBody);
         handler.handleRequest(eventReference, CONTEXT);
-        UnixPath expectedFilePath =
+        var expectedFilePath =
             constructExpectedFilePathForEntryWithUnkownFields(eventBody,
                                                               IllegalArgumentException.class.getSimpleName());
 
-        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        String file = s3Driver.getFile(expectedFilePath);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedFilePath);
         assertThat(file, is(not(emptyString())));
         assertThat(file, containsString(unknownProperty));
     }
@@ -539,10 +538,10 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                                  String exceptionName) {
 
         var cristinObjectId = extractCristinObjectId(eventBody);
-        String errorReportFilename = cristinObjectId + JSON;
-        UriWrapper inputFile = UriWrapper.fromUri(eventBody.getFileUri());
-        Instant timestamp = eventBody.getTimestamp();
-        UriWrapper bucket = inputFile.getHost();
+        var errorReportFilename = cristinObjectId + JSON;
+        var inputFile = UriWrapper.fromUri(eventBody.getFileUri());
+        var timestamp = eventBody.getTimestamp();
+        var bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
                    .addChild(timestampToString(timestamp))
                    .addChild(exceptionName)
@@ -564,9 +563,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private <T> ImportResult<FileContentsEvent<T>> extractActualReportFromS3Client(
         FileContentsEvent<T> eventBody,
         String exceptionName) throws JsonProcessingException {
-        UriWrapper errorFileUri = constructErrorFileUri(eventBody, exceptionName);
-        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
-        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        var errorFileUri = constructErrorFileUri(eventBody, exceptionName);
+        var s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
+        var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return eventHandlerObjectMapper.readValue(content, IMPORT_RESULT_JAVA_TYPE);
     }
 

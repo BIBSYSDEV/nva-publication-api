@@ -37,8 +37,11 @@ public class SqsBatchMessenger {
     public PutSqsMessageResult sendMessages(List<EventReference> messageBodies) {
         var messageRequestEntries = createMessageRequestEntries(messageBodies);
         var batches = batchEventReferences(messageRequestEntries);
-        var batchRequest = batches.stream().map(this::mapToSendMessageBatchRequestEntry);
-        return batchRequest.map(this::sendToSqs).reduce(PutSqsMessageResult::combine).orElseThrow();
+        return batches.stream()
+                .map(this::mapToSendMessageBatchRequestEntry)
+                .map(this::sendToSqs)
+                .reduce(PutSqsMessageResult::combine)
+                .orElseThrow();
     }
 
     private PutSqsMessageResult sendToSqs(SendMessageBatchRequest request) {
@@ -65,10 +68,12 @@ public class SqsBatchMessenger {
     private PutSqsMessageResult createPutSqsMessageResult(SendMessageBatchResult response) {
         var result = new PutSqsMessageResult();
         var failures =
-            response.getFailed().stream()
-                .map(s -> new PutSqsMessageResultFailureEntry(requestIdToMessageBody.get(s.getId()), s.getMessage()))
-                .collect(
-                Collectors.toList());
+                response.getFailed().stream()
+                        .map(errorEntry ->
+                                new PutSqsMessageResultFailureEntry(requestIdToMessageBody.get(errorEntry.getId()),
+                                        errorEntry.getMessage()))
+                        .collect(
+                                Collectors.toList());
         result.setFailures(failures);
         result.setSuccesses(mapToEventReferences(getSuccesses(response)));
         return result;
@@ -94,7 +99,7 @@ public class SqsBatchMessenger {
         Stream<SendMessageBatchRequestEntry> eventReferenceStream) {
         var counter = new AtomicInteger();
         return eventReferenceStream.collect(
-                Collectors.groupingBy(it -> counter.getAndIncrement() / MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS))
+                Collectors.groupingBy(item -> counter.getAndIncrement() / MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS))
                    .values();
     }
 

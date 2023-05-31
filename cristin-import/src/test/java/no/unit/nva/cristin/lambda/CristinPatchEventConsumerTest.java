@@ -112,7 +112,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldStoreErrorReportWhenSearchingForNvaPublicationByCristinIdentifierReturnsNoPublication()
+    void shouldStoreErrorReportWhenSearchingForParentPublicationByCristinIdentifierReturnsNoPublication()
         throws ApiGatewayException, IOException {
         var childPublication =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
@@ -192,9 +192,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     private ImportResult<NvaPublicationPartOfCristinPublication> extractActualReportFromS3Client(
         EventReference eventBody,
         String exceptionName, String childPublicationIdentifier) throws JsonProcessingException {
-        UriWrapper errorFileUri = constructErrorFileUri(eventBody, exceptionName, childPublicationIdentifier);
-        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
-        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        var errorFileUri = constructErrorFileUri(eventBody, exceptionName, childPublicationIdentifier);
+        var s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
+        var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return eventHandlerObjectMapper.readValue(content, new TypeReference<>() {
         });
     }
@@ -202,10 +202,10 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     private UriWrapper constructErrorFileUri(EventReference eventBody,
                                              String exceptionName, String childPublicationIdentifier) {
 
-        String errorReportFilename = childPublicationIdentifier + JSON;
-        UriWrapper inputFile = UriWrapper.fromUri(eventBody.getUri());
-        Instant timestamp = eventBody.getTimestamp();
-        UriWrapper bucket = inputFile.getHost();
+        var errorReportFilename = childPublicationIdentifier + JSON;
+        var inputFile = UriWrapper.fromUri(eventBody.getUri());
+        var timestamp = eventBody.getTimestamp();
+        var bucket = inputFile.getHost();
         return bucket.addChild(PATCH_ERRORS_PATH)
                    .addChild(timestampToString(timestamp))
                    .addChild(exceptionName)
@@ -234,11 +234,11 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         String cristinId,
         Class<?> publicationInstanceClass)
         throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication(publicationInstanceClass);
+        var publication = PublicationGenerator.randomPublication(publicationInstanceClass);
         publication.setAdditionalIdentifiers(createAdditionalIdentifiersWithCristinId(cristinId));
         removePartOfInPublicationContext(publication);
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier = Resource.fromPublication(publication)
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier = Resource.fromPublication(publication)
                                                        .persistNew(resourceService, userInstance)
                                                        .getIdentifier();
         return resourceService.getPublicationByIdentifier(publicationIdentifier);

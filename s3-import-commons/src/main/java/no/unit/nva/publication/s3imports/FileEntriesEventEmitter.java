@@ -88,14 +88,14 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
                                                Context context) {
         logger.info("Input event: " + input.toJsonString());
         validateEvent(event);
-        return attemptTPlaceMessagesOnQueue(input);
+        return attemptToPlaceMessagesOnQueue(input);
     }
 
     private static AmazonSQS defaultSqsClient() {
         return AmazonSQSClientBuilder.defaultClient();
     }
 
-    private PutSqsMessageResult attemptTPlaceMessagesOnQueue(EventReference input) {
+    private PutSqsMessageResult attemptToPlaceMessagesOnQueue(EventReference input) {
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         return attempt(() -> fetchFileFromS3(input, s3Driver))
                    .map(this::parseContents)

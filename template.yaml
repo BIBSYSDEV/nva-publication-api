@@ -383,7 +383,7 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
-  LogGroupPermissions:
+  DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
       PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
