@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
@@ -134,10 +133,13 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourcePublishedBeforeCurrentYear(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws JsonProcessingException, NotFoundException {
+        throws IOException, NotFoundException {
 
-        var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
-                                                                     getPublicationDateBeforeCurrentNviYear());
+        var publication =
+            setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptPublishedDate(publicationInstance,
+                                                                                         publicationContext,
+                                                                                         getPublicationDateBeforeCurrentNviYear());
+
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -150,10 +152,10 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourcePublishedAfterCurrentYear(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws JsonProcessingException, NotFoundException {
+        throws IOException, NotFoundException {
 
-        var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
-                                                                     getPublicationDateAfterCurrentNviYear());
+        var publication = setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptPublishedDate(
+            publicationInstance, publicationContext, getPublicationDateAfterCurrentNviYear());
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -166,10 +168,10 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     @MethodSource("nonNviCandidatePublicationInstanceAndPublicationContextProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceDoesNotMeetPublicationInstanceAndPublicationContextRequirement(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws JsonProcessingException, NotFoundException {
+        throws IOException, NotFoundException {
 
-        var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
-                                                                     getCurrentNviPublicationDate());
+        var publication = setupAndMockPublicationMeetingAllNviCandidacyRequirements(publicationInstance,
+                                                                                    publicationContext);
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -182,9 +184,10 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceIsNotPublished(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws JsonProcessingException, NotFoundException {
+        throws IOException, NotFoundException {
 
-        var publication = getPublicationWithStatusDraft(publicationInstance, publicationContext);
+        var publication = setupAndMockPublicationMeetingAllNviCandidacyRequirementsWithStatusDraft(
+            publicationInstance, publicationContext);
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -197,9 +200,10 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceContainsNonVerifiedContributorCreator(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws JsonProcessingException, NotFoundException {
+        throws IOException, NotFoundException {
 
-        var publication = getPublicationWithNonVerifiedCreator(publicationInstance, publicationContext);
+        var publication = setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptVerifiedCreator(
+            publicationInstance, publicationContext);
 
         var resourceUpdate = Resource.fromPublication(publication);
 
@@ -213,9 +217,10 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
     @MethodSource("nviCandidateJournalProvider")
     void shouldSetNviTypeNonNviCandidateWhenResourceDoesNotContainContributorCreator(
         PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws JsonProcessingException, NotFoundException {
+        throws IOException, NotFoundException {
 
-        var publication = getPublicationWithoutCreator(publicationInstance, publicationContext);
+        var publication = setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptRoleCreator(
+            publicationInstance, publicationContext);
         var resourceUpdate = Resource.fromPublication(publication);
 
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -332,6 +337,62 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                    .withCreatedDate(randomInstant())
                    .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
                    .build();
+    }
+
+    private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirements(
+        PublicationInstance<? extends Pages> publicationInstance,
+        PublicationContext publicationContext) throws IOException {
+        var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
+                                                                     getCurrentNviPublicationDate());
+        var journalUri = extractJournalUri(publication);
+        var journalName = randomString();
+        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
+        return publication;
+    }
+
+    private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirementsWithStatusDraft(
+        PublicationInstance<? extends Pages> publicationInstance,
+        PublicationContext publicationContext) throws IOException {
+        var publication = getPublicationWithStatusDraft(publicationInstance, publicationContext);
+        var journalUri = extractJournalUri(publication);
+        var journalName = randomString();
+
+        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
+        return publication;
+    }
+
+    private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptVerifiedCreator(
+        PublicationInstance<? extends Pages> publicationInstance,
+        PublicationContext publicationContext) throws IOException {
+        var publication = getPublicationWithNonVerifiedCreator(publicationInstance, publicationContext);
+        var journalUri = extractJournalUri(publication);
+        var journalName = randomString();
+
+        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
+        return publication;
+    }
+
+    private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptRoleCreator(
+        PublicationInstance<? extends Pages> publicationInstance,
+        PublicationContext publicationContext) throws IOException {
+        var publication = getPublicationWithoutCreator(publicationInstance, publicationContext);
+        var journalUri = extractJournalUri(publication);
+        var journalName = randomString();
+
+        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
+        return publication;
+    }
+
+    private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptPublishedDate(
+        PublicationInstance<? extends Pages> publicationInstance,
+        PublicationContext publicationContext, PublicationDate publicationDate) throws IOException {
+        var publication = getPublishedPublicationWithVerifiedCreator(publicationInstance, publicationContext,
+                                                                     publicationDate);
+
+        var journalUri = extractJournalUri(publication);
+        var journalName = randomString();
+        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
+        return publication;
     }
 
     private Publication setupAndMockAcademicMonographMeetingAllNviCandidacyRequirements()
