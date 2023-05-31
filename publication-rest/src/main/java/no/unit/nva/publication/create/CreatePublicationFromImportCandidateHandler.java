@@ -29,7 +29,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
-        this(ResourceService.defaultService(), ResourceService.defaultService(PUBLICATIONS_TABLE));
+        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE), ResourceService.defaultService());
     }
 
     public CreatePublicationFromImportCandidateHandler(ResourceService importCandidateService,
