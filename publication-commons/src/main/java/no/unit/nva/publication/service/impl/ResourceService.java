@@ -198,10 +198,11 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
-    public Publication autoImportPublication(Publication inputData) {
+    public Publication autoImportPublication(ImportCandidate inputData) {
+        var publication = inputData.toPublication();
         Instant currentTime = clockForTimestamps.instant();
-        var userInstance = UserInstance.fromPublication(inputData);
-        Resource newResource = Resource.fromPublication(inputData);
+        var userInstance = UserInstance.fromPublication(publication);
+        Resource newResource = Resource.fromPublication(publication);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setPublisher(createOrganization(userInstance));

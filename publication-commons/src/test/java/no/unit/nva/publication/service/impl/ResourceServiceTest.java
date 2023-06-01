@@ -886,7 +886,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
-        var publication = randomPublication();
+        var publication = randomImportCandidate();
         var persistedPublication = resourceService.autoImportPublication(publication);
         var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         assertThat(persistedPublication, is(equalTo(fetchedPublication)));

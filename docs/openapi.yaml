@@ -134,7 +134,7 @@ paths:
           'https://api.nva.unit.no/scopes/backend',
           'https://api.nva.unit.no/scopes/frontend',
           'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-upsert']
+          'https://api.nva.unit.no/scopes/third-party/publication-upsert' ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -548,18 +548,24 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        '201':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Publication'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
+                $ref: '#/components/schemas/Problem'
         '502':
           description: Bad Gateway
           content:

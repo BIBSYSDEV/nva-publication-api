@@ -5,7 +5,10 @@ import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_CANDIDATES_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_PROCESS_WENT_WRONG;
+import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
+import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
+import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.SCOPUS_IDENTIFIER;
 import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.ACCEPT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -170,9 +173,47 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(ROLLBACK_WENT_WRONG_MESSAGE));
     }
 
+    @Test
+    void shouldReturnBadRequestWhenImportCandidateHasStatusImported() throws IOException,
+                                                                             NotFoundException {
+        var importCandidate = createImportedPersistedImportCandidate();
+        var request = createRequest(importCandidate);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getBodyObject(Problem.class).getDetail(),
+                   containsString(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenImportCandidateIsMissingScopusIdentifier() throws IOException,
+                                                                                     NotFoundException {
+        var importCandidate = createImportCandidateWithoutScopusId();
+        var request = createRequest(importCandidate);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getBodyObject(Problem.class).getDetail(),
+                   containsString(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE));
+    }
+
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
         throws JsonProcessingException {
         return response.getBodyObject(PublicationResponse.class);
+    }
+
+    private ImportCandidate createImportCandidateWithoutScopusId() throws NotFoundException {
+        var candidate = createImportCandidate();
+        candidate.setAdditionalIdentifiers(Set.of());
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+    }
+
+    private ImportCandidate createImportedPersistedImportCandidate() throws NotFoundException {
+        var candidate = createImportCandidate();
+        candidate.setImportStatus(ImportStatus.IMPORTED);
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
     private InputStream createRequestWithoutAccessRights(ImportCandidate importCandidate) throws
@@ -220,7 +261,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
                    .withFundings(List.of(new FundingBuilder().build()))
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SCOPUS_IDENTIFIER, randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
                    .build();
