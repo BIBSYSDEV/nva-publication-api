@@ -31,7 +31,7 @@ public class PublishingRequestDto extends TicketDto {
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String ID_FIELD = "id";
-    public static final String WORKFLOW_FIELD = "publishingWorkflow";
+    public static final String WORKFLOW_FIELD = "workflow";
 
     @JsonProperty(CREATED_DATE_FIELD)
     private final Instant createdDate;
@@ -43,7 +43,7 @@ public class PublishingRequestDto extends TicketDto {
     private final URI id;
 
     @JsonProperty(WORKFLOW_FIELD)
-    private final PublishingWorkflow publishingWorkflow;
+    private final PublishingWorkflow workflow;
 
     @JsonCreator
     public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
@@ -55,13 +55,13 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                 @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                 @JsonProperty(ASSIGNEE_FIELD) Username assignee,
-                                @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow publishingWorkflow) {
+                                @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow) {
         super(status, messages, viewedBy, assignee, publicationIdentifier);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
         this.id = id;
-        this.publishingWorkflow = publishingWorkflow;
+        this.workflow = workflow;
     }
 
     public static TicketDto empty() {
@@ -78,6 +78,10 @@ public class PublishingRequestDto extends TicketDto {
 
     public SortableIdentifier getIdentifier() {
         return identifier;
+    }
+
+    public PublishingWorkflow getWorkflow() {
+        return workflow;
     }
 
     @Override
@@ -102,7 +106,7 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-                            getPublicationIdentifier(), id, getMessages(), getAssignee());
+                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getWorkflow());
     }
 
     @Override
@@ -123,10 +127,6 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getPublishingWorkflow(), that.getPublishingWorkflow());
-    }
-
-    public PublishingWorkflow getPublishingWorkflow() {
-        return publishingWorkflow;
+               && Objects.equals(getWorkflow(), that.getWorkflow());
     }
 }
