@@ -8,16 +8,6 @@ CONSTRUCT {
   ?publication nva:nviType ?nviCandidate .
 } WHERE {
 
-  {
-  SELECT (count(distinct ?verified) as ?verifiedCreatorCount){
-      ?publication nva:entityDescription/nva:contributor ?contributor .
-      ?contributor nva:role/rdf:type ?roleType .
-      ?contributor nva:identity/nva:verificationStatus ?verified .
-
-      FILTER(?roleType = nva:Creator && ?verified = "Verified")
-    } LIMIT 1
-  }
-
   ?publication a nva:Publication .
     ?publication nva:status ?publicationStatus .
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
@@ -40,6 +30,5 @@ CONSTRUCT {
     BIND(IF (?publicationStatus = nva:PUBLISHED
       && ?isNviInstance = "true"^^xsd:boolean
       && ?publicationYear = "2023"
-      && ?verifiedCreatorCount > 0
       && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 } GROUP BY ?publication ?nviCandidate

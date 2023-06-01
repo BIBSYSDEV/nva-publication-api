@@ -198,39 +198,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
     }
 
-    @ParameterizedTest
-    @MethodSource("nviCandidateJournalProvider")
-    void shouldSetNviTypeNonNviCandidateWhenResourceContainsNonVerifiedContributorCreator(
-        PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws IOException, NotFoundException {
-
-        var publication = setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptVerifiedCreator(
-            publicationInstance, publicationContext);
-
-        var resourceUpdate = Resource.fromPublication(publication);
-
-        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
-
-        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("nviCandidateJournalProvider")
-    void shouldSetNviTypeNonNviCandidateWhenResourceDoesNotContainContributorCreator(
-        PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext)
-        throws IOException, NotFoundException {
-
-        var publication = setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptRoleCreator(
-            publicationInstance, publicationContext);
-        var resourceUpdate = Resource.fromPublication(publication);
-
-        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualNviType = expandedResource.asJsonNode().at(NVI_TYPE_JSON_POINTER).asText();
-
-        assertThat(actualNviType, is(equalTo(NON_NVI_CANDIDATE)));
-    }
-
     private static URI randomPublicationChannelsUri() {
         return URI.create(PUBLICATION_CHANNELS_BASE_URI + randomString());
     }
@@ -363,28 +330,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         return publication;
     }
 
-    private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptVerifiedCreator(
-        PublicationInstance<? extends Pages> publicationInstance,
-        PublicationContext publicationContext) throws IOException {
-        var publication = getPublicationWithNonVerifiedCreator(publicationInstance, publicationContext);
-        var journalUri = extractJournalUri(publication);
-        var journalName = randomString();
-
-        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
-        return publication;
-    }
-
-    private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptRoleCreator(
-        PublicationInstance<? extends Pages> publicationInstance,
-        PublicationContext publicationContext) throws IOException {
-        var publication = getPublicationWithoutCreator(publicationInstance, publicationContext);
-        var journalUri = extractJournalUri(publication);
-        var journalName = randomString();
-
-        addJournalToMockUriRetriever(uriRetriever, journalUri, journalName);
-        return publication;
-    }
-
     private Publication setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptPublishedDate(
         PublicationInstance<? extends Pages> publicationInstance,
         PublicationContext publicationContext, PublicationDate publicationDate) throws IOException {
@@ -471,25 +416,9 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
                                                 getCurrentNviPublicationDate());
     }
 
-    private Publication getPublicationWithNonVerifiedCreator(PublicationInstance<? extends Pages> publicationInstance,
-                                                             PublicationContext publicationContext) {
-        return publicationWithEntityDescription(publicationInstance,
-                                                publicationContext,
-                                                PublicationStatus.PUBLISHED,
-                                                List.of(getNonVerifiedCreator(), getVerifiedContributorRoleOther()),
-                                                getCurrentNviPublicationDate());
-    }
-
     private Contributor getVerifiedContributorRoleOther() {
         return createContributor(Role.OTHER,
                                  ContributorVerificationStatus.VERIFIED);
-    }
-
-    private Publication getPublicationWithoutCreator(PublicationInstance<? extends Pages> publicationInstance,
-                                                     PublicationContext publicationContext) {
-        return publicationWithEntityDescription(publicationInstance, publicationContext,
-                                                PublicationStatus.PUBLISHED, List.of(getVerifiedContributorRoleOther()),
-                                                getCurrentNviPublicationDate());
     }
 
     private Publication getPublicationMeetingAllNviCandidacyRequirements(
@@ -515,10 +444,6 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
 
     private Contributor getVerifiedCreator() {
         return createContributor(Role.CREATOR, ContributorVerificationStatus.VERIFIED);
-    }
-
-    private Contributor getNonVerifiedCreator() {
-        return createContributor(Role.CREATOR, ContributorVerificationStatus.NOT_VERIFIED);
     }
 
     private Contributor createContributor(Role role, ContributorVerificationStatus verificationStatus) {
