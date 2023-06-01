@@ -9,6 +9,7 @@ import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPu
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -69,6 +70,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTest {
 
+    public static final int RANDOM_INTEGER_BOUND = 10;
     private static final String NVI_TYPE_JSON_POINTER = "/nviType";
     private static final String NVI_CANDIDATE = "NviCandidate";
     private static final String NON_NVI_CANDIDATE = "NonNviCandidate";
@@ -305,14 +307,14 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
 
     private static PublicationDate getPublicationDateBeforeCurrentNviYear() {
         var randomYearBeforeCurrentYear = LocalDate.of(CURRENT_NVI_YEAR, 1, 1)
-                                              .minusYears((long) (Math.random() * 10))
+                                              .minusYears(randomInteger(RANDOM_INTEGER_BOUND) + 1)
                                               .getYear();
         return new PublicationDate.Builder().withYear(String.valueOf(randomYearBeforeCurrentYear)).build();
     }
 
     private static PublicationDate getPublicationDateAfterCurrentNviYear() {
         var randomYearAfterCurrentYear =
-            LocalDate.of(CURRENT_NVI_YEAR, 1, 1).plusYears((long) (Math.random() * 10)).getYear();
+            LocalDate.of(CURRENT_NVI_YEAR, 1, 1).plusYears(randomInteger(RANDOM_INTEGER_BOUND) + 1).getYear();
         return new PublicationDate.Builder().withYear(String.valueOf(randomYearAfterCurrentYear)).build();
     }
 
@@ -456,7 +458,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         return publicationWithEntityDescription(publicationInstance,
                                                 publicationContext,
                                                 PublicationStatus.PUBLISHED,
-                                                List.of(getVerifiedCreator()),
+                                                List.of(getVerifiedCreator(), getVerifiedContributorRoleOther()),
                                                 publicationDate);
     }
 
@@ -465,7 +467,7 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         return publicationWithEntityDescription(publicationInstance,
                                                 publicationContext,
                                                 PublicationStatus.DRAFT,
-                                                List.of(getVerifiedCreator()),
+                                                List.of(getVerifiedCreator(), getVerifiedContributorRoleOther()),
                                                 getCurrentNviPublicationDate());
     }
 
@@ -474,15 +476,19 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         return publicationWithEntityDescription(publicationInstance,
                                                 publicationContext,
                                                 PublicationStatus.PUBLISHED,
-                                                List.of(getNonVerifiedCreator()),
+                                                List.of(getNonVerifiedCreator(), getVerifiedContributorRoleOther()),
                                                 getCurrentNviPublicationDate());
+    }
+
+    private Contributor getVerifiedContributorRoleOther() {
+        return createContributor(Role.OTHER,
+                                 ContributorVerificationStatus.VERIFIED);
     }
 
     private Publication getPublicationWithoutCreator(PublicationInstance<? extends Pages> publicationInstance,
                                                      PublicationContext publicationContext) {
         return publicationWithEntityDescription(publicationInstance, publicationContext,
-                                                PublicationStatus.PUBLISHED, List.of(
-                createContributor(Role.EDITOR, ContributorVerificationStatus.VERIFIED)),
+                                                PublicationStatus.PUBLISHED, List.of(getVerifiedContributorRoleOther()),
                                                 getCurrentNviPublicationDate());
     }
 

@@ -7,12 +7,20 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 CONSTRUCT {
   ?publication nva:nviType ?nviCandidate .
 } WHERE {
+
+  {
+  SELECT (count(distinct ?verified) as ?verifiedCreatorCount){
+      ?publication nva:entityDescription/nva:contributor ?contributor .
+      ?contributor nva:role/rdf:type ?roleType .
+      ?contributor nva:identity/nva:verificationStatus ?verified .
+
+      FILTER(?roleType = nva:Creator && ?verified = "Verified")
+    } LIMIT 1
+  }
+
   ?publication a nva:Publication .
     ?publication nva:status ?publicationStatus .
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
-
-    ?publication nva:entityDescription/nva:contributor/nva:role/rdf:type ?roleType .
-    ?publication nva:entityDescription/nva:contributor/nva:identity/nva:verificationStatus ?verificationStatus
 
     OPTIONAL { ?publication nva:entityDescription/nva:publicationDate/nva:year ?publicationYear . }
 
@@ -32,7 +40,6 @@ CONSTRUCT {
     BIND(IF (?publicationStatus = nva:PUBLISHED
       && ?isNviInstance = "true"^^xsd:boolean
       && ?publicationYear = "2023"
-      && ?roleType = nva:Creator
-      && ?verificationStatus = "Verified"
+      && ?verifiedCreatorCount > 0
       && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 } GROUP BY ?publication ?nviCandidate
