@@ -1,4 +1,5 @@
-#Constructs TODO: explain
+#Constructs nviType as either NviCandidate or NonNviCandidate based on the publication status,
+#publicationDate, publicationInstance and publicationContext levels.
 
 PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -29,6 +30,6 @@ CONSTRUCT {
 
     BIND(IF (?publicationStatus = nva:PUBLISHED
       && ?isNviInstance = "true"^^xsd:boolean
-      && ?publicationYear = "2023"
+      && ?publicationYear = "__NVI_YEAR__"
       && (?level = "1" || ?level = "2"), nva:NviCandidate, nva:NonNviCandidate)  AS ?nviCandidate)
 } GROUP BY ?publication ?nviCandidate

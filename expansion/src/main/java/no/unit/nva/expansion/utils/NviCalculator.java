@@ -26,7 +26,12 @@ import org.slf4j.LoggerFactory;
 
 public final class NviCalculator {
 
-    private static final String NVI_TYPE = IoUtils.stringFromResources(Path.of("nviTypeQuery.sparql"));
+    private static final String NVI_YEAR = "2023";
+
+    private static final String NVI_YEAR_REPLACE_STRING = "__NVI_YEAR__";
+
+    private static final String NVI_TYPE =
+        IoUtils.stringFromResources(Path.of("nviTypeQuery.sparql")).replace(NVI_YEAR_REPLACE_STRING, NVI_YEAR);
     private static final Logger logger = LoggerFactory.getLogger(NviCalculator.class);
 
     private static final String FRAME_SRC = IoUtils.stringFromResources(Path.of("nviFrame.json"));
