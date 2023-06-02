@@ -23,8 +23,8 @@ import nva.commons.core.JacocoGenerated;
 public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandler<ImportCandidate,
                                                                                       PublicationResponse> {
 
-    public static final String IMPORT_CANDIDATES_TABLE =
-        new Environment().readEnv("IMPORT_CANDIDATES_TABLE_NAME");
+    public static final String IMPORT_CANDIDATES_TABLE = new Environment().readEnv("IMPORT_CANDIDATES_TABLE_NAME");
+    public static final String PUBLICATIONS_TABLE = new Environment().readEnv("RESOURCE_TABLE_NAME");
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
@@ -36,7 +36,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
-        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE), ResourceService.defaultService());
+        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE), ResourceService.defaultService(PUBLICATIONS_TABLE));
     }
 
     public CreatePublicationFromImportCandidateHandler(ResourceService importCandidateService,
