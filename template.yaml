@@ -912,6 +912,30 @@ Resources:
                   - Name: suffix
                     Value: '.xml'
 
+  ScopusEmitDeletionEventHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.ScopusEmitDeletionEventHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 50
+      Timeout: 900
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+      Events:
+        Scopus:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusXmlBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.txt'
 
   DeletionProcessInitializationHandler:
     DependsOn: EventsLambdaPermissions
