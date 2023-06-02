@@ -73,8 +73,8 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.NotImported;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -870,6 +870,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var importCandidate = randomImportCandidate();
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+        assertThat(persistedImportCandidate.getImportStatus(), is(equalTo(fetchedImportCandidate.getImportStatus())));
         assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
     }
 
@@ -905,7 +906,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
                    .withStatus(PublicationStatus.PUBLISHED)
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus(new NotImported())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
                    .withHandle(randomUri())

@@ -12,6 +12,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 
 @SuppressWarnings("PMD.TooManyFields")
 public final class ResourceBuilder {

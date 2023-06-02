@@ -23,8 +23,6 @@ import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -41,8 +39,8 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.NotImported;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -106,7 +104,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus(new NotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withIndexedDate(Instant.now())

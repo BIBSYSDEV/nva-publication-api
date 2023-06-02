@@ -33,8 +33,8 @@ import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.NotImported;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
@@ -136,7 +136,7 @@ public class ImportCandidateDataEntryUpdateHandlerTest {
         var randomPublication = PublicationGenerator.randomPublication();
         return new ImportCandidate.Builder()
                    .withPublication(randomPublication)
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus(new NotImported())
                    .build();
     }
 

@@ -41,7 +41,7 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;

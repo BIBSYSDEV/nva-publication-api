@@ -1,15 +1,6 @@
-package no.unit.nva.publication.model.business;
+package no.unit.nva.publication.model.business.importcandidate;
 
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.time.Instant;
-import java.util.List;
-import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -27,30 +18,41 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.Resource;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static no.unit.nva.testutils.RandomDataGenerator.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class ImportCandidateTest {
+
+    public static Stream<Arguments> importStatuses() {
+        return Stream.of(Arguments.of(new Imported(Instant.now(), randomUri(), randomPerson())),
+                Arguments.of(new NotApplicable(randomPerson(), randomString(), Instant.now())));
+    }
+
+    private static Username randomPerson() {
+        return new Username(randomString());
+    }
 
     @Test
     void shouldCreatePublicationFromImportCandidate() {
         var randomImportCandidate = randomImportCandidate();
         var expectedPublication = createExpectedPublication(randomImportCandidate);
         var actualImportedPublication = randomImportCandidate.toPublication();
-        assertThat(randomImportCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+        assertThat(randomImportCandidate.getImportStatus(), is(equalTo(new NotImported())));
         assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
-    }
-
-    @Test
-    void builderShouldAcceptPublication() {
-        var randomPublication = createPublicationWithoutStatus();
-        var importCandidate =
-            new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
-                .build();
-        assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
-        var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
-
-        assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
     }
 
     @Test
@@ -60,6 +62,32 @@ public class ImportCandidateTest {
         var regeneratedImportCandidate = JsonUtils.dtoObjectMapper.readValue(json, ImportCandidate.class);
         assertThat(regeneratedImportCandidate, is(equalTo(regeneratedImportCandidate)));
     }
+
+    @Test
+    void builderShouldAcceptPublication() {
+        var randomPublication = createPublicationWithoutStatus();
+        var importCandidate =
+                new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
+                        .withImportStatus(new NotImported())
+                        .build();
+        assertThat(importCandidate.getImportStatus(), is(equalTo(new NotImported())));
+        var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
+
+        assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
+    }
+
+    @ParameterizedTest
+    @DisplayName("should be possible to swap imported status to other status")
+    @MethodSource("importStatuses")
+    void shouldBePossibleToTransitionLegalImportStatus(ImportStatus importStatus) {
+        var randomImportCandidate = randomImportCandidate();
+        randomImportCandidate.setImportStatus(importStatus);
+        assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));
+    }
+
+
+
+
 
     private static Funding randomFunding() {
         return new FundingBuilder().withId(randomUri()).build();
@@ -73,7 +101,7 @@ public class ImportCandidateTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .withImportStatus(new NotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withDoi(randomDoi())

@@ -36,11 +36,10 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.NotImported;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -111,7 +110,7 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private ImportCandidate createImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus(new NotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withDoi(randomDoi())

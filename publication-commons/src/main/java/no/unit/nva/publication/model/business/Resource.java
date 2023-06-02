@@ -24,6 +24,8 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -152,7 +154,7 @@ public class Resource implements Entity {
                 .withSubjects(importCandidate.getSubjects())
                 .withFundings(importCandidate.getFundings())
                 .withRightsHolder(importCandidate.getRightsHolder())
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .withImportStatus(importCandidate.getImportStatus())
                 .build();
     }
 
