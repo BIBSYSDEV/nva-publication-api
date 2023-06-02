@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 @Data
@@ -51,6 +52,11 @@ public class CristinLocale {
 
     @JsonProperty(GROUP_IDENTIFIER_FIELD)
     private String groupIdentifier;
+
+    @JacocoGenerated
+    public CristinLocale() {
+
+    }
 
     public ResourceOwner toResourceOwner() {
         return new ResourceOwner(new Username(extractOwner()), extractOwnerAffiliation());

@@ -83,7 +83,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, PublishingRequestDto.class);
         var publishingRequestDto = response.getBodyObject(PublishingRequestDto.class);
-        assertThat(publishingRequestDto.getPublishingWorkflow(), is(equalTo(ticket.getWorkflow())));
+        assertThat(publishingRequestDto.getWorkflow(), is(equalTo(ticket.getWorkflow())));
     }
 
     @ParameterizedTest

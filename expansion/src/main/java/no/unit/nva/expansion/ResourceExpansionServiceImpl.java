@@ -8,6 +8,7 @@ import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.cristin.CristinPerson;
+import no.unit.nva.expansion.utils.NviCalculator;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
@@ -84,7 +85,9 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         var identifier = dataEntry.getIdentifier();
         if (dataEntry instanceof Resource) {
             logger.info("Expanding Resource: {}", identifier);
-            return ExpandedResource.fromPublication(uriRetriever, dataEntry.toPublication(resourceService));
+            var expandedResource = ExpandedResource.fromPublication(uriRetriever,
+                                                                 dataEntry.toPublication(resourceService));
+            return NviCalculator.calculateNviType(expandedResource);
         } else if (dataEntry instanceof TicketEntry) {
             logger.info("Expanding TicketEntry: {}", identifier);
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);

@@ -217,7 +217,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static boolean isVerifiedContributor(Contributor contributor) {
-        return ContributorVerificationStatus.VERIFIED.equals(contributor.getContributorVerificationStatus());
+        return ContributorVerificationStatus.VERIFIED.equals(contributor.getIdentity().getVerificationStatus());
     }
 
     private static URI generateIdentifier(SortableIdentifier identifier) {
