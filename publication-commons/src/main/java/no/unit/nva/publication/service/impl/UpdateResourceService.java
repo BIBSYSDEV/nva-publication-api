@@ -96,7 +96,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         Resource existingResource = readResourceService.getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(new ResourceDao(existingResource));
-        TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource));
+        TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource), tableName);
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         sendTransactionWriteRequest(request);
     }

@@ -47,10 +47,6 @@ public class ServiceWithTransactions {
         this.client = client;
     }
 
-    protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
-        return newPutTransactionItem(data, RESOURCES_TABLE_NAME);
-    }
-
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
         Put put = new Put()
                       .withItem(data.toDynamoFormat())

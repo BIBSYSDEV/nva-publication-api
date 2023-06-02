@@ -65,7 +65,7 @@ import org.zalando.problem.Problem;
 
 public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
 
-    public static final String PUBLICATIONS_TABLE = new Environment().readEnv("TABLE_NAME");
+    public static final String PUBLICATIONS_TABLE = new Environment().readEnv("RESOURCE_TABLE_NAME");
     private ByteArrayOutputStream output;
     private Context context;
     private ResourceService importCandidateService;
@@ -78,7 +78,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         importCandidateService = new ResourceService(client, IMPORT_CANDIDATES_TABLE);
-        publicationService = new ResourceService(client, Clock.systemDefaultZone(), SortableIdentifier::next);
+        publicationService = new ResourceService(client, PUBLICATIONS_TABLE);
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);

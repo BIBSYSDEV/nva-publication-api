@@ -24,7 +24,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                                       PublicationResponse> {
 
     public static final String IMPORT_CANDIDATES_TABLE =
-        new Environment().readEnv("IMPORT_CANDIDATES_TABLE");
+        new Environment().readEnv("IMPORT_CANDIDATES_TABLE_NAME");
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
@@ -50,7 +50,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     protected PublicationResponse processInput(ImportCandidate input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         validateAccessRight(requestInfo);
-        validateImportCandidateStatus(input);
+        validateImportCandidate(input);
         var identifier = input.getIdentifier();
         return attempt(() -> candidateService.updateImportStatus(identifier, ImportStatus.IMPORTED))
                    .map(publicationService::autoImportPublication)
@@ -67,7 +67,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
     }
 
-    private void validateImportCandidateStatus(ImportCandidate importCandidate) throws BadRequestException {
+    private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
         if (ImportStatus.IMPORTED.equals(importCandidate.getImportStatus())) {
             throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE);
         }

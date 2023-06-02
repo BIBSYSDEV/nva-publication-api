@@ -462,7 +462,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource));
+        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
@@ -582,7 +582,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
-        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
+        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
     }
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource,
