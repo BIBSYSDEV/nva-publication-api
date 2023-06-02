@@ -35,21 +35,20 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ReadResourceService {
-    
-    public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
-    
-    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
-    private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
-    public static final int DEFAULT_LIMIT = 100;
 
+    public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
+
+    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
+    public static final int DEFAULT_LIMIT = 100;
+    private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
     private final AmazonDynamoDB client;
     private final String tableName;
-    
+
     protected ReadResourceService(AmazonDynamoDB client, String tableName) {
         this.client = client;
         this.tableName = tableName;
     }
-    
+
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         if (isNull(resourceIdentifier)) {
@@ -57,25 +56,24 @@ public class ReadResourceService {
         }
         return getResource(userInstance, resourceIdentifier).toPublication();
     }
-    
+
     public Publication getPublication(Publication publication) throws NotFoundException {
         return getResource(Resource.fromPublication(publication)).toPublication();
     }
-    
+
     public List<Publication> getResourcesByOwner(UserInstance userInstance) {
         var partitionKey = constructPrimaryPartitionKey(userInstance);
         var querySpec = partitionKeyToQuerySpec(partitionKey);
         var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
         var namesMap = querySpec.getNameMap();
         var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap, DEFAULT_LIMIT);
-        
+
         return queryResultToListOfPublications(result);
     }
-    
+
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-    
         var queryObject = new ResourceDao(resourceQueryObject(identifier));
-        var queryResult = queryObject.fetchByIdentifier(client);
+        var queryResult = queryObject.fetchByIdentifier(client, tableName);
         return (Resource) queryResult.getData();
     }
 
@@ -89,14 +87,14 @@ public class ReadResourceService {
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
         return getResource(resourceQueryObject(userInstance, identifier));
     }
-    
+
     protected Resource getResource(Resource resource) throws NotFoundException {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
         ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
         return (Resource) fetchedDao.getData();
     }
-    
+
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
@@ -104,7 +102,7 @@ public class ReadResourceService {
         QueryResult queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
     }
-    
+
     private static List<Resource> queryResultToResourceList(QueryResult result) {
         return result.getItems()
                    .stream()
@@ -125,14 +123,14 @@ public class ReadResourceService {
         return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
                                                         userInstance.getUsername());
     }
-    
+
     private List<Publication> queryResultToListOfPublications(QueryResult result) {
         return queryResultToResourceList(result)
                    .stream()
                    .map(Resource::toPublication)
                    .collect(Collectors.toList());
     }
-    
+
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
                                      Map<String, String> namesMap, int limit) {
         return client.query(
@@ -143,12 +141,12 @@ public class ReadResourceService {
                 .withLimit(limit)
         );
     }
-    
+
     private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
         return new ExpressionSpecBuilder()
                    .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
     }
-    
+
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
         GetItemResult result = client.getItem(new GetItemRequest()
                                                   .withTableName(tableName)
@@ -158,7 +156,7 @@ public class ReadResourceService {
         }
         return result;
     }
-    
+
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
         var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
         Map<String, Condition> keyConditions = queryObject
@@ -171,7 +169,7 @@ public class ReadResourceService {
                    .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
                    .withKeyConditions(keyConditions);
     }
-    
+
     private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
         return queryResult.getItems()
                    .stream()

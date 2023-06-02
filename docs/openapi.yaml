@@ -134,7 +134,7 @@ paths:
           'https://api.nva.unit.no/scopes/backend',
           'https://api.nva.unit.no/scopes/frontend',
           'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-upsert']
+          'https://api.nva.unit.no/scopes/third-party/publication-upsert' ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -525,6 +525,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
+    post:
+      summary: Create Publication from Import candidate
+      parameters:
+        - in: path
+          name: importCandidateIdentifier
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID identifier of the import candidate to publish.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportCandidate'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreatePublicationFromImportCandidateFunction.Arn}:live/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
 components:
   schemas:
@@ -652,10 +699,126 @@ components:
           type: string
     ImportCandidate:
       type: object
-      description: Complete ImportCandidate entity
+      description: Complete Import candidate entity
       properties:
-        allOf:
-          $ref: "#/components/schemas/Publication"
+        abstract:
+          type: string
+          description: short abstract of content
+        alternativeTitles:
+          type: array
+          description: short abstract of content
+          items:
+            type: string
+        contributors:
+          type: array
+          description: List of contributing people
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+        description:
+          type: string
+        doi:
+          type: string
+        id:
+          type: string
+        modifiedDate:
+          type: string
+          format: date
+        owner:
+          type: string
+        publicationDate:
+          type: object
+          properties:
+            day:
+              type: string
+            month:
+              type: string
+            type:
+              type: string
+            year:
+              type: string
+        publicationType:
+          type: string
+        publishedDate:
+          type: string
+          format: date
+        publisher:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        reference:
+          type: object
+          properties:
+            doi:
+              type: string
+            publicationContext:
+              type: object
+              properties:
+                level:
+                  type: string
+                linkedContext:
+                  type: string
+                onlineIssn:
+                  type: string
+                openAccess:
+                  type: boolean
+                peerReviewed:
+                  type: boolean
+                printIssn:
+                  type: string
+                publisher:
+                  type: string
+                seriesTitle:
+                  type: string
+                title:
+                  type: string
+                type:
+                  type: string
+                url:
+                  type: string
+            publicationInstance:
+              type: object
+              properties:
+                articleNumber:
+                  type: string
+                issue:
+                  type: string
+                pages:
+                  type: object
+                  properties:
+                    begin:
+                      type: string
+                    end:
+                      type: string
+                    illustrated:
+                      type: boolean
+                    pages:
+                      type: string
+                    type:
+                      type: string
+                peerReviewed:
+                  type: boolean
+                textbookContent:
+                  type: boolean
+                type:
+                  type: string
+                volume:
+                  type: string
+            type:
+              type: string
+        tags:
+          type: array
+          items:
+            type: string
+        title:
+          type: string
         importStatus:
           type: string
           enum:

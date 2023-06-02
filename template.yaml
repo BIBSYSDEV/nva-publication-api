@@ -830,6 +830,29 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+  CreatePublicationFromImportCandidateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler::handleRequest
+      Runtime: java11
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          IMPORT_CANDIDATES_TABLE_NAME: !Ref NvaImportCandidatesTable
+          RESOURCE_TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /import-candidate/{importCandidateIdentifier}
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
   #==========================Event Lambda functions====================================================
 
   BrageMigrationEventConsumer:

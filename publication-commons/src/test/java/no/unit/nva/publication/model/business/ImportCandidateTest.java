@@ -19,6 +19,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -43,13 +44,12 @@ public class ImportCandidateTest {
     @Test
     void builderShouldAcceptPublication() {
         var randomPublication = createPublicationWithoutStatus();
-        var importCandidate =
-            new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
-                .build();
-        assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+        var importCandidate = new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
+                                  .withImportStatus(ImportStatus.NOT_IMPORTED)
+                                  .build();
         var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
 
+        assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
         assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
     }
 
@@ -130,6 +130,7 @@ public class ImportCandidateTest {
                    .withHandle(randomImportCandidate.getHandle())
                    .withIndexedDate(randomImportCandidate.getIndexedDate())
                    .withPublishedDate(randomImportCandidate.getPublishedDate())
+                   .withStatus(PublicationStatus.PUBLISHED)
                    .build();
     }
 }
