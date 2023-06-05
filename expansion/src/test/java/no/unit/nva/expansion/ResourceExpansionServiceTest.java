@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -22,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -66,7 +69,6 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +93,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private MessageService messageService;
     private TicketService ticketService;
     private UriRetriever uriRetriever;
+    private ObjectMapper mapper;
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -205,6 +208,21 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         assertThat(indexDoc.fetchId(), is(not(nullValue())));
+    }
+
+    @Test
+    void shouldReturnExpandedResourceWithEntityDescriptionForPublicationsWithContributorWithoutId()
+        throws JsonProcessingException, NotFoundException {
+        var publicationJsonString = stringFromResources(
+            Path.of("publication_without_contributor_id_sample.json"));
+
+        var publication = mapper.readValue(publicationJsonString, Publication.class);
+
+        var resourceUpdate = Resource.fromPublication(publication);
+        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var actualEntityDescription = expandedResource.asJsonNode().at("/entityDescription").toString();
+
+        assertThat(actualEntityDescription, is(not(equalTo(""))));
     }
 
     @Test
@@ -447,7 +465,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceExpansionService mockedExpansionService() {
         uriRetriever = mock(UriRetriever.class);
         when(uriRetriever.getRawContent(any(), any()))
-            .thenReturn(Optional.of(IoUtils.stringFromResources(Path.of("cristin_person.json"))));
+            .thenReturn(Optional.of(stringFromResources(Path.of("cristin_person.json"))));
         return new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
@@ -477,6 +495,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketService = new TicketService(client);
         uriRetriever = new UriRetriever();
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
+        mapper = JsonUtils.dtoObjectMapper;
     }
 
     private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
