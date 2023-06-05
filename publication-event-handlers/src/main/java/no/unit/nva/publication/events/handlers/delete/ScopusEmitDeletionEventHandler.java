@@ -43,17 +43,15 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
 
     @Override
     public Void handleRequest(S3Event input, Context context) {
-        var events = attempt(() -> readFile(input))
-                         .map(this::extractIdentifiers)
-                         .stream().flatMap(List::stream)
-                         .map(this::emitDeletionEvent)
-                         .collect(Collectors.toList());
+        var content = readFile(input);
+        var identifiers = extractIdentifiers(content);
+        var events = identifiers.stream().map(this::emitDeletionEvent).collect(Collectors.toList());
         logger.info("Events {}", events);
         return null;
     }
 
-    private static String[] splitOnNewLine(String string) {
-        return string.split("\n");
+    private static List<String> splitOnNewLine(String string) {
+        return Arrays.asList(string.split("\n"));
     }
 
     private ScopusDeletionEvent emitDeletionEvent(String item) {
@@ -71,7 +69,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
 
     private List<String> extractIdentifiers(String string) {
         logger.info("Data {}", string);
-        return Arrays.stream(splitOnNewLine(string))
+        return splitOnNewLine(string).stream()
                    .map(this::extractScopusIdentifier)
                    .collect(Collectors.toList());
     }
