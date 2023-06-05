@@ -86,7 +86,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
-    private final DeleteResourceService deleteResourceService;
+    private DeleteResourceService deleteResourceService;
 
     public ResourceService(AmazonDynamoDB client,
                            Clock clock,
@@ -98,7 +98,6 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
-        this.deleteResourceService = null;
     }
 
     public ResourceService(AmazonDynamoDB client, String tableName) {
@@ -109,7 +108,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, tableName);
         this.updateResourceService =
             new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
-        this.deleteResourceService = new DeleteResourceService(client, tableName, clockForTimestamps,
+        this.deleteResourceService = new DeleteResourceService(client, tableName,
                                                                readResourceService);
     }
 
