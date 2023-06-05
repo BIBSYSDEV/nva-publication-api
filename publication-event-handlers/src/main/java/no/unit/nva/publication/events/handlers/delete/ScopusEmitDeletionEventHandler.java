@@ -56,18 +56,14 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         return string.split("\n");
     }
 
-    private static URI getCouldNotEmitEvent() {
-        logger.info(COULD_NOT_EMIT_EVENT_MESSAGE);
-        return null;
-    }
-
     private void emitDeletionEvent(String item) {
         var event = new ScopusDeletionEvent(ScopusDeletionEvent.EVENT_TOPIC, item);
         logger.info("Event to emit: {},", event);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         logger.info("S3Driver instantiated");
-        attempt(() -> s3Driver.insertFile(UnixPath.of(randomUUID().toString()), event.toJsonString()))
-            .orElse(failure -> getCouldNotEmitEvent());
+        var eventPath = UnixPath.of(randomUUID().toString());
+        logger.info("Event name: {}", event);
+        attempt(() -> s3Driver.insertFile(eventPath, event.toJsonString()));
         logger.info(EMITTED_EVENT_LOG_MESSAGE, event.toJsonString());
     }
 

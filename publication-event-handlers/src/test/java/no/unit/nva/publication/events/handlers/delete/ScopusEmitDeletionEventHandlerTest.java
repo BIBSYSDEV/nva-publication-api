@@ -3,7 +3,9 @@ package no.unit.nva.publication.events.handlers.delete;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -25,6 +27,11 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class ScopusEmitDeletionEventHandlerTest {
 
@@ -38,7 +45,7 @@ public class ScopusEmitDeletionEventHandlerTest {
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String SCOPUS_ID_FROM_TEST_FILE = "2-s2.0-38349009276";
     private ByteArrayOutputStream outputStream;
-    private FakeS3Client s3Client;
+    private S3Client s3Client;
     private S3Driver s3Driver;
     private ScopusEmitDeletionEventHandler handler;
 
