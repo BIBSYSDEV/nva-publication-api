@@ -45,8 +45,22 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init() {
         client = DynamoDBEmbedded.create().amazonDynamoDB();
-        CreateTableRequest request = createTableRequest();
+        CreateTableRequest request = createTableRequest(RESOURCES_TABLE_NAME);
         client.createTable(request);
+    }
+
+    public void init(String tableName) {
+        client = DynamoDBEmbedded.create().amazonDynamoDB();
+        CreateTableRequest request = createTableRequest(tableName);
+        client.createTable(request);
+    }
+
+    public void init(String firstTable, String secondTable) {
+        client = DynamoDBEmbedded.create().amazonDynamoDB();
+        var firstTableRequest = createTableRequest(firstTable);
+        var secondTableRequest = createTableRequest(secondTable);
+        client.createTable(firstTableRequest);
+        client.createTable(secondTableRequest);
     }
 
     @AfterEach
@@ -54,9 +68,9 @@ public class ResourcesLocalTest extends TestDataSource {
         client.shutdown();
     }
 
-    private CreateTableRequest createTableRequest() {
+    private CreateTableRequest createTableRequest(String tableName) {
         return new CreateTableRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withTableName(tableName)
                    .withAttributeDefinitions(attributeDefinitions())
                    .withKeySchema(primaryKeySchema())
                    .withGlobalSecondaryIndexes(globalSecondaryIndexes())

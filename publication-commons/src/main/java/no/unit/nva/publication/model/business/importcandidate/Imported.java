@@ -11,14 +11,23 @@ import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Imported implements ImportStatus {
+
+    private final static String IMPORTED_DATE = "importedDate";
+    private final static String PUBLICATION_ID = "publicationId";
+    private final static String IMPORTED_BY = "importedBy";
+
+    @JsonProperty(IMPORTED_DATE)
     private final Instant importedDate;
+
+    @JsonProperty(PUBLICATION_ID)
     private final URI publicationId;
 
+    @JsonProperty(IMPORTED_BY)
     private final Username importedBy;
 
-    public Imported(@JsonProperty Instant importedDate,
-                    @JsonProperty URI publicationId,
-                    @JsonProperty Username importedBy) {
+    public Imported(@JsonProperty(IMPORTED_DATE) Instant importedDate,
+                    @JsonProperty(PUBLICATION_ID) URI publicationId,
+                    @JsonProperty(IMPORTED_BY) Username importedBy) {
         this.importedDate = importedDate;
         this.importedBy = importedBy;
         this.publicationId = publicationId;

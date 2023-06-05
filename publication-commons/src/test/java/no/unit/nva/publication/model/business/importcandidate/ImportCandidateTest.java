@@ -1,6 +1,15 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -10,6 +19,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -24,16 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
-
-import static no.unit.nva.testutils.RandomDataGenerator.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 
 public class ImportCandidateTest {
 
@@ -56,6 +57,19 @@ public class ImportCandidateTest {
     }
 
     @Test
+    void builderShouldAcceptPublication() {
+        var randomPublication = createPublicationWithoutStatus();
+        var importCandidate =
+            new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
+                    .withImportStatus(new NotImported())
+                .build();
+
+        var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
+        assertThat(importCandidate.getImportStatus(), is(equalTo(new NotImported())));
+        assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
+    }
+
+    @Test
     void shouldDoRoundTripWithoutLosingData() throws JsonProcessingException {
         var randomImportCandidate = randomImportCandidate();
         var json = randomImportCandidate.toString();
@@ -63,18 +77,7 @@ public class ImportCandidateTest {
         assertThat(regeneratedImportCandidate, is(equalTo(regeneratedImportCandidate)));
     }
 
-    @Test
-    void builderShouldAcceptPublication() {
-        var randomPublication = createPublicationWithoutStatus();
-        var importCandidate =
-                new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
-                        .withImportStatus(new NotImported())
-                        .build();
-        assertThat(importCandidate.getImportStatus(), is(equalTo(new NotImported())));
-        var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
 
-        assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
-    }
 
     @ParameterizedTest
     @DisplayName("should be possible to swap imported status to other status")
@@ -84,9 +87,6 @@ public class ImportCandidateTest {
         randomImportCandidate.setImportStatus(importStatus);
         assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));
     }
-
-
-
 
 
     private static Funding randomFunding() {
@@ -158,6 +158,7 @@ public class ImportCandidateTest {
                    .withHandle(randomImportCandidate.getHandle())
                    .withIndexedDate(randomImportCandidate.getIndexedDate())
                    .withPublishedDate(randomImportCandidate.getPublishedDate())
+                   .withStatus(PublicationStatus.PUBLISHED)
                    .build();
     }
 }

@@ -42,6 +42,7 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -97,6 +98,16 @@ public class ResourceService extends ServiceWithTransactions {
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
     }
 
+    public ResourceService(AmazonDynamoDB client, String tableName) {
+        super(client);
+        this.tableName = tableName;
+        this.clockForTimestamps = Clock.systemDefaultZone();
+        this.identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
+        this.readResourceService = new ReadResourceService(client, tableName);
+        this.updateResourceService =
+            new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
+    }
+
     public ResourceService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
@@ -104,6 +115,11 @@ public class ResourceService extends ServiceWithTransactions {
     @JacocoGenerated
     public static ResourceService defaultService() {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+    }
+
+    @JacocoGenerated
+    public static ResourceService defaultService(String tableName) {
+        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, tableName);
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData)
@@ -182,6 +198,20 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
+    public Publication autoImportPublication(ImportCandidate inputData) {
+        var publication = inputData.toPublication();
+        Instant currentTime = clockForTimestamps.instant();
+        var userInstance = UserInstance.fromPublication(publication);
+        Resource newResource = Resource.fromPublication(publication);
+        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setResourceOwner(createResourceOwner(userInstance));
+        newResource.setPublisher(createOrganization(userInstance));
+        newResource.setCreatedDate(currentTime);
+        newResource.setModifiedDate(currentTime);
+        newResource.setStatus(PublicationStatus.PUBLISHED);
+        return insertResource(newResource);
+    }
+
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         List<Dao> daos = readResourceService
@@ -240,6 +270,11 @@ public class ResourceService extends ServiceWithTransactions {
 
     public ImportCandidate getImportCandidateByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toImportCandidate();
+    }
+
+    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status)
+        throws NotFoundException {
+        return updateResourceService.updateStatus(identifier, status);
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -387,11 +422,18 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
-        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
+        TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
 
         return fetchSavedImportCandidate(newResource);
+    }
+
+    private TransactWriteItem[] transactionItemsForNewImportCandidateInsertion(Resource newResource) {
+        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(newResource), tableName);
+        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource,
+                                                                                                          tableName);
+        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
     private ImportCandidate fetchSavedImportCandidate(Resource newResource) {
@@ -420,7 +462,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource));
+        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
@@ -540,6 +582,11 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
-        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
+        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
+    }
+
+    private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource,
+                                                                                      String tableName) {
+        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
     }
 }

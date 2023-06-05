@@ -18,6 +18,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -74,6 +75,7 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.Imported;
 import no.unit.nva.publication.model.business.importcandidate.NotImported;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -147,6 +149,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
     public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
         QueryResult queryResult = queryForDraftResource(resourceDaoWithStatusDraft);
         return parseResult(queryResult);
+    }
+
+    @Test
+    void shouldInstantiateResourceServiceForProvidedTable() {
+        var customTable = "CustomTable";
+        super.init(customTable);
+        var resourceService = new ResourceService(client, customTable);
+        List<String> tableNames = resourceService.getClient().listTables().getTableNames();
+        assertThat(tableNames, hasItem(customTable));
     }
 
     @Test
@@ -872,6 +883,28 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
         assertThat(persistedImportCandidate.getImportStatus(), is(equalTo(fetchedImportCandidate.getImportStatus())));
         assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
+    }
+
+    @Test
+    void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
+        var publication = randomImportCandidate();
+        var persistedPublication = resourceService.autoImportPublication(publication);
+        var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        assertThat(persistedPublication, is(equalTo(fetchedPublication)));
+        assertThat(fetchedPublication.getStatus(), is(equalTo(PUBLISHED)));
+    }
+
+    @Test
+    void shouldUpdateImportStatus() throws NotFoundException {
+        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
+        var expectedStatus = new Imported(Instant.now(), randomUri(), randomPerson());
+        resourceService.updateImportStatus(importCandidate.getIdentifier(), expectedStatus);
+        var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        assertThat(fetchedPublication.getImportStatus(), is(equalTo(expectedStatus)));
+    }
+
+    private Username randomPerson() {
+        return new Username(randomString());
     }
 
     @Test

@@ -11,13 +11,22 @@ import java.util.Objects;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class NotApplicable implements ImportStatus {
 
+    private final static String SET_TO_NOT_APPLICABLE_BY = "setToNotApplicableBy";
+    private final static String COMMENT = "comment";
+    private final static String SET_TO_NOT_APPLICABLE_DATE = "setToNotApplicableDate";
+
+    @JsonProperty(SET_TO_NOT_APPLICABLE_BY)
     private final Username setToNotApplicableBy;
+
+    @JsonProperty(COMMENT)
     private final String comment;
+
+    @JsonProperty(SET_TO_NOT_APPLICABLE_DATE)
     private final Instant setToNotApplicableDate;
 
-    public NotApplicable(@JsonProperty Username setToNotApplicableBy,
-                         @JsonProperty String comment,
-                         @JsonProperty Instant setToNotApplicableDate) {
+    public NotApplicable(@JsonProperty(SET_TO_NOT_APPLICABLE_BY) Username setToNotApplicableBy,
+                         @JsonProperty(COMMENT) String comment,
+                         @JsonProperty(SET_TO_NOT_APPLICABLE_DATE) Instant setToNotApplicableDate) {
         this.setToNotApplicableBy = setToNotApplicableBy;
         this.comment = comment;
         this.setToNotApplicableDate = setToNotApplicableDate;

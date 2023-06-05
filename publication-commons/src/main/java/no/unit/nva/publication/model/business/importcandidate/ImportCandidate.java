@@ -26,7 +26,8 @@ import nva.commons.core.JacocoGenerated;
 public class ImportCandidate extends Publication implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
-    @JsonProperty("importStatus")
+    public static final String IMPORT_STATUS = "importStatus";
+    @JsonProperty(IMPORT_STATUS)
     private ImportStatus importStatus;
 
     public ImportCandidate() {
@@ -74,7 +75,9 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     }
 
     public Publication toPublication() {
-        return this.copy().build();
+        return this.copy()
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .build();
     }
 
     public static final class Builder {
