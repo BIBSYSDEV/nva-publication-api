@@ -26,6 +26,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String EMITTED_EVENT_LOG_MESSAGE = "Emitted Event:{}";
     public static final String EMITION_ERROR_MESSAGE = "Could not emit event for scopus identifier ";
+    public static final String COULD_NOT_EMIT_EVENT_MESSAGE = "Could not emit event";
     private static final int SINGLE_EXPECTED_FILE = 0;
     private static final Logger logger = LoggerFactory.getLogger(ScopusEmitDeletionEventHandler.class);
     private final S3Client s3Client;
@@ -55,17 +56,22 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         return string.split("\n");
     }
 
-    private ScopusDeletionEvent emitDeletionEvent(String item) {
+    private static URI getCouldNotEmitEvent() {
+        logger.info(COULD_NOT_EMIT_EVENT_MESSAGE);
+        return null;
+    }
+
+    private void emitDeletionEvent(String item) {
         var event = new ScopusDeletionEvent(ScopusDeletionEvent.EVENT_TOPIC, item);
+        logger.info("Event to emit: {},", event);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        logger.info("S3Driver instantiated");
         attempt(() -> s3Driver.insertFile(UnixPath.of(randomUUID().toString()), event.toJsonString()))
-            .orElseThrow(new RuntimeException(EMITION_ERROR_MESSAGE + item));
+            .orElse(failure -> getCouldNotEmitEvent());
         logger.info(EMITTED_EVENT_LOG_MESSAGE, event.toJsonString());
-        return event;
     }
 
     private List<String> toScopudIdentifierList(String string) {
-        logger.info("File content, {}", string);
         return Arrays.stream(splitOnNewLine(string))
                    .map(this::extractScopusIdentifier)
                    .collect(Collectors.toList());
@@ -78,7 +84,6 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        logger.info("File to read identifiers from {}", fileUri);
         return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath());
     }
 
