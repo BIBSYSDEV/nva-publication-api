@@ -43,12 +43,11 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
 
     @Override
     public Void handleRequest(S3Event input, Context context) {
-        attempt(() -> readFile(input))
-            .map(this::toScopudIdentifierList)
-            .stream()
-            .flatMap(List::stream)
-            .forEach(this::emitDeletionEvent);
-
+        var events = attempt(() -> readFile(input))
+                         .map(this::extractIdentifiers)
+                         .stream().flatMap(List::stream)
+                         .map(this::emitDeletionEvent);
+        logger.info("Events {}", events);
         return null;
     }
 
@@ -56,7 +55,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         return string.split("\n");
     }
 
-    private void emitDeletionEvent(String item) {
+    private ScopusDeletionEvent emitDeletionEvent(String item) {
         logger.info("Creating event");
         var event = new ScopusDeletionEvent(ScopusDeletionEvent.EVENT_TOPIC, item);
         logger.info("Event to emit: {},", event);
@@ -66,9 +65,11 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         logger.info("Event name: {}", event);
         attempt(() -> s3Driver.insertFile(eventPath, event.toJsonString()));
         logger.info(EMITTED_EVENT_LOG_MESSAGE, event.toJsonString());
+        return event;
     }
 
-    private List<String> toScopudIdentifierList(String string) {
+    private List<String> extractIdentifiers(String string) {
+        logger.info("Data {}", string);
         return Arrays.stream(splitOnNewLine(string))
                    .map(this::extractScopusIdentifier)
                    .collect(Collectors.toList());
