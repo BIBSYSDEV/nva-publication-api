@@ -57,6 +57,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     }
 
     private void emitDeletionEvent(String item) {
+        logger.info("Creating event");
         var event = new ScopusDeletionEvent(ScopusDeletionEvent.EVENT_TOPIC, item);
         logger.info("Event to emit: {},", event);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
@@ -80,6 +81,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
+        logger.info("File to read from {}", fileUri);
         return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath());
     }
 
