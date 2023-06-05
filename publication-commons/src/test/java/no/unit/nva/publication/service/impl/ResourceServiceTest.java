@@ -902,6 +902,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+
+
+    @Test
     void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
         var failingClient = new FailingDynamoClient(this.client);
         resourceService = new ResourceService(failingClient, clock);
