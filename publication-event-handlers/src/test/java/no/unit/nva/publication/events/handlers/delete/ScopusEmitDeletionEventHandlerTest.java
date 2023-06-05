@@ -44,16 +44,14 @@ public class ScopusEmitDeletionEventHandlerTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String SCOPUS_ID_FROM_TEST_FILE = "2-s2.0-38349009276";
-    private ByteArrayOutputStream outputStream;
-    private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusEmitDeletionEventHandler handler;
 
     @BeforeEach
     public void init() {
-        s3Client = new FakeS3Client();
+        FakeS3Client s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
-        this.outputStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         handler = new ScopusEmitDeletionEventHandler(s3Client);
     }
 

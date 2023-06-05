@@ -8,6 +8,7 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.events.bodies.ScopusDeletionEvent;
 import no.unit.nva.s3.S3Driver;
@@ -25,8 +26,6 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     public static final String SCOPUS_IDENTIFIER_DELIMITER = "DELETE-";
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String EMITTED_EVENT_LOG_MESSAGE = "Emitted Event:{}";
-    public static final String EMITION_ERROR_MESSAGE = "Could not emit event for scopus identifier ";
-    public static final String COULD_NOT_EMIT_EVENT_MESSAGE = "Could not emit event";
     private static final int SINGLE_EXPECTED_FILE = 0;
     private static final Logger logger = LoggerFactory.getLogger(ScopusEmitDeletionEventHandler.class);
     private final S3Client s3Client;
@@ -43,10 +42,11 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
 
     @Override
     public Void handleRequest(S3Event input, Context context) {
-        var content = readFile(input);
-        var identifiers = extractIdentifiers(content);
-        var events = identifiers.stream().map(this::emitDeletionEvent).collect(Collectors.toList());
-        logger.info("Events {}", events);
+        Optional.ofNullable(readFile(input))
+            .map(this::extractIdentifiers)
+            .stream().flatMap(List::stream)
+            .forEach(this::emitDeletionEvent);
+
         return null;
     }
 
@@ -54,34 +54,33 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         return Arrays.asList(string.split("\n"));
     }
 
-    private ScopusDeletionEvent emitDeletionEvent(String item) {
-        logger.info("Creating event");
+    private static boolean isEmptyLine(String string) {
+        return !string.isBlank() || !string.isEmpty();
+    }
+
+    private void emitDeletionEvent(String item) {
         var event = new ScopusDeletionEvent(ScopusDeletionEvent.EVENT_TOPIC, item);
-        logger.info("Event to emit: {},", event);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
-        logger.info("S3Driver instantiated");
         var eventPath = UnixPath.of(randomUUID().toString());
-        logger.info("Event name: {}", event);
         attempt(() -> s3Driver.insertFile(eventPath, event.toJsonString()));
         logger.info(EMITTED_EVENT_LOG_MESSAGE, event.toJsonString());
-        return event;
     }
 
     private List<String> extractIdentifiers(String string) {
-        logger.info("Data {}", string);
         return splitOnNewLine(string).stream()
+                   .filter(ScopusEmitDeletionEventHandler::isEmptyLine)
                    .map(this::extractScopusIdentifier)
                    .collect(Collectors.toList());
     }
 
     private String extractScopusIdentifier(String item) {
+
         return item.split(SCOPUS_IDENTIFIER_DELIMITER)[1];
     }
 
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        logger.info("File to read from {}", fileUri);
         return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath());
     }
 
