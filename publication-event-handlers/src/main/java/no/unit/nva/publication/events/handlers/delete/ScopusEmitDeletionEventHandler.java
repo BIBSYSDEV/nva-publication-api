@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.publication.events.bodies.ScopusDeletionEvent;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -28,7 +29,12 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     private static final Logger logger = LoggerFactory.getLogger(ScopusEmitDeletionEventHandler.class);
     private final S3Client s3Client;
 
-    protected ScopusEmitDeletionEventHandler(S3Client s3Client) {
+    @JacocoGenerated
+    public ScopusEmitDeletionEventHandler() {
+        this(S3Driver.defaultS3Client().build());
+    }
+
+    public ScopusEmitDeletionEventHandler(S3Client s3Client) {
         super();
         this.s3Client = s3Client;
     }
