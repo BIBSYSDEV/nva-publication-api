@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.Username;
@@ -25,6 +26,7 @@ public class Imported implements ImportStatus {
     @JsonProperty(IMPORTED_BY)
     private final Username importedBy;
 
+    @JsonCreator
     public Imported(@JsonProperty(IMPORTED_DATE) Instant importedDate,
                     @JsonProperty(PUBLICATION_ID) URI publicationId,
                     @JsonProperty(IMPORTED_BY) Username importedBy) {

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.Username;
@@ -24,6 +25,7 @@ public class NotApplicable implements ImportStatus {
     @JsonProperty(SET_TO_NOT_APPLICABLE_DATE)
     private final Instant setToNotApplicableDate;
 
+    @JsonCreator
     public NotApplicable(@JsonProperty(SET_TO_NOT_APPLICABLE_BY) Username setToNotApplicableBy,
                          @JsonProperty(COMMENT) String comment,
                          @JsonProperty(SET_TO_NOT_APPLICABLE_DATE) Instant setToNotApplicableDate) {
