@@ -4,6 +4,7 @@ import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -43,10 +44,14 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -97,34 +102,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
-    }
-
-    private static URI constructExpectedPublicationId(Publication publication) {
-        return UriWrapper.fromHost(API_HOST)
-            .addChild("publication")
-            .addChild(publication.getIdentifier().toString())
-            .getUri();
-    }
-
-    private static List<Class<?>> listPublicationInstanceTypes() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
-        Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>)
-                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
-                       .findAny().orElseThrow();
-    }
-
-    private static ExpandedPerson getExpectedExpandedPerson(User user) {
-        return new ExpandedPerson(
-            "someFirstName",
-            "somePreferredFirstName",
-            "someLastName",
-            "somePreferredLastName",
-            user);
     }
 
     @BeforeEach
@@ -203,7 +180,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws JsonProcessingException, NotFoundException {
 
         Publication publication = PublicationGenerator.randomPublication(instanceType)
-            .copy().withEntityDescription(new EntityDescription()).build();
+                                      .copy().withEntityDescription(new EntityDescription()).build();
 
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -211,14 +188,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnExpandedResourceWithEntityDescriptionForPublicationsWithContributorWithoutId()
+    void shouldReturnExpandedResourceWithEntityDescriptionForPublicationWithContributorWithoutId()
         throws JsonProcessingException, NotFoundException {
         var publicationJsonString = stringFromResources(
             Path.of("publication_without_contributor_id_sample.json"));
 
         var publication = mapper.readValue(publicationJsonString, Publication.class);
-
         var resourceUpdate = Resource.fromPublication(publication);
+
+        expansionService = mockedExpansionService();
         var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         var actualEntityDescription = expandedResource.asJsonNode().at("/entityDescription").toString();
 
@@ -231,8 +209,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry
-            .requestNewTicket(publication, GeneralSupportRequest.class)
-            .persistNewTicket(ticketService);
+                                     .requestNewTicket(publication, GeneralSupportRequest.class)
+                                     .persistNewTicket(ticketService);
 
         var message = messageService.createMessage(ticketToBeExpanded, owner, randomString());
         var expectedExpandedMessage = messageToExpandedMessage(message);
@@ -249,8 +227,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry
-            .requestNewTicket(publication, GeneralSupportRequest.class)
-            .persistNewTicket(ticketService);
+                                     .requestNewTicket(publication, GeneralSupportRequest.class)
+                                     .persistNewTicket(ticketService);
 
         var messageThatWillLeadToTicketExpansion =
             messageService.createMessage(ticketToBeExpanded, owner, randomString());
@@ -295,10 +273,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnEmptySetIfNotTicketEntry() throws NotFoundException {
         var message = Message.builder()
-            .withResourceIdentifier(SortableIdentifier.next())
-            .withTicketIdentifier(SortableIdentifier.next())
-            .withIdentifier(SortableIdentifier.next())
-            .build();
+                          .withResourceIdentifier(SortableIdentifier.next())
+                          .withTicketIdentifier(SortableIdentifier.next())
+                          .withIdentifier(SortableIdentifier.next())
+                          .build();
 
         var actual = expansionService.getOrganizationIds(message);
 
@@ -418,24 +396,63 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getViewedBy(), is(equalTo(expectedExpandedViewedBySet)));
     }
 
+    private static URI constructExpectedPublicationId(Publication publication) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild("publication")
+                   .addChild(publication.getIdentifier().toString())
+                   .getUri();
+    }
+
+    private static List<Class<?>> listPublicationInstanceTypes() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
+        Class<? extends TicketEntry> ticketType) {
+        return (Class<? extends TicketEntry>)
+                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
+                       .findAny().orElseThrow();
+    }
+
+    private static ExpandedPerson getExpectedExpandedPerson(User user) {
+        return new ExpandedPerson(
+            "someFirstName",
+            "somePreferredFirstName",
+            "someLastName",
+            "somePreferredLastName",
+            user);
+    }
+
     private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
         return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
                    : TicketStatus.parse(expandedTicketStatus.toString());
     }
 
+    private Contributor createContributor(Role role, URI id) {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder()
+                                     .withName(randomString())
+                                     .withId(id)
+                                     .build())
+                   .withRole(new RoleType(role))
+                   .withAffiliations(List.of(randomOrganization()))
+                   .build();
+    }
+
     private ExpandedMessage messageToExpandedMessage(Message message) {
         return ExpandedMessage.builder()
-            .withCreatedDate(message.getCreatedDate())
-            .withModifiedDate(message.getModifiedDate())
-            .withOwner(message.getOwner())
-            .withResourceTitle(message.getResourceTitle())
-            .withCustomerId(message.getCustomerId())
-            .withSender(ExpandedPerson.defaultExpandedPerson(message.getSender()))
-            .withText(message.getText())
-            .withTicketIdentifier(message.getTicketIdentifier())
-            .withResourceIdentifier(message.getResourceIdentifier())
-            .withIdentifier(message.getIdentifier())
-            .build();
+                   .withCreatedDate(message.getCreatedDate())
+                   .withModifiedDate(message.getModifiedDate())
+                   .withOwner(message.getOwner())
+                   .withResourceTitle(message.getResourceTitle())
+                   .withCustomerId(message.getCustomerId())
+                   .withSender(ExpandedPerson.defaultExpandedPerson(message.getSender()))
+                   .withText(message.getText())
+                   .withTicketIdentifier(message.getTicketIdentifier())
+                   .withResourceIdentifier(message.getResourceIdentifier())
+                   .withIdentifier(message.getIdentifier())
+                   .build();
     }
 
     private Entity findEntity(String type) throws ApiGatewayException {
@@ -564,9 +581,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private Username extractUsername(ExpandedPerson expandedPerson) {
         return Optional.ofNullable(expandedPerson)
-            .map(ExpandedPerson::getUsername)
-            .map(User::toString)
-            .map(Username::new)
-            .orElse(null);
+                   .map(ExpandedPerson::getUsername)
+                   .map(User::toString)
+                   .map(Username::new)
+                   .orElse(null);
     }
 }
