@@ -25,6 +25,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     public static final String SCOPUS_IDENTIFIER_DELIMITER = "DELETE-";
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String EMITTED_EVENT_LOG_MESSAGE = "Emitted Event:{}";
+    public static final String EMITION_ERROR_MESSAGE = "Could not emit event for scopus identifier ";
     private static final int SINGLE_EXPECTED_FILE = 0;
     private static final Logger logger = LoggerFactory.getLogger(ScopusEmitDeletionEventHandler.class);
     private final S3Client s3Client;
@@ -43,7 +44,8 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     public Void handleRequest(S3Event input, Context context) {
         attempt(() -> readFile(input))
             .map(this::toScopudIdentifierList)
-            .stream().flatMap(List::stream)
+            .stream()
+            .flatMap(List::stream)
             .forEach(this::emitDeletionEvent);
 
         return null;
@@ -53,14 +55,17 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         return string.split("\n");
     }
 
-    private void emitDeletionEvent(String item) {
+    private ScopusDeletionEvent emitDeletionEvent(String item) {
         var event = new ScopusDeletionEvent(ScopusDeletionEvent.EVENT_TOPIC, item);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
-        attempt(() -> s3Driver.insertFile(UnixPath.of(randomUUID().toString()), event.toJsonString()));
+        attempt(() -> s3Driver.insertFile(UnixPath.of(randomUUID().toString()), event.toJsonString()))
+            .orElseThrow(new RuntimeException(EMITION_ERROR_MESSAGE + item));
         logger.info(EMITTED_EVENT_LOG_MESSAGE, event.toJsonString());
+        return event;
     }
 
     private List<String> toScopudIdentifierList(String string) {
+        logger.info("File content, {}", string);
         return Arrays.stream(splitOnNewLine(string))
                    .map(this::extractScopusIdentifier)
                    .collect(Collectors.toList());
@@ -73,6 +78,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
+        logger.info("File to read identifiers from {}", fileUri);
         return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath());
     }
 
