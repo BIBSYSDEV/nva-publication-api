@@ -4,7 +4,6 @@ import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -44,14 +43,10 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -427,17 +422,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
         return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
                    : TicketStatus.parse(expandedTicketStatus.toString());
-    }
-
-    private Contributor createContributor(Role role, URI id) {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder()
-                                     .withName(randomString())
-                                     .withId(id)
-                                     .build())
-                   .withRole(new RoleType(role))
-                   .withAffiliations(List.of(randomOrganization()))
-                   .build();
     }
 
     private ExpandedMessage messageToExpandedMessage(Message message) {
