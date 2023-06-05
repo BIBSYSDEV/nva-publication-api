@@ -4,12 +4,15 @@ import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
@@ -43,10 +46,14 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -83,6 +90,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     public static final URI ORGANIZATION =
         URI.create("https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
     public static final UserInstance USER = UserInstance.create(new User("12345"), ORGANIZATION);
+    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
@@ -93,7 +101,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private MessageService messageService;
     private TicketService ticketService;
     private UriRetriever uriRetriever;
-    private ObjectMapper mapper;
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -188,7 +195,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publicationJsonString = stringFromResources(
             Path.of("publication_without_contributor_id_sample.json"));
 
-        var publication = mapper.readValue(publicationJsonString, Publication.class);
+        var publication = objectMapper.readValue(publicationJsonString, Publication.class);
         var resourceUpdate = Resource.fromPublication(publication);
 
         expansionService = mockedExpansionService();
@@ -391,6 +398,37 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getViewedBy(), is(equalTo(expectedExpandedViewedBySet)));
     }
 
+    @Test
+    void shouldReturnExpandedResourceWithCorrectNumberOfContributorsForPublicationWithSamePersonInDifferentRoles()
+        throws JsonProcessingException, NotFoundException {
+        var publicationJsonString = stringFromResources(
+            Path.of("publication_sample.json"));
+
+        var publication = objectMapper.readValue(publicationJsonString, Publication.class);
+        var entityDescription = publication.getEntityDescription();
+        var contributors = entityDescription.getContributors();
+        var id = randomUri();
+        var creator = createContributor(Role.CREATOR, id);
+        contributors.add(creator);
+        var actor = createContributor(Role.ACTOR, id);
+        contributors.add(actor);
+
+        var resourceUpdate = Resource.fromPublication(publication);
+
+        expansionService = mockedExpansionService();
+
+        var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
+
+        var regeneratedPublicationContributors = objectMapper.readValue(expandedResourceAsJson, Publication.class);
+
+        var actualContributors = regeneratedPublicationContributors.getEntityDescription().getContributors();
+        assertThat(actualContributors.size(), is(equalTo(3)));
+        assertThat(actualContributors,
+                   containsInAnyOrder(List.of(creator).toArray()));
+        assertThat(actualContributors,
+                   containsInAnyOrder(actor));
+    }
+
     private static URI constructExpectedPublicationId(Publication publication) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild("publication")
@@ -422,6 +460,17 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
         return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
                    : TicketStatus.parse(expandedTicketStatus.toString());
+    }
+
+    private Contributor createContributor(Role role, URI id) {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder()
+                                     .withName(randomString())
+                                     .withId(id)
+                                     .build())
+                   .withRole(new RoleType(role))
+                   .withAffiliations(List.of(randomOrganization()))
+                   .build();
     }
 
     private ExpandedMessage messageToExpandedMessage(Message message) {
@@ -496,7 +545,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketService = new TicketService(client);
         uriRetriever = new UriRetriever();
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
-        mapper = JsonUtils.dtoObjectMapper;
     }
 
     private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
