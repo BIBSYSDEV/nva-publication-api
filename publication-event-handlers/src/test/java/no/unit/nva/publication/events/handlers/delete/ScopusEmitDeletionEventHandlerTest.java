@@ -45,7 +45,7 @@ public class ScopusEmitDeletionEventHandlerTest {
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String SCOPUS_ID_FROM_TEST_FILE = "2-s2.0-38349009276";
     private ByteArrayOutputStream outputStream;
-    private S3Client s3Client;
+    private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusEmitDeletionEventHandler handler;
 

@@ -46,7 +46,8 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         var events = attempt(() -> readFile(input))
                          .map(this::extractIdentifiers)
                          .stream().flatMap(List::stream)
-                         .map(this::emitDeletionEvent);
+                         .map(this::emitDeletionEvent)
+                         .collect(Collectors.toList());
         logger.info("Events {}", events);
         return null;
     }
