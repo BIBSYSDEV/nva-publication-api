@@ -419,9 +419,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
 
-        var regeneratedPublicationContributors = objectMapper.readValue(expandedResourceAsJson, Publication.class);
+        var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
 
-        var actualContributors = regeneratedPublicationContributors.getEntityDescription().getContributors();
+        var actualContributors = regeneratedPublication.getEntityDescription().getContributors();
         assertThat(actualContributors.size(), is(equalTo(3)));
         assertThat(actualContributors,
                    containsInAnyOrder(List.of(creator).toArray()));
