@@ -287,8 +287,8 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateStatus(identifier, status);
     }
 
-    public void deleteImportCandidate(SortableIdentifier identifier) throws BadMethodException, NotFoundException {
-        deleteResourceService.deleteImportCandidate(identifier);
+    public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
+        deleteResourceService.deleteImportCandidate(importCandidate);
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
