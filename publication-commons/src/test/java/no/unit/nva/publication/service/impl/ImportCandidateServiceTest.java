@@ -1,8 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.business.ImportStatus.IMPORTED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -16,7 +13,6 @@ import java.util.List;
 import java.util.Set;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -62,7 +58,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     void shouldDeleteImportCandidatePermanently() throws BadMethodException, NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         var appender = LogUtils.getTestingAppenderForRootLogger();
-        resourceService.deleteImportCandidate(importCandidate.getIdentifier());
+        resourceService.deleteImportCandidate(importCandidate);
         assertThrows(NotFoundException.class,
                      () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
         assertThat(appender.getMessages(), containsString("deleted " + importCandidate.getIdentifier()));
@@ -73,7 +69,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         resourceService.updateImportStatus(importCandidate.getIdentifier(), IMPORTED);
         assertThrows(BadMethodException.class,
-                     () -> resourceService.deleteImportCandidate(importCandidate.getIdentifier()));
+                     () -> resourceService.deleteImportCandidate(importCandidate));
     }
 
     private ImportCandidate randomImportCandidate() {
@@ -91,15 +87,6 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
-    private Publication draftPublicationWithoutDoiAndAssociatedLink() {
-
-        return randomPublication().copy()
-                   .withDoi(null)
-                   .withStatus(DRAFT)
-                   .withAssociatedArtifacts(List.of(randomAssociatedLink()))
                    .build();
     }
 }

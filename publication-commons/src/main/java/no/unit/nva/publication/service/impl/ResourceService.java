@@ -78,6 +78,7 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
+    public static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: ";
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
@@ -123,6 +124,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     /**
      * Should not be used initiating resourceService for resource-table
+     *
      * @param tableName name of table
      * @return
      */
@@ -287,8 +289,9 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateStatus(identifier, status);
     }
 
-    public void deleteImportCandidate(SortableIdentifier identifier) throws BadMethodException, NotFoundException {
-        deleteResourceService.deleteImportCandidate(identifier);
+    public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
+        deleteResourceService.deleteImportCandidate(importCandidate);
+        logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE + importCandidate.getIdentifier());
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
