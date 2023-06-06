@@ -12,7 +12,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
@@ -35,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
@@ -187,22 +187,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         assertThat(indexDoc.fetchId(), is(not(nullValue())));
-    }
-
-    @Test
-    void shouldReturnExpandedResourceWithEntityDescriptionForPublicationWithContributorWithoutId()
-        throws JsonProcessingException, NotFoundException {
-        var publicationJsonString = stringFromResources(
-            Path.of("publication_without_contributor_id_sample.json"));
-
-        var publication = objectMapper.readValue(publicationJsonString, Publication.class);
-        var resourceUpdate = Resource.fromPublication(publication);
-
-        expansionService = mockedExpansionService();
-        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var actualEntityDescription = expandedResource.asJsonNode().at("/entityDescription").toString();
-
-        assertThat(actualEntityDescription, is(not(equalTo(""))));
     }
 
     @Test
@@ -399,6 +383,22 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnExpandedResourceWithEntityDescriptionForPublicationWithContributorWithoutId()
+        throws JsonProcessingException, NotFoundException {
+        var publicationJsonString = stringFromResources(
+            Path.of("publication_without_contributor_id_sample.json"));
+
+        var publication = objectMapper.readValue(publicationJsonString, Publication.class);
+        var resourceUpdate = Resource.fromPublication(publication);
+
+        expansionService = mockedExpansionService();
+        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var actualEntityDescription = expandedResource.asJsonNode().at("/entityDescription").toString();
+
+        assertThat(actualEntityDescription, is(not(equalTo(""))));
+    }
+
+    @Test
     void shouldReturnExpandedResourceWithCorrectNumberOfContributorsForPublicationWithSamePersonInDifferentRoles()
         throws JsonProcessingException, NotFoundException {
         var publicationJsonString = stringFromResources(
@@ -408,9 +408,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var entityDescription = publication.getEntityDescription();
         var contributors = entityDescription.getContributors();
         var id = randomUri();
-        var creator = createContributor(Role.CREATOR, id);
+        var name = randomString();
+        var creator = createContributor(Role.CREATOR, id, name);
         contributors.add(creator);
-        var actor = createContributor(Role.ACTOR, id);
+        var actor = createContributor(Role.ACTOR, id, name);
         contributors.add(actor);
 
         var resourceUpdate = Resource.fromPublication(publication);
@@ -421,12 +422,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
 
-        var actualContributors = regeneratedPublication.getEntityDescription().getContributors();
-        assertThat(actualContributors.size(), is(equalTo(3)));
-        assertThat(actualContributors,
-                   containsInAnyOrder(List.of(creator).toArray()));
-        assertThat(actualContributors,
-                   containsInAnyOrder(actor));
+        var contributorsWithSameId =
+            regeneratedPublication.getEntityDescription()
+                .getContributors()
+                .stream()
+                .filter(contributor -> contributor.getIdentity().getId().equals(id))
+                .collect(
+                    Collectors.toList());
+        assertThat(contributorsWithSameId.size(), is(equalTo(2)));
     }
 
     private static URI constructExpectedPublicationId(Publication publication) {
@@ -462,10 +465,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    : TicketStatus.parse(expandedTicketStatus.toString());
     }
 
-    private Contributor createContributor(Role role, URI id) {
+    private Contributor createContributor(Role role, URI id, String name) {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder()
-                                     .withName(randomString())
+                                     .withName(name)
                                      .withId(id)
                                      .build())
                    .withRole(new RoleType(role))

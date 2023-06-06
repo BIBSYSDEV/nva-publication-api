@@ -187,6 +187,26 @@
   },
   "@type": "Publication",
   "entityDescription": {
+    "contributors": {
+      "@default": "@null",
+      "identity": {
+        "@embed": "@always",
+        "@default": "@null"
+      },
+      "affiliations": {
+        "@explicit": true,
+        "@embed": "@always",
+        "type": "Organization",
+        "labels": {
+          "@embed": "@always",
+          "@default": "@null"
+        },
+        "name": {
+          "@embed": "@always",
+          "@default": "@null"
+        }
+      }
+    },
     "metadataSource": {
       "@embed": "@never",
       "@default": "@null"
