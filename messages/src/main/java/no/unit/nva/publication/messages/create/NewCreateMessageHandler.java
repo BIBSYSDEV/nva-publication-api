@@ -9,6 +9,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -52,11 +53,15 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         var ticketIdentifier = extractTicketIdentifier(requestInfo);
         var user = UserInstance.fromRequestInfo(requestInfo);
         var ticket = fetchTicketForUser(requestInfo, ticketIdentifier, user);
+        updateStatusToPendingWhenCompletedGeneralSupportRequest(ticket);
         injectAssigneeWhenUnassignedTicket(ticket, requestInfo);
         var message = messageService.createMessage(ticket, user, input.getMessage());
-
-        addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
+        git addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
         return null;
+    }
+
+    private void updateStatusToPendingWhenCompletedGeneralSupportRequest(TicketEntry ticket) {
+        ticket.setStatus(TicketStatus.PENDING);
     }
 
     @Override
