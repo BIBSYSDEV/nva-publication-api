@@ -863,52 +863,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateResourceFromImportCandidate() throws NotFoundException {
-        var importCandidate = randomImportCandidate();
-        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
-        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(
-            persistedImportCandidate.getIdentifier());
-        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
-    }
-
-    @Test
     void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
         var publication = randomImportCandidate();
         var persistedPublication = resourceService.autoImportPublication(publication);
         var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         assertThat(persistedPublication, is(equalTo(fetchedPublication)));
         assertThat(fetchedPublication.getStatus(), is(equalTo(PUBLISHED)));
-    }
-
-    @Test
-    void shouldUpdateImportStatus() throws NotFoundException {
-        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        resourceService.updateImportStatus(importCandidate.getIdentifier(), IMPORTED);
-        var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(fetchedPublication.getImportStatus(), is(equalTo(IMPORTED)));
-    }
-
-    @Test
-    void shouldDeleteImportCandidatePermanently() throws BadMethodException, NotFoundException {
-        super.init("import-candidates");
-        resourceService = new ResourceService(client, "import-candidates");
-        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        var appender = LogUtils.getTestingAppenderForRootLogger();
-        resourceService.deleteImportCandidate(importCandidate.getIdentifier());
-        assertThrows(NotFoundException.class,
-                     () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
-        assertThat(appender.getMessages(), containsString("deleted " + importCandidate.getIdentifier()));
-    }
-
-    @Test
-    void shouldThrowBadMethodExpectedWhenDeletingImportCandidateWithStatusImported()
-        throws NotFoundException {
-        super.init("import-candidates");
-        resourceService = new ResourceService(client, "import-candidates");
-        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        resourceService.updateImportStatus(importCandidate.getIdentifier(), IMPORTED);
-        assertThrows(BadMethodException.class,
-                     () -> resourceService.deleteImportCandidate(importCandidate.getIdentifier()));
     }
 
     @Test

@@ -121,6 +121,12 @@ public class ResourceService extends ServiceWithTransactions {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
 
+    /**
+     * Should not be used initiating resourceService for resource-table
+     * @param tableName name of table
+     * @return
+     */
+
     @JacocoGenerated
     public static ResourceService defaultService(String tableName) {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, tableName);
