@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.publication.events.bodies.ImportCandidateDeletion;
+import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
 import no.unit.nva.publication.s3imports.BatchEventEmitter;
 import no.unit.nva.publication.s3imports.PutEventsResult;
 import no.unit.nva.s3.S3Driver;
@@ -23,23 +23,23 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, Void> {
+public class ImportCandidateEmitDeletionEventHandler implements RequestHandler<S3Event, Void> {
 
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String SCOPUS_IDENTIFIER_DELIMITER = "DELETE-";
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     private static final int SINGLE_EXPECTED_FILE = 0;
-    private static final Logger logger = LoggerFactory.getLogger(ScopusEmitDeletionEventHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ImportCandidateEmitDeletionEventHandler.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
     @JacocoGenerated
-    public ScopusEmitDeletionEventHandler() {
+    public ImportCandidateEmitDeletionEventHandler() {
         this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient());
     }
 
-    public ScopusEmitDeletionEventHandler(S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    public ImportCandidateEmitDeletionEventHandler(S3Client s3Client, EventBridgeClient eventBridgeClient) {
         super();
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
@@ -64,19 +64,18 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
         return !string.isBlank() || !string.isEmpty();
     }
 
-    private static ImportCandidateDeletion createEvent(String id) {
-        return new ImportCandidateDeletion(ImportCandidateDeletion.EVENT_TOPIC, id);
+    private static ImportCandidateDeleteEvent createEvent(String id) {
+        return new ImportCandidateDeleteEvent(ImportCandidateDeleteEvent.EVENT_TOPIC, id);
     }
 
-    private List<ImportCandidateDeletion> createEvents(Stream<String> scopusIdentifiers) {
-        return scopusIdentifiers
-                   .map(ScopusEmitDeletionEventHandler::createEvent)
+    private List<ImportCandidateDeleteEvent> createEvents(Stream<String> scopusIdentifiers) {
+        return scopusIdentifiers.map(ImportCandidateEmitDeletionEventHandler::createEvent)
                    .collect(Collectors.toList());
     }
 
-    private List<PutEventsResult> emitEvents(List<ImportCandidateDeletion> events, Context context) {
-        var batchEventEmitter = new BatchEventEmitter<ImportCandidateDeletion>
-                                    (ImportCandidateDeletion.class.getCanonicalName(),
+    private List<PutEventsResult> emitEvents(List<ImportCandidateDeleteEvent> events, Context context) {
+        var batchEventEmitter = new BatchEventEmitter<ImportCandidateDeleteEvent>
+                                    (ImportCandidateDeleteEvent.class.getCanonicalName(),
                                      context.getInvokedFunctionArn(),
                                      eventBridgeClient);
         batchEventEmitter.addEvents(events);
@@ -85,7 +84,7 @@ public class ScopusEmitDeletionEventHandler implements RequestHandler<S3Event, V
 
     private Stream<String> extractIdentifiers(String string) {
         return splitOnNewLine(string).stream()
-                   .filter(ScopusEmitDeletionEventHandler::isEmptyLine)
+                   .filter(ImportCandidateEmitDeletionEventHandler::isEmptyLine)
                    .map(this::extractScopusIdentifier);
     }
 

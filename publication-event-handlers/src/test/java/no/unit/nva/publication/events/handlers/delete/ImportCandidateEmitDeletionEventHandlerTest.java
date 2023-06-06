@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
-import static no.unit.nva.publication.events.bodies.ImportCandidateDeletion.TOPIC;
+import static no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent.TOPIC;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENT_BUS_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.events.bodies.ImportCandidateDeletion;
+import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
 import no.unit.nva.publication.model.events.DeleteEntryEvent;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
@@ -35,7 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
-public class ScopusEmitDeletionEventHandlerTest {
+public class ImportCandidateEmitDeletionEventHandlerTest {
 
     public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
@@ -68,7 +68,7 @@ public class ScopusEmitDeletionEventHandlerTest {
     private static Matcher<Iterable<? extends DeleteEntryEvent>> everyItemIs() {
         return Every.everyItem(HasPropertyWithValue.hasProperty(TOPIC,
                                                                 is(equalTo(
-                                                                    ImportCandidateDeletion.EVENT_TOPIC))));
+                                                                    ImportCandidateDeleteEvent.EVENT_TOPIC))));
     }
 
     private S3Event createS3Event(String expectedObjectKey) throws IOException {

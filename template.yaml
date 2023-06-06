@@ -924,6 +924,7 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
       Events:
         Scopus:
@@ -1347,7 +1348,6 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
-
 
   DeleteDraftPublicationHandler:
     DependsOn: EventsLambdaPermissions
