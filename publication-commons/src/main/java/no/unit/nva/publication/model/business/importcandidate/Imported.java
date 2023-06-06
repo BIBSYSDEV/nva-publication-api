@@ -13,41 +13,41 @@ import java.util.Objects;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Imported implements ImportStatus {
 
-    private final static String IMPORTED_DATE = "importedDate";
-    private final static String PUBLICATION_ID = "publicationId";
-    private final static String IMPORTED_BY = "importedBy";
+    private final static String IMPORTED_DATE = "setDate";
+    private final static String PUBLICATION_ID = "NvaPublicationId";
+    private final static String IMPORTED_BY = "setBy";
 
     @JsonProperty(IMPORTED_DATE)
-    private final Instant importedDate;
+    private final Instant setDate;
 
     @JsonProperty(PUBLICATION_ID)
-    private final URI publicationId;
+    private final URI NvaPublicationId;
 
     @JsonProperty(IMPORTED_BY)
-    private final Username importedBy;
+    private final Username setBy;
 
     @JsonCreator
     public Imported(@JsonProperty(IMPORTED_DATE) Instant importedDate,
                     @JsonProperty(PUBLICATION_ID) URI publicationId,
                     @JsonProperty(IMPORTED_BY) Username importedBy) {
-        this.importedDate = importedDate;
-        this.importedBy = importedBy;
-        this.publicationId = publicationId;
+        this.setDate = importedDate;
+        this.setBy = importedBy;
+        this.NvaPublicationId = publicationId;
 
     }
 
-    public Instant getImportedDate() {
-        return importedDate;
+    public Instant getSetDate() {
+        return setDate;
     }
 
 
-    public URI getPublicationId() {
-        return publicationId;
+    public URI getNvaPublicationId() {
+        return NvaPublicationId;
     }
 
 
-    public Username getImportedBy() {
-        return importedBy;
+    public Username getSetBy() {
+        return setBy;
     }
 
 
@@ -61,16 +61,16 @@ public class Imported implements ImportStatus {
             return false;
         }
         Imported imported = (Imported) o;
-        return Objects.equals(getImportedDate(), imported.getImportedDate())
-                && Objects.equals(getPublicationId(), imported.getPublicationId())
-                && Objects.equals(getImportedBy(), imported.getImportedBy());
+        return Objects.equals(getSetDate(), imported.getSetDate())
+                && Objects.equals(getNvaPublicationId(), imported.getNvaPublicationId())
+                && Objects.equals(getSetBy(), imported.getSetBy());
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getImportedDate(),
-                getPublicationId(),
-                getImportedBy());
+        return Objects.hash(getSetDate(),
+                getNvaPublicationId(),
+                getSetBy());
     }
 }

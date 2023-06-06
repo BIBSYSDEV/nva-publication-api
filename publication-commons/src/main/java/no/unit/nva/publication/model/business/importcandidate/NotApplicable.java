@@ -12,31 +12,31 @@ import java.util.Objects;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class NotApplicable implements ImportStatus {
 
-    private final static String SET_TO_NOT_APPLICABLE_BY = "setToNotApplicableBy";
+    private final static String SET_TO_NOT_APPLICABLE_BY = "setBy";
     private final static String COMMENT = "comment";
-    private final static String SET_TO_NOT_APPLICABLE_DATE = "setToNotApplicableDate";
+    private final static String SET_TO_NOT_APPLICABLE_DATE = "setToDate";
 
     @JsonProperty(SET_TO_NOT_APPLICABLE_BY)
-    private final Username setToNotApplicableBy;
+    private final Username setBy;
 
     @JsonProperty(COMMENT)
     private final String comment;
 
     @JsonProperty(SET_TO_NOT_APPLICABLE_DATE)
-    private final Instant setToNotApplicableDate;
+    private final Instant setToDate;
 
     @JsonCreator
     public NotApplicable(@JsonProperty(SET_TO_NOT_APPLICABLE_BY) Username setToNotApplicableBy,
                          @JsonProperty(COMMENT) String comment,
                          @JsonProperty(SET_TO_NOT_APPLICABLE_DATE) Instant setToNotApplicableDate) {
-        this.setToNotApplicableBy = setToNotApplicableBy;
+        this.setBy = setToNotApplicableBy;
         this.comment = comment;
-        this.setToNotApplicableDate = setToNotApplicableDate;
+        this.setToDate = setToNotApplicableDate;
     }
 
     @JacocoGenerated
-    public Username getSetToNotApplicableBy() {
-        return setToNotApplicableBy;
+    public Username getSetBy() {
+        return setBy;
     }
 
     @JacocoGenerated
@@ -45,8 +45,8 @@ public class NotApplicable implements ImportStatus {
     }
 
     @JacocoGenerated
-    public Instant getSetToNotApplicableDate() {
-        return setToNotApplicableDate;
+    public Instant getSetToDate() {
+        return setToDate;
     }
 
     @JacocoGenerated
@@ -59,16 +59,16 @@ public class NotApplicable implements ImportStatus {
             return false;
         }
         NotApplicable that = (NotApplicable) o;
-        return Objects.equals(getSetToNotApplicableBy(), that.getSetToNotApplicableBy())
+        return Objects.equals(getSetBy(), that.getSetBy())
                 && Objects.equals(getComment(), that.getComment())
-                && Objects.equals(getSetToNotApplicableDate(), that.getSetToNotApplicableDate());
+                && Objects.equals(getSetToDate(), that.getSetToDate());
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getSetToNotApplicableBy(),
+        return Objects.hash(getSetBy(),
                 getComment(),
-                getSetToNotApplicableDate());
+                getSetToDate());
     }
 }
