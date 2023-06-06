@@ -24,14 +24,17 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -41,9 +44,9 @@ import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
@@ -188,6 +191,20 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         assertThat(updatedTicket.getViewedBy(), hasItem(owner.getUser()));
     }
 
+    @Test
+    void shouldUpdateStatusToPendingWhenNewMessageCreatedForGeneralSupportRequest()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, null);
+        var s = ticketService.fetchTicket(ticket);
+        var owner = UserInstance.fromPublication(publication);
+        var request = createNewMessageRequestForNonElevatedUser(publication, ticket, owner, randomString());
+        handler.handleRequest(request, output, context);
+        var updatedTicket = ticket.fetch(ticketService);
+        assertThat(updatedTicket.getStatus(), is(equalTo(TicketStatus.PENDING)));
+    }
+
     private static Map<String, String> pathParameters(Publication publication,
                                                       TicketEntry ticket) {
         return Map.of(
@@ -219,13 +236,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
     private String createExpectedLocationHeader(Message actualMessage) {
         return UriWrapper.fromHost(API_HOST)
-            .addChild("publication")
-            .addChild(actualMessage.getResourceIdentifier().toString())
-            .addChild("ticket")
-            .addChild(actualMessage.getTicketIdentifier().toString())
-            .addChild("message")
-            .addChild(actualMessage.getIdentifier().toString())
-            .toString();
+                   .addChild("publication")
+                   .addChild(actualMessage.getResourceIdentifier().toString())
+                   .addChild("ticket")
+                   .addChild(actualMessage.getTicketIdentifier().toString())
+                   .addChild("message")
+                   .addChild(actualMessage.getIdentifier().toString())
+                   .toString();
     }
 
     private InputStream createNewMessageRequestForNonElevatedUser(Publication publication,
@@ -233,11 +250,11 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                   UserInstance userInstance,
                                                                   String randomString) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
-            .withPathParameters(pathParameters(publication, ticket))
-            .withBody(messageBody(randomString))
-            .withUserName(userInstance.getUsername())
-            .withCurrentCustomer(userInstance.getOrganizationUri())
-            .build();
+                   .withPathParameters(pathParameters(publication, ticket))
+                   .withBody(messageBody(randomString))
+                   .withUserName(userInstance.getUsername())
+                   .withCurrentCustomer(userInstance.getOrganizationUri())
+                   .build();
     }
 
     private InputStream createNewMessageRequestForElevatedUser(Publication publication,
@@ -247,12 +264,12 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                String... accessRights)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
-            .withPathParameters(pathParameters(publication, ticket))
-            .withBody(messageBody(message))
-            .withUserName(user.getUsername())
-            .withCurrentCustomer(user.getOrganizationUri())
-            .withAccessRights(user.getOrganizationUri(), accessRights)
-            .build();
+                   .withPathParameters(pathParameters(publication, ticket))
+                   .withBody(messageBody(message))
+                   .withUserName(user.getUsername())
+                   .withCurrentCustomer(user.getOrganizationUri())
+                   .withAccessRights(user.getOrganizationUri(), accessRights)
+                   .build();
     }
 
     private CreateMessageRequest messageBody(String message) {
