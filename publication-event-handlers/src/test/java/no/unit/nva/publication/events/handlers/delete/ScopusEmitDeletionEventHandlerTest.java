@@ -1,11 +1,13 @@
 package no.unit.nva.publication.events.handlers.delete;
 
+import static no.unit.nva.publication.events.bodies.ImportCandidateDeletion.TOPIC;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENT_BUS_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -20,18 +22,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
+import no.unit.nva.publication.events.bodies.ImportCandidateDeletion;
+import no.unit.nva.publication.model.events.DeleteEntryEvent;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
+import org.hamcrest.Matcher;
+import org.hamcrest.beans.HasPropertyWithValue;
+import org.hamcrest.core.Every;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class ScopusEmitDeletionEventHandlerTest {
 
@@ -45,22 +49,30 @@ public class ScopusEmitDeletionEventHandlerTest {
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String SCOPUS_ID_FROM_TEST_FILE = "2-s2.0-38349009276";
     private S3Driver s3Driver;
+    private FakeEventBridgeClient eventBridgeClient;
     private ScopusEmitDeletionEventHandler handler;
 
     @BeforeEach
     public void init() {
         FakeS3Client s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
+        eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler = new ScopusEmitDeletionEventHandler(s3Client);
+        handler = new ScopusEmitDeletionEventHandler(s3Client, eventBridgeClient);
     }
 
     @Test
     void shouldEmitEventsForEveryScopusIdentifierInDeletionList() throws IOException {
-        var logAppender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createS3Event(randomString());
         handler.handleRequest(s3Event, CONTEXT);
-        assertThat(logAppender.getMessages(), containsString(SCOPUS_ID_FROM_TEST_FILE));
+        List<DeleteEntryEvent> eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
+        assertThat(eventBodiesOfEmittedEventReferences, everyItemIs());
+    }
+
+    private static Matcher<Iterable<? extends DeleteEntryEvent>> everyItemIs() {
+        return Every.everyItem(HasPropertyWithValue.hasProperty(TOPIC,
+                                                                is(equalTo(
+                                                                    ImportCandidateDeletion.EVENT_TOPIC))));
     }
 
     private S3Event createS3Event(String expectedObjectKey) throws IOException {
@@ -86,6 +98,14 @@ public class ScopusEmitDeletionEventHandlerTest {
                                         randomString());
         var schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
+    }
+
+    private List<DeleteEntryEvent> collectBodiesOfEmittedEventReferences() {
+        return eventBridgeClient.getRequestEntries()
+                   .stream()
+                   .map(PutEventsRequestEntry::detail)
+                   .map(DeleteEntryEvent::fromJson)
+                   .collect(Collectors.toList());
     }
 
     private String randomDate() {

@@ -6,7 +6,7 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
-public class ScopusDeletionEvent implements JsonSerializable {
+public class ImportCandidateDeletion implements JsonSerializable {
 
     public static final String EVENT_TOPIC = "ImportCandidates.Scopus.Delete";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
@@ -17,8 +17,8 @@ public class ScopusDeletionEvent implements JsonSerializable {
     private final String topic;
 
     @JsonCreator
-    public ScopusDeletionEvent(@JsonProperty(TOPIC) String topic,
-                               @JsonProperty(SCOPUS_IDENTIFIER) String scopusIdentifier) {
+    public ImportCandidateDeletion(@JsonProperty(TOPIC) String topic,
+                                   @JsonProperty(SCOPUS_IDENTIFIER) String scopusIdentifier) {
         this.topic = topic;
         this.scopusIdentifier = scopusIdentifier;
     }
@@ -38,7 +38,7 @@ public class ScopusDeletionEvent implements JsonSerializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ScopusDeletionEvent that = (ScopusDeletionEvent) o;
+        ImportCandidateDeletion that = (ImportCandidateDeletion) o;
         return Objects.equals(getScopusIdentifier(), that.getScopusIdentifier()) && Objects.equals(
             getTopic(), that.getTopic());
     }
