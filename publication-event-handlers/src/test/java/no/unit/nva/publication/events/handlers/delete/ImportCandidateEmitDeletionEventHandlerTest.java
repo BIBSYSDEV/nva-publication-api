@@ -6,7 +6,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -17,7 +16,6 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -47,18 +45,16 @@ public class ScopusEmitDeletionEventHandlerTest {
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
-    private static final String SCOPUS_ID_FROM_TEST_FILE = "2-s2.0-38349009276";
     private S3Driver s3Driver;
     private FakeEventBridgeClient eventBridgeClient;
-    private ScopusEmitDeletionEventHandler handler;
+    private ImportCandidateEmitDeletionEventHandler handler;
 
     @BeforeEach
     public void init() {
         FakeS3Client s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler = new ScopusEmitDeletionEventHandler(s3Client, eventBridgeClient);
+        handler = new ImportCandidateEmitDeletionEventHandler(s3Client, eventBridgeClient);
     }
 
     @Test
