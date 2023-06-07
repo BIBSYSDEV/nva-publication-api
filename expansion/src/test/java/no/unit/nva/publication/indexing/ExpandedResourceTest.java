@@ -5,7 +5,6 @@ import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -37,19 +36,25 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,11 +65,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class ExpandedResourceTest {
 
-    public static final String PUBLISHER_NAME_JSON_PTR =
+    private static final String PUBLISHER_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/publisher/name";
-    public static final String SERIES_NAME_JSON_PTR =
+    private static final String SERIES_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/series/name";
-    public static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
+    private static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
+    private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
 
     private UriRetriever uriRetriever;
 
@@ -168,7 +174,7 @@ class ExpandedResourceTest {
         var indexDocument = fromPublication(uriRetriever, publication);
         var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
         var expectedUri =
-            UriWrapper.fromUri(PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
+            UriWrapper.fromUri(HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
         var actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
         assertThat(actualUri, is(equalTo(expectedUri)));
     }
@@ -225,6 +231,19 @@ class ExpandedResourceTest {
     }
 
     @Test
+    void shouldReturnExpandedResourceWithAnthologyPublicationChannelUrisWhenPublicationIsAcademicChapter()
+        throws JsonProcessingException {
+        var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
+        var academicChapter = getAcademicChapterPartOfAnthology(bookAnthology);
+        mockUriRetrieverPublicationResponse(bookAnthology);
+
+        var expandedResource = fromPublication(uriRetriever, academicChapter);
+        var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
+        assertThat(expandedResource.getPublicationContextUris(),
+                   containsInAnyOrder(expectedPublicationChannelIds.toArray()));
+    }
+
+    @Test
     void shouldNotFailWhenThereIsNoPublicationContext() throws JsonProcessingException {
 
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
@@ -252,6 +271,14 @@ class ExpandedResourceTest {
     void shouldNotFailWhenInputContainsAffiliationsThatAreIncomplete() {
         var publication = createPublicationWithEmptyAffiliations();
         assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
+    }
+
+    private static Publication getAcademicChapterPartOfAnthology(Publication bookAnthology) {
+        var bookAnthologyUri = toPublicationId(bookAnthology.getIdentifier());
+        var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
+        var anthology = (Anthology) academicChapter.getEntityDescription().getReference().getPublicationContext();
+        anthology.setId(bookAnthologyUri);
+        return academicChapter;
     }
 
     private static Stream<String> getFieldNameStream(JsonNode topOrg) {
@@ -289,6 +316,26 @@ class ExpandedResourceTest {
 
     private static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
+    }
+
+    private static URI toPublicationId(SortableIdentifier identifier) {
+        return UriWrapper.fromUri(HOST_URI)
+                   .addChild(identifier.toString())
+                   .getUri();
+    }
+
+    private void mockUriRetrieverPublicationResponse(Publication publication) throws JsonProcessingException {
+        var publicationId = toPublicationId(publication.getIdentifier());
+        var publicationResponse = objectMapper.writeValueAsString(PublicationResponse.fromPublication(publication));
+        when(uriRetriever.getRawContent(eq(publicationId), any())).thenReturn(Optional.of(publicationResponse));
+    }
+
+    private List<URI> getPublicationContextUris(Book book) {
+        var confirmedSeries = (Series) book.getSeries();
+        var expectedSeriesId = confirmedSeries.getId();
+        var publisher = (Publisher) book.getPublisher();
+        var expectedPublisherId = publisher.getId();
+        return List.of(expectedSeriesId, expectedPublisherId);
     }
 
     private void assertExplicitFieldsFromFraming(ObjectNode framedResultNode) {
