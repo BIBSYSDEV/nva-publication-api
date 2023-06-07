@@ -71,6 +71,7 @@ public class TicketResolver {
             publishPublicationAndFiles(publication);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
+            approveTicket(ticket, username);
             publishMetadata(publication);
         }
         return ticket;
