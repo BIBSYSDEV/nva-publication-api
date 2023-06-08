@@ -1,5 +1,6 @@
 package no.unit.nva.expansion;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
@@ -419,8 +420,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return publication.getEntityDescription()
                    .getContributors()
                    .stream()
-                   .filter(contributor -> contributor.getIdentity().getId().equals(id))
+                   .filter(contributor -> nonNull(contributor.getIdentity()))
+                   .filter(contributor -> nonNull(getId(contributor)))
+                   .filter(contributor -> getId(contributor).equals(id))
                    .collect(Collectors.toList());
+    }
+
+    private static URI getId(Contributor contributor) {
+        return contributor.getIdentity().getId();
     }
 
     private static URI constructExpectedPublicationId(Publication publication) {
@@ -456,17 +463,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    : TicketStatus.parse(expandedTicketStatus.toString());
     }
 
-    private Publication getPublicationWithSamePersonInDifferentContributorRoles(URI id)
-        throws JsonProcessingException {
+    private static Publication getSamplePublication() throws JsonProcessingException {
         var samplePublicationAsJsonString = stringFromResources(
             Path.of("publication_sample.json"));
-        var publication = objectMapper.readValue(samplePublicationAsJsonString, Publication.class);
+        return objectMapper.readValue(samplePublicationAsJsonString, Publication.class);
+    }
+
+    private Publication getPublicationWithSamePersonInDifferentContributorRoles(URI id)
+        throws JsonProcessingException {
+        var publication = getSamplePublication();
         var contributors = publication.getEntityDescription().getContributors();
         var name = randomString();
-        var creator = createContributor(randomElement(Role.values()), id, name);
-        contributors.add(creator);
-        var actor = createContributor(randomElement(Role.values()), id, name);
-        contributors.add(actor);
+        contributors.add(createContributor(randomElement(Role.values()), id, name));
+        contributors.add(createContributor(randomElement(Role.values()), id, name));
         return publication;
     }
 
