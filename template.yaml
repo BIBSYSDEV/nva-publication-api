@@ -954,6 +954,7 @@ Resources:
         Variables:
           API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaImportCandidatesTable
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           ALLOWED_ORIGIN: '*'
       Events:
