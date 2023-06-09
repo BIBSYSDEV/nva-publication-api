@@ -53,7 +53,6 @@ public class DeleteImportCandidateEventHandler
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<ImportCandidateDeleteEvent>> event,
                                        Context context) {
         logger.info("EventBridgeEvent {}", event.getDetail().getResponsePayload().toString());
-        logger.info("Event reference: {}", input);
 
         attempt(() -> input)
             .map(ImportCandidateDeleteEvent::getScopusIdentifier)
