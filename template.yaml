@@ -915,8 +915,8 @@ Resources:
   ScopusDeletionEventEmitter:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3-import-commons
-      Handler: no.unit.nva.publication.s3imports.DeleteImportCandidatesEventEmitter::handleRequest
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidatesEventEmitter::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 50
