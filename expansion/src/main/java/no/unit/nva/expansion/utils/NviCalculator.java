@@ -34,7 +34,7 @@ public final class NviCalculator {
         IoUtils.stringFromResources(Path.of("nviTypeQuery.sparql")).replace(NVI_YEAR_REPLACE_STRING, NVI_YEAR);
     private static final Logger logger = LoggerFactory.getLogger(NviCalculator.class);
 
-    private static final String FRAME_SRC = IoUtils.stringFromResources(Path.of("nviFrame.json"));
+    private static final String FRAME_SRC = IoUtils.stringFromResources(Path.of("expandedPublicationWithNviFrame.json"));
 
     private NviCalculator() {
     }

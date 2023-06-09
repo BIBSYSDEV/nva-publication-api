@@ -6,9 +6,10 @@ import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.apache.jena.rdf.model.ModelFactory.createDefaultModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.jsonldjava.core.JsonLdOptions;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,12 +18,16 @@ import java.util.stream.Collectors;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.riot.JsonLDWriteContext;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.riot.RDFWriter;
 import org.apache.jena.vocabulary.RDF;
 
 public class ExpandedParentPublication {
 
+    public static final String FRAME = IoUtils.stringFromResources(Path.of("parentPublicationFrame.json"));
     private static final String EMPTY_STRING = "";
     private static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
     private final UriRetriever uriRetriever;
@@ -39,13 +44,32 @@ public class ExpandedParentPublication {
         var model = createDefaultModel();
         loadPublicationWithChannelDataIntoModel(publicationResponseBody.get(), model);
         removePublicationTypeFromResource(publicationId, model);
-        return writeModelAsJsonLdString(model);
+        return getFramedModelJson(model);
     }
 
-    private static String writeModelAsJsonLdString(Model model) {
-        var stringWriter = new StringWriter();
-        RDFDataMgr.write(stringWriter, model, Lang.JSONLD);
-        return stringWriter.toString();
+    private static String getFramedModelJson(Model model) {
+        return RDFWriter.create()
+                   .format(RDFFormat.JSONLD10_FRAME_PRETTY)
+                   .context(getJsonLdWriteContext())
+                   .source(model)
+                   .build()
+                   .asString();
+    }
+
+    private static JsonLDWriteContext getJsonLdWriteContext() {
+        var context = new JsonLDWriteContext();
+        context.setOptions(getJsonLdOptions());
+        context.setFrame(FRAME);
+        return context;
+    }
+
+    private static JsonLdOptions getJsonLdOptions() {
+        var jsonLdOptions = new JsonLdOptions();
+        jsonLdOptions.setOmitGraph(true);
+        jsonLdOptions.setOmitDefault(true);
+        jsonLdOptions.setUseNativeTypes(true);
+        jsonLdOptions.setPruneBlankNodeIdentifiers(true);
+        return jsonLdOptions;
     }
 
     private static void removePublicationTypeFromResource(URI id, Model model) {
@@ -53,7 +77,8 @@ public class ExpandedParentPublication {
         model.remove(model.createStatement(model.createResource(id.toString()), RDF.type, publicationType));
     }
 
-    private void loadPublicationWithChannelDataIntoModel(String publicationJsonString, Model model) throws JsonProcessingException {
+    private void loadPublicationWithChannelDataIntoModel(String publicationJsonString, Model model)
+        throws JsonProcessingException {
         var inputStreams = getInputStreams(publicationJsonString);
         inputStreams.forEach(inputStream -> RDFDataMgr.read(model, inputStream, Lang.JSONLD));
     }
