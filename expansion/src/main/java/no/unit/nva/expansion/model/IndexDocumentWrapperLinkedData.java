@@ -1,6 +1,7 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextId;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
@@ -10,6 +11,7 @@ import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -43,7 +45,7 @@ public class IndexDocumentWrapperLinkedData {
         this.uriRetriever = uriRetriever;
     }
 
-    public String toFramedJsonLd(JsonNode indexDocument) {
+    public String toFramedJsonLd(JsonNode indexDocument) throws JsonProcessingException {
         String frame = SearchIndexFrame.FRAME_SRC;
         List<InputStream> inputStreams = getInputStreams(indexDocument);
         return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
@@ -73,14 +75,8 @@ public class IndexDocumentWrapperLinkedData {
         return stringWriter.toString();
     }
 
-    private static Model createModel(String input) {
-        var model = ModelFactory.createDefaultModel();
-        RDFDataMgr.read(model, stringToStream(input), Lang.JSONLD);
-        return model;
-    }
-
     //TODO: parallelize
-    private List<InputStream> getInputStreams(JsonNode indexDocument) {
+    private List<InputStream> getInputStreams(JsonNode indexDocument) throws JsonProcessingException {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
@@ -105,25 +101,40 @@ public class IndexDocumentWrapperLinkedData {
                    .collect(Collectors.toList());
     }
 
-    private String fetchAnthologyContent(JsonNode indexDocument) {
+    private String fetchAnthologyContent(JsonNode indexDocument) throws JsonProcessingException {
         return isAcademicChapter(indexDocument) && isPublicationContextTypeAnthology(indexDocument)
                    ? getAnthology(indexDocument)
                    : EMPTY_STRING;
     }
 
-    private String getAnthology(JsonNode indexDocument) {
+    private String getAnthology(JsonNode indexDocument) throws JsonProcessingException {
         var anthologyUri = extractPublicationContextId(indexDocument);
         return getParentPublication(anthologyUri);
     }
 
-    private String getParentPublication(URI publicationId) {
-        var input = fetch(publicationId);
-        if (input.isEmpty()) {
+    private String getParentPublication(URI publicationId) throws JsonProcessingException {
+        var publicationResponseBody = fetch(publicationId);
+        if (publicationResponseBody.isEmpty()) {
             return EMPTY_STRING;
         }
-        var model = createModel(input.get());
+        var model = createModel(publicationResponseBody.get());
         removePublicationTypeFromResource(publicationId, model);
         return writeModelAsJsonLdString(model);
+    }
+
+    private Model createModel(String publicationJsonString) throws JsonProcessingException {
+        var inputStreams = getParentPublicationInputStreams(publicationJsonString);
+        var model = ModelFactory.createDefaultModel();
+        inputStreams.forEach(inputStream -> RDFDataMgr.read(model, inputStream, Lang.JSONLD));
+        return model;
+    }
+
+    private List<InputStream> getParentPublicationInputStreams(String publicationJsonString)
+        throws JsonProcessingException {
+        var inputStreams = new ArrayList<InputStream>();
+        inputStreams.add(stringToStream(publicationJsonString));
+        inputStreams.addAll(fetchAll(extractPublicationContextUris(objectMapper.readTree(publicationJsonString))));
+        return inputStreams;
     }
 
     private Stream<String> fetchContentRecursively(URI uri) {
