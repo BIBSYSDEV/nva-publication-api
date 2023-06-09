@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.bodies;
+package no.unit.nva.publication.s3imports;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

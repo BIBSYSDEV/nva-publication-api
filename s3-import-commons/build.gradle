@@ -23,6 +23,7 @@ dependencies {
     implementation libs.aws.sdk2.eventbridge
     implementation libs.aws.sdk2.urlconnectionclient
     implementation libs.aws.sdk2.s3
+    implementation libs.aws.lambda.events
     implementation libs.aws.sdk2.regions
     implementation libs.aws.sdk2.httpClientApi
     implementation libs.aws.sdk.dynamodb

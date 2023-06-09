@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.delete;
+package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.DeleteEntriesEventEmitter.NON_EMITTED_FILENAMES_WARNING_PREFIX;
@@ -11,11 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
-import no.unit.nva.publication.s3imports.BatchEventEmitter;
-import no.unit.nva.publication.s3imports.PutEventsResult;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -23,23 +19,22 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ImportCandidateEmitDeletionEventHandler implements RequestHandler<S3Event, Void> {
+public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Event, Void> {
 
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String SCOPUS_IDENTIFIER_DELIMITER = "DELETE-";
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
-    public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     private static final int SINGLE_EXPECTED_FILE = 0;
-    private static final Logger logger = LoggerFactory.getLogger(ImportCandidateEmitDeletionEventHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidatesEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
     @JacocoGenerated
-    public ImportCandidateEmitDeletionEventHandler() {
+    public DeleteImportCandidatesEventEmitter() {
         this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient());
     }
 
-    public ImportCandidateEmitDeletionEventHandler(S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    public DeleteImportCandidatesEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
         super();
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
@@ -69,22 +64,22 @@ public class ImportCandidateEmitDeletionEventHandler implements RequestHandler<S
     }
 
     private List<ImportCandidateDeleteEvent> createEvents(Stream<String> scopusIdentifiers) {
-        return scopusIdentifiers.map(ImportCandidateEmitDeletionEventHandler::createEvent)
+        return scopusIdentifiers.map(DeleteImportCandidatesEventEmitter::createEvent)
                    .collect(Collectors.toList());
     }
 
     private List<PutEventsResult> emitEvents(List<ImportCandidateDeleteEvent> events, Context context) {
-        var batchEventEmitter = new BatchEventEmitter<ImportCandidateDeleteEvent>
-                                    (ImportCandidateDeleteEvent.class.getCanonicalName(),
-                                     context.getInvokedFunctionArn(),
-                                     eventBridgeClient);
+        var batchEventEmitter = new BatchEventEmitter<ImportCandidateDeleteEvent>(
+            ImportCandidateDeleteEvent.class.getCanonicalName(),
+            context.getInvokedFunctionArn(),
+            eventBridgeClient);
         batchEventEmitter.addEvents(events);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
     }
 
     private Stream<String> extractIdentifiers(String string) {
         return splitOnNewLine(string).stream()
-                   .filter(ImportCandidateEmitDeletionEventHandler::isEmptyLine)
+                   .filter(DeleteImportCandidatesEventEmitter::isEmptyLine)
                    .map(this::extractScopusIdentifier);
     }
 
