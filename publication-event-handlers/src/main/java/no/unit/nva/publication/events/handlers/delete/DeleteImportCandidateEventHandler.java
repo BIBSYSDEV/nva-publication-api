@@ -8,12 +8,10 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -21,7 +19,8 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+public class DeleteImportCandidateEventHandler
+    extends DestinationsEventBridgeEventHandler<ImportCandidateDeleteEvent, Void> {
 
     public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
@@ -34,31 +33,29 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
     public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
                                                                                  + "candidate";
     private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventHandler.class);
-    private final S3Driver s3Driver;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public DeleteImportCandidateEventHandler() {
-        this(new S3Driver(EVENTS_BUCKET), ResourceService.defaultService(TABLE_NAME), new UriRetriever());
+        this(ResourceService.defaultService(TABLE_NAME), new UriRetriever());
     }
 
-    protected DeleteImportCandidateEventHandler(S3Driver s3Driver,
-                                                ResourceService resourceService, UriRetriever uriRetriever) {
-        super(EventReference.class);
-        this.s3Driver = s3Driver;
+    protected DeleteImportCandidateEventHandler(
+        ResourceService resourceService, UriRetriever uriRetriever) {
+        super(ImportCandidateDeleteEvent.class);
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;
     }
 
     @Override
-    protected Void processInputPayload(EventReference input,
-                                       AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
+    protected Void processInputPayload(ImportCandidateDeleteEvent input,
+                                       AwsEventBridgeEvent<AwsEventBridgeDetail<ImportCandidateDeleteEvent>> event,
                                        Context context) {
         logger.info(event.getDetail().toString());
         logger.info("Event reference: {}", input);
 
-        attempt(() -> getEventReference(input))
+        attempt(() -> input)
             .map(ImportCandidateDeleteEvent::getScopusIdentifier)
             .map(this::fetchImportCandidate)
             .forEach(resourceService::deleteImportCandidate)
@@ -108,11 +105,5 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
         return "(additionalIdentifiers.value:\""
                + scopusIdentifier
                + "\")+AND+(additionalIdentifiers.source:\"scopusIdentifier\")";
-    }
-
-    private ImportCandidateDeleteEvent getEventReference(EventReference input) {
-        var blobString = s3Driver.readEvent(input.getUri());
-        logger.info("Blob string: {}", blobString);
-        return ImportCandidateDeleteEvent.fromJson(blobString);
     }
 }

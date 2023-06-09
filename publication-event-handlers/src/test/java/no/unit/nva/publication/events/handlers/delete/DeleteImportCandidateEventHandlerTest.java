@@ -73,7 +73,7 @@ public class DeleteImportCandidateEventHandlerTest extends ResourcesLocalTest {
         uriRetriever = mock(UriRetriever.class);
         s3Driver = new S3Driver(eventsBucket, "eventsBucket");
         resourceService = new ResourceService(client, "import-candidates");
-        this.handler = new DeleteImportCandidateEventHandler(s3Driver, resourceService, uriRetriever);
+        this.handler = new DeleteImportCandidateEventHandler(resourceService, uriRetriever);
     }
 
     @Test
