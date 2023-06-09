@@ -41,8 +41,7 @@ public class DeleteImportCandidateEventHandler
         this(ResourceService.defaultService(TABLE_NAME), new UriRetriever());
     }
 
-    protected DeleteImportCandidateEventHandler(
-        ResourceService resourceService, UriRetriever uriRetriever) {
+    protected DeleteImportCandidateEventHandler(ResourceService resourceService, UriRetriever uriRetriever) {
         super(ImportCandidateDeleteEvent.class);
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;

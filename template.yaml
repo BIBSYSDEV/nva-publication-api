@@ -303,6 +303,8 @@ Resources:
     Type: "AWS::SQS::Queue"
   ImportCandidateExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  DeleteImportCandidateHandlerDLQ:
+    Type: "AWS::SQS::Queue"
 
 
   #==============================ROLES=======================================================================
@@ -962,6 +964,14 @@ Resources:
             Pattern:
               detail:
                 topic: [ "ImportCandidates.Scopus.Delete" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeleteImportCandidateHandlerDLQ.Arn
 
 
   DeletionProcessInitializationHandler:
