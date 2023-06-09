@@ -95,8 +95,14 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
         return UriWrapper.fromHost(API_HOST)
                    .addChild(SEARCH)
                    .addChild(IMPORT_CANDIDATES)
-                   .addQueryParameter(QUERY, scopusIdentifier)
+                   .addQueryParameter(QUERY, constructQuery(scopusIdentifier))
                    .getUri();
+    }
+
+    private String constructQuery(String scopusIdentifier) {
+        return "(additionalIdentifiers.value:\""
+               + scopusIdentifier
+               + "\")+AND+(additionalIdentifiers.source:\"scopusIdentifier\")";
     }
 
     private ImportCandidateDeleteEvent getEventReference(EventReference input) {
