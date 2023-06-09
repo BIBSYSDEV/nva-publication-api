@@ -69,6 +69,7 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
     }
 
     private List<PutEventsResult> emitEvents(List<ImportCandidateDeleteEvent> events, Context context) {
+        logger.info("Events to emit: {}", events.toString());
         var batchEventEmitter = new BatchEventEmitter<ImportCandidateDeleteEvent>(
             ImportCandidateDeleteEvent.class.getCanonicalName(),
             context.getInvokedFunctionArn(),

@@ -55,6 +55,7 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
+        logger.info("Event reference: {}", input);
 
         attempt(() -> getEventReference(input))
             .map(ImportCandidateDeleteEvent::getScopusIdentifier)
@@ -109,7 +110,6 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
     }
 
     private ImportCandidateDeleteEvent getEventReference(EventReference input) {
-        logger.info("Input: {}", input.toJsonString());
         var blobString = s3Driver.readEvent(input.getUri());
         logger.info("Blob string: {}", blobString);
         return ImportCandidateDeleteEvent.fromJson(blobString);
