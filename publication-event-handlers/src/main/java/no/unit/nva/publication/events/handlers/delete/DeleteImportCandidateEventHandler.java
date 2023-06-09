@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventHandler.class);
     public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String API_HOST = new Environment().readEnv("API_HOST");
@@ -34,6 +33,7 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
     public static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
     public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
                                                                                  + "candidate";
+    private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventHandler.class);
     private final S3Driver s3Driver;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
@@ -55,6 +55,7 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
+        logger.info(event.getDetail().toString());
         logger.info("Event reference: {}", input);
 
         attempt(() -> getEventReference(input))
