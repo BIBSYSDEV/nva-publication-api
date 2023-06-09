@@ -2,13 +2,17 @@ package no.unit.nva.expansion.model;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
+import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextId;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
+import static no.unit.nva.expansion.model.ExpandedResource.isAcademicChapter;
+import static no.unit.nva.expansion.model.ExpandedResource.isPublicationContextTypeAnthology;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,10 +25,18 @@ import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.vocabulary.RDF;
 
 public class IndexDocumentWrapperLinkedData {
+
     public static final String PART_OF_FIELD = "/partOf";
     public static final String ID_FIELD = "/id";
+    public static final String EMPTY_STRING = "";
+    public static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
     private final UriRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
@@ -37,12 +49,43 @@ public class IndexDocumentWrapperLinkedData {
         return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
     }
 
+    private static String extractIdField(JsonNode i) {
+        return i.at(ID_FIELD).asText();
+    }
+
+    private static Stream<JsonNode> extractParentAffiliationNodes(String affiliation) {
+        var json = attempt(() -> dtoObjectMapper.readTree(affiliation)).orElseThrow().at(PART_OF_FIELD);
+        return toStream(json);
+    }
+
+    private static Stream<JsonNode> toStream(JsonNode jsonNode) {
+        return StreamSupport.stream(jsonNode.spliterator(), false);
+    }
+
+    private static void removePublicationTypeFromResource(URI id, Model model) {
+        var publicationType = model.createResource(PUBLICATION_ONTOLOGY);
+        model.remove(model.createStatement(model.createResource(id.toString()), RDF.type, publicationType));
+    }
+
+    private static String writeModelAsJsonLdString(Model model) {
+        var stringWriter = new StringWriter();
+        RDFDataMgr.write(stringWriter, model, Lang.JSONLD);
+        return stringWriter.toString();
+    }
+
+    private static Model createModel(String input) {
+        var model = ModelFactory.createDefaultModel();
+        RDFDataMgr.read(model, stringToStream(input), Lang.JSONLD);
+        return model;
+    }
+
     //TODO: parallelize
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
+        inputStreams.add(stringToStream(fetchAnthologyContent(indexDocument)));
         return inputStreams;
     }
 
@@ -62,6 +105,27 @@ public class IndexDocumentWrapperLinkedData {
                    .collect(Collectors.toList());
     }
 
+    private String fetchAnthologyContent(JsonNode indexDocument) {
+        return isAcademicChapter(indexDocument) && isPublicationContextTypeAnthology(indexDocument)
+                   ? getAnthology(indexDocument)
+                   : EMPTY_STRING;
+    }
+
+    private String getAnthology(JsonNode indexDocument) {
+        var anthologyUri = extractPublicationContextId(indexDocument);
+        return getParentPublication(anthologyUri);
+    }
+
+    private String getParentPublication(URI publicationId) {
+        var input = fetch(publicationId);
+        if (input.isEmpty()) {
+            return EMPTY_STRING;
+        }
+        var model = createModel(input.get());
+        removePublicationTypeFromResource(publicationId, model);
+        return writeModelAsJsonLdString(model);
+    }
+
     private Stream<String> fetchContentRecursively(URI uri) {
         var affiliation = fetch(uri);
         if (affiliation.isEmpty()) {
@@ -74,20 +138,7 @@ public class IndexDocumentWrapperLinkedData {
         return Stream.concat(Stream.of(affiliation.get()), parentAffiliations);
     }
 
-    private static String extractIdField(JsonNode i) {
-        return i.at(ID_FIELD).asText();
-    }
-
-    private static Stream<JsonNode> extractParentAffiliationNodes(String affiliation) {
-        var json = attempt(() -> dtoObjectMapper.readTree(affiliation)).orElseThrow().at(PART_OF_FIELD);
-        return toStream(json);
-    }
-
     private Optional<String> fetch(URI externalReference) {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
-    }
-
-    private static Stream<JsonNode> toStream(JsonNode jsonNode) {
-        return StreamSupport.stream(jsonNode.spliterator(), false);
     }
 }

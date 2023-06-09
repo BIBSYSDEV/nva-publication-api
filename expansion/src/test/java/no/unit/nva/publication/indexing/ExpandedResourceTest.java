@@ -70,6 +70,8 @@ class ExpandedResourceTest {
     private static final String SERIES_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/series/name";
     private static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
+    private static final String ID_NAMESPACE = System.getenv("ID_NAMESPACE");
+
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
 
     private UriRetriever uriRetriever;
@@ -170,7 +172,7 @@ class ExpandedResourceTest {
     void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier(Class<?> publicationInstance)
         throws JsonProcessingException {
 
-        var publication = PublicationGenerator.randomPublication(publicationInstance);
+        var publication = PublicationGenerator.randomPublication(AcademicChapter.class);
         var indexDocument = fromPublication(uriRetriever, publication);
         var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
         var expectedUri =
@@ -236,10 +238,12 @@ class ExpandedResourceTest {
         var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
         var academicChapter = getAcademicChapterPartOfAnthology(bookAnthology);
         mockUriRetrieverPublicationResponse(bookAnthology);
+        var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
 
         var expandedResource = fromPublication(uriRetriever, academicChapter);
-        var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
-        assertThat(expandedResource.getPublicationContextUris(),
+        var expandedResourceJsonNode = expandedResource.asJsonNode();
+        var actualPublicationChannelUris = extractActualPublicationChannelUris(expandedResourceJsonNode);
+        assertThat(actualPublicationChannelUris,
                    containsInAnyOrder(expectedPublicationChannelIds.toArray()));
     }
 
@@ -271,6 +275,16 @@ class ExpandedResourceTest {
     void shouldNotFailWhenInputContainsAffiliationsThatAreIncomplete() {
         var publication = createPublicationWithEmptyAffiliations();
         assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
+    }
+
+    private static List<URI> extractActualPublicationChannelUris(ObjectNode expandedResourceJsonNode) {
+        var actualPublisherId = URI.create(expandedResourceJsonNode.at(
+            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+            + "/publisher/id").textValue());
+        var actualSeriesId = URI.create(expandedResourceJsonNode.at(
+            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+            + "/series/id").textValue());
+        return List.of(actualPublisherId, actualSeriesId);
     }
 
     private static Publication getAcademicChapterPartOfAnthology(Publication bookAnthology) {
@@ -319,15 +333,17 @@ class ExpandedResourceTest {
     }
 
     private static URI toPublicationId(SortableIdentifier identifier) {
-        return UriWrapper.fromUri(HOST_URI)
+        return UriWrapper.fromUri(ID_NAMESPACE)
                    .addChild(identifier.toString())
                    .getUri();
     }
 
     private void mockUriRetrieverPublicationResponse(Publication publication) throws JsonProcessingException {
         var publicationId = toPublicationId(publication.getIdentifier());
-        var publicationResponse = objectMapper.writeValueAsString(PublicationResponse.fromPublication(publication));
-        when(uriRetriever.getRawContent(eq(publicationId), any())).thenReturn(Optional.of(publicationResponse));
+        var publicationResponse = PublicationResponse.fromPublication(publication);
+        publicationResponse.setId(publicationId);
+        when(uriRetriever.getRawContent(eq(publicationId), any())).thenReturn(
+            Optional.of(objectMapper.writeValueAsString(publicationResponse)));
     }
 
     private List<URI> getPublicationContextUris(Book book) {
