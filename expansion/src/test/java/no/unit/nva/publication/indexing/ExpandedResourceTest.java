@@ -2,8 +2,6 @@ package no.unit.nva.publication.indexing;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
@@ -66,15 +64,25 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class ExpandedResourceTest {
 
+    private static final String SERIES_LEVEL_JSON_PTR =
+        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+        + "/series/level";
+    private static final String PUBLISHER_LEVEL_JSON_PTR = "/entityDescription/reference/publicationContext"
+                                                           + "/entityDescription/reference/publicationContext"
+                                                           + "/publisher/level";
+    private static final String PUBLISHER_ID_JSON_PTR =
+        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+        + "/publisher/id";
+    private static final String SERIES_ID_JSON_PTR =
+        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+        + "/series/id";
     private static final String PUBLISHER_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/publisher/name";
     private static final String SERIES_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/series/name";
     private static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
     private static final String ID_NAMESPACE = System.getenv("ID_NAMESPACE");
-
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
-
     private UriRetriever uriRetriever;
 
     @BeforeEach
@@ -99,9 +107,10 @@ class ExpandedResourceTest {
         final ExpandedResource indexDocument = fromPublication(mockUriRetriever, publication);
         final JsonNode framedResultNode = indexDocument.asJsonNode();
 
-        assertEquals(publisherUri.toString(), framedResultNode.at(PUBLISHER_ID_JSON_PTR).textValue());
+        assertEquals(publisherUri.toString(),
+                     framedResultNode.at(PublicationJsonPointers.PUBLISHER_ID_JSON_PTR).textValue());
         assertEquals(publisherName, framedResultNode.at(PUBLISHER_NAME_JSON_PTR).textValue());
-        assertEquals(seriesUri.toString(), framedResultNode.at(SERIES_ID_JSON_PTR).textValue());
+        assertEquals(seriesUri.toString(), framedResultNode.at(PublicationJsonPointers.SERIES_ID_JSON_PTR).textValue());
         assertEquals(seriesName, framedResultNode.at(SERIES_NAME_JSON_PTR).textValue());
     }
 
@@ -257,12 +266,8 @@ class ExpandedResourceTest {
 
         var expandedResource = fromPublication(uriRetriever, academicChapter);
         var expandedResourceJsonNode = expandedResource.asJsonNode();
-        var actualSeriesLevel = expandedResourceJsonNode.at(
-            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-            + "/series/level").textValue();
-        var actualPublisherLevel = expandedResourceJsonNode.at("/entityDescription/reference/publicationContext"
-                                                               + "/entityDescription/reference/publicationContext"
-                                                               + "/publisher/level").textValue();
+        var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
+        var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
         assertThat(actualSeriesLevel, is(not(nullValue())));
         assertThat(actualPublisherLevel, is(not(nullValue())));
     }
@@ -314,12 +319,8 @@ class ExpandedResourceTest {
     }
 
     private static List<URI> extractActualPublicationChannelUris(ObjectNode expandedResourceJsonNode) {
-        var actualPublisherId = URI.create(expandedResourceJsonNode.at(
-            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-            + "/publisher/id").textValue());
-        var actualSeriesId = URI.create(expandedResourceJsonNode.at(
-            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-            + "/series/id").textValue());
+        var actualPublisherId = URI.create(expandedResourceJsonNode.at(PUBLISHER_ID_JSON_PTR).textValue());
+        var actualSeriesId = URI.create(expandedResourceJsonNode.at(SERIES_ID_JSON_PTR).textValue());
         return List.of(actualPublisherId, actualSeriesId);
     }
 
