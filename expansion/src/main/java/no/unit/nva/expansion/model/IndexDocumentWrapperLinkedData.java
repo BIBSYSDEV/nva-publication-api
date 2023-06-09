@@ -90,7 +90,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private String getAnthology(JsonNode indexDocument) throws JsonProcessingException {
         var anthologyUri = extractPublicationContextId(indexDocument);
-        return new ExpandedParentPublication(uriRetriever).getParentPublication(anthologyUri);
+        return new ExpandedParentPublication(uriRetriever).getExpandedParentPublication(anthologyUri);
     }
 
     private Stream<String> fetchContentRecursively(URI uri) {

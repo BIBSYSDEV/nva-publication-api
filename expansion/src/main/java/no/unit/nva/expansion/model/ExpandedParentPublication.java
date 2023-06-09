@@ -4,6 +4,7 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.apache.jena.rdf.model.ModelFactory.createDefaultModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -16,7 +17,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.vocabulary.RDF;
@@ -31,12 +31,13 @@ public class ExpandedParentPublication {
         this.uriRetriever = uriRetriever;
     }
 
-    public String getParentPublication(URI publicationId) throws JsonProcessingException {
+    public String getExpandedParentPublication(URI publicationId) throws JsonProcessingException {
         var publicationResponseBody = fetch(publicationId);
         if (publicationResponseBody.isEmpty()) {
             return EMPTY_STRING;
         }
-        var model = createModel(publicationResponseBody.get());
+        var model = createDefaultModel();
+        loadPublicationWithChannelDataIntoModel(publicationResponseBody.get(), model);
         removePublicationTypeFromResource(publicationId, model);
         return writeModelAsJsonLdString(model);
     }
@@ -52,11 +53,9 @@ public class ExpandedParentPublication {
         model.remove(model.createStatement(model.createResource(id.toString()), RDF.type, publicationType));
     }
 
-    private Model createModel(String publicationJsonString) throws JsonProcessingException {
+    private void loadPublicationWithChannelDataIntoModel(String publicationJsonString, Model model) throws JsonProcessingException {
         var inputStreams = getInputStreams(publicationJsonString);
-        var model = ModelFactory.createDefaultModel();
         inputStreams.forEach(inputStream -> RDFDataMgr.read(model, inputStream, Lang.JSONLD));
-        return model;
     }
 
     private List<InputStream> getInputStreams(String publicationJsonString)
@@ -67,8 +66,8 @@ public class ExpandedParentPublication {
         return inputStreams;
     }
 
-    private Collection<? extends InputStream> fetchAll(List<URI> publicationContextUris) {
-        return publicationContextUris.stream()
+    private Collection<? extends InputStream> fetchAll(List<URI> externalReferences) {
+        return externalReferences.stream()
                    .map(this::fetch)
                    .flatMap(Optional::stream)
                    .map(IoUtils::stringToStream)
