@@ -925,6 +925,7 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
       Events:
         Scopus:
