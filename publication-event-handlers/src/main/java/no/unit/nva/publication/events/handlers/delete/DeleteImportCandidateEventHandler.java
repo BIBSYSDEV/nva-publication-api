@@ -18,9 +18,12 @@ import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
+    private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventHandler.class);
     public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String API_HOST = new Environment().readEnv("API_HOST");
@@ -106,7 +109,9 @@ public class DeleteImportCandidateEventHandler extends DestinationsEventBridgeEv
     }
 
     private ImportCandidateDeleteEvent getEventReference(EventReference input) {
+        logger.info("Input: {}", input.toJsonString());
         var blobString = s3Driver.readEvent(input.getUri());
+        logger.info("Blob string: {}", blobString);
         return ImportCandidateDeleteEvent.fromJson(blobString);
     }
 }
