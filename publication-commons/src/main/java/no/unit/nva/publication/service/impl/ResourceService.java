@@ -124,9 +124,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     /**
      * Should not be used initiating resourceService for resource-table
-     *
      * @param tableName name of table
-     * @return
+     * @return ResourceService
      */
 
     @JacocoGenerated
