@@ -941,7 +941,7 @@ Resources:
   DeleteImportCandidateEventHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: scopus-import
+      CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventHandler::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
