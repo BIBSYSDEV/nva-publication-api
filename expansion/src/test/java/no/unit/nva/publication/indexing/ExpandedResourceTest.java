@@ -7,6 +7,7 @@ import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -86,8 +87,8 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
-        final URI seriesUri = extractSeriesUri(publication);
-        final URI publisherUri = extractPublisherUri(publication);
+        final URI seriesUri = extractSeriesId(publication);
+        final URI publisherUri = extractPublisherId(publication);
         final String publisherName = randomString();
         final String seriesName = randomString();
 
@@ -111,8 +112,8 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithCorrectTopLevelOrganization(int depth) throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
-        final URI seriesUri = extractSeriesUri(publication);
-        final URI publisherUri = extractPublisherUri(publication);
+        final URI seriesUri = extractSeriesId(publication);
+        final URI publisherUri = extractPublisherId(publication);
         final URI affiliationToBeExpandedId = extractAffiliationsUris(publication).get(0);
         final String publisherName = randomString();
         final String seriesName = randomString();
@@ -143,8 +144,8 @@ class ExpandedResourceTest {
     void shouldNotCreateTopLevelOrgForBlankNodes() throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
-        final URI seriesUri = extractSeriesUri(publication);
-        final URI publisherUri = extractPublisherUri(publication);
+        final URI seriesUri = extractSeriesId(publication);
+        final URI publisherUri = extractPublisherId(publication);
         final String publisherName = randomString();
         final String seriesName = randomString();
 
@@ -248,6 +249,25 @@ class ExpandedResourceTest {
     }
 
     @Test
+    void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
+        throws IOException {
+        var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
+        var academicChapter = getAcademicChapterPartOfAnthology(bookAnthology);
+        mockUriRetrieverResponses(bookAnthology);
+
+        var expandedResource = fromPublication(uriRetriever, academicChapter);
+        var expandedResourceJsonNode = expandedResource.asJsonNode();
+        var actualSeriesLevel = expandedResourceJsonNode.at(
+            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+            + "/series/level").textValue();
+        var actualPublisherLevel = expandedResourceJsonNode.at("/entityDescription/reference/publicationContext"
+                                                               + "/entityDescription/reference/publicationContext"
+                                                               + "/publisher/level").textValue();
+        assertThat(actualSeriesLevel, is(not(nullValue())));
+        assertThat(actualPublisherLevel, is(not(nullValue())));
+    }
+
+    @Test
     void shouldNotFailWhenThereIsNoPublicationContext() throws JsonProcessingException {
 
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
@@ -275,6 +295,22 @@ class ExpandedResourceTest {
     void shouldNotFailWhenInputContainsAffiliationsThatAreIncomplete() {
         var publication = createPublicationWithEmptyAffiliations();
         assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
+    }
+
+    private static void addPublisherToMockUriRetriever(UriRetriever uriRetriever, URI publisherId) throws IOException {
+        var publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, randomString());
+        mockGetRawContentResponse(uriRetriever, publisherId, publicationChannelSamplePublisher);
+    }
+
+    private static void addSeriesToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
+
+        var publicationChannelSampleSeries = getPublicationChannelSampleSeries(seriesId, randomString());
+        mockGetRawContentResponse(uriRetriever, seriesId, publicationChannelSampleSeries);
+    }
+
+    private static void mockGetRawContentResponse(UriRetriever uriRetriever, URI uri, String response) {
+        when(uriRetriever.getRawContent(eq(uri), any()))
+            .thenReturn(Optional.of(response));
     }
 
     private static List<URI> extractActualPublicationChannelUris(ObjectNode expandedResourceJsonNode) {
@@ -321,11 +357,9 @@ class ExpandedResourceTest {
                                                                          String publisherName)
         throws IOException {
         String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
-        when(mockUriRetriever.getRawContent(eq(journalId), any()))
-            .thenReturn(Optional.of(publicationChannelSampleJournal));
+        mockGetRawContentResponse(mockUriRetriever, journalId, publicationChannelSampleJournal);
         String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
-        when(mockUriRetriever.getRawContent(eq(publisherId), any()))
-            .thenReturn(Optional.of(publicationChannelSamplePublisher));
+        mockGetRawContentResponse(mockUriRetriever, publisherId, publicationChannelSamplePublisher);
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {
@@ -338,12 +372,23 @@ class ExpandedResourceTest {
                    .getUri();
     }
 
+    private void mockUriRetrieverResponses(Publication bookAnthology) throws IOException {
+        mockUriRetrieverPublicationChannelResponses(bookAnthology);
+        mockUriRetrieverPublicationResponse(bookAnthology);
+    }
+
+    private void mockUriRetrieverPublicationChannelResponses(Publication bookAnthology) throws IOException {
+        var seriesId = extractSeriesId(bookAnthology);
+        var publisherId = extractPublisherId(bookAnthology);
+        addSeriesToMockUriRetriever(uriRetriever, seriesId);
+        addPublisherToMockUriRetriever(uriRetriever, publisherId);
+    }
+
     private void mockUriRetrieverPublicationResponse(Publication publication) throws JsonProcessingException {
         var publicationId = toPublicationId(publication.getIdentifier());
         var publicationResponse = PublicationResponse.fromPublication(publication);
         publicationResponse.setId(publicationId);
-        when(uriRetriever.getRawContent(eq(publicationId), any())).thenReturn(
-            Optional.of(objectMapper.writeValueAsString(publicationResponse)));
+        mockGetRawContentResponse(uriRetriever, publicationId, objectMapper.writeValueAsString(publicationResponse));
     }
 
     private List<URI> getPublicationContextUris(Book book) {
@@ -390,7 +435,7 @@ class ExpandedResourceTest {
         return (Journal) publication.getEntityDescription().getReference().getPublicationContext();
     }
 
-    private URI extractPublisherUri(Publication publication) {
+    private URI extractPublisherId(Publication publication) {
         Book book = extractBook(publication);
         Publisher publisher = extractPublisher(book);
         return publisher.getId();
@@ -407,7 +452,7 @@ class ExpandedResourceTest {
                    .collect(Collectors.toList());
     }
 
-    private URI extractSeriesUri(Publication publication) {
+    private URI extractSeriesId(Publication publication) {
         Book book = extractBook(publication);
         Series confirmedSeries = (Series) book.getSeries();
         return confirmedSeries.getId();
