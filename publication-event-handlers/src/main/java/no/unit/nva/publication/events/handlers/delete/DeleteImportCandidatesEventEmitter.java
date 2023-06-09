@@ -1,8 +1,5 @@
-package no.unit.nva.publication.s3imports;
+package no.unit.nva.publication.events.handlers.delete;
 
-import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
-import static no.unit.nva.publication.s3imports.DeleteEntriesEventEmitter.NON_EMITTED_FILENAMES_WARNING_PREFIX;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.LINE_SEPARATOR;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -11,6 +8,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
+import no.unit.nva.publication.s3imports.ApplicationConstants;
+import no.unit.nva.publication.s3imports.BatchEventEmitter;
+import no.unit.nva.publication.s3imports.PutEventsResult;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -24,6 +25,7 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String SCOPUS_IDENTIFIER_DELIMITER = "DELETE-";
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
+    public static final String NOT_EMITTED_EVENTS = "Not emitted events {}:";
     private static final int SINGLE_EXPECTED_FILE = 0;
     private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidatesEventEmitter.class);
     private final S3Client s3Client;
@@ -31,7 +33,7 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
 
     @JacocoGenerated
     public DeleteImportCandidatesEventEmitter() {
-        this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient());
+        this(S3Driver.defaultS3Client().build(), ApplicationConstants.defaultEventBridgeClient());
     }
 
     public DeleteImportCandidatesEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
@@ -46,8 +48,7 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
             .map(this::extractIdentifiers)
             .map(this::createEvents)
             .map(scopusDeletionEventList -> emitEvents(scopusDeletionEventList, context))
-            .forEach(this::logWarningForNotEmittedFilenames);
-
+            .forEach(this::logWarningForNotEmittedEvents);
         return null;
     }
 
@@ -69,11 +70,12 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
     }
 
     private List<PutEventsResult> emitEvents(List<ImportCandidateDeleteEvent> events, Context context) {
-        logger.info("Events to emit: {}, {}", events.get(0).getTopic(), events.get(0).getScopusIdentifier());
         var batchEventEmitter = new BatchEventEmitter<ImportCandidateDeleteEvent>(
             ImportCandidateDeleteEvent.class.getCanonicalName(),
             context.getInvokedFunctionArn(),
             eventBridgeClient);
+        logger.info("Events to emit: {}",
+                    events.stream().map(ImportCandidateDeleteEvent::toJsonString).collect(Collectors.toList()));
         batchEventEmitter.addEvents(events);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
     }
@@ -85,7 +87,6 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
     }
 
     private String extractScopusIdentifier(String item) {
-
         return item.split(SCOPUS_IDENTIFIER_DELIMITER)[1];
     }
 
@@ -107,13 +108,13 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
         return event.getRecords().get(SINGLE_EXPECTED_FILE).getS3().getObject().getKey();
     }
 
-    private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
+    private void logWarningForNotEmittedEvents(List<PutEventsResult> failedRequests) {
         if (!failedRequests.isEmpty()) {
             String failedRequestsString = failedRequests
                                               .stream()
                                               .map(PutEventsResult::toString)
-                                              .collect(Collectors.joining(LINE_SEPARATOR));
-            logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX, failedRequestsString);
+                                              .collect(Collectors.joining("\n"));
+            logger.warn(NOT_EMITTED_EVENTS, failedRequestsString);
         }
     }
 }

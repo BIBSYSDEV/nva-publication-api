@@ -52,7 +52,7 @@ public class DeleteImportCandidateEventHandler
     protected Void processInputPayload(ImportCandidateDeleteEvent input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<ImportCandidateDeleteEvent>> event,
                                        Context context) {
-        logger.info(event.getDetail().toString());
+        logger.info("EventBridgeEvent {}", event.getDetail().getResponsePayload().toString());
         logger.info("Event reference: {}", input);
 
         attempt(() -> input)
