@@ -1,7 +1,6 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextId;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
@@ -14,7 +13,6 @@ import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,18 +25,12 @@ import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.vocabulary.RDF;
 
 public class IndexDocumentWrapperLinkedData {
 
-    public static final String PART_OF_FIELD = "/partOf";
-    public static final String ID_FIELD = "/id";
-    public static final String EMPTY_STRING = "";
-    public static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
+    private static final String PART_OF_FIELD = "/partOf";
+    private static final String ID_FIELD = "/id";
+    private static final String EMPTY_STRING = "";
     private final UriRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
@@ -62,17 +54,6 @@ public class IndexDocumentWrapperLinkedData {
 
     private static Stream<JsonNode> toStream(JsonNode jsonNode) {
         return StreamSupport.stream(jsonNode.spliterator(), false);
-    }
-
-    private static void removePublicationTypeFromResource(URI id, Model model) {
-        var publicationType = model.createResource(PUBLICATION_ONTOLOGY);
-        model.remove(model.createStatement(model.createResource(id.toString()), RDF.type, publicationType));
-    }
-
-    private static String writeModelAsJsonLdString(Model model) {
-        var stringWriter = new StringWriter();
-        RDFDataMgr.write(stringWriter, model, Lang.JSONLD);
-        return stringWriter.toString();
     }
 
     //TODO: parallelize
@@ -109,32 +90,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private String getAnthology(JsonNode indexDocument) throws JsonProcessingException {
         var anthologyUri = extractPublicationContextId(indexDocument);
-        return getParentPublication(anthologyUri);
-    }
-
-    private String getParentPublication(URI publicationId) throws JsonProcessingException {
-        var publicationResponseBody = fetch(publicationId);
-        if (publicationResponseBody.isEmpty()) {
-            return EMPTY_STRING;
-        }
-        var model = createModel(publicationResponseBody.get());
-        removePublicationTypeFromResource(publicationId, model);
-        return writeModelAsJsonLdString(model);
-    }
-
-    private Model createModel(String publicationJsonString) throws JsonProcessingException {
-        var inputStreams = getParentPublicationInputStreams(publicationJsonString);
-        var model = ModelFactory.createDefaultModel();
-        inputStreams.forEach(inputStream -> RDFDataMgr.read(model, inputStream, Lang.JSONLD));
-        return model;
-    }
-
-    private List<InputStream> getParentPublicationInputStreams(String publicationJsonString)
-        throws JsonProcessingException {
-        var inputStreams = new ArrayList<InputStream>();
-        inputStreams.add(stringToStream(publicationJsonString));
-        inputStreams.addAll(fetchAll(extractPublicationContextUris(objectMapper.readTree(publicationJsonString))));
-        return inputStreams;
+        return new ExpandedParentPublication(uriRetriever).getParentPublication(anthologyUri);
     }
 
     private Stream<String> fetchContentRecursively(URI uri) {
