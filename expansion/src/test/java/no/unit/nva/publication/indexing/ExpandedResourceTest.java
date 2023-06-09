@@ -172,7 +172,7 @@ class ExpandedResourceTest {
     void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier(Class<?> publicationInstance)
         throws JsonProcessingException {
 
-        var publication = PublicationGenerator.randomPublication(AcademicChapter.class);
+        var publication = PublicationGenerator.randomPublication(publicationInstance);
         var indexDocument = fromPublication(uriRetriever, publication);
         var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
         var expectedUri =
