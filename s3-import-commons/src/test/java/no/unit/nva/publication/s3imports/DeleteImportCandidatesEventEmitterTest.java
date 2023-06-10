@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.delete;
+package no.unit.nva.publication.s3imports;
 
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -20,8 +20,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
-import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -46,7 +44,7 @@ public class DeleteImportCandidatesEventEmitterTest {
     public static final Context CONTEXT = Mockito.mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
     public static final InputStream EVENT = IoUtils.inputStreamFromResources(
-        "delete/delete_scopus_identifier_list.txt");
+        "delete_scopus_identifier_list.txt");
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;

@@ -15,10 +15,8 @@ import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class DeleteImportCandidateEventHandler
+public class DeleteImportCandidateEventConsumer
     extends EventHandler<ImportCandidateDeleteEvent, Void> {
 
     public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
@@ -31,16 +29,15 @@ public class DeleteImportCandidateEventHandler
     public static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
     public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
                                                                                  + "candidate";
-    private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventHandler.class);
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
 
     @JacocoGenerated
-    public DeleteImportCandidateEventHandler() {
+    public DeleteImportCandidateEventConsumer() {
         this(ResourceService.defaultService(TABLE_NAME), new UriRetriever());
     }
 
-    protected DeleteImportCandidateEventHandler(ResourceService resourceService, UriRetriever uriRetriever) {
+    protected DeleteImportCandidateEventConsumer(ResourceService resourceService, UriRetriever uriRetriever) {
         super(ImportCandidateDeleteEvent.class);
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;
@@ -49,11 +46,6 @@ public class DeleteImportCandidateEventHandler
     @Override
     protected Void processInput(ImportCandidateDeleteEvent input, AwsEventBridgeEvent<ImportCandidateDeleteEvent> event,
                                 Context context) {
-        logger.info("Deleting import candidate");
-        logger.info("Event {}", event);
-        logger.info("EventBridgeEvent {}", event.toJsonString());
-        logger.info("Input {}", input);
-
         attempt(() -> input)
             .map(ImportCandidateDeleteEvent::getScopusIdentifier)
             .map(this::fetchImportCandidate)
@@ -83,8 +75,8 @@ public class DeleteImportCandidateEventHandler
         return attempt(() -> constructUri(scopusIdentifier))
                    .map(this::getResponseBody)
                    .map(Optional::get)
-                   .map(DeleteImportCandidateEventHandler::toSearchApiResponse)
-                   .map(DeleteImportCandidateEventHandler::toImportCandidate)
+                   .map(DeleteImportCandidateEventConsumer::toSearchApiResponse)
+                   .map(DeleteImportCandidateEventConsumer::toImportCandidate)
                    .orElseThrow();
     }
 

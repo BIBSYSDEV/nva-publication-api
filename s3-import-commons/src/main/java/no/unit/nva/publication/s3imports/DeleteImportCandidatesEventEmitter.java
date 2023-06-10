@@ -1,6 +1,5 @@
-package no.unit.nva.publication.events.handlers.delete;
+package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent.EVENT_TOPIC;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -9,10 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
-import no.unit.nva.publication.s3imports.ApplicationConstants;
-import no.unit.nva.publication.s3imports.BatchEventEmitter;
-import no.unit.nva.publication.s3imports.PutEventsResult;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -62,7 +57,7 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
     }
 
     private ImportCandidateDeleteEvent createEvent(String id) {
-        return new ImportCandidateDeleteEvent(EVENT_TOPIC, id);
+        return new ImportCandidateDeleteEvent(ImportCandidateDeleteEvent.EVENT_TOPIC, id);
     }
 
     private List<ImportCandidateDeleteEvent> createEvents(Stream<String> scopusIdentifiers) {

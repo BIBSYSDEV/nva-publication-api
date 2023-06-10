@@ -52,7 +52,7 @@ import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class DeleteImportCandidateEventHandlerTest extends ResourcesLocalTest {
+public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = mock(Context.class);
     public static final int TWO_HITS = 2;
@@ -61,7 +61,7 @@ public class DeleteImportCandidateEventHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private S3Driver s3Driver;
     private ByteArrayOutputStream output;
-    private DeleteImportCandidateEventHandler handler;
+    private DeleteImportCandidateEventConsumer handler;
     private UriRetriever uriRetriever;
 
     @BeforeEach
@@ -73,7 +73,7 @@ public class DeleteImportCandidateEventHandlerTest extends ResourcesLocalTest {
         uriRetriever = mock(UriRetriever.class);
         s3Driver = new S3Driver(eventsBucket, "eventsBucket");
         resourceService = new ResourceService(client, "import-candidates");
-        this.handler = new DeleteImportCandidateEventHandler(resourceService, uriRetriever);
+        this.handler = new DeleteImportCandidateEventConsumer(resourceService, uriRetriever);
     }
 
     @Test
@@ -108,7 +108,7 @@ public class DeleteImportCandidateEventHandlerTest extends ResourcesLocalTest {
 
     private String getScopusIdentifier(ImportCandidate importCandidate) {
         return importCandidate.getAdditionalIdentifiers().stream()
-                   .filter(DeleteImportCandidateEventHandlerTest::isScopus)
+                   .filter(DeleteImportCandidateEventConsumerTest::isScopus)
                    .map(AdditionalIdentifier::getValue)
                    .findFirst()
                    .orElseGet(RandomDataGenerator::randomString);
