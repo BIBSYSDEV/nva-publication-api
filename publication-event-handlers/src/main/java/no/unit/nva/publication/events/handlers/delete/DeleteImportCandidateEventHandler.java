@@ -5,8 +5,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
-import no.unit.nva.events.models.AwsEventBridgeDetail;
+import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -20,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DeleteImportCandidateEventHandler
-    extends DestinationsEventBridgeEventHandler<ImportCandidateDeleteEvent, Void> {
+    extends EventHandler<ImportCandidateDeleteEvent, Void> {
 
     public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
@@ -48,11 +47,12 @@ public class DeleteImportCandidateEventHandler
     }
 
     @Override
-    protected Void processInputPayload(ImportCandidateDeleteEvent input,
-                                       AwsEventBridgeEvent<AwsEventBridgeDetail<ImportCandidateDeleteEvent>> event,
-                                       Context context) {
+    protected Void processInput(ImportCandidateDeleteEvent input, AwsEventBridgeEvent<ImportCandidateDeleteEvent> event,
+                                Context context) {
         logger.info("Deleting import candidate");
-        logger.info("EventBridgeEvent {}", event.getDetail().getResponsePayload().toString());
+        logger.info("Event {}", event);
+        logger.info("EventBridgeEvent {}", event.toJsonString());
+        logger.info("Input {}", input);
 
         attempt(() -> input)
             .map(ImportCandidateDeleteEvent::getScopusIdentifier)

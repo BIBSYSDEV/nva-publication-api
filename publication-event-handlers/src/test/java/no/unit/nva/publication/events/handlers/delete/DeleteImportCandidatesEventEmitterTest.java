@@ -72,17 +72,17 @@ public class DeleteImportCandidatesEventEmitterTest {
         assertThat(eventBodiesOfEmittedEventReferences, everyItemIs());
     }
 
-//    @Test
-//    void shouldLogNotEmittedEvents() throws IOException {
-//        var s3Event = createS3Event(RandomDataGenerator.randomString());
-//        eventBridgeClient = new DeleteImportCandidatesEventEmitterTest.FakeEventBridgeClientThatFailsAllPutEvents(
-//            ApplicationConstants.EVENT_BUS_NAME);
-//        s3Driver = new S3Driver(s3Client, "ignoredValue");
-//        handler = new DeleteImportCandidatesEventEmitter(s3Client, eventBridgeClient);
-//        var appender = LogUtils.getTestingAppenderForRootLogger();
-//        handler.handleRequest(s3Event, CONTEXT);
-//        assertThat(appender.getMessages(), containsString("Not emitted events"));
-//    }
+    @Test
+    void shouldLogNotEmittedEvents() throws IOException {
+        var s3Event = createS3Event(RandomDataGenerator.randomString());
+        eventBridgeClient = new DeleteImportCandidatesEventEmitterTest.FakeEventBridgeClientThatFailsAllPutEvents(
+            ApplicationConstants.EVENT_BUS_NAME);
+        s3Driver = new S3Driver(s3Client, "ignoredValue");
+        handler = new DeleteImportCandidatesEventEmitter(s3Client, eventBridgeClient);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        handler.handleRequest(s3Event, CONTEXT);
+        assertThat(appender.getMessages(), containsString("Not emitted events"));
+    }
 
     private static Matcher<Iterable<?>> everyItemIs() {
         return Every.everyItem(HasPropertyWithValue.hasProperty(ImportCandidateDeleteEvent.TOPIC,
