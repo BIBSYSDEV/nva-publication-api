@@ -945,7 +945,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 50
