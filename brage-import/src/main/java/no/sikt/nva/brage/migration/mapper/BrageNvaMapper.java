@@ -39,7 +39,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -156,7 +155,7 @@ public final class BrageNvaMapper {
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
-                   .withLicense(extractLicense(file))
+                   .withLicense(getLicenseUri(file))
                    .withPublisherAuthority(extractPublisherAuthority(record))
                    .withEmbargoDate(extractEmbargoDate(file))
                    .buildPublishedFile();
@@ -175,13 +174,9 @@ public final class BrageNvaMapper {
                    .orElse(false);
     }
 
-    private static License extractLicense(ContentFile file) {
-        var licenseIdentifier = file.getLicense().getNvaLicense().getIdentifier().getValue();
-        return new License.Builder()
-                   .withIdentifier(licenseIdentifier)
-                   .withLabels(Map.of(NORWEGIAN_BOKMAAL, licenseIdentifier))
-                   .build();
-    }
+    private static URI getLicenseUri(ContentFile file) {
+        return file.getLicense().getNvaLicense().getLicenseUri().getValue();
+     }
 
     private static Organization extractPublisher(Record record) {
         return Optional.ofNullable(record.getCustomer())
