@@ -941,7 +941,7 @@ Resources:
                   - Name: suffix
                     Value: '.txt'
 
-  DeleteImportCandidateEventHandler:
+  DeleteImportCandidateEventConsumer:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1162,6 +1162,37 @@ Resources:
                 responsePayload:
                   topic:
                     - "ImportCandidates.DataEntry.Update"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+
+  DeleteImportCandidateEventHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 64
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
                     - "ImportCandidates.DataEntry.Delete"
       EventInvokeConfig:
         DestinationConfig:

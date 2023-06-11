@@ -6,6 +6,10 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
+/**
+ * Event is emitted by DeleteImportCandidatesEventEmitter. Event is consumed by DeleteImportCandidateEventConsumer.
+ */
+
 public class ImportCandidateDeleteEvent implements JsonSerializable {
 
     public static final String EVENT_TOPIC = "ImportCandidates.Scopus.Delete";

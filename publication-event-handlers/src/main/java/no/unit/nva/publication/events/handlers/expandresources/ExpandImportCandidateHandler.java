@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate.IMPORT_CANDIDATE_DELETION;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
@@ -13,7 +13,6 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
-import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -25,7 +24,6 @@ public class ExpandImportCandidateHandler extends
                                           DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
-    public static final String IMPORT_CANDIDATES_DELETED = "ImportCandidates.ExpandedEntry.Deleted";
     public static final Environment ENVIRONMENT = new Environment();
     public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
@@ -49,22 +47,13 @@ public class ExpandImportCandidateHandler extends
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var blob = readBlobFromS3(input);
-        return shouldBeDeleted(blob)
-                   ? createOutputDeletionEvent(blob.getOldData())
-                   : attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData()))
-                         .map(this::createOutPutEventAndPersistDocument).orElseThrow();
+        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData()))
+                   .map(this::createOutPutEventAndPersistDocument)
+                   .orElse(failure -> emptyEvent());
     }
 
-    private static boolean shouldBeDeleted(ImportCandidateDataEntryUpdate blob) {
-        return IMPORT_CANDIDATE_DELETION.equals(blob.getTopic());
-    }
-
-    private EventReference createOutputDeletionEvent(ImportCandidate oldData) {
-        var indexDocument = createIndexDocument(ExpandedImportCandidate.fromImportCandidate(oldData));
-        var uri = writeEntryToS3(indexDocument);
-        var eventReference = new EventReference(IMPORT_CANDIDATES_DELETED, uri);
-        logger.info(eventReference.toJsonString());
-        return eventReference;
+    private EventReference emptyEvent() {
+        return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
     private ImportCandidateDataEntryUpdate readBlobFromS3(EventReference input) {
