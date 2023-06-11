@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -81,7 +82,8 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = persistedImportCandidate();
         var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(importCandidate, SINGLE_HIT));
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
+                                                                             SINGLE_HIT));
         handler.handleRequest(event, output, CONTEXT);
         assertThrows(NotFoundException.class,
                      () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
@@ -94,11 +96,12 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
                IOException {
         var importCandidate = persistedImportCandidate();
         var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(importCandidate, TWO_HITS));
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
+                                                                             TWO_HITS));
         assertThrows(RuntimeException.class, () -> handler.handleRequest(event, output, CONTEXT));
     }
 
-    private static Optional<String> toResponse(ImportCandidate importCandidate, int hits) {
+    private static Optional<String> toResponse(ExpandedImportCandidate importCandidate, int hits) {
         return Optional.of(new ImportCandidateSearchApiResponse(List.of(importCandidate), hits).toString());
     }
 

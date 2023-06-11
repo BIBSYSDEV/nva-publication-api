@@ -6,19 +6,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.expansion.model.ExpandedImportCandidate;
 
 public class ImportCandidateSearchApiResponse implements JsonSerializable {
 
     public static final String HITS = "hits";
     public static final String TOTAL = "total";
     @JsonProperty(HITS)
-    private final List<ImportCandidate> hits;
+    private final List<ExpandedImportCandidate> hits;
     @JsonProperty(TOTAL)
     private final int total;
 
     @JsonCreator
-    public ImportCandidateSearchApiResponse(@JsonProperty(HITS) List<ImportCandidate> hits,
+    public ImportCandidateSearchApiResponse(@JsonProperty(HITS) List<ExpandedImportCandidate> hits,
                                             @JsonProperty(TOTAL) int total) {
         this.hits = hits;
         this.total = total;
@@ -33,7 +33,7 @@ public class ImportCandidateSearchApiResponse implements JsonSerializable {
         return total;
     }
 
-    public List<ImportCandidate> getHits() {
+    public List<ExpandedImportCandidate> getHits() {
         return hits;
     }
 }
