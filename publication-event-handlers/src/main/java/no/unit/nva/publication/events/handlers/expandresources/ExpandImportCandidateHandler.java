@@ -13,6 +13,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
+import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -24,6 +25,7 @@ public class ExpandImportCandidateHandler extends
                                           DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
+    public static final String IMPORT_CANDIDATES_DELETED = "ImportCandidates.ExpandedEntry.Deleted";
     public static final Environment ENVIRONMENT = new Environment();
     public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
@@ -48,7 +50,7 @@ public class ExpandImportCandidateHandler extends
                                                  Context context) {
         var blob = readBlobFromS3(input);
         return shouldBeDeleted(blob)
-                   ? createOutputDeletionEvent()
+                   ? createOutputDeletionEvent(blob.getOldData())
                    : attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData()))
                          .map(this::createOutPutEventAndPersistDocument).orElseThrow();
     }
@@ -57,8 +59,10 @@ public class ExpandImportCandidateHandler extends
         return IMPORT_CANDIDATE_DELETION.equals(blob.getTopic());
     }
 
-    private EventReference createOutputDeletionEvent() {
-        var eventReference = new EventReference("ImportCandidates.ExpandedEntry.Deleted", null);
+    private EventReference createOutputDeletionEvent(ImportCandidate oldData) {
+        var indexDocument = createIndexDocument(ExpandedImportCandidate.fromImportCandidate(oldData));
+        var uri = writeEntryToS3(indexDocument);
+        var eventReference = new EventReference(IMPORT_CANDIDATES_DELETED, uri);
         logger.info(eventReference.toJsonString());
         return eventReference;
     }
