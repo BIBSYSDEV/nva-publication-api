@@ -87,12 +87,12 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotProduceAnExpandedDataEntryWhenInputHasNoNewImage() throws IOException {
+    void shouldProduceDeletionEventWhenInputHasNoNewImage() throws IOException {
         var oldImage = randomImportCandidate();
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, null);
         handler.handleRequest(request, output, CONTEXT);
         var eventReference = JsonUtils.dtoObjectMapper.readValue(output.toString(), EventReference.class);
-        assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
+        assertThat(eventReference.getTopic(), is(equalTo("ImportCandidates.ExpandedEntry.Deleted")));
     }
 
     private EventReference emptyEvent(Instant timestamp) {

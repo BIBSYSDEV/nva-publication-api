@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate.IMPORT_CANDIDATE_DELETION;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
@@ -26,7 +27,6 @@ public class ExpandImportCandidateHandler extends
     public static final Environment ENVIRONMENT = new Environment();
     public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
-    public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
@@ -47,13 +47,20 @@ public class ExpandImportCandidateHandler extends
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var blob = readBlobFromS3(input);
-        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData()))
-                   .map(this::createOutPutEventAndPersistDocument)
-                   .orElse(failure -> emptyEvent());
+        return shouldBeDeleted(blob)
+                   ? createOutputDeletionEvent()
+                   : attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData()))
+                         .map(this::createOutPutEventAndPersistDocument).orElseThrow();
     }
 
-    private EventReference emptyEvent() {
-        return new EventReference(EMPTY_EVENT_TOPIC, null);
+    private static boolean shouldBeDeleted(ImportCandidateDataEntryUpdate blob) {
+        return IMPORT_CANDIDATE_DELETION.equals(blob.getTopic());
+    }
+
+    private EventReference createOutputDeletionEvent() {
+        var eventReference = new EventReference("ImportCandidates.ExpandedEntry.Deleted", null);
+        logger.info(eventReference.toJsonString());
+        return eventReference;
     }
 
     private ImportCandidateDataEntryUpdate readBlobFromS3(EventReference input) {
