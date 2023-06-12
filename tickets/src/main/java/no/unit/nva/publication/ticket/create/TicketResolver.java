@@ -17,7 +17,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -57,18 +56,11 @@ public class TicketResolver {
             persistTicket(ticket);
             return resolvePublishingRequest(ticket, publication, publishingRequestCase, finalizedBy);
         }
-        if (isGeneralSupportRequest(ticket)) {
-            if()
-        }
-            return persistTicket(ticket);
+        return persistTicket(ticket);
     }
 
     private static boolean isNotAdministrativeAgreement(AssociatedArtifact artifact) {
         return artifact instanceof File && !(artifact instanceof AdministrativeAgreement);
-    }
-
-    private boolean isGeneralSupportRequest(TicketEntry ticket) {
-        return ticket instanceof GeneralSupportRequest;
     }
 
     private TicketEntry resolvePublishingRequest(TicketEntry ticket, Publication publication,

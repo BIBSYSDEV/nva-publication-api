@@ -10,6 +10,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -132,6 +133,28 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticketWithMessage = ticketService.fetchTicket(ticket);
         assertThat(ticketWithMessage.getAssignee(), is(equalTo(new Username(sender.getUsername()))));
         var expectedSender = sender.getUser();
+        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldCreateMessageAndDoNotSetCuratorAsAssigneeWhenSenderIsCuratorAndPublicationOwnerAndTicketHasNoAssignee(
+        Class<? extends TicketEntry> ticketType, PublicationStatus status)
+        throws ApiGatewayException, IOException {
+        var curatorAndOwner = UserInstance.create(new User(randomString()), randomUri());
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, curatorAndOwner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, curatorAndOwner, expectedText,
+                                                             ACCESS_RIGHT_DOI_REQUEST, ACCESS_RIGHT_PUBLISH_REQUEST);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertThatResponseContainsCorrectInformation(response, ticket);
+        var ticketWithMessage = ticketService.fetchTicket(ticket);
+        assertThat(ticketWithMessage.getAssignee(), is(nullValue()));
+        var expectedSender = curatorAndOwner.getUser();
         assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
     }
 
