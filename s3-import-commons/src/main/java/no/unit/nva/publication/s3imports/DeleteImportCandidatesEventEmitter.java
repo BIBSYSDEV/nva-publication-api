@@ -13,6 +13,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -29,13 +30,21 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
 
     @JacocoGenerated
     public DeleteImportCandidatesEventEmitter() {
-        this(S3Driver.defaultS3Client().build(), ApplicationConstants.defaultEventBridgeClient());
+        this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient());
     }
 
     public DeleteImportCandidatesEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
         super();
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
+    }
+
+    @JacocoGenerated
+    public static EventBridgeClient defaultEventBridgeClient() {
+        return EventBridgeClient.builder()
+                   .region(ApplicationConstants.AWS_REGION)
+                   .httpClient(UrlConnectionHttpClient.create())
+                   .build();
     }
 
     @Override

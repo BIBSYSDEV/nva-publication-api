@@ -59,7 +59,6 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     public static final int TWO_HITS = 2;
     public static final int SINGLE_HIT = 1;
     public static final int ZERO_HITS = 0;
-    private final Environment environment = mock(Environment.class);
     private ResourceService resourceService;
     private S3Driver s3Driver;
     private ByteArrayOutputStream output;
@@ -69,7 +68,6 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init("import-candidates");
-        when(environment.readEnv("ALLOWED_ORIGIN")).thenReturn("*");
         this.output = new ByteArrayOutputStream();
         var eventsBucket = new FakeS3Client();
         uriRetriever = mock(UriRetriever.class);

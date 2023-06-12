@@ -1183,7 +1183,7 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventHandler::handleRequest
       Runtime: java11
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 64
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
