@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
-import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.DOI_REQUEST_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
@@ -20,8 +19,10 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.storage.ContributionDao;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
@@ -86,15 +87,22 @@ public class ServiceWithTransactions {
 
     protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT));
+            return Optional.of((DoiRequestDao) daos.stream().filter(d -> d instanceof DoiRequestDao).findFirst().get());
         }
         return Optional.empty();
     }
 
+    protected List<ContributionDao> extractContributions(List<Dao> daos) {
+        return
+            daos.stream().filter(d -> d instanceof ContributionDao).map(d -> (ContributionDao) d).collect(Collectors.toList());
+    }
+
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
-        if (doiRequestExists(daos) || onlyResourceExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
+        var dao = daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
+        if (dao instanceof ResourceDao) {
+            return (ResourceDao) dao;
         }
+
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
 
@@ -117,11 +125,7 @@ public class ServiceWithTransactions {
         return new TransactionFailedException(fail.getException());
     }
 
-    private boolean onlyResourceExists(List<Dao> daos) {
-        return daos.size() == 1;
-    }
-
     private boolean doiRequestExists(List<Dao> daos) {
-        return daos.size() == 2;
+        return daos.stream().anyMatch(d -> d instanceof DoiRequestDao);
     }
 }

@@ -4,7 +4,6 @@ import static no.unit.nva.publication.model.storage.DaoUtils.doiRequestDao;
 import static no.unit.nva.publication.model.storage.DaoUtils.sampleResourceDao;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.DOI_REQUEST_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -44,7 +43,8 @@ class JoinWithResourceTest extends ResourcesLocalTest {
 
         List<JoinWithResource> retrievedData = parseResult(result);
 
-        var retrievedDoiRequestDao = (DoiRequestDao) retrievedData.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT);
+        var retrievedDoiRequestDao =
+            (DoiRequestDao) retrievedData.stream().filter(d -> d instanceof DoiRequestDao).findFirst().get();
         var retrievedResourceDao = (ResourceDao) retrievedData.get(RESOURCE_INDEX_IN_QUERY_RESULT);
 
         assertThat(retrievedDoiRequestDao, is(equalTo(doiRequestDao)));

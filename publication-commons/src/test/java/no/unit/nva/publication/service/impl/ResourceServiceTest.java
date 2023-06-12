@@ -5,6 +5,7 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -18,6 +19,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
@@ -28,6 +30,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -58,7 +61,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -67,11 +72,14 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.model.business.Contribution;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -81,7 +89,10 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ContributionDao;
+import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -128,6 +139,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String ASSIGNEE = "assignee";
     private static final String FINALIZED_BY = "finalizedBy";
+    public static final String S_ID_ENTRY = "{S: IdEntry,}";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -147,7 +159,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
         QueryResult queryResult = queryForDraftResource(resourceDaoWithStatusDraft);
-        return parseResult(queryResult);
+        return parseQueryResultAsType(queryResult, ResourceDao.class);
     }
 
     @Test
@@ -259,6 +271,42 @@ class ResourceServiceTest extends ResourcesLocalTest {
         ResourceService resourceService = resourceServiceThatDoesNotReceivePublicationUpdateAfterCreation(client);
         Publication actualPublication = createPersistedPublicationWithDoi(resourceService, publication);
         assertThat(actualPublication, is(nullValue()));
+    }
+
+    @Test
+    void createPublicationInsertsContributionToDatabase() throws BadRequestException {
+        var publication = createPersistedPublicationWithContributions();
+        assertThatContributionsAndIdentifierEntryExist(publication);
+    }
+
+    @Test
+    void fetchAllContributionsForResourceReturnsAllContributorsFromPublication() throws BadRequestException {
+        var publication = createPersistedPublicationWithContributions();
+
+        var originalContributors = new ArrayList<>(publication.getEntityDescription().getContributors());
+
+        var persistedContributors = resourceService
+                                .fetchAllContributionsForResource(Resource.fromPublication(publication))
+                                .map(Contribution::getContributor).collect(Collectors.toList());
+
+        assertThat(
+            new HashSet<>(persistedContributors),
+            is(equalTo(new HashSet<>(originalContributors)))
+        );
+    }
+
+    @Test
+    void fetchAllContributionsForResourceDoesNotReturnContributionsFromOtherResources() throws BadRequestException {
+        var otherPublication = createPersistedPublicationWithContributions();
+        var publication = createPersistedPublicationWithContributions();
+
+        var persistedContributors = resourceService
+                                        .fetchAllContributionsForResource(Resource.fromPublication(publication))
+                                        .map(Contribution::getContributor).collect(Collectors.toList());
+
+        assertThat(persistedContributors,
+                   not(hasItem(equalTo(otherPublication.getEntityDescription().getContributors().get(0))))
+        );
     }
 
     @Test
@@ -713,7 +761,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void deleteDraftPublicationDeletesDraftResourceWithoutDoi() throws ApiGatewayException {
         var publication = createPersistedPublicationWithoutDoi();
-        assertThatIdentifierEntryHasBeenCreated();
+        assertThatIdentifierEntryHasBeenCreated(publication);
 
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
         assertDoesNotThrow(fetchResourceAction);
@@ -728,7 +776,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() throws BadRequestException {
         Publication publication = createPersistedPublicationWithDoi();
-        assertThatIdentifierEntryHasBeenCreated();
+        assertThatIdentifierEntryHasBeenCreated(publication);
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
         assertDoesNotThrow(fetchResourceAction);
 
@@ -737,7 +785,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                                publication.getIdentifier());
         assertThrows(TransactionFailedException.class, deleteAction);
 
-        assertThatTheEntriesHaveNotBeenDeleted();
+        assertThatTheEntriesHaveNotBeenDeleted(publication);
     }
 
     @Test
@@ -745,7 +793,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication publication = createPersistedPublicationWithoutDoi();
         UserInstance userInstance = UserInstance.fromPublication(publication);
         resourceService.publishPublication(userInstance, publication.getIdentifier());
-        assertThatIdentifierEntryHasBeenCreated();
+        assertThatIdentifierEntryHasBeenCreated(publication);
 
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
         assertDoesNotThrow(fetchResourceAction);
@@ -754,7 +802,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                                publication.getIdentifier());
         assertThrows(TransactionFailedException.class, deleteAction);
 
-        assertThatTheEntriesHaveNotBeenDeleted();
+        assertThatTheEntriesHaveNotBeenDeleted(publication);
     }
 
     @Test
@@ -763,6 +811,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
         createDoiRequest(publication);
 
         UserInstance userInstance = UserInstance.fromPublication(publication);
+        resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
+
+        assertThatAllEntriesHaveBeenDeleted();
+    }
+
+    @Test
+    void deleteDraftPublicationDeletesContributionsWhenPublicationHasDoiContributors() throws ApiGatewayException {
+        Publication publication = createPersistedPublicationWithContributions();
+
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
 
         assertThatAllEntriesHaveBeenDeleted();
@@ -796,6 +855,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var sampleMessage = messageService.createMessage(ticket, userInstance, randomString());
 
+        var contributionIdentifiers =
+            resourceService.fetchAllContributionsForResource(Resource.fromPublication(publication))
+                .map(Contribution::getIdentifier)
+                .collect(Collectors.toList());
+
         var firstListingResult = fetchFirstDataEntry();
         var identifierInFirstScan = extractIdentifierFromFirstScanResult(firstListingResult);
 
@@ -805,8 +869,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                             .map(Entity::getIdentifier)
                                             .collect(Collectors.toList());
 
+
+
         var expectedIdentifiers = new ArrayList<>(
             List.of(publication.getIdentifier(), ticket.getIdentifier(), sampleMessage.getIdentifier()));
+        expectedIdentifiers.addAll(contributionIdentifiers);
         expectedIdentifiers.remove(identifierInFirstScan);
         assertThat(identifiersFromSecondScan,
                    containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));
@@ -957,6 +1024,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .build();
     }
 
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .withAffiliations(List.of(
+                       randomOrganization()
+                   ))
+                   .build();
+    }
+
     private Publication draftPublicationWithoutDoiAndAssociatedLink() {
 
         return randomPublication().copy()
@@ -968,6 +1045,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
+        return Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+    }
+
+    private Publication createPersistedPublicationWithContributions() throws BadRequestException {
+        var publication = randomPublication().copy().withDoi(null).build();
+        publication.getEntityDescription().setContributors(List.of(
+            randomContributor(),
+            randomContributor()
+        ));
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
@@ -1027,17 +1114,30 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return new ResourceService(client, clock);
     }
 
-    private void assertThatIdentifierEntryHasBeenCreated() {
-        assertThatResourceAndIdentifierEntryExist();
+    private void assertThatIdentifierEntryHasBeenCreated(Publication resource) {
+        assertThatResourceAndIdentifierEntryExist(resource);
     }
 
-    private void assertThatResourceAndIdentifierEntryExist() {
-        ScanResult result = client.scan(new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
-        assertThat(result.getCount(), is(equalTo(2)));
+    private void assertThatResourceAndIdentifierEntryExist(Publication resource) {
+        var resourceDao = queryObjectForResource(resource);
+        var result = queryForPrimaryKey(resourceDao);
+        var scan = scanTable();
+
+        assertTrue(parseQueryResultAsType(result, ResourceDao.class).isPresent());
+        assertThat((int) countIdEntries(scan), is(greaterThanOrEqualTo(1)));
     }
 
-    private void assertThatTheEntriesHaveNotBeenDeleted() {
-        assertThatResourceAndIdentifierEntryExist();
+    private void assertThatContributionsAndIdentifierEntryExist(Publication resource) {
+        var resourceDao = queryObjectForResource(resource);
+        var result = queryForPrimaryKey(resourceDao);
+        var scan = scanTable();
+
+        assertTrue(parseQueryResultAsType(result, ContributionDao.class).isPresent());
+        assertThat((int) countIdEntries(scan), is(greaterThanOrEqualTo(1)));
+    }
+
+    private void assertThatTheEntriesHaveNotBeenDeleted(Publication resource) {
+        assertThatResourceAndIdentifierEntryExist(resource);
     }
 
     private void assertThatAllEntriesHaveBeenDeleted() {
@@ -1105,6 +1205,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return new ResourceDao(resourceWithStatusPublished);
     }
 
+    private ResourceDao queryObjectForResource(Publication resource) {
+        Resource resourceCopy = Resource.fromPublication(resource).copy().build();
+        return new ResourceDao(resourceCopy);
+    }
+
     private QueryResult queryForDraftResource(ResourceDao resourceDao) {
 
         return client.query(new QueryRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
@@ -1112,8 +1217,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                 .withKeyConditions(resourceDao.fetchEntryByTypeCustomerStatusKey()));
     }
 
-    private Optional<ResourceDao> parseResult(QueryResult result) {
-        return result.getItems().stream().map(map -> parseAttributeValuesMap(map, ResourceDao.class)).findAny();
+    private QueryResult queryForPrimaryKey(WithPrimaryKey dao) {
+        return client.query(new QueryRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                .withKeyConditions(dao.primaryKeyPartitionKeyCondition()));
+    }
+
+    private ScanResult scanTable() {
+        return client.scan(new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
+    }
+
+    private <T> Optional<T> parseQueryResultAsType(QueryResult result, Class<T> daoClass) {
+        return result.getItems().stream()
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
+                   .filter(dao -> daoClass.isInstance(dao)).map(dao -> (T) dao).findAny();
+    }
+
+    private long countIdEntries(ScanResult result) {
+        return result.getItems().stream().filter(r -> r.get("type").toString().equals(S_ID_ENTRY)).count();
     }
 
     private Publication createPublishedResource() throws ApiGatewayException {

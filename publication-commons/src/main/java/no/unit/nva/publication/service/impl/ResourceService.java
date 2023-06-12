@@ -26,26 +26,31 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.model.business.Contribution;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ContributionDao;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
@@ -226,7 +231,7 @@ public class ResourceService extends ServiceWithTransactions {
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         List<Dao> daos = readResourceService
-                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+                             .fetchResourceAndAssociatedItemsFromResourceIndex(userInstance, resourceIdentifier);
 
         List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
@@ -270,8 +275,8 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
     }
 
-    public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
-        return readResourceService.getResourcesByOwner(sampleUser);
+    public List<Publication> getPublicationsByOwner(UserInstance userInstance) {
+        return readResourceService.getResourcesByOwner(userInstance);
     }
 
     // TODO rename to getPublicationForUsageWithElevatedRights
@@ -316,6 +321,14 @@ public class ResourceService extends ServiceWithTransactions {
                    .stream()
                    .map(TicketDao::getData)
                    .map(TicketEntry.class::cast);
+    }
+
+    public Stream<Contribution> fetchAllContributionsForResource(Resource resource) {
+        var dao = (ResourceDao) resource.toDao();
+        return dao.fetchAllContributions(getClient())
+                   .stream()
+                   .map(ContributionDao::getData)
+                   .map(Contribution.class::cast);
     }
 
     public Stream<TicketEntry> fetchAllTicketsForPublication(
@@ -474,13 +487,49 @@ public class ResourceService extends ServiceWithTransactions {
         List<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.addAll(deleteResourceTransactionItems(daos));
         transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
+        transactionItems.addAll(deleteContributionTransactionItems(daos));
         return transactionItems;
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
         TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
+
+        var contributionDaos = contributionDaosForContributionsInsertion(resource);
+        var contributionTransactions = transactionItemsForContributionsInsertion(contributionDaos);
+        var contributionIdentifierTransactions = transactionItemsForContributionIdentifiers(contributionDaos);
+
+        List<TransactWriteItem> transactionItems = new ArrayList<>();
+        transactionItems.add(resourceEntry);
+        transactionItems.add(uniqueIdentifierEntry);
+        transactionItems.addAll(contributionTransactions);
+        transactionItems.addAll(contributionIdentifierTransactions);
+        return transactionItems.toArray(TransactWriteItem[]::new);
+    }
+
+    private List<TransactWriteItem> transactionItemsForContributionsInsertion(List<ContributionDao> daos) {
+        return daos
+                   .stream()
+                   .map(contributionDao -> newPutTransactionItem(contributionDao, tableName))
+                   .collect(Collectors.toList());
+    }
+
+    private List<ContributionDao> contributionDaosForContributionsInsertion(Resource resource) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .orElseGet(EntityDescription::new)
+                   .getContributors()
+                   .stream()
+                   .map(contributor -> new ContributionDao(resource, contributor))
+                   .collect(Collectors.toList());
+    }
+
+    private List<TransactWriteItem> transactionItemsForContributionIdentifiers(List<ContributionDao> daos) {
+        return daos.stream()
+                   .map(Dao::getIdentifier)
+                   .map(Objects::toString)
+                   .map(IdentifierEntry::new)
+                   .map(identity -> newPutTransactionItem(identity, tableName))
+                   .collect(Collectors.toList());
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
@@ -491,6 +540,15 @@ public class ResourceService extends ServiceWithTransactions {
         return Collections.emptyList();
     }
 
+    private List<TransactWriteItem> deleteContributionTransactionItems(List<Dao> daos) {
+        List<ContributionDao> contributionRequests = extractContributions(daos);
+        if (!contributionRequests.isEmpty()) {
+            return deleteContributionsTransactionItems(contributionRequests);
+        }
+        return Collections.emptyList();
+    }
+
+
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(DoiRequestDao doiRequestDao) {
         WithPrimaryKey identifierEntry = IdentifierEntry.create(doiRequestDao);
         WithPrimaryKey uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(doiRequestDao);
@@ -498,6 +556,20 @@ public class ResourceService extends ServiceWithTransactions {
             Stream.of(doiRequestDao, identifierEntry, uniqueDoiRequestEntry)
                 .map(this::newDeleteTransactionItem)
 
+                .collect(Collectors.toList());
+    }
+
+    private List<TransactWriteItem> deleteContributionsTransactionItems(List<ContributionDao> contributionDaos) {
+        return contributionDaos.stream()
+                   .map(d -> deleteContributionsTransactionItem(d))
+                    .flatMap(Collection::stream).collect(Collectors.toList());
+    }
+
+    private List<TransactWriteItem> deleteContributionsTransactionItem(ContributionDao contributionDao) {
+        WithPrimaryKey identifierEntry = IdentifierEntry.create(contributionDao);
+        return
+            Stream.of(contributionDao, identifierEntry)
+                .map(this::newDeleteTransactionItem)
                 .collect(Collectors.toList());
     }
 
