@@ -63,18 +63,30 @@ public class TicketResolver {
         return artifact instanceof File && !(artifact instanceof AdministrativeAgreement);
     }
 
+    private static boolean hasNoFiles(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .noneMatch(artifact -> artifact instanceof File);
+    }
+
     private TicketEntry resolvePublishingRequest(TicketEntry ticket, Publication publication,
                                                  PublishingRequestCase publishingRequestCase, Username username)
         throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
-            approveTicket(ticket, username);
             publishPublicationAndFiles(publication);
+            approveTicket(ticket, username);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
-            approveTicket(ticket, username);
             publishMetadata(publication);
+            approveTicketWhenPublicationContainsMetadataOnly(ticket, publication, username);
         }
         return ticket;
+    }
+
+    private void approveTicketWhenPublicationContainsMetadataOnly(TicketEntry ticket, Publication publication,
+                                                                  Username username) throws ApiGatewayException {
+        if (hasNoFiles(publication)) {
+            approveTicket(ticket, username);
+        }
     }
 
     private void approveTicket(TicketEntry ticket, Username username) throws ApiGatewayException {
