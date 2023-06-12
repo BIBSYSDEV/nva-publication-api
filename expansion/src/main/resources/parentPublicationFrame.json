@@ -175,18 +175,28 @@
   },
   "@explicit": true,
   "entityDescription": {
+    "@default": "@null",
     "@explicit": true,
-    "mainTitle": {},
+    "mainTitle": {
+      "@default": "@null"
+    },
     "contributors": {
+      "@default": "@null",
       "@explicit": true,
       "identity": {
+        "@default": "@null",
         "@explicit": true,
-        "name": {}
+        "name": {
+          "@default": "@null"
+        }
       }
     },
     "reference": {
+      "@default": "@null",
       "@explicit": true,
-      "publicationContext": {}
+      "publicationContext": {
+        "@default": "@null"
+      }
     }
   }
 }
