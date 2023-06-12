@@ -1,0 +1,253 @@
+{
+  "type" : "Publication",
+  "identifier" : "01888a567f46-64561a29-fe91-40f4-ba64-9a7e6931ffa2",
+  "status" : "PUBLISHED",
+  "resourceOwner" : {
+    "owner" : "123456@12345.0.0.0",
+    "ownerAffiliation" : "https://api.dev.nva.aws.unit.no/cristin/organization/12345.0.0.0"
+  },
+  "publisher" : {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/customer/bb3d0c0c-5065-4623-9b98-5810983c2478",
+    "labels" : { }
+  },
+  "createdDate" : "2023-06-05T06:55:04.518135Z",
+  "modifiedDate" : "2023-06-05T06:56:03.945316Z",
+  "publishedDate" : "2023-06-05T06:56:03.933635Z",
+  "entityDescription" : {
+    "type" : "EntityDescription",
+    "mainTitle" : "Title",
+    "alternativeTitles" : { },
+    "language" : "http://lexvo.org/id/iso639-3/eng",
+    "publicationDate" : {
+      "type" : "PublicationDate",
+      "year" : "2023",
+      "month" : "3",
+      "day" : "1"
+    },
+    "contributors" : [ {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "name" : "Name"
+      },
+      "affiliations" : [ ],
+      "role" : {
+        "type" : "Creator"
+      },
+      "sequence" : 1,
+      "correspondingAuthor" : false
+    }, {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "name" : "Name"
+      },
+      "affiliations" : [ ],
+      "role" : {
+        "type" : "Creator"
+      },
+      "sequence" : 2,
+      "correspondingAuthor" : false
+    } ],
+    "alternativeAbstracts" : { },
+    "tags" : [ ],
+    "reference" : {
+      "type" : "Reference",
+      "publicationContext" : {
+        "type" : "Journal",
+        "id" : "https://api.dev.nva.aws.unit.no/publication-channels/journal/123456/2023"
+      },
+      "doi" : "https://doi.org/doi",
+      "publicationInstance" : {
+        "type" : "AcademicArticle",
+        "pages" : {
+          "type" : "Range",
+          "begin" : "100916",
+          "end" : "100916"
+        },
+        "volume" : "35"
+      }
+    },
+    "metadataSource" : "https://doi.org/doi"
+  },
+  "projects" : [ ],
+  "fundings" : [ ],
+  "subjects" : [ ],
+  "associatedArtifacts" : [ ],
+  "additionalIdentifiers" : [ ],
+  "@context" : {
+    "@vocab" : "https://nva.sikt.no/ontology/publication#",
+    "xsd" : "http://www.w3.org/2001/XMLSchema#",
+    "id" : "@id",
+    "type" : "@type",
+    "affiliations" : {
+      "@id" : "affiliation",
+      "@container" : "@set"
+    },
+    "activeFrom" : {
+      "@type" : "xsd:dateTime"
+    },
+    "activeTo" : {
+      "@type" : "xsd:dateTime"
+    },
+    "associatedArtifacts" : {
+      "@id" : "associatedArtifact",
+      "@container" : "@set"
+    },
+    "additionalIdentifiers" : {
+      "@id" : "additionalIdentifier",
+      "@container" : "@set"
+    },
+    "alternativeTitles" : {
+      "@id" : "alternativeTitle",
+      "@container" : "@language"
+    },
+    "approvals" : {
+      "@id" : "approval",
+      "@container" : "@set"
+    },
+    "approvalStatus" : {
+      "@type" : "@vocab",
+      "@context" : {
+        "@vocab" : "https://nva.sikt.no/ontology/publication#"
+      }
+    },
+    "approvedBy" : {
+      "@type" : "@vocab",
+      "@context" : {
+        "@vocab" : "https://nva.sikt.no/ontology/approvals-body#"
+      }
+    },
+    "architectureOutput" : {
+      "@id" : "architectureOutput",
+      "@container" : "@set"
+    },
+    "compliesWith" : {
+      "@id" : "compliesWith",
+      "@container" : "@set"
+    },
+    "concertProgramme" : {
+      "@id" : "concertProgramme",
+      "@container" : "@set"
+    },
+    "contributors" : {
+      "@id" : "contributor",
+      "@container" : "@set"
+    },
+    "createdDate" : {
+      "@type" : "xsd:dateTime"
+    },
+    "date" : {
+      "@type" : "xsd:dateTime"
+    },
+    "doi" : {
+      "@type" : "@id"
+    },
+    "embargoDate" : {
+      "@type" : "xsd:dateTime"
+    },
+    "from" : {
+      "@type" : "xsd:dateTime"
+    },
+    "handle" : {
+      "@type" : "@id"
+    },
+    "indexedDate" : {
+      "@type" : "xsd:dateTime"
+    },
+    "isbnList" : {
+      "@id" : "isbn",
+      "@container" : "@set"
+    },
+    "labels" : {
+      "@id" : "label",
+      "@container" : "@language"
+    },
+    "language" : {
+      "@type" : "@id"
+    },
+    "link" : {
+      "@type" : "@id"
+    },
+    "manifestations" : {
+      "@id" : "manifestation",
+      "@container" : "@set"
+    },
+    "metadataSource" : {
+      "@type" : "@id"
+    },
+    "modifiedDate" : {
+      "@type" : "xsd:dateTime"
+    },
+    "musicalWorks" : {
+      "@id" : "musicalWork",
+      "@container" : "@set"
+    },
+    "ownerAffiliation" : {
+      "@type" : "@id"
+    },
+    "outputs" : {
+      "@id" : "output",
+      "@container" : "@set"
+    },
+    "publishedDate" : {
+      "@type" : "xsd:dateTime"
+    },
+    "nameType" : {
+      "@type" : "@vocab",
+      "@context" : {
+        "@vocab" : "https://nva.sikt.no/ontology/publication#"
+      }
+    },
+    "projects" : {
+      "@id" : "project",
+      "@container" : "@set"
+    },
+    "fundings" : {
+      "@id" : "funding",
+      "@container" : "@set"
+    },
+    "related" : {
+      "@id" : "related",
+      "@container" : "@set"
+    },
+    "referencedBy" : {
+      "@id" : "referencedBy",
+      "@container" : "@set"
+    },
+    "role" : {
+      "@type" : "@vocab",
+      "@context" : {
+        "@vocab" : "https://nva.sikt.no/ontology/publication#"
+      }
+    },
+    "status" : {
+      "@type" : "@vocab",
+      "@context" : {
+        "@vocab" : "https://nva.sikt.no/ontology/publication#"
+      }
+    },
+    "subjects" : {
+      "@id" : "subject",
+      "@type" : "@id",
+      "@container" : "@set"
+    },
+    "tags" : {
+      "@id" : "tag",
+      "@container" : "@set"
+    },
+    "to" : {
+      "@type" : "xsd:dateTime"
+    },
+    "trackList" : {
+      "@id" : "trackList",
+      "@container" : "@set"
+    },
+    "venues" : {
+      "@id" : "venue",
+      "@container" : "@set"
+    }
+  },
+  "id" : "https://api.dev.nva.aws.unit.no/publication/0257d023-2466-4609-a0a0-0406bd17c05e"
+}

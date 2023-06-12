@@ -56,6 +56,7 @@ import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -85,6 +86,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
+    private DeleteResourceService deleteResourceService;
 
     public ResourceService(AmazonDynamoDB client,
                            Clock clock,
@@ -106,6 +108,8 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, tableName);
         this.updateResourceService =
             new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
+        this.deleteResourceService = new DeleteResourceService(client, tableName,
+                                                               readResourceService);
     }
 
     public ResourceService(AmazonDynamoDB client, Clock clock) {
@@ -116,6 +120,12 @@ public class ResourceService extends ServiceWithTransactions {
     public static ResourceService defaultService() {
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
+
+    /**
+     * Should not be used initiating resourceService for resource-table
+     * @param tableName name of table
+     * @return
+     */
 
     @JacocoGenerated
     public static ResourceService defaultService(String tableName) {
@@ -275,6 +285,10 @@ public class ResourceService extends ServiceWithTransactions {
     public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status)
         throws NotFoundException {
         return updateResourceService.updateStatus(identifier, status);
+    }
+
+    public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
+        deleteResourceService.deleteImportCandidate(importCandidate);
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)

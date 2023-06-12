@@ -360,7 +360,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
         assertThat(getTicketPublishingWorkflow(publication),
                    is(equalTo(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
     }
@@ -418,7 +418,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publishedPublication = resourceService.getPublication(publication);
         assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(UnpublishedFile.class)));
         assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
-        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.COMPLETED)));
     }
 
     @Test

@@ -1,14 +1,21 @@
 package no.unit.nva.publication.messages.create;
 
+import static java.util.Objects.isNull;
+import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.HttpURLConnection;
+import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.messages.MessageApiConfig;
 import no.unit.nva.publication.messages.model.NewMessageDto;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -20,13 +27,6 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.HttpURLConnection;
-import java.util.Map;
-
-import static java.util.Objects.isNull;
-import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
 
@@ -52,9 +52,9 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         var ticketIdentifier = extractTicketIdentifier(requestInfo);
         var user = UserInstance.fromRequestInfo(requestInfo);
         var ticket = fetchTicketForUser(requestInfo, ticketIdentifier, user);
+        updateStatusToPendingWhenCompletedGeneralSupportRequest(ticket);
         injectAssigneeWhenUnassignedTicket(ticket, requestInfo);
         var message = messageService.createMessage(ticket, user, input.getMessage());
-
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
         return null;
     }
@@ -90,11 +90,36 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
     }
 
+    private void updateStatusToPendingWhenCompletedGeneralSupportRequest(TicketEntry ticket) {
+        if (ticket instanceof GeneralSupportRequest) {
+            ticket.setStatus(TicketStatus.PENDING);
+        }
+    }
+
+    private static boolean ticketHasNoAssigne(TicketEntry ticket) {
+        return isNull(ticket.getAssignee());
+    }
+
+    private static String getOwner(TicketEntry ticket) {
+        return ticket.getOwner().toString();
+    }
+
     private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo)
         throws UnauthorizedException {
-        if (isNull(ticket.getAssignee()) && userIsElevatedUser(requestInfo)) {
+        if (userCanBeSetAsAssignee(ticket, requestInfo)) {
             ticket.setAssignee(usernameFromRequestInfo(requestInfo));
         }
+    }
+
+    private boolean userCanBeSetAsAssignee(TicketEntry ticket, RequestInfo requestInfo)
+        throws UnauthorizedException {
+        return ticketHasNoAssigne(ticket)
+               && userIsElevatedUser(requestInfo)
+               && userIsNotTicketOwner(ticket, requestInfo);
+    }
+
+    private boolean userIsNotTicketOwner(TicketEntry ticket, RequestInfo requestInfo) throws UnauthorizedException {
+        return !getOwner(ticket).equals(requestInfo.getUserName());
     }
 
     private TicketEntry fetchTicketForUser(RequestInfo requestInfo, SortableIdentifier ticketIdentifier,
@@ -117,7 +142,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, UserInstance user)
         throws ApiGatewayException {
         return attempt(() -> ticketService.fetchTicket(user, ticketIdentifier))
-            .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
+                   .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
     }
 
     private void validateAccessRightsForTicketType(RequestInfo requestInfo, Class<? extends TicketEntry> ticketType)
@@ -150,7 +175,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance user)
         throws ApiGatewayException {
         return attempt(() -> ticketService.fetchTicketForElevatedUser(user, ticketIdentifier))
-            .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
+                   .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
     }
 
     private ApiGatewayException handleFetchingTicketForUserError(Exception exception) {

@@ -434,21 +434,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                        publicationsWithCristinIdentifier.toArray(Publication[]::new)));
     }
 
-    private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
-        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
-        return Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
-                   .map(publication -> injectOwner(userInstance, publication))
-                   .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
-                   .map(attempt(res -> createPersistedPublicationWithDoi(resourceService, res)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toSet());
-    }
-
-    private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
-        return publication;
-    }
-
     @Test
     void getResourcesByOwnerReturnsEmptyListWhenUseHasNoPublications() {
 
@@ -928,6 +913,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
 
+    private static AssociatedArtifactList createEmptyArtifactList() {
+        return new AssociatedArtifactList(emptyList());
+    }
+
+    private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
+        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
+        return Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
+                   .map(publication -> injectOwner(userInstance, publication))
+                   .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
+                   .map(attempt(res -> createPersistedPublicationWithDoi(resourceService, res)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toSet());
+    }
+
+    private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
+        return publication;
+    }
+
     private void assertThatFailedBatchScanLogsProperly(TestAppender testAppender, Set<Publication> userResources) {
         assertThat(testAppender.getMessages(), containsString("AmazonDynamoDBException"));
         userResources.forEach(publication -> {
@@ -952,10 +956,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
                    .build();
-    }
-
-    private static AssociatedArtifactList createEmptyArtifactList() {
-        return new AssociatedArtifactList(emptyList());
     }
 
     private Publication draftPublicationWithoutDoiAndAssociatedLink() {
