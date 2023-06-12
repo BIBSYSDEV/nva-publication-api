@@ -32,7 +32,7 @@ public final class NviCalculator {
     private static final Logger logger = LoggerFactory.getLogger(NviCalculator.class);
 
     private static final String FRAME_SRC = IoUtils.stringFromResources(
-        Path.of("expandedPublicationWithNviFrame.json"));
+        Path.of("frame.json"));
 
     private NviCalculator() {
     }

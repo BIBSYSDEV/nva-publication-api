@@ -171,23 +171,38 @@
     "venues": {
       "@container": "@set",
       "@id": "venue"
+    },
+    "nviType": {
+      "@type": "@vocab",
+      "@context": {
+        "@vocab": "https://nva.sikt.no/ontology/publication#"
+      }
+    },
+    "NviCandidate" : "https://nva.sikt.no/ontology/publication#NviCandidate",
+    "NonNviCandidate" : "https://nva.sikt.no/ontology/publication#NonNviCandidate",
+    "publicationContextUris": {
+      "@container": "@set"
     }
   },
   "@type": "Publication",
   "entityDescription": {
     "contributors": {
+      "@default": "@null",
       "identity": {
-        "@embed": "@always"
+        "@embed": "@always",
+        "@default": "@null"
       },
       "affiliations": {
         "@explicit": true,
         "@embed": "@always",
         "type": "Organization",
         "labels": {
-          "@embed": "@always"
+          "@embed": "@always",
+          "@default": "@null"
         },
         "name": {
-          "@embed": "@always"
+          "@embed": "@always",
+          "@default": "@null"
         }
       }
     },
