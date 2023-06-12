@@ -10,7 +10,7 @@ public class NvaLicense {
     private NvaLicenseUri licenseUri;
 
 
-    public NvaLicense(@JsonProperty("identifier") NvaLicenseUri licenseUri) {
+    public NvaLicense(@JsonProperty("licenseuri") NvaLicenseUri licenseUri) {
         this.licenseUri = licenseUri;
     }
 

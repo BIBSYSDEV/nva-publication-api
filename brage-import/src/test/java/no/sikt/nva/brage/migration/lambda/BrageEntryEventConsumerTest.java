@@ -172,8 +172,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageGenerator = buildGeneratorForRecord();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        var actula = actualPublication.getAssociatedArtifacts();
-        var expected = brageGenerator.getNvaPublication().getAssociatedArtifacts();
         assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
     }
 
