@@ -58,6 +58,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     public static final Context CONTEXT = mock(Context.class);
     public static final int TWO_HITS = 2;
     public static final int SINGLE_HIT = 1;
+    public static final int ZERO_HITS = 0;
     private final Environment environment = mock(Environment.class);
     private ResourceService resourceService;
     private S3Driver s3Driver;
@@ -82,8 +83,9 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = persistedImportCandidate();
         var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
-                                                                             SINGLE_HIT));
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(
+            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
+                       SINGLE_HIT));
         handler.handleRequest(event, output, CONTEXT);
         assertThrows(NotFoundException.class,
                      () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
@@ -92,17 +94,30 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldThrowBadGatewayExceptionWhenMultipleHitsInResponseFetchingUniqueImportCandidate()
-        throws NotFoundException,
-               IOException {
+        throws NotFoundException, IOException {
         var importCandidate = persistedImportCandidate();
         var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
-                                                                             TWO_HITS));
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(
+            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
+                       TWO_HITS));
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(event, output, CONTEXT));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenEmptyZeroHitsInResponseFetchingUniqueImportCandidate()
+        throws NotFoundException, IOException {
+        var importCandidate = persistedImportCandidate();
+        var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(emptyResponse());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(event, output, CONTEXT));
     }
 
     private static Optional<String> toResponse(ExpandedImportCandidate importCandidate, int hits) {
         return Optional.of(new ImportCandidateSearchApiResponse(List.of(importCandidate), hits).toString());
+    }
+
+    private static Optional<String> emptyResponse() {
+        return Optional.of(new ImportCandidateSearchApiResponse(List.of(), ZERO_HITS).toString());
     }
 
     private static boolean isScopus(AdditionalIdentifier identifier) {

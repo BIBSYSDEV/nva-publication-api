@@ -57,14 +57,14 @@ public class DeleteImportCandidateEventConsumer
 
     private static ExpandedImportCandidate toExpandedImportCandidate(ImportCandidateSearchApiResponse response)
         throws BadGatewayException {
-        if (containsMultipleHits(response)) {
-            throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
+        if (containsSingleHit(response)) {
+            return response.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
         }
-        return response.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
+        throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
     }
 
-    private static boolean containsMultipleHits(ImportCandidateSearchApiResponse response) {
-        return response.getTotal() > 1;
+    private static boolean containsSingleHit(ImportCandidateSearchApiResponse response) {
+        return response.getTotal() == 1;
     }
 
     private static ImportCandidateSearchApiResponse toSearchApiResponse(String response) {
