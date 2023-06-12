@@ -59,6 +59,7 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
@@ -479,6 +480,21 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
     }
 
+    @Test
+    void shouldNotSetCuratorAsAssigneeOnGeneralSupportTicketWhenCuratorIsPublicationOwner()
+        throws ApiGatewayException, IOException {
+        var curatorAndOwner = UserInstance.create(new User("12345"), randomUri());
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(PUBLISHED, curatorAndOwner,
+                                                                              resourceService);
+        var request = createHttpTicketCreationRequestWithCuratorAccessRights(constructDto(GeneralSupportRequest.class), publication,
+                                                                             curatorAndOwner);
+        handler.handleRequest(request, output, CONTEXT);
+        var persistedTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                                            publication.getIdentifier(),
+                                                                            PublishingRequestCase.class);
+        assertThat(persistedTicket.get().getAssignee(), is(nullValue()));
+    }
+
     private static Username getResourceOwner(Publication publication) {
         return publication.getResourceOwner().getOwner();
     }
@@ -638,6 +654,19 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withBody(ticketDto)
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
+                   .withCurrentCustomer(userCredentials.getOrganizationUri())
+                   .build();
+    }
+
+    private InputStream createHttpTicketCreationRequestWithCuratorAccessRights(TicketDto ticketDto,
+                                                                               Publication publication,
+                                                                               UserInstance userCredentials)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+                   .withBody(ticketDto)
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                   .withUserName(userCredentials.getUsername())
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_PUBLISH_REQUEST.toString())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
                    .build();
     }
