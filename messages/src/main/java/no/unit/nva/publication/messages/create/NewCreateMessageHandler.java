@@ -11,9 +11,11 @@ import no.unit.nva.model.Username;
 import no.unit.nva.publication.messages.MessageApiConfig;
 import no.unit.nva.publication.messages.model.NewMessageDto;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -50,9 +52,9 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         var ticketIdentifier = extractTicketIdentifier(requestInfo);
         var user = UserInstance.fromRequestInfo(requestInfo);
         var ticket = fetchTicketForUser(requestInfo, ticketIdentifier, user);
+        updateStatusToPendingWhenCompletedGeneralSupportRequest(ticket);
         injectAssigneeWhenUnassignedTicket(ticket, requestInfo);
         var message = messageService.createMessage(ticket, user, input.getMessage());
-
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
         return null;
     }
@@ -86,6 +88,12 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
 
     private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
         return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
+    }
+
+    private void updateStatusToPendingWhenCompletedGeneralSupportRequest(TicketEntry ticket) {
+        if (ticket instanceof GeneralSupportRequest) {
+            ticket.setStatus(TicketStatus.PENDING);
+        }
     }
 
     private static boolean ticketHasNoAssigne(TicketEntry ticket) {

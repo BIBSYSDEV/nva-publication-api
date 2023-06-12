@@ -88,6 +88,7 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
@@ -432,21 +433,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(actualResourcesSet,
                    containsInAnyOrder(
                        publicationsWithCristinIdentifier.toArray(Publication[]::new)));
-    }
-
-    private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
-        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
-        return Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
-                   .map(publication -> injectOwner(userInstance, publication))
-                   .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
-                   .map(attempt(res -> createPersistedPublicationWithDoi(resourceService, res)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toSet());
-    }
-
-    private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
-        return publication;
     }
 
     @Test
@@ -877,28 +863,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateResourceFromImportCandidate() throws NotFoundException {
-        var importCandidate = randomImportCandidate();
-        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
-        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
-        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
-    }
-
-    @Test
     void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
         var publication = randomImportCandidate();
         var persistedPublication = resourceService.autoImportPublication(publication);
         var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         assertThat(persistedPublication, is(equalTo(fetchedPublication)));
         assertThat(fetchedPublication.getStatus(), is(equalTo(PUBLISHED)));
-    }
-
-    @Test
-    void shouldUpdateImportStatus() throws NotFoundException {
-        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        resourceService.updateImportStatus(importCandidate.getIdentifier(), IMPORTED);
-        var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(fetchedPublication.getImportStatus(), is(equalTo(IMPORTED)));
     }
 
     @Test
@@ -920,6 +890,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.refreshResources(resources);
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
+    }
+
+    private static AssociatedArtifactList createEmptyArtifactList() {
+        return new AssociatedArtifactList(emptyList());
+    }
+
+    private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
+        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
+        return Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
+                   .map(publication -> injectOwner(userInstance, publication))
+                   .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
+                   .map(attempt(res -> createPersistedPublicationWithDoi(resourceService, res)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toSet());
+    }
+
+    private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
+        return publication;
     }
 
     private void assertThatFailedBatchScanLogsProperly(TestAppender testAppender, Set<Publication> userResources) {
@@ -946,10 +935,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
                    .build();
-    }
-
-    private static AssociatedArtifactList createEmptyArtifactList() {
-        return new AssociatedArtifactList(emptyList());
     }
 
     private Publication draftPublicationWithoutDoiAndAssociatedLink() {

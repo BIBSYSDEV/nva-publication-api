@@ -1,12 +1,17 @@
 package no.unit.nva.expansion;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -22,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -30,7 +36,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -40,10 +48,14 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -66,7 +78,6 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +92,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     public static final URI ORGANIZATION =
         URI.create("https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
     public static final UserInstance USER = UserInstance.create(new User("12345"), ORGANIZATION);
+    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
@@ -94,34 +106,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
-    }
-
-    private static URI constructExpectedPublicationId(Publication publication) {
-        return UriWrapper.fromHost(API_HOST)
-            .addChild("publication")
-            .addChild(publication.getIdentifier().toString())
-            .getUri();
-    }
-
-    private static List<Class<?>> listPublicationInstanceTypes() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
-        Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>)
-                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
-                       .findAny().orElseThrow();
-    }
-
-    private static ExpandedPerson getExpectedExpandedPerson(User user) {
-        return new ExpandedPerson(
-            "someFirstName",
-            "somePreferredFirstName",
-            "someLastName",
-            "somePreferredLastName",
-            user);
     }
 
     @BeforeEach
@@ -200,7 +184,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws JsonProcessingException, NotFoundException {
 
         Publication publication = PublicationGenerator.randomPublication(instanceType)
-            .copy().withEntityDescription(new EntityDescription()).build();
+                                      .copy().withEntityDescription(new EntityDescription()).build();
 
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
@@ -213,8 +197,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry
-            .requestNewTicket(publication, GeneralSupportRequest.class)
-            .persistNewTicket(ticketService);
+                                     .requestNewTicket(publication, GeneralSupportRequest.class)
+                                     .persistNewTicket(ticketService);
 
         var message = messageService.createMessage(ticketToBeExpanded, owner, randomString());
         var expectedExpandedMessage = messageToExpandedMessage(message);
@@ -231,8 +215,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry
-            .requestNewTicket(publication, GeneralSupportRequest.class)
-            .persistNewTicket(ticketService);
+                                     .requestNewTicket(publication, GeneralSupportRequest.class)
+                                     .persistNewTicket(ticketService);
 
         var messageThatWillLeadToTicketExpansion =
             messageService.createMessage(ticketToBeExpanded, owner, randomString());
@@ -277,10 +261,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnEmptySetIfNotTicketEntry() throws NotFoundException {
         var message = Message.builder()
-            .withResourceIdentifier(SortableIdentifier.next())
-            .withTicketIdentifier(SortableIdentifier.next())
-            .withIdentifier(SortableIdentifier.next())
-            .build();
+                          .withResourceIdentifier(SortableIdentifier.next())
+                          .withTicketIdentifier(SortableIdentifier.next())
+                          .withIdentifier(SortableIdentifier.next())
+                          .build();
 
         var actual = expansionService.getOrganizationIds(message);
 
@@ -400,24 +384,125 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.getViewedBy(), is(equalTo(expectedExpandedViewedBySet)));
     }
 
+    @Test
+    void shouldReturnExpandedResourceWithEntityDescriptionForPublicationWithContributorWithoutId()
+        throws JsonProcessingException, NotFoundException {
+        var publicationJsonString = stringFromResources(
+            Path.of("publication_without_contributor_id_sample.json"));
+
+        var publication = objectMapper.readValue(publicationJsonString, Publication.class);
+        var resourceUpdate = Resource.fromPublication(publication);
+
+        expansionService = mockedExpansionService();
+        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var actualEntityDescription = expandedResource.asJsonNode().at("/entityDescription").toString();
+
+        assertThat(actualEntityDescription, is(not(equalTo(""))));
+    }
+
+    @Test
+    void shouldReturnExpandedResourceWithCorrectNumberOfContributorsForPublicationWithSamePersonInDifferentRoles()
+        throws JsonProcessingException, NotFoundException {
+        var id = randomUri();
+        var publication = getPublicationWithSamePersonInDifferentContributorRoles(id);
+        var resourceUpdate = Resource.fromPublication(publication);
+
+        expansionService = mockedExpansionService();
+        var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
+
+        var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
+
+        var contributorsWithSameId = extractContributorsWithId(id, regeneratedPublication);
+        assertThat(contributorsWithSameId.size(), is(equalTo(2)));
+    }
+
+    private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
+        return publication.getEntityDescription()
+                   .getContributors()
+                   .stream()
+                   .filter(contributor -> nonNull(contributor.getIdentity()))
+                   .filter(contributor -> nonNull(getId(contributor)))
+                   .filter(contributor -> getId(contributor).equals(id))
+                   .collect(Collectors.toList());
+    }
+
+    private static URI getId(Contributor contributor) {
+        return contributor.getIdentity().getId();
+    }
+
+    private static URI constructExpectedPublicationId(Publication publication) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild("publication")
+                   .addChild(publication.getIdentifier().toString())
+                   .getUri();
+    }
+
+    private static List<Class<?>> listPublicationInstanceTypes() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
+        Class<? extends TicketEntry> ticketType) {
+        return (Class<? extends TicketEntry>)
+                   ticketTypeProvider().filter(type -> !ticketType.equals(type) && !type.equals(DoiRequest.class))
+                       .findAny().orElseThrow();
+    }
+
+    private static ExpandedPerson getExpectedExpandedPerson(User user) {
+        return new ExpandedPerson(
+            "someFirstName",
+            "somePreferredFirstName",
+            "someLastName",
+            "somePreferredLastName",
+            user);
+    }
+
     private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
         return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
                    : TicketStatus.parse(expandedTicketStatus.toString());
     }
 
+    private static Publication getSamplePublication() throws JsonProcessingException {
+        var samplePublicationAsJsonString = stringFromResources(
+            Path.of("publication_sample.json"));
+        return objectMapper.readValue(samplePublicationAsJsonString, Publication.class);
+    }
+
+    private Publication getPublicationWithSamePersonInDifferentContributorRoles(URI id)
+        throws JsonProcessingException {
+        var publication = getSamplePublication();
+        var contributors = publication.getEntityDescription().getContributors();
+        var name = randomString();
+        contributors.add(createContributor(randomElement(Role.values()), id, name));
+        contributors.add(createContributor(randomElement(Role.values()), id, name));
+        return publication;
+    }
+
+    private Contributor createContributor(Role role, URI id, String name) {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder()
+                                     .withName(name)
+                                     .withId(id)
+                                     .build())
+                   .withRole(new RoleType(role))
+                   .withAffiliations(List.of(randomOrganization()))
+                   .build();
+    }
+
     private ExpandedMessage messageToExpandedMessage(Message message) {
         return ExpandedMessage.builder()
-            .withCreatedDate(message.getCreatedDate())
-            .withModifiedDate(message.getModifiedDate())
-            .withOwner(message.getOwner())
-            .withResourceTitle(message.getResourceTitle())
-            .withCustomerId(message.getCustomerId())
-            .withSender(ExpandedPerson.defaultExpandedPerson(message.getSender()))
-            .withText(message.getText())
-            .withTicketIdentifier(message.getTicketIdentifier())
-            .withResourceIdentifier(message.getResourceIdentifier())
-            .withIdentifier(message.getIdentifier())
-            .build();
+                   .withCreatedDate(message.getCreatedDate())
+                   .withModifiedDate(message.getModifiedDate())
+                   .withOwner(message.getOwner())
+                   .withResourceTitle(message.getResourceTitle())
+                   .withCustomerId(message.getCustomerId())
+                   .withSender(ExpandedPerson.defaultExpandedPerson(message.getSender()))
+                   .withText(message.getText())
+                   .withTicketIdentifier(message.getTicketIdentifier())
+                   .withResourceIdentifier(message.getResourceIdentifier())
+                   .withIdentifier(message.getIdentifier())
+                   .build();
     }
 
     private Entity findEntity(String type) throws ApiGatewayException {
@@ -447,7 +532,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceExpansionService mockedExpansionService() {
         uriRetriever = mock(UriRetriever.class);
         when(uriRetriever.getRawContent(any(), any()))
-            .thenReturn(Optional.of(IoUtils.stringFromResources(Path.of("cristin_person.json"))));
+            .thenReturn(Optional.of(stringFromResources(Path.of("cristin_person.json"))));
         return new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 
@@ -545,9 +630,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private Username extractUsername(ExpandedPerson expandedPerson) {
         return Optional.ofNullable(expandedPerson)
-            .map(ExpandedPerson::getUsername)
-            .map(User::toString)
-            .map(Username::new)
-            .orElse(null);
+                   .map(ExpandedPerson::getUsername)
+                   .map(User::toString)
+                   .map(Username::new)
+                   .orElse(null);
     }
 }
