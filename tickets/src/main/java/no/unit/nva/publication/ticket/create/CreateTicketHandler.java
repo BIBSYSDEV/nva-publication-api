@@ -45,8 +45,9 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     @JacocoGenerated
     public CreateTicketHandler() {
         this(ResourceService.defaultService(),
-                new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
-                        new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)));
+             new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
+                                new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
+                                                                  BACKEND_CLIENT_SECRET_NAME)));
     }
 
     public CreateTicketHandler(ResourceService resourceService, TicketResolver ticketResolver) {
@@ -60,8 +61,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         throws ApiGatewayException {
         var publicationIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
         var publication = fetchPublication(publicationIdentifier, getUser(requestInfo), requestInfo);
-        var ticketType = input.ticketType();
-        var newTicket = TicketEntry.requestNewTicket(publication, ticketType);
+        var newTicket = TicketEntry.requestNewTicket(publication, input.ticketType());
         var customer = requestInfo.getCurrentCustomer();
         var username = new Username(requestInfo.getUserName());
         var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer, username);

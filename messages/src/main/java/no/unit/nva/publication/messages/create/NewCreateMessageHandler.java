@@ -96,11 +96,30 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         }
     }
 
+    private static boolean ticketHasNoAssigne(TicketEntry ticket) {
+        return isNull(ticket.getAssignee());
+    }
+
+    private static String getOwner(TicketEntry ticket) {
+        return ticket.getOwner().toString();
+    }
+
     private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo)
         throws UnauthorizedException {
-        if (isNull(ticket.getAssignee()) && userIsElevatedUser(requestInfo)) {
+        if (userCanBeSetAsAssignee(ticket, requestInfo)) {
             ticket.setAssignee(usernameFromRequestInfo(requestInfo));
         }
+    }
+
+    private boolean userCanBeSetAsAssignee(TicketEntry ticket, RequestInfo requestInfo)
+        throws UnauthorizedException {
+        return ticketHasNoAssigne(ticket)
+               && userIsElevatedUser(requestInfo)
+               && userIsNotTicketOwner(ticket, requestInfo);
+    }
+
+    private boolean userIsNotTicketOwner(TicketEntry ticket, RequestInfo requestInfo) throws UnauthorizedException {
+        return !getOwner(ticket).equals(requestInfo.getUserName());
     }
 
     private TicketEntry fetchTicketForUser(RequestInfo requestInfo, SortableIdentifier ticketIdentifier,
