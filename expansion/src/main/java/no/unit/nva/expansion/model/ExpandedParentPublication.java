@@ -4,9 +4,9 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.apache.jena.rdf.model.ModelFactory.createDefaultModel;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Path;
@@ -33,15 +33,10 @@ public class ExpandedParentPublication {
         this.uriRetriever = uriRetriever;
     }
 
-    public String getExpandedParentPublication(URI publicationId) throws JsonProcessingException {
-        var publicationResponseBody = fetch(publicationId);
-        if (publicationResponseBody.isEmpty()) {
-            return EMPTY_STRING;
-        }
-        var model = createDefaultModel();
-        loadPublicationWithChannelDataIntoModel(publicationResponseBody.get(), model);
-        removePublicationTypeFromResource(publicationId, model);
-        return frameJsonLd(model, FRAME);
+    public String getExpandedParentPublication(URI publicationId) {
+        return fetch(publicationId)
+                   .map(expandedPublication -> expandParent(publicationId, expandedPublication))
+                   .orElse(EMPTY_STRING);
     }
 
     private static void removePublicationTypeFromResource(URI id, Model model) {
@@ -49,17 +44,23 @@ public class ExpandedParentPublication {
         model.remove(model.createStatement(model.createResource(id.toString()), RDF.type, publicationType));
     }
 
-    private void loadPublicationWithChannelDataIntoModel(String publicationJsonString, Model model)
-        throws JsonProcessingException {
+    private String expandParent(URI publicationId, String publicationResponseBody) {
+        var model = createDefaultModel();
+        loadPublicationWithChannelDataIntoModel(publicationResponseBody, model);
+        removePublicationTypeFromResource(publicationId, model);
+        return frameJsonLd(model, FRAME);
+    }
+
+    private void loadPublicationWithChannelDataIntoModel(String publicationJsonString, Model model) {
         var inputStreams = getInputStreams(publicationJsonString);
         inputStreams.forEach(inputStream -> RDFDataMgr.read(model, inputStream, Lang.JSONLD));
     }
 
-    private List<InputStream> getInputStreams(String publicationJsonString)
-        throws JsonProcessingException {
+    private List<InputStream> getInputStreams(String publicationJsonString) {
         var inputStreams = new ArrayList<InputStream>();
         inputStreams.add(stringToStream(publicationJsonString));
-        inputStreams.addAll(fetchAll(extractPublicationContextUris(objectMapper.readTree(publicationJsonString))));
+        inputStreams.addAll(fetchAll(
+            extractPublicationContextUris(attempt(() -> objectMapper.readTree(publicationJsonString)).orElseThrow())));
         return inputStreams;
     }
 
