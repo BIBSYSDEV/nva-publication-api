@@ -1,5 +1,6 @@
 package no.unit.nva.expansion;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
@@ -8,6 +9,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -401,35 +403,31 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnExpandedResourceWithCorrectNumberOfContributorsForPublicationWithSamePersonInDifferentRoles()
         throws JsonProcessingException, NotFoundException {
-        var publicationJsonString = stringFromResources(
-            Path.of("publication_sample.json"));
-
-        var publication = objectMapper.readValue(publicationJsonString, Publication.class);
-        var entityDescription = publication.getEntityDescription();
-        var contributors = entityDescription.getContributors();
         var id = randomUri();
-        var name = randomString();
-        var creator = createContributor(Role.CREATOR, id, name);
-        contributors.add(creator);
-        var actor = createContributor(Role.ACTOR, id, name);
-        contributors.add(actor);
-
+        var publication = getPublicationWithSamePersonInDifferentContributorRoles(id);
         var resourceUpdate = Resource.fromPublication(publication);
 
         expansionService = mockedExpansionService();
-
         var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
 
         var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
 
-        var contributorsWithSameId =
-            regeneratedPublication.getEntityDescription()
-                .getContributors()
-                .stream()
-                .filter(contributor -> contributor.getIdentity().getId().equals(id))
-                .collect(
-                    Collectors.toList());
+        var contributorsWithSameId = extractContributorsWithId(id, regeneratedPublication);
         assertThat(contributorsWithSameId.size(), is(equalTo(2)));
+    }
+
+    private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
+        return publication.getEntityDescription()
+                   .getContributors()
+                   .stream()
+                   .filter(contributor -> nonNull(contributor.getIdentity()))
+                   .filter(contributor -> nonNull(getId(contributor)))
+                   .filter(contributor -> getId(contributor).equals(id))
+                   .collect(Collectors.toList());
+    }
+
+    private static URI getId(Contributor contributor) {
+        return contributor.getIdentity().getId();
     }
 
     private static URI constructExpectedPublicationId(Publication publication) {
@@ -463,6 +461,22 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static TicketStatus getTicketStatus(ExpandedTicketStatus expandedTicketStatus) {
         return ExpandedTicketStatus.NEW.equals(expandedTicketStatus) ? TicketStatus.PENDING
                    : TicketStatus.parse(expandedTicketStatus.toString());
+    }
+
+    private static Publication getSamplePublication() throws JsonProcessingException {
+        var samplePublicationAsJsonString = stringFromResources(
+            Path.of("publication_sample.json"));
+        return objectMapper.readValue(samplePublicationAsJsonString, Publication.class);
+    }
+
+    private Publication getPublicationWithSamePersonInDifferentContributorRoles(URI id)
+        throws JsonProcessingException {
+        var publication = getSamplePublication();
+        var contributors = publication.getEntityDescription().getContributors();
+        var name = randomString();
+        contributors.add(createContributor(randomElement(Role.values()), id, name));
+        contributors.add(createContributor(randomElement(Role.values()), id, name));
+        return publication;
     }
 
     private Contributor createContributor(Role role, URI id, String name) {
