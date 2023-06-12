@@ -303,6 +303,10 @@ Resources:
     Type: "AWS::SQS::Queue"
   ImportCandidateExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  ImportCandidateDataEntryUpdateHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  DeleteImportCandidateEventHandlerDLQ:
+    Type: "AWS::SQS::Queue"
   DeleteImportCandidateHandlerDLQ:
     Type: "AWS::SQS::Queue"
 
@@ -1201,7 +1205,7 @@ Resources:
             Destination: !Ref NewNvaEventBusArn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+            Destination: !GetAtt DeleteImportCandidateEventHandlerDLQ.Arn
 
   ExpandedResourcesPersistenceHandler:
     DependsOn: EventsLambdaPermissions
@@ -1416,7 +1420,7 @@ Resources:
             Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+            Destination: !GetAtt ImportCandidateDataEntryUpdateHandlerDLQ.Arn
 
   DeleteDraftPublicationHandler:
     DependsOn: EventsLambdaPermissions
