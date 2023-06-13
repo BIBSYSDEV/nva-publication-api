@@ -7,7 +7,7 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Username;
 
-public class ImportStatusB implements JsonSerializable {
+public class ImportStatus implements JsonSerializable {
 
     private final CandidateStatus candidateStatus;
 
@@ -20,8 +20,8 @@ public class ImportStatusB implements JsonSerializable {
     private final String comment;
 
     @ConstructorProperties({"candidateStatus", "modifiedDate", "setBy", "nvaPublicationId", "comment"})
-    public ImportStatusB(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy,
-                         URI nvaPublicationId, String comment) {
+    public ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy,
+                        URI nvaPublicationId, String comment) {
         this.candidateStatus = candidateStatus;
         this.modifiedDate = modifiedDate;
         this.setBy = setBy;
@@ -59,10 +59,10 @@ public class ImportStatusB implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ImportStatusB)) {
+        if (!(o instanceof ImportStatus)) {
             return false;
         }
-        ImportStatusB that = (ImportStatusB) o;
+        ImportStatus that = (ImportStatus) o;
         return getCandidateStatus() == that.getCandidateStatus()
                && Objects.equals(getSetBy(), that.getSetBy())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())

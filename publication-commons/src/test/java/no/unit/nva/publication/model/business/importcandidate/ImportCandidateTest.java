@@ -82,7 +82,7 @@ public class ImportCandidateTest {
     @ParameterizedTest
     @DisplayName("should be possible to swap imported status to other status")
     @MethodSource("importStatuses")
-    void shouldBePossibleToTransitionLegalImportStatus(ImportStatusB importStatus) {
+    void shouldBePossibleToTransitionLegalImportStatus(ImportStatus importStatus) {
         var randomImportCandidate = randomImportCandidate();
         randomImportCandidate.setImportStatus(importStatus);
         assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));

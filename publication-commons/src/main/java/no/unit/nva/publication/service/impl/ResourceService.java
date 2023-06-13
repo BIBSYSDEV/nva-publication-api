@@ -46,7 +46,7 @@ import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusB;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
@@ -282,7 +282,7 @@ public class ResourceService extends ServiceWithTransactions {
         return getResourceByIdentifier(identifier).toImportCandidate();
     }
 
-    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatusB status)
+    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status)
         throws NotFoundException {
         return updateResourceService.updateStatus(identifier, status);
     }

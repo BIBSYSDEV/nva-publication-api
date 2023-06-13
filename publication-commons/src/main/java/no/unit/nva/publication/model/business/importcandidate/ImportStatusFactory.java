@@ -12,26 +12,26 @@ public final class ImportStatusFactory {
 
     }
 
-    public static ImportStatusB createNotImported() {
-        return new ImportStatusB(CandidateStatus.NOT_IMPORTED,
-                                 Instant.now(),
-                                 null,
-                                 null,
-                                 null);
+    public static ImportStatus createNotImported() {
+        return new ImportStatus(CandidateStatus.NOT_IMPORTED,
+                                Instant.now(),
+                                null,
+                                null,
+                                null);
     }
 
-    public static ImportStatusB createImported(Username setBy, URI nvaPublicationUri) {
-        return new ImportStatusB(CandidateStatus.IMPORTED,
-                                 Instant.now(), setBy,
-                                 nvaPublicationUri,
-                                 null);
+    public static ImportStatus createImported(Username setBy, URI nvaPublicationUri) {
+        return new ImportStatus(CandidateStatus.IMPORTED,
+                                Instant.now(), setBy,
+                                nvaPublicationUri,
+                                null);
     }
 
-    public static ImportStatusB createNotApplicable(Username setBy, String comment) {
-        return new ImportStatusB(CandidateStatus.NOT_APPLICABLE,
-                                 Instant.now(),
-                                 setBy,
-                                 null,
-                                 comment);
+    public static ImportStatus createNotApplicable(Username setBy, String comment) {
+        return new ImportStatus(CandidateStatus.NOT_APPLICABLE,
+                                Instant.now(),
+                                setBy,
+                                null,
+                                comment);
     }
 }

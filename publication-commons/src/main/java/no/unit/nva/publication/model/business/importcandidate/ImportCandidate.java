@@ -28,7 +28,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     public static final String TYPE = "ImportCandidate";
     public static final String IMPORT_STATUS = "importStatus";
     @JsonProperty(IMPORT_STATUS)
-    private ImportStatusB importStatus;
+    private ImportStatus importStatus;
 
     public ImportCandidate() {
         super();
@@ -66,11 +66,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
         return this.toJsonString();
     }
 
-    public ImportStatusB getImportStatus() {
+    public ImportStatus getImportStatus() {
         return importStatus;
     }
 
-    public void setImportStatus(ImportStatusB importStatus) {
+    public void setImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
     }
 
@@ -110,7 +110,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withImportStatus(ImportStatusB importStatus) {
+        public Builder withImportStatus(ImportStatus importStatus) {
             importCandidate.setImportStatus(importStatus);
             return this;
         }

@@ -25,7 +25,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusB;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -77,7 +77,7 @@ public class Resource implements Entity {
     @JsonProperty
     private String rightsHolder;
     @JsonProperty
-    private ImportStatusB importStatus;
+    private ImportStatus importStatus;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
@@ -202,11 +202,11 @@ public class Resource implements Entity {
      * This gets the import status for importCandidate and should be null in other context.
      * @return importStatus if Resource is an ImportCandidate
      */
-    public Optional<ImportStatusB> getImportStatus() {
+    public Optional<ImportStatus> getImportStatus() {
         return Optional.ofNullable(importStatus);
     }
 
-    public void setImportStatus(ImportStatusB importStatus) {
+    public void setImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
     }
 
