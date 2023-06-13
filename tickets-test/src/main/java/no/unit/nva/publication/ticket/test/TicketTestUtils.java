@@ -7,6 +7,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
@@ -94,6 +95,20 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
+    public static Publication createPersistedPublicationWithAssociatedLink(PublicationStatus status,
+                                                                             ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithAssociatedLink(status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (isPublished(publication)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
     public static Publication createPersistedPublicationWithDoi(PublicationStatus status,
                                                                 ResourceService resourceService)
         throws ApiGatewayException {
@@ -168,6 +183,13 @@ public final class TicketTestUtils {
                               .build();
         unpublishFiles(publication);
         return publication;
+    }
+
+    private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
+        return randomPublication().copy()
+                              .withStatus(status)
+                              .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
+                              .build();
     }
 
     private static void unpublishFiles(Publication publication) {
