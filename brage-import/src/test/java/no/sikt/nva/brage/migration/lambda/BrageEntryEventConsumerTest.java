@@ -4,7 +4,6 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_B
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
-import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.NORWEGIAN_BOKMAAL;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder.randomHandle;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
@@ -38,7 +37,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
@@ -52,7 +50,7 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
-import no.sikt.nva.brage.migration.record.license.NvaLicenseIdentifier;
+import no.sikt.nva.brage.migration.record.license.NvaLicenseUri;
 import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
 import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
@@ -132,7 +130,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Organization TEST_ORGANIZATION =
         new Organization.Builder().withId(URI.create(
             "https://api.nva.unit.no/customer/test")).build();
-    public static final NvaLicenseIdentifier LICENSE_IDENTIFIER = NvaLicenseIdentifier.CC_BY_NC;
+    public static final NvaLicenseUri LICENSE_IDENTIFIER = NvaLicenseUri.CC_BY_NC;
     public static final String FILENAME = "filename";
     public static final String HARD_CODED_CRISTIN_IDENTIFIER = "12345";
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
@@ -157,6 +155,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
+    public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by-nc/4.0/");
+
 
     @BeforeEach
     public void init() {
@@ -982,8 +982,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                    "description",
                                    UUID,
                                    new License("someLicense",
-                                               new NvaLicense(LICENSE_IDENTIFIER, Map.of(NORWEGIAN_BOKMAAL,
-                                                                                         LICENSE_IDENTIFIER.getValue()))),
+                                               new NvaLicense(LICENSE_IDENTIFIER)),
                                    EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));
@@ -992,11 +991,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private List<AssociatedArtifact> createCorrespondingAssociatedArtifacts() {
         return List.of(File.builder()
                            .withIdentifier(UUID)
-                           .withLicense(new no.unit.nva.model.associatedartifacts.file.License.Builder()
-                                            .withIdentifier(String.valueOf(LICENSE_IDENTIFIER.getValue()))
-                                            .withLabels(Map.of(NORWEGIAN_BOKMAAL,
-                                                               LICENSE_IDENTIFIER.getValue()))
-                                            .build())
+                           .withLicense(LICENSE_URI)
                            .withName(FILENAME)
                            .withSize(FakeS3cClientWithCopyObjectSupport.SOME_CONTENT_LENGTH)
                            .withMimeType(FakeS3cClientWithCopyObjectSupport.APPLICATION_PDF_MIMETYPE)
