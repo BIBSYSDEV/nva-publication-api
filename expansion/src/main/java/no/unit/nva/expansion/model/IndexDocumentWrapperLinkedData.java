@@ -48,8 +48,14 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private static Stream<JsonNode> extractParentAffiliationNodes(String affiliation) {
-        var json = attempt(() -> dtoObjectMapper.readTree(affiliation)).orElseThrow().at(PART_OF_FIELD);
-        return toStream(json);
+        return attempt(() -> dtoObjectMapper.readTree(affiliation))
+                   .map(IndexDocumentWrapperLinkedData::extractPartOfNode)
+                   .map(IndexDocumentWrapperLinkedData::toStream)
+                   .orElseThrow();
+    }
+
+    private static JsonNode extractPartOfNode(JsonNode node) {
+        return node.at(PART_OF_FIELD);
     }
 
     private static Stream<JsonNode> toStream(JsonNode jsonNode) {
@@ -82,13 +88,13 @@ public class IndexDocumentWrapperLinkedData {
                    .collect(Collectors.toList());
     }
 
-    private String fetchAnthologyContent(JsonNode indexDocument) throws JsonProcessingException {
+    private String fetchAnthologyContent(JsonNode indexDocument) {
         return isAcademicChapter(indexDocument) && isPublicationContextTypeAnthology(indexDocument)
                    ? getAnthology(indexDocument)
                    : EMPTY_STRING;
     }
 
-    private String getAnthology(JsonNode indexDocument) throws JsonProcessingException {
+    private String getAnthology(JsonNode indexDocument) {
         var anthologyUri = extractPublicationContextId(indexDocument);
         return new ExpandedParentPublication(uriRetriever).getExpandedParentPublication(anthologyUri);
     }
