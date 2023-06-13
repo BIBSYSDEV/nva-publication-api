@@ -11,7 +11,7 @@ import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
