@@ -10,7 +10,6 @@ import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 import java.net.URI;
@@ -37,7 +36,7 @@ public class IndexDocumentWrapperLinkedData {
         this.uriRetriever = uriRetriever;
     }
 
-    public String toFramedJsonLd(JsonNode indexDocument) throws JsonProcessingException {
+    public String toFramedJsonLd(JsonNode indexDocument) {
         String frame = SearchIndexFrame.FRAME_SRC;
         List<InputStream> inputStreams = getInputStreams(indexDocument);
         return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
@@ -63,7 +62,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     //TODO: parallelize
-    private List<InputStream> getInputStreams(JsonNode indexDocument) throws JsonProcessingException {
+    private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
