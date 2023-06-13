@@ -1,37 +1,28 @@
 package no.sikt.nva.brage.migration.record.license;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
 public class NvaLicense {
 
     private static final String TYPE = "License";
-    private NvaLicenseIdentifier identifier;
+    private NvaLicenseUri licenseUri;
 
-    private final Map<String, String> labels;
 
-    public NvaLicense(@JsonProperty("identifier") NvaLicenseIdentifier identifier,
-                      @JsonProperty("labels") Map<String, String> labels) {
-        this.identifier = identifier;
-        this.labels = labels;
+    public NvaLicense(@JsonProperty("licenseuri") NvaLicenseUri licenseUri) {
+        this.licenseUri = licenseUri;
     }
 
-    public NvaLicenseIdentifier getIdentifier() {
-        return identifier;
+    public NvaLicenseUri getLicenseUri() {
+        return licenseUri;
     }
 
     @JacocoGenerated
-    public void setIdentifier(NvaLicenseIdentifier identifier) {
-        this.identifier = identifier;
+    public void setLicenseUri(NvaLicenseUri identifier) {
+        this.licenseUri = identifier;
     }
 
-    @JacocoGenerated
-    @JsonProperty("labels")
-    public Map<String, String> getLabels() {
-        return labels;
-    }
 
     @JsonProperty("type")
     public String getType() {
@@ -41,7 +32,7 @@ public class NvaLicense {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(TYPE, identifier, labels);
+        return Objects.hash(TYPE, licenseUri);
     }
 
     @JacocoGenerated
@@ -54,7 +45,6 @@ public class NvaLicense {
             return false;
         }
         NvaLicense nvaLicense = (NvaLicense) o;
-        return Objects.equals(identifier, nvaLicense.identifier)
-               && Objects.equals(labels, nvaLicense.labels);
+        return Objects.equals(licenseUri, nvaLicense.licenseUri);
     }
 }

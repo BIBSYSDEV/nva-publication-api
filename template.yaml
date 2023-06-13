@@ -303,6 +303,12 @@ Resources:
     Type: "AWS::SQS::Queue"
   ImportCandidateExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  ImportCandidateDataEntryUpdateHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  DeleteImportCandidateEventHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  DeleteImportCandidateHandlerDLQ:
+    Type: "AWS::SQS::Queue"
 
 
   #==============================ROLES=======================================================================
@@ -925,6 +931,7 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
       Events:
         Scopus:
@@ -937,6 +944,40 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: '.txt'
+
+  DeleteImportCandidateEventConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 50
+      Timeout: 900
+      Environment:
+        Variables:
+          API_HOST: !Ref ApiDomain
+          TABLE_NAME: !Ref NvaImportCandidatesTable
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          ALLOWED_ORIGIN: '*'
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "ImportCandidates.Scopus.Delete" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeleteImportCandidateHandlerDLQ.Arn
+
 
   DeletionProcessInitializationHandler:
     DependsOn: EventsLambdaPermissions
@@ -1133,6 +1174,38 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+
+  DeleteImportCandidateEventHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic:
+                    - "ImportCandidates.DataEntry.Delete"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeleteImportCandidateEventHandlerDLQ.Arn
 
   ExpandedResourcesPersistenceHandler:
     DependsOn: EventsLambdaPermissions
@@ -1347,7 +1420,7 @@ Resources:
             Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
+            Destination: !GetAtt ImportCandidateDataEntryUpdateHandlerDLQ.Arn
 
   DeleteDraftPublicationHandler:
     DependsOn: EventsLambdaPermissions
@@ -1517,22 +1590,6 @@ Resources:
             Pattern:
               detail:
                 topic: [ "FetchDoi.DataImport.Scopus" ]
-
-  ScopusDeletionEventHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.ScopusDeletionEventHandler::handleRequest
-      Runtime: java11
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        Event:
-          Type: EventBridgeRule
-          Properties:
-            EventBusName: !Ref NewNvaEventBusArn
-            Pattern:
-              detail:
-                topic: [ "FetchDoi.Delete.Scopus" ]
 
 
   #==========================Manually triggered functions=============================================

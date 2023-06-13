@@ -1,7 +1,8 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENT_BUS_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -18,20 +19,25 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.model.events.DeleteEntryEvent;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.logutils.LogUtils;
 import org.hamcrest.Matcher;
 import org.hamcrest.beans.HasPropertyWithValue;
 import org.hamcrest.core.Every;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public class DeleteImportCandidatesEventEmitterTest {
 
@@ -44,14 +50,15 @@ public class DeleteImportCandidatesEventEmitterTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private S3Driver s3Driver;
+    private FakeS3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
     private DeleteImportCandidatesEventEmitter handler;
 
     @BeforeEach
     public void init() {
-        FakeS3Client s3Client = new FakeS3Client();
+        s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
-        eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
+        eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
         handler = new DeleteImportCandidatesEventEmitter(s3Client, eventBridgeClient);
     }
 
@@ -59,11 +66,23 @@ public class DeleteImportCandidatesEventEmitterTest {
     void shouldEmitEventsForEveryScopusIdentifierInDeletionList() throws IOException {
         var s3Event = createS3Event(RandomDataGenerator.randomString());
         handler.handleRequest(s3Event, CONTEXT);
-        List<DeleteEntryEvent> eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
+        var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
         assertThat(eventBodiesOfEmittedEventReferences, everyItemIs());
     }
 
-    private static Matcher<Iterable<? extends DeleteEntryEvent>> everyItemIs() {
+    @Test
+    void shouldLogNotEmittedEvents() throws IOException {
+        var s3Event = createS3Event(RandomDataGenerator.randomString());
+        eventBridgeClient = new DeleteImportCandidatesEventEmitterTest.FakeEventBridgeClientThatFailsAllPutEvents(
+            ApplicationConstants.EVENT_BUS_NAME);
+        s3Driver = new S3Driver(s3Client, "ignoredValue");
+        handler = new DeleteImportCandidatesEventEmitter(s3Client, eventBridgeClient);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        handler.handleRequest(s3Event, CONTEXT);
+        assertThat(appender.getMessages(), containsString("Not emitted events"));
+    }
+
+    private static Matcher<Iterable<?>> everyItemIs() {
         return Every.everyItem(HasPropertyWithValue.hasProperty(ImportCandidateDeleteEvent.TOPIC,
                                                                 is(equalTo(
                                                                     ImportCandidateDeleteEvent.EVENT_TOPIC))));
@@ -94,15 +113,30 @@ public class DeleteImportCandidatesEventEmitterTest {
         return new S3Entity(RandomDataGenerator.randomString(), bucket, object, schemaVersion);
     }
 
-    private List<DeleteEntryEvent> collectBodiesOfEmittedEventReferences() {
+    private List<ImportCandidateDeleteEvent> collectBodiesOfEmittedEventReferences() {
         return eventBridgeClient.getRequestEntries()
                    .stream()
                    .map(PutEventsRequestEntry::detail)
-                   .map(DeleteEntryEvent::fromJson)
+                   .map(event -> attempt(() ->JsonUtils.dtoObjectMapper.readValue(event,
+                                                                                ImportCandidateDeleteEvent.class)).orElseThrow())
                    .collect(Collectors.toList());
     }
 
     private String randomDate() {
         return Instant.now().toString();
+    }
+
+    static class FakeEventBridgeClientThatFailsAllPutEvents extends FakeEventBridgeClient {
+
+        public FakeEventBridgeClientThatFailsAllPutEvents(String eventBusName) {
+            super(eventBusName);
+        }
+
+        @Override
+        public PutEventsResponse putEvents(PutEventsRequest putEventsRequest) throws
+                                                                              AwsServiceException,
+                                                                              SdkClientException {
+            return PutEventsResponse.builder().failedEntryCount(putEventsRequest.entries().size()).build();
+        }
     }
 }

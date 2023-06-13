@@ -62,7 +62,6 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         resourceService.deleteImportCandidate(importCandidate);
         assertThrows(NotFoundException.class,
                      () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
-        assertThat(appender.getMessages(), containsString("deleted " + importCandidate.getIdentifier()));
     }
 
     @Test
