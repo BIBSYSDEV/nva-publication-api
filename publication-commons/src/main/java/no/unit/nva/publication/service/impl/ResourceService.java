@@ -42,11 +42,11 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusB;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
@@ -124,7 +124,7 @@ public class ResourceService extends ServiceWithTransactions {
     /**
      * Should not be used initiating resourceService for resource-table
      * @param tableName name of table
-     * @return
+     * @return resourceService
      */
 
     @JacocoGenerated
@@ -282,7 +282,7 @@ public class ResourceService extends ServiceWithTransactions {
         return getResourceByIdentifier(identifier).toImportCandidate();
     }
 
-    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status)
+    public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatusB status)
         throws NotFoundException {
         return updateResourceService.updateStatus(identifier, status);
     }

@@ -12,7 +12,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusB;
 
 @SuppressWarnings("PMD.TooManyFields")
 public final class ResourceBuilder {
@@ -35,7 +35,7 @@ public final class ResourceBuilder {
     private List<URI> subjects;
     private List<Funding> fundings;
     private String rightsHolder;
-    private ImportStatus importStatus;
+    private ImportStatusB importStatus;
 
     ResourceBuilder() {
     }
@@ -130,7 +130,7 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withImportStatus(ImportStatus importStatus) {
+    public ResourceBuilder withImportStatus(ImportStatusB importStatus) {
         this.importStatus = importStatus;
         return this;
     }

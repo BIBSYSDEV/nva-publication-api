@@ -75,8 +75,7 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.Imported;
-import no.unit.nva.publication.model.business.importcandidate.NotImported;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -882,7 +881,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateImportStatus() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        var expectedStatus = new Imported(Instant.now(), randomUri(), randomPerson());
+        var expectedStatus = ImportStatusFactory.createImported(randomPerson(), randomUri());
         resourceService.updateImportStatus(importCandidate.getIdentifier(), expectedStatus);
         var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
         assertThat(fetchedPublication.getImportStatus(), is(equalTo(expectedStatus)));
@@ -943,7 +942,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
                    .withStatus(PublicationStatus.PUBLISHED)
-                   .withImportStatus(new NotImported())
+                   .withImportStatus( ImportStatusFactory.createNotImported())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
                    .withHandle(randomUri())

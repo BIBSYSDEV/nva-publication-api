@@ -49,11 +49,10 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.Imported;
-import no.unit.nva.publication.model.business.importcandidate.NotImported;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -102,7 +101,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var updatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
                 importCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getImportStatus(), is(instanceOf(Imported.class)));
+        assertThat(updatedImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo( CandidateStatus.IMPORTED)));
         assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
@@ -121,7 +120,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
                 importCandidate.getIdentifier());
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
-        assertThat(notUpdatedImportCandidate.getImportStatus(), is(instanceOf(NotImported.class)));
+        assertThat(notUpdatedImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(IMPORT_PROCESS_WENT_WRONG));
     }
 
@@ -214,13 +213,9 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
 
     private ImportCandidate createImportedPersistedImportCandidate() throws NotFoundException {
         var candidate = createImportCandidate();
-        candidate.setImportStatus(createImportedStatus());
+        candidate.setImportStatus(ImportStatusFactory.createImported(randomPerson(), randomUri()));
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
-
-    private ImportStatus createImportedStatus() {
-        return new Imported(Instant.now(), randomUri(), randomPerson());
     }
 
     private Username randomPerson() {
@@ -257,7 +252,7 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
 
     private ImportCandidate createImportCandidate() {
         return new ImportCandidate.Builder()
-                .withImportStatus(new NotImported())
+                .withImportStatus(ImportStatusFactory.createNotImported())
                 .withEntityDescription(randomEntityDescription())
                 .withLink(randomUri())
                 .withDoi(randomDoi())

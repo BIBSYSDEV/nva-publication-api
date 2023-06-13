@@ -6,7 +6,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
@@ -17,9 +16,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.Imported;
-import no.unit.nva.publication.model.business.importcandidate.NotImported;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -50,9 +49,10 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateImportStatus() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        resourceService.updateImportStatus(importCandidate.getIdentifier(), new Imported(null, null, null));
+        resourceService.updateImportStatus(importCandidate.getIdentifier(),
+                                           ImportStatusFactory.createImported(null, null));
         var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(fetchedPublication.getImportStatus(), instanceOf(Imported.class));
+        assertThat(fetchedPublication.getImportStatus().getCandidateStatus(), equalTo(CandidateStatus.IMPORTED));
     }
 
     @Test
@@ -68,7 +68,8 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowBadMethodExpectedWhenDeletingImportCandidateWithStatusImported() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        resourceService.updateImportStatus(importCandidate.getIdentifier(), new Imported(null, null, null));
+        resourceService.updateImportStatus(importCandidate.getIdentifier(),
+                                           ImportStatusFactory.createImported(null, null));
         assertThrows(BadMethodException.class,
                      () -> resourceService.deleteImportCandidate(importCandidate));
     }
@@ -76,7 +77,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
                    .withStatus(PublicationStatus.PUBLISHED)
-                   .withImportStatus(new NotImported())
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
                    .withHandle(randomUri())

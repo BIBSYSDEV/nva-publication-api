@@ -39,8 +39,8 @@ import java.util.stream.Stream;
 public class ImportCandidateTest {
 
     public static Stream<Arguments> importStatuses() {
-        return Stream.of(Arguments.of(new Imported(Instant.now(), randomUri(), randomPerson())),
-                Arguments.of(new NotApplicable(randomPerson(), randomString(), Instant.now())));
+        return Stream.of(Arguments.of( ImportStatusFactory.createImported(randomPerson(), randomUri())),
+                Arguments.of( ImportStatusFactory.createNotApplicable(randomPerson(), randomString())));
     }
 
     private static Username randomPerson() {
@@ -52,7 +52,7 @@ public class ImportCandidateTest {
         var randomImportCandidate = randomImportCandidate();
         var expectedPublication = createExpectedPublication(randomImportCandidate);
         var actualImportedPublication = randomImportCandidate.toPublication();
-        assertThat(randomImportCandidate.getImportStatus(), is(equalTo(new NotImported())));
+        assertThat(randomImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
     }
 
@@ -61,11 +61,11 @@ public class ImportCandidateTest {
         var randomPublication = createPublicationWithoutStatus();
         var importCandidate =
             new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
-                    .withImportStatus(new NotImported())
+                    .withImportStatus( ImportStatusFactory.createNotImported())
                 .build();
 
         var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
-        assertThat(importCandidate.getImportStatus(), is(equalTo(new NotImported())));
+        assertThat(importCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
     }
 
@@ -82,7 +82,7 @@ public class ImportCandidateTest {
     @ParameterizedTest
     @DisplayName("should be possible to swap imported status to other status")
     @MethodSource("importStatuses")
-    void shouldBePossibleToTransitionLegalImportStatus(ImportStatus importStatus) {
+    void shouldBePossibleToTransitionLegalImportStatus(ImportStatusB importStatus) {
         var randomImportCandidate = randomImportCandidate();
         randomImportCandidate.setImportStatus(importStatus);
         assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));
@@ -101,7 +101,7 @@ public class ImportCandidateTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                .withImportStatus(new NotImported())
+                .withImportStatus( ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withDoi(randomDoi())

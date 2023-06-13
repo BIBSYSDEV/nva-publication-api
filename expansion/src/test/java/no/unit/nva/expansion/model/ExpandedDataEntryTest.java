@@ -55,7 +55,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate.Builder;
-import no.unit.nva.publication.model.business.importcandidate.NotImported;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -215,7 +215,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
         return new ImportCandidate.Builder()
-                   .withImportStatus(new NotImported())
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription(publicationContext))
                    .withLink(randomUri())
                    .withDoi(randomDoi())

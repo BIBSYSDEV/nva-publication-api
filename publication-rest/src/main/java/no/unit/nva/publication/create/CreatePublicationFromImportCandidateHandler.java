@@ -8,9 +8,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.exception.NotAuthorizedException;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.Imported;
-import no.unit.nva.publication.model.business.importcandidate.NotImported;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -22,10 +22,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
-import java.time.Instant;
-
 public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandler<ImportCandidate,
-        PublicationResponse> {
+                                                                                      PublicationResponse> {
 
     public static final String IMPORT_CANDIDATES_TABLE = new Environment().readEnv("IMPORT_CANDIDATES_TABLE_NAME");
     public static final String PUBLICATIONS_TABLE = new Environment().readEnv("RESOURCE_TABLE_NAME");
@@ -34,13 +32,14 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
     public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE = "Resource has already been imported";
     public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE = "Resource is missing scopus "
-            + "identifier";
+                                                                                     + "identifier";
     private final ResourceService candidateService;
     private final ResourceService publicationService;
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
-        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE), ResourceService.defaultService(PUBLICATIONS_TABLE));
+        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE),
+             ResourceService.defaultService(PUBLICATIONS_TABLE));
     }
 
     public CreatePublicationFromImportCandidateHandler(ResourceService importCandidateService,
@@ -50,21 +49,18 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         this.publicationService = publicationService;
     }
 
-    private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
-    }
-
     @Override
     protected PublicationResponse processInput(ImportCandidate input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         validateAccessRight(requestInfo);
         validateImportCandidate(input);
         var identifier = input.getIdentifier();
         //TODO: refactor this
-        return attempt(() -> candidateService.updateImportStatus(identifier, new Imported(Instant.now(), null, null)))
-                .map(publicationService::autoImportPublication)
-                .map(PublicationResponse::fromPublication)
-                .orElseThrow(failure -> rollbackAndThrowException(input));
+        return attempt(() -> candidateService.updateImportStatus(identifier,
+                                                                 ImportStatusFactory.createImported(null, null)))
+                   .map(publicationService::autoImportPublication)
+                   .map(PublicationResponse::fromPublication)
+                   .orElseThrow(failure -> rollbackAndThrowException(input));
     }
 
     @Override
@@ -72,8 +68,12 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return HTTP_CREATED;
     }
 
+    private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
+        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+    }
+
     private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
-        if (importCandidate.getImportStatus() instanceof Imported) {
+        if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().getCandidateStatus())) {
             throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE);
         }
         if (isNull(getScopusIdentifier(importCandidate))) {
@@ -83,7 +83,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     private BadGatewayException rollbackAndThrowException(ImportCandidate input) {
         return attempt(() -> rollbackImportStatusUpdate(input))
-                .orElse(fail -> new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE));
+                   .orElse(fail -> new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE));
     }
 
     private void validateAccessRight(RequestInfo requestInfo) throws NotAuthorizedException {
@@ -94,11 +94,11 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     private String getScopusIdentifier(ImportCandidate importCandidate) {
         return importCandidate.getAdditionalIdentifiers()
-                .stream()
-                .filter(this::isScopusIdentifier)
-                .map(AdditionalIdentifier::getValue)
-                .findFirst()
-                .orElse(null);
+                   .stream()
+                   .filter(this::isScopusIdentifier)
+                   .map(AdditionalIdentifier::getValue)
+                   .findFirst()
+                   .orElse(null);
     }
 
     private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
@@ -106,8 +106,8 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)
-            throws NotFoundException {
-        candidateService.updateImportStatus(importCandidate.getIdentifier(), new NotImported());
+        throws NotFoundException {
+        candidateService.updateImportStatus(importCandidate.getIdentifier(), ImportStatusFactory.createNotImported());
         return new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);
     }
 }

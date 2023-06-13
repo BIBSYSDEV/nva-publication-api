@@ -24,7 +24,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusB;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -70,7 +70,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(ORGANIZATIONS_FIELD)
     private List<Organization> organizations;
     @JsonProperty(IMPORT_STATUS_FIELD)
-    private ImportStatus importStatus;
+    private ImportStatusB importStatus;
     @JsonProperty(PUBLICATION_YEAR_FIELD)
     private String publicationYear;
 
@@ -183,11 +183,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public ImportStatus getImportStatus() {
+    public ImportStatusB getImportStatus() {
         return importStatus;
     }
 
-    public void setImportStatus(ImportStatus importStatus) {
+    public void setImportStatus(ImportStatusB importStatus) {
         this.importStatus = importStatus;
     }
 
@@ -377,7 +377,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withImportStatus(ImportStatus importStatus) {
+        public Builder withImportStatus(ImportStatusB importStatus) {
             expandedImportCandidate.setImportStatus(importStatus);
             return this;
         }
