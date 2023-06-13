@@ -9,15 +9,10 @@ import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DeleteResourceService extends ServiceWithTransactions {
 
-    private static final Logger logger = LoggerFactory.getLogger(DeleteResourceService.class);
     public static final String CAN_NOT_DELETE_IMPORT_CANDIDATE_MESSAGE = "Can not delete already imported resource!";
-    public static final String IMPORT_CANDIDATE_DELETION_MESSAGE = "Import candidate with id ‰s has been permanently "
-                                                                   + "deleted {}";
     private final String tableName;
     private final ReadResourceService readResourceService;
 
@@ -38,7 +33,6 @@ public class DeleteResourceService extends ServiceWithTransactions {
             var transactionWriteItem = deleteResource(Resource.fromImportCandidate(importCandidate));
             var request = new TransactWriteItemsRequest().withTransactItems(transactionWriteItem);
             sendTransactionWriteRequest(request);
-            logger.info(IMPORT_CANDIDATE_DELETION_MESSAGE, importCandidate.getIdentifier());
         }
     }
 

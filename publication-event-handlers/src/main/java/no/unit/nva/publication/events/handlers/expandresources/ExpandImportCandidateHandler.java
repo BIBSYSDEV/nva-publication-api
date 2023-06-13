@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
@@ -26,7 +27,6 @@ public class ExpandImportCandidateHandler extends
     public static final Environment ENVIRONMENT = new Environment();
     public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
-    public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;

@@ -1,8 +1,5 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
-import static no.unit.nva.publication.s3imports.DeleteEntriesEventEmitter.NON_EMITTED_FILENAMES_WARNING_PREFIX;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.LINE_SEPARATOR;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -16,6 +13,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -24,6 +22,7 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String SCOPUS_IDENTIFIER_DELIMITER = "DELETE-";
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
+    public static final String NOT_EMITTED_EVENTS = "Not emitted events {}:";
     private static final int SINGLE_EXPECTED_FILE = 0;
     private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidatesEventEmitter.class);
     private final S3Client s3Client;
@@ -40,14 +39,21 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
         this.eventBridgeClient = eventBridgeClient;
     }
 
+    @JacocoGenerated
+    public static EventBridgeClient defaultEventBridgeClient() {
+        return EventBridgeClient.builder()
+                   .region(ApplicationConstants.AWS_REGION)
+                   .httpClient(UrlConnectionHttpClient.create())
+                   .build();
+    }
+
     @Override
     public Void handleRequest(S3Event input, Context context) {
         Stream.of(readFile(input))
             .map(this::extractIdentifiers)
             .map(this::createEvents)
-            .map(scopusDeletionEventList -> emitEvents(scopusDeletionEventList, context))
-            .forEach(this::logWarningForNotEmittedFilenames);
-
+            .map(list -> emitEvents(list, context))
+            .forEach(this::logWarningForNotEmittedEvents);
         return null;
     }
 
@@ -59,12 +65,12 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
         return !string.isBlank() || !string.isEmpty();
     }
 
-    private static ImportCandidateDeleteEvent createEvent(String id) {
+    private ImportCandidateDeleteEvent createEvent(String id) {
         return new ImportCandidateDeleteEvent(ImportCandidateDeleteEvent.EVENT_TOPIC, id);
     }
 
     private List<ImportCandidateDeleteEvent> createEvents(Stream<String> scopusIdentifiers) {
-        return scopusIdentifiers.map(DeleteImportCandidatesEventEmitter::createEvent)
+        return scopusIdentifiers.map(this::createEvent)
                    .collect(Collectors.toList());
     }
 
@@ -73,6 +79,8 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
             ImportCandidateDeleteEvent.class.getCanonicalName(),
             context.getInvokedFunctionArn(),
             eventBridgeClient);
+        logger.info("Events to emit: {}",
+                    events.stream().map(ImportCandidateDeleteEvent::toJsonString).collect(Collectors.toList()));
         batchEventEmitter.addEvents(events);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
     }
@@ -84,7 +92,6 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
     }
 
     private String extractScopusIdentifier(String item) {
-
         return item.split(SCOPUS_IDENTIFIER_DELIMITER)[1];
     }
 
@@ -106,13 +113,13 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
         return event.getRecords().get(SINGLE_EXPECTED_FILE).getS3().getObject().getKey();
     }
 
-    private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
+    private void logWarningForNotEmittedEvents(List<PutEventsResult> failedRequests) {
         if (!failedRequests.isEmpty()) {
             String failedRequestsString = failedRequests
                                               .stream()
                                               .map(PutEventsResult::toString)
-                                              .collect(Collectors.joining(LINE_SEPARATOR));
-            logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX, failedRequestsString);
+                                              .collect(Collectors.joining("\n"));
+            logger.warn(NOT_EMITTED_EVENTS, failedRequestsString);
         }
     }
 }
