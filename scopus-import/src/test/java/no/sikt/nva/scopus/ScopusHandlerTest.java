@@ -1553,15 +1553,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                     .willReturn(aResponse().withBody("[]").withStatus(HttpURLConnection.HTTP_OK)));
     }
 
-    private void createSearchApiResponse(ImportCandidate importCandidate) {
-
-        //        stubFor(WireMock.get(urlMatching("/search/import-candidates"))
-        //                    .willReturn(aResponse().withBody(String.valueOf(new ImportCandidateSearchApiResponse
-        //                    (List.of(
-        //                        ExpandedImportCandidate.fromImportCandidate(importCandidate)), 1))).withStatus
-        //                        (HttpURLConnection.HTTP_OK)));
-    }
-
     private void mockedPiaException() {
         stubFor(WireMock.get(urlPathEqualTo("/sentralimport/authors"))
                     .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
