@@ -138,9 +138,10 @@ public class ResourceExpansionServiceNviCalculationTest extends ResourcesLocalTe
         throws IOException, NotFoundException {
 
         var publication =
-            setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptPublishedDate(publicationInstance,
-                                                                                         publicationContext,
-                                                                                         getPublicationDateBeforeCurrentNviYear());
+            setupAndMockPublicationMeetingAllNviCandidacyRequirementsExceptPublishedDate(
+                publicationInstance,
+                publicationContext,
+                getPublicationDateBeforeCurrentNviYear());
 
         var resourceUpdate = Resource.fromPublication(publication);
 
