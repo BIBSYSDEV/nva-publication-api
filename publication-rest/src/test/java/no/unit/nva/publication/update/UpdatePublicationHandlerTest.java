@@ -19,8 +19,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
+import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_THESIS;
+import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -578,6 +579,24 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
 
+    @Test
+    void shouldUpdateNonDegreePublicationWhenUserHasAccessRightEditAllNonDegreePublications()
+        throws ApiGatewayException, IOException {
+        Publication savedPublication = createSamplePublication();
+        Publication publicationUpdate = updateTitle(savedPublication);
+        InputStream event = userWithEditAllNonDegreePublicationsUpdatesPublication(publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+        Publication updatedPublication =
+            publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+
+        publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
+
+        String expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
+        String actualTitle = updatedPublication.getEntityDescription().getMainTitle();
+        assertThat(actualTitle, is(equalTo(expectedTitle)));
+        assertThat(updatedPublication, is(equalTo(publicationUpdate)));
+    }
+
     private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
         return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
                                     mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests());
@@ -660,6 +679,19 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .build();
     }
 
+    private InputStream userWithEditAllNonDegreePublicationsUpdatesPublication(Publication publicationUpdate)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        URI customerId = randomUri();
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                   .withPathParameters(pathParameters)
+                   .withCurrentCustomer(customerId)
+                   .withBody(publicationUpdate)
+                   .withAccessRights(customerId, EDIT_ALL_NON_DEGREE_RESOURCES.toString())
+                   .withUserName(SOME_CURATOR)
+                   .build();
+    }
+
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
@@ -684,7 +716,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .withCurrentCustomer(customerId)
             .withPersonCristinId(cristinId)
             .withBody(publicationUpdate)
-            .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
+            .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
             .build();
     }
 
@@ -709,7 +741,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .withPathParameters(pathParameters)
             .withCurrentCustomer(customerId)
             .withBody(publicationUpdate)
-            .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
+            .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
             .build();
     }
 
@@ -723,7 +755,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
             .withCurrentCustomer(customerId)
             .withBody(publicationUpdate)
-            .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
+            .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
             .withPathParameters(pathParameters)
             .build();
     }
