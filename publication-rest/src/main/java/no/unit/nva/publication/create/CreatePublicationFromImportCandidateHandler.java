@@ -31,8 +31,8 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
     public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE = "Resource has already been imported";
-    public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE = "Resource is missing scopus "
-                                                                                     + "identifier";
+    public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE =
+        "Resource is missing scopus identifier";
     private final ResourceService candidateService;
     private final ResourceService publicationService;
 
