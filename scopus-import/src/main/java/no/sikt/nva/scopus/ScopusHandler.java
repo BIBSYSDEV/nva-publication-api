@@ -15,7 +15,7 @@ import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;

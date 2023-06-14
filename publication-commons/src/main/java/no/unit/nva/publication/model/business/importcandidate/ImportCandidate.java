@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business;
+package no.unit.nva.publication.model.business.importcandidate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -58,7 +58,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return false;
         }
         ImportCandidate that = (ImportCandidate) o;
-        return getImportStatus() == that.getImportStatus();
+        return Objects.equals(getImportStatus(), that.getImportStatus());
     }
 
     @Override

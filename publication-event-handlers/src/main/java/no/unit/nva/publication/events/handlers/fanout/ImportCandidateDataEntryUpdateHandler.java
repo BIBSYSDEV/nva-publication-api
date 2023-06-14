@@ -18,7 +18,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;

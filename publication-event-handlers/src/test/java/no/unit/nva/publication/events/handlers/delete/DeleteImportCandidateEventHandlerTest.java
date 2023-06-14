@@ -33,8 +33,8 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.DeleteImportCandidateEvent;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -84,7 +84,7 @@ public class DeleteImportCandidateEventHandlerTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withIndexedDate(Instant.now())

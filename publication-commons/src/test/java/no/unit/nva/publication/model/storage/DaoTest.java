@@ -21,7 +21,8 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.*;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -56,7 +57,6 @@ class DaoTest extends ResourcesLocalTest {
     private static final String DATA_FINALIZED_BY = "data.finalizedBy";
     private static final String DATA_FINALIZED_DATE = "data.finalizedDate";
     private static final String DATA_ASSIGNEE = "data.assignee";
-    public static final String IMPORT_STATUS = "importStatus";
     public static final String DATA_IMPORT_STATUS = "data.importStatus";
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
 
@@ -291,7 +291,7 @@ class DaoTest extends ResourcesLocalTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
