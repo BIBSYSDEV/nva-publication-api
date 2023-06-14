@@ -28,6 +28,7 @@ dependencies {
     implementation libs.bundles.jackson
     implementation project(path: ':publication-commons')
     implementation project(":s3-import-commons")
+    implementation project(":expansion")
 
 
     testImplementation libs.nva.testutils

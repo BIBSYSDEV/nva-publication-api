@@ -1,5 +1,10 @@
 package no.unit.nva.publication.model.business;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -7,11 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TicketEntryTest {
 
@@ -29,14 +29,37 @@ class TicketEntryTest {
         assertThat(actualUserInstance, is(equalTo(expectedUserInstance)));
     }
 
-    private static UserInstance getExpectedUserInstance(Publication publication) {
-        return UserInstance.create(
-                publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
-    }
-
     @Test
     void shouldThrowExceptionForUnrecognizedTicketType() {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
         assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, DoiRequest.class));
+    }
+
+    @Test
+    void shouldThrowExceptionForUnrecognizedTicketTypeRequestingNewTicket() {
+        var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
+        assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, TicketEntry.class));
+    }
+
+    @Test
+    void shouldThrowExceptionForUnrecognizedTicketTypeCreatingQueryObject() {
+        var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
+        assertThrows(UnsupportedOperationException.class,
+                     () -> TicketEntry.createQueryObject(publication.getPublisher().getId(),
+                                                         publication.getIdentifier(),
+                                                         TicketEntry.class));
+    }
+
+    @Test
+    void shouldThrowExceptionForUnrecognizedTicketCreatingNewTicket() {
+        var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
+        assertThrows(UnsupportedOperationException.class,
+                     () -> TicketEntry.createNewTicket(publication, TicketEntry.class,
+                                                       SortableIdentifier::next));
+    }
+
+    private static UserInstance getExpectedUserInstance(Publication publication) {
+        return UserInstance.create(
+            publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
     }
 }

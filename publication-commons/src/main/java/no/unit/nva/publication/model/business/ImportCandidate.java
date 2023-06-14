@@ -80,6 +80,18 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .build();
     }
 
+    public ImportCandidate merge(ImportCandidate importCandidate) {
+        return new Builder()
+                   .withEntityDescription(importCandidate.getEntityDescription())
+                   .withIdentifier(this.getIdentifier())
+                   .withPublisher(this.getPublisher())
+                   .withResourceOwner(this.getResourceOwner())
+                   .withAdditionalIdentifiers(this.getAdditionalIdentifiers())
+                   .withImportStatus(this.getImportStatus())
+                   .withDoi(this.getDoi())
+                   .build();
+    }
+
     public static final class Builder {
 
         private final ImportCandidate importCandidate;

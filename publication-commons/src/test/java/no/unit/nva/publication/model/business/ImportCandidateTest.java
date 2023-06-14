@@ -6,6 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.List;
@@ -51,6 +52,14 @@ public class ImportCandidateTest {
 
         assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
         assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
+    }
+
+    @Test
+    void shouldMergeIncomingImportCandidateIntoExistingOneAndUpdateEntityDescription() {
+        var importCandidate = randomImportCandidate();
+        var importCandidateAfterMerge = importCandidate.merge(randomImportCandidate());
+        assertThat(importCandidateAfterMerge.getEntityDescription(),
+                   is(not(equalTo(importCandidate.getEntityDescription()))));
     }
 
     @Test

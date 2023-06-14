@@ -38,6 +38,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -120,6 +122,7 @@ import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
@@ -133,12 +136,20 @@ import no.sikt.nva.scopus.utils.PiaResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
+import no.unit.nva.expansion.model.ExpandedImportCandidate;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
@@ -146,13 +157,18 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -224,6 +240,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
     private ResourceService resourceService;
+    private UriRetriever uriRetriever;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
@@ -248,7 +265,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
         cristinConnection = new CristinConnection(httpClient);
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService);
+        uriRetriever = mock(UriRetriever.class);
+        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService, uriRetriever);
         scopusData = new ScopusGenerator();
     }
 
@@ -258,7 +276,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService);
+        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService, uriRetriever);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
@@ -427,12 +445,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         //                                        .getPublishername();
         //      var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
         //      assertThat(actualPublisherName, is(expectedPublisherName));
-    }
-
-    private void removePublishers() {
-        var publishers =
-            scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher();
-        publishers.removeAll(publishers);
     }
 
     @Test
@@ -1067,8 +1079,26 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         var s3Event = createNewScopusPublicationEvent();
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
-                                        fakeResourceServiceThrowingException);
+                                        fakeResourceServiceThrowingException, uriRetriever);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
+    void shouldMergeIncomingImportCandidateIntoExistingOneWhenScopusIdsMatch() throws IOException {
+        var existingImportCandidate = createPersistedImportCandidate();
+        createEmptyPiaMock();
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(existingImportCandidate));
+        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var s3Event = createNewScopusPublicationEvent();
+        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
+
+        assertThat(importCandidate.getEntityDescription(),
+                   is(not(equalTo(existingImportCandidate.getEntityDescription()))));
+        assertThat(importCandidate.getCreatedDate(), is(equalTo(existingImportCandidate.getCreatedDate())));
     }
 
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {
@@ -1126,6 +1156,63 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .orElse(null);
     }
 
+    @NotNull
+    private static Optional<String> toResponse(ImportCandidate importCandidate) {
+        return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(List.of(
+            ExpandedImportCandidate.fromImportCandidate(importCandidate)), 1)));
+    }
+
+    private ImportCandidate createPersistedImportCandidate() {
+        var importCandidate = randomImportCandidate();
+        return resourceService.persistImportCandidate(importCandidate);
+    }
+
+    private ImportCandidate randomImportCandidate() {
+        return new ImportCandidate.Builder()
+                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withEntityDescription(randomEntityDescription())
+                   .withLink(randomUri())
+                   .withDoi(randomDoi())
+                   .withIndexedDate(Instant.now())
+                   .withPublishedDate(Instant.now())
+                   .withHandle(randomUri())
+                   .withModifiedDate(Instant.now())
+                   .withCreatedDate(Instant.now())
+                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                   .withSubjects(List.of(randomUri()))
+                   .withIdentifier(SortableIdentifier.next())
+                   .withRightsHolder(randomString())
+                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
+                   .withFundings(List.of(new FundingBuilder().build()))
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("scopusIdentifier", randomString())))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
+                   .withAssociatedArtifacts(List.of())
+                   .build();
+    }
+
+    private EntityDescription randomEntityDescription() {
+        return new EntityDescription.Builder()
+                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
+                   .withAbstract(randomString())
+                   .withDescription(randomString())
+                   .withContributors(List.of(randomContributor()))
+                   .withMainTitle(randomString())
+                   .build();
+    }
+
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .build();
+    }
+
+    private void removePublishers() {
+        var publishers =
+            scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher();
+        publishers.removeAll(publishers);
+    }
+
     private void mockAffiliationResponse(String cristinOrganizationId, AuthorGroupTp authorGroupTp) {
         generatePiaAndCristinAffiliationResponse(authorGroupTp, cristinOrganizationId);
     }
@@ -1172,7 +1259,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
             }
 
-            public  ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
+            public ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
             }
         };
@@ -1464,6 +1551,15 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private void createEmptyPiaMock() {
         stubFor(WireMock.get(urlMatching("/sentralimport/authors"))
                     .willReturn(aResponse().withBody("[]").withStatus(HttpURLConnection.HTTP_OK)));
+    }
+
+    private void createSearchApiResponse(ImportCandidate importCandidate) {
+
+        //        stubFor(WireMock.get(urlMatching("/search/import-candidates"))
+        //                    .willReturn(aResponse().withBody(String.valueOf(new ImportCandidateSearchApiResponse
+        //                    (List.of(
+        //                        ExpandedImportCandidate.fromImportCandidate(importCandidate)), 1))).withStatus
+        //                        (HttpURLConnection.HTTP_OK)));
     }
 
     private void mockedPiaException() {

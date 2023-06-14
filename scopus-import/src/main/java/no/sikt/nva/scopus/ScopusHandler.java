@@ -1,5 +1,7 @@
 package no.sikt.nva.scopus;
 
+import static java.util.Objects.nonNull;
+import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -8,22 +10,33 @@ import jakarta.xml.bind.JAXB;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
+import java.util.Optional;
 import java.util.Random;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
+import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.model.ExpandedImportCandidate;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.ImportCandidate;
+import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -39,36 +52,76 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
+    public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
+                                                                                 + "candidate";
     private static final String ERROR_SAVING_SCOPUS_PUBLICATION = "Error saving imported scopus publication object "
                                                                   + "key: {}";
     private static final int MAX_SLEEP_TIME = 100;
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
+    private static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
+    private static final String SEARCH = "search";
+    private static final String IMPORT_CANDIDATES = "import-candidates";
+    private static final String QUERY = "query";
     private final S3Client s3Client;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
     private final ResourceService resourceService;
+    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public ScopusHandler() {
         this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
-             ResourceService.defaultService());
+             ResourceService.defaultService(), new UriRetriever());
     }
 
-    public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
-                         ResourceService resourceService) {
+    public ScopusHandler(S3Client s3Client,
+                         PiaConnection piaConnection,
+                         CristinConnection cristinConnection,
+                         ResourceService resourceService,
+                         UriRetriever uriRetriever) {
         this.s3Client = s3Client;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.resourceService = resourceService;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
-    public Publication handleRequest(S3Event event, Context context) {
+    public ImportCandidate handleRequest(S3Event event, Context context) {
         return attempt(() -> createImportCandidate(event))
-                   .flatMap(this::persistInDatabase)
+                   .map(this::updateExistingIfNeeded)
+                   .flatMap(this::persistOrUpdateInDatabase)
                    .map(publication -> storeSuccessReport(publication, event))
                    .orElseThrow(fail -> handleSavingError(fail, event));
+    }
+
+    private static ExpandedImportCandidate toExpandedImportCandidate(ImportCandidateSearchApiResponse response)
+        throws BadGatewayException {
+        if (containsSingleHit(response)) {
+            return response.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
+        }
+        throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
+    }
+
+    private static boolean containsSingleHit(ImportCandidateSearchApiResponse response) {
+        return response.getTotal() == 1;
+    }
+
+    private static ImportCandidateSearchApiResponse toSearchApiResponse(String response) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, ImportCandidateSearchApiResponse.class))
+                   .orElseThrow();
+    }
+
+    private static ImportCandidate toImportCandidate(ExpandedImportCandidate expandedImportCandidate) {
+        return new ImportCandidate.Builder()
+                   .withIdentifier(extractIdentifier(expandedImportCandidate))
+                   .build();
+    }
+
+    private static SortableIdentifier extractIdentifier(ExpandedImportCandidate expandedImportCandidate) {
+        return new SortableIdentifier(UriWrapper.fromUri(expandedImportCandidate.getIdentifier()).getLastPathElement());
     }
 
     @JacocoGenerated
@@ -81,21 +134,61 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return new CristinConnection();
     }
 
-    private static ImportResult<String> generateReportFromContent(Failure<Publication> fail, String content) {
+    private static ImportResult<String> generateReportFromContent(Failure<ImportCandidate> fail, String content) {
         return ImportResult.reportFailure(content, fail.getException());
     }
 
-    private Publication storeSuccessReport(Publication publication, S3Event event) {
+
+
+    private ImportCandidate updateExistingIfNeeded(ImportCandidate importCandidate) throws NotFoundException {
+        var existingImportCandidate = fetchImportCandidate(getScopusIdentifier(importCandidate));
+        if (nonNull(existingImportCandidate)) {
+            var persistedImportcandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
+            return persistedImportcandidate.merge(importCandidate);
+        } else {
+            return importCandidate;
+        }
+    }
+
+    private ImportCandidate fetchImportCandidate(String scopusIdentifier) {
+        return attempt(() -> constructUri(scopusIdentifier))
+                   .map(this::getResponseBody)
+                   .map(Optional::get)
+                   .map(ScopusHandler::toSearchApiResponse)
+                   .map(ScopusHandler::toExpandedImportCandidate)
+                   .map(ScopusHandler::toImportCandidate)
+                   .orElse(failure -> null);
+    }
+
+    private Optional<String> getResponseBody(URI uri) {
+        return uriRetriever.getRawContent(uri, CONTENT_TYPE);
+    }
+
+    private URI constructUri(String scopusIdentifier) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(SEARCH)
+                   .addChild(IMPORT_CANDIDATES)
+                   .addQueryParameter(QUERY, constructQuery(scopusIdentifier))
+                   .getUri();
+    }
+
+    private String constructQuery(String scopusIdentifier) {
+        return "(additionalIdentifiers.value:\""
+               + scopusIdentifier
+               + "\")+AND+(additionalIdentifiers.source:\"scopusIdentifier\")";
+    }
+
+    private ImportCandidate storeSuccessReport(ImportCandidate importCandidate, S3Event event) {
         return attempt(this::getS3DriverForScopusImportBucket)
-                   .map(s3Driver -> insertSucceededReportFile(publication, event, s3Driver))
+                   .map(s3Driver -> insertSucceededReportFile(importCandidate, event, s3Driver))
                    .orElseThrow();
     }
 
-    private Publication insertSucceededReportFile(Publication publication, S3Event event, S3Driver s3Driver)
+    private ImportCandidate insertSucceededReportFile(ImportCandidate importCandidate, S3Event event, S3Driver s3Driver)
         throws IOException {
-        s3Driver.insertFile(constructFileUri(event, publication).toS3bucketPath(),
-                            getScopusIdentifier(publication));
-        return publication;
+        s3Driver.insertFile(constructFileUri(event, importCandidate).toS3bucketPath(),
+                            getScopusIdentifier(importCandidate));
+        return importCandidate;
     }
 
     private S3Driver getS3DriverForScopusImportBucket() {
@@ -109,9 +202,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
                    .addChild(publication.getIdentifier().toString());
     }
 
-    private String getScopusIdentifier(Publication publication) {
-        return publication.getAdditionalIdentifiers()
-                   .stream()
+    private String getScopusIdentifier(ImportCandidate importCandidate) {
+        return importCandidate.getAdditionalIdentifiers().stream()
                    .filter(this::isScopusIdentifier)
                    .map(AdditionalIdentifier::getValue)
                    .findFirst()
@@ -122,23 +214,23 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return SCOPUS_IDENTIFIER.equals(identifier.getSource());
     }
 
-    private RuntimeException handleSavingError(Failure<Publication> fail, S3Event event) {
+    private RuntimeException handleSavingError(Failure<ImportCandidate> fail, S3Event event) {
         loggError(event, fail);
         saveReportToS3(fail, event);
         return ExceptionMapper.castToCorrectRuntimeException(fail.getException());
     }
 
-    private void loggError(S3Event event, Failure<Publication> fail) {
+    private void loggError(S3Event event, Failure<ImportCandidate> fail) {
         logger.error(ERROR_SAVING_SCOPUS_PUBLICATION + extractObjectKey(event), fail.getException());
     }
 
-    private void saveReportToS3(Failure<Publication> fail, S3Event event) {
+    private void saveReportToS3(Failure<ImportCandidate> fail, S3Event event) {
         attempt(() -> getContentToSave(event))
             .map(content -> generateReportFromContent(fail, content))
             .map(report -> insertReport(fail, event, report));
     }
 
-    private URI insertReport(Failure<Publication> fail, S3Event event,
+    private URI insertReport(Failure<ImportCandidate> fail, S3Event event,
                              ImportResult<String> report)
         throws IOException {
         return getS3DriverForScopusImportBucket()
@@ -166,8 +258,16 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return s3Event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
     }
 
-    private Try<Publication> persistInDatabase(ImportCandidate importCandidate) {
-        Try<Publication> attemptSave = tryPersistingInDatabase(importCandidate);
+    private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate) throws BadRequestException {
+        if (nonNull(importCandidate.getIdentifier())) {
+            return Try.of(resourceService.updateImportCandidate(importCandidate));
+        }
+        return persistInDatabase(importCandidate);
+    }
+
+    @NotNull
+    private Try<ImportCandidate> persistInDatabase(ImportCandidate importCandidate) {
+        var attemptSave = tryPersistingInDatabase(importCandidate);
         for (int efforts = 0; shouldTryAgain(attemptSave, efforts); efforts++) {
             attemptSave = tryPersistingInDatabase(importCandidate);
             avoidCongestionInDatabase();
@@ -188,15 +288,15 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return RANDOM.nextInt(MAX_SLEEP_TIME);
     }
 
-    private boolean shouldTryAgain(Try<Publication> attemptSave, int efforts) {
+    private boolean shouldTryAgain(Try<ImportCandidate> attemptSave, int efforts) {
         return attemptSave.isFailure() && efforts < MAX_EFFORTS;
     }
 
-    private Try<Publication> tryPersistingInDatabase(ImportCandidate importCandidate) {
+    private Try<ImportCandidate> tryPersistingInDatabase(ImportCandidate importCandidate) {
         return attempt(() -> createImportCandidate(importCandidate));
     }
 
-    private Publication createImportCandidate(ImportCandidate importCandidate) {
+    private ImportCandidate createImportCandidate(ImportCandidate importCandidate) {
         return resourceService.persistImportCandidate(importCandidate);
     }
 

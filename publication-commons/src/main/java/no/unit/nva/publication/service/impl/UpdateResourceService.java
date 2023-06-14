@@ -40,6 +40,7 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class UpdateResourceService extends ServiceWithTransactions {
@@ -101,6 +102,20 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
+    public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
+        var existingImportCandidate = fetchImportCandidate(importCandidate);
+        if (isNotImported(existingImportCandidate)) {
+            importCandidate.setCreatedDate(existingImportCandidate.getCreatedDate());
+            importCandidate.setModifiedDate(clockForTimestamps.instant());
+            var resource = Resource.fromImportCandidate(importCandidate);
+            var updateResourceTransactionItem = updateResource(resource);
+            var request = new TransactWriteItemsRequest().withTransactItems(List.of(updateResourceTransactionItem));
+            sendTransactionWriteRequest(request);
+            return importCandidate;
+        }
+        throw new BadRequestException("Can not update already imported candidate");
+    }
+
     protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
         return new DeletePublicationStatusResponse(RESOURCE_ALREADY_DELETED,
                                                    HttpURLConnection.HTTP_NO_CONTENT);
@@ -150,9 +165,19 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return importCandidate;
     }
 
+    private static boolean isNotImported(ImportCandidate importCandidate) {
+        return !importCandidate.getImportStatus().equals(ImportStatus.IMPORTED);
+    }
+
     private static boolean publicationIsPublished(Publication publication) {
         var status = publication.getStatus();
         return PublicationStatus.PUBLISHED.equals(status);
+    }
+
+    private ImportCandidate fetchImportCandidate(ImportCandidate importCandidate) {
+        return attempt(() -> readResourceService.getResourceByIdentifier(importCandidate.getIdentifier()))
+                   .map(Resource::toImportCandidate)
+                   .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 
     /**
