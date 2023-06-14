@@ -11,11 +11,19 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 
 public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatus, ImportCandidate> {
 
     public static final String IMPORT_CANDIDATE_IDENTIFIER_PATH_PARAMETER = "importCandidateIdentifier";
+    public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
     private final ResourceService importCandidateService;
+
+    @JacocoGenerated
+    public UpdateImportStatusHandler() {
+        this(ResourceService.defaultService(TABLE_NAME));
+    }
 
     public UpdateImportStatusHandler(ResourceService importCandidateService) {
         super(ImportStatus.class);
