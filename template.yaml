@@ -655,6 +655,25 @@ Resources:
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
+  UpdateImportStatusHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.update.UpdateImportStatusHandler::handleRequest
+      Runtime: java11
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaImportCandidatesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        PutEvent:
+          Type: Api
+          Properties:
+            Path: /import-candidate/{importCandidateIdentifier}
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
+
   NvaDeletePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
