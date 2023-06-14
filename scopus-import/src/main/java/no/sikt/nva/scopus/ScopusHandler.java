@@ -24,7 +24,6 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -41,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
+@SuppressWarnings("PMD.GodClass")
 public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
@@ -138,12 +138,11 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return ImportResult.reportFailure(content, fail.getException());
     }
 
-
-
     private ImportCandidate updateExistingIfNeeded(ImportCandidate importCandidate) throws NotFoundException {
         var existingImportCandidate = fetchImportCandidate(getScopusIdentifier(importCandidate));
         if (nonNull(existingImportCandidate)) {
-            var persistedImportcandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
+            var persistedImportcandidate = resourceService.getImportCandidateByIdentifier(
+                existingImportCandidate.getIdentifier());
             return persistedImportcandidate.merge(importCandidate);
         } else {
             return importCandidate;

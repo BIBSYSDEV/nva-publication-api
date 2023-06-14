@@ -8,6 +8,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -16,6 +18,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.model.business.ImportStatus;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -84,6 +87,13 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         resourceService.updateImportStatus(importCandidate.getIdentifier(), IMPORTED);
         var updatedImportCandidate = update(importCandidate);
         assertThrows(BadRequestException.class, () -> resourceService.updateImportCandidate(updatedImportCandidate));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCanNotFetchImportCandidateWhenUpdatingIt() throws NotFoundException,
+                                                                                  BadRequestException {
+        var importCandidate = randomImportCandidate();
+        assertThrows(TransactionFailedException.class, () -> resourceService.updateImportCandidate(importCandidate));
     }
 
     private ImportCandidate update(ImportCandidate importCandidate) {
