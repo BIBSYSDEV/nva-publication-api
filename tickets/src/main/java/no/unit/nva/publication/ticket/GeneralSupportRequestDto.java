@@ -13,7 +13,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
@@ -36,7 +35,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
 
-    public GeneralSupportRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
+    public GeneralSupportRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                                     @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                     @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                     @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
@@ -76,19 +75,6 @@ public class GeneralSupportRequestDto extends TicketDto {
     @Override
     public Class<? extends TicketEntry> ticketType() {
         return GeneralSupportRequest.class;
-    }
-
-    @Override
-    public TicketEntry toTicket() {
-        var request = new GeneralSupportRequest();
-        request.setIdentifier(this.getIdentifier());
-        request.setStatus(this.getStatus());
-        request.setResourceIdentifier(this.getPublicationIdentifier());
-        request.setCreatedDate(this.getCreatedDate());
-        request.setModifiedDate(this.getModifiedDate());
-        request.setViewedBy(this.getViewedBy());
-        request.setAssignee(this.getAssignee());
-        return request;
     }
 
     @Override
