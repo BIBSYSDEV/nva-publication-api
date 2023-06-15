@@ -13,11 +13,37 @@ CONSTRUCT {
     ?publication nva:status ?publicationStatus .
     ?publication nva:entityDescription/nva:reference/nva:publicationInstance/rdf:type ?instanceType .
 
-    OPTIONAL { ?publication nva:entityDescription/nva:publicationDate/nva:year ?publicationYear . }
+    OPTIONAL {
+      SELECT distinct ?publicationYear WHERE {
+        ?publicationDate rdf:type ?type ;
+                         nva:year ?publicationYear .
+        FILTER(?type = nva:PublicationDate)
+      }
+    }
 
-    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:publisher/nva:level ?publisherLevel . }
-    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:series/nva:level ?seriesLevel . }
-    OPTIONAL { ?publication nva:entityDescription/nva:reference/nva:publicationContext/nva:level ?journalLevel .  }
+    OPTIONAL {
+      SELECT distinct ?publisherLevel WHERE {
+        ?publisher rdf:type ?type ;
+                   nva:level ?publisherLevel .
+        FILTER(?type = nva:Publisher)
+      }
+    }
+
+    OPTIONAL {
+      SELECT distinct ?seriesLevel WHERE {
+        ?publisher rdf:type ?type ;
+                   nva:level ?seriesLevel .
+        FILTER(?type = nva:Series)
+      }
+    }
+
+    OPTIONAL {
+      SELECT distinct ?journalLevel WHERE {
+            ?publisher rdf:type ?type ;
+                       nva:level ?journalLevel .
+            FILTER(?type = nva:Journal)
+      }
+    }
 
     BIND(IF (BOUND(?seriesLevel), ?seriesLevel, ?publisherLevel) AS ?seriesOrPublisherLevel)
     BIND(IF (BOUND(?journalLevel), ?journalLevel, ?seriesOrPublisherLevel) AS ?optionalLevel)
