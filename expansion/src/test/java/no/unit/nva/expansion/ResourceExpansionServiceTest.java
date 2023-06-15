@@ -178,7 +178,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(messages, contains(expectedExpandedMessage));
     }
 
-    @ParameterizedTest(name = "should return framed index document for resources. Instance type:{0}")
+    @ParameterizedTest(name = "should return framed index document for resources. Instance type:{0.}")
     @MethodSource("listPublicationInstanceTypes")
     void shouldReturnFramedIndexDocumentFromResource(Class<?> instanceType)
         throws JsonProcessingException, NotFoundException {

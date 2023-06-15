@@ -1,9 +1,11 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
+import static no.unit.nva.expansion.model.ExpandedResource.contributorNode;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextId;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
+import static no.unit.nva.expansion.model.ExpandedResource.extractUris;
+import static no.unit.nva.expansion.model.ExpandedResource.fundingNode;
 import static no.unit.nva.expansion.model.ExpandedResource.isAcademicChapter;
 import static no.unit.nva.expansion.model.ExpandedResource.isPublicationContextTypeAnthology;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
@@ -65,22 +67,24 @@ public class IndexDocumentWrapperLinkedData {
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
+        inputStreams.add(stringToStream(fetchAnthologyContent(indexDocument)));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
-        inputStreams.add(stringToStream(fetchAnthologyContent(indexDocument)));
+        inputStreams.addAll(fetchAll(extractUris(fundingNode(indexDocument), "/source")));
+
         return inputStreams;
     }
 
-    private Collection<? extends InputStream> fetchAll(List<URI> publicationContextUris) {
-        return publicationContextUris.stream()
+    private Collection<? extends InputStream> fetchAll(Collection<URI> uris) {
+        return uris.stream()
                    .map(this::fetch)
                    .flatMap(Optional::stream)
                    .map(IoUtils::stringToStream)
                    .collect(Collectors.toList());
     }
 
-    private List<InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
-        return extractAffiliationUris(indexDocument)
+    private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
+        return extractUris(contributorNode(indexDocument), "/id")
                    .stream()
                    .flatMap(this::fetchContentRecursively)
                    .map(IoUtils::stringToStream)
@@ -99,15 +103,20 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Stream<String> fetchContentRecursively(URI uri) {
-        var affiliation = fetch(uri);
-        if (affiliation.isEmpty()) {
+        var optionalDocument = fetch(uri);
+        if (optionalDocument.isEmpty()) {
             return Stream.empty();
         }
-        var parentAffiliations = extractParentAffiliationNodes(affiliation.get())
+        var parentAffiliations = toStreamJsonNode(optionalDocument.get())
                                      .map(IndexDocumentWrapperLinkedData::extractIdField)
                                      .map(URI::create)
                                      .flatMap(this::fetchContentRecursively);
-        return Stream.concat(Stream.of(affiliation.get()), parentAffiliations);
+        return Stream.concat(Stream.of(optionalDocument.get()), parentAffiliations);
+    }
+
+    private static Stream<JsonNode> toStreamJsonNode(String document) {
+        var jsonNode = attempt(() -> dtoObjectMapper.readTree(document)).orElseThrow().at(PART_OF_FIELD);
+        return toStream(jsonNode);
     }
 
     private Optional<String> fetch(URI externalReference) {
