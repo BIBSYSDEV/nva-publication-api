@@ -15,33 +15,33 @@ CONSTRUCT {
 
     OPTIONAL {
       SELECT distinct ?publicationYear WHERE {
-        ?publicationDate rdf:type ?type .
-        ?publicationDate nva:year ?publicationYear
-        FILTER(?type = <https://nva.sikt.no/ontology/publication#PublicationDate>)
+        ?publicationDate rdf:type ?type ;
+                         nva:year ?publicationYear .
+        FILTER(?type = nva:PublicationDate)
       }
     }
 
     OPTIONAL {
       SELECT distinct ?publisherLevel WHERE {
-        ?publisher rdf:type ?type .
-        ?publisher nva:level ?publisherLevel
-        FILTER(?type = <https://nva.sikt.no/ontology/publication#Publisher>)
+        ?publisher rdf:type ?type ;
+                   nva:level ?publisherLevel .
+        FILTER(?type = nva:Publisher)
       }
     }
 
     OPTIONAL {
       SELECT distinct ?seriesLevel WHERE {
-        ?publisher rdf:type ?type .
-        ?publisher nva:level ?seriesLevel
-        FILTER(?type = <https://nva.sikt.no/ontology/publication#Series>)
+        ?publisher rdf:type ?type ;
+                   nva:level ?seriesLevel .
+        FILTER(?type = nva:Series)
       }
     }
 
     OPTIONAL {
       SELECT distinct ?journalLevel WHERE {
-            ?publisher rdf:type ?type .
-            ?publisher nva:level ?journalLevel
-            FILTER(?type = <https://nva.sikt.no/ontology/publication#Journal>)
+            ?publisher rdf:type ?type ;
+                       nva:level ?journalLevel .
+            FILTER(?type = nva:Journal)
       }
     }
 
