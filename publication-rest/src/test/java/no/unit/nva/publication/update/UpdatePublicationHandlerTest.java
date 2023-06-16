@@ -136,7 +136,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private FakeSecretsManagerClient secretsManagerClient;
 
-    public static Stream<Arguments> allDegreeInstances() {
+    static Stream<Arguments> allDegreeInstances() {
         return Stream.of(
                 Arguments.of(DegreeMaster.class),
                 Arguments.of(DegreeBachelor.class),
@@ -292,7 +292,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException, BadRequestException {
-        publication = PublicationGenerator.publicationWithoutIdentifier();
+        publication = PublicationGenerator.randomPublication(Textbook.class);
+        publication.setIdentifier(null);
         Publication savedPublication = createSamplePublication();
 
         Publication publicationUpdate = updateTitle(savedPublication);
@@ -527,20 +528,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    @DisplayName("Handler returns Forbidden when thesis and no PUBLISH_THESIS ")
-    void shouldReturnForbiddenWhenNoAccessRight() throws IOException, BadRequestException {
-        var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
-        var savedThesis = Resource
-                .fromPublication(thesisPublication)
-                .persistNew(publicationService, UserInstance.fromPublication(publication));
-        var updatedPublication = updateTitle(savedThesis);
-        var event = contributorUpdatesPublicationWithoutHavingRights(updatedPublication);
-        updatePublicationHandler.handleRequest(event, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
-    }
-
-    @Test
     @DisplayName("Handler returns OK when thesis and is owner")
     void shouldReturnOKWhenUserIsOwner() throws IOException, BadRequestException {
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
@@ -638,7 +625,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("allDegreeInstances")
     void shouldUpdateDegreePublicationWhenUserHasAccessRightToEditDegree(Class<?> degree)
             throws BadRequestException, IOException, NotFoundException {
-        Publication  degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
+        Publication degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
         Publication publicationUpdate = updateTitle(degreePublication);
         InputStream event = userWithAccessRightToEditDegree(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -657,7 +644,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("allDegreeInstances")
     void shouldReturnForbiddenWhenUserDoesNotHasAccessRightToEditDegree(Class<?> degree)
             throws BadRequestException, IOException {
-        Publication  degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
+        Publication degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
         Publication publicationUpdate = updateTitle(degreePublication);
         InputStream event = userWithEditAllNonDegreePublicationsUpdatesPublication(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
