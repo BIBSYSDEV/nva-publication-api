@@ -61,7 +61,7 @@ class MigrationTests extends ResourcesLocalTest {
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
                              .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .filter(DoiRequestDao.class::isInstance)
                              .map(Dao::getData)
                              .map(entry -> (DoiRequest) entry)
                              .collect(Collectors.toList());
@@ -77,7 +77,7 @@ class MigrationTests extends ResourcesLocalTest {
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
                              .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .filter(DoiRequestDao.class::isInstance)
                              .map(Dao::getData)
                              .map(entry -> (DoiRequest) entry)
                              .filter(entry -> nonNull(entry.getResourceIdentifier()))

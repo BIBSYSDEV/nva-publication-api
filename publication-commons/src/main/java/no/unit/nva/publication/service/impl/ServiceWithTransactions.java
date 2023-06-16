@@ -87,14 +87,14 @@ public class ServiceWithTransactions {
 
     protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.stream().filter(d -> d instanceof DoiRequestDao).findFirst().get());
+            return Optional.of((DoiRequestDao) daos.stream().filter(DoiRequestDao.class::isInstance).findFirst().get());
         }
         return Optional.empty();
     }
 
     protected List<ContributionDao> extractContributions(List<Dao> daos) {
         return
-            daos.stream().filter(d -> d instanceof ContributionDao).map(d -> (ContributionDao) d).collect(Collectors.toList());
+            daos.stream().filter(ContributionDao.class::isInstance).map(d -> (ContributionDao) d).collect(Collectors.toList());
     }
 
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
@@ -126,6 +126,6 @@ public class ServiceWithTransactions {
     }
 
     private boolean doiRequestExists(List<Dao> daos) {
-        return daos.stream().anyMatch(d -> d instanceof DoiRequestDao);
+        return daos.stream().anyMatch(DoiRequestDao.class::isInstance);
     }
 }

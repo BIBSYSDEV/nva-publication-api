@@ -780,7 +780,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
         assertDoesNotThrow(fetchResourceAction);
 
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
                                                                                publication.getIdentifier());
         assertThrows(TransactionFailedException.class, deleteAction);
@@ -790,8 +790,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithoutDoi();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var publication = createPersistedPublicationWithoutDoi();
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.publishPublication(userInstance, publication.getIdentifier());
         assertThatIdentifierEntryHasBeenCreated(publication);
 
@@ -810,7 +810,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication publication = createPersistedPublicationWithoutDoi();
         createDoiRequest(publication);
 
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
 
         assertThatAllEntriesHaveBeenDeleted();
@@ -818,9 +818,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationDeletesContributionsWhenPublicationHasDoiContributors() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithContributions();
-
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var publication = createPersistedPublicationWithContributions();
+        var userInstance = UserInstance.fromPublication(publication);
 
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
 

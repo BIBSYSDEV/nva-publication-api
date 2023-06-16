@@ -44,7 +44,7 @@ class JoinWithResourceTest extends ResourcesLocalTest {
         List<JoinWithResource> retrievedData = parseResult(result);
 
         var retrievedDoiRequestDao =
-            (DoiRequestDao) retrievedData.stream().filter(d -> d instanceof DoiRequestDao).findFirst().get();
+            (DoiRequestDao) retrievedData.stream().filter(DoiRequestDao.class::isInstance).findFirst().get();
         var retrievedResourceDao = (ResourceDao) retrievedData.get(RESOURCE_INDEX_IN_QUERY_RESULT);
 
         assertThat(retrievedDoiRequestDao, is(equalTo(doiRequestDao)));
