@@ -194,6 +194,7 @@
       },
       "affiliations": {
         "@explicit": true,
+        "@default": "@null",
         "@embed": "@always",
         "type": "Organization",
         "labels": {
