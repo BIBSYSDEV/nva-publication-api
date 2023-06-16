@@ -15,7 +15,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
@@ -46,7 +45,7 @@ public class PublishingRequestDto extends TicketDto {
     private final PublishingWorkflow workflow;
 
     @JsonCreator
-    public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketStatus status,
+    public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                                 @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                 @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                 @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
@@ -87,19 +86,6 @@ public class PublishingRequestDto extends TicketDto {
     @Override
     public Class<? extends TicketEntry> ticketType() {
         return PublishingRequestCase.class;
-    }
-
-    @Override
-    public TicketEntry toTicket() {
-        var ticket = new PublishingRequestCase();
-        ticket.setCreatedDate(getCreatedDate());
-        ticket.setStatus(getStatus());
-        ticket.setModifiedDate(getModifiedDate());
-        ticket.setIdentifier(getIdentifier());
-        ticket.setResourceIdentifier(getPublicationIdentifier());
-        ticket.setViewedBy(getViewedBy());
-        ticket.setAssignee(getAssignee());
-        return ticket;
     }
 
     @Override

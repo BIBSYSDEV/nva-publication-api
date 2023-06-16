@@ -22,7 +22,9 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.ticket.TicketDto;
+import no.unit.nva.publication.ticket.TicketDtoParser;
 import no.unit.nva.publication.ticket.TicketTestLocal;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
@@ -30,10 +32,9 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
-    
+
     private ListTicketsForPublicationHandler handler;
     private MessageService messageService;
 
@@ -59,7 +60,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnAllTicketsWithMessagesForPublicationWhenTicketContainsMessages(
-            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var expectedTicketDto = constructDto(createPersistedTicketWithMessage(ticketType, publication));
 
@@ -73,7 +74,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser(
-            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
+        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = nonOwnerRequestsTicketsForPublication(publication);
@@ -141,7 +142,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     private static Map<String, String> constructPathParameters(Publication publication) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
-            publication.getIdentifier().toString());
+                      publication.getIdentifier().toString());
     }
 
     private InputStream elevatedUserOfAlienOrgRequestsTicketsForPublication(Publication publication)
@@ -154,7 +155,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
                    .build();
     }
-    
+
     private InputStream elevatedUserRequestsTicketsForPublication(Publication publication)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
@@ -164,13 +165,13 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.toString())
                    .build();
     }
-    
+
     private void assertThatResponseContainsExpectedTickets(TicketEntry ticket) throws JsonProcessingException {
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         var body = response.getBodyObject(TicketCollection.class);
         var actualTicketIdentifiers = body.getTickets()
                                           .stream()
-                                          .map(TicketDto::toTicket)
+                                          .map(TicketDtoParser::toTicket)
                                           .map(Entity::getIdentifier)
                                           .collect(Collectors.toList());
         var expectedIdentifiers = ticket.getIdentifier();

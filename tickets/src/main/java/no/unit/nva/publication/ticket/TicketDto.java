@@ -2,6 +2,7 @@ package no.unit.nva.publication.ticket;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.ticket.utils.TicketDtoStatusMapper.getTicketDtoStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -23,7 +24,6 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.ViewedBy;
 import nva.commons.core.paths.UriWrapper;
@@ -42,7 +42,7 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String ASSIGNEE_FIELD = "assignee";
     public static final String PUBLICATION_IDENTIFIER_FIELD = "publicationIdentifier";
     @JsonProperty(STATUS_FIELD)
-    private final TicketStatus status;
+    private final TicketDtoStatus status;
     @JsonProperty(VIEWED_BY)
     private final Set<User> viewedBy;
     @JsonProperty(MESSAGES_FIELD)
@@ -52,7 +52,7 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(PUBLICATION_IDENTIFIER_FIELD)
     private final SortableIdentifier publicationIdentifier;
 
-    protected TicketDto(TicketStatus status,
+    protected TicketDto(TicketDtoStatus status,
                         List<MessageDto> messages,
                         Set<User> viewedBy,
                         Username assignee,
@@ -78,7 +78,7 @@ public abstract class TicketDto implements JsonSerializable {
                               .collect(Collectors.toList());
         return TicketDto.builder()
                    .withCreatedDate(ticket.getCreatedDate())
-                   .withStatus(ticket.getStatus())
+                   .withStatus(getTicketDtoStatus(ticket))
                    .withModifiedDate(ticket.getModifiedDate())
                    .withIdentifier(ticket.getIdentifier())
                    .withId(createTicketId(ticket))
@@ -110,9 +110,7 @@ public abstract class TicketDto implements JsonSerializable {
 
     public abstract Class<? extends TicketEntry> ticketType();
 
-    public abstract TicketEntry toTicket();
-
-    public final TicketStatus getStatus() {
+    public final TicketDtoStatus getStatus() {
         return status;
     }
 
@@ -133,7 +131,7 @@ public abstract class TicketDto implements JsonSerializable {
 
     public static final class Builder {
 
-        private TicketStatus status;
+        private TicketDtoStatus status;
         private Instant createdDate;
         private Instant modifiedDate;
         private SortableIdentifier identifier;
@@ -146,7 +144,7 @@ public abstract class TicketDto implements JsonSerializable {
         private Builder() {
         }
 
-        public Builder withStatus(TicketStatus status) {
+        public Builder withStatus(TicketDtoStatus status) {
             this.status = status;
             return this;
         }

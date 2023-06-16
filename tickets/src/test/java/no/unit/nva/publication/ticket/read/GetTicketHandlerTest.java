@@ -2,6 +2,7 @@ package no.unit.nva.publication.ticket.read;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.publication.ticket.TicketDtoParser.toTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -30,6 +31,7 @@ import no.unit.nva.publication.ticket.MessageDto;
 import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketConfig;
 import no.unit.nva.publication.ticket.TicketDto;
+import no.unit.nva.publication.ticket.TicketDtoStatus;
 import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -69,7 +71,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
-        var actualTicketEntry = ticketDto.toTicket();
+        var actualTicketEntry = toTicket(ticketDto);
         assertThat(TicketDto.fromTicket(actualTicketEntry), is(equalTo(ticketDto)));
     }
 
@@ -84,6 +86,19 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, PublishingRequestDto.class);
         var publishingRequestDto = response.getBodyObject(PublishingRequestDto.class);
         assertThat(publishingRequestDto.getWorkflow(), is(equalTo(ticket.getWorkflow())));
+    }
+
+    @Test
+    void shouldReturnTicketWithStatusNewWhenTicketIsUnassignedAndInProgress()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var ticket = (PublishingRequestCase) createPersistedTicket(PublishingRequestCase.class, publication);
+
+        var request = createHttpRequest(publication, ticket).build();
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
+        var ticketDto = response.getBodyObject(TicketDto.class);
+        assertThat(ticketDto.getStatus(), is(equalTo(TicketDtoStatus.NEW)));
     }
 
     @ParameterizedTest
@@ -127,7 +142,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
-        var actualTicketEntry = ticketDto.toTicket();
+        var actualTicketEntry = toTicket(ticketDto);
         assertThat(TicketDto.fromTicket(actualTicketEntry), is(equalTo(ticketDto)));
     }
 
