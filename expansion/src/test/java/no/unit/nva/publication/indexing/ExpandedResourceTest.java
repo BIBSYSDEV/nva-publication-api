@@ -1,12 +1,11 @@
 package no.unit.nva.publication.indexing;
 
+import static java.util.Map.entry;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
-import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
-import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.*;
+import static no.unit.nva.testutils.RandomDataGenerator.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -26,12 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -83,6 +77,8 @@ class ExpandedResourceTest {
     private static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
     private static final String ID_NAMESPACE = System.getenv("ID_NAMESPACE");
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
+    private static final String FIELD_TYPE = "type";
+    private static final String FIELD_IDENTIFIER = "identifier";
     private UriRetriever uriRetriever;
 
     @BeforeEach
@@ -115,21 +111,28 @@ class ExpandedResourceTest {
     }
 
     //TODO: should check that you get affiliation names
-    @ParameterizedTest(name = "should return IndexDocument with correct topLevelAffiliation with referencing depth: "
-                              + "{0}")
+    @ParameterizedTest(
+            name = "should return IndexDocument with correct topLevelAffiliation with referencing depth: {0}")
     @ValueSource(ints = {1, 2, 3, 6})
     void shouldReturnIndexDocumentWithCorrectTopLevelOrganization(int depth) throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
         final URI seriesUri = extractSeriesId(publication);
         final URI publisherUri = extractPublisherId(publication);
+        final URI sourceUri0 = publication.getFundings().get(0).getSource();
+        final URI sourceUri1 = publication.getFundings().get(1).getSource();
         final URI affiliationToBeExpandedId = extractAffiliationsUris(publication).get(0);
         final String publisherName = randomString();
         final String seriesName = randomString();
 
         final UriRetriever mockUriRetriever = mock(UriRetriever.class);
-        addPublicationChannelPublisherToMockUriRetriever(mockUriRetriever, seriesUri, seriesName, publisherUri,
-                                                         publisherName);
+        addPublicationChannelPublisherToMockUriRetriever(
+                mockUriRetriever, seriesUri, seriesName, publisherUri, publisherName);
+        mockGetRawContentResponse(
+                mockUriRetriever, sourceUri0, getPublicationSampleFundingSource());
+        mockGetRawContentResponse(
+                mockUriRetriever, sourceUri1, getPublicationSampleFundingSource());
+
 
         var expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
 
@@ -307,6 +310,12 @@ class ExpandedResourceTest {
         mockGetRawContentResponse(uriRetriever, publisherId, publicationChannelSamplePublisher);
     }
 
+    private static void addFundingsToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
+
+        var fundings = getPublicationChannelSampleSeries(seriesId, randomString());
+        mockGetRawContentResponse(uriRetriever, seriesId, fundings);
+    }
+
     private static void addSeriesToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
 
         var publicationChannelSampleSeries = getPublicationChannelSampleSeries(seriesId, randomString());
@@ -357,10 +366,24 @@ class ExpandedResourceTest {
                                                                          URI publisherId,
                                                                          String publisherName)
         throws IOException {
-        String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
-        mockGetRawContentResponse(mockUriRetriever, journalId, publicationChannelSampleJournal);
-        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
-        mockGetRawContentResponse(mockUriRetriever, publisherId, publicationChannelSamplePublisher);
+        mockGetRawContentResponse(
+                mockUriRetriever, journalId, getPublicationChannelSampleJournal(journalId, journalName));
+        mockGetRawContentResponse(
+                mockUriRetriever, publisherId, getPublicationChannelSamplePublisher(publisherId, publisherName));
+
+    }
+
+    private static  String getPublicationSampleFundingSource() throws JsonProcessingException {
+        return objectMapper.writeValueAsString(
+                Map.ofEntries(
+                entry(FIELD_TYPE, "FundingSource"),
+                entry(FIELD_ID, "https://api.dev.nva.aws.unit.no/cristin/funding-sources/NFR"),
+                entry(FIELD_IDENTIFIER, "NFR"),
+                entry(FIELD_NAME,  Map.ofEntries(
+                        entry("en", "Research Council of Norway (RCN)"),
+                        entry("nb", "Norges forskningsråd   ")))
+                )
+        );
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {
@@ -470,4 +493,6 @@ class ExpandedResourceTest {
     private Publication randomJournalArticleWithConfirmedJournal() {
         return PublicationGenerator.randomPublication(FeatureArticle.class);
     }
+
+
 }

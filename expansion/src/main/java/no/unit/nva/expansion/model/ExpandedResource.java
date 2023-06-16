@@ -21,16 +21,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -88,9 +81,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static URI extractPublicationContextId(JsonNode indexDocument) {
-        return extractUriFromNode(indexDocument,PUBLICATION_CONTEXT_ID_JSON_PTR)
-                   .findFirst()
-                   .orElse(null);
+        return URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).textValue());
     }
 
     public List<URI> getPublicationContextUris() {
@@ -208,32 +199,19 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return root.at(PUBLICATION_CONTEXT_ID_JSON_PTR).textValue();
     }
 
-    public static ArrayNode contributorNode(JsonNode root) {
+    public static ArrayNode contributorNodes(JsonNode root) {
         return (ArrayNode) root.at(CONTRIBUTORS_POINTER);
     }
 
-    public static ArrayNode fundingNode(JsonNode root) {
+    public static ArrayNode fundingNodes(JsonNode root) {
         return (ArrayNode) root.at(FUNDING_SOURCE_POINTER);
     }
 
     public static Set<URI> extractUris(ArrayNode root, String fieldName) {
-        return StreamSupport.stream(root.spliterator(), false)
-                   .flatMap(ExpandedResource::streamOrEmpty)
-                   .flatMap(child -> extractUriFromNode(child, fieldName))
-                   .collect(Collectors.toSet());
-    }
-
-    private static Stream<URI> extractUriFromNode(JsonNode child, String fieldName) {
-        return Optional.ofNullable(child.at(fieldName))
-                   .map(JsonNode::textValue)
-                   .map(URI::create)
-                   .stream();
-    }
-
-    private static Stream<JsonNode> streamOrEmpty(JsonNode node) {
-        return Optional.ofNullable(node)
-                   .map(o -> StreamSupport.stream(o.spliterator(), false))
-                   .orElse(Stream.empty());
+        return root.findValues(fieldName).stream()
+                .map(JsonNode::textValue)
+                .map(URI::create)
+                .collect(Collectors.toSet());
     }
 
     private static URI getBookSeriesUri(JsonNode root) {

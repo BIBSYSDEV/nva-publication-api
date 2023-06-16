@@ -1,11 +1,11 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.expansion.model.ExpandedResource.contributorNode;
+import static no.unit.nva.expansion.model.ExpandedResource.contributorNodes;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextId;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractUris;
-import static no.unit.nva.expansion.model.ExpandedResource.fundingNode;
+import static no.unit.nva.expansion.model.ExpandedResource.fundingNodes;
 import static no.unit.nva.expansion.model.ExpandedResource.isAcademicChapter;
 import static no.unit.nva.expansion.model.ExpandedResource.isPublicationContextTypeAnthology;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
@@ -15,10 +15,7 @@ import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -68,10 +65,10 @@ public class IndexDocumentWrapperLinkedData {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         inputStreams.add(stringToStream(fetchAnthologyContent(indexDocument)));
-        inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
-        inputStreams.addAll(fetchAll(extractUris(fundingNode(indexDocument), "/source")));
-
+        inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
+        inputStreams.addAll(fetchAll(extractUris(fundingNodes(indexDocument), "source")));
+        inputStreams.removeIf(Objects::isNull);
         return inputStreams;
     }
 
@@ -84,7 +81,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
-        return extractUris(contributorNode(indexDocument), "/id")
+        return extractUris(contributorNodes(indexDocument), "/id")
                    .stream()
                    .flatMap(this::fetchContentRecursively)
                    .map(IoUtils::stringToStream)
