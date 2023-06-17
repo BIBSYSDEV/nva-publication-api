@@ -129,6 +129,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
+import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.sikt.nva.scopus.utils.ContentWrapper;
 import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.LanguagesWrapper;
@@ -240,6 +241,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
     private ResourceService resourceService;
+    private ScopusUpdater scopusUpdater;
     private UriRetriever uriRetriever;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
@@ -266,7 +268,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         cristinConnection = new CristinConnection(httpClient);
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         uriRetriever = mock(UriRetriever.class);
-        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService, uriRetriever);
+        scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
+        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService, scopusUpdater);
         scopusData = new ScopusGenerator();
     }
 
@@ -276,7 +279,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService, uriRetriever);
+        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, resourceService, scopusUpdater);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
@@ -1079,7 +1082,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         var s3Event = createNewScopusPublicationEvent();
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
-                                        fakeResourceServiceThrowingException, uriRetriever);
+                                        fakeResourceServiceThrowingException, scopusUpdater);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
@@ -1096,9 +1099,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
 
+        assertThat(importCandidate.getIdentifier(), is(equalTo(existingImportCandidate.getIdentifier())));
+        assertThat(importCandidate.getImportStatus(), is(equalTo(existingImportCandidate.getImportStatus())));
         assertThat(importCandidate.getEntityDescription(),
                    is(not(equalTo(existingImportCandidate.getEntityDescription()))));
-        assertThat(importCandidate.getCreatedDate(), is(equalTo(existingImportCandidate.getCreatedDate())));
     }
 
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {
