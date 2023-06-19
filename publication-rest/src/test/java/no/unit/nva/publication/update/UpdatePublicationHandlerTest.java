@@ -4,6 +4,7 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
@@ -49,6 +50,7 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -69,9 +71,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
-import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.role.Role;
@@ -140,8 +140,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return Stream.of(
                 Arguments.of(DegreeMaster.class),
                 Arguments.of(DegreeBachelor.class),
-                Arguments.of(DegreePhd.class),
-                Arguments.of(DegreeLicentiate.class)
+                Arguments.of(DegreePhd.class)
         );
     }
 
@@ -189,7 +188,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler =
                 new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
                         uriRetriever);
-        publication = createPublication();
+        publication = createNonDegreePublication();
     }
 
     @Test
@@ -292,7 +291,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException, BadRequestException {
-        publication = PublicationGenerator.randomPublication(Textbook.class);
         publication.setIdentifier(null);
         Publication savedPublication = createSamplePublication();
 
@@ -416,9 +414,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerThrowsExceptionWhenInputIsValidUserHasRightToEditAnyResourceInOwnInstButEditsResourceInOtherInst()
             throws IOException, BadRequestException {
-        Publication savedPublication = createNonDegreeSamplePublication();
+        Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
-
         InputStream event = userUpdatesPublicationOfOtherInstitution(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -606,7 +603,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateNonDegreePublicationWhenUserHasAccessRightEditAllNonDegreePublications()
             throws ApiGatewayException, IOException {
-        Publication savedPublication = createNonDegreeSamplePublication();
+        Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
         InputStream event = userWithEditAllNonDegreePublicationsUpdatesPublication(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -640,7 +637,26 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
 
-    @ParameterizedTest(name = "Should return Forbidden publication when user does not has access rights to edit degree and the publication is Degree")
+    @ParameterizedTest(name = "Should update degree publication when user is resource owner")
+    @MethodSource("allDegreeInstances")
+    void shouldUpdateDegreePublicationWhenUserIsResourceOwner(Class<?> degree)
+            throws BadRequestException, IOException, NotFoundException {
+        Publication degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
+        Publication publicationUpdate = updateTitle(degreePublication);
+        InputStream event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+        Publication updatedPublication =
+                publicationService.getPublicationByIdentifier(degreePublication.getIdentifier());
+
+        publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
+
+        String expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
+        String actualTitle = updatedPublication.getEntityDescription().getMainTitle();
+        assertThat(actualTitle, is(equalTo(expectedTitle)));
+        assertThat(updatedPublication, is(equalTo(publicationUpdate)));
+    }
+
+    @ParameterizedTest(name = "Should return Forbidden publication when user does not has access rights to edit degree and is not publication owner and the publication is Degree")
     @MethodSource("allDegreeInstances")
     void shouldReturnForbiddenWhenUserDoesNotHasAccessRightToEditDegree(Class<?> degree)
             throws BadRequestException, IOException {
@@ -655,14 +671,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private Publication savePublication(Publication degreePublication) throws BadRequestException {
         UserInstance userInstance = UserInstance.fromPublication(degreePublication);
         return Resource.fromPublication(degreePublication).persistNew(publicationService, userInstance);
-    }
-
-    //TODO: replace with create randomNonDegreePublication from PublicationGenerator
-    private Publication createNonDegreeSamplePublication() throws BadRequestException {
-        var publication = PublicationGenerator.randomPublication(Textbook.class);
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
-
     }
 
     private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
@@ -730,7 +738,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream userWithAccessRightToEditDegree(Publication publicationUpdate) throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
-        var customerId = publicationUpdate.getPublisher().getId();
+        var customerId = randomUri();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                 .withUserName(SOME_CURATOR)
                 .withPathParameters(pathParameters)
@@ -816,7 +824,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
                 .withPathParameters(pathParameters)
                 .build();
     }
@@ -870,7 +877,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private HandlerRequestBuilder<Publication> generateInputStreamMissingPathParameters() throws IOException {
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-                .withBody(createPublication())
+                .withBody(createNonDegreePublication())
                 .withHeaders(generateHeaders());
     }
 
@@ -880,8 +887,17 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return headers;
     }
 
-    private Publication createPublication() {
-        return PublicationGenerator.publicationWithIdentifier();
+    private Publication createNonDegreePublication() {
+        var publicationInstanceTypes = listPublicationInstanceTypes();
+        var nonDegreePublicationInstances = publicationInstanceTypes.stream().filter(this::isNonDegreeClass).collect(Collectors.toList());
+        var publication = PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances));
+        publication.setIdentifier(SortableIdentifier.next());
+        return publication;
+    }
+
+    private boolean isNonDegreeClass(Class<?> publicationInstance) {
+        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd");
+        return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 
     private GatewayResponse<Problem> toGatewayResponseProblem() throws JsonProcessingException {

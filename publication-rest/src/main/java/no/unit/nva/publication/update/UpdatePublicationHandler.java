@@ -39,7 +39,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.pages.Pages;
@@ -180,8 +179,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     private Boolean isDegree(PublicationInstance<? extends Pages> publicationInstance) {
         return publicationInstance instanceof DegreeBachelor
                 || publicationInstance instanceof DegreeMaster
-                || publicationInstance instanceof DegreePhd
-                || publicationInstance instanceof DegreeLicentiate;
+                || publicationInstance instanceof DegreePhd;
     }
 
     private boolean isUnpublishedFile(AssociatedArtifact artifact) {
@@ -278,8 +276,9 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     }
 
-    private Publication getPublicationIfUserCanEditThesis(Publication publication, RequestInfo requestInfo) throws ForbiddenException {
-        if (userUnauthorizedToPublishThesis(requestInfo)) {
+    private Publication getPublicationIfUserCanEditThesis(Publication publication, RequestInfo requestInfo) throws ApiGatewayException {
+        var userInstance = createUserInstanceFromRequest(requestInfo);
+        if (userUnauthorizedToPublishThesis(requestInfo) && !userIsPublicationOwner(userInstance, publication)) {
             throw new ForbiddenException();
         }
         return publication;
