@@ -237,6 +237,10 @@ public class NvaBrageMigrationDataGenerator {
         private String cristinIdentifier;
         private String rightsHolder;
 
+        public static URI randomHandle() {
+            return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
+        }
+
         public String getRightsHolder() {
             return rightsHolder;
         }
@@ -245,6 +249,7 @@ public class NvaBrageMigrationDataGenerator {
             this.rightsHolder = rightsHolder;
             return this;
         }
+
         public String getCristinIdentifier() {
             return cristinIdentifier;
         }
@@ -583,7 +588,7 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(issnList)) {
                 issnList = List.of(randomIssn(), randomIssn());
             }
-            if(isNull(rightsHolder)) {
+            if (isNull(rightsHolder)) {
                 rightsHolder = randomString();
             }
             if (isNull(publication)) {
@@ -666,10 +671,6 @@ public class NvaBrageMigrationDataGenerator {
                     return new Language(List.of("norsk", "svensk"),
                                         UriWrapper.fromUri(LanguageMapper.LEXVO_URI_UNDEFINED).getUri());
             }
-        }
-
-        public static URI randomHandle() {
-            return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
         }
 
         private no.sikt.nva.brage.migration.record.Publication createPublication() {

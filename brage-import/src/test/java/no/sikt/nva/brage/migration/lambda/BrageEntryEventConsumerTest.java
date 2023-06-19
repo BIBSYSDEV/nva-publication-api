@@ -10,6 +10,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -50,7 +51,6 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
-import no.sikt.nva.brage.migration.record.license.NvaLicenseUri;
 import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
 import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
@@ -113,9 +113,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_SCIENTIFIC_MONOGRAPH = new Type(List.of(NvaType.SCIENTIFIC_MONOGRAPH.getValue()),
                                                                   NvaType.SCIENTIFIC_MONOGRAPH.getValue());
     public static final Type TYPE_INTERVIEW = new Type(List.of(NvaType.INTERVIEW.getValue()),
-                                                                  NvaType.INTERVIEW.getValue());
+                                                       NvaType.INTERVIEW.getValue());
     public static final Type TYPE_PRESENTATION_OTHER = new Type(List.of(NvaType.PRESENTATION_OTHER.getValue()),
-                                                       NvaType.PRESENTATION_OTHER.getValue());
+                                                                NvaType.PRESENTATION_OTHER.getValue());
     public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
     public static final Type TYPE_JOURNAL_ARTICLE = new Type(List.of(NvaType.JOURNAL_ARTICLE.getValue()),
                                                              NvaType.JOURNAL_ARTICLE.getValue());
@@ -130,10 +130,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Organization TEST_ORGANIZATION =
         new Organization.Builder().withId(URI.create(
             "https://api.nva.unit.no/customer/test")).build();
-    public static final NvaLicenseUri LICENSE_IDENTIFIER = NvaLicenseUri.CC_BY_NC;
     public static final String FILENAME = "filename";
     public static final String HARD_CODED_CRISTIN_IDENTIFIER = "12345";
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
+    public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by-nc/4.0/");
     private static final Type TYPE_REPORT_WORKING_PAPER = new Type(List.of(NvaType.WORKING_PAPER.getValue()),
                                                                    NvaType.WORKING_PAPER.getValue());
     private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()),
@@ -155,8 +155,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
-    public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by-nc/4.0/");
-
 
     @BeforeEach
     public void init() {
@@ -981,8 +979,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                    BundleType.ORIGINAL,
                                    "description",
                                    UUID,
-                                   new License("someLicense",
-                                               new NvaLicense(LICENSE_IDENTIFIER)),
+                                   new License("someLicense", new NvaLicense(URI.create("https://creativecommons"
+                                                                              + ".org/licenses/by-nc/4.0"))),
                                    EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));

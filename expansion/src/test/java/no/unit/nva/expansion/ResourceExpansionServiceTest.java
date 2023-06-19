@@ -14,6 +14,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
@@ -51,6 +52,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -401,6 +403,23 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnExpandedResourceWithContributorForPublicationWithContributorWithoutIdOrAffiliation()
+        throws JsonProcessingException, NotFoundException {
+        var contributorWithoutIdOrAffiliation = createContributor(randomElement(Role.values()), null, randomString(),
+                                                                   Collections.emptyList());
+        var entityDescription = createEntityDescriptionWithContributor(contributorWithoutIdOrAffiliation);
+        var publication = PublicationGenerator.randomPublication().copy()
+                              .withEntityDescription(entityDescription)
+                              .build();
+        var resourceUpdate = Resource.fromPublication(publication);
+
+        expansionService = mockedExpansionService();
+        var expandedResource = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var actualContributors = extractContributors(expandedResource);
+        assertThat(actualContributors, containsInAnyOrder(List.of(contributorWithoutIdOrAffiliation).toArray()));
+    }
+
+    @Test
     void shouldReturnExpandedResourceWithCorrectNumberOfContributorsForPublicationWithSamePersonInDifferentRoles()
         throws JsonProcessingException, NotFoundException {
         var id = randomUri();
@@ -414,6 +433,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         var contributorsWithSameId = extractContributorsWithId(id, regeneratedPublication);
         assertThat(contributorsWithSameId.size(), is(equalTo(2)));
+    }
+
+    private static List<Contributor> extractContributors(ExpandedResource expandedResource)
+        throws JsonProcessingException {
+        return objectMapper.readValue(
+            expandedResource.asJsonNode().at("/entityDescription").toString(),
+            EntityDescription.class).getContributors();
+    }
+
+    private static EntityDescription createEntityDescriptionWithContributor(Contributor contributor) {
+        var entityDescription = new EntityDescription();
+        entityDescription.setContributors(List.of(contributor));
+        return entityDescription;
     }
 
     private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
@@ -474,19 +506,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = getSamplePublication();
         var contributors = publication.getEntityDescription().getContributors();
         var name = randomString();
-        contributors.add(createContributor(randomElement(Role.values()), id, name));
-        contributors.add(createContributor(randomElement(Role.values()), id, name));
+        contributors.add(createContributor(randomElement(Role.values()), id, name, List.of(randomOrganization())));
+        contributors.add(createContributor(randomElement(Role.values()), id, name, List.of(randomOrganization())));
         return publication;
     }
 
-    private Contributor createContributor(Role role, URI id, String name) {
+    private Contributor createContributor(Role role, URI id, String name, List<Organization> affiliations) {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder()
                                      .withName(name)
                                      .withId(id)
                                      .build())
                    .withRole(new RoleType(role))
-                   .withAffiliations(List.of(randomOrganization()))
+                   .withAffiliations(affiliations)
                    .build();
     }
 
