@@ -6,17 +6,21 @@ import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
+import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_THESIS;
+import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+
 import java.net.URI;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -28,14 +32,17 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.Reference;
+
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -56,8 +63,6 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
@@ -65,8 +70,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
     public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
-                                                                        + " from upstream";
-    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
+            + " from upstream";
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -78,12 +82,12 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     @JacocoGenerated
     public UpdatePublicationHandler() {
         this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
-             TicketService.defaultService(),
-             new Environment(),
-             IdentityServiceClient.prepare(),
-             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
+                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        Clock.systemDefaultZone()),
+                TicketService.defaultService(),
+                new Environment(),
+                IdentityServiceClient.prepare(),
+                new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
     /**
@@ -104,9 +108,13 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         this.uriRetriever = uriRetriever;
     }
 
+    private static boolean isPending(TicketEntry publishingRequest) {
+        return TicketStatus.PENDING.equals(publishingRequest.getStatus());
+    }
+
     @Override
     protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
 
         SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
         validateRequest(identifierInPath, input);
@@ -122,10 +130,6 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     @Override
     protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
         return HttpStatus.SC_OK;
-    }
-
-    private static boolean isPending(TicketEntry publishingRequest) {
-        return TicketStatus.PENDING.equals(publishingRequest.getStatus());
     }
 
     private BadGatewayException createBadGatewayException() {
@@ -156,7 +160,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private boolean isAlreadyPublished(Publication existingPublication) {
         return PublicationStatus.PUBLISHED.equals(existingPublication.getStatus())
-               || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
+                || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
     }
 
     private boolean isPublishable(AssociatedArtifact artifact) {
@@ -165,13 +169,17 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private boolean isThesis(Publication publication) {
-        var kind = attempt(() -> publication.getEntityDescription().getReference().getPublicationInstance())
-            .toOptional();
+        return Optional.ofNullable(publication.getEntityDescription())
+                .map(EntityDescription::getReference)
+                .map(Reference::getPublicationInstance)
+                .map(this::isDegree)
+                .orElse(false);
+    }
 
-        return kind.isPresent() &&
-               (kind.get() instanceof DegreeBachelor
-                || kind.get() instanceof DegreeMaster
-                || kind.get() instanceof DegreePhd);
+    private Boolean isDegree(PublicationInstance<? extends Pages> publicationInstance) {
+        return publicationInstance instanceof DegreeBachelor
+                || publicationInstance instanceof DegreeMaster
+                || publicationInstance instanceof DegreePhd;
     }
 
     private boolean isUnpublishedFile(AssociatedArtifact artifact) {
@@ -180,27 +188,32 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication) {
         return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
-            .filter(PublishingRequestCase.class::isInstance)
-            .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
-            .filter(UpdatePublicationHandler::isPending)
-            .findAny()
-            .isEmpty();
+                .filter(PublishingRequestCase.class::isInstance)
+                .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
+                .filter(UpdatePublicationHandler::isPending)
+                .findAny()
+                .isEmpty();
     }
 
-    private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
+    private boolean userCanEditOtherPeoplesPublicationsInTheirOwnInstitution(RequestInfo requestInfo, UserInstance userInstance, Publication existingPublication) {
 
         var accessRight = EDIT_OWN_INSTITUTION_RESOURCES.name();
-        return !requestInfo.clientIsThirdParty() && requestInfo.userIsAuthorized(accessRight);
+        return !requestInfo.clientIsThirdParty() && requestInfo.userIsAuthorized(accessRight)
+                && userIsFromSameOrganizationAsPublication(userInstance, existingPublication);
+    }
+
+    private boolean userIsFromSameOrganizationAsPublication(UserInstance userInstance, Publication existingPublication) {
+        return userInstance.getOrganizationUri().equals(getCustomerId(existingPublication));
     }
 
     private boolean userIsContributor(URI cristinId, Publication publication) {
         return Optional.ofNullable(publication.getEntityDescription())
-            .map(EntityDescription::getContributors).stream()
-            .flatMap(Collection::stream)
-            .filter(this::hasCristinId)
-            .map(Contributor::getIdentity)
-            .map(Identity::getId)
-            .anyMatch(id -> attempt(() -> id.equals(cristinId)).orElseThrow());
+                .map(EntityDescription::getContributors).stream()
+                .flatMap(Collection::stream)
+                .filter(this::hasCristinId)
+                .map(Contributor::getIdentity)
+                .map(Identity::getId)
+                .anyMatch(id -> attempt(() -> id.equals(cristinId)).orElseThrow());
     }
 
     private boolean userIsContributorWithUpdatingPublicationRights(RequestInfo requestInfo, Publication publication) {
@@ -213,69 +226,82 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private boolean userUnauthorizedToPublishThesis(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(PUBLISH_THESIS.name());
+        return !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name());
     }
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
-        throws BadGatewayException {
+            throws BadGatewayException {
         var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
-            .orElseThrow(this::createBadGatewayException);
+                .orElseThrow(this::createBadGatewayException);
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
-                                                                 CustomerPublishingWorkflowResponse.class)).orElseThrow();
+                CustomerPublishingWorkflowResponse.class)).orElseThrow();
     }
 
     private List<AssociatedArtifact> getUnpublishedFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
-            .filter(this::isUnpublishedFile)
-            .collect(Collectors.toList());
+                .filter(this::isUnpublishedFile)
+                .collect(Collectors.toList());
     }
 
     private Publication fetchExistingPublication(RequestInfo requestInfo, SortableIdentifier identifierInPath)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
 
-        var userInstance = createUserInstanceFromRequest(requestInfo);
+
         var publication = fetchPublication(identifierInPath);
-        var isOwner = userIsPublicationOwner(userInstance, publication);
+        return isThesis(publication)
+                ? getPublicationIfUserCanEditThesis(publication, requestInfo)
+                : getNonDegreePublication(publication, requestInfo);
+    }
 
-        if (isThesis(publication) && userUnauthorizedToPublishThesis(requestInfo) && !isOwner) {
-            logger.info("thesis={} unauthorized={} isOwner={}",
-                        isThesis(publication),
-                        userUnauthorizedToPublishThesis(requestInfo),
-                        isOwner);
+    private Publication getNonDegreePublication(Publication publication, RequestInfo requestInfo) throws ApiGatewayException {
 
-            throw new ForbiddenException();
+        if (userCanEditAllNonDegreePublications(requestInfo)) {
+            return publication;
         }
-
         if (userIsContributorWithUpdatingPublicationRights(requestInfo, publication)) {
-            logger.info("userIsContributorWithUpdatingPublicationRights");
             return publication;
         }
-        if (userCanEditOtherPeoplesPublications(requestInfo)) {
-            checkUserIsInSameInstitutionAsThePublication(userInstance, publication);
+        var userInstance = createUserInstanceFromRequest(requestInfo);
+        if (userCanEditOtherPeoplesPublicationsInTheirOwnInstitution(requestInfo, userInstance, publication)) {
             return publication;
-        }
-        if (isOwner) {
-            return fetchPublicationForPublicationOwner(identifierInPath, userInstance);
         }
         if (userIsCuratorAndIsInSameInstitutionAsThePublicationContributor(publication, requestInfo, userInstance)) {
             return publication;
         }
+
+        if (userIsPublicationOwner(userInstance, publication)) {
+            return fetchPublicationForPublicationOwner(publication.getIdentifier(), userInstance);
+        }
         throw new ForbiddenException();
+
+    }
+
+    private Publication getPublicationIfUserCanEditThesis(Publication publication, RequestInfo requestInfo) throws ApiGatewayException {
+        var userInstance = createUserInstanceFromRequest(requestInfo);
+        if (userUnauthorizedToPublishThesis(requestInfo) && !userIsPublicationOwner(userInstance, publication)) {
+            throw new ForbiddenException();
+        }
+        return publication;
+    }
+
+
+    private boolean userCanEditAllNonDegreePublications(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(EDIT_ALL_NON_DEGREE_RESOURCES.name());
     }
 
     private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
         return attempt(() -> resourceService.getPublicationByIdentifier(identifierInPath))
-            .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+                .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
     private Publication fetchPublicationForPublicationOwner(SortableIdentifier identifierInPath,
                                                             UserInstance userInstance)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
         return resourceService.getPublication(userInstance, identifierInPath);
     }
 
     private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, URI customerId)
-        throws BadGatewayException {
+            throws BadGatewayException {
         var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
         ticket.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
         return ticket;
@@ -287,55 +313,47 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
         return requestInfo.clientIsThirdParty()
-                   ? createExternalUserInstance(requestInfo, identityServiceClient)
-                   : extractUserInstance(requestInfo);
+                ? createExternalUserInstance(requestInfo, identityServiceClient)
+                : extractUserInstance(requestInfo);
     }
 
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(requestInfo::getCurrentCustomer)
-            .map(customerId -> UserInstance.create(requestInfo.getUserName(), customerId))
-            .orElseThrow(fail -> new UnauthorizedException());
-    }
-
-    private void checkUserIsInSameInstitutionAsThePublication(UserInstance userInstance,
-                                                              Publication existingPublication)
-        throws NotAuthorizedException {
-        if (!userInstance.getOrganizationUri().equals(getCustomerId(existingPublication))) {
-            throw new NotAuthorizedException();
-        }
+                .map(customerId -> UserInstance.create(requestInfo.getUserName(), customerId))
+                .orElseThrow(fail -> new UnauthorizedException());
     }
 
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
         if (containsNewPublishableFiles(publicationUpdate)) {
             attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
-                .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
-                                                                   getCustomerId(publicationUpdate)))
-                .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
-                .orElseThrow(fail -> createBadGatewayException());
+                    .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
+                            getCustomerId(publicationUpdate)))
+                    .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
+                    .orElseThrow(fail -> createBadGatewayException());
         }
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)
-        throws BadRequestException {
+            throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);
         }
     }
 
     private boolean userIsCuratorAndIsInSameInstitutionAsThePublicationContributor(
-        Publication existingPublication,
-        RequestInfo requestInfo, UserInstance userInstance) {
+            Publication existingPublication,
+            RequestInfo requestInfo, UserInstance userInstance) {
         return userIsAuthorizedToApproveDoiRequest(requestInfo) && userAndContributorInTheSameInstitution(
-            existingPublication, userInstance);
+                existingPublication, userInstance);
     }
 
     private boolean userAndContributorInTheSameInstitution(Publication publication,
                                                            UserInstance userInstance) {
         return publication.getEntityDescription().getContributors()
-            .stream().flatMap(contributor ->
-                                  contributor.getAffiliations().stream().map(Organization::getId))
-            .anyMatch(id ->
-                          id.equals(userInstance.getOrganizationUri()));
+                .stream().flatMap(contributor ->
+                        contributor.getAffiliations().stream().map(Organization::getId))
+                .anyMatch(id ->
+                        id.equals(userInstance.getOrganizationUri()));
     }
 
     private boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
