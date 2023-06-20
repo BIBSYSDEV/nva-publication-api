@@ -53,7 +53,6 @@ import org.joda.time.Instant;
 @SuppressWarnings("PMD.GodClass")
 public final class BrageNvaMapper {
 
-    public static final String NORWEGIAN_BOKMAAL = "nb";
     public static final String CRISTIN = "cristin";
     public static final String PERSON = "person";
     public static final String BASE_PATH = new Environment().readEnv("DOMAIN_NAME");
@@ -175,8 +174,8 @@ public final class BrageNvaMapper {
     }
 
     private static URI getLicenseUri(ContentFile file) {
-        return file.getLicense().getNvaLicense().getLicenseUri().getValue();
-     }
+        return file.getLicense().getNvaLicense().getLicense();
+    }
 
     private static Organization extractPublisher(Record record) {
         return Optional.ofNullable(record.getCustomer())
