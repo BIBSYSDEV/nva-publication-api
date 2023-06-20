@@ -182,12 +182,6 @@
     "NonNviCandidate" : "https://nva.sikt.no/ontology/publication#NonNviCandidate",
     "publicationContextUris": {
       "@container": "@set"
-    },
-    "source": {
-      "@context": {
-        "@vocab": "https://nva.sikt.no/ontology/publication#"
-      },
-      "@type": "@vocab"
     }
   },
   "@type": "Publication",
