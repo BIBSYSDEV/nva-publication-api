@@ -64,7 +64,7 @@ public class IndexDocumentWrapperLinkedData {
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
-        inputStreams.add(stringToStream(fetchAnthologyContent(indexDocument)));
+        inputStreams.add(fetchAnthologyContent(indexDocument));
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
         inputStreams.addAll(fetchAll(extractUris(fundingNodes(indexDocument), "source")));
@@ -74,6 +74,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private Collection<? extends InputStream> fetchAll(Collection<URI> uris) {
         return uris.stream()
+                   .distinct()
                    .map(this::fetch)
                    .flatMap(Optional::stream)
                    .map(IoUtils::stringToStream)
@@ -83,15 +84,16 @@ public class IndexDocumentWrapperLinkedData {
     private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
         return extractUris(contributorNodes(indexDocument), "/id")
                    .stream()
+                   .distinct()
                    .flatMap(this::fetchContentRecursively)
                    .map(IoUtils::stringToStream)
                    .collect(Collectors.toList());
     }
 
-    private String fetchAnthologyContent(JsonNode indexDocument) {
+    private InputStream fetchAnthologyContent(JsonNode indexDocument) {
         return isAcademicChapter(indexDocument) && isPublicationContextTypeAnthology(indexDocument)
-                   ? getAnthology(indexDocument)
-                   : EMPTY_STRING;
+                   ? stringToStream(getAnthology(indexDocument))
+                   : null;
     }
 
     private String getAnthology(JsonNode indexDocument) {
@@ -117,6 +119,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Optional<String> fetch(URI externalReference) {
+
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
     }
 }

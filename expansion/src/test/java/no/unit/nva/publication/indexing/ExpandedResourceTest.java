@@ -119,8 +119,6 @@ class ExpandedResourceTest {
         final Publication publication = randomBookWithConfirmedPublisher();
         final URI seriesUri = extractSeriesId(publication);
         final URI publisherUri = extractPublisherId(publication);
-        final URI sourceUri0 = publication.getFundings().get(0).getSource();
-        final URI sourceUri1 = publication.getFundings().get(1).getSource();
         final URI affiliationToBeExpandedId = extractAffiliationsUris(publication).get(0);
         final String publisherName = randomString();
         final String seriesName = randomString();
@@ -128,10 +126,6 @@ class ExpandedResourceTest {
         final UriRetriever mockUriRetriever = mock(UriRetriever.class);
         addPublicationChannelPublisherToMockUriRetriever(
                 mockUriRetriever, seriesUri, seriesName, publisherUri, publisherName);
-        mockGetRawContentResponse(
-                mockUriRetriever, sourceUri0, getPublicationSampleFundingSource());
-        mockGetRawContentResponse(
-                mockUriRetriever, sourceUri1, getPublicationSampleFundingSource());
 
 
         var expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
@@ -151,6 +145,29 @@ class ExpandedResourceTest {
 
         assertExplicitFieldsFromFraming(framedResultNode);
     }
+
+    @Test
+    void shouldReturnIndexDocumentWithValidFundingSource() throws Exception {
+
+        final var publication = randomBookWithConfirmedPublisher();
+        final var sourceUri0 = publication.getFundings().get(0).getSource();
+        final var sourceUri1 = publication.getFundings().get(1).getSource();
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+        mockGetRawContentResponse(mockUriRetriever, sourceUri0, getPublicationSampleFundingSource());
+        mockGetRawContentResponse(mockUriRetriever, sourceUri1, getPublicationSampleFundingSource());
+
+        final var framedResultNode = fromPublication(mockUriRetriever, publication)
+            .asJsonNode();
+        final var indexSource = framedResultNode
+            .at(PublicationJsonPointers.FUNDING_SOURCE_POINTER)
+            .findValues("source").stream()
+            .map(JsonNode::textValue)
+            .map(URI::create)
+            .collect(Collectors.toSet());
+        assertThat(indexSource,hasItems(sourceUri0,sourceUri1));
+    }
+
 
     @Test
     void shouldNotCreateTopLevelOrgForBlankNodes() throws Exception {
