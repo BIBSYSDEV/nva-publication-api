@@ -212,6 +212,18 @@
       "@default": "@null"
     }
   },
+  "doi": {
+    "@embed": "@never",
+    "@default": "@null"
+  },
+  "handle": {
+    "@embed": "@never",
+    "@default": "@null"
+  },
+  "link": {
+    "@embed": "@never",
+    "@default": "@null"
+  },
   "topLevelOrganization": {
     "@container": "@set",
     "@embed": "@always"
