@@ -9,7 +9,7 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_THESIS;
+import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -364,7 +364,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withCurrentCustomer(testOrgId)
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
+            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
             .build();
     }
 
@@ -385,7 +385,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withCurrentCustomer(testOrgId)
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_THESIS.name())
+            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
             .build();
     }
 
