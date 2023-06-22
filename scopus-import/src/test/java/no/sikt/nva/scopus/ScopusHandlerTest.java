@@ -1120,7 +1120,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static String getScopusIdentifier(Publication publication) {
         return publication.getAdditionalIdentifiers()
                    .stream()
-                   .filter(id -> "scopusIdentifier".equals(id.getSource()))
+                   .filter(id -> "scopusIdentifier".equals(id.getSourceName()))
                    .findFirst()
                    .map(AdditionalIdentifier::getValue)
                    .orElse(null);

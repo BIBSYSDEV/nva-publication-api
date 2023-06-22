@@ -148,31 +148,31 @@ class ExpandedResourceTest {
         assertExplicitFieldsFromFraming(framedResultNode);
     }
 
+//    @Test
+//    @Deprecated
+//    void shouldReturnIndexDocumentWithValidFundingSource() throws Exception {
+//
+//        final var publication = randomBookWithConfirmedPublisher();
+//        final var sourceUri0 = publication.getFundings().get(0).getSource();
+//        final var sourceUri1 = publication.getFundings().get(1).getSource();
+//        final var mockUriRetriever = mock(UriRetriever.class);
+//
+//        mockGetRawContentResponse(
+//            mockUriRetriever,
+//            sourceUri0,
+//            getPublicationSampleFundingSource(sourceUri0));
+//        mockGetRawContentResponse(
+//            mockUriRetriever,
+//            sourceUri1,
+//            getPublicationSampleFundingSource(sourceUri1));
+//
+//        final var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+//        final var extractedSourceId = extractSourceId(framedResultNode);
+//
+//        assertThat(extractedSourceId, hasItems(sourceUri0, sourceUri1));
+//    }
+
     @Test
-    void shouldReturnIndexDocumentWithValidFundingSource() throws Exception {
-
-        final var publication = randomBookWithConfirmedPublisher();
-        final var sourceUri0 = publication.getFundings().get(0).getSource();
-        final var sourceUri1 = publication.getFundings().get(1).getSource();
-        final var mockUriRetriever = mock(UriRetriever.class);
-
-        mockGetRawContentResponse(
-            mockUriRetriever,
-            sourceUri0,
-            getPublicationSampleFundingSource(sourceUri0));
-        mockGetRawContentResponse(
-            mockUriRetriever,
-            sourceUri1,
-            getPublicationSampleFundingSource(sourceUri1));
-
-        final var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
-        final var extractedSourceId = extractSourceId(framedResultNode);
-
-        assertThat(extractedSourceId, hasItems(sourceUri0, sourceUri1));
-    }
-
-    @Test
-    @Deprecated
     void shouldReturnIndexDocumentWithValidFundingSourceInsertingContextInFundingSource() throws Exception {
 
         final var publication = randomBookWithConfirmedPublisher();
@@ -365,11 +365,11 @@ class ExpandedResourceTest {
         mockGetRawContentResponse(uriRetriever, publisherId, publicationChannelSamplePublisher);
     }
 
-    private static void addFundingsToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
-
-        var fundings = getPublicationChannelSampleSeries(seriesId, randomString());
-        mockGetRawContentResponse(uriRetriever, seriesId, fundings);
-    }
+//    private static void addFundingsToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
+//
+//        var fundings = getPublicationChannelSampleSeries(seriesId, randomString());
+//        mockGetRawContentResponse(uriRetriever, seriesId, fundings);
+//    }
 
     private static void addSeriesToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
 
