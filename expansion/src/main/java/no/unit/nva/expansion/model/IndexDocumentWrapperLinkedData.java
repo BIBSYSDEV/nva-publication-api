@@ -29,16 +29,28 @@ import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class IndexDocumentWrapperLinkedData {
 
     private static final String PART_OF_FIELD = "/partOf";
     private static final String ID_FIELD = "/id";
     private static final String SOURCE = "source";
-    public static final String CONTEXT = "@context";
+    private static final String CONTEXT = "@context";
     private final UriRetriever uriRetriever;
+
+    @Deprecated
+    private static final String contextAsString =
+        "{\n"
+        + "  \"@vocab\": \"https://nva.sikt.no/ontology/publication#\",\n"
+        + "  \"id\": \"@id\",\n"
+        + "  \"type\": \"@type\",\n"
+        + "  \"name\": {\n"
+        + "    \"@id\": \"label\",\n"
+        + "    \"@container\": \"@language\"\n"
+        + "  }\n"
+        + "}\n";
+
+    private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
@@ -89,37 +101,12 @@ public class IndexDocumentWrapperLinkedData {
                    .collect(Collectors.toList());
     }
 
-
-    @Deprecated
-    private static final String contextAsString =
-      "{\n"
-      + "  \"@vocab\": \"https://nva.sikt.no/ontology/publication#\",\n"
-      + "  \"id\": \"@id\",\n"
-      + "  \"type\": \"@type\",\n"
-      + "  \"name\": {\n"
-      + "    \"@id\": \"label\",\n"
-      + "    \"@container\": \"@language\"\n"
-      + "  }\n"
-      + "}\n";
-
-    private static final JsonNode CONTEXT_NODE =  attempt(() -> objectMapper.readTree(contextAsString)).get();
-
     @Deprecated
     private InputStream addContext(InputStream inputStream) {
-//        return attempt(() -> objectMapper.readTree(inputStream))
-//            .map(jsonNode -> {
-//                if (!jsonNode.has(CONTEXT)){
-//                    ((ObjectNode) jsonNode).put(CONTEXT, CONTEXT_NODE);
-//                }
-//                return stringToStream(jsonNode.toString());
-//            }).orElse( f -> inputStream);
-
         var nodes = attempt(() -> objectMapper.readTree(inputStream)).toOptional();
-        if (nodes.isPresent()) {
-            if (!nodes.get().has(CONTEXT)){
-                ((ObjectNode) nodes.get()).put(CONTEXT, CONTEXT_NODE);
-                return stringToStream(nodes.get().toString());
-            }
+        if (nodes.isPresent() && !nodes.get().has(CONTEXT)) {
+            ((ObjectNode) nodes.get()).put(CONTEXT, CONTEXT_NODE);
+            return stringToStream(nodes.get().toString());
         }
         return inputStream;
     }
