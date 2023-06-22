@@ -15,6 +15,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
@@ -107,8 +108,14 @@ public class IndexDocumentWrapperLinkedData {
         if (nodes.isPresent() && !nodes.get().has(CONTEXT)) {
             ((ObjectNode) nodes.get()).put(CONTEXT, CONTEXT_NODE);
             return stringToStream(nodes.get().toString());
+        } else {
+            try {
+                inputStream.reset();
+                return inputStream;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
-        return inputStream;
     }
 
     private Collection<? extends InputStream> fetchAll(Collection<URI> uris) {
