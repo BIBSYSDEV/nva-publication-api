@@ -136,7 +136,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
-        return SOURCE_CRISTIN.equals(identifier.getSource());
+        return SOURCE_CRISTIN.equals(identifier.getSourceName());
     }
 
     private Publication storeHandleAndPublicationIdentifier(Publication publication, S3Event s3Event) {

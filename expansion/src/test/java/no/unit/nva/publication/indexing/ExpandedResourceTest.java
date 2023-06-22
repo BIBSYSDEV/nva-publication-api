@@ -1,6 +1,5 @@
 package no.unit.nva.publication.indexing;
 
-import static java.util.Map.entry;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -28,6 +27,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -84,8 +84,6 @@ class ExpandedResourceTest {
     private static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
     private static final String ID_NAMESPACE = System.getenv("ID_NAMESPACE");
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
-    private static final String FIELD_TYPE = "type";
-    private static final String FIELD_IDENTIFIER = "identifier";
     private UriRetriever uriRetriever;
 
     @BeforeEach
@@ -147,7 +145,6 @@ class ExpandedResourceTest {
 
         assertThat(distinctTopLevelIds.stream().sorted().collect(Collectors.toList()),
                    is(equalTo(expectedTopLevelOrgs.stream().sorted().collect(Collectors.toList()))));
-
         assertExplicitFieldsFromFraming(framedResultNode);
     }
 
@@ -157,20 +154,56 @@ class ExpandedResourceTest {
         final var publication = randomBookWithConfirmedPublisher();
         final var sourceUri0 = publication.getFundings().get(0).getSource();
         final var sourceUri1 = publication.getFundings().get(1).getSource();
-
         final var mockUriRetriever = mock(UriRetriever.class);
-        mockGetRawContentResponse(mockUriRetriever, sourceUri0, getPublicationSampleFundingSource());
-        mockGetRawContentResponse(mockUriRetriever, sourceUri1, getPublicationSampleFundingSource());
 
-        final var framedResultNode = fromPublication(mockUriRetriever, publication)
-            .asJsonNode();
-        final var indexSource = framedResultNode
-            .at(PublicationJsonPointers.FUNDING_SOURCE_POINTER)
-            .findValues("source").stream()
-            .map(JsonNode::textValue)
-            .map(URI::create)
-            .collect(Collectors.toSet());
-        assertThat(indexSource,hasItems(sourceUri0,sourceUri1));
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri0,
+            getPublicationSampleFundingSource(sourceUri0));
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri1,
+            getPublicationSampleFundingSource(sourceUri1));
+
+        final var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        final var extractedSourceId = extractSourceId(framedResultNode);
+
+        assertThat(extractedSourceId, hasItems(sourceUri0, sourceUri1));
+    }
+
+    @Test
+    @Deprecated
+    void shouldReturnIndexDocumentWithValidFundingSourceInsertingContextInFundingSource() throws Exception {
+
+        final var publication = randomBookWithConfirmedPublisher();
+        final var sourceUri0 = publication.getFundings().get(0).getSource();
+        final var sourceUri1 = publication.getFundings().get(1).getSource();
+        final var mockUriRetriever = mock(UriRetriever.class);
+
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri0,
+            getPublicationSampleFundingSourceWithoutContext(sourceUri0));
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri1,
+            getPublicationSampleFundingSourceWithoutContext(sourceUri1));
+
+        final var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        final var extractedSourceId = extractSourceId(framedResultNode);
+
+        assertThat(extractedSourceId,hasItems(sourceUri0,sourceUri1));
+    }
+
+    private static Set<URI> extractSourceId(ObjectNode framedResultNode) {
+        return
+            framedResultNode
+                .at(PublicationJsonPointers.FUNDING_SOURCE_POINTER)
+                .findValues("source").stream()
+                .flatMap(node -> node.findValues("id").stream())
+                .map(JsonNode::textValue)
+                .map(URI::create)
+                .collect(Collectors.toSet());
     }
 
 
@@ -398,17 +431,38 @@ class ExpandedResourceTest {
         );
     }
 
-    private static  String getPublicationSampleFundingSource() throws JsonProcessingException {
-        return objectMapper.writeValueAsString(
-                Map.ofEntries(
-                entry(FIELD_TYPE, "FundingSource"),
-                entry(FIELD_ID, "https://api.dev.nva.aws.unit.no/cristin/funding-sources/NFR"),
-                entry(FIELD_IDENTIFIER, "NFR"),
-                entry(FIELD_NAME,  Map.ofEntries(
-                        entry("en", "Research Council of Norway (RCN)"),
-                        entry("nb", "Norges forskningsråd   ")))
-                )
-        );
+
+    private static  String getPublicationSampleFundingSource(URI sourceId) throws JsonProcessingException {
+        return "{\n"
+               + "  \"@context\": {\n"
+               + "    \"@vocab\": \"https://nva.sikt.no/ontology/publication#\",\n"
+               + "    \"id\": \"@id\",\n"
+               + "    \"type\": \"@type\",\n"
+               + "    \"name\": {\n"
+               + "      \"@id\": \"label\",\n"
+               + "      \"@container\": \"@language\"\n"
+               + "    }\n"
+               + "  },\n"
+               + "  \"type\" : \"FundingSource\",\n"
+               + "  \"id\" : \"" + sourceId + "\",\n"
+               + "  \"identifier\" : \"NFR\",\n"
+               + "  \"name\" : {\n"
+               + "    \"en\" : \"Research Council of Norway (RCN)\",\n"
+               + "    \"nb\" : \"Norges forskningsråd\"\n"
+               + "  }\n"
+               + "}";
+    }
+
+    private static  String getPublicationSampleFundingSourceWithoutContext(URI sourceId) throws JsonProcessingException {
+        return "{\n"
+               + "  \"type\" : \"FundingSource\",\n"
+               + "  \"id\" : \"" + sourceId + "\",\n"
+               + "  \"identifier\" : \"NFR\",\n"
+               + "  \"name\" : {\n"
+               + "    \"en\" : \"Research Council of Norway (RCN)\",\n"
+               + "    \"nb\" : \"Norges forskningsråd\"\n"
+               + "  }\n"
+               + "}";
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {
@@ -460,7 +514,7 @@ class ExpandedResourceTest {
         return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
     }
 
-    private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
+    private Collection<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
         var topLevelAffiliations = framedResultNode.at("/topLevelOrganization");
         return StreamSupport.stream(topLevelAffiliations.spliterator(), false)
                    .map(node -> node.get("id").asText())
@@ -496,8 +550,8 @@ class ExpandedResourceTest {
 
     private List<URI> extractAffiliationsUris(Publication publication) {
         return publication.getEntityDescription().getContributors()
-                   .stream().flatMap(contributor ->
-                                         contributor.getAffiliations().stream().map(Organization::getId))
+                   .stream()
+                   .flatMap(contributor -> contributor.getAffiliations().stream().map(Organization::getId))
                    .collect(Collectors.toList());
     }
 

@@ -21,7 +21,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import no.unit.nva.commons.json.JsonSerializable;
@@ -71,6 +76,13 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return uris;
     }
 
+    public static Set<URI> extractAffiliationUris(JsonNode indexDocument) {
+        return extractUris(contributorNodes(indexDocument),"id");
+    }
+
+    public static URI extractPublicationContextUri(JsonNode indexDocument) {
+        return URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).asText());
+    }
 
     public static boolean isPublicationContextTypeAnthology(JsonNode root) {
         return CONTEXT_TYPE_ANTHOLOGY.equals(getPublicationContextType(root));
@@ -78,10 +90,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     public static boolean isAcademicChapter(JsonNode root) {
         return INSTANCE_TYPE_ACADEMIC_CHAPTER.equals(getInstanceType(root));
-    }
-
-    public static URI extractPublicationContextId(JsonNode indexDocument) {
-        return URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).textValue());
     }
 
     public List<URI> getPublicationContextUris() {
@@ -207,11 +215,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return (ArrayNode) root.at(FUNDING_SOURCE_POINTER);
     }
 
-    public static Set<URI> extractUris(ArrayNode root, String fieldName) {
-        return root.findValues(fieldName).stream()
-                .map(JsonNode::textValue)
-                .map(URI::create)
-                .collect(Collectors.toSet());
+    public static Set<URI> extractUris(ArrayNode root, String nodeName) {
+        return root.findValues(nodeName).stream()
+                   .map(JsonNode::textValue)
+                   .map(URI::create)
+                   .collect(Collectors.toSet());
     }
 
     private static URI getBookSeriesUri(JsonNode root) {

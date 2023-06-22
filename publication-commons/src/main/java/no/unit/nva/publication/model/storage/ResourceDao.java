@@ -197,7 +197,7 @@ public class ResourceDao extends Dao
     
     private boolean keyEqualsCristin(AdditionalIdentifier identifier) {
         return Optional.ofNullable(identifier)
-                   .map(AdditionalIdentifier::getSource)
+                   .map(AdditionalIdentifier::getSourceName)
                    .map(CRISTIN_SOURCE::equals)
                    .orElse(false);
     }

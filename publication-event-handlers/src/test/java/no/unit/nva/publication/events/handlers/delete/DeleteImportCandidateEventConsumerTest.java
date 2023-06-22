@@ -118,7 +118,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     }
 
     private static boolean isScopus(AdditionalIdentifier identifier) {
-        return identifier.getSource().equals(SCOPUS_IDENTIFIER);
+        return identifier.getSourceName().equals(SCOPUS_IDENTIFIER);
     }
 
     private String getScopusIdentifier(ImportCandidate importCandidate) {
