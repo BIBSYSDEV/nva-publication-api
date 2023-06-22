@@ -365,12 +365,6 @@ class ExpandedResourceTest {
         mockGetRawContentResponse(uriRetriever, publisherId, publicationChannelSamplePublisher);
     }
 
-//    private static void addFundingsToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
-//
-//        var fundings = getPublicationChannelSampleSeries(seriesId, randomString());
-//        mockGetRawContentResponse(uriRetriever, seriesId, fundings);
-//    }
-
     private static void addSeriesToMockUriRetriever(UriRetriever uriRetriever, URI seriesId) throws IOException {
 
         var publicationChannelSampleSeries = getPublicationChannelSampleSeries(seriesId, randomString());
@@ -432,7 +426,7 @@ class ExpandedResourceTest {
     }
 
 
-    private static  String getPublicationSampleFundingSource(URI sourceId) throws JsonProcessingException {
+    private static  String getPublicationSampleFundingSource(URI sourceId)  {
         return "{\n"
                + "  \"@context\": {\n"
                + "    \"@vocab\": \"https://nva.sikt.no/ontology/publication#\",\n"
@@ -453,7 +447,7 @@ class ExpandedResourceTest {
                + "}";
     }
 
-    private static  String getPublicationSampleFundingSourceWithoutContext(URI sourceId) throws JsonProcessingException {
+    private static  String getPublicationSampleFundingSourceWithoutContext(URI sourceId) {
         return "{\n"
                + "  \"type\" : \"FundingSource\",\n"
                + "  \"id\" : \"" + sourceId + "\",\n"
