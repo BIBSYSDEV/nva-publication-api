@@ -3,6 +3,8 @@ package no.unit.nva.publication.indexing;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
@@ -10,6 +12,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsIterableContaining.hasItems;
@@ -43,6 +46,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
@@ -57,6 +61,7 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.paths.UriWrapper;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -370,6 +375,72 @@ class ExpandedResourceTest {
     void shouldNotFailWhenInputContainsAffiliationsThatAreIncomplete() {
         var publication = createPublicationWithEmptyAffiliations();
         assertDoesNotThrow(() -> ExpandedResource.fromPublication(uriRetriever, publication));
+    }
+
+    @Test
+    void shouldNotExpandDoiWhenIdUsedElsewhere() throws IOException {
+        var bookAnthology = bookAnthologyWithDoiReferencedInAssociatedLink();
+        mockUriRetrieverResponses(bookAnthology);
+
+        var expandedResource = ExpandedResource.fromPublication(uriRetriever, bookAnthology);
+
+        var actualDoi = expandedResource.getAllFields().get("doi");
+
+        assertThat(actualDoi, allOf(Matchers.instanceOf(String.class),
+                                    is((equalTo(bookAnthology.getDoi().toString())))));
+    }
+
+    @Test
+    void shouldNotExpandHandleWhenIdUsedElsewhere() throws IOException {
+        var bookAnthology = bookAnthologyWithHandleReferencedInAssociatedLink();
+        mockUriRetrieverResponses(bookAnthology);
+
+        var expandedResource = ExpandedResource.fromPublication(uriRetriever, bookAnthology);
+
+        var actualHandle = expandedResource.getAllFields().get("handle");
+
+        assertThat(actualHandle, allOf(Matchers.instanceOf(String.class),
+                                    is((equalTo(bookAnthology.getHandle().toString())))));
+    }
+
+    @Test
+    void shouldNotExpandLinkWhenIdUsedElsewhere() throws IOException {
+        var bookAnthology = bookAnthologyWithLinkReferencedInAssociatedLink();
+        mockUriRetrieverResponses(bookAnthology);
+
+        var expandedResource = ExpandedResource.fromPublication(uriRetriever, bookAnthology);
+
+        var actualLink = expandedResource.getAllFields().get("link");
+
+        assertThat(actualLink, allOf(Matchers.instanceOf(String.class),
+                                       is((equalTo(bookAnthology.getLink().toString())))));
+    }
+
+    private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {
+        var doi = randomDoi();
+        return PublicationGenerator.randomPublication(BookAnthology.class)
+                   .copy()
+                   .withDoi(doi)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(doi, null, null)))
+                   .build();
+    }
+
+    private Publication bookAnthologyWithHandleReferencedInAssociatedLink() {
+        var handle = randomUri();
+        return PublicationGenerator.randomPublication(BookAnthology.class)
+                   .copy()
+                   .withHandle(handle)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(handle, null, null)))
+                   .build();
+    }
+
+    private Publication bookAnthologyWithLinkReferencedInAssociatedLink() {
+        var link = randomUri();
+        return PublicationGenerator.randomPublication(BookAnthology.class)
+                   .copy()
+                   .withLink(link)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(link, null, null)))
+                   .build();
     }
 
     private static void addPublisherToMockUriRetriever(UriRetriever uriRetriever, URI publisherId) throws IOException {
