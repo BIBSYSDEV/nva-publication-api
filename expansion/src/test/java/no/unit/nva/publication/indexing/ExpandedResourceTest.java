@@ -184,15 +184,27 @@ class ExpandedResourceTest {
             mockUriRetriever,
             sourceUri0,
             getPublicationSampleFundingSourceWithoutContext(sourceUri0));
+
         mockGetRawContentResponse(
             mockUriRetriever,
             sourceUri1,
             getPublicationSampleFundingSourceWithoutContext(sourceUri1));
 
-        final var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
-        final var extractedSourceId = extractSourceId(framedResultNode);
+        assertHasExpectedFundings(
+            sourceUri0,
+            sourceUri1,
+            fromPublication(mockUriRetriever, publication).asJsonNode());
+    }
 
-        assertThat(extractedSourceId,hasItems(sourceUri0,sourceUri1));
+    private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
+        final var extractedSourceId = extractSourceId(framedResultNode);
+        final var fundings = framedResultNode.at(PublicationJsonPointers.FUNDING_SOURCE_POINTER);
+        fundings.forEach(ExpandedResourceTest::assertHasLabels);
+        assertThat(extractedSourceId,hasItems(sourceUri0, sourceUri1));
+    }
+
+    private static void assertHasLabels(JsonNode funding) {
+        assertThat(funding.get("labels"), is(not(nullValue())));
     }
 
     private static Set<URI> extractSourceId(ObjectNode framedResultNode) {

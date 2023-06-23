@@ -94,28 +94,41 @@ public class IndexDocumentWrapperLinkedData {
         return inputStreams;
     }
 
+
     @Deprecated
     private Collection<? extends InputStream> fetchFundingSources(JsonNode indexDocument) {
         return fetchAll(extractUris(fundingNodes(indexDocument), SOURCE))
                    .stream()
-                   .map(this::addContext)
+                   .map(this::addPotentiallyMissingContext)
                    .collect(Collectors.toList());
     }
 
     @Deprecated
-    private InputStream addContext(InputStream inputStream) {
-        var nodes = attempt(() -> objectMapper.readTree(inputStream)).toOptional();
-        if (nodes.isPresent() && !nodes.get().has(CONTEXT)) {
-            ((ObjectNode) nodes.get()).put(CONTEXT, CONTEXT_NODE);
-            return stringToStream(nodes.get().toString());
-        } else {
-            try {
-                inputStream.reset();
-                return inputStream;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    private InputStream addPotentiallyMissingContext(InputStream inputStream) {
+        return attempt(() -> objectMapper.readTree(inputStream))
+                   .toOptional()
+                   .filter(this::hasNoContextNode)
+                   .map(this::injectContext)
+                   .map(JsonNode::toString)
+                   .map(IoUtils::stringToStream)
+                   .orElseGet(() -> resetInputStream(inputStream));
+    }
+
+    private InputStream resetInputStream(InputStream inputStream) {
+        try {
+            inputStream.reset();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+        return inputStream;
+    }
+
+    private JsonNode injectContext(JsonNode jsonNode) {
+        return ((ObjectNode) jsonNode).set(CONTEXT, CONTEXT_NODE);
+    }
+
+    private boolean hasNoContextNode(JsonNode jsonNode) {
+        return !jsonNode.has(CONTEXT);
     }
 
     private Collection<? extends InputStream> fetchAll(Collection<URI> uris) {
