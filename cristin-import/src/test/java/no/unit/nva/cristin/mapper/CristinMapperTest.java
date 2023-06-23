@@ -545,7 +545,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
-        return identifier.getSource().equals(IDENTIFIER_ORIGIN);
+        return identifier.getSourceName().equals(IDENTIFIER_ORIGIN);
     }
 
     private ContributionReference extractContributionReference(Integer cristinIdentifierValue,

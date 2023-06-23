@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -115,8 +116,8 @@ class ExpandedResourceTest {
     }
 
     //TODO: should check that you get affiliation names
-    @ParameterizedTest(name = "should return IndexDocument with correct topLevelAffiliation with referencing depth: "
-                              + "{0}")
+    @ParameterizedTest(
+            name = "should return IndexDocument with correct topLevelAffiliation with referencing depth: {0}")
     @ValueSource(ints = {1, 2, 3, 6})
     void shouldReturnIndexDocumentWithCorrectTopLevelOrganization(int depth) throws Exception {
 
@@ -128,12 +129,11 @@ class ExpandedResourceTest {
         final String seriesName = randomString();
 
         final UriRetriever mockUriRetriever = mock(UriRetriever.class);
-        addPublicationChannelPublisherToMockUriRetriever(mockUriRetriever, seriesUri, seriesName, publisherUri,
-                                                         publisherName);
+        addPublicationChannelPublisherToMockUriRetriever(
+                mockUriRetriever, seriesUri, seriesName, publisherUri, publisherName);
 
         var expectedTopLevelUri = getTopLevelUri(depth, affiliationToBeExpandedId, mockUriRetriever);
-
-        ObjectNode framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
 
         var expectedTopLevelOrgs = new ArrayList<URI>();
         expectedTopLevelOrgs.add(expectedTopLevelUri);
@@ -145,9 +145,79 @@ class ExpandedResourceTest {
 
         assertThat(distinctTopLevelIds.stream().sorted().collect(Collectors.toList()),
                    is(equalTo(expectedTopLevelOrgs.stream().sorted().collect(Collectors.toList()))));
-
         assertExplicitFieldsFromFraming(framedResultNode);
     }
+
+    @Test
+    @Deprecated
+    void shouldReturnIndexDocumentWithValidFundingSource() throws Exception {
+
+        final var publication = randomBookWithConfirmedPublisher();
+        final var sourceUri0 = publication.getFundings().get(0).getSource();
+        final var sourceUri1 = publication.getFundings().get(1).getSource();
+        final var mockUriRetriever = mock(UriRetriever.class);
+
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri0,
+            getPublicationSampleFundingSource(sourceUri0));
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri1,
+            getPublicationSampleFundingSource(sourceUri1));
+
+        final var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        final var extractedSourceId = extractSourceId(framedResultNode);
+
+        assertThat(extractedSourceId, hasItems(sourceUri0, sourceUri1));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithValidFundingSourceInsertingContextInFundingSource() throws Exception {
+
+        final var publication = randomBookWithConfirmedPublisher();
+        final var sourceUri0 = publication.getFundings().get(0).getSource();
+        final var sourceUri1 = publication.getFundings().get(1).getSource();
+        final var mockUriRetriever = mock(UriRetriever.class);
+
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri0,
+            getPublicationSampleFundingSourceWithoutContext(sourceUri0));
+
+        mockGetRawContentResponse(
+            mockUriRetriever,
+            sourceUri1,
+            getPublicationSampleFundingSourceWithoutContext(sourceUri1));
+
+        assertHasExpectedFundings(
+            sourceUri0,
+            sourceUri1,
+            fromPublication(mockUriRetriever, publication).asJsonNode());
+    }
+
+    private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
+        final var extractedSourceId = extractSourceId(framedResultNode);
+        final var fundings = framedResultNode.at(PublicationJsonPointers.FUNDING_SOURCE_POINTER);
+        fundings.forEach(ExpandedResourceTest::assertHasLabels);
+        assertThat(extractedSourceId,hasItems(sourceUri0, sourceUri1));
+    }
+
+    private static void assertHasLabels(JsonNode funding) {
+        assertThat(funding.get("labels"), is(not(nullValue())));
+    }
+
+    private static Set<URI> extractSourceId(ObjectNode framedResultNode) {
+        return
+            framedResultNode
+                .at(PublicationJsonPointers.FUNDING_SOURCE_POINTER)
+                .findValues("source").stream()
+                .flatMap(node -> node.findValues("id").stream())
+                .map(JsonNode::textValue)
+                .map(URI::create)
+                .collect(Collectors.toSet());
+    }
+
 
     @Test
     void shouldNotCreateTopLevelOrgForBlankNodes() throws Exception {
@@ -351,16 +421,54 @@ class ExpandedResourceTest {
                    .build();
     }
 
-    private static void addPublicationChannelPublisherToMockUriRetriever(UriRetriever mockUriRetriever,
-                                                                         URI journalId,
-                                                                         String journalName,
-                                                                         URI publisherId,
-                                                                         String publisherName)
+    private static void addPublicationChannelPublisherToMockUriRetriever(
+        UriRetriever mockUriRetriever, URI journalId, String journalName, URI publisherId, String publisherName)
         throws IOException {
-        String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
-        mockGetRawContentResponse(mockUriRetriever, journalId, publicationChannelSampleJournal);
-        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
-        mockGetRawContentResponse(mockUriRetriever, publisherId, publicationChannelSamplePublisher);
+
+        mockGetRawContentResponse(
+                mockUriRetriever,
+                journalId,
+                getPublicationChannelSampleJournal(journalId, journalName)
+        );
+        mockGetRawContentResponse(
+                mockUriRetriever,
+                publisherId,
+                getPublicationChannelSamplePublisher(publisherId, publisherName)
+        );
+    }
+
+
+    private static  String getPublicationSampleFundingSource(URI sourceId)  {
+        return "{\n"
+               + "  \"@context\": {\n"
+               + "    \"@vocab\": \"https://nva.sikt.no/ontology/publication#\",\n"
+               + "    \"id\": \"@id\",\n"
+               + "    \"type\": \"@type\",\n"
+               + "    \"name\": {\n"
+               + "      \"@id\": \"label\",\n"
+               + "      \"@container\": \"@language\"\n"
+               + "    }\n"
+               + "  },\n"
+               + "  \"type\" : \"FundingSource\",\n"
+               + "  \"id\" : \"" + sourceId + "\",\n"
+               + "  \"identifier\" : \"NFR\",\n"
+               + "  \"name\" : {\n"
+               + "    \"en\" : \"Research Council of Norway (RCN)\",\n"
+               + "    \"nb\" : \"Norges forskningsråd\"\n"
+               + "  }\n"
+               + "}";
+    }
+
+    private static  String getPublicationSampleFundingSourceWithoutContext(URI sourceId) {
+        return "{\n"
+               + "  \"type\" : \"FundingSource\",\n"
+               + "  \"id\" : \"" + sourceId + "\",\n"
+               + "  \"identifier\" : \"NFR\",\n"
+               + "  \"name\" : {\n"
+               + "    \"en\" : \"Research Council of Norway (RCN)\",\n"
+               + "    \"nb\" : \"Norges forskningsråd\"\n"
+               + "  }\n"
+               + "}";
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {
@@ -412,7 +520,7 @@ class ExpandedResourceTest {
         return affiliationGenerator.setAffiliationInMockUriRetriever(affiliationToBeExpandedId);
     }
 
-    private List<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
+    private Collection<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
         var topLevelAffiliations = framedResultNode.at("/topLevelOrganization");
         return StreamSupport.stream(topLevelAffiliations.spliterator(), false)
                    .map(node -> node.get("id").asText())
@@ -448,8 +556,8 @@ class ExpandedResourceTest {
 
     private List<URI> extractAffiliationsUris(Publication publication) {
         return publication.getEntityDescription().getContributors()
-                   .stream().flatMap(contributor ->
-                                         contributor.getAffiliations().stream().map(Organization::getId))
+                   .stream()
+                   .flatMap(contributor -> contributor.getAffiliations().stream().map(Organization::getId))
                    .collect(Collectors.toList());
     }
 

@@ -119,7 +119,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.getSource());
+        return SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail, S3Event event) {

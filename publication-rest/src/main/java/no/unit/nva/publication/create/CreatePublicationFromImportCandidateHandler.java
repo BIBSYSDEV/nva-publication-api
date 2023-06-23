@@ -102,7 +102,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.getSource());
+        return SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
     }
 
     private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)
