@@ -30,7 +30,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final String PART_OF_FIELD = "/partOf";
     private static final String ID_FIELD = "/id";
     private static final String EMPTY_STRING = "";
-    public static final String CRISTIN_VERSION = " version=2023-05-26";
+    public static final String CRISTIN_VERSION = "; version=2023-05-26";
     private final UriRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
