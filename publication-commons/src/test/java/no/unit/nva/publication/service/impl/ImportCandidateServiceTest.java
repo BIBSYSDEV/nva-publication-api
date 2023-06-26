@@ -1,12 +1,12 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.model.business.importcandidate.CandidateStatus.IMPORTED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
@@ -18,11 +18,13 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadMethodException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,13 +54,12 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         resourceService.updateImportStatus(importCandidate.getIdentifier(),
                                            ImportStatusFactory.createImported(null, null));
         var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(fetchedPublication.getImportStatus().getCandidateStatus(), equalTo(CandidateStatus.IMPORTED));
+        assertThat(fetchedPublication.getImportStatus().getCandidateStatus(), equalTo(IMPORTED));
     }
 
     @Test
     void shouldDeleteImportCandidatePermanently() throws BadMethodException, NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        var appender = LogUtils.getTestingAppenderForRootLogger();
         resourceService.deleteImportCandidate(importCandidate);
         assertThrows(NotFoundException.class,
                      () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
@@ -71,6 +72,36 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
                                            ImportStatusFactory.createImported(null, null));
         assertThrows(BadMethodException.class,
                      () -> resourceService.deleteImportCandidate(importCandidate));
+    }
+
+    @Test
+    void shouldUpdateExistingNotImportedImportCandidate() throws BadRequestException, NotFoundException {
+        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
+        var updatedImportCandidate = update(importCandidate);
+        resourceService.updateImportCandidate(updatedImportCandidate);
+        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        assertThat(fetchedImportCandidate, is(equalTo(updatedImportCandidate)));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingImportedImportCandidate() throws NotFoundException {
+        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
+        resourceService.updateImportStatus(importCandidate.getIdentifier(),
+                                           ImportStatusFactory.createImported(new Username(randomString()), randomUri()));
+        var updatedImportCandidate = update(importCandidate);
+        assertThrows(BadRequestException.class, () -> resourceService.updateImportCandidate(updatedImportCandidate));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCanNotFetchImportCandidateWhenUpdatingIt() throws NotFoundException,
+                                                                                  BadRequestException {
+        var importCandidate = randomImportCandidate();
+        assertThrows(TransactionFailedException.class, () -> resourceService.updateImportCandidate(importCandidate));
+    }
+
+    private ImportCandidate update(ImportCandidate importCandidate) {
+        importCandidate.setHandle(randomUri());
+        return importCandidate;
     }
 
     private ImportCandidate randomImportCandidate() {

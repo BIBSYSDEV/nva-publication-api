@@ -17,8 +17,8 @@ public class PublicationChannelGenerator {
     public static final String FIELD_ID = "id";
     public static final String FIELD_LEVEL = "level";
     public static final String FIELD_CONTEXT = "@context";
-    public static final String PUBLICATION_CHANNEL_CONTEXT = "https://bibsysdev.github"
-                                                             + ".io/src/publication-channel/channel-context.json";
+    public static final String PUBLICATION_CHANNEL_CONTEXT =
+            "https://bibsysdev.github.io/src/publication-channel/channel-context.json";
 
     public static String getPublicationChannelSampleJournal(URI journalId, String journalName)
         throws JsonProcessingException {
@@ -32,7 +32,7 @@ public class PublicationChannelGenerator {
     }
 
     public static String getPublicationChannelJournal(URI identifier, String publisherName)
-        throws JsonProcessingException {
+            throws JsonProcessingException {
         var publisherMap = getPublicationChannelMap(identifier, publisherName);
         return objectMapper.writeValueAsString(publisherMap);
     }

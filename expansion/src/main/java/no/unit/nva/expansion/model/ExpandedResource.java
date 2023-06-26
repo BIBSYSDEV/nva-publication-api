@@ -1,9 +1,9 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTRIBUTORS_POINTER;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.FUNDING_SOURCE_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.INSTANCE_TYPE_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLICATION_CONTEXT_ID_JSON_PTR;
@@ -26,11 +26,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -79,8 +77,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static Set<URI> extractAffiliationUris(JsonNode indexDocument) {
-        var contributors = getContributors(indexDocument);
-        return getAffiliationsIdsFromJsonNode(contributors);
+        return extractUris(contributorNodes(indexDocument),"id");
+    }
+
+    public static URI extractPublicationContextUri(JsonNode indexDocument) {
+        return URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).asText());
     }
 
     public static boolean isPublicationContextTypeAnthology(JsonNode root) {
@@ -89,10 +90,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     public static boolean isAcademicChapter(JsonNode root) {
         return INSTANCE_TYPE_ACADEMIC_CHAPTER.equals(getInstanceType(root));
-    }
-
-    public static URI extractPublicationContextId(JsonNode indexDocument) {
-        return URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).asText());
     }
 
     public List<URI> getPublicationContextUris() {
@@ -210,28 +207,19 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return root.at(PUBLICATION_CONTEXT_ID_JSON_PTR).textValue();
     }
 
-    private static ArrayNode getContributors(JsonNode root) {
+    public static ArrayNode contributorNodes(JsonNode root) {
         return (ArrayNode) root.at(CONTRIBUTORS_POINTER);
     }
 
-    private static Set<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
-        return StreamSupport.stream(contributorsRoot.spliterator(), false)
-                   .flatMap(ExpandedResource::extractAffiliations)
-                   .flatMap(ExpandedResource::extractAffiliationId)
-                   .collect(Collectors.toSet());
+    public static ArrayNode fundingNodes(JsonNode root) {
+        return (ArrayNode) root.at(FUNDING_SOURCE_POINTER);
     }
 
-    private static Stream<URI> extractAffiliationId(JsonNode child) {
-        return Optional.ofNullable(child.at("/id"))
+    public static Set<URI> extractUris(ArrayNode root, String nodeName) {
+        return root.findValues(nodeName).stream()
                    .map(JsonNode::textValue)
                    .map(URI::create)
-                   .stream();
-    }
-
-    private static Stream<JsonNode> extractAffiliations(JsonNode node) {
-        return Optional.ofNullable(node.at(AFFILIATIONS_POINTER))
-                   .map(o -> StreamSupport.stream(o.spliterator(), false))
-                   .orElse(Stream.empty());
+                   .collect(Collectors.toSet());
     }
 
     private static URI getBookSeriesUri(JsonNode root) {
