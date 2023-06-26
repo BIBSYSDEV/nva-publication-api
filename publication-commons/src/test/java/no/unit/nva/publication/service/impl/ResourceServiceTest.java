@@ -16,7 +16,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -76,6 +78,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -231,6 +234,21 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(readResource, is(equalTo(expectedResource)));
         assertThat(readResource.getCreatedDate(), is(not(equalTo(notExpectedCreatedDate))));
         assertThat(readResource.getModifiedDate(), is(not(equalTo(notExpectedModifiedDate))));
+    }
+
+    @Test
+    void createResourceReturnsResourceWithContributionsFromOriginalInputObject() throws BadRequestException {
+        var publication = randomPublication();
+        publication.getEntityDescription().setContributors(
+            List.of(randomContributor())
+        );
+        var userInstance = UserInstance.fromPublication(publication);
+
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+        var persistedContributions = persistedPublication.getEntityDescription().getContributors();
+        assertThat(persistedContributions, is(notNullValue()));
+        assertThat(persistedContributions.size(), is(greaterThanOrEqualTo(1)));
+        assertThat(persistedContributions, containsInAnyOrder(publication.getEntityDescription().getContributors().toArray()));
     }
 
     @Test
@@ -438,7 +456,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
         var client = mock(AmazonDynamoDB.class);
         var expectedMessage = new RuntimeException("expectedMessage");
-        when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
+        when(client.query(any(QueryRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
         var failingResourceService = new ResourceService(client, clock);
@@ -525,8 +543,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
         Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
-        GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
-        when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
+        QueryResult responseWithInvalidItem = new QueryResult().withItems(
+            ItemUtils.toAttributeValues(invalidItem)
+        );
+        when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
         ResourceService failingResourceService = new ResourceService(mockClient, clock);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
@@ -535,6 +555,64 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Executable action = () -> failingResourceService.getPublication(SAMPLE_USER, someIdentifier);
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass, action);
+    }
+
+    @Test
+    void createResourceDoesNotPersistContributorsInResourceDao() throws BadRequestException {
+        var publication = createPersistedPublicationWithContributions();
+        var resourceDao = queryObjectForResource(publication);
+        var result = queryForPrimaryKey(resourceDao);
+
+        var fetchedDao = parseQueryResultAsType(result, ResourceDao.class);
+        assertTrue(fetchedDao.isPresent());
+        assertThat(fetchedDao.get().getResource().getEntityDescription().getContributors(), is(empty()));
+    }
+
+    @Test
+    void createResourcePersistsContributionsAsSeparateDao() throws BadRequestException, NotImplementedException {
+        var publication = createPersistedPublicationWithContributions();
+        var resourceDao = queryObjectForResource(publication);
+        var result = queryForPrimaryKey(resourceDao);
+
+        var fetchedDao = parseQueryResultAsType(result, ContributionDao.class);
+        assertTrue(fetchedDao.isPresent());
+    }
+
+    @Test
+    void GetPublicationReturnResourceWithMergedContributors()
+        throws BadRequestException, NotFoundException {
+        var publication = createPersistedPublicationWithContributions();
+
+        var fetchedPublication = resourceService.getPublication(publication);
+        var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
+        assertThat(fetchedContributors, is(notNullValue()));
+        assertThat(fetchedContributors.size(), is(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    void GetPublicationByIdentifierReturnResourceWithMergedContributors()
+        throws BadRequestException, NotFoundException {
+        var publication = createPersistedPublicationWithContributions();
+
+        var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
+        assertThat(fetchedContributors, is(notNullValue()));
+        assertThat(fetchedContributors.size(), is(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    void GetResourcesByOwnerReturnResourcesWithMergedContributors() throws BadRequestException,
+
+                                                                           NotImplementedException {
+
+        var owner = UserInstance.create(randomString(), randomUri());
+        createPersistedPublicationWithOwnerAndContributions(owner);
+        createPersistedPublicationWithOwnerAndContributions(owner);
+
+        var fetchedPublication = resourceService.getPublicationsByOwner(owner).get(0);
+        var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
+        assertThat(fetchedContributors, is(notNullValue()));
+        assertThat(fetchedContributors.size(), is(greaterThanOrEqualTo(1)));
     }
 
     @Test
@@ -1050,6 +1128,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private Publication createPersistedPublicationWithContributions() throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
+        publication.getEntityDescription().setContributors(List.of(
+            randomContributor(),
+            randomContributor()
+        ));
+        return Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+    }
+
+    private Publication createPersistedPublicationWithOwnerAndContributions(UserInstance userInstance)
+        throws BadRequestException {
+        var publication = injectOwner(userInstance, randomPublication().copy().withDoi(null).build());
         publication.getEntityDescription().setContributors(List.of(
             randomContributor(),
             randomContributor()

@@ -418,7 +418,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
-    @Test
+    @Test // TODO: Sondre fix
     void shouldUpdateResourceWhenAuthorizedUserIsContributorAndHasCristinId()
         throws BadRequestException, IOException, NotFoundException {
         Publication savedPublication = createSamplePublication();
@@ -551,7 +551,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             IsEqual.equalTo(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE)));
     }
 
-    @Test
+    @Test // TODO: Sondre fix
     void shouldUpdatePublicationWhenUserIsCuratorAndIsInSameInstitutionAsThePublicationContributor()
         throws BadRequestException, IOException, NotFoundException {
         Publication savedPublication = createSamplePublication();
