@@ -41,11 +41,6 @@ public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSe
         return new DoiRequestDao(doi);
     }
 
-    public static DoiRequestDao queryObject(ResourceDao queryObject) {
-        var doiRequest = DoiRequest.builder().withResourceIdentifier(queryObject.getResourceIdentifier()).build();
-        return new DoiRequestDao(doiRequest);
-    }
-
     public static DoiRequestDao queryObject(URI publisherId, User owner) {
         return queryObject(publisherId, owner, null);
     }

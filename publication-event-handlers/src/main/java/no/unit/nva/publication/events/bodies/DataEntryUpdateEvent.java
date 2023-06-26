@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.publication.model.business.Contribution;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -25,6 +26,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public static final String GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC =
         "PublicationService.GeneralSupportRequest.Update";
     private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
+    private static final String CONTRIBUTION_UPDATE_EVENT_TOPIC = "PublicationService.Contribution.Update";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
@@ -34,7 +36,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         DoiRequest.class, DOI_REQUEST_UPDATE_EVENT_TOPIC,
         PublishingRequestCase.class, PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC,
         Message.class, MESSAGE_UPDATE_EVENT_TOPIC,
-        GeneralSupportRequest.class, GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC
+        GeneralSupportRequest.class, GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC,
+        Contribution.class, CONTRIBUTION_UPDATE_EVENT_TOPIC
     );
     @JsonProperty(ACTION)
     private final String action;

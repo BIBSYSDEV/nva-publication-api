@@ -27,8 +27,8 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ContributionDao;
 import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -94,8 +94,8 @@ public class ReadResourceService {
         ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
         return (Resource) fetchedDao.getData();
     }
-
-    protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
+    
+    protected List<Dao> fetchResourceAndAssociatedItemsFromResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
         QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject)).orElseThrow();
@@ -106,9 +106,11 @@ public class ReadResourceService {
     private static List<Resource> queryResultToResourceList(QueryResult result) {
         return result.getItems()
                    .stream()
-                   .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
+                   .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, Dao.class))
+                   .filter(dao -> dao instanceof ResourceDao)
+                   .map(dao -> (ResourceDao) dao)
                    .map(ResourceDao::getData)
-                   .map(Resource.class::cast)
+                   .map(Resource.class::cast) //TODO: Join ContributionDaos into Resource
                    .collect(Collectors.toList());
     }
 
@@ -158,11 +160,11 @@ public class ReadResourceService {
     }
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
-        var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
+        var contributionsQueryObject = ContributionDao.queryObject(queryObject);
         Map<String, Condition> keyConditions = queryObject
                                                    .byResource(
                                                        queryObject.joinByResourceContainedOrderedType(),
-                                                       doiRequestQueryObject.joinByResourceContainedOrderedType()
+                                                       contributionsQueryObject.joinByResourceContainedOrderedType()
                                                    );
         return new QueryRequest()
                    .withTableName(tableName)
