@@ -45,6 +45,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String HANDLE_REPORTS_PATH = "HANDLE_REPORTS";
     public static final String PATH_SEPERATOR = "/";
+    public static final String UPDATE_REPORTS_PATH = "UPDATE_REPORTS";
     private static final int MAX_SLEEP_TIME = 100;
     private static final int SINGLE_EXPECTED_RECORD = 0;
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
@@ -105,8 +106,21 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .orElseThrow();
     }
 
+    private void storePublicationBeforeUpdate(Publication publication, S3Event s3Event) {
+        var fileUri = updateResourceFilePath(publication, s3Event);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), publication.toString())).orElseThrow();
+    }
+
+    private UriWrapper updateResourceFilePath(Publication publication, S3Event s3Event) {
+        return UriWrapper.fromUri(UPDATE_REPORTS_PATH)
+                   .addChild(timePath(s3Event))
+                   .addChild(publication.getIdentifier().toString());
+    }
+
     private Publication mergeTwoPublications(Publication publication, Publication existingPublication,
                                              S3Event s3Event) {
+        storePublicationBeforeUpdate(existingPublication, s3Event);
         return attempt(() -> updatedPublication(publication, existingPublication))
                    .map(resourceService::updatePublication)
                    .map(updatedPublication -> storeHandleAndPublicationIdentifier(updatedPublication, s3Event))
