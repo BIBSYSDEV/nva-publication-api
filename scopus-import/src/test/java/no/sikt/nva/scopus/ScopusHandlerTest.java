@@ -43,6 +43,7 @@ import static nva.commons.core.StringUtils.isNotBlank;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
@@ -143,6 +144,7 @@ import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -165,12 +167,10 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -1472,6 +1472,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
 
         assertThat(contributor.getAffiliations(), hasSize(expectedCristinPerson.getAffiliations().size()));
+
+        assertThat(contributor.getIdentity().getVerificationStatus(),
+                   anyOf(equalTo(ContributorVerificationStatus.VERIFIED),
+                         equalTo(ContributorVerificationStatus.NOT_VERIFIED)));
 
         var actualOrganizationFromAffiliation = contributor.getAffiliations()
                                                     .stream()

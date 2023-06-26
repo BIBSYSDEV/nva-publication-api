@@ -28,6 +28,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonPropertyOrder({CONTEXT, ID, TYPE, IDENTIFIERS, NAMES, CONTACT_DETAILS, IMAGE, AFFILIATIONS})
 public class Person implements JsonSerializable {
 
+    public static final String VERIFIED = "verified";
     @JsonProperty(TYPE)
     private static final String type = "Person";
     @JsonProperty(ID)
@@ -49,6 +50,8 @@ public class Person implements JsonSerializable {
     private String norwegianNationalId;
     @JsonProperty(RESERVED)
     private Boolean reserved;
+    @JsonProperty(VERIFIED)
+    private Boolean isVerified;
 
     private Person() {
 
@@ -77,6 +80,14 @@ public class Person implements JsonSerializable {
         this.affiliations = affiliations;
     }
 
+    public Boolean getVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(Boolean verified) {
+        isVerified = verified;
+    }
+
     public String getContext() {
         return context;
     }
@@ -89,48 +100,48 @@ public class Person implements JsonSerializable {
         return Objects.nonNull(identifiers) ? identifiers : Collections.emptySet();
     }
 
-    public URI getId() {
-        return id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
     public void setIdentifiers(Set<TypedValue> identifiers) {
         this.identifiers = identifiers;
     }
 
-    public Set<Affiliation> getAffiliations() {
-        return Objects.nonNull(affiliations) ? affiliations : Collections.emptySet();
-    }
-
-    public ContactDetails getContactDetails() {
-        return contactDetails;
-    }
-
-    public URI getImage() {
-        return image;
+    public URI getId() {
+        return id;
     }
 
     public void setId(URI id) {
         this.id = id;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public Set<Affiliation> getAffiliations() {
+        return Objects.nonNull(affiliations) ? affiliations : Collections.emptySet();
+    }
+
     public void setAffiliations(Set<Affiliation> affiliations) {
         this.affiliations = affiliations;
     }
 
-    public Set<TypedValue> getNames() {
-        return Objects.nonNull(names) ? names : Collections.emptySet();
+    public ContactDetails getContactDetails() {
+        return contactDetails;
     }
 
     public void setContactDetails(ContactDetails contactDetails) {
         this.contactDetails = contactDetails;
     }
 
+    public URI getImage() {
+        return image;
+    }
+
     public void setImage(URI image) {
         this.image = image;
+    }
+
+    public Set<TypedValue> getNames() {
+        return Objects.nonNull(names) ? names : Collections.emptySet();
     }
 
     public void setNames(Set<TypedValue> names) {
@@ -155,6 +166,13 @@ public class Person implements JsonSerializable {
 
     @JacocoGenerated
     @Override
+    public int hashCode() {
+        return Objects.hash(getContext(), getId(), getIdentifiers(), getNames(), getContactDetails(), getImage(),
+                            getAffiliations());
+    }
+
+    @JacocoGenerated
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -175,13 +193,6 @@ public class Person implements JsonSerializable {
     @Override
     public String toString() {
         return toJsonString();
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getContext(), getId(), getIdentifiers(), getNames(), getContactDetails(), getImage(),
-                            getAffiliations());
     }
 
     @JacocoGenerated
@@ -238,9 +249,13 @@ public class Person implements JsonSerializable {
             return this;
         }
 
+        public Builder withVerifiedStatus(Boolean verifiedStatus) {
+            person.setVerified(verifiedStatus);
+            return this;
+        }
+
         public Person build() {
             return person;
         }
     }
-
 }

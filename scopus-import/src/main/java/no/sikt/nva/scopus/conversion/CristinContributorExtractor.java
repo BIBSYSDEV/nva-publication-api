@@ -11,6 +11,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
@@ -55,7 +56,16 @@ public final class CristinContributorExtractor {
                               .findAny().map(TypedValue::getValue)
                               .orElse(null));
         identity.setId(cristinPerson.getId());
+        identity.setVerificationStatus(nonNull(cristinPerson.getVerified())
+                                           ? generateVerificationStatus(cristinPerson)
+                                           : ContributorVerificationStatus.CANNOT_BE_ESTABLISHED);
         return identity;
+    }
+
+    private static ContributorVerificationStatus generateVerificationStatus(Person cristinPerson) {
+        return cristinPerson.getVerified()
+                   ? ContributorVerificationStatus.VERIFIED
+                   : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
     private static List<Organization> generateOrganizations(
