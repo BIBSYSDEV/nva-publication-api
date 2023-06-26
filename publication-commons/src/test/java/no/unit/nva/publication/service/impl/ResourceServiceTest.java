@@ -7,7 +7,6 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
-import static no.unit.nva.publication.model.business.ImportStatus.IMPORTED;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
@@ -75,8 +74,8 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -88,7 +87,6 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
@@ -863,12 +861,34 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldCreateResourceFromImportCandidate() throws NotFoundException {
+        var importCandidate = randomImportCandidate();
+        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
+        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+        assertThat(persistedImportCandidate.getImportStatus(), is(equalTo(fetchedImportCandidate.getImportStatus())));
+        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
+    }
+
+    @Test
     void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
         var publication = randomImportCandidate();
         var persistedPublication = resourceService.autoImportPublication(publication);
         var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         assertThat(persistedPublication, is(equalTo(fetchedPublication)));
         assertThat(fetchedPublication.getStatus(), is(equalTo(PUBLISHED)));
+    }
+
+    @Test
+    void shouldUpdateImportStatus() throws NotFoundException {
+        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
+        var expectedStatus = ImportStatusFactory.createImported(randomPerson(), randomUri());
+        resourceService.updateImportStatus(importCandidate.getIdentifier(), expectedStatus);
+        var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        assertThat(fetchedPublication.getImportStatus(), is(equalTo(expectedStatus)));
+    }
+
+    private Username randomPerson() {
+        return new Username(randomString());
     }
 
     @Test
@@ -922,7 +942,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
                    .withStatus(PublicationStatus.PUBLISHED)
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus( ImportStatusFactory.createNotImported())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
                    .withHandle(randomUri())

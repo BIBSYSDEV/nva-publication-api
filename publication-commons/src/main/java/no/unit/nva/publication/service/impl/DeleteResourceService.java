@@ -4,8 +4,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -27,7 +27,7 @@ public class DeleteResourceService extends ServiceWithTransactions {
     public void deleteImportCandidate(ImportCandidate candidate) throws NotFoundException, BadMethodException {
         var importCandidate = readResourceService.getResourceByIdentifier(candidate.getIdentifier())
                                   .toImportCandidate();
-        if (ImportStatus.IMPORTED.equals(importCandidate.getImportStatus())) {
+        if (CandidateStatus.IMPORTED.equals( importCandidate.getImportStatus().getCandidateStatus())) {
             throw new BadMethodException(CAN_NOT_DELETE_IMPORT_CANDIDATE_MESSAGE);
         } else {
             var transactionWriteItem = deleteResource(Resource.fromImportCandidate(importCandidate));

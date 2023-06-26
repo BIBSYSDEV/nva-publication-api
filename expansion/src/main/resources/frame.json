@@ -3,7 +3,6 @@
     "@vocab": "https://nva.sikt.no/ontology/publication#",
     "hasPart": "https://bibsysdev.github.io/src/organization-ontology.ttl#hasPart",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
-
     "DIRHEALTH": "https://nva.sikt.no/ontology/approvals-body#DIRHEALTH",
     "NMA": "https://nva.sikt.no/ontology/approvals-body#NMA",
     "NARA": "https://nva.sikt.no/ontology/approvals-body#NARA",
@@ -13,6 +12,9 @@
     "Film": "https://nva.sikt.no/ontology/publication#Film",
     "InteractiveFilm": "https://nva.sikt.no/ontology/publication#InteractiveFilm",
     "AugmentedVirtualRealityFilm": "https://nva.sikt.no/ontology/publication#AugmentedVirtualRealityFilm",
+    "source": {
+      "@type": "@id"
+    },
     "approvedBy": {
       "@context": {
         "@vocab": "https://nva.sikt.no/ontology/approvals-body#"
@@ -172,23 +174,39 @@
     "venues": {
       "@container": "@set",
       "@id": "venue"
+    },
+    "nviType": {
+      "@type": "@vocab",
+      "@context": {
+        "@vocab": "https://nva.sikt.no/ontology/publication#"
+      }
+    },
+    "NviCandidate" : "https://nva.sikt.no/ontology/publication#NviCandidate",
+    "NonNviCandidate" : "https://nva.sikt.no/ontology/publication#NonNviCandidate",
+    "publicationContextUris": {
+      "@container": "@set"
     }
   },
   "@type": "Publication",
   "entityDescription": {
     "contributors": {
+      "@default": "@null",
       "identity": {
-        "@embed": "@always"
+        "@embed": "@always",
+        "@default": "@null"
       },
       "affiliations": {
         "@explicit": true,
+        "@default": "@null",
         "@embed": "@always",
         "type": "Organization",
         "labels": {
-          "@embed": "@always"
+          "@embed": "@always",
+          "@default": "@null"
         },
         "name": {
-          "@embed": "@always"
+          "@embed": "@always",
+          "@default": "@null"
         }
       }
     },
@@ -196,6 +214,18 @@
       "@embed": "@never",
       "@default": "@null"
     }
+  },
+  "doi": {
+    "@embed": "@never",
+    "@default": "@null"
+  },
+  "handle": {
+    "@embed": "@never",
+    "@default": "@null"
+  },
+  "link": {
+    "@embed": "@never",
+    "@default": "@null"
   },
   "topLevelOrganization": {
     "@container": "@set",

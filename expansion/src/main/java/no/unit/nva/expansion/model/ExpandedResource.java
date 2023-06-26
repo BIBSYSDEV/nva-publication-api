@@ -1,11 +1,12 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTRIBUTORS_POINTER;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.FUNDING_SOURCE_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.JOURNAL_ID_JSON_PTR;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.INSTANCE_TYPE_JSON_PTR;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLICATION_CONTEXT_ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
@@ -25,28 +26,28 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+
 import no.unit.nva.commons.json.JsonSerializable;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
 @JsonTypeName(ExpandedResource.TYPE)
 public final class ExpandedResource implements JsonSerializable, ExpandedDataEntry {
-
     // The ExpandedResource differs from ExpandedDoiRequest and ExpandedMessage
     // because is does not extend the Resource or Publication class,
     // but it contains its data as an inner Json Node.
-    public static final String ID_FIELD_NAME = "id";
+
     public static final String TYPE = "Publication";
-    public static final String JSON_LD_CONTEXT_FIELD = "@context";
+    private static final String ID_FIELD_NAME = "id";
+    private static final String JSON_LD_CONTEXT_FIELD = "@context";
+    private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
+    private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -76,8 +77,19 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static Set<URI> extractAffiliationUris(JsonNode indexDocument) {
-        var contributors = getContributors(indexDocument);
-        return getAffiliationsIdsFromJsonNode(contributors);
+        return extractUris(contributorNodes(indexDocument),"id");
+    }
+
+    public static URI extractPublicationContextUri(JsonNode indexDocument) {
+        return URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).asText());
+    }
+
+    public static boolean isPublicationContextTypeAnthology(JsonNode root) {
+        return CONTEXT_TYPE_ANTHOLOGY.equals(getPublicationContextType(root));
+    }
+
+    public static boolean isAcademicChapter(JsonNode root) {
+        return INSTANCE_TYPE_ACADEMIC_CHAPTER.equals(getInstanceType(root));
     }
 
     public List<URI> getPublicationContextUris() {
@@ -136,6 +148,10 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return toJsonString();
     }
 
+    private static String getInstanceType(JsonNode root) {
+        return root.at(INSTANCE_TYPE_JSON_PTR).asText();
+    }
+
     private static String enrichJson(UriRetriever uriRetriever, ObjectNode documentWithId) {
         return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever))
                    .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
@@ -188,31 +204,22 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static String getJournalIdStr(JsonNode root) {
-        return root.at(JOURNAL_ID_JSON_PTR).textValue();
+        return root.at(PUBLICATION_CONTEXT_ID_JSON_PTR).textValue();
     }
 
-    private static ArrayNode getContributors(JsonNode root) {
+    public static ArrayNode contributorNodes(JsonNode root) {
         return (ArrayNode) root.at(CONTRIBUTORS_POINTER);
     }
 
-    private static Set<URI> getAffiliationsIdsFromJsonNode(ArrayNode contributorsRoot) {
-        return StreamSupport.stream(contributorsRoot.spliterator(), false)
-                   .flatMap(ExpandedResource::extractAffiliations)
-                   .flatMap(ExpandedResource::extractAffiliationId)
-                   .collect(Collectors.toSet());
+    public static ArrayNode fundingNodes(JsonNode root) {
+        return (ArrayNode) root.at(FUNDING_SOURCE_POINTER);
     }
 
-    private static Stream<URI> extractAffiliationId(JsonNode child) {
-        return Optional.ofNullable(child.at("/id"))
+    public static Set<URI> extractUris(ArrayNode root, String nodeName) {
+        return root.findValues(nodeName).stream()
                    .map(JsonNode::textValue)
                    .map(URI::create)
-                   .stream();
-    }
-
-    private static Stream<JsonNode> extractAffiliations(JsonNode node) {
-        return Optional.ofNullable(node.at(AFFILIATIONS_POINTER))
-                   .map(o -> StreamSupport.stream(o.spliterator(), false))
-                   .orElse(Stream.empty());
+                   .collect(Collectors.toSet());
     }
 
     private static URI getBookSeriesUri(JsonNode root) {

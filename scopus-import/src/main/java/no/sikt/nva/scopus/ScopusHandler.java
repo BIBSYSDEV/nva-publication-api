@@ -17,8 +17,8 @@ import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -135,7 +135,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.getSource());
+        return SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
     }
 
     private RuntimeException handleSavingError(Failure<ImportCandidate> fail, S3Event event) {

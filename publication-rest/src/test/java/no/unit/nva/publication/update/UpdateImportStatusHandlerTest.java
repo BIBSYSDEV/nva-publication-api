@@ -1,27 +1,20 @@
-package no.unit.nva.publication.fetch;
+package no.unit.nva.publication.update;
 
-import static com.google.common.net.HttpHeaders.ACCEPT;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
-import static no.unit.nva.publication.fetch.FetchImportCandidateHandler.IMPORT_CANDIDATE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
+import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.SCOPUS_IDENTIFIER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
+import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -36,76 +29,90 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.zalando.problem.Problem;
 
-@WireMockTest(httpsEnabled = true)
-public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
+public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
 
     public static final String IDENTIFIER = "importCandidateIdentifier";
+    public static final String TABLE_NAME = "import-candidates";
+    private static final Context CONTEXT = mock(Context.class);
     private ByteArrayOutputStream output;
-    private Context context;
-    private ResourceService resourceService;
-    private FetchImportCandidateHandler handler;
+    private ResourceService importCandidateService;
+    private UpdateImportStatusHandler handler;
 
     @BeforeEach
     public void setUp() {
-        super.init();
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
-        resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        context = mock(Context.class);
+        super.init(TABLE_NAME);
         output = new ByteArrayOutputStream();
-        handler = new FetchImportCandidateHandler(resourceService);
+        importCandidateService = new ResourceService(client, TABLE_NAME);
+        handler = new UpdateImportStatusHandler(importCandidateService);
     }
 
     @Test
-    void shouldReturnImportCandidateSuccessfullyWhenImportCandidateIsInDatabase()
-        throws NotFoundException, IOException {
+    void shouldReturnUnauthorizedIfUserHasNoAccessRights() throws IOException, NotFoundException {
         var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate.getIdentifier());
-        handler.handleRequest(request, output, context);
+        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.USER);
+        handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
-        var responseImportCandidate = response.getBodyObject(ImportCandidate.class);
-        assertThat(importCandidate, is(equalTo(responseImportCandidate)));
+
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
     @Test
-    void shouldReturnNotFoundWhenImportCandidateDoesNotExist() throws IOException {
-        var request = createRequest(SortableIdentifier.next());
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        var detail = response.getBodyObject(Problem.class).getDetail();
+    void shouldReturnNotFoundWhenAttemptingToUpdateStatusOnNonExistingImportCandidate() throws IOException {
+        var importCandidate = createImportCandidate();
+        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
-        assertThat(detail, containsString(IMPORT_CANDIDATE_NOT_FOUND_MESSAGE));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
     }
 
-    private InputStream createRequest(SortableIdentifier identifier) throws JsonProcessingException {
-        var pathParameters = Map.of(IDENTIFIER, identifier.toString());
-        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        return new HandlerRequestBuilder<InputStream>(restApiMapper)
-                   .withHeaders(headers)
+    @Test
+    void shouldUpdateImportStatusSuccessfully() throws NotFoundException, IOException {
+        var importCandidate = createPersistedImportCandidate();
+        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
+    }
+
+    private static ImportStatus notApplicableImportStatus() {
+        return ImportStatusFactory.createNotApplicable(new Username(randomString()), null);
+    }
+
+    private InputStream request(ImportCandidate importCandidate, ImportStatus importStatus, AccessRight accessRight)
+        throws JsonProcessingException {
+        Map<String, String> pathParameters = Map.of(IDENTIFIER, importCandidate.getIdentifier().toString());
+
+        var customerId = importCandidate.getPublisher().getId();
+        return new HandlerRequestBuilder<ImportStatus>(restApiMapper)
+                   .withUserName(importCandidate.getResourceOwner().getOwner().getValue())
+                   .withCurrentCustomer(customerId)
+                   .withBody(importStatus)
+                   .withAccessRights(customerId, accessRight.name())
                    .withPathParameters(pathParameters)
                    .build();
     }
 
     private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
-        var importCandidate = resourceService.persistImportCandidate(createImportCandidate());
-        return resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        var candidate = createImportCandidate();
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
     private ImportCandidate createImportCandidate() {
@@ -124,7 +131,8 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withFundings(List.of(new FundingBuilder().build()))
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SCOPUS_IDENTIFIER, randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
                    .build();

@@ -3,12 +3,14 @@ package no.unit.nva.publication.create;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.exception.NotAuthorizedException;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -29,14 +31,15 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
     public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE = "Resource has already been imported";
-    public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE = "Resource is missing scopus "
-                                                                                     + "identifier";
+    public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE =
+        "Resource is missing scopus identifier";
     private final ResourceService candidateService;
     private final ResourceService publicationService;
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
-        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE), ResourceService.defaultService(PUBLICATIONS_TABLE));
+        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE),
+             ResourceService.defaultService(PUBLICATIONS_TABLE));
     }
 
     public CreatePublicationFromImportCandidateHandler(ResourceService importCandidateService,
@@ -52,7 +55,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         validateAccessRight(requestInfo);
         validateImportCandidate(input);
         var identifier = input.getIdentifier();
-        return attempt(() -> candidateService.updateImportStatus(identifier, ImportStatus.IMPORTED))
+        //TODO: refactor this
+        return attempt(() -> candidateService.updateImportStatus(identifier,
+                                                                 ImportStatusFactory.createImported(null, null)))
                    .map(publicationService::autoImportPublication)
                    .map(PublicationResponse::fromPublication)
                    .orElseThrow(failure -> rollbackAndThrowException(input));
@@ -68,7 +73,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
-        if (ImportStatus.IMPORTED.equals(importCandidate.getImportStatus())) {
+        if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().getCandidateStatus())) {
             throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE);
         }
         if (isNull(getScopusIdentifier(importCandidate))) {
@@ -97,12 +102,12 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.getSource());
+        return SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
     }
 
     private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)
         throws NotFoundException {
-        candidateService.updateImportStatus(importCandidate.getIdentifier(), ImportStatus.NOT_IMPORTED);
+        candidateService.updateImportStatus(importCandidate.getIdentifier(), ImportStatusFactory.createNotImported());
         return new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);
     }
 }

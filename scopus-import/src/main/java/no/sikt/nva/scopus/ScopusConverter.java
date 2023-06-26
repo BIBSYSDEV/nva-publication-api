@@ -29,8 +29,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
@@ -109,7 +109,7 @@ public class ScopusConverter {
                 .withEntityDescription(generateEntityDescription())
                 .withModifiedDate(Instant.now())
                 .withStatus(PublicationStatus.PUBLISHED)
-                .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .withImportStatus(ImportStatusFactory.createNotImported())
                 .build();
     }
 

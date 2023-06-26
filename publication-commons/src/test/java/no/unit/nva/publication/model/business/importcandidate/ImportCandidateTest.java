@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business;
+package no.unit.nva.publication.model.business.importcandidate;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -28,28 +28,44 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.business.Resource;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import java.util.stream.Stream;
 
 public class ImportCandidateTest {
+
+    public static Stream<Arguments> importStatuses() {
+        return Stream.of(Arguments.of( ImportStatusFactory.createImported(randomPerson(), randomUri())),
+                Arguments.of( ImportStatusFactory.createNotApplicable(randomPerson(), randomString())));
+    }
+
+    private static Username randomPerson() {
+        return new Username(randomString());
+    }
 
     @Test
     void shouldCreatePublicationFromImportCandidate() {
         var randomImportCandidate = randomImportCandidate();
         var expectedPublication = createExpectedPublication(randomImportCandidate);
         var actualImportedPublication = randomImportCandidate.toPublication();
-        assertThat(randomImportCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+        assertThat(randomImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
     }
 
     @Test
     void builderShouldAcceptPublication() {
         var randomPublication = createPublicationWithoutStatus();
-        var importCandidate = new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
-                                  .withImportStatus(ImportStatus.NOT_IMPORTED)
-                                  .build();
-        var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
+        var importCandidate =
+            new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
+                    .withImportStatus( ImportStatusFactory.createNotImported())
+                .build();
 
-        assertThat(importCandidate.getImportStatus(), is(equalTo(ImportStatus.NOT_IMPORTED)));
+        var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
+        assertThat(importCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
     }
 
@@ -60,6 +76,18 @@ public class ImportCandidateTest {
         var regeneratedImportCandidate = JsonUtils.dtoObjectMapper.readValue(json, ImportCandidate.class);
         assertThat(regeneratedImportCandidate, is(equalTo(regeneratedImportCandidate)));
     }
+
+
+
+    @ParameterizedTest
+    @DisplayName("should be possible to swap imported status to other status")
+    @MethodSource("importStatuses")
+    void shouldBePossibleToTransitionLegalImportStatus(ImportStatus importStatus) {
+        var randomImportCandidate = randomImportCandidate();
+        randomImportCandidate.setImportStatus(importStatus);
+        assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));
+    }
+
 
     private static Funding randomFunding() {
         return new FundingBuilder().withId(randomUri()).build();
@@ -73,7 +101,7 @@ public class ImportCandidateTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                .withImportStatus( ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withDoi(randomDoi())

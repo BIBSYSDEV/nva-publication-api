@@ -165,11 +165,13 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.ImportCandidate;
-import no.unit.nva.publication.model.business.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -1154,7 +1156,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static String getScopusIdentifier(Publication publication) {
         return publication.getAdditionalIdentifiers()
                    .stream()
-                   .filter(id -> "scopusIdentifier".equals(id.getSource()))
+                   .filter(id -> "scopusIdentifier".equals(id.getSourceName()))
                    .findFirst()
                    .map(AdditionalIdentifier::getValue)
                    .orElse(null);
@@ -1173,7 +1175,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatus.NOT_IMPORTED)
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
