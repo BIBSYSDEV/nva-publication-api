@@ -18,6 +18,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -115,7 +116,7 @@ class ExpandedResourceTest {
     }
 
     private static void mockGetRawContentResponse(UriRetriever uriRetriever, URI uri, String response) {
-        when(uriRetriever.getRawContent(eq(uri), any()))
+        when(uriRetriever.getRawContent(eq(uri), anyString()))
                 .thenReturn(Optional.of(response));
     }
 
@@ -158,9 +159,9 @@ class ExpandedResourceTest {
                                                                          URI publisherId,
                                                                          String publisherName)
             throws IOException {
-        String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
+        var publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
         mockGetRawContentResponse(mockUriRetriever, journalId, publicationChannelSampleJournal);
-        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
+        var publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
         mockGetRawContentResponse(mockUriRetriever, publisherId, publicationChannelSamplePublisher);
     }
 
