@@ -592,7 +592,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client);
         ticketService = new TicketService(client);
-        uriRetriever = new UriRetriever();
+        uriRetriever = mock(UriRetriever.class);
         expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
     }
 

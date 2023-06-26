@@ -37,6 +37,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final String ID_FIELD = "/id";
     private static final String SOURCE = "source";
     private static final String CONTEXT = "@context";
+    public static final String CRISTIN_VERSION = "; version=2023-05-26";
     private final UriRetriever uriRetriever;
 
     @Deprecated
@@ -160,7 +161,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Stream<String> fetchContentRecursively(URI uri) {
-        var affiliation = fetch(uri);
+        var affiliation = fetchOrganizations(uri);
         if (affiliation.isEmpty()) {
             return Stream.empty();
         }
@@ -173,5 +174,9 @@ public class IndexDocumentWrapperLinkedData {
 
     private Optional<String> fetch(URI externalReference) {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
+    }
+
+    private Optional<String> fetchOrganizations(URI externalReference) {
+        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION);
     }
 }

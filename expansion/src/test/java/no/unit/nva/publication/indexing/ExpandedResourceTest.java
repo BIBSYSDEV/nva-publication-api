@@ -21,12 +21,17 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -71,21 +76,21 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ExpandedResourceTest {
 
     private static final String SERIES_LEVEL_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/level";
+            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+                    + "/series/level";
     private static final String PUBLISHER_LEVEL_JSON_PTR = "/entityDescription/reference/publicationContext"
-                                                           + "/entityDescription/reference/publicationContext"
-                                                           + "/publisher/level";
+            + "/entityDescription/reference/publicationContext"
+            + "/publisher/level";
     private static final String PUBLISHER_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/publisher/id";
+            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+                    + "/publisher/id";
     private static final String SERIES_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/id";
+            "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
+                    + "/series/id";
     private static final String PUBLISHER_NAME_JSON_PTR =
-        "/entityDescription/reference/publicationContext/publisher/name";
+            "/entityDescription/reference/publicationContext/publisher/name";
     private static final String SERIES_NAME_JSON_PTR =
-        "/entityDescription/reference/publicationContext/series/name";
+            "/entityDescription/reference/publicationContext/series/name";
     private static final Set<String> ACCEPTABLE_FIELD_NAMES = Set.of("id", "name", "labels", "type", "hasPart");
     private static final String ID_NAMESPACE = System.getenv("ID_NAMESPACE");
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
@@ -378,6 +383,14 @@ class ExpandedResourceTest {
     }
 
     @Test
+    void shouldUseApiVersionWhenLookingUpOrganizations() throws JsonProcessingException {
+        var publication = PublicationGenerator.randomPublication();
+        var orgIds = getOrgIdsForContributorAffiliations(publication);
+        ExpandedResource.fromPublication(uriRetriever, publication);
+        orgIds.forEach(orgId -> verify(uriRetriever, times(1)).getRawContent(orgId, "application/ld+json; version=2023-05-26"));
+    }
+
+    @Test
     void shouldNotExpandDoiWhenIdUsedElsewhere() throws IOException {
         var bookAnthology = bookAnthologyWithDoiReferencedInAssociatedLink();
         mockUriRetrieverResponses(bookAnthology);
@@ -551,6 +564,22 @@ class ExpandedResourceTest {
                    .addChild(identifier.toString())
                    .getUri();
     }
+
+    private static Set<URI> getOrgIdsForContributorAffiliations(Publication publication) {
+        return publication
+                .getEntityDescription()
+                .getContributors()
+                .stream()
+                .map(Contributor::getAffiliations)
+                .map(ExpandedResourceTest::getOrgIds)
+                .flatMap(Set::stream).collect(Collectors.toSet());
+    }
+
+    private static Set<URI> getOrgIds(List<Organization> organizations) {
+        return organizations.stream().map(Organization::getId).collect(Collectors.toSet());
+    }
+
+
 
     private void mockUriRetrieverResponses(Publication bookAnthology) throws IOException {
         mockUriRetrieverPublicationChannelResponses(bookAnthology);
