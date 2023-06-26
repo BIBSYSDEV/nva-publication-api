@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
@@ -9,7 +10,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.storage.ContributionDao;
@@ -41,6 +45,9 @@ public class Contribution implements Entity {
     @JsonProperty(CONTRIBUTOR)
     private Contributor contributor;
 
+    @JsonProperty
+    private Set<AdditionalIdentifier> additionalIdentifiers;
+
     @JacocoGenerated
     public Contribution() {
     }
@@ -60,6 +67,7 @@ public class Contribution implements Entity {
                    .withIdentifier(SortableIdentifier.next())
                    .withContributor(contributor)
                    .withResourceIdentifier(resource.getIdentifier())
+                   .withAdditionalIdentifiers(resource.getAdditionalIdentifiers())
                    .build();
     }
 
@@ -147,6 +155,14 @@ public class Contribution implements Entity {
         return resourceIdentifier;
     }
 
+    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+        return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
+    }
+
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        this.additionalIdentifiers = additionalIdentifiers;
+    }
+
     public static final class Builder {
 
         private final Contribution contribution;
@@ -188,6 +204,11 @@ public class Contribution implements Entity {
 
         public Builder withContributor(Contributor contributor) {
             contribution.setContributor(contributor);
+            return this;
+        }
+
+        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+            contribution.additionalIdentifiers = additionalIdentifiers;
             return this;
         }
 

@@ -130,9 +130,9 @@ public class ResourceDao extends Dao
                    .collect(Collectors.toList());
     }
 
-    public List<ContributionDao> fetchAllContributions(AmazonDynamoDB client) {
+    public List<ContributionDao> fetchAllContributions(AmazonDynamoDB client, String tableName) {
         var queryRequest = new QueryRequest()
-                               .withTableName(RESOURCES_TABLE_NAME)
+                               .withTableName(tableName)
                                .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                                .withKeyConditions(byResource(ContributionDao.BY_CONTRIBUTION_INDEX_ORDER_PREFIX));
         return client.query(queryRequest)
@@ -209,7 +209,7 @@ public class ResourceDao extends Dao
     
     private boolean keyEqualsCristin(AdditionalIdentifier identifier) {
         return Optional.ofNullable(identifier)
-                   .map(AdditionalIdentifier::getSource)
+                   .map(AdditionalIdentifier::getSourceName)
                    .map(CRISTIN_SOURCE::equals)
                    .orElse(false);
     }

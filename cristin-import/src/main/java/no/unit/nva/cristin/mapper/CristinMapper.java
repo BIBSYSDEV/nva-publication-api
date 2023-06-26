@@ -359,7 +359,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private boolean hasIdenticalSourceCode(String sourceCode, AdditionalIdentifier additionalIdentifier) {
-        return additionalIdentifier.getSource().equals(sourceCode);
+        return additionalIdentifier.getSourceName().equals(sourceCode);
     }
 
     private Set<AdditionalIdentifier> extractCristinSourceids(CristinObject cristinObject) {

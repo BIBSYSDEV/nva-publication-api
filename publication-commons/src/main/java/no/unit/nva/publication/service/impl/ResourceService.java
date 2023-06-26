@@ -325,7 +325,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     public Stream<Contribution> fetchAllContributionsForResource(Resource resource) {
         var dao = (ResourceDao) resource.toDao();
-        return dao.fetchAllContributions(getClient())
+        return dao.fetchAllContributions(getClient(), tableName)
                    .stream()
                    .map(ContributionDao::getData)
                    .map(Contribution.class::cast);
@@ -492,12 +492,13 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
-        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-
         var contributionDaos = contributionDaosForContributionsInsertion(resource);
         var contributionTransactions = transactionItemsForContributionsInsertion(contributionDaos);
         var contributionIdentifierTransactions = transactionItemsForContributionIdentifiers(contributionDaos);
+
+        var resourceWithoutContributions= copyResourceWithoutContributions(resource);
+        var resourceEntry = newPutTransactionItem(new ResourceDao(resourceWithoutContributions), tableName);
+        var uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
 
         List<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(resourceEntry);
@@ -505,6 +506,14 @@ public class ResourceService extends ServiceWithTransactions {
         transactionItems.addAll(contributionTransactions);
         transactionItems.addAll(contributionIdentifierTransactions);
         return transactionItems.toArray(TransactWriteItem[]::new);
+    }
+
+    private Resource copyResourceWithoutContributions(Resource publication) {
+        if (publication.getEntityDescription() == null) {
+            return publication.copy().build();
+        } else {
+            return publication.copy().withEntityDescription(publication.getEntityDescription().copy().withContributors(null).build()).build();
+        }
     }
 
     private List<TransactWriteItem> transactionItemsForContributionsInsertion(List<ContributionDao> daos) {
