@@ -3,14 +3,15 @@ package no.sikt.nva.brage.migration.lambda;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder.randomHandle;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -38,6 +39,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
@@ -55,15 +57,20 @@ import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCo
 import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -752,6 +759,23 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    is(equalTo(nvaBrageMigrationDataGenerator.getNvaPublication().getHandle().toString())));
     }
 
+    @Test
+    void shouldSavePublicationBeforeUpdateInS3() throws IOException, BadRequestException {
+        var cristinIdentifier = randomString();
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withCristinIdentifier(cristinIdentifier)
+                                                 .build();
+        var existingPublication = persistPublicationWithCristinIdAndHandle(cristinIdentifier,
+                                                                           nvaBrageMigrationDataGenerator.getNvaPublication()
+                                                                               .getHandle());
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+        var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication.getIdentifier());
+        assertThat(storedPublication, is(equalTo(existingPublication.toString())));
+    }
+
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)
         throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.readValue(
@@ -770,6 +794,24 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                     throw new RuntimeException(e);
                 }
             });
+    }
+
+    private Publication persistPublicationWithCristinIdAndHandle(String cristinIdentifier, URI handle)
+        throws BadRequestException {
+        var publication =
+            randomPublication().copy()
+                .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                .withHandle(handle)
+                .build();
+        return Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+    }
+
+    private String extractUpdateReportFromS3(S3Event s3Event, SortableIdentifier identifier) {
+        var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        var uri = UriWrapper.fromUri(UPDATE_REPORTS_PATH).addChild(timestamp).addChild(String.valueOf(identifier));
+        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        return s3Driver.getFile(uri.toS3bucketPath());
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
@@ -980,7 +1022,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                    "description",
                                    UUID,
                                    new License("someLicense", new NvaLicense(URI.create("https://creativecommons"
-                                                                              + ".org/licenses/by-nc/4.0"))),
+                                                                                        + ".org/licenses/by-nc/4.0"))),
                                    EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));
