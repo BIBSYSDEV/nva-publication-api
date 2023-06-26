@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class CristinImportPublicationMerger {
@@ -37,7 +36,6 @@ public class CristinImportPublicationMerger {
         return fillNewPublicationWithMetadataFromBrage(publicationForUpdating);
     }
 
-    @NotNull
     private Publication fillNewPublicationWithMetadataFromBrage(Publication publicationForUpdating) {
         publicationForUpdating.getEntityDescription().setDescription(getCorrectDescription());
         publicationForUpdating.getEntityDescription().setAbstract(getCorrectAbstract());
@@ -46,8 +44,15 @@ public class CristinImportPublicationMerger {
     }
 
     private AssociatedArtifactList mergeAssociatedArtifacts() {
-        var associatedArtifacts1 = bragePublication.getAssociatedArtifacts();
+        return cristinPublication.getAssociatedArtifacts().isEmpty()
+                   ? mergeFiles()
+                   : cristinPublication.getAssociatedArtifacts();
+
+    }
+
+    private AssociatedArtifactList mergeFiles() {
         var associatedArtifactsToExistingPublication1 = cristinPublication.getAssociatedArtifacts();
+        var associatedArtifacts1 = bragePublication.getAssociatedArtifacts();
         var comparator = new AssociatedArtifactComparator(s3Client, associatedArtifactsToExistingPublication1);
         var list = new ArrayList<>(associatedArtifactsToExistingPublication1);
         associatedArtifacts1.stream()
