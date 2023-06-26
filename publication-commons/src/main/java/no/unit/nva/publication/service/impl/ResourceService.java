@@ -124,6 +124,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     /**
      * Should not be used initiating resourceService for resource-table
+     *
      * @param tableName name of table
      * @return ResourceService
      */
@@ -331,6 +332,10 @@ public class ResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var resource = fetchResourceForElevatedUser(userInstance.getOrganizationUri(), publicationIdentifier);
         return resource.fetchAllTickets(this);
+    }
+
+    public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
+        return updateResourceService.updateImportCandidate(importCandidate);
     }
 
     private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
