@@ -102,6 +102,7 @@ import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
@@ -418,7 +419,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
-    @Test // TODO: Sondre fix
+    @Test
     void shouldUpdateResourceWhenAuthorizedUserIsContributorAndHasCristinId()
         throws BadRequestException, IOException, NotFoundException {
         Publication savedPublication = createSamplePublication();
@@ -599,12 +600,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
         var contributorWithoutCristinId = new Contributor.Builder()
-            .withRole(new RoleType(Role.ARCHITECT))
-            .withIdentity(new Identity.Builder().withName(randomString()).build())
-            .build();
+                                              .withRole(new RoleType(Role.ARCHITECT))
+                                              .withIdentity(new Identity.Builder().withName(randomString()).build())
+                                              .withSequence(randomInteger())
+                                              .build();
         var contributorWithoutIdentity = new Contributor.Builder()
-            .withRole(new RoleType(Role.ARCHITECT))
-            .build();
+                                             .withRole(new RoleType(Role.ARCHITECT))
+                                             .withSequence(randomInteger())
+                                             .build();
         publication.getEntityDescription().getContributors()
             .addAll(List.of(contributorWithoutCristinId, contributorWithoutIdentity));
     }
@@ -618,10 +621,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Contributor createContributorForPublicationUpdate(URI cristinId) {
         return new Contributor.Builder()
-            .withRole(new RoleType(Role.ARCHITECT))
-            .withIdentity(new Identity.Builder().withId(cristinId).withName(randomString()).build())
-            .withAffiliations(getListOfRandomOrganizations())
-            .build();
+                   .withRole(new RoleType(Role.ARCHITECT))
+                   .withSequence(randomInteger(1000))
+                   .withIdentity(new Identity.Builder().withId(cristinId).withName(randomString()).build())
+                   .withAffiliations(getListOfRandomOrganizations())
+                   .build();
     }
 
     private List<Organization> getListOfRandomOrganizations() {

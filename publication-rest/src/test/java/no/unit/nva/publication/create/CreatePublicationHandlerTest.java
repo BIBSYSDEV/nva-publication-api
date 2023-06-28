@@ -44,7 +44,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -57,6 +60,7 @@ import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -419,7 +423,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withReference(
                 new Reference.Builder()
                     .withDoi(RandomDataGenerator.randomDoi())
-                    .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
                     .build())
             .build();
     }

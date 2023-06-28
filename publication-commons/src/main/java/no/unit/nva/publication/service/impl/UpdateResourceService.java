@@ -16,10 +16,16 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -36,9 +42,12 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.storage.ContributionDao;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
+import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
@@ -81,9 +90,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
         var updateResourceTransactionItem = updateResource(resource);
         var updateTicketsTransactionItems = updateTickets(resource);
+        var updateContributionTransactionItems = updateContributions(resource);
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResourceTransactionItem);
         transactionItems.addAll(updateTicketsTransactionItems);
+        transactionItems.addAll(updateContributionTransactionItems);
 
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
@@ -93,11 +104,27 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
         throws NotFoundException {
-        Resource existingResource = readResourceService.getResource(oldOwner, identifier);
-        Resource newResource = updateResourceOwner(newOwner, existingResource);
-        TransactWriteItem deleteAction = newDeleteTransactionItem(new ResourceDao(existingResource));
-        TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource), tableName);
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
+        var existingResource = readResourceService.getResource(oldOwner, identifier);
+        var existingResourceDao = new ResourceDao(existingResource);
+        var newResource = updateResourceOwner(newOwner, existingResource);
+        var contributions = existingResourceDao.fetchAllContributions(getClient(), tableName);
+        var deleteResourceAction = newDeleteTransactionItem(existingResourceDao);
+        var insertResourceAction = newPutTransactionItem(new ResourceDao(newResource), tableName);
+
+        var newContributionDaos = contributionDaosForContributionsInsertion(newResource);
+
+        var deleteOldContributions = deleteContributionTransactionItems(contributions);
+        var newContributions = transactionItemsForContributionsInsertion(newContributionDaos);
+        var newContributionIdentifiers = transactionItemsForContributionIdentifiers(newContributionDaos);
+
+        var transactions =  new ArrayList<TransactWriteItem>();
+        transactions.add(deleteResourceAction);
+        transactions.add(insertResourceAction);
+        transactions.addAll(deleteOldContributions);
+        transactions.addAll(newContributions);
+        transactions.addAll(newContributionIdentifiers);
+
+        TransactWriteItemsRequest request = newTransactWriteItemsRequest(transactions);
         sendTransactionWriteRequest(request);
     }
 
@@ -203,6 +230,69 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .map(put -> new TransactWriteItem().withPut(put))
                    .collect(Collectors.toList());
     }
+
+    private List<TransactWriteItem> updateContributions(Resource resource) {
+        var dao = new ResourceDao(resource);
+        var exisitingContributionDao = dao.fetchAllContributions(getClient(), tableName);
+        var newContributionDaos = contributionDaosForContributionsInsertion(resource);
+
+        var delete = deleteContributionTransactionItems(exisitingContributionDao);
+        var contributionTransactions = transactionItemsForContributionsInsertion(newContributionDaos);
+        var contributionIdentifierTransactions = transactionItemsForContributionIdentifiers(newContributionDaos);
+
+        var transactions =  new ArrayList<TransactWriteItem>();
+        transactions.addAll(delete);
+        transactions.addAll(contributionTransactions);
+        transactions.addAll(contributionIdentifierTransactions);
+        return transactions;
+    }
+
+    private List<TransactWriteItem> transactionItemsForContributionsInsertion(List<ContributionDao> daos) {
+        return daos
+                   .stream()
+                   .map(contributionDao -> newPutTransactionItem(contributionDao, tableName))
+                   .collect(Collectors.toList());
+    }
+
+    private List<ContributionDao> contributionDaosForContributionsInsertion(Resource resource) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .orElseGet(EntityDescription::new)
+                   .getContributors()
+                   .stream()
+                   .map(contributor -> new ContributionDao(resource, contributor))
+                   .collect(Collectors.toList());
+    }
+
+    private List<TransactWriteItem> transactionItemsForContributionIdentifiers(List<ContributionDao> daos) {
+        return daos.stream()
+                   .map(Dao::getIdentifier)
+                   .map(Objects::toString)
+                   .map(IdentifierEntry::new)
+                   .map(identity -> newPutTransactionItem(identity, tableName))
+                   .collect(Collectors.toList());
+    }
+
+    private List<TransactWriteItem> deleteContributionTransactionItems(List<ContributionDao> daos) {
+        if (!daos.isEmpty()) {
+            return deleteContributionsTransactionItems(daos);
+        }
+        return Collections.emptyList();
+    }
+
+    private List<TransactWriteItem> deleteContributionsTransactionItems(List<ContributionDao> contributionDaos) {
+        return contributionDaos.stream()
+                   .map(this::deleteContributionsTransactionItem)
+                   .flatMap(Collection::stream).collect(Collectors.toList());
+    }
+
+    private List<TransactWriteItem> deleteContributionsTransactionItem(ContributionDao contributionDao) {
+        WithPrimaryKey identifierEntry = IdentifierEntry.create(contributionDao);
+        return
+            Stream.of(contributionDao, identifierEntry)
+                .map(this::newDeleteTransactionItem)
+                .collect(Collectors.toList());
+    }
+
 
     private TransactWriteItem updateResource(Resource resourceUpdate) {
 
