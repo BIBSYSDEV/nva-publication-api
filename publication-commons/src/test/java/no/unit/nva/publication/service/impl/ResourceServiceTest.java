@@ -13,6 +13,7 @@ import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANN
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -60,6 +61,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -112,6 +114,7 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -616,6 +619,29 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    @Disabled("Does not work yet")
+    void shouldReturnResourceAndContributorsWhenResourceIsRequestedByIdentifier() throws BadRequestException,
+                                                                                          NotFoundException {
+        var publication = createPersistedPublicationWithManyContributions(7000);
+
+        var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
+        assertThat(fetchedContributors.size(), is(equalTo(7000)));
+    }
+
+    @Test
+    void shouldReturnResourceAndContributorsInSameOrderAsInsertionWhenResourceIsRequestedByIdentifier() throws BadRequestException,
+                                                                                      NotFoundException {
+        var publication = createPersistedPublicationWithManyContributions(10);
+        var insertedContributors = publication.getEntityDescription().getContributors();
+
+        var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
+        assertThat(fetchedContributors, is(notNullValue()));
+        assertThat(fetchedContributors, is(equalTo(insertedContributors)));
+    }
+
+    @Test
     void shouldPublishResourceWhenClientRequestsToPublish() throws ApiGatewayException {
         var resource = createPersistedPublicationWithDoi();
         var userInstance = UserInstance.fromPublication(resource);
@@ -1105,6 +1131,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(randomInteger(10000))
                    .withAffiliations(List.of(
                        randomOrganization()
                    ))
@@ -1132,6 +1159,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
             randomContributor(),
             randomContributor()
         ));
+        return Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+    }
+
+    private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {
+        var publication = randomPublication().copy().withDoi(null).build();
+        var contributions =
+            IntStream.rangeClosed(1, amount).mapToObj(i -> randomContributor()).collect(Collectors.toList());
+        publication.getEntityDescription().setContributors(
+            contributions
+        );
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
@@ -1371,6 +1409,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withPublisher(userOrganization(expectedOwner))
                    .withCreatedDate(originalResource.getCreatedDate())
                    .withModifiedDate(updatedResource.getModifiedDate())
+                   .withEntityDescription(originalResource.getEntityDescription())
                    .build();
     }
 

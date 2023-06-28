@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
@@ -294,7 +295,10 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
-        deleteResourceService.deleteImportCandidate(importCandidate);
+        var contributions =
+            new ResourceDao(Resource.fromImportCandidate(importCandidate))
+                .fetchAllContributions(getClient(), tableName);
+        deleteResourceService.deleteImportCandidate(importCandidate, contributions);
         logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE + importCandidate.getIdentifier());
     }
 
@@ -309,10 +313,10 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     //TODO: redesign migration process?
-    public Entity migrate(Entity dataEntry) {
+    public List<Entity> migrate(Entity dataEntry) {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
-                   : dataEntry;
+                   : List.of(dataEntry);
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -358,6 +362,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .stream()
                    .map(attempt(this::migrate))
                    .map(Try::orElseThrow)
+                   .flatMap(List::stream)
                    .collect(Collectors.toList());
     }
 
@@ -374,8 +379,22 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry) {
-        return dataEntry;
+    private List<Entity> migrateResource(Resource dataEntry) {
+        if (isNull(dataEntry.getEntityDescription()) || dataEntry.getEntityDescription().getContributors().isEmpty()) {
+            return List.of();
+        }
+
+        var contributors =
+            dataEntry.getEntityDescription().getContributors().stream().map(c -> Contribution.create(dataEntry, c)).collect(
+                Collectors.toList());
+
+        dataEntry.getEntityDescription().setContributors(null);
+
+        var entries = new ArrayList<Entity>();
+        entries.add(dataEntry);
+        entries.addAll(contributors);
+
+        return entries;
     }
 
     private void writeToDynamoInBatches(List<WriteRequest> writeRequests) {
@@ -458,11 +477,20 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedImportCandidate(newResource);
     }
 
-    private TransactWriteItem[] transactionItemsForNewImportCandidateInsertion(Resource newResource) {
-        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(newResource), tableName);
-        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource,
-                                                                                                          tableName);
-        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
+    private TransactWriteItem[] transactionItemsForNewImportCandidateInsertion(Resource resource) {
+        var contributionDaos = contributionDaosForContributionsInsertion(resource);
+        var contributionTransactions = transactionItemsForContributionsInsertion(contributionDaos);
+        var contributionIdentifierTransactions = transactionItemsForContributionIdentifiers(contributionDaos);
+
+        var resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
+        var uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
+
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(resourceEntry);
+        transactionItems.add(uniqueIdentifierEntry);
+        transactionItems.addAll(contributionTransactions);
+        transactionItems.addAll(contributionIdentifierTransactions);
+        return transactionItems.toArray(TransactWriteItem[]::new);
     }
 
     private ImportCandidate fetchSavedImportCandidate(Resource newResource) {
@@ -484,7 +512,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
         throws BadRequestException {
-        List<TransactWriteItem> transactionItems = new ArrayList<>();
+        var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.addAll(deleteResourceTransactionItems(daos));
         transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
         transactionItems.addAll(deleteContributionTransactionItems(daos));
@@ -500,7 +528,7 @@ public class ResourceService extends ServiceWithTransactions {
         var resourceEntry = newPutTransactionItem(new ResourceDao(resourceWithoutContributions), tableName);
         var uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
 
-        List<TransactWriteItem> transactionItems = new ArrayList<>();
+        var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(resourceEntry);
         transactionItems.add(uniqueIdentifierEntry);
         transactionItems.addAll(contributionTransactions);
