@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isConferenceReport;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -100,15 +101,11 @@ public final class PublicationContextMapper {
         return NvaType.PRESENTATION_OTHER.getValue().equals(record.getType().getNva());
     }
 
-    private static PublicationContext buildPublicationContextWhenMediaContribution() {
-        return new MediaContribution.Builder()
-                   .withFormat(MediaFormat.TEXT)
-                   .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER))
-                   .build();
-    }
-
     public static boolean isSupportedReportType(Record record) {
-        return isReport(record) || isResearchReport(record) || isReportWorkingPaper(record);
+        return isReport(record)
+               || isResearchReport(record)
+               || isReportWorkingPaper(record)
+               || isConferenceReport(record);
     }
 
     public static boolean isMusic(Record record) {
@@ -177,6 +174,13 @@ public final class PublicationContextMapper {
 
     public static boolean isInterview(Record record) {
         return NvaType.INTERVIEW.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationContext buildPublicationContextWhenMediaContribution() {
+        return new MediaContribution.Builder()
+                   .withFormat(MediaFormat.TEXT)
+                   .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER))
+                   .build();
     }
 
     private static boolean isReport(Record record) {

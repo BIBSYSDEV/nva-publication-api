@@ -29,7 +29,9 @@ public enum NvaType {
     PRESENTATION_OTHER("Other presentation"),
     SCIENTIFIC_MONOGRAPH("Vitenskapelig monografi"),
     SCIENTIFIC_CHAPTER("Vitenskapelig kapittel"),
-    SCIENTIFIC_ARTICLE("Vitenskapelig artikkel");
+    SCIENTIFIC_ARTICLE("Vitenskapelig artikkel"),
+    CONFERENCE_REPORT("ConferenceReport");
+
     private final String value;
 
     NvaType(String value) {
