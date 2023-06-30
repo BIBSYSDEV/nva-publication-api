@@ -1590,7 +1590,7 @@ Resources:
             Pattern:
               detail:
                 topic: [ "PublicationService.DataImport.Filename" ]
-                subtopic: [ "PublicationService.CristinData.DataEntry" ]
+                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry" ]
 
 
   CreatePublishedPublicationHandler:
