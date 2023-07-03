@@ -6,6 +6,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Cl
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUPPORTED_SUBTOPICS;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -217,7 +218,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
             logger.info(event.toJsonString());
             throw new IllegalArgumentException(WRONG_TOPIC_ERROR + event.getDetail().getTopic());
         }
-        if (!SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER.equalsIgnoreCase(event.getDetail().getSubtopic())) {
+        if (!SUPPORTED_SUBTOPICS.contains(event.getDetail().getSubtopic())) {
             logger.info(event.toJsonString());
             throw new IllegalArgumentException(WRONG_SUBTOPIC + event.getDetail().getSubtopic());
         }
