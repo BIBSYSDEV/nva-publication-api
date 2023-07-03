@@ -54,6 +54,7 @@ import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -252,6 +253,13 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublishingContext(new Event.Builder().build())
                            .withPublicationInstance(new OtherPresentation())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.CONFERENCE_REPORT.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new ConferenceReport(builder.getMonographPages()))
+                           .withPublishingContext(generatePublicationContextForReport(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }

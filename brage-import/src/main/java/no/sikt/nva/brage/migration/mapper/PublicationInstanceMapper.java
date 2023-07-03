@@ -48,6 +48,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -123,6 +124,9 @@ public final class PublicationInstanceMapper {
         if (isConferencePoster(record)) {
             return buildPublicationInstanceWhenConferencePoster();
         }
+        if (isConferenceReport(record)) {
+            return buildPublicationInstanceWhenConferenceReport(record);
+        }
         if (isReportWorkingPaper(record)) {
             return buildPublicationInstanceWhenReportWorkingPaper(record);
         }
@@ -135,6 +139,14 @@ public final class PublicationInstanceMapper {
         else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferenceReport(Record record) {
+        return new ConferenceReport(extractMonographPages(record));
+    }
+
+    public static boolean isConferenceReport(Record record) {
+        return NvaType.CONFERENCE_REPORT.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherPresentation() {
