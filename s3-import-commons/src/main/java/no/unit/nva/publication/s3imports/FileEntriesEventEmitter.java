@@ -1,7 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
-import static no.unit.nva.publication.s3imports.ApplicationConstants.EVENTS_BUCKET;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER;
@@ -102,7 +101,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
                    .map(this::parseContents)
                    .map(this::convertFieldNamesToLowerCase)
                    .map(jsonNodes -> generateMessageBodies(input, jsonNodes))
-                   .map(this::createEventReferences)
+                   .map(fileContentsEventStream -> createEventReferences(fileContentsEventStream, input))
                    .map(entries -> placeOnQueue(entries, input))
                    .map(result -> storePartialFailuresToS3(result, input))
                    .orElseThrow(failure -> storeCompleteFailureReport(failure, input));
@@ -197,9 +196,8 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     }
 
     private List<EventReference> createEventReferences(
-        Stream<FileContentsEvent<JsonNode>> eventBodies) {
-
-        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        Stream<FileContentsEvent<JsonNode>> eventBodies, EventReference input) {
+        var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         return eventBodies
                    .map(attempt(fileContents -> fileContents.toEventReference(s3Driver)))
                    .map(Try::orElseThrow).collect(Collectors.toList());
