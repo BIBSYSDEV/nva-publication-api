@@ -28,6 +28,7 @@ public class CristinGenerator {
                    .withId(cristinId)
                    .withNames(names).withAffiliations(generateAffiliations())
                    .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))
+                   .withVerifiedStatus(randomBoolean())
                    .build();
     }
 
