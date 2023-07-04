@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
+import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -26,6 +27,8 @@ public class CristinConnection {
     public static final String QUERY_PARAM_DEPTH_NONE = "?depth=none";
     public static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
     public static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
+    public static final String ACCEPT = "Accept";
+    public static final String CRISTIN_VERSION = "; version=2023-05-26";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     private final HttpClient httpClient;
 
@@ -109,8 +112,9 @@ public class CristinConnection {
     private HttpRequest createOrganizationRequest(URI uri) {
         var organizationUri = URI.create(uri + QUERY_PARAM_DEPTH_NONE);
         return HttpRequest.newBuilder()
-                   .uri(organizationUri)
-                   .GET()
-                   .build();
+                .uri(organizationUri)
+                .header(ACCEPT, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION)
+                .GET()
+                .build();
     }
 }
