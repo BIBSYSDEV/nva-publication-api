@@ -62,7 +62,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     private static final String NODES_IN_ARRAY = "},{";
     private static final Object END_OF_ARRAY = "]";
     private static final String BEGINNING_OF_ARRAY = "[";
-    public static final String WRONG_SUBTOPIC = "event does not contain the correct subtopic";
+    public static final String WRONG_SUBTOPIC = "event does not contain the correct subtopic: ";
 
     private final AmazonSQS amazonSQS;
     private final S3Client s3Client;
