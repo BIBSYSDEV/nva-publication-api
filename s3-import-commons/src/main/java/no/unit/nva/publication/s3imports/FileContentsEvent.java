@@ -97,7 +97,7 @@ public class FileContentsEvent<T> implements JsonSerializable {
     
     public EventReference toEventReference(S3Driver s3Driver) throws IOException {
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(this);
-        var uri = s3Driver.insertEvent(UnixPath.of(CRISTIN_ENTRIES_EVENT_FOLDER), json);
+        var uri = s3Driver.insertEvent(UnixPath.of(CRISTIN_ENTRIES_EVENT_FOLDER, timestamp.toString()), json);
         return new EventReference(getTopic(), getSubtopic(), uri, timestamp);
     }
     
