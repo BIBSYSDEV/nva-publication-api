@@ -19,4 +19,5 @@ include 'scopus-generate'
 include 'scopus-import'
 include 'tickets-test'
 include 'tickets-test'
+include 'cristin-datamodel-generated'
 

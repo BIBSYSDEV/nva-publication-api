@@ -8,6 +8,7 @@
     PMD rules
   </description>
   <exclude-pattern>.*/test/.*</exclude-pattern>
+  <exclude-pattern>.*/cristin.datamodel.generated.*</exclude-pattern>
 
   <rule ref="category/java/errorprone.xml">
     <exclude name="DataflowAnomalyAnalysis"/>

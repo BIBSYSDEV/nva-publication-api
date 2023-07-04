@@ -69,6 +69,7 @@ checkstyle {
 }
 
 tasks.withType(Checkstyle) {
+    exclude '**/cristin/datamodel/generated**'
     reports {
         xml.enabled false
         html.enabled true

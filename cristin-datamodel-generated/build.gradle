@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+    id 'org.jsonschema2pojo' version '1.2.1'
+    id 'de.undercouch.download' version '5.4.0'
+
+}
+
+group 'no.sikt'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.1'
+}
+
+task downLoadSchemaJson(type: Download) {
+    src 'https://api.cristin.no/v2/doc/json-schemas/results_GET_response.json'
+    dest 'src/main/resources/schema/results.json'
+}
+
+jsonSchema2Pojo {
+    source = files("${sourceSets.main.output.resourcesDir}/schema/")
+    targetDirectory = file("${project.buildDir}/generated-sources/js2p")
+    targetPackage = 'no.sikt.cristin.datamodel.generated'
+}
+
+build.dependsOn(generateJsonSchema2Pojo)
+generateJsonSchema2Pojo.dependsOn(downLoadSchemaJson)
