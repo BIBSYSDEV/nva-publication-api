@@ -18,7 +18,7 @@ dependencies {
 
 task downLoadSchemaJson(type: Download) {
     src 'https://api.cristin.no/v2/doc/json-schemas/results_GET_response.json'
-    dest 'src/main/resources/schema/results.json'
+    dest 'src/main/resources/schema/cristinResult.json'
 }
 
 jsonSchema2Pojo {
