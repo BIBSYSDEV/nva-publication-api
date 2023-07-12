@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +31,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
 
+@SuppressWarnings("PMD.GodClass")
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
@@ -49,6 +51,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String IMPORT_STATUS_FIELD = "importStatus";
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
     public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
+    public static final String CREATED_DATE = "createdDate";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -73,6 +76,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private ImportStatus importStatus;
     @JsonProperty(PUBLICATION_YEAR_FIELD)
     private String publicationYear;
+    @JsonProperty(CREATED_DATE)
+    private Instant createdDate;
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate) {
         return new ExpandedImportCandidate.Builder()
@@ -88,7 +93,17 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
                    .withJournal(extractJournal(importCandidate))
                    .withPublisher(extractPublisher(importCandidate))
+                   .withCreatedDate(importCandidate.getCreatedDate())
                    .build();
+    }
+
+    @JacocoGenerated
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    private void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
     }
 
     @JacocoGenerated
@@ -359,6 +374,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
         public Builder withJournal(Journal journal) {
             expandedImportCandidate.setJournal(journal);
+            return this;
+        }
+
+        public Builder withCreatedDate(Instant createdDate) {
+            expandedImportCandidate.setCreatedDate(createdDate);
             return this;
         }
 
