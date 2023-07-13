@@ -6,8 +6,8 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SE
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
-import static no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder.randomHandle;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
@@ -43,7 +43,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
-import no.sikt.nva.brage.migration.merger.MergePublicationException;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
@@ -192,6 +191,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withCristinIdentifier("123456")
                                  .withResourceContent(createResourceContent())
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
+                                 .withLink(randomUri())
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -214,29 +214,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                            createCorrespondingAssociatedArtifacts());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThatPublicationsMatch(actualPublication, expectedPublication);
-    }
-
-    @Test
-    void shouldThrowExceptionIfExistingCristinPublicationContainsDifferentHandle() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
-                                 .withCristinIdentifier("123456")
-                                 .withDescription(List.of("My description"))
-                                 .withAbstracts(List.of("My abstract"))
-                                 .withResourceContent(createResourceContent())
-                                 .build();
-        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
-        var file = new java.io.File("src/test/resources/testFile.txt");
-        putAssociatedArtifactsToResourceStorage(brageGenerator, s3Driver, file);
-        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
-        var cristinPublication = brageGenerator.getNvaPublication().copy().build();
-        var cristinHandle = randomHandle();
-        cristinPublication.setHandle(cristinHandle);
-        resourceService.createPublicationFromImportedEntry(cristinPublication);
-        var exception = assertThrows(MergePublicationException.class, () -> handler.handleRequest(s3Event, CONTEXT));
-        assertThat(exception.getMessage(), containsString(cristinHandle.toString()));
-        assertThat(exception.getMessage(), containsString(brageGenerator.getNvaPublication().getHandle().toString()));
-        assertThat(exception.getMessage(), containsString("Handle mismatch"));
     }
 
     @Test
@@ -275,7 +252,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withCristinIdentifier("123456")
                                  .withDescription(List.of("My description"))
                                  .withAbstracts(List.of("My abstract"))
-                                 .withResourceContent(createResourceContent())
                                  .build();
         var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
         var file = new java.io.File("src/test/resources/testFile.txt");
@@ -699,6 +675,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withPublishedDate(null)
                                  .withType(TYPE_BOOK)
                                  .withResourceContent(createResourceContent())
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
 
@@ -800,6 +777,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static void putAssociatedArtifactsToResourceStorage(NvaBrageMigrationDataGenerator dataGenerator,
                                                                 S3Driver s3Driver, java.io.File file) {
         dataGenerator.getNvaPublication().getAssociatedArtifacts().stream()
+            .filter(artifact -> artifact instanceof File)
             .map(artifact -> (File) artifact)
             .map(File::getIdentifier)
             .forEach(id -> {
