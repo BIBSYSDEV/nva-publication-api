@@ -31,7 +31,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
@@ -52,6 +52,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
     public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
     public static final String CREATED_DATE = "createdDate";
+    public static final String CONTRIBUTORS = "contributors";
+    public static final String IMPORT_CANDIDATE = "import-candidate";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -70,6 +72,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private int numberOfVerifiedContributors;
     @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
     private int totalNumberOfContributors;
+    @JsonProperty(CONTRIBUTORS)
+    private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
     private List<Organization> organizations;
     @JsonProperty(IMPORT_STATUS_FIELD)
@@ -91,10 +95,19 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withMainTitle(extractMainTitle(importCandidate))
                    .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
                    .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
+                   .withContributors(extractContributors(importCandidate))
                    .withJournal(extractJournal(importCandidate))
                    .withPublisher(extractPublisher(importCandidate))
                    .withCreatedDate(importCandidate.getCreatedDate())
                    .build();
+    }
+
+    public List<Contributor> getContributors() {
+        return contributors;
+    }
+
+    public void setContributors(List<Contributor> contributors) {
+        this.contributors = contributors;
     }
 
     @JacocoGenerated
@@ -225,6 +238,13 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return new SortableIdentifier(UriWrapper.fromUri(this.identifier).getLastPathElement());
     }
 
+    private static List<Contributor> extractContributors(ImportCandidate importCandidate) {
+        var contributors = importCandidate.getEntityDescription().getContributors();
+        return contributors.size() < 5
+                   ? contributors.subList(0, contributors.size())
+                   : contributors.subList(0, 5);
+    }
+
     private static int extractNumberOfVerifiedContributors(ImportCandidate importCandidate) {
         return (int) importCandidate.getEntityDescription().getContributors().stream()
                          .filter(ExpandedImportCandidate::isVerifiedContributor)
@@ -238,6 +258,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private static URI generateIdentifier(SortableIdentifier identifier) {
         return UriWrapper.fromHost(HOST)
                    .addChild(PUBLICATION)
+                   .addChild(IMPORT_CANDIDATE)
                    .addChild(identifier.toString())
                    .getUri();
     }
@@ -404,6 +425,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
         public Builder withPublicationYear(String publicationYear) {
             expandedImportCandidate.setPublicationYear(publicationYear);
+            return this;
+        }
+
+        public Builder withContributors(List<Contributor> contributors) {
+            expandedImportCandidate.setContributors(contributors);
             return this;
         }
 
