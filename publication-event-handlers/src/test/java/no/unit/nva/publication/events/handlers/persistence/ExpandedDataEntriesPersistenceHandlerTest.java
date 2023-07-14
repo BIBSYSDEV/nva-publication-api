@@ -236,7 +236,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     private ExpandedDataEntry randomExpandedImportCandidate() {
-        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate());
+        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate(), null);
     }
 
     private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()

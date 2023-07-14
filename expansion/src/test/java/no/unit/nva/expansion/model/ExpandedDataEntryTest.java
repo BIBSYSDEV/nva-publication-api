@@ -50,6 +50,7 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -122,7 +123,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("importCandidateContextTypeProvider")
     public void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, null);
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
@@ -312,7 +313,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
-                return createExpandedImportCandidate(publication, uriRetriever);
+                return createExpandedImportCandidate(publication);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 resourceService.publishPublication(UserInstance.fromPublication(publication),
                                                    publication.getIdentifier());
@@ -362,10 +363,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             return publication;
         }
 
-        private static ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(Publication publication,
-                                                                                         UriRetriever uriRetriever) {
+        private static ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(Publication publication) {
             var importCandidate = new Builder().withPublication(publication).build();
-            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
+            var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
+            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(randomString()));
+            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, authorizedBackendClient);
             return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
         }
 
