@@ -366,7 +366,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         private static ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(Publication publication) {
             var importCandidate = new Builder().withPublication(publication).build();
             var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
-            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(randomString()));
+            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(randomString() + "200"));
             var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, authorizedBackendClient);
             return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
         }

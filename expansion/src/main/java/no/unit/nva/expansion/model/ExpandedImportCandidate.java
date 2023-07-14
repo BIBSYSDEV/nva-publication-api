@@ -344,12 +344,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .collect(Collectors.toList());
     }
 
+    @JacocoGenerated
     private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever)
         throws BadGatewayException {
         var uriToRetrieve = createUri(id.toString());
         var response = attempt(() -> uriRetriever.getRawContent(uriToRetrieve, CONTENT_TYPE))
                            .orElseThrow();
         if (response.isPresent() && okResponse(response.get())) {
+            logger.info("Fetched nva customer {}", response.get());
             return true;
         }
         if (response.isPresent() && notFoundResponse(response.get())) {
@@ -358,6 +360,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         throw new BadGatewayException("Could not fetch nva customer");
     }
 
+    @JacocoGenerated
     private static boolean notFoundResponse(String response) {
         return response.contains("404");
     }
