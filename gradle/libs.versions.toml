@@ -36,6 +36,7 @@ karate-apache = { strictly = '0.9.6' }
 karate-junit5 = { strictly = '1.1.0' }
 jena = { strictly = '4.7.0'}
 jsonassert = { strictly = '1.5.1'}
+opencsv = { strictly = '5.7.1'}
 
 
 [libraries]
@@ -150,6 +151,8 @@ karate-parent = { group = 'com.intuit.karate', name = 'karate-parent', version.r
 
 jena-core = { group=  'org.apache.jena', name = 'jena-core', version.ref = 'jena' }
 jena-arq = { group = 'org.apache.jena', name = 'jena-arq', version.ref = 'jena' }
+
+opencsv = { group = 'com.opencsv', name = 'opencsv', version.ref = 'opencsv'}
 
 [bundles]
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',

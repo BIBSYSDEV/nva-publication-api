@@ -21,13 +21,13 @@ dependencies {
     implementation libs.aws.java.sdk.core
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.secrets
+    implementation libs.opencsv
 
     implementation libs.jackson.databind
     implementation libs.jackson.annotations
     implementation libs.jackson.datatype.jsr310
     implementation libs.guava
     implementation libs.zalando
-
 
     runtimeOnly libs.jackson.core
     runtimeOnly libs.jackson.datatype.jdk8
