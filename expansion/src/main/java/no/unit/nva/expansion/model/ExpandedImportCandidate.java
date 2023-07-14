@@ -1,14 +1,9 @@
 package no.unit.nva.expansion.model;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
-import static no.unit.nva.expansion.ResourceExpansionServiceImpl.logger;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +37,8 @@ import org.joda.time.DateTime;
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public static final String TYPE = "ImportCandidate";
-    public static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final String API_HOST = "API_HOST";
+    public static final String HOST = new Environment().readEnv(API_HOST);
     public static final String PUBLICATION = "publication";
     public static final String ID_FIELD = "id";
     public static final String ADDITIONAL_IDENTIFIERS_FIELD = "additionalIdentifiers";
@@ -57,8 +53,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
     public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
     public static final String CREATED_DATE = "createdDate";
-    private static final String CUSTOMER = "customer";
-    private static final String CRISTIN_ID = "cristinId";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -94,7 +88,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
                    .withImportStatus(importCandidate.getImportStatus())
                    .withPublicationYear(extractPublicationYear(importCandidate))
-                   .withOrganizations(extractOrganizations(importCandidate, uriRetriever))
+                   .withOrganizations(extractOrganizations(importCandidate))
                    .withDoi(extractDoi(importCandidate))
                    .withMainTitle(extractMainTitle(importCandidate))
                    .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
@@ -244,7 +238,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static URI generateIdentifier(SortableIdentifier identifier) {
-        return UriWrapper.fromHost(API_HOST)
+        return UriWrapper.fromHost(HOST)
                    .addChild(PUBLICATION)
                    .addChild(identifier.toString())
                    .getUri();
@@ -333,30 +327,18 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
 
-    private static List<Organization> extractOrganizations(ImportCandidate importCandidate,
-                                                           AuthorizedBackendUriRetriever uriRetriever) {
+    private static List<Organization> extractOrganizations(ImportCandidate importCandidate) {
         return importCandidate.getEntityDescription().getContributors().stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
                    .filter(organization -> nonNull(organization.getId()))
-                   .filter(org -> isNvaCustomer(org.getId(), uriRetriever))
+                   .filter(org -> isNvaCustomer(org.getId()))
                    .collect(Collectors.toList());
     }
 
-    private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
-        var uriToRetrieve = createUri(id.toString());
-        var response = attempt(() -> uriRetriever.getRawContent(uriToRetrieve, CONTENT_TYPE));
-        var isCustomer = response.isSuccess();
-        logger.info("Nva customer: {}", isCustomer);
-        return isCustomer;
-    }
-
-    private static URI createUri(String affiliation) {
-        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST)
-                                      .addChild(CUSTOMER)
-                                      .addChild(CRISTIN_ID)
-                                      .getUri();
-        return URI.create(getCustomerEndpoint + "/" + URLEncoder.encode(affiliation, StandardCharsets.UTF_8));
+    private static boolean isNvaCustomer(URI id) {
+        var u = new AuthorizedBackendUriRetriever("", "");
+        u.getRawContent()
     }
 
     public static final class Builder {

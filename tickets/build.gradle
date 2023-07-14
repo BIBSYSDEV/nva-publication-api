@@ -33,7 +33,7 @@ dependencies {
     testImplementation project(':publication-testing')
     testImplementation libs.nva.testutils
     testImplementation project(path: ':tickets-test')
-    testImplementation(libs.javafaker) {
+    testImplementation(libs.datafaker) {
         because('For generating test data in tests. Another alternative is jfairy')
     }
     testImplementation libs.logutils

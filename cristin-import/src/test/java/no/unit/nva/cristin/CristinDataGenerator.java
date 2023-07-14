@@ -20,7 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -30,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import net.datafaker.Faker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
@@ -43,6 +43,7 @@ import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinMediumType;
+import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinPublisher;
@@ -51,7 +52,6 @@ import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
-import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 
 public final class CristinDataGenerator {
 

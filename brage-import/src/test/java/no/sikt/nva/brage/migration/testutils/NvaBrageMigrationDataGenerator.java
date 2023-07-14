@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -8,11 +9,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -43,6 +45,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -152,6 +156,7 @@ public class NvaBrageMigrationDataGenerator {
         record.setPublishedDate(builder.getPublishedDate());
         record.setCristinId(builder.getCristinIdentifier());
         record.setRightsHolder(builder.getRightsHolder());
+        record.setLink(builder.getLink());
         return record;
     }
 
@@ -236,6 +241,7 @@ public class NvaBrageMigrationDataGenerator {
         private no.sikt.nva.brage.migration.record.Publication publication;
         private String cristinIdentifier;
         private String rightsHolder;
+        private URI link;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -346,6 +352,14 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public List<AssociatedArtifact> getAssociatedArtifacts() {
+            if (nonNull(link) && isNull(associatedArtifacts)) {
+                return new AssociatedArtifactList(List.of(new AssociatedLink(link, null, null)));
+            }
+            if(nonNull(link) && !associatedArtifacts.isEmpty()) {
+                var list = new ArrayList<AssociatedArtifact>(associatedArtifacts);
+                list.add(new AssociatedLink(link, null, null));
+                return list;
+            }
             return associatedArtifacts;
         }
 
@@ -378,6 +392,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withCustomer(Customer customer) {
             this.customer = customer;
+            return this;
+        }
+
+        public Builder withLink(URI link) {
+            this.link = link;
             return this;
         }
 
@@ -573,7 +592,7 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(publicationDate) && isNull(publicationDateForPublication)) {
                 this.publicationDate = createPublicationDate();
                 this.publicationDateForPublication = createPublicationDateForPublication(publicationDate);
-            } else if (Objects.nonNull(publicationDate) && isNull(publicationDateForPublication)) {
+            } else if (nonNull(publicationDate) && isNull(publicationDateForPublication)) {
                 this.publicationDateForPublication = createPublicationDateForPublication(publicationDate);
             }
             if (isNull(pages)) {
@@ -599,6 +618,10 @@ public class NvaBrageMigrationDataGenerator {
 
         public String getEntityAbstractsForPublication() {
             return isNull(abstracts) || abstracts.isEmpty() ? null : mergeStringsByLineBreak(abstracts);
+        }
+
+        public URI getLink() {
+            return link;
         }
 
         private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(

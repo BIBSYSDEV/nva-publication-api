@@ -11,8 +11,6 @@ dependencies {
 
     compileOnly libs.nva.apigateway
 
-    implementation libs.javafaker
-
     implementation libs.junit.jupiter.api
 
 

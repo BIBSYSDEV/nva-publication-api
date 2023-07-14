@@ -39,9 +39,9 @@ dependencies {
     implementation libs.typesafe.config
     implementation libs.bundles.logging
 
+    testImplementation libs.bundles.testing
     testImplementation libs.nva.datamodel.testutils
     testImplementation project(":publication-testing")
-    testImplementation libs.javafaker
     testImplementation libs.nva.testutils
     testImplementation libs.logutils
     testImplementation libs.nva.identifiers

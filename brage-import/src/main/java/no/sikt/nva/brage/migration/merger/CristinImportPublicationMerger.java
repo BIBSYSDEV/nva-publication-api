@@ -1,35 +1,20 @@
 package no.sikt.nva.brage.migration.merger;
 
-import static java.util.Objects.nonNull;
-import java.util.ArrayList;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.StringUtils;
-import software.amazon.awssdk.services.s3.S3Client;
 
 public class CristinImportPublicationMerger {
-
-    public static final String HANDLE_MISMATCH_INFORMATION = "Handle mismatch. cristin publication handle: %s, "
-                                                             + "brage-publication handle: %s";
 
     private final Publication cristinPublication;
     private final Publication bragePublication;
 
-    private final S3Client s3Client;
-
-    public CristinImportPublicationMerger(Publication cristinPublication, Publication bragePublication,
-                                          S3Client s3Client) {
+    public CristinImportPublicationMerger(Publication cristinPublication, Publication bragePublication) {
         this.cristinPublication = cristinPublication;
         this.bragePublication = bragePublication;
-        this.s3Client = s3Client;
     }
 
     public Publication mergePublications() {
-        if (handleMistMatch()) {
-            throw new MergePublicationException(String.format(HANDLE_MISMATCH_INFORMATION,
-                                                              cristinPublication.getHandle(),
-                                                              bragePublication.getHandle()));
-        }
         var publicationForUpdating = cristinPublication.copy()
                                          .withHandle(bragePublication.getHandle())
                                          .build();
@@ -47,18 +32,14 @@ public class CristinImportPublicationMerger {
         return cristinPublication.getAssociatedArtifacts().isEmpty()
                    ? mergeFiles()
                    : cristinPublication.getAssociatedArtifacts();
-
     }
 
     private AssociatedArtifactList mergeFiles() {
-        var associatedArtifactsToExistingPublication1 = cristinPublication.getAssociatedArtifacts();
-        var associatedArtifacts1 = bragePublication.getAssociatedArtifacts();
-        var comparator = new AssociatedArtifactComparator(s3Client, associatedArtifactsToExistingPublication1);
-        var list = new ArrayList<>(associatedArtifactsToExistingPublication1);
-        associatedArtifacts1.stream()
-            .filter(artifact -> !comparator.containsAssociatedArtifact(artifact))
-            .forEach(list::add);
-        return new AssociatedArtifactList(list);
+        var associatedArtifactsToExistingPublication = cristinPublication.getAssociatedArtifacts();
+        var associatedArtifacts = bragePublication.getAssociatedArtifacts();
+        return associatedArtifacts.size() > associatedArtifactsToExistingPublication.size()
+                   ? new AssociatedArtifactList(associatedArtifacts)
+                   : associatedArtifactsToExistingPublication;
     }
 
     private String getCorrectDescription() {
@@ -71,10 +52,5 @@ public class CristinImportPublicationMerger {
         return StringUtils.isNotEmpty(cristinPublication.getEntityDescription().getAbstract())
                    ? cristinPublication.getEntityDescription().getAbstract()
                    : bragePublication.getEntityDescription().getAbstract();
-    }
-
-    private boolean handleMistMatch() {
-        return nonNull(cristinPublication.getHandle())
-               && !cristinPublication.getHandle().equals(bragePublication.getHandle());
     }
 }
