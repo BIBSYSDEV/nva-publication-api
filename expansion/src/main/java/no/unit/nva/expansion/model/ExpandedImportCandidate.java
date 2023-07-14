@@ -32,6 +32,7 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -339,16 +340,30 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
                    .filter(organization -> nonNull(organization.getId()))
-                   .filter(org -> isNvaCustomer(org.getId(), uriRetriever))
+                   .filter(org -> attempt(() -> isNvaCustomer(org.getId(), uriRetriever)).orElseThrow())
                    .collect(Collectors.toList());
     }
 
-    private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
+    private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever)
+        throws BadGatewayException {
         var uriToRetrieve = createUri(id.toString());
-        var response = attempt(() -> uriRetriever.getRawContent(uriToRetrieve, CONTENT_TYPE));
-        var isCustomer = response.isSuccess();
-        logger.info("Nva customer: {}", isCustomer);
-        return isCustomer;
+        var response = attempt(() -> uriRetriever.getRawContent(uriToRetrieve, CONTENT_TYPE))
+                           .orElseThrow();
+        if (response.isPresent() && okResponse(response.get())) {
+            return true;
+        }
+        if (response.isPresent() && notFoundResponse(response.get())) {
+            return false;
+        }
+        throw new BadGatewayException("Could not fetch nva customer");
+    }
+
+    private static boolean notFoundResponse(String response) {
+        return response.contains("404");
+    }
+
+    private static boolean okResponse(String response) {
+        return response.contains("200");
     }
 
     private static URI createUri(String affiliation) {
