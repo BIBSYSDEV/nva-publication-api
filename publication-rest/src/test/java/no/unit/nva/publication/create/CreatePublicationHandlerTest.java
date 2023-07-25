@@ -263,6 +263,17 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldPersistDegreePublicationWhenUserIsExternalClient() throws IOException {
+        var thesisPublication = samplePublication.copy()
+            .withEntityDescription(thesisPublishableEntityDescription())
+            .build();
+        var event = requestFromExternalClient(CreatePublicationRequest.fromPublication(thesisPublication));
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    @Test
     void shouldReturnUnauthorizedWhenRequestIsFromExternalClientAndClientIdIsMissing() throws IOException {
         var event = requestFromExternalClientWithoutClientId(createEmptyPublicationRequest());
         handler.handleRequest(event, outputStream, context);
