@@ -129,6 +129,18 @@ public class ResourceDao extends Dao
                    .map(item -> parseAttributeValuesMap(item, TicketDao.class))
                    .collect(Collectors.toList());
     }
+
+    public List<ContributionDao> fetchAllContributions(AmazonDynamoDB client, String tableName) {
+        var queryRequest = new QueryRequest()
+                               .withTableName(tableName)
+                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .withKeyConditions(byResource(ContributionDao.BY_CONTRIBUTION_INDEX_ORDER_PREFIX));
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(item -> parseAttributeValuesMap(item, ContributionDao.class))
+                   .collect(Collectors.toList());
+    }
     
     public ResourceDao fetchForElevatedUser(AmazonDynamoDB client) throws NotFoundException {
         var queryRequest = new QueryRequest()

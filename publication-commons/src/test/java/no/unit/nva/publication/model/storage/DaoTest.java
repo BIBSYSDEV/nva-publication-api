@@ -263,6 +263,13 @@ class DaoTest extends ResourcesLocalTest {
     private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
         return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next);
     }
+
+    private static Contribution createContribution(Class<? extends Contribution> entityType) throws ConflictException {
+        return Contribution.create(
+            Resource.fromPublication(draftPublicationWithoutDoi()),
+            DaoTest.randomContributor()
+        );
+    }
     
     private static Stream<Dao> instanceProvider() {
         return DaoUtils.instanceProvider();
@@ -285,6 +292,8 @@ class DaoTest extends ResourcesLocalTest {
         } else if (Message.class.equals(entityType)) {
             var ticket = createTicket(DoiRequest.class);
             return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+        } else if (Contribution.class.equals(entityType)) {
+            return createContribution((Class<? extends Contribution>) entityType);
         }
         throw new UnsupportedOperationException();
     }
@@ -322,7 +331,7 @@ class DaoTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Contributor randomContributor() {
+    private static Contributor randomContributor() {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
