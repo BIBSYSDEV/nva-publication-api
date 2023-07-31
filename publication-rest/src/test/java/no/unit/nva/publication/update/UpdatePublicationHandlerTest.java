@@ -673,6 +673,35 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return Resource.fromPublication(degreePublication).persistNew(publicationService, userInstance);
     }
 
+    @Test
+    void handlerUpdatesDegreePublicationWhenInputIsValidAndUserIsExternalClient()
+        throws IOException, BadRequestException {
+
+        var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
+        var savedThesis = Resource
+            .fromPublication(thesisPublication)
+            .persistNew(publicationService, UserInstance.fromPublication(publication));
+        var publicationUpdate = updateTitle(savedThesis);
+
+        InputStream inputStream =
+            externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        when(getExternalClientResponse.getCustomerUri())
+            .thenReturn(publication.getPublisher().getId());
+        when(getExternalClientResponse.getActingUser())
+            .thenReturn(publication.getResourceOwner().getOwner().getValue());
+
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+
+        assertThat(body.getEntityDescription().getMainTitle(),
+                   is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+    }
+
     private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
         var contributorWithoutCristinId = new Contributor.Builder()
                 .withRole(new RoleType(Role.ARCHITECT))

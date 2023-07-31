@@ -128,8 +128,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Publication updatedPublication(Publication publication, Publication existingPublication) {
-        var cristinImportPublicationMerger = new CristinImportPublicationMerger(existingPublication, publication,
-                                                                                s3Client);
+        var cristinImportPublicationMerger = new CristinImportPublicationMerger(existingPublication, publication);
         return cristinImportPublicationMerger.mergePublications();
     }
 

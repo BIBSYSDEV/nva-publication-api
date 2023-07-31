@@ -5,9 +5,11 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
+@JacocoGenerated
 public class AssociatedArtifactComparator {
 
     private final S3Client s3Client;

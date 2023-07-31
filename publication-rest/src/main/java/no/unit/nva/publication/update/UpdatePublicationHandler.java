@@ -225,8 +225,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return publication.getResourceOwner().getOwner().equals(new Username(userInstance.getUsername()));
     }
 
-    private boolean userUnauthorizedToPublishThesis(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name());
+    private boolean userUnauthorizedToPublishThesisAndIsNotExternalClient(RequestInfo requestInfo) {
+        return !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name()) && !requestInfo.clientIsThirdParty();
     }
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
@@ -278,7 +278,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private Publication getPublicationIfUserCanEditThesis(Publication publication, RequestInfo requestInfo) throws ApiGatewayException {
         var userInstance = createUserInstanceFromRequest(requestInfo);
-        if (userUnauthorizedToPublishThesis(requestInfo) && !userIsPublicationOwner(userInstance, publication)) {
+        if (userUnauthorizedToPublishThesisAndIsNotExternalClient(requestInfo) && !userIsPublicationOwner(userInstance, publication)) {
             throw new ForbiddenException();
         }
         return publication;

@@ -74,7 +74,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
         logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
-        if (isThesisAndHasNoRightsToPublishThesis(input, requestInfo)) {
+        if (isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(input, requestInfo)) {
             throw new ForbiddenException();
         }
         var newPublication = Optional.ofNullable(input)
@@ -123,9 +123,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         );
     }
 
-    private boolean isThesisAndHasNoRightsToPublishThesis(CreatePublicationRequest request, RequestInfo requestInfo) {
+    private boolean isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(CreatePublicationRequest request, RequestInfo requestInfo) {
 
-        return isThesis(request) && !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name());
+        return isThesis(request) && !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name()) && !requestInfo.clientIsThirdParty();
     }
 
     private boolean isThesis(CreatePublicationRequest request) {

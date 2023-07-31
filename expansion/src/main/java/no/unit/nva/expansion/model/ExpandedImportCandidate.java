@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -40,7 +41,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
@@ -62,6 +63,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String CREATED_DATE = "createdDate";
     public static final String CRISTIN = "cristin";
     public static final String ORGANIZATION = "organization";
+    public static final String CONTRIBUTORS = "contributors";
+    public static final String IMPORT_CANDIDATE = "import-candidate";
     private static final String CUSTOMER = "customer";
     private static final String CRISTIN_ID = "cristinId";
     @JsonProperty(ID_FIELD)
@@ -82,6 +85,9 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private int numberOfVerifiedContributors;
     @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
     private int totalNumberOfContributors;
+    @Getter
+    @JsonProperty(CONTRIBUTORS)
+    private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
     private List<Organization> organizations;
     @JsonProperty(IMPORT_STATUS_FIELD)
@@ -103,10 +109,15 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withMainTitle(extractMainTitle(importCandidate))
                    .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
                    .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
+                   .withContributors(extractContributors(importCandidate))
                    .withJournal(extractJournal(importCandidate))
                    .withPublisher(extractPublisher(importCandidate))
                    .withCreatedDate(importCandidate.getCreatedDate())
                    .build();
+    }
+
+    public void setContributors(List<Contributor> contributors) {
+        this.contributors = contributors;
     }
 
     @JacocoGenerated
@@ -236,6 +247,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return new SortableIdentifier(UriWrapper.fromUri(this.identifier).getLastPathElement());
     }
 
+    private static List<Contributor> extractContributors(ImportCandidate importCandidate) {
+        var contributors = importCandidate.getEntityDescription().getContributors();
+        return contributors.size() < 5 ? contributors.subList(0, contributors.size()) : contributors.subList(0, 5);
+    }
+
     private static int extractNumberOfVerifiedContributors(ImportCandidate importCandidate) {
         return (int) importCandidate.getEntityDescription()
                          .getContributors()
@@ -249,7 +265,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static URI generateIdentifier(SortableIdentifier identifier) {
-        return UriWrapper.fromHost(API_HOST).addChild(PUBLICATION).addChild(identifier.toString()).getUri();
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(PUBLICATION)
+                   .addChild(IMPORT_CANDIDATE)
+                   .addChild(identifier.toString())
+                   .getUri();
     }
 
     private static PublicationInstance<? extends Pages> extractPublicationInstance(ImportCandidate importCandidate) {
@@ -348,12 +368,9 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     // uriRetriever instead of getRawContent()
     private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever)
         throws BadGatewayException {
-        var cristinId = UriWrapper.fromUri(id).getLastPathElement();
-        var topLevelOrganization = uriRetriever.getRawContent(toCristinOrgUri(cristinId), CONTENT_TYPE)
-                                       .map(ExpandedImportCandidate::extractTopLevelOrganization)
-                                       .orElseThrow();
-        var response = attempt(() -> uriRetriever.getRawContent(createUri(topLevelOrganization), CONTENT_TYPE))
-                           .orElseThrow();
+        var topLevelOrganization = fetchTopLevelOrganization(id, uriRetriever);
+        var response = attempt(
+            () -> uriRetriever.getRawContent(createUri(topLevelOrganization), CONTENT_TYPE)).orElseThrow();
         if (response.isPresent() && okResponse(response.get())) {
             logger.info("Fetched nva customer {}", response.get());
             return true;
@@ -364,12 +381,16 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         throw new BadGatewayException("Could not fetch nva customer");
     }
 
-    private static URI extractTopLevelOrganization(String body) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class))
-                   .map(CristinOrganization::getPartOf)
-                   .map(list -> list.get(0))
-                   .map(Organization::getId)
+    private static URI fetchTopLevelOrganization(URI id, AuthorizedBackendUriRetriever uriRetriever) {
+        var cristinId = UriWrapper.fromUri(id).getLastPathElement();
+        return uriRetriever.getRawContent(toCristinOrgUri(cristinId), CONTENT_TYPE)
+                   .map(ExpandedImportCandidate::extractTopLevelOrganization)
                    .orElseThrow();
+    }
+
+    private static URI extractTopLevelOrganization(String body) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class)).map(
+            CristinOrganization::getPartOf).map(list -> list.get(0)).map(Organization::getId).orElseThrow();
     }
 
     private static URI toCristinOrgUri(String cristinId) {
@@ -461,6 +482,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
         public Builder withPublicationYear(String publicationYear) {
             expandedImportCandidate.setPublicationYear(publicationYear);
+            return this;
+        }
+
+        public Builder withContributors(List<Contributor> contributors) {
+            expandedImportCandidate.setContributors(contributors);
             return this;
         }
 
