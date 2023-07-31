@@ -128,7 +128,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("importCandidateContextTypeProvider")
     public void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, null);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate,
+                                                                                  mock(AuthorizedBackendUriRetriever.class));
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
