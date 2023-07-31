@@ -46,13 +46,13 @@ public class PublicationContextCreator {
         "https://api.nva.unit.no/publication-channels/publisher/11111/2018");
     private static final URI TEMPORARY_HARDCODE_SERIES_URI = URI.create(
         "https://api.nva.unit.no/publication-channels/journal/1111/2019");
-    private static final URI TEMPORARY_HARDCODE_JOURNAL_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/journal/1111/2019");
 
     private final DocTp docTp;
+    private final PublicationChannelConnection publicationChannelConnection;
 
-    public PublicationContextCreator(DocTp docTp) {
+    public PublicationContextCreator(DocTp docTp, PublicationChannelConnection publicationChannelConnection) {
         this.docTp = docTp;
+        this.publicationChannelConnection = publicationChannelConnection;
     }
 
     public PublicationContext getPublicationContext() {
@@ -216,8 +216,7 @@ public class PublicationContextCreator {
     }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
-        return !findPublisherName().isEmpty()
-                   ? Optional.of(new Publisher(TEMPORARY_HARDCODED_PUBLISHER_URI))
+        return !findPublisherName().isEmpty() ? Optional.of(new Publisher(TEMPORARY_HARDCODED_PUBLISHER_URI))
                    : Optional.empty();
     }
 
@@ -253,13 +252,14 @@ public class PublicationContextCreator {
                    : Optional.empty();
     }
 
-    //Unused variables should be used for search in Channel Register when it will be implemented
     private Optional<Periodical> fetchPeriodicalInfoFromPublicationChannels() {
         var sourceTitle = findSourceTitle();
         var printIssn = findPrintIssn().orElse(null);
         var electronicIssn = findElectronicIssn().orElse(null);
         var publicationYear = findPublicationYear().orElseThrow();
-        return Optional.of(new Journal(UriWrapper.fromUri(TEMPORARY_HARDCODE_JOURNAL_URI).getUri()));
+        var journalId = publicationChannelConnection.fetchJournal(printIssn, electronicIssn, sourceTitle,
+                                                                  publicationYear);
+        return journalId.map(Journal::new);
     }
 
     private boolean thereIsLevelInformationForPublication() {

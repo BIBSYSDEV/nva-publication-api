@@ -51,4 +51,6 @@ test {
     environment "PIA_PASSWORD_KEY", "somePasswordNameKey"
     environment "TABLE_NAME", "nonExistingTable"
     environment "SCOPUS_IMPORT_BUCKET", "someBucket"
+    environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
+    environment "BACKEND_CLIENT_AUTH_URL", "example.com"
 }
