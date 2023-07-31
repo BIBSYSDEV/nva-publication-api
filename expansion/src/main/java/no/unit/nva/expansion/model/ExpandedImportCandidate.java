@@ -344,7 +344,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .collect(Collectors.toList());
     }
 
-    @JacocoGenerated
+    //TODO: should be refactored when we have updated commons version. Should use getResponse() method of
+    // uriRetriever instead of getRawContent()
     private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever)
         throws BadGatewayException {
         var cristinId = UriWrapper.fromUri(id).getLastPathElement();
