@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -58,6 +60,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
     public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
     public static final String CREATED_DATE = "createdDate";
+    public static final String CRISTIN = "cristin";
+    public static final String ORGANIZATION = "organization";
     private static final String CUSTOMER = "customer";
     private static final String CRISTIN_ID = "cristinId";
     @JsonProperty(ID_FIELD)
@@ -89,8 +93,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               AuthorizedBackendUriRetriever uriRetriever) {
-        return new ExpandedImportCandidate.Builder()
-                   .withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
+        return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
                    .withImportStatus(importCandidate.getImportStatus())
@@ -147,8 +150,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return publicationInstance;
     }
 
-    public void setPublicationInstance(
-        PublicationInstance<? extends Pages> publicationInstance) {
+    public void setPublicationInstance(PublicationInstance<? extends Pages> publicationInstance) {
         this.publicationInstance = publicationInstance;
     }
 
@@ -235,7 +237,9 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static int extractNumberOfVerifiedContributors(ImportCandidate importCandidate) {
-        return (int) importCandidate.getEntityDescription().getContributors().stream()
+        return (int) importCandidate.getEntityDescription()
+                         .getContributors()
+                         .stream()
                          .filter(ExpandedImportCandidate::isVerifiedContributor)
                          .count();
     }
@@ -245,10 +249,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static URI generateIdentifier(SortableIdentifier identifier) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION)
-                   .addChild(identifier.toString())
-                   .getUri();
+        return UriWrapper.fromHost(API_HOST).addChild(PUBLICATION).addChild(identifier.toString()).getUri();
     }
 
     private static PublicationInstance<? extends Pages> extractPublicationInstance(ImportCandidate importCandidate) {
@@ -273,8 +274,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
      */
 
     private static PublishingHouse extractPublishingHouse(PublicationContext publicationContext) {
-        return isBook(publicationContext)
-                   ? ((Book) publicationContext).getPublisher()
+        return isBook(publicationContext) ? ((Book) publicationContext).getPublisher()
                    : ((Report) publicationContext).getPublisher();
     }
 
@@ -291,9 +291,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Journal extractJournal(ImportCandidate importCandidate) {
-        return isJournalContent(importCandidate)
-                   ? getPublicationContext(importCandidate)
-                   : null;
+        return isJournalContent(importCandidate) ? getPublicationContext(importCandidate) : null;
     }
 
     private static Journal getPublicationContext(ImportCandidate importCandidate) {
@@ -336,7 +334,9 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static List<Organization> extractOrganizations(ImportCandidate importCandidate,
                                                            AuthorizedBackendUriRetriever uriRetriever) {
-        return importCandidate.getEntityDescription().getContributors().stream()
+        return importCandidate.getEntityDescription()
+                   .getContributors()
+                   .stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
                    .filter(organization -> nonNull(organization.getId()))
@@ -347,8 +347,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JacocoGenerated
     private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever)
         throws BadGatewayException {
-        var uriToRetrieve = createUri(id.toString());
-        var response = attempt(() -> uriRetriever.getRawContent(uriToRetrieve, CONTENT_TYPE))
+        var cristinId = UriWrapper.fromUri(id).getLastPathElement();
+        var topLevelOrganization = uriRetriever.getRawContent(toCristinOrgUri(cristinId), CONTENT_TYPE)
+                                       .map(ExpandedImportCandidate::extractTopLevelOrganization)
+                                       .orElseThrow();
+        var response = attempt(() -> uriRetriever.getRawContent(createUri(topLevelOrganization), CONTENT_TYPE))
                            .orElseThrow();
         if (response.isPresent() && okResponse(response.get())) {
             logger.info("Fetched nva customer {}", response.get());
@@ -360,6 +363,18 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         throw new BadGatewayException("Could not fetch nva customer");
     }
 
+    private static URI extractTopLevelOrganization(String body) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class))
+                   .map(CristinOrganization::getPartOf)
+                   .map(list -> list.get(0))
+                   .map(Organization::getId)
+                   .orElseThrow();
+    }
+
+    private static URI toCristinOrgUri(String cristinId) {
+        return UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(cristinId).getUri();
+    }
+
     @JacocoGenerated
     private static boolean notFoundResponse(String response) {
         return response.contains("404");
@@ -369,12 +384,10 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return response.contains("200");
     }
 
-    private static URI createUri(String affiliation) {
-        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST)
-                                      .addChild(CUSTOMER)
-                                      .addChild(CRISTIN_ID)
-                                      .getUri();
-        return URI.create(getCustomerEndpoint + "/" + URLEncoder.encode(affiliation, StandardCharsets.UTF_8));
+    private static URI createUri(URI topLevelOrganization) {
+        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild(CUSTOMER).addChild(CRISTIN_ID).getUri();
+        return URI.create(
+            getCustomerEndpoint + "/" + URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8));
     }
 
     public static final class Builder {
@@ -390,8 +403,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withAdditionalIdentifiers(
-            Set<AdditionalIdentifier> additionalIdentifiers) {
+        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
             expandedImportCandidate.setAdditionalIdentifiers(additionalIdentifiers);
             return this;
         }

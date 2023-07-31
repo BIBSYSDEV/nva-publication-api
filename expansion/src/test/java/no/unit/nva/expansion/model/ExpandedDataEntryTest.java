@@ -1,6 +1,8 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.model.ExpandedImportCandidate.API_HOST;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -18,6 +20,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -27,6 +30,7 @@ import java.util.Set;
 
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -68,6 +72,7 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.stubs.WiremockHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -366,7 +371,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         private static ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(Publication publication) {
             var importCandidate = new Builder().withPublication(publication).build();
             var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
-            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(randomString() + "200"));
+            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(
+                Optional.of(new CristinOrganization(List.of(new Organization.Builder().withId(randomUri()).build())).toJsonString()
+                + " 200"));
             var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, authorizedBackendClient);
             return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
         }
