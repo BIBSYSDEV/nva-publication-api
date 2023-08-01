@@ -1180,6 +1180,9 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
           TABLE_NAME: !Ref NvaImportCandidatesTable
+          API_HOST: !Ref ApiDomain
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule

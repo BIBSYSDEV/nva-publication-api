@@ -1194,9 +1194,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     @NotNull
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
-        return Optional.of(String.valueOf(
-            new ImportCandidateSearchApiResponse(List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate)),
-                                                 1)));
+        return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(List.of(
+            ExpandedImportCandidate.fromImportCandidate(importCandidate, null)), 1)));
     }
 
     private ImportCandidate createPersistedImportCandidate() {
