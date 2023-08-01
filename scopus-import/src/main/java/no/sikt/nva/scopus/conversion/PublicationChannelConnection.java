@@ -14,13 +14,11 @@ import nva.commons.core.paths.UriWrapper;
 public class PublicationChannelConnection {
 
     public static final String PUBLICATION_CHANNELS_V2 = "publication-channels-v2";
-    public static final String JOURNAL = "journal";
     public static final String QUERY = "query";
     public static final String YEAR = "year";
     public static final String CONTENT_TYPE = "application/json";
     public static final int SINGLE_ITEM = 1;
     private static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String SERIES = "series";
     private final AuthorizedBackendUriRetriever uriRetriever;
 
     public PublicationChannelConnection(AuthorizedBackendUriRetriever uriRetriever) {
@@ -30,26 +28,20 @@ public class PublicationChannelConnection {
     public Optional<URI> fetchJournal(String printIssn, String electronicIssn, String sourceTitle,
                                       Integer publicationYear) {
         var uriStream = Stream.of(printIssn, electronicIssn, sourceTitle)
-            .map(item -> constructSearchJournalUri(item, publicationYear));
+                            .map(item -> constructSearchUri(PublicationChannel.JOURNAL, item, publicationYear));
         return fetchPublicationChannelId(uriStream);
     }
 
     public Optional<URI> fetchSeries(String printIssn, String electronicIssn, String sourceTitle,
                                      Integer publicationYear) {
         var uriStream = Stream.of(printIssn, electronicIssn, sourceTitle)
-                    .map(item -> constructSearchSeriesUri(item, publicationYear));
+                            .map(item -> constructSearchUri(PublicationChannel.SERIES, item, publicationYear));
         return fetchPublicationChannelId(uriStream);
     }
 
-    private Optional<URI> fetchPublicationChannelId(Stream<URI> uriStream) {
-        return uriStream.map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .map(PublicationChannelConnection::toPublicationChannelResponse)
-                   .filter(Objects::nonNull)
-                   .filter(PublicationChannelConnection::containsSingleResult)
-                   .map(PublicationChannelConnection::getId)
-                   .findFirst();
+    public Optional<URI> fetchPublisher(String publisherName, Integer publicationYer) {
+        var uriToRetrieve = constructSearchUri(PublicationChannel.PUBLISHER, publisherName, publicationYer);
+        return fetchPublicationChannelId(Stream.of(uriToRetrieve));
     }
 
     private static URI getId(PublicationChannelResponse results) {
@@ -65,19 +57,21 @@ public class PublicationChannelConnection {
             failure -> null);
     }
 
-    private URI constructSearchJournalUri(String searchTerm, Integer year) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION_CHANNELS_V2)
-                   .addChild(JOURNAL)
-                   .addQueryParameter(QUERY, searchTerm)
-                   .addQueryParameter(YEAR, String.valueOf(year))
-                   .getUri();
+    private Optional<URI> fetchPublicationChannelId(Stream<URI> uriStream) {
+        return uriStream.map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(PublicationChannelConnection::toPublicationChannelResponse)
+                   .filter(Objects::nonNull)
+                   .filter(PublicationChannelConnection::containsSingleResult)
+                   .map(PublicationChannelConnection::getId)
+                   .findFirst();
     }
 
-    private URI constructSearchSeriesUri(String searchTerm, Integer year) {
+    private URI constructSearchUri(PublicationChannel publicationChannel, String searchTerm, Integer year) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(PUBLICATION_CHANNELS_V2)
-                   .addChild(SERIES)
+                   .addChild(publicationChannel.getValue())
                    .addQueryParameter(QUERY, searchTerm)
                    .addQueryParameter(YEAR, String.valueOf(year))
                    .getUri();

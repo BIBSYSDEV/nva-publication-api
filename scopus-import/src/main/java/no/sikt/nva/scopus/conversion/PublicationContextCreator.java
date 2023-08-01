@@ -1,7 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +31,7 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
 
@@ -41,9 +41,6 @@ public class PublicationContextCreator {
     public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
-    public static final String EMPTY_STRING = "";
-    private static final URI TEMPORARY_HARDCODED_PUBLISHER_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/publisher/11111/2018");
     private final DocTp docTp;
     private final PublicationChannelConnection publicationChannelConnection;
 
@@ -190,11 +187,8 @@ public class PublicationContextCreator {
                    .anyMatch(List::isEmpty);
     }
 
-    //orElse(null) should be substituted with createUnconfirmedPublisher() when new Channel Register Service will be
-    // implemented
     private PublishingHouse createPublisher() {
-        return fetchConfirmedPublisherFromPublicationChannels().orElse(null);
-        //        .orElseGet(this::createUnconfirmedPublisher)
+        return fetchConfirmedPublisherFromPublicationChannels().orElseGet(this::createUnconfirmedPublisher);
     }
 
     private BookSeries createBookSeries() {
@@ -212,17 +206,17 @@ public class PublicationContextCreator {
     }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
-        return !findPublisherName().isEmpty() ? Optional.of(new Publisher(TEMPORARY_HARDCODED_PUBLISHER_URI))
-                   : Optional.empty();
+        var publisherName = findPublisherName();
+        var publicationYear = findPublicationYear().orElse(null);
+        return publisherName.map(name -> publicationChannelConnection.fetchPublisher(name, publicationYear))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(Publisher::new);
     }
 
-    //These methods should be used when new Channel Register Service will be
-    // implemented
-
-    //    private UnconfirmedPublisher createUnconfirmedPublisher() {
-    //        var publisherName = findPublisherName();
-    //        return new UnconfirmedPublisher(publisherName);
-    //    }
+    private UnconfirmedPublisher createUnconfirmedPublisher() {
+        return new UnconfirmedPublisher(findPublisherName().orElse(null));
+    }
 
     private UnconfirmedSeries createUnconfirmedSeries() {
         var title = findSourceTitle();
@@ -231,16 +225,16 @@ public class PublicationContextCreator {
         return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
     }
 
-    private String findPublisherName() {
-        Optional<PublisherTp> publisherTp = docTp.getItem()
-                                                .getItem()
-                                                .getBibrecord()
-                                                .getHead()
-                                                .getSource()
-                                                .getPublisher()
-                                                .stream()
-                                                .findFirst();
-        return publisherTp.map(PublisherTp::getPublishername).orElse(EMPTY_STRING);
+    private Optional<String> findPublisherName() {
+        return docTp.getItem()
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getSource()
+                   .getPublisher()
+                   .stream()
+                   .map(PublisherTp::getPublishername)
+                   .findFirst();
     }
 
     private Optional<Periodical> createConfirmedJournal() {
