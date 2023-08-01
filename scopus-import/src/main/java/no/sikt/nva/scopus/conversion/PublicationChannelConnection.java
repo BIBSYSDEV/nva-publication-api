@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
@@ -19,6 +20,7 @@ public class PublicationChannelConnection {
     public static final String CONTENT_TYPE = "application/json";
     public static final int SINGLE_ITEM = 1;
     private static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final String SERIES = "series";
     private final AuthorizedBackendUriRetriever uriRetriever;
 
     public PublicationChannelConnection(AuthorizedBackendUriRetriever uriRetriever) {
@@ -27,15 +29,27 @@ public class PublicationChannelConnection {
 
     public Optional<URI> fetchJournal(String printIssn, String electronicIssn, String sourceTitle,
                                       Integer publicationYear) {
-        return attempt(() -> Stream.of(printIssn, electronicIssn, sourceTitle)
-                                 .map(item -> constructSearchJournalUri(item, publicationYear))
-                                 .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
-                                 .filter(Optional::isPresent)
-                                 .map(Optional::get)
-                                 .map(PublicationChannelConnection::toPublicationChannelResponse)
-                                 .filter(PublicationChannelConnection::containsSingleResult)
-                                 .map(PublicationChannelConnection::getId)
-                                 .findFirst()).orElse(failure -> Optional.<URI>empty());
+        var uriStream = Stream.of(printIssn, electronicIssn, sourceTitle)
+            .map(item -> constructSearchJournalUri(item, publicationYear));
+        return fetchPublicationChannelId(uriStream);
+    }
+
+    public Optional<URI> fetchSeries(String printIssn, String electronicIssn, String sourceTitle,
+                                     Integer publicationYear) {
+        var uriStream = Stream.of(printIssn, electronicIssn, sourceTitle)
+                    .map(item -> constructSearchSeriesUri(item, publicationYear));
+        return fetchPublicationChannelId(uriStream);
+    }
+
+    private Optional<URI> fetchPublicationChannelId(Stream<URI> uriStream) {
+        return uriStream.map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(PublicationChannelConnection::toPublicationChannelResponse)
+                   .filter(Objects::nonNull)
+                   .filter(PublicationChannelConnection::containsSingleResult)
+                   .map(PublicationChannelConnection::getId)
+                   .findFirst();
     }
 
     private static URI getId(PublicationChannelResponse results) {
@@ -55,6 +69,15 @@ public class PublicationChannelConnection {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(PUBLICATION_CHANNELS_V2)
                    .addChild(JOURNAL)
+                   .addQueryParameter(QUERY, searchTerm)
+                   .addQueryParameter(YEAR, String.valueOf(year))
+                   .getUri();
+    }
+
+    private URI constructSearchSeriesUri(String searchTerm, Integer year) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(PUBLICATION_CHANNELS_V2)
+                   .addChild(SERIES)
                    .addQueryParameter(QUERY, searchTerm)
                    .addQueryParameter(YEAR, String.valueOf(year))
                    .getUri();

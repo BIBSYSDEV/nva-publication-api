@@ -32,8 +32,8 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
-import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings({"PMD.PrematureDeclaration", "PMD.UnusedLocalVariable"})
 public class PublicationContextCreator {
@@ -44,9 +44,6 @@ public class PublicationContextCreator {
     public static final String EMPTY_STRING = "";
     private static final URI TEMPORARY_HARDCODED_PUBLISHER_URI = URI.create(
         "https://api.nva.unit.no/publication-channels/publisher/11111/2018");
-    private static final URI TEMPORARY_HARDCODE_SERIES_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/journal/1111/2019");
-
     private final DocTp docTp;
     private final PublicationChannelConnection publicationChannelConnection;
 
@@ -200,11 +197,8 @@ public class PublicationContextCreator {
         //        .orElseGet(this::createUnconfirmedPublisher)
     }
 
-    //orElse(null) should be substituted with createUnconfirmedPublisher() when new Channel Register Service will be
-    // implemented
     private BookSeries createBookSeries() {
-        return fetchConfirmedSeriesFromPublicationChannels().orElse(null);
-        //        .orElseGet(this::createUnconfirmedSeries);
+        return fetchConfirmedSeriesFromPublicationChannels().orElseGet(this::createUnconfirmedSeries);
     }
 
     private Optional<BookSeries> fetchConfirmedSeriesFromPublicationChannels() {
@@ -212,7 +206,9 @@ public class PublicationContextCreator {
         var printIssn = findPrintIssn().orElse(null);
         var electronicIssn = findElectronicIssn().orElse(null);
         var publicationYear = findPublicationYear().orElseThrow();
-        return Optional.of(new Series(UriWrapper.fromUri(TEMPORARY_HARDCODE_SERIES_URI).getUri()));
+        var seriesId = publicationChannelConnection.fetchSeries(printIssn, electronicIssn, sourceTitle,
+                                                                publicationYear);
+        return seriesId.map(Series::new);
     }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
@@ -228,12 +224,12 @@ public class PublicationContextCreator {
     //        return new UnconfirmedPublisher(publisherName);
     //    }
 
-    //    private UnconfirmedSeries createUnconfirmedSeries() {
-    //        var title = findSourceTitle();
-    //        var issn = findPrintIssn().orElse(null);
-    //        var onlineIssn = findElectronicIssn().orElse(null);
-    //        return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
-    //    }
+    private UnconfirmedSeries createUnconfirmedSeries() {
+        var title = findSourceTitle();
+        var issn = findPrintIssn().orElse(null);
+        var onlineIssn = findElectronicIssn().orElse(null);
+        return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
+    }
 
     private String findPublisherName() {
         Optional<PublisherTp> publisherTp = docTp.getItem()

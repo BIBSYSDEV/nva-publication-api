@@ -165,6 +165,7 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
@@ -536,10 +537,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
-        //        var actualSeries = ((Book) actualPublicationContext).getSeries();
-        //        assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
-        //        var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
-        //        assertThat(actualIssn, is(expectedIssn));
+        var actualSeries = ((Book) actualPublicationContext).getSeries();
+        assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
+        var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
+        assertThat(actualIssn, is(expectedIssn));
     }
 
     @Test
@@ -589,13 +590,17 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         final var expectedIssn = randomIssn();
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var s3Event = createNewScopusPublicationEvent();
+        var expectedSeriesId = randomUri();
+        when(authorizedBackendUriRetriever.getRawContent(any(), any()))
+            .thenReturn(Optional.of(new PublicationChannelResponse(1,
+                                                                   List.of(new PublicationChannelHit(expectedSeriesId))).toString()));
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualSeries = ((Book) actualPublicationContext).getSeries();
         assertThat(actualSeries, instanceOf(Series.class));
         var actualUri = ((Series) actualSeries).getId();
-        assertThat(actualUri, is(TEMPORARY_HARDCODE_SERIES_URI));
+        assertThat(actualUri, is(expectedSeriesId));
     }
 
     @Test
@@ -631,7 +636,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedIssn = randomIssn();
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var s3Event = createNewScopusPublicationEvent();
-        var expectedJournalId = randomUri();
         when(authorizedBackendUriRetriever.getRawContent(any(), any()))
             .thenReturn(Optional.of(randomString()));
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
