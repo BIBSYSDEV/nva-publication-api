@@ -128,6 +128,7 @@ import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
+import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse.PublicationChannelHit;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
@@ -610,7 +611,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         var expectedJournalId = randomUri();
         when(authorizedBackendUriRetriever.getRawContent(any(), any()))
-            .thenReturn(Optional.of(List.of(new PublicationChannelResponse(expectedJournalId)).toString()));
+            .thenReturn(Optional.of(new PublicationChannelResponse(1,
+                                                                           List.of(new PublicationChannelHit(expectedJournalId))).toString()));
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Journal.class));

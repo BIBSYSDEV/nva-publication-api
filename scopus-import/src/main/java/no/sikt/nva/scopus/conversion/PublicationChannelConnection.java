@@ -12,7 +12,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public class PublicationChannelConnection {
 
-    public static final String PUBLICATION_CHANNELS = "publication-channels";
+    public static final String PUBLICATION_CHANNELS_V2 = "publication-channels-v2";
     public static final String JOURNAL = "journal";
     public static final String QUERY = "query";
     public static final String YEAR = "year";
@@ -32,28 +32,28 @@ public class PublicationChannelConnection {
                                  .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
                                  .filter(Optional::isPresent)
                                  .map(Optional::get)
-                                 .map(PublicationChannelConnection::toPublicationChannelResults)
+                                 .map(PublicationChannelConnection::toPublicationChannelResponse)
                                  .filter(PublicationChannelConnection::containsSingleResult)
                                  .map(PublicationChannelConnection::getId)
                                  .findFirst()).orElse(failure -> Optional.<URI>empty());
     }
 
-    private static URI getId(PublicationChannelResponse... results) {
-        return results[0].getId();
+    private static URI getId(PublicationChannelResponse results) {
+        return results.getHits().get(0).getId();
     }
 
-    private static boolean containsSingleResult(PublicationChannelResponse... results) {
-        return results.length == SINGLE_ITEM;
+    private static boolean containsSingleResult(PublicationChannelResponse response) {
+        return response.getTotalHits() == SINGLE_ITEM;
     }
 
-    private static PublicationChannelResponse[] toPublicationChannelResults(String response) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, PublicationChannelResponse[].class)).orElse(
+    private static PublicationChannelResponse toPublicationChannelResponse(String response) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, PublicationChannelResponse.class)).orElse(
             failure -> null);
     }
 
     private URI constructSearchJournalUri(String searchTerm, Integer year) {
         return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION_CHANNELS)
+                   .addChild(PUBLICATION_CHANNELS_V2)
                    .addChild(JOURNAL)
                    .addQueryParameter(QUERY, searchTerm)
                    .addQueryParameter(YEAR, String.valueOf(year))
