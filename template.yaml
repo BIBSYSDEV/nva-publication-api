@@ -928,6 +928,8 @@ Resources:
           PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
           PIA_REST_API: !Ref PiaRestHost
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Events:
         Scopus:
           Type: S3

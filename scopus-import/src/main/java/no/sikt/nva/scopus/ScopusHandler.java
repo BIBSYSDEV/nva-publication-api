@@ -13,12 +13,14 @@ import java.util.Random;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
+import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -37,6 +39,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 @SuppressWarnings("PMD.GodClass")
 public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
+    public static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
+    public static final String BACKEND_CLIENT_AUTH_URL = new Environment().readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     public static final Random RANDOM = new Random(System.currentTimeMillis());
     public static final int MAX_EFFORTS = 10;
@@ -54,31 +58,32 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     private final S3Client s3Client;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
+    private final PublicationChannelConnection publicationChannelConnection;
     private final ResourceService resourceService;
     private final ScopusUpdater scopusUpdater;
 
     @JacocoGenerated
     public ScopusHandler() {
         this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
+             new PublicationChannelConnection(
+                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL)),
              ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), new UriRetriever()));
     }
 
-    public ScopusHandler(S3Client s3Client,
-                         PiaConnection piaConnection,
-                         CristinConnection cristinConnection,
-                         ResourceService resourceService,
+    public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
+                         PublicationChannelConnection publicationChannelConnection, ResourceService resourceService,
                          ScopusUpdater scopusUpdater) {
         this.s3Client = s3Client;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
+        this.publicationChannelConnection = publicationChannelConnection;
         this.resourceService = resourceService;
         this.scopusUpdater = scopusUpdater;
     }
 
     @Override
     public ImportCandidate handleRequest(S3Event event, Context context) {
-        return attempt(() -> createImportCandidate(event))
-                   .map(this::updateExistingIfNeeded)
+        return attempt(() -> createImportCandidate(event)).map(this::updateExistingIfNeeded)
                    .flatMap(this::persistOrUpdateInDatabase)
                    .map(publication -> storeSuccessReport(publication, event))
                    .orElseThrow(fail -> handleSavingError(fail, event));
@@ -103,9 +108,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private ImportCandidate storeSuccessReport(ImportCandidate importCandidate, S3Event event) {
-        return attempt(this::getS3DriverForScopusImportBucket)
-                   .map(s3Driver -> insertSucceededReportFile(importCandidate, event, s3Driver))
-                   .orElseThrow();
+        return attempt(this::getS3DriverForScopusImportBucket).map(
+            s3Driver -> insertSucceededReportFile(importCandidate, event, s3Driver)).orElseThrow();
     }
 
     private ImportCandidate insertSucceededReportFile(ImportCandidate importCandidate, S3Event event, S3Driver s3Driver)
@@ -127,7 +131,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private String getScopusIdentifier(ImportCandidate importCandidate) {
-        return importCandidate.getAdditionalIdentifiers().stream()
+        return importCandidate.getAdditionalIdentifiers()
+                   .stream()
                    .filter(this::isScopusIdentifier)
                    .map(AdditionalIdentifier::getValue)
                    .findFirst()
@@ -149,17 +154,14 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private void saveReportToS3(Failure<ImportCandidate> fail, S3Event event) {
-        attempt(() -> getContentToSave(event))
-            .map(content -> generateReportFromContent(fail, content))
+        attempt(() -> getContentToSave(event)).map(content -> generateReportFromContent(fail, content))
             .map(report -> insertReport(fail, event, report));
     }
 
-    private URI insertReport(Failure<ImportCandidate> fail, S3Event event,
-                             ImportResult<String> report)
+    private URI insertReport(Failure<ImportCandidate> fail, S3Event event, ImportResult<String> report)
         throws IOException {
-        return getS3DriverForScopusImportBucket()
-                   .insertFile(constructErrorFileUri(event, fail.getException()).toS3bucketPath(),
-                               report.toJsonString());
+        return getS3DriverForScopusImportBucket().insertFile(
+            constructErrorFileUri(event, fail.getException()).toS3bucketPath(), report.toJsonString());
     }
 
     private String getContentToSave(S3Event event) {
@@ -169,9 +171,13 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     private UriWrapper constructErrorFileUri(S3Event event, Exception exception) {
         var fileUri = UriWrapper.fromUri(extractObjectKey(event));
         var timestamp = timePath(event);
-        return UriWrapper.fromUri(ERROR_BUCKET_PATH + PATH_SEPERATOR
-                                  + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName()
-                                  + PATH_SEPERATOR + fileUri.getLastPathElement());
+        return UriWrapper.fromUri(ERROR_BUCKET_PATH
+                                  + PATH_SEPERATOR
+                                  + timestamp
+                                  + PATH_SEPERATOR
+                                  + exception.getClass().getSimpleName()
+                                  + PATH_SEPERATOR
+                                  + fileUri.getLastPathElement());
     }
 
     private String timePath(S3Event event) {
@@ -240,7 +246,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private ImportCandidate generatePublication(DocTp docTp) {
-        var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection);
+        var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection,
+                                                  publicationChannelConnection);
         return scopusConverter.generateImportCandidate();
     }
 

@@ -1,7 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +31,9 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
-import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings({"PMD.PrematureDeclaration", "PMD.UnusedLocalVariable"})
 public class PublicationContextCreator {
@@ -41,18 +41,12 @@ public class PublicationContextCreator {
     public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
-    public static final String EMPTY_STRING = "";
-    private static final URI TEMPORARY_HARDCODED_PUBLISHER_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/publisher/11111/2018");
-    private static final URI TEMPORARY_HARDCODE_SERIES_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/journal/1111/2019");
-    private static final URI TEMPORARY_HARDCODE_JOURNAL_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/journal/1111/2019");
-
     private final DocTp docTp;
+    private final PublicationChannelConnection publicationChannelConnection;
 
-    public PublicationContextCreator(DocTp docTp) {
+    public PublicationContextCreator(DocTp docTp, PublicationChannelConnection publicationChannelConnection) {
         this.docTp = docTp;
+        this.publicationChannelConnection = publicationChannelConnection;
     }
 
     public PublicationContext getPublicationContext() {
@@ -193,18 +187,12 @@ public class PublicationContextCreator {
                    .anyMatch(List::isEmpty);
     }
 
-    //orElse(null) should be substituted with createUnconfirmedPublisher() when new Channel Register Service will be
-    // implemented
     private PublishingHouse createPublisher() {
-        return fetchConfirmedPublisherFromPublicationChannels().orElse(null);
-        //        .orElseGet(this::createUnconfirmedPublisher)
+        return fetchConfirmedPublisherFromPublicationChannels().orElseGet(this::createUnconfirmedPublisher);
     }
 
-    //orElse(null) should be substituted with createUnconfirmedPublisher() when new Channel Register Service will be
-    // implemented
     private BookSeries createBookSeries() {
-        return fetchConfirmedSeriesFromPublicationChannels().orElse(null);
-        //        .orElseGet(this::createUnconfirmedSeries);
+        return fetchConfirmedSeriesFromPublicationChannels().orElseGet(this::createUnconfirmedSeries);
     }
 
     private Optional<BookSeries> fetchConfirmedSeriesFromPublicationChannels() {
@@ -212,40 +200,41 @@ public class PublicationContextCreator {
         var printIssn = findPrintIssn().orElse(null);
         var electronicIssn = findElectronicIssn().orElse(null);
         var publicationYear = findPublicationYear().orElseThrow();
-        return Optional.of(new Series(UriWrapper.fromUri(TEMPORARY_HARDCODE_SERIES_URI).getUri()));
+        var seriesId = publicationChannelConnection.fetchSeries(printIssn, electronicIssn, sourceTitle,
+                                                                publicationYear);
+        return seriesId.map(Series::new);
     }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
-        return !findPublisherName().isEmpty()
-                   ? Optional.of(new Publisher(TEMPORARY_HARDCODED_PUBLISHER_URI))
-                   : Optional.empty();
+        var publisherName = findPublisherName();
+        var publicationYear = findPublicationYear().orElse(null);
+        return publisherName.map(name -> publicationChannelConnection.fetchPublisher(name, publicationYear))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(Publisher::new);
     }
 
-    //These methods should be used when new Channel Register Service will be
-    // implemented
+    private UnconfirmedPublisher createUnconfirmedPublisher() {
+        return new UnconfirmedPublisher(findPublisherName().orElse(null));
+    }
 
-    //    private UnconfirmedPublisher createUnconfirmedPublisher() {
-    //        var publisherName = findPublisherName();
-    //        return new UnconfirmedPublisher(publisherName);
-    //    }
+    private UnconfirmedSeries createUnconfirmedSeries() {
+        var title = findSourceTitle();
+        var issn = findPrintIssn().orElse(null);
+        var onlineIssn = findElectronicIssn().orElse(null);
+        return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
+    }
 
-    //    private UnconfirmedSeries createUnconfirmedSeries() {
-    //        var title = findSourceTitle();
-    //        var issn = findPrintIssn().orElse(null);
-    //        var onlineIssn = findElectronicIssn().orElse(null);
-    //        return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
-    //    }
-
-    private String findPublisherName() {
-        Optional<PublisherTp> publisherTp = docTp.getItem()
-                                                .getItem()
-                                                .getBibrecord()
-                                                .getHead()
-                                                .getSource()
-                                                .getPublisher()
-                                                .stream()
-                                                .findFirst();
-        return publisherTp.map(PublisherTp::getPublishername).orElse(EMPTY_STRING);
+    private Optional<String> findPublisherName() {
+        return docTp.getItem()
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getSource()
+                   .getPublisher()
+                   .stream()
+                   .map(PublisherTp::getPublishername)
+                   .findFirst();
     }
 
     private Optional<Periodical> createConfirmedJournal() {
@@ -253,13 +242,14 @@ public class PublicationContextCreator {
                    : Optional.empty();
     }
 
-    //Unused variables should be used for search in Channel Register when it will be implemented
     private Optional<Periodical> fetchPeriodicalInfoFromPublicationChannels() {
         var sourceTitle = findSourceTitle();
         var printIssn = findPrintIssn().orElse(null);
         var electronicIssn = findElectronicIssn().orElse(null);
         var publicationYear = findPublicationYear().orElseThrow();
-        return Optional.of(new Journal(UriWrapper.fromUri(TEMPORARY_HARDCODE_JOURNAL_URI).getUri()));
+        var journalId = publicationChannelConnection.fetchJournal(printIssn, electronicIssn, sourceTitle,
+                                                                  publicationYear);
+        return journalId.map(Journal::new);
     }
 
     private boolean thereIsLevelInformationForPublication() {
