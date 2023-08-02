@@ -2,7 +2,6 @@ package no.unit.nva.expansion.model;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
-import static no.unit.nva.expansion.ResourceExpansionServiceImpl.logger;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -366,32 +365,51 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     //TODO: should be refactored when we have updated commons version. Should use getResponse() method of
     // uriRetriever instead of getRawContent()
-    private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever)
-        throws BadGatewayException {
-        var topLevelOrganization = fetchTopLevelOrganization(id, uriRetriever);
-        var response = attempt(
-            () -> uriRetriever.getRawContent(createUri(topLevelOrganization), CONTENT_TYPE)).get();
-        if (response.isPresent() && okResponse(response.get())) {
-            logger.info("Fetched nva customer {}", response.get());
-            return true;
-        }
-        if (response.isPresent() && notFoundResponse(response.get())) {
-            return false;
-        }
-        throw new BadGatewayException("Could not fetch nva customer");
-    }
-
-    private static URI fetchTopLevelOrganization(URI id, AuthorizedBackendUriRetriever uriRetriever) {
-        var cristinId = UriWrapper.fromUri(id).getLastPathElement();
-        return uriRetriever.getRawContent(toCristinOrgUri(cristinId), CONTENT_TYPE)
-                   .map(ExpandedImportCandidate::extractTopLevelOrganization)
+    private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
+        return attempt(() -> UriWrapper.fromUri(id).getLastPathElement())
+                   .map(ExpandedImportCandidate::toCristinOrgUri)
+                   .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+                   .map(response -> JsonUtils.dtoObjectMapper.readValue(response.orElse(null),
+                                                                        CristinOrganization.class))
+                   .map(CristinOrganization::getPartOf)
+                   .map(list -> list.get(0).getId())
+                   .map(topLevelOrgId -> uriRetriever.getRawContent(createUri(topLevelOrgId), CONTENT_TYPE))
+                   .map(Optional::get)
+                   .map(string -> {
+                       if (okResponse(string)) {
+                           return true;
+                       }
+                       if (notFoundResponse(string)) {
+                           return false;
+                       } else {
+                           throw new BadGatewayException("Could not fetch nva customer: " + string);
+                       }
+                   })
                    .orElseThrow();
+        //        var topLevelOrganization = fetchTopLevelOrganization(id, uriRetriever);
+        //        var response = attempt(
+        //            () -> uriRetriever.getRawContent(createUri(topLevelOrganization), CONTENT_TYPE)).get();
+        //        if (response.isPresent() && okResponse(response.get())) {
+        //            logger.info("Fetched nva customer {}", response.get());
+        //            return true;
+        //        }
+        //        if (response.isPresent() && notFoundResponse(response.get())) {
+        //            return false;
+        //        }
+        //        throw new BadGatewayException("Could not fetch nva customer");
     }
 
-    private static URI extractTopLevelOrganization(String body) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class)).map(
-            CristinOrganization::getPartOf).map(list -> list.get(0)).map(Organization::getId).orElseThrow();
-    }
+//    private static URI fetchTopLevelOrganization(URI id, AuthorizedBackendUriRetriever uriRetriever) {
+//        var cristinId = UriWrapper.fromUri(id).getLastPathElement();
+//        return uriRetriever.getRawContent(toCristinOrgUri(cristinId), CONTENT_TYPE)
+//                   .map(ExpandedImportCandidate::extractTopLevelOrganization)
+//                   .orElseThrow();
+//    }
+
+//    private static URI extractTopLevelOrganization(String body) {
+//        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class)).map(
+//            CristinOrganization::getPartOf).map(list -> list.get(0)).map(Organization::getId).orElseThrow();
+//    }
 
     private static URI toCristinOrgUri(String cristinId) {
         return UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(cristinId).getUri();
