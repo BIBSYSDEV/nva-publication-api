@@ -370,7 +370,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         throws BadGatewayException {
         var topLevelOrganization = fetchTopLevelOrganization(id, uriRetriever);
         var response = attempt(
-            () -> uriRetriever.getRawContent(createUri(topLevelOrganization), CONTENT_TYPE)).orElseThrow();
+            () -> uriRetriever.getRawContent(createUri(topLevelOrganization), CONTENT_TYPE)).get();
         if (response.isPresent() && okResponse(response.get())) {
             logger.info("Fetched nva customer {}", response.get());
             return true;
