@@ -81,9 +81,7 @@ public class CristinConnection {
     }
 
     private Person getCristinPersonResponse(String json) throws JsonProcessingException {
-        var person = JsonUtils.singleLineObjectMapper.readValue(json, Person.class);
-        logger.info("Cristin person fetched successfully: {}", person.toJsonString());
-        return person;
+        return JsonUtils.singleLineObjectMapper.readValue(json, Person.class);
     }
 
     private String getBodyFromPersonResponse(HttpResponse<String> response) {
