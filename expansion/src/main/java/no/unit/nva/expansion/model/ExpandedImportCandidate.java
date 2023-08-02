@@ -2,6 +2,7 @@ package no.unit.nva.expansion.model;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
+import static no.unit.nva.expansion.ResourceExpansionServiceImpl.logger;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -374,6 +375,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(CristinOrganization::getPartOf)
                    .map(list -> list.get(0).getId())
                    .map(topLevelOrgId -> uriRetriever.getRawContent(createUri(topLevelOrgId), CONTENT_TYPE))
+                   .map(ExpandedImportCandidate::log)
                    .map(Optional::get)
                    .map(string -> {
                        if (okResponse(string)) {
@@ -399,7 +401,12 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         //        throw new BadGatewayException("Could not fetch nva customer");
     }
 
-//    private static URI fetchTopLevelOrganization(URI id, AuthorizedBackendUriRetriever uriRetriever) {
+    private static Optional<String> log(Optional<String> response) {
+        logger.info("Response customer: {}", response);
+        return response;
+    }
+
+    //    private static URI fetchTopLevelOrganization(URI id, AuthorizedBackendUriRetriever uriRetriever) {
 //        var cristinId = UriWrapper.fromUri(id).getLastPathElement();
 //        return uriRetriever.getRawContent(toCristinOrgUri(cristinId), CONTENT_TYPE)
 //                   .map(ExpandedImportCandidate::extractTopLevelOrganization)
