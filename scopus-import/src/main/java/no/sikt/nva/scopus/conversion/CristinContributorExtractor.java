@@ -19,6 +19,8 @@ import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CristinContributorExtractor {
 
@@ -26,6 +28,8 @@ public final class CristinContributorExtractor {
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
     public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
     public static final String ORCID_FIELD_NAME = "orcid";
+    private static final Logger logger = LoggerFactory.getLogger(CristinContributorExtractor.class);
+
 
     @JacocoGenerated
     private CristinContributorExtractor() {
@@ -59,6 +63,8 @@ public final class CristinContributorExtractor {
         identity.setVerificationStatus(nonNull(cristinPerson.getVerified())
                                            ? generateVerificationStatus(cristinPerson)
                                            : ContributorVerificationStatus.CANNOT_BE_ESTABLISHED);
+        logger.info("Cristin person: {}", cristinPerson.toJsonString());
+        logger.info("Identity from cristinPerson: {}", identity);
         return identity;
     }
 

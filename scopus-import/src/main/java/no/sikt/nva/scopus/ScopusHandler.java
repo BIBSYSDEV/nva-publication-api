@@ -66,7 +66,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     public ScopusHandler() {
         this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
              new PublicationChannelConnection(
-                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_SECRET_NAME, BACKEND_CLIENT_AUTH_URL)),
+                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
              ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), new UriRetriever()));
     }
 
