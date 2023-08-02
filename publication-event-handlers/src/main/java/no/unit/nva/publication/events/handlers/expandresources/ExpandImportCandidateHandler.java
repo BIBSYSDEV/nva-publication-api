@@ -30,6 +30,7 @@ public class ExpandImportCandidateHandler extends
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final int PUBLICATION_YEAR_2018 = 2018;
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final AuthorizedBackendUriRetriever retriever;
     private final S3Driver s3Reader;
@@ -54,8 +55,14 @@ public class ExpandImportCandidateHandler extends
                                                  Context context) {
         var blob = readBlobFromS3(input);
         return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever))
-                   .map(this::createOutPutEventAndPersistDocument)
+                   .map(expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate)
+                                                       ? createOutPutEventAndPersistDocument(expandedImportCandidate)
+                                                       : emptyEvent())
                    .orElse(failure -> emptyEvent());
+    }
+
+    private boolean shouldBeExpanded(ExpandedImportCandidate expandedImportCandidate) {
+        return Integer.parseInt(expandedImportCandidate.getPublicationYear()) >= PUBLICATION_YEAR_2018;
     }
 
     private EventReference emptyEvent() {

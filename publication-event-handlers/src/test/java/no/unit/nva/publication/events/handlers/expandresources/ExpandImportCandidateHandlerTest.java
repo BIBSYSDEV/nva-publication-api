@@ -86,12 +86,27 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldNotProduceExpandedDataEntryWhenPublicationDateIsOlderThan2018() throws IOException {
+        var oldImage = randomImportCandidate();
+        var newImage = updatedVersionOfImportCandidateWithPublicationDate(oldImage);
+        var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
+        handler.handleRequest(request, output, CONTEXT);
+        var eventReference = JsonUtils.dtoObjectMapper.readValue(output.toString(), EventReference.class);
+        assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
+    }
+
+    @Test
     void shouldNotProduceAnExpandedDataEntryWhenInputHasNoNewImage() throws IOException {
         var oldImage = randomImportCandidate();
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, null);
         handler.handleRequest(request, output, CONTEXT);
         var eventReference = JsonUtils.dtoObjectMapper.readValue(output.toString(), EventReference.class);
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
+    }
+
+    private ImportCandidate updatedVersionOfImportCandidateWithPublicationDate(ImportCandidate importCandidate) {
+        importCandidate.getEntityDescription().getPublicationDate().setYear("2015");
+        return importCandidate;
     }
 
     private EventReference emptyEvent(Instant timestamp) {
