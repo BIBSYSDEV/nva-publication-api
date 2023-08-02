@@ -89,6 +89,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private UriRetriever uriRetriever;
+    private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
 
     public static Stream<Class<?>> entryTypes() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
@@ -113,6 +114,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.messageService = new MessageService(client);
         this.ticketService = new TicketService(client);
         this.uriRetriever = mock(UriRetriever.class);
+        this.authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
@@ -122,8 +124,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("importCandidateContextTypeProvider")
     public void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, mock(
-            AuthorizedBackendUriRetriever.class));
+        when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(randomString()));
+        var expandedImportCandidate = ExpandedImportCandidate
+                                          .fromImportCandidate(importCandidate, authorizedBackendUriRetriever);
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
@@ -238,8 +241,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     private Contributor randomContributor() {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
+        return new Contributor.Builder().withIdentity(new Identity.Builder().withId(randomUri()).withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
+                   .withAffiliations(List.of(new Organization.Builder().withId(randomUri()).build()))
                    .build();
     }
 
