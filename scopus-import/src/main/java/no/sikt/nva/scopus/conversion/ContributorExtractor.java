@@ -69,16 +69,15 @@ public class ContributorExtractor {
         Optional<Contributor> matchingContributor = contributors.stream()
                                                         .filter(
                                                             contributor -> compareContributorToAuthorOrCollaboration(
-                                                                contributor,
-                                                                authorOrCollaboration))
+                                                                contributor, authorOrCollaboration))
                                                         .findAny();
         if (matchingContributor.isPresent()) {
             replaceExistingContributor(matchingContributor.get(), authorGroupTp);
         } else {
-            Optional<PersonalnameType> correspondencePerson = correspondenceTps
-                                                                  .stream()
+            Optional<PersonalnameType> correspondencePerson = correspondenceTps.stream()
                                                                   .map(this::extractPersonalNameType)
-                                                                  .findFirst().orElse(Optional.empty());
+                                                                  .findFirst()
+                                                                  .orElse(Optional.empty());
             generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp,
                                                          correspondencePerson.orElse(null));
         }
@@ -88,16 +87,14 @@ public class ContributorExtractor {
         if (isNull(existingContributor.getIdentity().getId())) {
             var optionalNewAffiliations = generateAffiliationFromAuthorGroupTp(authorGroupTp);
             optionalNewAffiliations.ifPresent(
-                organizations ->
-                    createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
-                                                                                             existingContributor));
+                organizations -> createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
+                                                                                                          existingContributor));
         }
     }
 
-    private void createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(
-        Organization newAffiliation, Contributor matchingContributor) {
-        var newContributor =
-            cloneContributorAddingAffiliation(matchingContributor, newAffiliation);
+    private void createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(Organization newAffiliation,
+                                                                                          Contributor matchingContributor) {
+        var newContributor = cloneContributorAddingAffiliation(matchingContributor, newAffiliation);
         replaceContributor(matchingContributor, newContributor);
     }
 
@@ -111,8 +108,7 @@ public class ContributorExtractor {
         List<Organization> affiliations = new ArrayList<>(existingContributor.getAffiliations());
         affiliations.add(newAffiliation);
 
-        return new Contributor.Builder()
-                   .withIdentity(existingContributor.getIdentity())
+        return new Contributor.Builder().withIdentity(existingContributor.getIdentity())
                    .withAffiliations(affiliations)
                    .withRole(existingContributor.getRole())
                    .withSequence(existingContributor.getSequence())
@@ -121,8 +117,7 @@ public class ContributorExtractor {
     }
 
     private boolean compareContributorToAuthorOrCollaboration(Contributor contributor, Object authorOrCollaboration) {
-        return authorOrCollaboration instanceof AuthorTp
-                   ? isSamePerson((AuthorTp) authorOrCollaboration, contributor)
+        return authorOrCollaboration instanceof AuthorTp ? isSamePerson((AuthorTp) authorOrCollaboration, contributor)
                    : isSameSequenceElement((CollaborationTp) authorOrCollaboration, contributor);
     }
 
@@ -140,15 +135,13 @@ public class ContributorExtractor {
         }
     }
 
-    private void generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                              AuthorGroupTp authorGroupTp,
+    private void generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration, AuthorGroupTp authorGroupTp,
                                                               PersonalnameType correspondencePerson) {
         if (authorOrCollaboration instanceof AuthorTp) {
-            generateContributor((AuthorTp) authorOrCollaboration, authorGroupTp,
-                                correspondencePerson);
+            generateContributor((AuthorTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
         } else {
-            generateContributorFromCollaborationTp(
-                (CollaborationTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
+            generateContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration, authorGroupTp,
+                                                   correspondencePerson);
         }
     }
 
@@ -158,14 +151,12 @@ public class ContributorExtractor {
         var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinPersonUri);
         var cristinOrganizationUri = getCristinOrganizationUri(authorGroup);
         var cristinOrganization = cristinConnection.getCristinOrganizationByCristinId(cristinOrganizationUri);
-        contributors.add(
-            cristinPerson
-                .map(person -> CristinContributorExtractor.generateContributorFromCristin(person,
-                                                                                          author,
-                                                                                          correspondencePerson,
-                                                                                          cristinOrganization))
-                .orElseGet(() -> generateContributorFromAuthorTp(author, authorGroup, correspondencePerson,
-                                                                 cristinOrganization)));
+        contributors.add(cristinPerson.map(
+                person -> CristinContributorExtractor.generateContributorFromCristin(person, author,
+                                                                                     correspondencePerson,
+                                                                                     cristinOrganization))
+                             .orElseGet(() -> generateContributorFromAuthorTp(author, authorGroup, correspondencePerson,
+                                                                              cristinOrganization)));
     }
 
     @Nullable
@@ -177,12 +168,10 @@ public class ContributorExtractor {
                    .orElse(null);
     }
 
-    private Contributor generateContributorFromAuthorTp(
-        AuthorTp author, AuthorGroupTp authorGroup,
-        PersonalnameType correspondencePerson,
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
-        return new Contributor.Builder()
-                   .withIdentity(generateContributorIdentityFromAuthorTp(author))
+    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
+                                                        PersonalnameType correspondencePerson,
+                                                        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+        return new Contributor.Builder().withIdentity(generateContributorIdentityFromAuthorTp(author))
                    .withAffiliations(generateAffiliation(organization, authorGroup).map(List::of).orElse(List.of()))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(author))
@@ -192,24 +181,19 @@ public class ContributorExtractor {
 
     private Optional<Organization> generateAffiliationFromCristinOrganization(
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
-        return Optional.of(new Organization.Builder()
-                               .withId(organization.getId())
-                               .withLabels(organization.getLabels())
-                               .build());
+        return Optional.of(
+            new Organization.Builder().withId(organization.getId()).withLabels(organization.getLabels()).build());
     }
 
-    private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
-                                                        AuthorGroupTp authorGroupTp,
+    private void generateContributorFromCollaborationTp(CollaborationTp collaboration, AuthorGroupTp authorGroupTp,
                                                         PersonalnameType correspondencePerson) {
-        var cristinOrganizationUri = piaConnection
-                                         .getCristinOrganizationIdentifier(authorGroupTp.getAffiliation().getAfid());
+        var cristinOrganizationUri = piaConnection.getCristinOrganizationIdentifier(
+            authorGroupTp.getAffiliation().getAfid());
         var cristinOrganization = cristinConnection.getCristinOrganizationByCristinId(cristinOrganizationUri);
-        var newContributor = new Contributor.Builder()
-                                 .withIdentity(
-                                     new Identity.Builder().withName(determineContributorName(collaboration)).build())
-                                 .withAffiliations(
-                                     generateAffiliation(cristinOrganization, authorGroupTp).map(List::of)
-                                         .orElse(List.of()))
+        var newContributor = new Contributor.Builder().withIdentity(
+                new Identity.Builder().withName(determineContributorName(collaboration)).build())
+                                 .withAffiliations(generateAffiliation(cristinOrganization, authorGroupTp).map(List::of)
+                                                       .orElse(List.of()))
                                  .withRole(new RoleType(Role.OTHER))
                                  .withSequence(getSequenceNumber(collaboration))
                                  .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, correspondencePerson))
@@ -219,8 +203,7 @@ public class ContributorExtractor {
 
     private Optional<Organization> generateAffiliation(
         no.sikt.nva.scopus.conversion.model.cristin.Organization cristinOrganization, AuthorGroupTp authorGroupTp) {
-        return nonNull(cristinOrganization)
-                   ? generateAffiliationFromCristinOrganization(cristinOrganization)
+        return nonNull(cristinOrganization) ? generateAffiliationFromCristinOrganization(cristinOrganization)
                    : generateAffiliationFromAuthorGroupTp(authorGroupTp);
     }
 
@@ -232,18 +215,16 @@ public class ContributorExtractor {
     }
 
     private Optional<Organization> generateAffiliationFromAuthorGroupTp(AuthorGroupTp authorGroup) {
-        return getOrganizationLabels(authorGroup)
-                   .map(this::generateOrganizationWithLabel);
+        return getOrganizationLabels(authorGroup).map(this::generateOrganizationWithLabel);
     }
 
     private boolean isCorrespondingAuthor(CollaborationTp collaboration, PersonalnameType correspondencePerson) {
-        return nonNull(correspondencePerson)
-               && collaboration.getIndexedName().equals(correspondencePerson.getIndexedName());
+        return nonNull(correspondencePerson) && collaboration.getIndexedName()
+                                                    .equals(correspondencePerson.getIndexedName());
     }
 
     private boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
-        return nonNull(correspondencePerson)
-               && author.getIndexedName().equals(correspondencePerson.getIndexedName());
+        return nonNull(correspondencePerson) && author.getIndexedName().equals(correspondencePerson.getIndexedName());
     }
 
     private int getSequenceNumber(CollaborationTp collaborationTp) {
@@ -274,40 +255,34 @@ public class ContributorExtractor {
 
     private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
         var organizationNameOptional = getOrganizationNameFromAuthorGroup(authorGroup);
-        return organizationNameOptional.map(organizationName -> Map.of(getLanguageIso6391Code(organizationName),
-                                                                       organizationName));
+        return organizationNameOptional.map(
+            organizationName -> Map.of(getLanguageIso6391Code(organizationName), organizationName));
     }
 
     private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
-        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
-                   ? potentiallyMalformedOrcidString
+        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL) ? potentiallyMalformedOrcidString
                    : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
     }
 
     private Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {
         var affiliation = authorGroup.getAffiliation();
-        return nonNull(affiliation)
-                   ? Optional.of(affiliation
-                                     .getOrganization()
-                                     .stream()
-                                     .map(organizationTp -> extractContentString(
-                                         organizationTp.getContent()))
-                                     .collect(Collectors.joining(AFFILIATION_DELIMITER)))
+        return nonNull(affiliation) ? Optional.of(affiliation.getOrganization()
+                                                      .stream()
+                                                      .map(organizationTp -> extractContentString(
+                                                          organizationTp.getContent()))
+                                                      .collect(Collectors.joining(AFFILIATION_DELIMITER)))
                    : Optional.empty();
     }
 
     private String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {
         var detector = new OptimaizeLangDetector().loadModels();
         var result = detector.detect(textToBeGuessedLanguageCodeFrom);
-        return result.isReasonablyCertain()
-                   ? getIso6391LanguageCodeForSupportedNvaLanguage(result.getLanguage())
+        return result.isReasonablyCertain() ? getIso6391LanguageCodeForSupportedNvaLanguage(result.getLanguage())
                    : ENGLISH.getIso6391Code();
     }
 
     private String getIso6391LanguageCodeForSupportedNvaLanguage(String possiblyUnsupportedLanguageIso6391code) {
         var language = LanguageMapper.getLanguageByIso6391Code(possiblyUnsupportedLanguageIso6391code);
-        return nonNull(language.getIso6391Code())
-                   ? language.getIso6391Code()
-                   : ENGLISH.getIso6391Code();
+        return nonNull(language.getIso6391Code()) ? language.getIso6391Code() : ENGLISH.getIso6391Code();
     }
 }
