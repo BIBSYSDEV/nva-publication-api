@@ -17,13 +17,11 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExpandImportCandidateHandler extends
-                                          DestinationsEventBridgeEventHandler<EventReference, EventReference> {
+public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
     public static final Environment ENVIRONMENT = new Environment();
@@ -31,6 +29,7 @@ public class ExpandImportCandidateHandler extends
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+    public static final int PUBLICATION_YEAR_2018 = 2018;
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final AuthorizedBackendUriRetriever retriever;
     private final S3Driver s3Reader;
@@ -54,13 +53,16 @@ public class ExpandImportCandidateHandler extends
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var blob = readBlobFromS3(input);
-        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever))
-                   .map(this::createOutPutEventAndPersistDocument)
-                   .orElse(this::emptyEvent);
+        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever)).map(
+            expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate) ? createOutPutEventAndPersistDocument(
+                expandedImportCandidate) : emptyEvent()).orElse(failure -> emptyEvent());
     }
 
-    private EventReference emptyEvent(Failure<EventReference> failure) {
-        logger.info("Could not expand import candidate: {}", failure.getException().getMessage());
+    private boolean shouldBeExpanded(ExpandedImportCandidate expandedImportCandidate) {
+        return Integer.parseInt(expandedImportCandidate.getPublicationYear()) >= PUBLICATION_YEAR_2018;
+    }
+
+    private EventReference emptyEvent() {
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
