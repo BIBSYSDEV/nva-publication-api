@@ -17,6 +17,7 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,10 +56,11 @@ public class ExpandImportCandidateHandler extends
         var blob = readBlobFromS3(input);
         return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever))
                    .map(this::createOutPutEventAndPersistDocument)
-                   .orElse(failure -> emptyEvent());
+                   .orElse(this::emptyEvent);
     }
 
-    private EventReference emptyEvent() {
+    private EventReference emptyEvent(Failure<EventReference> failure) {
+        logger.info("Could not expand import candidate: {}", failure.getException().getMessage());
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
