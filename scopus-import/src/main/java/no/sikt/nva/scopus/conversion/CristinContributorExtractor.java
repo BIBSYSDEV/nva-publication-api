@@ -31,14 +31,11 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static Contributor generateContributorFromCristin(
-        Person person,
-        AuthorTp authorTp,
-        PersonalnameType correspondencePerson,
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    public static Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
+                                                             PersonalnameType correspondencePerson,
+                                                             no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
 
-        return new Contributor.Builder()
-                   .withIdentity(generateContributorIdentityFromCristinPerson(person))
+        return new Contributor.Builder().withIdentity(generateContributorIdentityFromCristinPerson(person))
                    .withAffiliations(generateOrganizations(person.getAffiliations(), organization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
@@ -49,28 +46,25 @@ public final class CristinContributorExtractor {
     private static Identity generateContributorIdentityFromCristinPerson(Person cristinPerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(cristinPerson));
-        identity.setOrcId(cristinPerson
-                              .getIdentifiers()
+        identity.setOrcId(cristinPerson.getIdentifiers()
                               .stream()
                               .filter(CristinContributorExtractor::isOrcid)
-                              .findAny().map(TypedValue::getValue)
+                              .findAny()
+                              .map(TypedValue::getValue)
                               .orElse(null));
         identity.setId(cristinPerson.getId());
-        identity.setVerificationStatus(nonNull(cristinPerson.getVerified())
-                                           ? generateVerificationStatus(cristinPerson)
+        identity.setVerificationStatus(nonNull(cristinPerson.getVerified()) ? generateVerificationStatus(cristinPerson)
                                            : ContributorVerificationStatus.CANNOT_BE_ESTABLISHED);
         return identity;
     }
 
     private static ContributorVerificationStatus generateVerificationStatus(Person cristinPerson) {
-        return cristinPerson.getVerified()
-                   ? ContributorVerificationStatus.VERIFIED
+        return cristinPerson.getVerified() ? ContributorVerificationStatus.VERIFIED
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<Organization> generateOrganizations(
-        Set<Affiliation> affiliations,
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    private static List<Organization> generateOrganizations(Set<Affiliation> affiliations,
+                                                            no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
 
         var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations);
         if (nonNull(organization)) {
@@ -89,24 +83,18 @@ public final class CristinContributorExtractor {
 
     @NotNull
     private static Organization convertToOrganization(Affiliation affiliation) {
-        return new Organization.Builder()
-                   .withId(affiliation.getOrganization())
+        return new Organization.Builder().withId(affiliation.getOrganization())
                    .withLabels(affiliation.getRole().getLabels())
                    .build();
     }
 
     private static Organization createOrganizationFromAuthorGroupTpAffiliation(
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
-        return Optional.ofNullable(organization)
-                   .map(CristinContributorExtractor::toOrganization)
-                   .orElse(null);
+        return Optional.ofNullable(organization).map(CristinContributorExtractor::toOrganization).orElse(null);
     }
 
     private static Organization toOrganization(no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
-        return new Organization.Builder()
-                   .withId(organization.getId())
-                   .withLabels(organization.getLabels())
-                   .build();
+        return new Organization.Builder().withId(organization.getId()).withLabels(organization.getLabels()).build();
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {
@@ -130,14 +118,21 @@ public final class CristinContributorExtractor {
     }
 
     private static String getFirstName(Person person) {
-        return person.getNames().stream()
-                   .filter(CristinContributorExtractor::isFirstName).findFirst().map(
-                TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
+        return person.getNames()
+                   .stream()
+                   .filter(CristinContributorExtractor::isFirstName)
+                   .findFirst()
+                   .map(TypedValue::getValue)
+                   .orElse(StringUtils.EMPTY_STRING);
     }
 
     private static String getLastName(Person person) {
-        return person.getNames().stream().filter(CristinContributorExtractor::isSurname).findFirst()
-                   .map(TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
+        return person.getNames()
+                   .stream()
+                   .filter(CristinContributorExtractor::isSurname)
+                   .findFirst()
+                   .map(TypedValue::getValue)
+                   .orElse(StringUtils.EMPTY_STRING);
     }
 
     private static boolean isFirstName(TypedValue typedValue) {

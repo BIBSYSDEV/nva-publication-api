@@ -21,8 +21,7 @@ import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExpandImportCandidateHandler extends
-                                          DestinationsEventBridgeEventHandler<EventReference, EventReference> {
+public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
     public static final Environment ENVIRONMENT = new Environment();
@@ -54,11 +53,9 @@ public class ExpandImportCandidateHandler extends
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var blob = readBlobFromS3(input);
-        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever))
-                   .map(expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate)
-                                                       ? createOutPutEventAndPersistDocument(expandedImportCandidate)
-                                                       : emptyEvent())
-                   .orElse(failure -> emptyEvent());
+        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever)).map(
+            expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate) ? createOutPutEventAndPersistDocument(
+                expandedImportCandidate) : emptyEvent()).orElse(failure -> emptyEvent());
     }
 
     private boolean shouldBeExpanded(ExpandedImportCandidate expandedImportCandidate) {
