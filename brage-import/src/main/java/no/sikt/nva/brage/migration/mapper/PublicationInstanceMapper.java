@@ -12,6 +12,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLect
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherPresentation;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPerformingArts;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPlanOrBlueprint;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
@@ -20,7 +21,9 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScie
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
@@ -33,7 +36,12 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
@@ -48,6 +56,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
+import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
@@ -136,9 +145,59 @@ public final class PublicationInstanceMapper {
         if (isOtherPresentation(record)) {
            return buildPublicationInstanceWhenOtherPresentation();
         }
-        else {
+        if (isProfessionalArticle(record)) {
+            return buildPublicationInstanceWhenProfessionalArticle(record);
+        }
+        if (isPerformingArts(record)) {
+            return buildPublicationInstanceWhenPerformingArts();
+        }
+        if (isVisualArts(record)) {
+            return buildPublicationInstanceWhenVisualArts();
+        }
+        if (isReaderOpinion(record)) {
+            return buildPublicationInstanceWhenReaderOpinion(record);
+        }
+        if (isAnthology(record)) {
+            return buildPublicationInstanceWhenAnthology(record);
+        } else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenAnthology(Record record) {
+        return new BookAnthology(extractMonographPages(record));
+    }
+
+    public static boolean isAnthology(Record record) {
+        return NvaType.ANTHOLOGY.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReaderOpinion(Record record) {
+        return new MediaReaderOpinion(extractVolume(record), extractIssue(record), null, extractPages(record));
+    }
+
+    public static boolean isReaderOpinion(Record record) {
+        return NvaType.READER_OPINION.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenVisualArts() {
+        return new VisualArts(VisualArtsSubtype.createOther(null), null, Set.of());
+    }
+
+    public static boolean isVisualArts(Record record) {
+        return NvaType.VISUAL_ARTS.getValue().equals(record.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPerformingArts() {
+        return new PerformingArts(PerformingArtsSubtype.createOther(null), null, List.of());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenProfessionalArticle(Record record) {
+        return new ProfessionalArticle(extractPages(record), extractVolume(record), extractIssue(record), null);
+    }
+
+    public static boolean isProfessionalArticle(Record record) {
+        return NvaType.PROFESSIONAL_ARTICLE.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferenceReport(Record record) {
