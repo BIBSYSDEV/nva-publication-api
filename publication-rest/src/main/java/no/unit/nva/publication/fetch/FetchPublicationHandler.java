@@ -33,10 +33,12 @@ import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.GoneException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -57,13 +59,11 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @JacocoGenerated
     public FetchPublicationHandler() {
         this(AmazonDynamoDBClientBuilder.defaultClient(),
-             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                               BACKEND_CLIENT_SECRET_NAME));
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
     @JacocoGenerated
-    public FetchPublicationHandler(AmazonDynamoDB client,
-                                   RawContentRetriever uriRetriever) {
+    public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever uriRetriever) {
         this(defaultResourceService(client), uriRetriever, new Environment());
     }
 
@@ -73,8 +73,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
      * @param resourceService publicationService
      * @param environment     environment
      */
-    public FetchPublicationHandler(ResourceService resourceService,
-                                   RawContentRetriever uriRetriever,
+    public FetchPublicationHandler(ResourceService resourceService, RawContentRetriever uriRetriever,
                                    Environment environment) {
         super(Void.class, environment);
         this.uriRetriever = uriRetriever;
@@ -83,27 +82,23 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     @Override
     protected List<MediaType> listSupportedMediaTypes() {
-        return List.of(
-            HTML_UTF_8,
-            ANY_TEXT_TYPE,
-            XHTML_UTF_8,
-            APPLICATION_JSON_LD,
-            APPLICATION_DATACITE_XML,
-            SCHEMA_ORG,
-            JSON_UTF_8
-        );
+        return List.of(HTML_UTF_8, ANY_TEXT_TYPE, XHTML_UTF_8, APPLICATION_JSON_LD, APPLICATION_DATACITE_XML,
+                       SCHEMA_ORG, JSON_UTF_8);
     }
 
     @Override
-    protected String processInput(Void input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
+    protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
 
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
-        temporaryHackWhileWeWaitForUnauthenticatedUserAccess(publication);
-        return createResponse(requestInfo, publication);
+
+        return isDraft(publication)
+                   ? userIsCuratorOrOwner(requestInfo, publication)
+                         ? createResponse(requestInfo, publication)
+                         : throwNotFoundException()
+                   : createResponse(requestInfo, publication);
     }
 
     @Override
@@ -111,25 +106,31 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return statusCode;
     }
 
-    // TODO: implement unauthenticated users to allow us to remove unpublished files from returned data when the user
-    //  is unauthenticated.
-    private static void temporaryHackWhileWeWaitForUnauthenticatedUserAccess(Publication publication) {
-        if (PublicationStatus.PUBLISHED_METADATA.equals(publication.getStatus())) {
-            publication.setStatus(PublicationStatus.PUBLISHED);
-        }
-    }
-
     @JacocoGenerated
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
         return new ResourceService(client, CLOCK);
+    }
+
+    private String throwNotFoundException() throws NotFoundException {
+        throw new NotFoundException("Publication is not found");
+    }
+
+    private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString()) || attempt(
+            () -> publication.getResourceOwner().getOwner().toString().equals(requestInfo.getUserName())).orElse(
+            failure -> false);
+    }
+
+    private boolean isDraft(Publication publication) {
+        return PublicationStatus.DRAFT.equals(publication.getStatus());
     }
 
     private boolean publicationIsLogicallyDeleted(Publication publication) {
         return PublicationStatus.DELETED.equals(publication.getStatus());
     }
 
-    private String createResponse(RequestInfo requestInfo,
-                                  Publication publication) throws UnsupportedAcceptHeaderException, GoneException {
+    private String createResponse(RequestInfo requestInfo, Publication publication)
+        throws UnsupportedAcceptHeaderException, GoneException {
 
         if (publicationIsLogicallyDeleted(publication)) {
             throw new GoneException(GONE_MESSAGE);
@@ -152,15 +153,13 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private URI landingPageLocation(SortableIdentifier identifier) {
-        return new UriWrapper(HTTPS, environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN))
-                   .addChild(REGISTRATION_PATH)
+        return new UriWrapper(HTTPS, environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).addChild(REGISTRATION_PATH)
                    .addChild(identifier.toString())
                    .getUri();
     }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        var publicationResponse = PublicationMapper
-                                      .convertValue(publication, PublicationResponse.class);
+        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
 
