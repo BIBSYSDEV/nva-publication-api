@@ -48,13 +48,14 @@ public class TicketResolver {
         this.uriRetriever = uriRetriever;
     }
 
-    public TicketEntry resolveAndPersistTicket(TicketEntry ticket, Publication publication, URI customerId,
-                                               Username finalizedBy)
-        throws ApiGatewayException {
+    public TicketEntry resolveAndPersistTicket(TicketEntry ticket,
+                                               Publication publication,
+                                               URI customerId,
+                                               Username finalizedBy, boolean isCurator) throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
-            persistTicket(ticket);
-            return resolvePublishingRequest(ticket, publication, publishingRequestCase, finalizedBy);
+            persistTicket(publishingRequestCase);
+            return resolvePublishingRequest(publishingRequestCase, publication, finalizedBy, isCurator);
         }
         return persistTicket(ticket);
     }
@@ -68,18 +69,18 @@ public class TicketResolver {
                    .noneMatch(artifact -> artifact instanceof File);
     }
 
-    private TicketEntry resolvePublishingRequest(TicketEntry ticket, Publication publication,
-                                                 PublishingRequestCase publishingRequestCase, Username username)
+    private PublishingRequestCase resolvePublishingRequest(PublishingRequestCase publishingRequestCase, Publication publication,
+                                                           Username username, boolean isCurator)
         throws ApiGatewayException {
-        if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
+        if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow()) || isCurator) {
             publishPublicationAndFiles(publication);
-            approveTicket(ticket, username);
+            approveTicket(publishingRequestCase, username);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
             publishMetadata(publication);
-            approveTicketWhenPublicationContainsMetadataOnly(ticket, publication, username);
+            approveTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication, username);
         }
-        return ticket;
+        return publishingRequestCase;
     }
 
     private void approveTicketWhenPublicationContainsMetadataOnly(TicketEntry ticket, Publication publication,

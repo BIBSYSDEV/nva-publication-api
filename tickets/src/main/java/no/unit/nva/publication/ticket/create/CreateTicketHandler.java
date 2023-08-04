@@ -64,7 +64,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var newTicket = TicketEntry.requestNewTicket(publication, input.ticketType());
         var customer = requestInfo.getCurrentCustomer();
         var username = new Username(requestInfo.getUserName());
-        var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer, username);
+        var isCurator = requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.name());
+        var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer, username, isCurator);
         var ticketLocation = createTicketLocation(publicationIdentifier, persistedTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
         return null;
