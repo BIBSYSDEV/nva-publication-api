@@ -1908,7 +1908,7 @@ Resources:
     Properties:
       Name: !Join [ '',[ 'resource-service-internal-bus',!Ref Suffix ] ]
 
-  #=========================Cristin-Athena===================================================================
+  #=========================Cristin-Brage-Athena===================================================================
 
   CristinImportDatabase:
     Type: AWS::Glue::Database
@@ -1917,6 +1917,14 @@ Resources:
       DatabaseInput:
         Description: Read-only database mirroring the data in S3 bucket for expanded resources
         Name: cristin
+
+  BrageImportDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+    DatabaseInput:
+      Description: Read-only database mirroring the data in S3 bucket for expanded resources
+      Name: brage
 
   CristinCrawler:
     Type: AWS::Glue::Crawler
@@ -1940,6 +1948,30 @@ Resources:
       Targets:
         S3Targets:
           - Path: !Sub 's3://cristin-import-${AWS::AccountId}/2022-10-18'
+
+  BrageErrorCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Configuration: >
+        {
+            "Version":1.0,
+            "Grouping":{
+              "TableLevelConfiguration":3
+            }
+        }
+      DatabaseName: !Ref    BrageImportDatabase
+      Description: Crawler that crawls the s3 bucket of the brage reports data
+      Name: CristinCrawler
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !GetAtt CristinCrawlerRole.Arn
+      SchemaChangePolicy:
+        DeleteBehavior: DELETE_FROM_DATABASE
+        UpdateBehavior: UPDATE_IN_DATABASE
+      Targets:
+        S3Targets:
+          - Path: !Sub 's3://brage-migration-reports-884807050265/ERROR/2023-07-25:14/'
+            Exclusions: [ '*.error' ]
 
 
 
@@ -2051,7 +2083,9 @@ Resources:
                   - s3:GetObject
                   - s3:ListBucket
                   - s3:PutObject
-                Resource: !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
+                Resource:
+                 - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
+                 - !Ref BrageMigrationInputBucket
 
 
   #==========================BI=============================================================================
