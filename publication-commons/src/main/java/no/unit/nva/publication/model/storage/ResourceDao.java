@@ -60,7 +60,7 @@ public class ResourceDao extends Dao
             resourceIdentifier);
         return new ResourceDao(resource);
     }
-    
+
     public static String constructPrimaryPartitionKey(URI customerId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
             orgUriToOrgIdentifier(customerId), owner);

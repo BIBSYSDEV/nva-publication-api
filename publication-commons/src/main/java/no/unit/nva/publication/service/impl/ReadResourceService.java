@@ -13,8 +13,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
@@ -175,14 +173,15 @@ public class ReadResourceService {
     private static Resource queryResultToResource(QueryResult result) throws NotFoundException {
         var daos = queryResultToDao(result);
         var resourceDaos = filterDaos(daos, ResourceDao.class);
-        var contributionDaos = filterDaos(daos, ContributionDao.class);
 
         if (resourceDaos.isEmpty()) {
             throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
         }
+
         var resource = (Resource) resourceDaos.get(0).getData();
 
         if (resource.getEntityDescription() != null) {
+            var contributionDaos = filterDaos(daos, ContributionDao.class);
             resource.getEntityDescription().setContributors(extractContributionDaos(contributionDaos));
         }
         return resource;
@@ -248,16 +247,6 @@ public class ReadResourceService {
                            .and(S(PRIMARY_KEY_SORT_KEY_NAME).beginsWith(sortKey))
                    )
                    .buildForQuery();
-    }
-
-    private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
-        GetItemResult result = client.getItem(new GetItemRequest()
-                                                  .withTableName(tableName)
-                                                  .withKey(primaryKey));
-        if (isNull(result.getItem())) {
-            throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
-        }
-        return result;
     }
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {

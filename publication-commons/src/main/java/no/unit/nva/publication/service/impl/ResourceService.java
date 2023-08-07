@@ -296,9 +296,10 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
-        var contributions =
-            new ResourceDao(Resource.fromImportCandidate(importCandidate))
-                .fetchAllContributions(getClient(), tableName);
+        var contributions = (importCandidate.getPublisher() == null)
+                                ? List.<ContributionDao>of()
+                                : new ResourceDao(Resource.fromImportCandidate(importCandidate))
+                                      .fetchAllContributions(getClient(), tableName);
         deleteResourceService.deleteImportCandidate(importCandidate, contributions);
         logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE + importCandidate.getIdentifier());
     }
@@ -386,12 +387,12 @@ public class ResourceService extends ServiceWithTransactions {
     // change this method depending on the current migration needs.
     private List<Entity> migrateResource(Resource dataEntry) {
         if (isNull(dataEntry.getEntityDescription()) || dataEntry.getEntityDescription().getContributors().isEmpty()) {
-            return List.of();
+            return List.of(dataEntry);
         }
 
         var contributors =
-            dataEntry.getEntityDescription().getContributors().stream().map(c -> Contribution.create(dataEntry, c)).collect(
-                Collectors.toList());
+            dataEntry.getEntityDescription().getContributors().stream()
+                .map(c -> Contribution.create(dataEntry, c)).toList();
 
         dataEntry.getEntityDescription().setContributors(null);
 
@@ -712,11 +713,6 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
-        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
-    }
-
-    private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource,
-                                                                                      String tableName) {
         return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
     }
 }
