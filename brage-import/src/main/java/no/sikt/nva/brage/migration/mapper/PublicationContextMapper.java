@@ -1,7 +1,11 @@
 package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isAnthology;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isConferenceReport;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isProfessionalArticle;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isReaderOpinion;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isVisualArts;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +34,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedMediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
@@ -60,7 +65,7 @@ public final class PublicationContextMapper {
     @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
     public static PublicationContext buildPublicationContext(Record record)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        if (isBook(record) || isScientificMonograph(record) || isOtherStudentWork(record) || isStudentPaper(record)) {
+        if (shouldBeMappedToBook(record)) {
             return buildPublicationContextWhenBook(record);
         }
         if (isSupportedReportType(record)) {
@@ -69,7 +74,7 @@ public final class PublicationContextMapper {
         if (isUnconfirmedJournal(record) || isUnconfirmedScientificArticle(record)) {
             return buildPublicationContextForUnconfirmedJournalArticle(record);
         }
-        if (isJournalArticle(record) || isScientificArticle(record) || isFeatureArticle(record)) {
+        if (isArticle(record)) {
             return buildPublicationContextWhenJournalArticle(record);
         }
         if (isDegree(record)) {
@@ -84,7 +89,7 @@ public final class PublicationContextMapper {
         if (isLecture(record) || isConferencePoster(record) || isOtherPresentation(record)) {
             return buildPublicationContextWhenEvent();
         }
-        if (isDesignProduct(record) || isMusic(record) || isPlanOrBlueprint(record)) {
+        if (isArtistic(record)) {
             return new Artistic();
         }
         if (isDataset(record)) {
@@ -92,9 +97,43 @@ public final class PublicationContextMapper {
         }
         if (isInterview(record)) {
             return buildPublicationContextWhenMediaContribution();
+        }
+        if (isReaderOpinion(record)) {
+            return buildPublicationContextWhenReaderOpinion();
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
+    }
+
+    private static boolean shouldBeMappedToBook(Record record) {
+        return isBook(record)
+               || isScientificMonograph(record)
+               || isOtherStudentWork(record)
+               || isStudentPaper(record)
+               || isAnthology(record);
+    }
+
+    private static PublicationContext buildPublicationContextWhenReaderOpinion() throws InvalidIssnException {
+        return new UnconfirmedMediaContributionPeriodical(null, null, null);
+    }
+
+    private static boolean isArtistic(Record record) {
+        return isDesignProduct(record)
+               || isMusic(record)
+               || isPlanOrBlueprint(record)
+               || isPerformingArts(record)
+               || isVisualArts(record);
+    }
+
+    public static boolean isPerformingArts(Record record) {
+        return NvaType.PERFORMING_ARTS.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean isArticle(Record record) {
+        return isJournalArticle(record)
+               || isScientificArticle(record)
+               || isFeatureArticle(record)
+               || isProfessionalArticle(record);
     }
 
     public static boolean isOtherPresentation(Record record) {

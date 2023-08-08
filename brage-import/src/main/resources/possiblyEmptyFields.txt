@@ -15,6 +15,8 @@ entityDescription.reference.publicationInstance.description
 entityDescription.reference.publicationInstance.venues
 entityDescription.reference.publicationInstance.manifestations
 entityDescription.reference.publicationInstance.architectureOutput
+entityDescription.reference.publicationInstance.subtype.description
+entityDescription.reference.publicationInstance.outputs
 
 entityDescription.reference.publicationContext.onlineIssn
 entityDescription.reference.publicationContext.printIssn
