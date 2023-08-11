@@ -31,7 +31,7 @@ import no.unit.nva.model.Publication;
     "finansiering_varbeid", "type_produkt",
     "kildepostid", "arkivpost", "varbeid_url",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
+    "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon", "identified_cristin_person"})
 
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {

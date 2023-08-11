@@ -42,7 +42,7 @@ public class CristinContributor implements Comparable<CristinContributor> {
     private String familyName;
     @JsonProperty("rekkefolgenr")
     private Integer contributorOrder;
-    @JsonProperty("identified_cristin_person")
+    @JsonProperty("verified_person")
     private VerificationStatus verificationStatus;
     @JsonProperty("VARBEID_PERSON_STED")
     private List<CristinContributorsAffiliation> affiliations;
