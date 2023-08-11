@@ -52,6 +52,7 @@ import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
+import no.unit.nva.cristin.mapper.VerificationStatus;
 
 public final class CristinDataGenerator {
 
@@ -104,8 +105,15 @@ public final class CristinDataGenerator {
                    .withIdentifier(contributorIndex)
                    .withGivenName(randomString())
                    .withFamilyName(randomString())
+                   .withVerificationStatus(randomVerificationStatus())
                    .withAffiliations(randomAffiliations())
                    .build();
+    }
+
+    private static VerificationStatus randomVerificationStatus() {
+        return (new Random().nextInt() < 0)
+                   ? VerificationStatus.VERIFIED
+                   : VerificationStatus.NOT_VERIFIED;
     }
 
     public static CristinPresentationalWork randomPresentationalWork() {
@@ -697,6 +705,7 @@ public final class CristinDataGenerator {
     private static CristinContributor creatContributor(Integer contributorIndex, CristinContributorRoleCode roleCode) {
         return CristinContributor.builder()
                    .withContributorOrder(contributorIndex)
+                   .withVerificationStatus(randomVerificationStatus())
                    .withIdentifier(contributorIndex)
                    .withGivenName(randomString())
                    .withFamilyName(randomString())
