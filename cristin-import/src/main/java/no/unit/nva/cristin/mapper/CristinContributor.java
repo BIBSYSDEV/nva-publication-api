@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PERSON_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Collection;
@@ -29,6 +30,7 @@ import nva.commons.core.paths.UriWrapper;
 @Data
 @Builder(builderClassName = "CristinContributorBuilder", toBuilder = true, builderMethodName = "builder",
     buildMethodName = "build", setterPrefix = "with")
+@JsonIgnoreProperties({"identified_cristin_person"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributor implements Comparable<CristinContributor> {
 
