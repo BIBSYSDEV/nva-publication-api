@@ -111,7 +111,7 @@ public final class CristinDataGenerator {
     }
 
     private static VerificationStatus randomVerificationStatus() {
-        return (new Random().nextInt() < 0)
+        return new Random().nextBoolean()
                    ? VerificationStatus.VERIFIED
                    : VerificationStatus.NOT_VERIFIED;
     }
