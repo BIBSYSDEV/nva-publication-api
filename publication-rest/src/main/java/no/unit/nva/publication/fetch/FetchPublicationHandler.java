@@ -39,6 +39,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.GoneException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -115,10 +116,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         throw new NotFoundException("Publication is not found");
     }
 
-    private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString()) || attempt(
-            () -> publication.getResourceOwner().getOwner().toString().equals(requestInfo.getUserName())).orElse(
-            failure -> false);
+    private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication)
+        throws UnauthorizedException {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
+               || publication.getResourceOwner().getOwner().getValue().equals(requestInfo.getUserName());
     }
 
     private boolean isDraft(Publication publication) {

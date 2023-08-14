@@ -19,6 +19,7 @@ import static org.apache.http.HttpStatus.SC_GONE;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -302,12 +303,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnNotFoundWhenUnauthorizedUserAttemptingToFetchDraftPublication()
+    void shouldReturnNotAuthorizedWhenUnauthorizedUserAttemptingToFetchDraftPublication()
         throws ApiGatewayException, IOException {
         var publication = createPublication();
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
         var gatewayResponse = parseHandlerResponse();
-        assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
+        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
     private InputStream generateCuratorRequest(Publication publication) throws JsonProcessingException {
