@@ -1922,9 +1922,9 @@ Resources:
     Type: AWS::Glue::Database
     Properties:
       CatalogId: !Ref AWS::AccountId
-    DatabaseInput:
-      Description: Read-only database mirroring the data in S3 bucket for expanded resources
-      Name: brage
+      DatabaseInput:
+        Description: Read-only database mirroring the data in S3 bucket for brage errors
+        Name: brage-errors
 
   CristinCrawler:
     Type: AWS::Glue::Crawler
