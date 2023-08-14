@@ -2085,7 +2085,7 @@ Resources:
                   - s3:PutObject
                 Resource:
                  - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
-                 - !Ref BrageMigrationInputBucket
+                 - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}//*"
 
 
   #==========================BI=============================================================================
