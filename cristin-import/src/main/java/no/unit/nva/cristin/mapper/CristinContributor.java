@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PERSON_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Collection;
@@ -18,6 +19,7 @@ import lombok.Data;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.RoleType;
@@ -26,13 +28,9 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
 @Data
-@Builder(
-    builderClassName = "CristinContributorBuilder",
-    toBuilder = true,
-    builderMethodName = "builder",
-    buildMethodName = "build",
-    setterPrefix = "with"
-)
+@Builder(builderClassName = "CristinContributorBuilder", toBuilder = true, builderMethodName = "builder",
+    buildMethodName = "build", setterPrefix = "with")
+@JsonIgnoreProperties({"identified_cristin_person"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributor implements Comparable<CristinContributor> {
 
@@ -46,6 +44,8 @@ public class CristinContributor implements Comparable<CristinContributor> {
     private String familyName;
     @JsonProperty("rekkefolgenr")
     private Integer contributorOrder;
+    @JsonProperty("verified_person")
+    private VerificationStatus verificationStatus;
     @JsonProperty("VARBEID_PERSON_STED")
     private List<CristinContributorsAffiliation> affiliations;
 
@@ -64,6 +64,7 @@ public class CristinContributor implements Comparable<CristinContributor> {
         Identity identity = new Identity.Builder()
                                 .withName(fullName)
                                 .withId(constructId())
+                                .withVerificationStatus(extractVerificationStatus())
                                 .build();
 
         return new Contributor.Builder()
@@ -94,6 +95,14 @@ public class CristinContributor implements Comparable<CristinContributor> {
         }
     }
 
+    private ContributorVerificationStatus extractVerificationStatus() {
+        return isNull(verificationStatus)
+                   ? ContributorVerificationStatus.CANNOT_BE_ESTABLISHED
+                   : VerificationStatus.VERIFIED.getValue().equals(verificationStatus.getValue())
+                         ? ContributorVerificationStatus.VERIFIED
+                         : ContributorVerificationStatus.NOT_VERIFIED;
+    }
+
     private String constructFullName() {
         StringBuilder nameBuilder = new StringBuilder();
         if (StringUtils.isNotBlank(getGivenName())) {
@@ -104,17 +113,19 @@ public class CristinContributor implements Comparable<CristinContributor> {
             nameBuilder.append(getFamilyName());
         }
 
-        return StringUtils.isNotBlank(nameBuilder.toString().trim()) ? nameBuilder.toString().trim() : null;
+        return StringUtils.isNotBlank(nameBuilder.toString().trim())
+                   ? nameBuilder.toString().trim()
+                   : null;
     }
 
     private RoleType extractRoles() {
-        CristinContributorRole firstRole =
-            affiliations.stream()
-                .map(CristinContributorsAffiliation::getRoles)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .findFirst()
-                .orElseThrow(AffiliationWithoutRoleException::new);
+        CristinContributorRole firstRole = affiliations
+                                               .stream()
+                                               .map(CristinContributorsAffiliation::getRoles)
+                                               .filter(Objects::nonNull)
+                                               .flatMap(Collection::stream)
+                                               .findFirst()
+                                               .orElseThrow(AffiliationWithoutRoleException::new);
         return firstRole.toNvaRole();
     }
 
@@ -122,19 +133,20 @@ public class CristinContributor implements Comparable<CristinContributor> {
         if (isNull(affiliations)) {
             throw new ContributorWithoutAffiliationException();
         }
-        return affiliations.stream()
+        return affiliations
+                   .stream()
                    .map(CristinContributorsAffiliation::toNvaOrganization)
                    .collect(Collectors.toList());
     }
 
     private URI constructId() {
         return SHOULD_CREATE_CONTRIBUTOR_ID
-                   ?
-                   UriWrapper.fromUri(NVA_API_DOMAIN)
-                       .addChild(CRISTIN_PATH)
-                       .addChild(PERSON_PATH)
-                       .addChild(identifier.toString())
-                       .getUri()
+                   ? UriWrapper
+                         .fromUri(NVA_API_DOMAIN)
+                         .addChild(CRISTIN_PATH)
+                         .addChild(PERSON_PATH)
+                         .addChild(identifier.toString())
+                         .getUri()
                    : null;
     }
 }
