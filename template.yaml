@@ -1961,7 +1961,7 @@ Resources:
         }
       DatabaseName: !Ref    BrageImportDatabase
       Description: Crawler that crawls the s3 bucket of the brage reports data
-      Name: CristinCrawler
+      Name: BrageErrorCrawler
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
       Role: !GetAtt CristinCrawlerRole.Arn
