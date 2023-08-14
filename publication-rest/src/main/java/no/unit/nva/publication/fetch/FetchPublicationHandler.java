@@ -33,13 +33,11 @@ import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.GoneException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -99,7 +97,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var publication = resourceService.getPublicationByIdentifier(identifier);
 
         return isDraft(publication)
-                   ? userIsCuratorOrOwner(requestInfo, publication)
+                   ? userIsCuratorOrOwner(publication)
                          ? createResponse(requestInfo, publication)
                          : throwNotFoundException()
                    : createResponse(requestInfo, publication);
@@ -115,13 +113,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return new ResourceService(client, CLOCK);
     }
 
+    @JacocoGenerated
     private String throwNotFoundException() throws NotFoundException {
         throw new NotFoundException("Publication is not found");
     }
 
     //TODO: Temporary commented out while getUserName returns null.
     @JacocoGenerated
-    private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication) {
+    private boolean userIsCuratorOrOwner(Publication publication) {
         var owner = publication.getResourceOwner().getOwner().getValue();
         logger.info("Publication owner: {}", owner);
 //        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
