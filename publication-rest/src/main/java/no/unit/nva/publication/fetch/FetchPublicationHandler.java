@@ -38,7 +38,6 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.GoneException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -97,7 +96,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
 
-        if(isDraft(publication) && userIsCuratorOrOwner(requestInfo, publication)) {
+
+        if (isDraft(publication) && userIsCuratorOrOwner(requestInfo, publication)) {
             return createResponse(requestInfo, publication);
         }  else {
             return createResponse(requestInfo, publication);
@@ -115,10 +115,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication)
-        throws UnauthorizedException {
+        throws ApiGatewayException {
         var owner = publication.getResourceOwner().getOwner().getValue();
         logger.info("Publication owner: {}", owner);
-        var userName = requestInfo.getUserName();
+        var userName = RequestUtil.getOwner(requestInfo);
         logger.info("Request info user: {}", userName);
         return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
                || owner.equals(userName);
