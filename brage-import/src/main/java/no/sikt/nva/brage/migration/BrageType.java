@@ -40,6 +40,18 @@ public enum BrageType {
     CONFERENCE_LECTURE("Conference lecture"),
     PRESENTATION_OTHER("Other presentation"),
     INTERVIEW("Interview"),
+    ANTHOLOGY("Anthology"),
+    PERFORMING_ARTS("Performing arts"),
+    PROFESSIONAL_ARTICLE("Professional article"),
+    READER_OPINION("Reader opinion"),
+    VISUAL_ARTS("Visual arts"),
+    ARCHITECTURE("Architecture"),
+    ACADEMIC_ARTICLE("Academic article"),
+    ACADEMIC_CHAPTER("Academic chapter"),
+    ACADEMIC_MONOGRAPH("Academic monograph"),
+    NON_FICTION_MONOGRAPH("Non-fiction monograph"),
+    NON_FICTION_CHAPTER("Non-fiction chapter"),
+    REPORT_CHAPTER("Report chapter"),
     PEER_REVIEWED("Peer reviewed");
     private final String value;
 

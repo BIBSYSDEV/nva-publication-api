@@ -2,7 +2,9 @@ package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.nonNull;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
@@ -23,6 +25,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedMediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
@@ -37,7 +40,14 @@ import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtypeOther;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
@@ -54,6 +64,7 @@ import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
+import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
@@ -260,6 +271,43 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublicationInstance(new ConferenceReport(builder.getMonographPages()))
                            .withPublishingContext(generatePublicationContextForReport(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.PROFESSIONAL_ARTICLE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new ProfessionalArticle(generateRange(builder), null, null, null))
+                           .withPublishingContext(generateJournal(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.PERFORMING_ARTS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new PerformingArts(PerformingArtsSubtype.createOther(
+                               null), null, List.of()))
+                           .withPublishingContext(new Artistic())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.VISUAL_ARTS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new VisualArts(VisualArtsSubtype.createOther(null),
+                                                                   null, null))
+                           .withPublishingContext(new Artistic())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.READER_OPINION.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new MediaReaderOpinion(null, null, null, generateRange(builder)))
+                           .withPublishingContext(new UnconfirmedMediaContributionPeriodical(null, null, null))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.ANTHOLOGY.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new BookAnthology(builder.getMonographPages()))
+                           .withPublishingContext(generatePublicationContextForBook(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }

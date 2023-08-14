@@ -422,6 +422,25 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
+    void shouldPublishPublicationAndFilesWhenCustomerAllowsPublishingMetadataOnlyButRequesterIsCurator()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler.handleRequest(createHttpTicketCreationRequestByCurator(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+        var publishedPublication = resourceService.getPublication(publication);
+        assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(PublishedFile.class)));
+        assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(getTicketStatusForPublication(publication), is(equalTo(COMPLETED)));
+    }
+
+    @Test
     void shouldPublishPublicationWhenPublicationIsWithoutFilesAndWhenCustomerAllowsPublishingMetadataOnly()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithAssociatedLink(DRAFT, resourceService);
@@ -657,6 +676,19 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
+                   .build();
+    }
+
+    private InputStream createHttpTicketCreationRequestByCurator(TicketDto ticketDto,
+                                                        Publication publication,
+                                                        UserInstance userCredentials)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+                   .withBody(ticketDto)
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                   .withUserName(userCredentials.getUsername())
+                   .withCurrentCustomer(userCredentials.getOrganizationUri())
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.name())
                    .build();
     }
 
