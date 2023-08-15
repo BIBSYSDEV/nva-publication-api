@@ -33,6 +33,7 @@ import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -97,7 +98,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var publication = resourceService.getPublicationByIdentifier(identifier);
 
         return isDraft(publication)
-                   ? userIsCuratorOrOwner(publication)
+                   ? userIsCuratorOrOwner(requestInfo, publication)
                          ? createResponse(requestInfo, publication)
                          : throwNotFoundException()
                    : createResponse(requestInfo, publication);
@@ -120,12 +121,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     //TODO: Temporary commented out while getUserName returns null.
     @JacocoGenerated
-    private boolean userIsCuratorOrOwner(Publication publication) {
+    private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication) throws ApiGatewayException {
         var owner = publication.getResourceOwner().getOwner().getValue();
         logger.info("Publication owner: {}", owner);
-//        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-//               || owner.equals(requestInfo.getUserName());
-        return true;
+        logger.info("Request info: {}", requestInfo.toString());
+        logger.info("Request context: {}", requestInfo.getRequestContext());
+        logger.info("Request info username: {}", RequestUtil.getOwner(requestInfo));
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
+               || owner.equals(requestInfo.getUserName());
     }
 
     private boolean isDraft(Publication publication) {
