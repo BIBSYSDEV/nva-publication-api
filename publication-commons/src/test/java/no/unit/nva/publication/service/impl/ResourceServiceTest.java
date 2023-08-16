@@ -582,7 +582,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void GetPublicationReturnResourceWithMergedContributors()
+    void getPublicationReturnResourceWithMergedContributors()
         throws BadRequestException, NotFoundException {
         var publication = createPersistedPublicationWithContributions();
 
@@ -593,7 +593,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void GetPublicationByIdentifierReturnResourceWithMergedContributors()
+    void getPublicationByIdentifierReturnResourceWithMergedContributors()
         throws BadRequestException, NotFoundException {
         var publication = createPersistedPublicationWithContributions();
 
@@ -604,23 +604,22 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void GetResourcesByOwnerReturnResourcesWithMergedContributors() throws BadRequestException,
+    void getResourcesByOwnerReturnResourcesWithMergedContributors() throws BadRequestException,
 
                                                                            NotImplementedException {
 
         var owner = UserInstance.create(randomString(), randomUri());
-        createPersistedPublicationWithOwnerAndContributions(owner);
-        createPersistedPublicationWithOwnerAndContributions(owner);
+        createPersistedPublicationWithOwnerAndTwoContributions(owner);
+        createPersistedPublicationWithOwnerAndTwoContributions(owner);
 
         var fetchedPublication = resourceService.getPublicationsByOwner(owner).get(0);
         var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
         assertThat(fetchedContributors, is(notNullValue()));
-        assertThat(fetchedContributors.size(), is(greaterThanOrEqualTo(1)));
+        assertThat(fetchedContributors.size(), is(equalTo(2)));
     }
 
     @Test
-    @Disabled("Does not work yet")
-    void shouldReturnResourceAndContributorsWhenResourceIsRequestedByIdentifier() throws BadRequestException,
+    void shouldReturnResourceWithContributorsWhenResourceHasManyContributions() throws BadRequestException,
                                                                                           NotFoundException {
         var publication = createPersistedPublicationWithManyContributions(7000);
 
@@ -1165,16 +1164,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
-        var contributions =
-            IntStream.rangeClosed(1, amount).mapToObj(i -> randomContributor()).collect(Collectors.toList());
-        publication.getEntityDescription().setContributors(
-            contributions
-        );
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
+        var contributions = IntStream
+                                .rangeClosed(1, amount)
+                                .mapToObj(i -> randomContributor())
+                                .collect(Collectors.toList());
+        publication.getEntityDescription().setContributors(contributions);
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private Publication createPersistedPublicationWithOwnerAndContributions(UserInstance userInstance)
+    private Publication createPersistedPublicationWithOwnerAndTwoContributions(UserInstance userInstance)
         throws BadRequestException {
         var publication = injectOwner(userInstance, randomPublication().copy().withDoi(null).build());
         publication.getEntityDescription().setContributors(List.of(

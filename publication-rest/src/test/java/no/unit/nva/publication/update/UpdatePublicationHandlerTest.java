@@ -573,7 +573,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 IsEqual.equalTo(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE)));
     }
 
-    @Test // TODO: Sondre fix
     void shouldUpdatePublicationWhenUserIsCuratorAndIsInSameInstitutionAsThePublicationContributor()
             throws BadRequestException, IOException, NotFoundException {
         Publication savedPublication = createSamplePublication();

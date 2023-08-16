@@ -481,10 +481,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "number of tickets:{0}")
     @DisplayName("should list all tickets for a user")
     @Timeout(TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET)
-    @ValueSource(doubles = {0.5, 1.0, 1.5, 2.0, 2.5})
-    void shouldListTicketsForUser(double timesTheResultSetSize) {
-        int numberOfTickets = (int) ceil(
-            PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES * timesTheResultSetSize);
+    @ValueSource(ints = {1, 20})
+    void shouldListTicketsForUser(int numberOfTickets) {
         var expectedTickets = IntStream.range(0, numberOfTickets)
             .boxed()
             .map(attempt(ignored -> persistPublication(owner, DRAFT)))

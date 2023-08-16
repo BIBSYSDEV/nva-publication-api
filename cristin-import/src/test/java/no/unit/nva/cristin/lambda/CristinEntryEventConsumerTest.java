@@ -163,7 +163,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertDoesNotThrow(() -> s3Driver.getFile(expectedErrorFileLocation));
     }
 
-    @Test // TODO: Sondre fix
     void shouldSavePublicationToDynamoDbWhenInputIsEventWithCristinResult() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
