@@ -43,6 +43,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
@@ -98,7 +99,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class TicketServiceTest extends ResourcesLocalTest {
 
     public static final String SOME_ASSIGNEE = "some@user";
-    private static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     private static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
     private static final Username USERNAME = new Username(randomString());
     private static final String FINALIZED_DATE = "finalizedDate";
@@ -325,7 +325,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var service = new TicketService(client);
         var response = randomPublishingRequest().persistNewTicket(service);
         assertThat(response, is(equalTo(expectedTicketEntry)));
-        verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());
+        verify(client, times(1)).getItem(any());
     }
 
     @ParameterizedTest(name = "ticket type:{0}")
@@ -481,10 +481,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "number of tickets:{0}")
     @DisplayName("should list all tickets for a user")
     @Timeout(TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET)
-    @ValueSource(doubles = {0.5, 1.0, 1.5, 2.0, 2.5})
-    void shouldListTicketsForUser(double timesTheResultSetSize) {
-        int numberOfTickets = (int) ceil(
-            PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES * timesTheResultSetSize);
+    @ValueSource(ints = {1, 20})
+    void shouldListTicketsForUser(int numberOfTickets) {
         var expectedTickets = IntStream.range(0, numberOfTickets)
             .boxed()
             .map(attempt(ignored -> persistPublication(owner, DRAFT)))
@@ -743,16 +741,16 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
                                                                         AmazonDynamoDB client) {
-        var mockedGetPublicationResponse = new GetItemResult().withItem(mockedPublicationResponse());
+        var mockedGetPublicationResponse = new QueryResult().withItems(List.of(mockedPublicationResponse()));
         var mockedResponseWhenItemNotYetInPlace = ResourceNotFoundException.class;
 
         var ticketEntry = createUnpersistedTicket(randomPublicationWithoutDoi(), ticketType);
         var mockedResponseWhenItemFinallyInPlace = new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
 
         when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
-        when(client.getItem(any())).thenReturn(mockedGetPublicationResponse)
-            .thenThrow(mockedResponseWhenItemNotYetInPlace)
-            .thenReturn(mockedResponseWhenItemFinallyInPlace);
+        when(client.query(any())).thenReturn(mockedGetPublicationResponse)
+            .thenThrow(mockedResponseWhenItemNotYetInPlace);
+        when(client.getItem(any())).thenReturn(mockedResponseWhenItemFinallyInPlace);
         return ticketEntry;
     }
 

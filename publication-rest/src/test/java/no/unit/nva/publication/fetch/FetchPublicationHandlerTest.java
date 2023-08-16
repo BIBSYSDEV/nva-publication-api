@@ -12,6 +12,7 @@ import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAGE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -20,13 +21,16 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -44,15 +48,21 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
@@ -69,6 +79,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -149,6 +160,26 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertTrue(gatewayResponse.getBody().contains(DATACITE_XML_RESOURCE_ELEMENT));
     }
 
+    @Test
+    void shouldReturnPublicationWithContributionsOnValidInput(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws IOException, ApiGatewayException {
+        var createdPublication = createPublicationWithContributors(wireMockRuntimeInfo);
+        var createdContributions = createdPublication.getEntityDescription().getContributors();
+        var publicationIdentifier = createdPublication.getIdentifier().toString();
+
+        var headers = Map.of(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        createCustomerMock(createdPublication.getPublisher());
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers), output, context);
+        var gatewayResponse = parseHandlerResponse();
+        var fetchedPublication = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var fetchedContributions = fetchedPublication.getEntityDescription().getContributors();
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+
+        assertThat(fetchedContributions, is(notNullValue()));
+        assertThat(fetchedContributions.size(), is(greaterThanOrEqualTo(1)));
+        assertThat(fetchedContributions, Matchers.containsInAnyOrder(createdContributions.toArray()));
+    }
+
     private Publication createPublicationWithPublisher(WireMockRuntimeInfo wireMockRuntimeInfo)
             throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
@@ -157,6 +188,36 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createPublicationWithContributors(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication();
+        publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
+        var ed = publication.getEntityDescription();
+        ed.setContributors(
+            List.of(
+                randomContributor()
+            )
+        );
+        publication.getEntityDescription().setContributors(
+            List.of(
+                randomContributor(),
+                randomContributor()
+
+            )
+        );
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        SortableIdentifier publicationIdentifier =
+            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .build();
     }
 
     private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {

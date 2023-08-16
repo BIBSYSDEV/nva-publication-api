@@ -37,7 +37,8 @@ import nva.commons.core.JacocoGenerated;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
     @JsonSubTypes.Type(TicketDao.class),
-    @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class)
+    @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
+    @JsonSubTypes.Type(name = ContributionDao.TYPE, value = ContributionDao.class)
 })
 public abstract class Dao
     implements DynamoEntry,
@@ -111,7 +112,7 @@ public abstract class Dao
     }
     
     @Override
-    public final String getPrimaryKeyPartitionKey() {
+    public String getPrimaryKeyPartitionKey() {
         return formatPrimaryPartitionKey(getCustomerId(), getOwner().toString());
     }
     
@@ -123,7 +124,7 @@ public abstract class Dao
     
     @Override
     @JacocoGenerated
-    public final String getPrimaryKeySortKey() {
+    public String getPrimaryKeySortKey() {
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, indexingType(), getIdentifier());
     }
     

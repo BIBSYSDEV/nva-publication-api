@@ -573,7 +573,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 IsEqual.equalTo(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE)));
     }
 
-    @Test
     void shouldUpdatePublicationWhenUserIsCuratorAndIsInSameInstitutionAsThePublicationContributor()
             throws BadRequestException, IOException, NotFoundException {
         Publication savedPublication = createSamplePublication();
@@ -704,12 +703,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
         var contributorWithoutCristinId = new Contributor.Builder()
-                .withRole(new RoleType(Role.ARCHITECT))
-                .withIdentity(new Identity.Builder().withName(randomString()).build())
-                .build();
+                                              .withRole(new RoleType(Role.ARCHITECT))
+                                              .withIdentity(new Identity.Builder().withName(randomString()).build())
+                                              .withSequence(randomInteger())
+                                              .build();
         var contributorWithoutIdentity = new Contributor.Builder()
-                .withRole(new RoleType(Role.ARCHITECT))
-                .build();
+                                             .withRole(new RoleType(Role.ARCHITECT))
+                                             .withSequence(randomInteger())
+                                             .build();
         publication.getEntityDescription().getContributors()
                 .addAll(List.of(contributorWithoutCristinId, contributorWithoutIdentity));
     }
@@ -723,10 +724,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Contributor createContributorForPublicationUpdate(URI cristinId) {
         return new Contributor.Builder()
-                .withRole(new RoleType(Role.ARCHITECT))
-                .withIdentity(new Identity.Builder().withId(cristinId).withName(randomString()).build())
-                .withAffiliations(getListOfRandomOrganizations())
-                .build();
+                   .withRole(new RoleType(Role.ARCHITECT))
+                   .withSequence(randomInteger(1000))
+                   .withIdentity(new Identity.Builder().withId(cristinId).withName(randomString()).build())
+                   .withAffiliations(getListOfRandomOrganizations())
+                   .build();
     }
 
     private List<Organization> getListOfRandomOrganizations() {

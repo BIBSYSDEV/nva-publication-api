@@ -11,16 +11,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -110,6 +113,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
+                   .withEntityDescription(new EntityDescription.Builder().withContributors(randomContributors()).build())
                    .withHandle(randomUri())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
                    .withSubjects(List.of(randomUri()))
@@ -119,6 +123,17 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
+                   .build();
+    }
+
+    private List<Contributor> randomContributors() {
+        return List.of(randomContributor());
+    }
+
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
                    .build();
     }
 }

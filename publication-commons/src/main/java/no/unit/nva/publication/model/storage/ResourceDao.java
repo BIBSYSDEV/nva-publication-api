@@ -60,7 +60,7 @@ public class ResourceDao extends Dao
             resourceIdentifier);
         return new ResourceDao(resource);
     }
-    
+
     public static String constructPrimaryPartitionKey(URI customerId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
             orgUriToOrgIdentifier(customerId), owner);
@@ -128,6 +128,16 @@ public class ResourceDao extends Dao
                    .stream()
                    .map(item -> parseAttributeValuesMap(item, TicketDao.class))
                    .collect(Collectors.toList());
+    }
+
+    public List<ContributionDao> fetchAllContributions(AmazonDynamoDB client, String tableName) {
+        var queryRequest = new QueryRequest()
+                               .withTableName(tableName)
+                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .withKeyConditions(byResource(ContributionDao.BY_CONTRIBUTION_INDEX_ORDER_PREFIX));
+        var results = fetchAllQueryResults(client, queryRequest);
+
+        return results.map(ContributionDao.class::cast).collect(Collectors.toList());
     }
     
     public ResourceDao fetchForElevatedUser(AmazonDynamoDB client) throws NotFoundException {
