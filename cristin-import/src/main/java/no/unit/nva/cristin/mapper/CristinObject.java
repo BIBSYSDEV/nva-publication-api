@@ -113,6 +113,9 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("finansiering_varbeid")
     private List<CristinGrant> cristinGrants;
 
+    @JsonProperty("varbeid_url")
+    private List<CristinAssociatedUri> cristinAssociatedUris;
+
     private String publicationOwner;
 
     public CristinObject() {
