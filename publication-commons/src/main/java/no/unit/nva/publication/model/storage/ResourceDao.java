@@ -135,11 +135,9 @@ public class ResourceDao extends Dao
                                .withTableName(tableName)
                                .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                                .withKeyConditions(byResource(ContributionDao.BY_CONTRIBUTION_INDEX_ORDER_PREFIX));
-        return client.query(queryRequest)
-                   .getItems()
-                   .stream()
-                   .map(item -> parseAttributeValuesMap(item, ContributionDao.class))
-                   .collect(Collectors.toList());
+        var results = fetchAllQueryResults(client, queryRequest);
+
+        return results.map(ContributionDao.class::cast).collect(Collectors.toList());
     }
     
     public ResourceDao fetchForElevatedUser(AmazonDynamoDB client) throws NotFoundException {

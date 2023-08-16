@@ -51,4 +51,6 @@ test {
     environment "PIA_PASSWORD_KEY", "somePasswordNameKey"
     environment "TABLE_NAME", "nonExistingTable"
     environment "SCOPUS_IMPORT_BUCKET", "someBucket"
+    environment "AWS_REGION", "eu-west-1"
+    environment "API_HOST", "api.localhost.nva.aws.unit.no"
 }

@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.EMPTY_RESOURCE_IDENTIFIER_ERROR;
@@ -22,12 +23,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Contribution;
+import no.unit.nva.publication.model.business.QuerySpliterator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ContributionDao;
@@ -69,9 +72,9 @@ public class ReadResourceService {
         var querySpec = partitionKeyToQuerySpec(partitionKey);
         var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
         var namesMap = querySpec.getNameMap();
-        var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
+        var daos = sendAndParseQueryToDaos(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
-        return queryResultToListOfPublications(result)
+        return daosToPublications(daos)
                    .stream()
                    .limit(DEFAULT_LIMIT)
                    .collect(Collectors.toList());
@@ -83,9 +86,9 @@ public class ReadResourceService {
         var querySpec = primaryKeyToQuerySpec(partitionKey, sortKey);
         var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
         var namesMap = querySpec.getNameMap();
-        var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
+        var daos = sendAndParseQueryToDaos(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
-        return queryResultToResource(result);
+        return queryDaosToResource(daos);
     }
 
 
@@ -100,8 +103,8 @@ public class ReadResourceService {
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
         var queryObject = new ResourceDao(resourceQueryObjectWithCristinIdentifier(cristinIdentifier));
         var queryRequest = queryObject.createQueryFindByCristinIdentifier();
-        var queryResult = client.query(queryRequest);
-        return queryResultToListOfPublications(queryResult);
+        var daos = sendAndParseRequestToDaos(queryRequest);
+        return daosToPublications(daos);
     }
 
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
@@ -125,8 +128,7 @@ public class ReadResourceService {
                    .map(Contribution.class::cast);
     }
 
-    private static List<Resource> queryResultToResourceList(QueryResult result) {
-        var daos = queryResultToDao(result);
+    private static List<Resource> joinDaosToResourcesWithContributions(List<Dao> daos) {
         var resourceDaos = filterDaos(daos, ResourceDao.class);
         var contributionDaos = filterDaos(daos, ContributionDao.class);
 
@@ -170,8 +172,8 @@ public class ReadResourceService {
         return joinWithContributions(resource, contributions);
     }
 
-    private static Resource queryResultToResource(QueryResult result) throws NotFoundException {
-        var daos = queryResultToDao(result);
+    private static Resource queryDaosToResource(List<Dao> daos) throws NotFoundException {
+
         var resourceDaos = filterDaos(daos, ResourceDao.class);
 
         if (resourceDaos.isEmpty()) {
@@ -185,13 +187,6 @@ public class ReadResourceService {
             resource.getEntityDescription().setContributors(extractContributionDaos(contributionDaos));
         }
         return resource;
-    }
-
-    private static List<Dao> queryResultToDao(QueryResult result) {
-        return result.getItems()
-            .stream()
-            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, Dao.class))
-            .collect(Collectors.toList());
     }
 
     private static <T> List<T> filterDaos(List<Dao> daos, Class<T> tClass ) {
@@ -218,21 +213,30 @@ public class ReadResourceService {
                                                         userInstance.getUsername());
     }
 
-    private List<Publication> queryResultToListOfPublications(QueryResult result) {
-        return queryResultToResourceList(result)
+    private List<Publication> daosToPublications(List<Dao> daos) {
+        return joinDaosToResourcesWithContributions(daos)
                    .stream()
                    .map(Resource::toPublication)
                    .collect(Collectors.toList());
     }
 
-    private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
-                                     Map<String, String> namesMap) {
-        return client.query(
+    private List<Dao> sendAndParseQueryToDaos(String conditionExpression, Map<String, AttributeValue> valuesMap,
+                                              Map<String, String> namesMap) {
+        var request =
             new QueryRequest().withKeyConditionExpression(conditionExpression)
                 .withExpressionAttributeNames(namesMap)
                 .withExpressionAttributeValues(valuesMap)
-                .withTableName(tableName)
-        );
+                .withTableName(tableName);
+        var queryIterator = new QuerySpliterator(client, request, RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES);
+        return StreamSupport.stream(queryIterator, false)
+                   .map(item -> parseAttributeValuesMap(item, Dao.class)).collect(Collectors.toList());
+    }
+
+    private List<Dao> sendAndParseRequestToDaos(QueryRequest request) {
+
+        var queryIterator = new QuerySpliterator(client, request, RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES);
+        return StreamSupport.stream(queryIterator, false)
+                   .map(item -> parseAttributeValuesMap(item, Dao.class)).collect(Collectors.toList());
     }
 
     private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {

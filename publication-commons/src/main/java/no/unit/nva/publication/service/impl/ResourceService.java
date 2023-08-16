@@ -27,6 +27,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -82,7 +83,7 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
-    public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
+    public static final int MAX_SIZE_OF_BATCH_REQUEST = 25;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
     public static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: ";
     private static final String SEPARATOR_ITEM = ",";
@@ -392,7 +393,7 @@ public class ResourceService extends ServiceWithTransactions {
 
         var contributors =
             dataEntry.getEntityDescription().getContributors().stream()
-                .map(c -> Contribution.create(dataEntry, c)).toList();
+                .map(c -> Contribution.create(dataEntry, c)).collect(Collectors.toList());
 
         dataEntry.getEntityDescription().setContributors(null);
 
@@ -469,18 +470,23 @@ public class ResourceService extends ServiceWithTransactions {
 
     private Publication insertResource(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
+        sendTransactionWriteItems(transactionItems);
 
         return fetchSavedPublication(newResource);
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
+        sendTransactionWriteItems(transactionItems);
 
         return fetchSavedImportCandidate(newResource);
+    }
+
+    private void sendTransactionWriteItems(TransactWriteItem... transactionItems) {
+        Lists.partition(Arrays.asList(transactionItems), MAX_SIZE_OF_BATCH_REQUEST)
+            .stream()
+            .map(i -> newTransactWriteItemsRequest(i))
+            .forEach(this::sendTransactionWriteRequest);
     }
 
     private TransactWriteItem[] transactionItemsForNewImportCandidateInsertion(Resource resource) {
