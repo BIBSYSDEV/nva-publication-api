@@ -13,7 +13,6 @@ import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
-import nva.commons.core.JacocoGenerated;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +32,6 @@ import java.util.Optional;
  * MUSIKK_INNSP
  */
 
-@JacocoGenerated
 @Data
 @Builder(
     builderClassName = "CristinProductBuilder",

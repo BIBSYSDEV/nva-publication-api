@@ -19,7 +19,7 @@ import java.util.Locale;
     buildMethodName = "build",
     setterPrefix = "with"
 )
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
 @JsonIgnoreProperties({"tidsenhetnavn", "tidsenhetnavn_nynorsk", "tidsenhetnavn_engelsk"})
 
 
@@ -28,7 +28,7 @@ public class ArtisticProductionTimeUnit {
 
     //The only time codes that exist in the dataset are minutes or weeks.
     @JsonIgnore
-    private static final String MINUTE = "MINUTT";
+    public static final String MINUTE = "MINUTT";
 
     @JsonIgnore
     public static final int MAX_SHORT_FILM_LENGTH_IN_MINUTES = 40;
