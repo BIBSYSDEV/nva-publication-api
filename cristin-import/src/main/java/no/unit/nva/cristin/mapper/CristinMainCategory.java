@@ -6,12 +6,14 @@ import java.util.List;
 import nva.commons.core.SingletonCollector;
 
 public enum CristinMainCategory {
+
     BOOK("BOK", "BOOK"),
     JOURNAL("TIDSSKRIFTPUBL", "JOURNAL"),
     REPORT("RAPPORT", "REPORT"),
     CHAPTER("BOKRAPPORTDEL", "CHAPTER"),
     EVENT("FOREDRAG", "EVENT"),
     MEDIA_CONTRIBUTION("MEDIEBIDRAG", "MEDIA_CONTRIBUTION"),
+    ARTISTIC_PRODUCTION("KUNST_PRODUKSJON", "ARTISTIC_PRODUCTION"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -47,6 +49,10 @@ public enum CristinMainCategory {
 
     public static boolean isEvent(CristinObject cristinObject) {
         return CristinMainCategory.EVENT.equals(cristinObject.getMainCategory());
+    }
+
+    public static boolean isArt(CristinObject cristinObject) {
+        return CristinMainCategory.ARTISTIC_PRODUCTION.equals(cristinObject.getMainCategory());
     }
 
     public static boolean isMediaContribution(CristinObject cristinObject) {

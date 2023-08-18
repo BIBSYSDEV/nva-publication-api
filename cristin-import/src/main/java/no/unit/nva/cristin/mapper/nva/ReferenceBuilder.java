@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper.nva;
 
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isArt;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
@@ -22,6 +23,7 @@ import no.unit.nva.cristin.mapper.PeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -92,6 +94,9 @@ public class ReferenceBuilder extends CristinMappingModule {
         }
         if (isMediaContribution(cristinObject)) {
             return buildMediaContributionForPublicationContext();
+        }
+        if (isArt(cristinObject)) {
+            return new Artistic();
         }
         return null;
     }

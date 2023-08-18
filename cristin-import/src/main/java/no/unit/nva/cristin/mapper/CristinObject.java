@@ -13,6 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.model.Publication;
 
 @Data
@@ -30,7 +32,7 @@ import no.unit.nva.model.Publication;
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "finansiering_varbeid", "type_produkt",
     "kildepostid", "arkivpost", "varbeid_url",
-    "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
+    "type_utstilling", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
 
 @SuppressWarnings({"PMD.TooManyFields"})
@@ -112,6 +114,12 @@ public class CristinObject implements JsonSerializable {
 
     @JsonProperty("finansiering_varbeid")
     private List<CristinGrant> cristinGrants;
+
+    @JsonProperty("type_kunstneriskproduksjon")
+    private CristinArtisticProduction cristinArtisticProduction;
+
+    @JsonProperty("type_produkt")
+    private CristinProduct cristinProduct;
 
     private String publicationOwner;
 
