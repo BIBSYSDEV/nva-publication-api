@@ -106,4 +106,10 @@ public class ArtisticFeatures {
         var movingPicture = (MovingPicture) publicationInstance;
         assertThat(movingPicture.getSubtype().getType().getType(), is(equalTo(movingPictureSubtypeEnum)));
     }
+
+    @And("the cristin result lack the duration in both metadata fields")
+    public void theCristinResultLackTheDurationInBothMetadataFields() {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setArtisticProductionTimeUnit(null);
+        scenarioContext.getCristinEntry().getCristinProduct().setTimeUnit(null);
+    }
 }

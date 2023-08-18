@@ -39,3 +39,11 @@ Feature: Rules that apply for Artistic results
       | type_produkt               | 50       | Film                     |
 
 
+  Scenario: If there is no duration field of the Cristin film production,
+  the nva MovingPictureSubtype is MovingPictureOther
+    Given a valid Cristin Result with secondary category "FILMPRODUKSJON"
+    And the Cristin result with both type_kunstneriskproduksjon and type_produkt present
+    And the cristin result lack the duration in both metadata fields
+    When the Cristin Result is converted to an NVA Resource
+    Then the Cristin Result contains a MovingPictureSubtypeEnum equal to "MovingPictureOther"
+
