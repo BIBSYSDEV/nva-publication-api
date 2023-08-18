@@ -3,11 +3,14 @@ package no.unit.nva.cristin.mapper;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinImportConfig.cristinEntryMapper;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import java.time.LocalDate;
 import java.util.List;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +33,7 @@ import no.unit.nva.model.Publication;
 // to remove it from the exports
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
-    "finansiering_varbeid", "type_produkt",
+    "finansiering_varbeid",
     "kildepostid", "arkivpost", "varbeid_url",
     "type_utstilling", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
