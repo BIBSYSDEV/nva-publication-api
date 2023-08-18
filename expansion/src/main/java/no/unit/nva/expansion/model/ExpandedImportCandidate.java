@@ -2,6 +2,7 @@ package no.unit.nva.expansion.model;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
+import static no.unit.nva.expansion.ResourceExpansionServiceImpl.logger;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -44,7 +45,7 @@ import org.joda.time.DateTime;
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
-    public static final String TYPE = "ImportCandidate";
+    public static final String TYPE = "ImportCandidateSummary";
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String PUBLICATION = "publication";
     public static final String ID_FIELD = "id";
@@ -372,7 +373,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(ExpandedImportCandidate::toCristinOrganization)
                    .map(CristinOrganization::getPartOf)
                    .map(ExpandedImportCandidate::getId)
-                   .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
                    .map(uri -> fetchCustomer(uriRetriever, uri))
                    .map(Optional::get)
                    .map(ExpandedImportCandidate::okResponse)
@@ -380,7 +380,9 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Optional<String> fetchCustomer(AuthorizedBackendUriRetriever uriRetriever, URI uri) {
-        return uriRetriever.getRawContent(toFetchCustomerByCristinIdUri(uri), CONTENT_TYPE);
+        var fetchCustomerByCristinIdUri = toFetchCustomerByCristinIdUri(uri);
+        logger.info("Customer to fetch uri: {}", fetchCustomerByCristinIdUri);
+        return uriRetriever.getRawContent(fetchCustomerByCristinIdUri, CONTENT_TYPE);
     }
 
     private static URI getId(List<Organization> list) {
@@ -396,11 +398,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static String getCristinIdentifier(URI id) {
+        logger.info("Cristin ID: {}", id);
         return UriWrapper.fromUri(id).getLastPathElement();
     }
 
     private static URI toCristinOrgUri(String cristinId) {
-        return UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(cristinId).getUri();
+        var uri = UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(cristinId).getUri();
+        logger.info("Cristin URI id: {}", uri);
+        return uri;
     }
 
     private static boolean okResponse(String response) {
