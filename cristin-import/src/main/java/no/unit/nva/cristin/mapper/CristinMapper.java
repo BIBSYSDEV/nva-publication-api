@@ -70,20 +70,35 @@ public class CristinMapper extends CristinMappingModule {
 
     public Publication generatePublication() {
         Publication publication = new Builder()
-                                      .withAdditionalIdentifiers(extractAdditionalIdentifiers())
-                                      .withEntityDescription(generateEntityDescription())
-                                      .withCreatedDate(extractDate())
-                                      .withModifiedDate(extractEntryLastModifiedDate())
-                                      .withPublishedDate(extractDate())
-                                      .withPublisher(extractOrganization())
-                                      .withResourceOwner(extractResourceOwner())
-                                      .withStatus(PublicationStatus.PUBLISHED)
-                                      .withProjects(extractProjects())
-                                      .withSubjects(generateNvaHrcsCategoriesAndActivities())
-                                      .withFundings(extractFundings())
-                                      .build();
+            .withHandle(extractHandle())
+            .withAdditionalIdentifiers(extractAdditionalIdentifiers())
+            .withEntityDescription(generateEntityDescription())
+            .withCreatedDate(extractDate())
+            .withModifiedDate(extractEntryLastModifiedDate())
+            .withPublishedDate(extractDate())
+            .withPublisher(extractOrganization())
+            .withResourceOwner(extractResourceOwner())
+            .withStatus(PublicationStatus.PUBLISHED)
+            .withProjects(extractProjects())
+            .withSubjects(generateNvaHrcsCategoriesAndActivities())
+            .withFundings(extractFundings())
+            .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
+    }
+
+    private URI extractHandle() {
+        return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
+            .flatMap(CristinMapper::extractArchiveUri)
+            .orElse(null);
+    }
+
+    private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
+        return associatedUris
+            .stream()
+            .filter(CristinAssociatedUri::isArchive)
+            .findFirst() // Analysis of the cristin dataset shows that there is either 0 or 1 archive uri present.
+            .map(CristinAssociatedUri::getUrl);
     }
 
     private static void addContributorNumberIfMissing(List<CristinContributor> cristinContributors) {
