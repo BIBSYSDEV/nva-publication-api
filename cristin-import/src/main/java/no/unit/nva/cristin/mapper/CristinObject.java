@@ -29,7 +29,7 @@ import no.unit.nva.model.Publication;
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "finansiering_varbeid", "type_produkt",
-    "kildepostid", "arkivpost", "varbeid_url",
+    "kildepostid", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
 
@@ -112,6 +112,9 @@ public class CristinObject implements JsonSerializable {
 
     @JsonProperty("finansiering_varbeid")
     private List<CristinGrant> cristinGrants;
+
+    @JsonProperty("varbeid_url")
+    private List<CristinAssociatedUri> cristinAssociatedUris;
 
     private String publicationOwner;
 

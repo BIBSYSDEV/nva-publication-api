@@ -397,3 +397,18 @@ Feature: Mappings that hold for all types of Cristin Results
       | NTNU     | 34502          | 0     | 0        | 0        |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource should have a owner "ntnu@34502.0.0.0" and ownerAffiliation: "https://api.test.nva.aws.unit.no/cristin/organization/34502.0.0.0"
+
+  Scenario: when brage-archive handle is present they should be mapped
+    Given the Cristin Result has the following varbeid_url present:
+      | urltypekode | url                                  |
+      | FULLTEKST   | wwww.example.com                     |
+      | ARKIV       | https://hdl.handle.net/11250/2977385 |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have the archive handle set to "https://hdl.handle.net/11250/2977385"
+
+  Scenario: when brage-archive handles is not present the result is still mapped
+    Given the Cristin Result has the following varbeid_url present:
+      | urltypekode | url                                  |
+      | FULLTEKST   | wwww.example.com                     |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have the handle set to null

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
@@ -570,5 +571,24 @@ public class GeneralMappingRules {
         if (contributors.size() != desiredInjectedAffiliations.size()) {
             throw new MisformattedScenarioException(ERROR_MESSAGE_FOR_MISMATCH_BETWEEN_ROLES_AND_AFFILIATIONS);
         }
+    }
+
+    @Given("the Cristin Result has the following varbeid_url present:")
+    public void theCristinResultHasTheFollowingVarbeid_urlPresent(List<CristinAssociatedUri> cristinAssociatedUrls) {
+        scenarioContext.getCristinEntry().setCristinAssociatedUris(cristinAssociatedUrls);
+    }
+
+    @Then("the NVA Resource should have the archive handle set to {string}")
+    public void theNVAResourceShouldHaveTheArchiveHandleSet(String expectedHandleString) {
+        var publication = scenarioContext.getNvaEntry();
+        var actualHandle = publication.getHandle();
+        var expectedHandle = UriWrapper.fromUri(expectedHandleString).getUri();
+        assertThat(actualHandle, is(equalTo(expectedHandle)));
+    }
+
+    @Then("the NVA Resource should have the handle set to null")
+    public void theNVAResourceShouldHaveTheHandleSetToNull() {
+        var actualHandle = scenarioContext.getNvaEntry().getHandle();
+        assertThat(actualHandle, is(nullValue()));
     }
 }
