@@ -30,7 +30,7 @@ public class CsvGeneratorTestClient {
                              .build();
 
         int from = 0;
-        int results = 10;
+        int results = 20;
 
         int count;
         var allDocuments = new ArrayList<JsonNode>();
@@ -39,7 +39,7 @@ public class CsvGeneratorTestClient {
             allDocuments.addAll(documents);
             count = documents.size();
             from += results;
-        } while (count >= results);
+        } while (count >= results && from <= 5000);
 
         try (var publicationDataSetGenerator = new PublicationDataSetGenerator()) {
             allDocuments.forEach(publicationDataSetGenerator::addEntry);
@@ -79,6 +79,7 @@ public class CsvGeneratorTestClient {
     }
 
     public static void main(String... args) throws IOException, InterruptedException {
+        //var client = new CsvGeneratorTestClient(URI.create("https://api.dev.nva.aws.unit.no/search/resources"));
         var client = new CsvGeneratorTestClient(URI.create("https://api.nva.unit.no/search/resources"));
         client.exportToCsv();
     }

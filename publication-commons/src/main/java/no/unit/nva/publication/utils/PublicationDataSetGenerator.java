@@ -16,6 +16,7 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
     private static final String CHANNEL_ONLINE_ISSN = "channelOnlineIssn";
     private static final String CHANNEL_PRINT_ISSN = "channelPrintIssn";
     private static final String CHANNEL_LEVEL = "channelLevel";
+    private static final String IDENTIFIER = "identifier";
 
     private static final String[] COLUMNS_NAMES = new String[]{
         URL,
@@ -27,11 +28,13 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
         CHANNEL_NAME,
         CHANNEL_ONLINE_ISSN,
         CHANNEL_PRINT_ISSN,
-        CHANNEL_LEVEL
+        CHANNEL_LEVEL,
+        IDENTIFIER
     };
     private static final int ONE = 1;
     private final ContributorDataSetGenerator contributorDataSetGenerator = new ContributorDataSetGenerator();
     private final FundingsDataSetGenerator fundingsDataSetGenerator = new FundingsDataSetGenerator();
+    private final IdentifiersDataSetGenerator identifiersDataSetGenerator = new IdentifiersDataSetGenerator();
 
     public PublicationDataSetGenerator() {
         super("publications", COLUMNS_NAMES);
@@ -40,10 +43,11 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
     @Override
     public void addEntry(JsonNode rootNode, String... references) {
         var url = rootNode.get("id").asText();
+        var identifier = rootNode.get("identifier").asText();
         var title = rootNode.at("/entityDescription/mainTitle").asText();
         var category = rootNode.at("/entityDescription/reference/publicationInstance/type").asText();
         String publicationDate = extractPublicationDate(rootNode);
-        extractContributors(url, rootNode);
+        extractContributors(url, identifier, rootNode);
         var publicationContextNode = rootNode.at("/entityDescription/reference/publicationContext");
         String channelType = null;
         String channelIdentifier = null;
@@ -59,7 +63,8 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
             channelPrintIssn = extractChannelPrintIssn(publicationContextNode);
             channelLevel = extractChannelLevel(publicationContextNode);
         }
-        extractFundingSources(url, rootNode);
+        extractFundingSources(url, identifier, rootNode);
+        extractAdditionalIdentifiers(url, identifier, rootNode);
         writeLine(new String[]{
             url,
             title,
@@ -70,7 +75,8 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
             channelName,
             channelOnlineIssn,
             channelPrintIssn,
-            channelLevel});
+            channelLevel,
+            identifier});
     }
 
     @Override
@@ -78,14 +84,22 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
         super.exportToFile();
         this.contributorDataSetGenerator.exportToFile();
         this.fundingsDataSetGenerator.exportToFile();
+        this.identifiersDataSetGenerator.exportToFile();
     }
 
-    private void extractFundingSources(String url, JsonNode document) {
+    private void extractAdditionalIdentifiers(String url, String identifier, JsonNode rootNode) {
+        var additionalIdentifiersNode = rootNode.at("/additionalIdentifiers");
+        if (additionalIdentifiersNode != null) {
+            identifiersDataSetGenerator.addEntry(additionalIdentifiersNode, url, identifier);
+        }
+    }
+
+    private void extractFundingSources(String url, String identifier, JsonNode document) {
         var fundingsNode = document.at("/fundings");
         if (fundingsNode != null) {
             var iterator = fundingsNode.elements();
             while (iterator.hasNext()) {
-                fundingsDataSetGenerator.addEntry(iterator.next(), url);
+                fundingsDataSetGenerator.addEntry(iterator.next(), url, identifier);
             }
         }
     }
@@ -119,14 +133,14 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
     private static String extractChannelLevel(JsonNode publicationContextNode) {
         return Optional.ofNullable(publicationContextNode.get("level")).
                    map(JsonNode::asText)
-                   .orElse("");
+                   .orElse(null);
     }
 
-    private void extractContributors(String url, JsonNode document) {
+    private void extractContributors(String url, String identifier, JsonNode document) {
         var contributorsNode = document.at("/entityDescription/contributors");
         var iterator = contributorsNode.elements();
         while (iterator.hasNext()) {
-            contributorDataSetGenerator.addEntry(iterator.next(), url);
+            contributorDataSetGenerator.addEntry(iterator.next(), url, identifier);
         }
     }
 
@@ -163,5 +177,6 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
 
         contributorDataSetGenerator.close();
         fundingsDataSetGenerator.close();
+        identifiersDataSetGenerator.close();
     }
 }

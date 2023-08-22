@@ -6,14 +6,16 @@ import java.io.IOException;
 
 public class ContributorDataSetGenerator extends AbstractDataSetGenerator {
 
-    private static final String URL = "publicationUrl";
+    private static final String PUBLICATION_URL = "publicationUrl";
+    private static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     private static final String ID = "id";
     private static final String NAME = "name";
     private static final String SEQUENCE_NO = "sequenceNo";
     private static final String ROLE = "role";
 
     private static final String[] COLUMNS = new String[]{
-        URL,
+        PUBLICATION_URL,
+        PUBLICATION_IDENTIFIER,
         ID,
         NAME,
         SEQUENCE_NO,
@@ -34,11 +36,11 @@ public class ContributorDataSetGenerator extends AbstractDataSetGenerator {
         var sequenceNo = rootNode.at("/sequence").asText();
         var role = rootNode.at("/role/type").asText();
 
-        writeLine(new String[]{references[0], id, name, sequenceNo, role});
+        writeLine(new String[]{references[0], references[1], id, name, sequenceNo, role});
 
         var affiliationsNode = rootNode.at("/affiliations");
         if (affiliationsNode != null) {
-            contributorAffiliationDataSetGenerator.addEntry(affiliationsNode, references[0], id, name);
+            contributorAffiliationDataSetGenerator.addEntry(affiliationsNode, references[0], references[1], id, name);
         }
     }
 
