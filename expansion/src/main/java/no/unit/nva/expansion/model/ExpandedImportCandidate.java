@@ -44,7 +44,7 @@ import org.joda.time.DateTime;
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
-    public static final String TYPE = "ImportCandidate";
+    public static final String TYPE = "ImportCandidateSummary";
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String PUBLICATION = "publication";
     public static final String ID_FIELD = "id";
@@ -372,7 +372,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(ExpandedImportCandidate::toCristinOrganization)
                    .map(CristinOrganization::getPartOf)
                    .map(ExpandedImportCandidate::getId)
-                   .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
                    .map(uri -> fetchCustomer(uriRetriever, uri))
                    .map(Optional::get)
                    .map(ExpandedImportCandidate::okResponse)
