@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -362,7 +363,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
                    .filter(organization -> nonNull(organization.getId()))
-                   .map(org -> attempt(() -> toNvaCustomer(org.getId(), uriRetriever)).orElseThrow())
+                   .map(org -> toNvaCustomer(org.getId(), uriRetriever))
+                   .filter(Objects::nonNull)
                    .collect(Collectors.toSet());
     }
 
@@ -371,8 +373,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private static Organization toNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
         return UIO_SECONDARY_TOP_LEVEL_ORG_ID.equals(getCristinIdentifier(id))
                    ? constructUioSecondaryTopLevelOrganization(id)
-                   : attempt(() -> getCristinIdentifier(id))
-                         .map(ExpandedImportCandidate::toCristinOrgUri)
+                   : attempt(() -> getCristinIdentifier(id)).map(ExpandedImportCandidate::toCristinOrgUri)
                          .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
                          .map(Optional::get)
                          .map(ExpandedImportCandidate::toCristinOrganization)
@@ -383,18 +384,19 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     @JacocoGenerated
     private static Organization constructUioSecondaryTopLevelOrganization(URI id) {
-        return new Organization.Builder().withId(id).withLabels(Map.of("en", "University of Oslo",
-                                                                       "nb", "Universitetet i Oslo")).build();
+        return new Organization.Builder().withId(id)
+                   .withLabels(Map.of("en", "University of Oslo", "nb", "Universitetet i Oslo"))
+                   .build();
     }
 
     private static Organization fetchCustomer(AuthorizedBackendUriRetriever uriRetriever,
                                               CristinOrganization organization) {
-        var response = uriRetriever.getRawContent(toFetchCustomerByCristinIdUri(organization.getId()), CONTENT_TYPE);
-        return attempt(() -> response).map(Optional::get)
-                   .map(string -> attempt(
-                       () -> JsonUtils.dtoObjectMapper.readValue(string, Customer.class)).orElseThrow())
-                   .map(customer -> toOrganization(customer, organization))
-                   .orElseThrow();
+        return attempt(() -> toFetchCustomerByCristinIdUri(organization.getId()))
+            .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+            .map(Optional::get)
+            .map(string -> attempt(() -> JsonUtils.dtoObjectMapper.readValue(string, Customer.class)).orElseThrow())
+            .map(customer -> toOrganization(customer, organization))
+            .orElseThrow();
     }
 
     private static Organization toOrganization(Customer organization, CristinOrganization cristinOrganization) {
