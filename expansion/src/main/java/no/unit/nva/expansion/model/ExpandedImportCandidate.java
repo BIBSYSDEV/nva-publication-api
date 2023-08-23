@@ -2,6 +2,7 @@ package no.unit.nva.expansion.model;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
+import static no.unit.nva.expansion.ResourceExpansionServiceImpl.logger;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -366,7 +367,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     //TODO: should be refactored when we have updated commons version. Should return false if response status is 404
     // Should use getResponse() method of uriRetriever instead of getRawContent()
     private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
-        return attempt(() -> getCristinIdentifier(id)).map(ExpandedImportCandidate::toCristinOrgUri)
+        return attempt(() -> getCristinIdentifier(id))
+                   .map(ExpandedImportCandidate::toCristinOrgUri)
                    .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
                    .map(Optional::get)
                    .map(ExpandedImportCandidate::toCristinOrganization)
@@ -382,12 +384,16 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return uriRetriever.getRawContent(toFetchCustomerByCristinIdUri(uri), CONTENT_TYPE);
     }
 
-    private static URI getId(List<Organization> list) {
-        return list.get(0).getId();
+    private static URI getId(List<CristinOrganization.Organization> list) {
+        var cristinId = list.get(0).getId();
+        logger.info("Cristin id of fetched org: {}", cristinId.toString());
+        return cristinId;
     }
 
     private static CristinOrganization toCristinOrganization(String response) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.readValue(response, CristinOrganization.class);
+        var fetchedCristinOrg = JsonUtils.dtoObjectMapper.readValue(response, CristinOrganization.class);
+        logger.info("Fetched cristin org: {}", fetchedCristinOrg.toJsonString());
+        return fetchedCristinOrg;
     }
 
     private static Optional<String> fetchTopLevelOrg(URI uri, AuthorizedBackendUriRetriever uriRetriever) {
@@ -403,6 +409,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static boolean okResponse(String response) {
+        logger.info("Customer response: {}", response);
         return response.contains("200");
     }
 
