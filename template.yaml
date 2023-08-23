@@ -608,7 +608,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /context
+            Path: /context.jsonld
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
