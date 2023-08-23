@@ -42,7 +42,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.AvoidUsingHardCodedIP"})
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
