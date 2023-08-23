@@ -32,6 +32,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
+import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
@@ -212,6 +215,13 @@ public final class CristinDataGenerator {
                 return randomTvOrMedia(category);
             case WRITTEN_INTERVIEW:
                 return randomWrittenInterview();
+//            case MUSICAL_PERFORMANCE:
+//            case VISUAL_ARTS:
+            case FILM_PRODUCTION:
+//            case MUSICAL_PIECE:
+//            case ARCHITECT_DESIGN:
+//            case THEATRICAL_PRODUCTION:
+                return randomArtisticProduction(category);
             default:
                 break;
         }
@@ -573,6 +583,31 @@ public final class CristinDataGenerator {
                    .build();
     }
 
+    private static CristinObject randomArtisticProduction(CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+            .withId(largeRandomNumber())
+            .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
+            .withSecondaryCategory(secondaryCategory)
+            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+            .withEntryCreationDate(LocalDate.now())
+            .withPublicationYear(randomYear())
+            .withPublicationOwner(randomString())
+            .withContributors(randomContributors())
+            .withCristinArtisticProduction(randomCristinArtisticProduction())
+            .build();
+    }
+
+    private static CristinArtisticProduction randomCristinArtisticProduction() {
+        return CristinArtisticProduction.builder()
+            .withArtisticGenre(ArtisticGenre.builder().withGenreCode(randomString()).build())
+            .withArtisticProductionTimeUnit(ArtisticProductionTimeUnit.builder().withTimeUnitCode("MINUTT").build())
+            .withDuration("6")
+            .withOriginalComposer(randomString())
+            .withCoCreators(randomString())
+            .withCrew(randomString())
+            .build();
+    }
+
     private static CristinObject newCristinObject(Integer index) {
         return createObjectWithCristinContributorRoleCode(index, randomContributors());
     }
@@ -645,7 +680,7 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, ENTRY_PUBLISHED_DATE, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                    SOURCE_RECORD_IDENTIFIER, SUB_DEPARTMEND_IDENTIFIER_CREATED, OWNER_CODE_CREATED,
                    INSTITUTION_IDENTIFIER_CREATED, GROUP_IDENTIFIER_CREATED, DEPARTMENT_IDENTIFIER_CREATED,
-                   CRISTIN_LOCALES, CRISTIN_ASSOCIATED_URIS,
+                   CRISTIN_LOCALES,CRISTIN_ASSOCIATED_URIS, "cristinProduct", "cristinArtisticProduction",
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
                    LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_GRANTS, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
