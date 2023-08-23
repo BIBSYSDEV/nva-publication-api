@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.expansion.model.customer.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -41,7 +42,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.AvoidUsingHardCodedIP"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
@@ -67,6 +68,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String IMPORT_CANDIDATE = "import-candidate";
     private static final String CUSTOMER = "customer";
     private static final String CRISTIN_ID = "cristinId";
+    private static final String UIO_SECONDARY_TOP_LEVEL_ORG_ID = "185.90.0.0";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -367,7 +369,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     //TODO: should be refactored when we have updated commons version. Should return false if response status is 404
     // Should use getResponse() method of uriRetriever instead of getRawContent()
     private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
-        return attempt(() -> getCristinIdentifier(id))
+        return UIO_SECONDARY_TOP_LEVEL_ORG_ID.equals(getCristinIdentifier(id))
+               || attempt(() -> getCristinIdentifier(id))
                    .map(ExpandedImportCandidate::toCristinOrgUri)
                    .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
                    .map(Optional::get)
@@ -409,8 +412,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static boolean okResponse(String response) {
-        logger.info("Customer response: {}", response);
-        return response.contains("200");
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, Customer.class))
+                   .map(Customer::getId)
+                   .stream()
+                   .findFirst()
+                   .isPresent();
     }
 
     private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
