@@ -6,10 +6,9 @@ import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtypeEnum;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit.MINUTE;
 
 public interface MovingPictureExtractor {
-
-    String MINUTE = "MINUTT";
 
     int MAX_SHORT_FILM_LENGTH_IN_MINUTES = 40;
 

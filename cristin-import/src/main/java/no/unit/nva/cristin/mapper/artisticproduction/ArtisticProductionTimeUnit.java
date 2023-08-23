@@ -30,9 +30,6 @@ public class ArtisticProductionTimeUnit {
     @JsonIgnore
     public static final String MINUTE = "MINUTT";
 
-    @JsonIgnore
-    public static final int MAX_SHORT_FILM_LENGTH_IN_MINUTES = 40;
-
     @JsonProperty("tidsenhetkode")
     private String timeUnitCode;
 
