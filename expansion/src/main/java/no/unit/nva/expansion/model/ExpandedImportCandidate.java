@@ -11,7 +11,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -69,7 +68,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String IMPORT_CANDIDATE = "import-candidate";
     private static final String CUSTOMER = "customer";
     private static final String CRISTIN_ID = "cristinId";
-    private static final String UIO_SECONDARY_TOP_LEVEL_ORG_ID = "185.90.0.0";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -371,22 +369,13 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     //TODO: should be refactored when we have updated commons version. Should return false if response status is 404
     // Should use getResponse() method of uriRetriever instead of getRawContent()
     private static Organization toNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
-        return UIO_SECONDARY_TOP_LEVEL_ORG_ID.equals(getCristinIdentifier(id))
-                   ? constructUioSecondaryTopLevelOrganization(id)
-                   : attempt(() -> getCristinIdentifier(id)).map(ExpandedImportCandidate::toCristinOrgUri)
+        return attempt(() -> getCristinIdentifier(id)).map(ExpandedImportCandidate::toCristinOrgUri)
                          .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
                          .map(Optional::get)
                          .map(ExpandedImportCandidate::toCristinOrganization)
                          .map(CristinOrganization::getTopLevelOrg)
                          .map(org -> fetchCustomer(uriRetriever, org))
                          .orElse(failure -> null);
-    }
-
-    @JacocoGenerated
-    private static Organization constructUioSecondaryTopLevelOrganization(URI id) {
-        return new Organization.Builder().withId(id)
-                   .withLabels(Map.of("en", "University of Oslo", "nb", "Universitetet i Oslo"))
-                   .build();
     }
 
     private static Organization fetchCustomer(AuthorizedBackendUriRetriever uriRetriever,
