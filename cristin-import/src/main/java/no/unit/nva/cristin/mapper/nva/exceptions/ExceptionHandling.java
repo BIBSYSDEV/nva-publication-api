@@ -37,6 +37,9 @@ public final class ExceptionHandling {
         if (exception instanceof UnsupportedRoleException) {
             return (UnsupportedRoleException) exception;
         }
+        if (exception instanceof  CristinIdAlreadyExistException) {
+            return (CristinIdAlreadyExistException) exception;
+        }
         if (exception instanceof RuntimeException) {
             return (RuntimeException) exception;
         }
