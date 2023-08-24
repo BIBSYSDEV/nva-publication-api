@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -348,8 +349,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             var importCandidate = new Builder().withPublication(publication).build();
             var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
             when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(
-                new CristinOrganization(List.of(new Organization.Builder().withId(randomUri()).build())).toJsonString()
-                + " 200"));
+                new CristinOrganization(randomUri(), List.of(new CristinOrganization(randomUri(), List.of(), Map.of())),
+                                        Map.of()).toJsonString()));
             var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate,
                                                                                       authorizedBackendClient);
             return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);

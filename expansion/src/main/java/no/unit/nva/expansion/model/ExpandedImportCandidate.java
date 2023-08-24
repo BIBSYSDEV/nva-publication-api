@@ -11,12 +11,14 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.expansion.model.customer.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -88,7 +90,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(CONTRIBUTORS)
     private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
-    private List<Organization> organizations;
+    private Set<Organization> organizations;
     @JsonProperty(IMPORT_STATUS_FIELD)
     private ImportStatus importStatus;
     @JsonProperty(PUBLICATION_YEAR_FIELD)
@@ -210,11 +212,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public List<Organization> getOrganizations() {
+    public Set<Organization> getOrganizations() {
         return organizations;
     }
 
-    public void setOrganizations(List<Organization> organizations) {
+    public void setOrganizations(Set<Organization> organizations) {
         this.organizations = organizations;
     }
 
@@ -351,39 +353,45 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
 
-    private static List<Organization> extractOrganizations(ImportCandidate importCandidate,
-                                                           AuthorizedBackendUriRetriever uriRetriever) {
+    private static Set<Organization> extractOrganizations(ImportCandidate importCandidate,
+                                                          AuthorizedBackendUriRetriever uriRetriever) {
         return importCandidate.getEntityDescription()
                    .getContributors()
                    .stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
                    .filter(organization -> nonNull(organization.getId()))
-                   .filter(org -> attempt(() -> isNvaCustomer(org.getId(), uriRetriever)).orElseThrow())
-                   .collect(Collectors.toList());
+                   .map(org -> toNvaCustomer(org.getId(), uriRetriever))
+                   .filter(Objects::nonNull)
+                   .collect(Collectors.toSet());
     }
 
     //TODO: should be refactored when we have updated commons version. Should return false if response status is 404
     // Should use getResponse() method of uriRetriever instead of getRawContent()
-    private static boolean isNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
+    private static Organization toNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
         return attempt(() -> getCristinIdentifier(id)).map(ExpandedImportCandidate::toCristinOrgUri)
-                   .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
-                   .map(Optional::get)
-                   .map(ExpandedImportCandidate::toCristinOrganization)
-                   .map(CristinOrganization::getPartOf)
-                   .map(ExpandedImportCandidate::getId)
-                   .map(uri -> fetchCustomer(uriRetriever, uri))
-                   .map(Optional::get)
-                   .map(ExpandedImportCandidate::okResponse)
-                   .orElse(failure -> false);
+                         .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
+                         .map(Optional::get)
+                         .map(ExpandedImportCandidate::toCristinOrganization)
+                         .map(CristinOrganization::getTopLevelOrg)
+                         .map(org -> fetchCustomer(uriRetriever, org))
+                         .orElse(failure -> null);
     }
 
-    private static Optional<String> fetchCustomer(AuthorizedBackendUriRetriever uriRetriever, URI uri) {
-        return uriRetriever.getRawContent(toFetchCustomerByCristinIdUri(uri), CONTENT_TYPE);
+    private static Organization fetchCustomer(AuthorizedBackendUriRetriever uriRetriever,
+                                              CristinOrganization organization) {
+        return attempt(() -> toFetchCustomerByCristinIdUri(organization.getId()))
+            .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+            .map(Optional::get)
+            .map(string -> attempt(() -> JsonUtils.dtoObjectMapper.readValue(string, Customer.class)).orElseThrow())
+            .map(customer -> toOrganization(customer, organization))
+            .orElseThrow();
     }
 
-    private static URI getId(List<Organization> list) {
-        return list.get(0).getId();
+    private static Organization toOrganization(Customer organization, CristinOrganization cristinOrganization) {
+        return new Organization.Builder().withLabels(cristinOrganization.getTopLevelOrg().getLabels())
+                   .withId(organization.getId())
+                   .build();
     }
 
     private static CristinOrganization toCristinOrganization(String response) throws JsonProcessingException {
@@ -400,10 +408,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static URI toCristinOrgUri(String cristinId) {
         return UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(cristinId).getUri();
-    }
-
-    private static boolean okResponse(String response) {
-        return response.contains("200");
     }
 
     private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
@@ -470,7 +474,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withOrganizations(List<Organization> organizations) {
+        public Builder withOrganizations(Set<Organization> organizations) {
             expandedImportCandidate.setOrganizations(organizations);
             return this;
         }
