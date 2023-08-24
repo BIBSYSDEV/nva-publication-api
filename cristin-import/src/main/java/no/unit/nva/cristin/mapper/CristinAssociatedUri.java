@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 
@@ -30,6 +31,11 @@ public class CristinAssociatedUri {
 
     @JsonProperty("url")
     private URI url;
+
+    @JacocoGenerated
+    public CristinAssociatedUri() {
+
+    }
 
 
     @JsonIgnore
