@@ -2,6 +2,8 @@ package no.unit.nva.publication.fetch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import static com.google.common.net.HttpHeaders.ACCEPT;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
@@ -35,6 +37,7 @@ class FetchPublicationContextHandlerTest {
     private static final String DEFAULT_MEDIA_TYPE = "*/*";
     private static final String UNSUPPORTED_ACCEPT_HEADER_MESSAGE = "contains no supported Accept header values.";
     private static final URI BASE_URI = URI.create("https://api-host.example.com/publication");
+    public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
     private FetchPublicationContextHandler fetchPublicationContextHandler;
     private Context context;
     private ByteArrayOutputStream output;
@@ -47,12 +50,17 @@ class FetchPublicationContextHandlerTest {
     }
 
     @Test
-    void shouldReturnPublicationContextAsString()
-            throws IOException {
+    void shouldReturnPublicationContextAsString() throws IOException {
         var request = generateHandlerRequest(Map.of(ACCEPT, APPLICATION_JSON));
         fetchPublicationContextHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, String.class);
-        assertThat(response.getBody(), is(equalTo(Publication.getJsonLdContext(BASE_URI))));
+        var expectedContext = "{\"@context\":" + Publication.getJsonLdContext(BASE_URI) + "}";
+        var expected = formatJson(expectedContext);
+        assertThat(response.getBody(), is(equalTo(expected)));
+    }
+
+    private static String formatJson(String json) throws JsonProcessingException {
+        return MAPPER.writeValueAsString(MAPPER.readTree(json));
     }
 
     @ParameterizedTest(name = "mediaType {0} is invalid")
