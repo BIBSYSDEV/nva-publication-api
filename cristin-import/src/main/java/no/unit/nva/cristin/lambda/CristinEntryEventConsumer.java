@@ -20,10 +20,14 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
+import no.unit.nva.cristin.mapper.nva.exceptions.CristinIdAlreadyExistException;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -98,10 +102,33 @@ public class CristinEntryEventConsumer
 
     private Publication processEvent(EventReference eventReference) {
         var eventBody = readEventBody(eventReference);
-        return attempt(() -> generatePublicationRepresentations(eventBody))
-                   .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
-                   .map(this::persistConversionReports)
-                   .orElseThrow(fail -> handleSavingError(fail, eventBody));
+        return attempt(() -> getCristinObject(eventBody))
+            .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
+            .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
+            .map(this::persistConversionReports)
+            .orElseThrow(fail -> handleSavingError(fail, eventBody));
+    }
+
+    private CristinObject getCristinObject(FileContentsEvent<JsonNode> eventBody) {
+        var cristinObject = parseCristinObject(eventBody);
+        validateCristinObject(cristinObject);
+        return cristinObject;
+    }
+
+    private void validateCristinObject(CristinObject cristinObject) {
+        var duplicateCristinPublicationsInNva = resourceService
+            .getPublicationsByCristinIdentifier(cristinObject.getId().toString());
+        if (!duplicateCristinPublicationsInNva.isEmpty()) {
+            var nvaPublicationIdentifiers = getDuplicatePublicationIdentifiers(duplicateCristinPublicationsInNva);
+            throw new CristinIdAlreadyExistException(cristinObject.getId().toString(), nvaPublicationIdentifiers);
+        }
+    }
+
+    private static Stream<String> getDuplicatePublicationIdentifiers(List<Publication> duplicateCristinPublicationsInNva) {
+        return duplicateCristinPublicationsInNva
+            .stream()
+            .map(Publication::getIdentifier)
+            .map(SortableIdentifier::toString);
     }
 
     private EventReference getEventReferenceFromBody(String body) {
@@ -130,8 +157,8 @@ public class CristinEntryEventConsumer
     }
 
     private PublicationRepresentations generatePublicationRepresentations(
+        CristinObject cristinObject,
         FileContentsEvent<JsonNode> eventBody) {
-        var cristinObject = parseCristinObject(eventBody);
         var publication = cristinObject.toPublication();
         return new PublicationRepresentations(cristinObject, publication, eventBody);
     }

@@ -218,7 +218,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         handler.handleRequest(eventReference, CONTEXT);
         var expectedExceptionName = RuntimeException.class.getSimpleName();
-        var expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+        var expectedFilePath = constructExpectedErrorFilePaths(eventBody,
                                                                                       expectedExceptionName);
 
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
@@ -317,7 +317,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler.handleRequest(eventReference, CONTEXT);
         var expectedExceptionName = ContributorWithoutAffiliationException.class.getSimpleName();
 
-        var expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+        var expectedFilePath = constructExpectedErrorFilePaths(eventBody,
                                                                                       expectedExceptionName);
 
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
@@ -338,7 +338,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler.handleRequest(eventReference, CONTEXT);
 
         var expectedExceptionName = AffiliationWithoutRoleException.class.getSimpleName();
-        var expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+        var expectedFilePath = constructExpectedErrorFilePaths(eventBody,
                                                                                       expectedExceptionName);
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedFilePath);
@@ -400,7 +400,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventReference = createEventReference(eventBody);
         handler.handleRequest(eventReference, CONTEXT);
         var expectedFilePath =
-            constructExpectedFilePathForEntryWithUnkownFields(eventBody,
+            constructExpectedErrorFilePaths(eventBody,
                                                               IllegalArgumentException.class.getSimpleName());
 
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
@@ -472,6 +472,22 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    is(equalTo(expectedPartOFCristinPublication)));
     }
 
+    @Test
+    void shouldPersistExceptionWhenImportingSameCristinPostTwice() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventBody = createEventBody(cristinObject);
+        var eventReference = createEventReference(eventBody);
+        var publications = handler.handleRequest(eventReference, CONTEXT);
+        assertThat(publications, hasSize(1));
+        var duplicatePublication =  handler.handleRequest(eventReference, CONTEXT);
+        assertThat(duplicatePublication, hasSize(0));
+        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "CristinIdAlreadyExistException");
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(file, is(not(emptyString())));
+        assertThat(file, containsString("CristinIdAlreadyExistException"));
+    }
+
     private SQSEvent createEventReferenceWithInvalidMessagesAlongWithValidEventBody(
         FileContentsEvent<CristinObject> validEventBody)
         throws IOException {
@@ -508,7 +524,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return sqsEvent;
     }
 
-    private <T> UnixPath constructExpectedFilePathForEntryWithUnkownFields(
+    private <T> UnixPath constructExpectedErrorFilePaths(
         FileContentsEvent<T> event, String exceptionName) {
         return ERRORS_FOLDER
                    .addChild(timestampToString(event.getTimestamp()))
