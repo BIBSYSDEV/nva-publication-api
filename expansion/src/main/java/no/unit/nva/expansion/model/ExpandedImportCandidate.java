@@ -125,8 +125,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static CollaborationType extractCooperation(Set<Organization> organizations) {
         return organizations.size() > 1
-                   ? CollaborationType.MULTIPLE_ORGANIZATIONS
-                   : CollaborationType.SINGLE_ORGANIZATION;
+                   ? CollaborationType.COLLABORATIVE
+                   : CollaborationType.NON_COLLABORATIVE;
     }
 
     public void setContributors(List<Contributor> contributors) {

@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum CollaborationType {
 
-    MULTIPLE_ORGANIZATIONS("multipleOrganizations"), SINGLE_ORGANIZATION("singleOrganization");
+    COLLABORATIVE("collaborative"), NON_COLLABORATIVE("nonCollaborative");
 
     private final String value;
 
