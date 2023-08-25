@@ -379,11 +379,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         var s3Driver = new S3Driver(s3Client, "bucket");
         var expectedFilePath = eventbody.getFileUri().getPath();
-        var expectedTimestamp = eventbody.getTimestamp();
         var exceptionName = UnsupportedSecondaryCategoryException.class.getSimpleName();
         var fileIdWithEnding = cristinObjectWithCustomSecondaryCategory.get("id").asText() + JSON;
         var expectedErrorFileLocation = ERRORS_FOLDER
-                                            .addChild(timestampToString(expectedTimestamp))
                                             .addChild(exceptionName)
                                             .addChild(expectedFilePath)
                                             .addChild(fileIdWithEnding);
@@ -527,7 +525,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private <T> UnixPath constructExpectedErrorFilePaths(
         FileContentsEvent<T> event, String exceptionName) {
         return ERRORS_FOLDER
-                   .addChild(timestampToString(event.getTimestamp()))
                    .addChild(exceptionName)
                    .addChild(event.getFileUri().getPath())
                    .addChild(extractCristinObjectId(event) + JSON);
@@ -556,13 +553,17 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var cristinObjectId = extractCristinObjectId(eventBody);
         var errorReportFilename = cristinObjectId + JSON;
         var inputFile = UriWrapper.fromUri(eventBody.getFileUri());
-        var timestamp = eventBody.getTimestamp();
         var bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
-                   .addChild(timestampToString(timestamp))
                    .addChild(exceptionName)
-                   .addChild(inputFile.getPath())
+                   .addChild(extractSecondLastPathElementAndFileName( inputFile.getPath()))
                    .addChild(errorReportFilename);
+    }
+
+    private UnixPath extractSecondLastPathElementAndFileName(UnixPath path) {
+        var lastPartElement = path.getLastPathElement();
+        var secondLastPart = path.getPathElementByIndexFromEnd(1);
+        return  UnixPath.of(secondLastPart, lastPartElement);
     }
 
     private <T> int extractCristinObjectId(FileContentsEvent<T> eventBody) {

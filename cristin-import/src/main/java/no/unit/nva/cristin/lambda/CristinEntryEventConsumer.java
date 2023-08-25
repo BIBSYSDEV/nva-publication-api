@@ -302,14 +302,18 @@ public class CristinEntryEventConsumer
     private UriWrapper constructErrorFileUri(FileContentsEvent<JsonNode> event,
                                              Exception exception) {
         var fileUri = UriWrapper.fromUri(event.getFileUri());
-        var timestamp = event.getTimestamp();
         var bucket = fileUri.getHost();
         return bucket
                    .addChild(ERRORS_FOLDER)
-                   .addChild(timestampToString(timestamp))
                    .addChild(exception.getClass().getSimpleName())
-                   .addChild(fileUri.getPath())
+                   .addChild( constructPathBasedOnSecondLastPart( fileUri.getPath()))
                    .addChild(createErrorReportFilename(event));
+    }
+
+    private static UnixPath constructPathBasedOnSecondLastPart(UnixPath path) {
+        var lastPart = path.getLastPathElement();
+        var secondLastPart = path.getPathElementByIndexFromEnd(1);
+        return UnixPath.of(secondLastPart, lastPart);
     }
 
     private String createErrorReportFilename(FileContentsEvent<JsonNode> eventBody) {
