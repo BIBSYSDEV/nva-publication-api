@@ -39,7 +39,6 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -55,6 +54,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     public static final Context CONTEXT = mock(Context.class);
     private ByteArrayOutputStream output;
     private ExpandImportCandidateHandler handler;
+    private AuthorizedBackendUriRetriever uriRetriever;
     private S3Driver s3Reader;
     private S3Driver s3Writer;
 
@@ -67,14 +67,16 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         s3Writer = new S3Driver(eventsBucket, "eventsBucket");
         s3Reader = new S3Driver(indexBucket, "indexBucket");
 
-        var mockUriRetriever = mock(UriRetriever.class);
-        when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
+        uriRetriever = mock(AuthorizedBackendUriRetriever.class);
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 
-        this.handler = new ExpandImportCandidateHandler(s3Writer, s3Reader, null);
+        this.handler = new ExpandImportCandidateHandler(s3Writer, s3Reader, uriRetriever);
     }
 
     @Test
     void shouldProduceAnExpandedDataEntryWhenInputHasNewImage() throws IOException {
+        when(uriRetriever.getRawContent(any(), any()))
+            .thenReturn(Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"));
         var oldImage = randomImportCandidate();
         var newImage = updatedVersionOfImportCandidate(oldImage);
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
@@ -104,6 +106,22 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
     }
 
+    @Test
+    void shouldProduceExpandedImportCandidateWithCollaboration() throws IOException {
+        when(uriRetriever.getRawContent(any(), any()))
+            .thenReturn(Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"),
+                        Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"),
+                        Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"));
+        var oldImage = importCandidateWithMultipleContributors();
+        var newImage = updatedVersionOfImportCandidate(oldImage);
+        var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = objectMapper.readValue(output.toString(), EventReference.class);
+        var eventBlobStoredInS3 = s3Reader.readEvent(response.getUri());
+        var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, PersistedDocument.class);
+        assertThat(blobObject.getBody().identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
+    }
+
     private ImportCandidate updatedVersionOfImportCandidateWithPublicationDate(ImportCandidate importCandidate) {
         importCandidate.getEntityDescription().getPublicationDate().setYear("2015");
         return importCandidate;
@@ -116,6 +134,13 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     private ImportCandidate updatedVersionOfImportCandidate(ImportCandidate oldImage) {
         oldImage.setDoi(randomDoi());
         return oldImage;
+    }
+
+    private ImportCandidate importCandidateWithMultipleContributors() {
+        var importCandidate = randomImportCandidate();
+        importCandidate.getEntityDescription().getContributors()
+            .addAll(List.of(randomContributor(), randomContributor(), randomContributor()));
+        return importCandidate;
     }
 
     private ImportCandidate randomImportCandidate() {
@@ -154,6 +179,8 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
+                   .withAffiliations(List.of(
+                       new Organization.Builder().withId(URI.create("https://example.com/" + randomString())).build()))
                    .build();
     }
 
