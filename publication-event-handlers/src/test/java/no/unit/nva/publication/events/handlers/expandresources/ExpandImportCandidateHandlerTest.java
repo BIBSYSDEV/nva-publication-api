@@ -107,7 +107,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldProduceExpandedImportCandidateWithCooperation() throws IOException {
+    void shouldProduceExpandedImportCandidateWithCollaboration() throws IOException {
         when(uriRetriever.getRawContent(any(), any()))
             .thenReturn(Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"),
                         Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"),
