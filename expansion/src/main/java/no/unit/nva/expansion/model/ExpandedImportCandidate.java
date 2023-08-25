@@ -91,6 +91,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
     private Set<Organization> organizations;
+    @JsonProperty("cooperation")
+    private Cooperation cooperation;
     @JsonProperty(IMPORT_STATUS_FIELD)
     private ImportStatus importStatus;
     @JsonProperty(PUBLICATION_YEAR_FIELD)
@@ -100,12 +102,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               AuthorizedBackendUriRetriever uriRetriever) {
-        return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
+        var organizations = extractOrganizations(importCandidate, uriRetriever);
+        return new ExpandedImportCandidate.Builder()
+                   .withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
                    .withImportStatus(importCandidate.getImportStatus())
                    .withPublicationYear(extractPublicationYear(importCandidate))
-                   .withOrganizations(extractOrganizations(importCandidate, uriRetriever))
+                   .withOrganizations(organizations)
                    .withDoi(extractDoi(importCandidate))
                    .withMainTitle(extractMainTitle(importCandidate))
                    .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
@@ -114,7 +118,12 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withJournal(extractJournal(importCandidate))
                    .withPublisher(extractPublisher(importCandidate))
                    .withCreatedDate(importCandidate.getCreatedDate())
+                   .withCooperation(extractCooperation(organizations))
                    .build();
+    }
+
+    private static Cooperation extractCooperation(Set<Organization> organizations) {
+        return organizations.size() > 1 ? Cooperation.MULTIPLE : Cooperation.SINGLE;
     }
 
     public void setContributors(List<Contributor> contributors) {
@@ -182,6 +191,15 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public void setPublisher(PublishingHouse publisher) {
         this.publisher = publisher;
+    }
+
+    @JacocoGenerated
+    public Cooperation getCooperation() {
+        return cooperation;
+    }
+
+    public void setCooperation(Cooperation cooperation) {
+        this.cooperation = cooperation;
     }
 
     @JacocoGenerated
@@ -451,6 +469,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
         public Builder withPublisher(PublishingHouse publisher) {
             expandedImportCandidate.setPublisher(publisher);
+            return this;
+        }
+
+        public Builder withCooperation(Cooperation cooperation) {
+            expandedImportCandidate.setCooperation(cooperation);
             return this;
         }
 
