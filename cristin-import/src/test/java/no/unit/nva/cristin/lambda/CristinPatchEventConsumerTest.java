@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.PATCH_ERRORS_
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,6 +42,7 @@ import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -63,6 +65,21 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     private CristinPatchEventConsumer handler;
 
     private ResourceService resourceService;
+
+    private String eventBody = "{\n" +
+        "  \"topic\" : \"PublicationService.DataImport.DataEntry\",\n" +
+        "  \"subtopic\" : \"PublicationService.CristinData.PatchEntry\",\n" +
+        "  \"fileUri\" : \"s3://cristin-import-750639270376/PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS/2023-08-22T07:33:43.862173Z/018a1cd1d6ae-c4e322d1-441c-423b-bd28-33e19d0fc77a\",\n" +
+        "  \"timestamp\" : \"2023-08-25T12:02:54.109687Z\",\n" +
+        "  \"contents\" : {\n" +
+        "    \"nvapublicationidentifier\" : \"018a1cd1d6ae-c4e322d1-441c-423b-bd28-33e19d0fc77a\",\n" +
+        "    \"partof\" : {\n" +
+        "      \"cristinid\" : \"815340\"\n" +
+        "    }\n" +
+        "  }\n" +
+        "}";
+
+
 
     @BeforeEach
     public void init() {
@@ -227,7 +244,15 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
                          .withNvaPublicationIdentifier(childPublicationId)
                          .withPartOf(NvaPublicationPartOf.builder().withCristinId(partOfCristinId).build())
                          .build();
-        return partOf.toJsonString();
+        return createFileContentsEventReference(partOf);
+    }
+
+    private String createFileContentsEventReference(NvaPublicationPartOfCristinPublication partOf) {
+        return new FileContentsEvent<>(randomString(),
+            randomString(),
+            randomUri(),
+            Instant.now(),
+            partOf).toJsonString();
     }
 
     private Publication createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(

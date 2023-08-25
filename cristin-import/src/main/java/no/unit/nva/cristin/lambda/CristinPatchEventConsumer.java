@@ -22,6 +22,7 @@ import no.unit.nva.cristin.patcher.model.ParentAndChild;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -125,7 +126,6 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
 
     private ParentAndChild retrieveChildAndParentPublications(NvaPublicationPartOfCristinPublication eventBody)
         throws NotFoundException {
-
         var childPublication = getChildPublication(eventBody);
         var parentPublication = getParentPublication(eventBody);
         eventBody.setChildPublication(childPublication);
@@ -152,6 +152,9 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
     private NvaPublicationPartOfCristinPublication readEventBody(EventReference input) {
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         var json = s3Driver.readEvent(input.getUri());
-        return NvaPublicationPartOfCristinPublication.fromJson(json);
+        var fileContentsEvent =
+            FileContentsEvent.fromJson(json, NvaPublicationPartOfCristinPublication.class);
+        return fileContentsEvent.getContents();
+
     }
 }
