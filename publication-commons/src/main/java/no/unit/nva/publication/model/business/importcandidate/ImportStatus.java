@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Username;
+import nva.commons.core.JacocoGenerated;
 
 public class ImportStatus implements JsonSerializable {
 
@@ -49,11 +50,13 @@ public class ImportStatus implements JsonSerializable {
         return comment;
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getCandidateStatus(), getSetBy(), getModifiedDate(), getNvaPublicationId(), getComment());
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {

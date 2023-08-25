@@ -13,6 +13,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -32,6 +33,29 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     public ImportCandidate() {
         super();
+    }
+
+    public Builder copyImportCandidate() {
+        return new ImportCandidate.Builder()
+                   .withIdentifier(getIdentifier())
+                   .withStatus(getStatus())
+                   .withResourceOwner(getResourceOwner())
+                   .withPublisher(getPublisher())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withPublishedDate(getPublishedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withHandle(getHandle())
+                   .withDoi(getDoi())
+                   .withLink(getLink())
+                   .withEntityDescription(getEntityDescription())
+                   .withProjects(getProjects())
+                   .withFundings(getFundings())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withAssociatedArtifacts(getAssociatedArtifacts())
+                   .withSubjects(getSubjects())
+                   .withFundings(getFundings())
+                   .withRightsHolder(getRightsHolder());
     }
 
     @Override

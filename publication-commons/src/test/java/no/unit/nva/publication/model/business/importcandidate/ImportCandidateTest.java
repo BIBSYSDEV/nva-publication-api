@@ -6,6 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.List;
@@ -77,8 +78,6 @@ public class ImportCandidateTest {
         assertThat(regeneratedImportCandidate, is(equalTo(regeneratedImportCandidate)));
     }
 
-
-
     @ParameterizedTest
     @DisplayName("should be possible to swap imported status to other status")
     @MethodSource("importStatuses")
@@ -88,6 +87,12 @@ public class ImportCandidateTest {
         assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));
     }
 
+    @Test
+    void shouldCopyImportCandidate() {
+        var randomImportCandidate = randomImportCandidate();
+        var copy = randomImportCandidate.copyImportCandidate().withDoi(null).build();
+        assertThat(randomImportCandidate, is(not(equalTo(copy))));
+    }
 
     private static Funding randomFunding() {
         return new FundingBuilder().withId(randomUri()).build();
