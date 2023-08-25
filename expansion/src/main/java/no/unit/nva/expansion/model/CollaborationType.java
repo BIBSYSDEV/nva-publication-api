@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum CollaborationType {
 
-    COLLABORATIVE("collaborative"), NON_COLLABORATIVE("nonCollaborative");
+    COLLABORATIVE("Collaborative"), NON_COLLABORATIVE("NonCollaborative");
 
     private final String value;
 
