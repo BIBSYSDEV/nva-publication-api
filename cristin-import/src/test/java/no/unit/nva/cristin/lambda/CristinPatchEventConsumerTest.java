@@ -66,19 +66,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     private ResourceService resourceService;
 
-    private String eventBody = "{\n" +
-        "  \"topic\" : \"PublicationService.DataImport.DataEntry\",\n" +
-        "  \"subtopic\" : \"PublicationService.CristinData.PatchEntry\",\n" +
-        "  \"fileUri\" : \"s3://cristin-import-750639270376/PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS/2023-08-22T07:33:43.862173Z/018a1cd1d6ae-c4e322d1-441c-423b-bd28-33e19d0fc77a\",\n" +
-        "  \"timestamp\" : \"2023-08-25T12:02:54.109687Z\",\n" +
-        "  \"contents\" : {\n" +
-        "    \"nvapublicationidentifier\" : \"018a1cd1d6ae-c4e322d1-441c-423b-bd28-33e19d0fc77a\",\n" +
-        "    \"partof\" : {\n" +
-        "      \"cristinid\" : \"815340\"\n" +
-        "    }\n" +
-        "  }\n" +
-        "}";
-
 
 
     @BeforeEach
