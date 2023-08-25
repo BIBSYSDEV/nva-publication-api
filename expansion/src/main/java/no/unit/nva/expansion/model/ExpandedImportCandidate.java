@@ -68,6 +68,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String IMPORT_CANDIDATE = "import-candidate";
     private static final String CUSTOMER = "customer";
     private static final String CRISTIN_ID = "cristinId";
+    public static final String COLLABORATION_TYPE_FIELD = "collaborationType";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -91,8 +92,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
     private Set<Organization> organizations;
-    @JsonProperty("cooperation")
-    private Cooperation cooperation;
+    @JsonProperty(COLLABORATION_TYPE_FIELD)
+    private CollaborationType collaborationType;
     @JsonProperty(IMPORT_STATUS_FIELD)
     private ImportStatus importStatus;
     @JsonProperty(PUBLICATION_YEAR_FIELD)
@@ -122,8 +123,10 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .build();
     }
 
-    private static Cooperation extractCooperation(Set<Organization> organizations) {
-        return organizations.size() > 1 ? Cooperation.MULTIPLE : Cooperation.SINGLE;
+    private static CollaborationType extractCooperation(Set<Organization> organizations) {
+        return organizations.size() > 1
+                   ? CollaborationType.MULTIPLE_ORGANIZATIONS
+                   : CollaborationType.SINGLE_ORGANIZATION;
     }
 
     public void setContributors(List<Contributor> contributors) {
@@ -194,12 +197,12 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public Cooperation getCooperation() {
-        return cooperation;
+    public CollaborationType getCollaborationType() {
+        return collaborationType;
     }
 
-    public void setCooperation(Cooperation cooperation) {
-        this.cooperation = cooperation;
+    public void setCollaborationType(CollaborationType collaborationType) {
+        this.collaborationType = collaborationType;
     }
 
     @JacocoGenerated
@@ -472,8 +475,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withCooperation(Cooperation cooperation) {
-            expandedImportCandidate.setCooperation(cooperation);
+        public Builder withCooperation(CollaborationType collaborationType) {
+            expandedImportCandidate.setCollaborationType(collaborationType);
             return this;
         }
 
