@@ -126,6 +126,7 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
 
     private ParentAndChild retrieveChildAndParentPublications(NvaPublicationPartOfCristinPublication eventBody)
         throws NotFoundException {
+        logger.info("CONTENTS", eventBody.toJsonString());
         var childPublication = getChildPublication(eventBody);
         var parentPublication = getParentPublication(eventBody);
         eventBody.setChildPublication(childPublication);
@@ -152,6 +153,7 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
     private NvaPublicationPartOfCristinPublication readEventBody(EventReference input) {
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
         var json = s3Driver.readEvent(input.getUri());
+        logger.info("INPUT", json);
         var fileContentsEvent =
             FileContentsEvent.fromJson(json, NvaPublicationPartOfCristinPublication.class);
         return fileContentsEvent.getContents();
