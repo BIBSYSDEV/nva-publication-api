@@ -106,7 +106,6 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
         return bucket
             .addChild(PATCH_SUCCESS)
             .addChild(timestampToString(timestamp))
-            .addChild(fileUri.getPath())
             .addChild(publication.getIdentifier() + JSON);
     }
 

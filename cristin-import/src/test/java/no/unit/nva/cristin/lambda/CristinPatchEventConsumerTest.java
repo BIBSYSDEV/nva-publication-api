@@ -311,7 +311,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var bucket = inputFile.getHost();
         return bucket.addChild(PATCH_SUCCESS)
             .addChild(timestampToString(timestamp))
-            .addChild(inputFile.getPath())
             .addChild(successReportFilename);
     }
 }
