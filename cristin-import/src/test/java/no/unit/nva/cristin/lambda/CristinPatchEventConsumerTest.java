@@ -192,23 +192,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualRepport, containsString(parentPublication.getIdentifier().toString()));
     }
 
-    private String extractSuccessReportFromS3Client(EventReference eventReference, Publication childPublication) {
-        var successFileUri = constructSuccessFileUri(eventReference, childPublication);
-        var s3Driver = new S3Driver(s3Client, successFileUri.getUri().getHost());
-        return s3Driver.getFile(successFileUri.toS3bucketPath());
-    }
-
-    private UriWrapper constructSuccessFileUri(EventReference eventReference, Publication childPublication) {
-        var successReportFilename = childPublication.getIdentifier() + JSON;
-        var inputFile = UriWrapper.fromUri(eventReference.getUri());
-        var timestamp = eventReference.getTimestamp();
-        var bucket = inputFile.getHost();
-        return bucket.addChild(PATCH_SUCCESS)
-            .addChild(timestampToString(timestamp))
-            .addChild(inputFile.getPath())
-            .addChild(successReportFilename);
-    }
-
     @Test
     void shouldStoreErrorReportWhenParentAndChildPublicationDoesNotMatch()
         throws ApiGatewayException, IOException {
@@ -313,5 +296,22 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     private EventReference createInputEventForFile(URI fileUri) {
         return new EventReference(randomString(), randomString(), fileUri, Instant.now());
+    }
+
+    private String extractSuccessReportFromS3Client(EventReference eventReference, Publication childPublication) {
+        var successFileUri = constructSuccessFileUri(eventReference, childPublication);
+        var s3Driver = new S3Driver(s3Client, successFileUri.getUri().getHost());
+        return s3Driver.getFile(successFileUri.toS3bucketPath());
+    }
+
+    private UriWrapper constructSuccessFileUri(EventReference eventReference, Publication childPublication) {
+        var successReportFilename = childPublication.getIdentifier() + JSON;
+        var inputFile = UriWrapper.fromUri(eventReference.getUri());
+        var timestamp = eventReference.getTimestamp();
+        var bucket = inputFile.getHost();
+        return bucket.addChild(PATCH_SUCCESS)
+            .addChild(timestampToString(timestamp))
+            .addChild(inputFile.getPath())
+            .addChild(successReportFilename);
     }
 }
