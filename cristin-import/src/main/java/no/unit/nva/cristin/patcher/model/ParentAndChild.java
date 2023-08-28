@@ -1,13 +1,24 @@
 package no.unit.nva.cristin.patcher.model;
 
 import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 
-public class ParentAndChild {
+public class ParentAndChild implements JsonSerializable {
 
-    private final Publication childPublication;
-    private final Publication parentPublication;
+    @JsonProperty
+    private Publication childPublication;
+
+    @JsonProperty
+    private Publication parentPublication;
+
+    @JacocoGenerated
+    public  ParentAndChild() {
+
+    }
 
     public ParentAndChild(Publication childPublication, Publication parentPublication) {
         this.childPublication = childPublication;
