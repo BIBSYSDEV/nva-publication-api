@@ -20,13 +20,13 @@ import nva.commons.core.JacocoGenerated;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class NvaPublicationPartOfCristinPublication implements JsonSerializable {
 
-    @JsonProperty
+    @JsonProperty("nvapublicationidentifier")
     private String nvaPublicationIdentifier;
 
-    @JsonProperty
+    @JsonProperty("childpublication")
     private Publication childPublication;
 
-    @JsonProperty
+    @JsonProperty("partof")
     private NvaPublicationPartOf partOf;
 
     @JacocoGenerated
