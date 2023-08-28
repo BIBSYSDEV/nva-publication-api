@@ -1,7 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.CristinImportConfig.cristinEntryMapper;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -22,22 +20,17 @@ import nva.commons.core.JacocoGenerated;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class NvaPublicationPartOfCristinPublication implements JsonSerializable {
 
-    @JsonProperty
+    @JsonProperty("nvapublicationidentifier")
     private String nvaPublicationIdentifier;
 
-    @JsonProperty
+    @JsonProperty("childpublication")
     private Publication childPublication;
 
-    @JsonProperty
+    @JsonProperty("partof")
     private NvaPublicationPartOf partOf;
 
     @JacocoGenerated
     public NvaPublicationPartOfCristinPublication() {
     }
 
-    public static NvaPublicationPartOfCristinPublication fromJson(String json) {
-        return attempt(
-            () -> cristinEntryMapper.readValue(json, NvaPublicationPartOfCristinPublication.class))
-                   .orElseThrow();
-    }
 }

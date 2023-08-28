@@ -7,24 +7,29 @@ import static no.unit.nva.cristin.lambda.CristinPatchEventConsumer.PATCH_ERRORS_
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.Mockito.mock;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.patcher.exception.NotFoundException;
@@ -41,6 +46,7 @@ import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -64,6 +70,27 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     private ResourceService resourceService;
 
+    private String jsonInput = "{\n" +
+        "    \"topic\": \"PublicationService.DataImport.DataEntry\",\n" +
+        "    \"subtopic\": \"PublicationService.CristinData.PatchEntry\",\n" +
+        "    \"fileUri\": \"s3://cristin-import-750639270376/PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS/subset_august/0189e3caa462-68be1d7f-fc6e-4aa1-97fd-38be735d9cac\",\n" +
+        "    \"timestamp\": \"2023-08-28T12:13:29.252151Z\",\n" +
+        "    \"contents\": {\n" +
+        "        \"nvapublicationidentifier\": \"0189e3caa462-68be1d7f-fc6e-4aa1-97fd-38be735d9cac\",\n" +
+        "        \"partof\": {\n" +
+        "            \"cristinid\": \"817503\"\n" +
+        "        }\n" +
+        "    }\n" +
+        "}";
+
+    private static void removePartOfInPublicationContext(Publication publication) {
+        if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Anthology) {
+            publication.getEntityDescription().getReference().setPublicationContext(new Anthology.Builder().build());
+        }
+    }
+
+
+
     @BeforeEach
     public void init() {
         super.init();
@@ -71,6 +98,16 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignored");
         handler = new CristinPatchEventConsumer(resourceService, s3Client);
+    }
+
+    @Test
+    void shouldParseFileContents() {
+        var fileContents = FileContentsEvent.fromJson(jsonInput, NvaPublicationPartOfCristinPublication.class);
+        var contents = fileContents.getContents();
+        assertThat(contents.getNvaPublicationIdentifier(), is(notNullValue()));
+        assertThat(contents.getNvaPublicationIdentifier(), is(equalTo("0189e3caa462-68be1d7f-fc6e-4aa1-97fd-38be735d9cac")));
+        assertThat(contents.getPartOf(), is(notNullValue()));
+        assertThat(contents.getPartOf().getCristinId(), is(equalTo("817503")));
     }
 
     @Test
@@ -183,12 +220,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         return sqsEvent;
     }
 
-    private static void removePartOfInPublicationContext(Publication publication) {
-        if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Anthology) {
-            publication.getEntityDescription().getReference().setPublicationContext(new Anthology.Builder().build());
-        }
-    }
-
     private ImportResult<NvaPublicationPartOfCristinPublication> extractActualReportFromS3Client(
         EventReference eventBody,
         String exceptionName, String childPublicationIdentifier) throws JsonProcessingException {
@@ -227,7 +258,15 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
                          .withNvaPublicationIdentifier(childPublicationId)
                          .withPartOf(NvaPublicationPartOf.builder().withCristinId(partOfCristinId).build())
                          .build();
-        return partOf.toJsonString();
+        return createFileContentsEventReference(partOf);
+    }
+
+    private String createFileContentsEventReference(NvaPublicationPartOfCristinPublication partOf) {
+        return new FileContentsEvent<>(randomString(),
+            randomString(),
+            randomUri(),
+            Instant.now(),
+            partOf).toJsonString();
     }
 
     private Publication createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(

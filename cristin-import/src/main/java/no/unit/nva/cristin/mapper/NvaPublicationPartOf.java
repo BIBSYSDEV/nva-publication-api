@@ -19,7 +19,7 @@ import nva.commons.core.JacocoGenerated;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class NvaPublicationPartOf {
 
-    @JsonProperty
+    @JsonProperty("cristinid")
     private String cristinId;
 
     private Publication parentPublication;
