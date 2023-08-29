@@ -14,6 +14,8 @@ import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
+import no.unit.nva.model.instancetypes.artistic.music.OtherPerformance;
 import no.unit.nva.model.time.Time;
 import no.unit.nva.model.time.Instant;
 import nva.commons.core.ioutils.IoUtils;
@@ -117,11 +119,19 @@ public class ArtisticFeatures {
             .orElseThrow();
     }
 
-    @And("the performance type is equalt to {string}")
+    @And("the performance type is equal to {string}")
     public void thePerformanceTypeIsEqualtTo(String performanceType) {
-        scenarioContext.getCristinEntry()
-            .getCristinArtisticProduction()
-            .setPerformance(Performance.builder().withPerformanceType(performanceType).build());
+        if ("null".equals(performanceType)) {
+            scenarioContext.getCristinEntry()
+                .getCristinArtisticProduction()
+                .setPerformance(null);
+        } else {
+            scenarioContext.getCristinEntry()
+                .getCristinArtisticProduction()
+                .setPerformance(Performance.builder().withPerformanceType(performanceType).build());
+
+        }
+
     }
 
     @And("the performance is a premiere")
@@ -136,18 +146,6 @@ public class ArtisticFeatures {
             .setArtisticProductionTimeUnit(ArtisticProductionTimeUnit
                 .builder()
                 .withTimeUnitCode("MINUTT")
-                .build());
-    }
-
-    @And("the performance has an event start of {string}, title {string}, place equal to {string}")
-    public void thePerformanceHasAnEventStartOfTitlePlaceEqualTo(String start, String title, String place) {
-        scenarioContext.getCristinEntry()
-            .getCristinArtisticProduction()
-            .setEvent(ArtisticEvent
-                .builder()
-                .withDateFrom(start)
-                .withTitle(title)
-                .withPlace(place)
                 .build());
     }
 
@@ -169,7 +167,7 @@ public class ArtisticFeatures {
         var concert = (Concert) musicalWorkPerformance.getManifestations().get(0);
         var expectedPlace = new UnconfirmedPlace(place, null);
         assertThat(concert.getPlace(), is(equalTo(expectedPlace)));
-        var expectedTime = new Instant( Time.convertToInstant(time));
+        var expectedTime = new Instant(Time.convertToInstant(time));
         var actualTime = concert.getTime();
         assertThat(actualTime, instanceOf(Instant.class));
         assertThat(actualTime, is(equalTo(expectedTime)));
@@ -185,5 +183,44 @@ public class ArtisticFeatures {
         assertThat(concertProgramme.isPremiere(), is(equalTo(true)));
         assertThat(concertProgramme.getTitle(), is(equalTo(title)));
         assertThat(concertProgramme.getComposer(), is(equalTo(composer)));
+    }
+
+    @And("the performance has an event start of {string}, title {string}, place equal to {string}")
+    public void thePerformanceHasAnEventStartOfEventEndOfTitlePlaceEqualTo(String start, String title, String place) {
+        scenarioContext.getCristinEntry()
+            .getCristinArtisticProduction()
+            .setEvent(ArtisticEvent
+                .builder()
+                .withDateFrom(start)
+                .withTitle(title)
+                .withPlace(place)
+                .build());
+    }
+
+    @Then("the Nva Resource has a OtherPerformance")
+    public void theNvaResourceHasAOtherPerformance() {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        assertThat(musicalWorkPerformance.getManifestations(), hasSize(1));
+        assertThat(musicalWorkPerformance.getManifestations().get(0), instanceOf(OtherPerformance.class));
+    }
+
+    @And("the OtherPerformance has a place {string} and duration {string} minutes")
+    public void theOtherPerformanceHasAPlaceDateAndDurationMinutes(String place, String duration) {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
+        var expectedPlace = new UnconfirmedPlace(place, null);
+        assertThat(otherPerformance.getPlace(), is(equalTo(expectedPlace)));
+        assertThat(otherPerformance.getExtent(), is(equalTo(duration)));
+    }
+
+    @And("the OtherPerformance has a musicalWorkPerformance with title {string}, composer {string}")
+    public void theOtherPerformanceHasAMusicalWorkPerformanceWithTitleComposerThatIsAPremiere(String title, String composer) {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
+        assertThat(otherPerformance.getMusicalWorks(), hasSize(1));
+        assertThat(otherPerformance.getMusicalWorks().get(0), instanceOf(MusicalWork.class));
+        var program = (MusicalWork) otherPerformance.getMusicalWorks().get(0);
+        assertThat(program.getComposer(), is(equalTo(composer)));
+        assertThat(program.getTitle(), is(equalTo(title)));
     }
 }

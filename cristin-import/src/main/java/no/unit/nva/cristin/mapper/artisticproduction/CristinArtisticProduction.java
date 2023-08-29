@@ -16,11 +16,12 @@ import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformanceManifestation;
+import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWorkPerformance;
+import no.unit.nva.model.instancetypes.artistic.music.OtherPerformance;
 import no.unit.nva.model.time.Instant;
 import nva.commons.core.JacocoGenerated;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -147,20 +148,32 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private List<MusicPerformanceManifestation> extractMusicPerformanceManifestations() {
-        var manifestations = new ArrayList<MusicPerformanceManifestation>();
-        var concert = extractConcert();
-        concert.ifPresent(manifestations::add);
-        return manifestations;
+        return List.of(extractMusicPerformanceManifestation());
     }
 
-    private Optional<Concert> extractConcert() {
-        return performance.isConcert()
-            ? Optional.of(new Concert(extractPlace(),
+    private MusicPerformanceManifestation extractMusicPerformanceManifestation() {
+        return isConcert()
+            ? new Concert(extractPlace(),
             extractTime(),
             extractExtent(),
             extractConcertProgrammes(),
-            null))
-            : Optional.empty();
+            null)
+            : new OtherPerformance(null,
+            extractPlace(),
+            extractExtent(),
+            extractProgrammes());
+    }
+
+    private List<MusicalWork> extractProgrammes() {
+        return List.of(extractMusicalWork());
+    }
+
+    private MusicalWork extractMusicalWork() {
+        return new MusicalWork(extractTitle(), originalComposer);
+    }
+
+    private boolean isConcert() {
+       return Optional.ofNullable(performance).map(Performance::isConcert).orElse(false);
     }
 
     private String extractExtent() {
@@ -171,9 +184,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private List<MusicalWorkPerformance> extractConcertProgrammes() {
-        var concertProgrammes = new ArrayList<MusicalWorkPerformance>();
-        concertProgrammes.add( extractMusicalWorkPerformance());
-        return concertProgrammes;
+        return List.of(extractMusicalWorkPerformance());
     }
 
     private MusicalWorkPerformance extractMusicalWorkPerformance() {

@@ -19,6 +19,7 @@ entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.linkedContext
 
 entityDescription.reference.publicationInstance.manifestations.concertSeries
+entityDescription.reference.publicationInstance.manifestations.performanceType
 
 entityDescription.abstract
 entityDescription.tags

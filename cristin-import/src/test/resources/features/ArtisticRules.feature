@@ -51,7 +51,7 @@ Feature: Rules that apply for Artistic results
 
   Scenario: Cristin musical performance result with Concert performance should be mapped to Nva-publication
     Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
-    And the performance type is equalt to "KONSERT"
+    And the performance type is equal to "KONSERT"
     And the performance is a premiere
     And the performance has a duration of "35" minutes
     And the performance has an event start of "2018-02-03T00:00:00", title "Celebratory Concert of Swiss Philosophy Society", place equal to "Göttingen"
@@ -60,3 +60,14 @@ Feature: Rules that apply for Artistic results
     Then the Nva Resource has a Concert announcements
     And the concert has a place "Göttingen", date "2018-02-03T00:00:00", and duration "35" minutes
     And the concert has a program with title "Celebratory Concert of Swiss Philosophy Society", composer "Dániel Péter Biró", and is a premiere
+
+  Scenario: Cristin musical performance that is not a concert should be mapped to OtherPerformance
+    Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
+    And the performance type is equal to "null"
+    And the performance has a duration of "35" minutes
+    And the performance has an event start of "2018-02-03T00:00:00", title "Celebratory Concert of Swiss Philosophy Society", place equal to "Göttingen"
+    And the performance has an original composer "Dániel Péter Biró"
+    When the Cristin Result is converted to an NVA Resource
+    Then the Nva Resource has a OtherPerformance
+    And the OtherPerformance has a place "Göttingen" and duration "35" minutes
+    And the OtherPerformance has a musicalWorkPerformance with title "Celebratory Concert of Swiss Philosophy Society", composer "Dániel Péter Biró"
