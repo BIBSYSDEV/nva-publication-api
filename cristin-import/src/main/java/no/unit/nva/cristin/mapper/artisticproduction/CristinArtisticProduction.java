@@ -13,9 +13,16 @@ import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
+import no.unit.nva.model.instancetypes.artistic.music.Concert;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformanceManifestation;
+import no.unit.nva.model.instancetypes.artistic.music.MusicalWorkPerformance;
+import no.unit.nva.model.time.Instant;
 import nva.commons.core.JacocoGenerated;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -35,11 +42,12 @@ import java.util.List;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"status_bestilt", "produkttype", "hendelse"})
+@JsonIgnoreProperties({"status_bestilt", "produkttype"})
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinArtisticProduction implements DescriptionExtractor, MovingPictureExtractor {
 
 
+    public static final String YES = "J";
     @JsonProperty("status_urframforing")
     private String premiere;
 
@@ -95,6 +103,9 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonProperty("besetning")
     private String crew;
 
+    @JsonProperty("hendelse")
+    private ArtisticEvent event;
+
 
     @JacocoGenerated
     public CristinArtisticProduction() {
@@ -130,4 +141,59 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
 
+    @JsonIgnore
+    public MusicPerformance toMusicPerformance() {
+        return new MusicPerformance(extractMusicPerformanceManifestations());
+    }
+
+    private List<MusicPerformanceManifestation> extractMusicPerformanceManifestations() {
+        var manifestations = new ArrayList<MusicPerformanceManifestation>();
+        var concert = extractConcert();
+        concert.ifPresent(manifestations::add);
+        return manifestations;
+    }
+
+    private Optional<Concert> extractConcert() {
+        return performance.isConcert()
+            ? Optional.of(new Concert(extractPlace(),
+            extractTime(),
+            extractExtent(),
+            extractConcertProgrammes(),
+            null))
+            : Optional.empty();
+    }
+
+    private String extractExtent() {
+        var shouldExtractExtent = Optional.ofNullable(artisticProductionTimeUnit)
+            .map(ArtisticProductionTimeUnit::timeUnitIsInMinutes)
+            .orElse(false);
+        return shouldExtractExtent ?  duration : null;
+    }
+
+    private List<MusicalWorkPerformance> extractConcertProgrammes() {
+        var concertProgrammes = new ArrayList<MusicalWorkPerformance>();
+        concertProgrammes.add( extractMusicalWorkPerformance());
+        return concertProgrammes;
+    }
+
+    private MusicalWorkPerformance extractMusicalWorkPerformance() {
+        return new MusicalWorkPerformance(extractTitle(), originalComposer, isPremiere());
+    }
+
+    private String extractTitle() {
+        return Optional.ofNullable(event).map(ArtisticEvent::getTitle).orElse(null);
+    }
+
+    @JsonIgnore
+    private boolean isPremiere() {
+        return Optional.ofNullable(premiere).map(YES::equals).orElse(false);
+    }
+
+    private Instant extractTime() {
+        return Optional.ofNullable(event).map(ArtisticEvent::getNvaTime).orElse(null);
+    }
+
+    private UnconfirmedPlace extractPlace() {
+        return Optional.ofNullable(event).map(ArtisticEvent::toNvaPlace).orElse(null);
+    }
 }

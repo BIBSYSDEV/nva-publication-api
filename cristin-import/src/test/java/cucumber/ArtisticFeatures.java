@@ -3,12 +3,19 @@ package cucumber;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.cristin.mapper.artisticproduction.ArtisticEvent;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
+import no.unit.nva.cristin.mapper.artisticproduction.Performance;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
+import no.unit.nva.model.instancetypes.artistic.music.Concert;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.time.Time;
+import no.unit.nva.model.time.Instant;
 import nva.commons.core.ioutils.IoUtils;
 
 import java.nio.file.Path;
@@ -51,31 +58,6 @@ public class ArtisticFeatures {
         var otherRelease = (OtherRelease) output;
         var publisher = (UnconfirmedPublisher) otherRelease.getPublisher();
         assertThat(publisher.getName(), is(equalTo("Landbruksfilm")));
-
-
-
-    }
-
-    private String readResourceFile(Path path) {
-        return IoUtils.stringFromResources(path);
-    }
-
-    private CristinProduct readProductFromResource() {
-        var cristinProductString = readResourceFile(Path.of("type_produkt.json"));
-        return attempt(
-            () -> JsonUtils
-                .dtoObjectMapper
-                .readValue(cristinProductString, CristinProduct.class))
-            .orElseThrow();
-    }
-
-    private CristinArtisticProduction readArtisticProductionFromResource() {
-        var artisticProduction = readResourceFile(Path.of("type_kunstneriskproduksjon.json"));
-        return attempt(
-            () -> JsonUtils
-                .dtoObjectMapper
-                .readValue(artisticProduction, CristinArtisticProduction.class))
-            .orElseThrow();
     }
 
 
@@ -111,5 +93,97 @@ public class ArtisticFeatures {
     public void theCristinResultLackTheDurationInBothMetadataFields() {
         scenarioContext.getCristinEntry().getCristinArtisticProduction().setArtisticProductionTimeUnit(null);
         scenarioContext.getCristinEntry().getCristinProduct().setTimeUnit(null);
+    }
+
+    private String readResourceFile(Path path) {
+        return IoUtils.stringFromResources(path);
+    }
+
+    private CristinProduct readProductFromResource() {
+        var cristinProductString = readResourceFile(Path.of("type_produkt.json"));
+        return attempt(
+            () -> JsonUtils
+                .dtoObjectMapper
+                .readValue(cristinProductString, CristinProduct.class))
+            .orElseThrow();
+    }
+
+    private CristinArtisticProduction readArtisticProductionFromResource() {
+        var artisticProduction = readResourceFile(Path.of("type_kunstneriskproduksjon.json"));
+        return attempt(
+            () -> JsonUtils
+                .dtoObjectMapper
+                .readValue(artisticProduction, CristinArtisticProduction.class))
+            .orElseThrow();
+    }
+
+    @And("the performance type is equalt to {string}")
+    public void thePerformanceTypeIsEqualtTo(String performanceType) {
+        scenarioContext.getCristinEntry()
+            .getCristinArtisticProduction()
+            .setPerformance(Performance.builder().withPerformanceType(performanceType).build());
+    }
+
+    @And("the performance is a premiere")
+    public void thePerformanceIsAPremiere() {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setPremiere("J");
+    }
+
+    @And("the performance has a duration of {string} minutes")
+    public void thePerformanceHasADurationOfMinutes(String duration) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setDuration(duration);
+        scenarioContext.getCristinEntry().getCristinArtisticProduction()
+            .setArtisticProductionTimeUnit(ArtisticProductionTimeUnit
+                .builder()
+                .withTimeUnitCode("MINUTT")
+                .build());
+    }
+
+    @And("the performance has an event start of {string}, title {string}, place equal to {string}")
+    public void thePerformanceHasAnEventStartOfTitlePlaceEqualTo(String start, String title, String place) {
+        scenarioContext.getCristinEntry()
+            .getCristinArtisticProduction()
+            .setEvent(ArtisticEvent
+                .builder()
+                .withDateFrom(start)
+                .withTitle(title)
+                .withPlace(place)
+                .build());
+    }
+
+    @And("the performance has an original composer {string}")
+    public void thePerformanceHasAnOriginalComposer(String composer) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setOriginalComposer(composer);
+    }
+
+    @Then("the Nva Resource has a Concert announcements")
+    public void theNvaResourceHasAConcertAnnouncements() {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        assertThat(musicalWorkPerformance.getManifestations(), hasSize(1));
+        assertThat(musicalWorkPerformance.getManifestations().get(0), instanceOf(Concert.class));
+    }
+
+    @And("the concert has a place {string}, date {string}, and duration {string} minutes")
+    public void theConcertHasAPlaceDateAndDurationMinutes(String place, String time, String duration) {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var concert = (Concert) musicalWorkPerformance.getManifestations().get(0);
+        var expectedPlace = new UnconfirmedPlace(place, null);
+        assertThat(concert.getPlace(), is(equalTo(expectedPlace)));
+        var expectedTime = new Instant( Time.convertToInstant(time));
+        var actualTime = concert.getTime();
+        assertThat(actualTime, instanceOf(Instant.class));
+        assertThat(actualTime, is(equalTo(expectedTime)));
+        assertThat(concert.getExtent(), is(equalTo(duration)));
+    }
+
+    @And("the concert has a program with title {string}, composer {string}, and is a premiere")
+    public void theConcertHasAProgramWithTitleComposerAndIsAPremiere(String title, String composer) {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var concert = (Concert) musicalWorkPerformance.getManifestations().get(0);
+        assertThat(concert.getConcertProgramme(), hasSize(1));
+        var concertProgramme = concert.getConcertProgramme().get(0);
+        assertThat(concertProgramme.isPremiere(), is(equalTo(true)));
+        assertThat(concertProgramme.getTitle(), is(equalTo(title)));
+        assertThat(concertProgramme.getComposer(), is(equalTo(composer)));
     }
 }
