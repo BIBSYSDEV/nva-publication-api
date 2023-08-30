@@ -20,7 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -30,6 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
@@ -61,7 +62,7 @@ public final class CristinDataGenerator {
 
     public static final int SMALL_NUMBER = 10;
     public static final Random RANDOM = new Random(System.currentTimeMillis());
-    public static final Faker FAKER = Faker.instance();
+    public static final BaseFaker FAKER = new BaseFaker();
     public static final int FIRST_TITLE = 0;
     public static final int USE_WHOLE_ARRAY = -1;
     public static final int NUMBER_OF_KNOWN_SECONDARY_CATEGORIES = 1;

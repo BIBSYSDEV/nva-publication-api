@@ -11,7 +11,7 @@ dependencies {
     implementation libs.nva.auth
 
     implementation libs.bundles.logging
-    implementation libs.jackson.databind
+    implementation libs.bundles.jackson
 
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'

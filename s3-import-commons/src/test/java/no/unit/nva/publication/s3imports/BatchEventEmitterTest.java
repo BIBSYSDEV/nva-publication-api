@@ -14,12 +14,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.github.javafaker.Faker;
-import com.github.javafaker.Lorem;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import net.datafaker.providers.base.BaseFaker;
+import net.datafaker.providers.base.Lorem;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,9 +36,8 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public class BatchEventEmitterTest {
-    
-    public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
-    public static final Lorem FAKER = Faker.instance().lorem();
+
+    public static final Lorem FAKER = new BaseFaker().lorem();
     private EventBridgeClient eventBridgeClient;
     private AtomicInteger sleepingCounter;
     

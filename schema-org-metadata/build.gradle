@@ -3,7 +3,11 @@ dependencies {
     implementation libs.nva.json
     implementation libs.nva.datamodel.core
 
-    implementation libs.bundles.jena
+    implementation libs.bundles.jackson
+
+    implementation (libs.bundles.jena) {
+        exclude group: 'com.fasterxml.jackson.core', module:'jackson-core'
+    }
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
     testImplementation project(':publication-testing')
