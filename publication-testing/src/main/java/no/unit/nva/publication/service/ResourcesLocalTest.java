@@ -33,6 +33,7 @@ import no.unit.nva.publication.TestDataSource;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
 
+@SuppressWarnings({"PMD.TestClassWithoutTestCases"})
 @JacocoGenerated
 public class ResourcesLocalTest extends TestDataSource {
 

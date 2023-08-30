@@ -3,6 +3,7 @@ package no.unit.nva.publication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import no.unit.nva.model.Publication;
 
+@SuppressWarnings({"PMD.TestClassWithoutTestCases"})
 public class TestDataSource {
 
     public Publication publicationWithIdentifier() {
