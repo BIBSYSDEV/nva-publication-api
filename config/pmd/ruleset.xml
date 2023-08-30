@@ -12,7 +12,7 @@
   <rule ref="category/java/errorprone.xml">
     <exclude name="DataflowAnomalyAnalysis"/>
     <exclude name="MissingSerialVersionUID"/>
-    <exclude name="BeanMembersShouldSerialize"/>
+    <exclude name="NonSerializableClass"/>
   </rule>
 
   <rule ref="category/java/multithreading.xml">
