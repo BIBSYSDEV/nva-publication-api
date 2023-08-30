@@ -12,6 +12,7 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
+import no.unit.nva.model.instancetypes.artistic.music.AudioVisualPublication;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
@@ -27,6 +28,7 @@ import static no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -222,5 +224,27 @@ public class ArtisticFeatures {
         var program = (MusicalWork) otherPerformance.getMusicalWorks().get(0);
         assertThat(program.getComposer(), is(equalTo(composer)));
         assertThat(program.getTitle(), is(equalTo(title)));
+    }
+
+    @And("the performance has a ISRC equal to {string}")
+    public void thePerformanceHasAISRCEqualTo(String isrc) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setIsrc(isrc);
+    }
+
+    @And("the performance has a medium equal to {string}")
+    public void thePerformanceHasAMediumEqualTo(String medium) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setMedium(medium);
+    }
+
+    @And("the performance has a publisher name equal to {string}")
+    public void thePerformanceHasAPublisherNameEqualTo(String publisherName) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setPublisherName(publisherName);
+    }
+
+    @Then("the Nva resource has a AudioVisualPublication")
+    public void theNvaResourceHasAAudioVisualPublication() {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        assertThat(musicalWorkPerformance.getManifestations(), hasSize(2));
+        assertThat(musicalWorkPerformance.getManifestations(), hasItem( instanceOf(AudioVisualPublication.class)));
     }
 }

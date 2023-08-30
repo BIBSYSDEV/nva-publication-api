@@ -71,3 +71,14 @@ Feature: Rules that apply for Artistic results
     Then the Nva Resource has a OtherPerformance
     And the OtherPerformance has a place "Göttingen" and duration "35" minutes
     And the OtherPerformance has a musicalWorkPerformance with title "Celebratory Concert of Swiss Philosophy Society", composer "Dániel Péter Biró"
+
+  Scenario: Cristin musical performance that contains ISRC should be mapped to AudioVisualPublication
+    Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
+    And the performance has a ISRC equal to "NOLCA1554010"
+    And the performance has a duration of "35" minutes
+    And the performance has a medium equal to "CD"
+    And the performance has a publisher name equal to "Austad Music"
+    When the Cristin Result is converted to an NVA Resource
+    Then the Nva resource has a AudioVisualPublication
+    And the AudioVisualPublication has a mediaSubType equalTo "CD", ISRC equalTo "NOLCA1554010", unconfirmedPublisher name equal to "Austad Music"
+
