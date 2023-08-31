@@ -20,6 +20,10 @@ entityDescription.reference.publicationContext.linkedContext
 
 entityDescription.reference.publicationInstance.manifestations.concertSeries
 entityDescription.reference.publicationInstance.manifestations.performanceType
+.entityDescription.reference.publicationInstance.manifestations.place
+entityDescription.reference.publicationInstance.manifestations.musicalWorks.title
+entityDescription.reference.publicationInstance.manifestations.trackList
+entityDescription.reference.publicationInstance.manifestations.catalogueNumber
 
 entityDescription.abstract
 entityDescription.tags

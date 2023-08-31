@@ -8,12 +8,19 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import no.unit.nva.cristin.mapper.nva.MediaSubTypeBuilder;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsrcException;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
+import no.unit.nva.model.instancetypes.artistic.music.AudioVisualPublication;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
+import no.unit.nva.model.instancetypes.artistic.music.Isrc;
+import no.unit.nva.model.instancetypes.artistic.music.MusicMediaSubtype;
+import no.unit.nva.model.instancetypes.artistic.music.MusicMediaType;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformanceManifestation;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
@@ -21,9 +28,19 @@ import no.unit.nva.model.instancetypes.artistic.music.MusicalWorkPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.OtherPerformance;
 import no.unit.nva.model.time.Instant;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+
+import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.COMPACT_DISC;
+import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.DIGITAL_FILE;
+import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.OTHER;
+import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.VINYL;
+import static nva.commons.core.attempt.Try.attempt;
 
 
 /**
@@ -47,8 +64,14 @@ import java.util.Optional;
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinArtisticProduction implements DescriptionExtractor, MovingPictureExtractor {
 
-
     public static final String YES = "J";
+    @JsonIgnore
+    private static final Map<String, MusicMediaType> CRISTIN_MEDIUM_TO_NVA_MEDIUM =
+        Map.of("CD", COMPACT_DISC,
+            "CD-innspilling", COMPACT_DISC,
+            "Plateinnspilling", VINYL,
+            "Digital singel", DIGITAL_FILE,
+            "Digitalt album", DIGITAL_FILE);
     @JsonProperty("status_urframforing")
     private String premiere;
 
@@ -148,7 +171,42 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private List<MusicPerformanceManifestation> extractMusicPerformanceManifestations() {
-        return List.of(extractMusicPerformanceManifestation());
+        var manifestations = new ArrayList<MusicPerformanceManifestation>();
+        manifestations.add(extractMusicPerformanceManifestation());
+        var audioVisualPublication = extractAudioVisualPublication();
+        audioVisualPublication.ifPresent(manifestations::add);
+        return manifestations;
+    }
+
+    private Optional<AudioVisualPublication> extractAudioVisualPublication() {
+        if (StringUtils.isNotEmpty(isrc) || "CD".equals(medium)) {
+            return Optional.of(createAudioVisualPublication());
+        }
+        return Optional.empty();
+    }
+
+    private AudioVisualPublication createAudioVisualPublication() {
+        return attempt(() -> new AudioVisualPublication(extractMediumType(),
+            new UnconfirmedPublisher(publisherName),
+            null,
+            List.of(),
+            constructIsrc())).orElseThrow();
+    }
+
+    private Isrc constructIsrc() {
+       return Optional.of(isrc).map(this::extractIsrc).orElse(null);
+    }
+
+    private Isrc extractIsrc(String isrc) {
+        return attempt(() -> new Isrc(isrc)).orElseThrow(r -> new InvalidIsrcException(r.getException()));
+    }
+
+    private MusicMediaSubtype extractMediumType() {
+        return new MusicMediaSubtype(convertCristinMediumToNvaMediumSubtype());
+    }
+
+    private MusicMediaType convertCristinMediumToNvaMediumSubtype() {
+        return Optional.ofNullable(medium).map(CRISTIN_MEDIUM_TO_NVA_MEDIUM::get).orElse(OTHER);
     }
 
     private MusicPerformanceManifestation extractMusicPerformanceManifestation() {
@@ -173,14 +231,14 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private boolean isConcert() {
-       return Optional.ofNullable(performance).map(Performance::isConcert).orElse(false);
+        return Optional.ofNullable(performance).map(Performance::isConcert).orElse(false);
     }
 
     private String extractExtent() {
         var shouldExtractExtent = Optional.ofNullable(artisticProductionTimeUnit)
             .map(ArtisticProductionTimeUnit::timeUnitIsInMinutes)
             .orElse(false);
-        return shouldExtractExtent ?  duration : null;
+        return shouldExtractExtent ? duration : null;
     }
 
     private List<MusicalWorkPerformance> extractConcertProgrammes() {

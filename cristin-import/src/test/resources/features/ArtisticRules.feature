@@ -80,5 +80,9 @@ Feature: Rules that apply for Artistic results
     And the performance has a publisher name equal to "Austad Music"
     When the Cristin Result is converted to an NVA Resource
     Then the Nva resource has a AudioVisualPublication
-    And the AudioVisualPublication has a mediaSubType equalTo "CD", ISRC equalTo "NOLCA1554010", unconfirmedPublisher name equal to "Austad Music"
+    And the AudioVisualPublication has a mediaSubType equalTo "CompactDisc", ISRC equalTo "NOLCA1554010", unconfirmedPublisher name equal to "Austad Music"
 
+
+  Scenario: Cristin musical performance that contains an invalid ISRC should store an error report
+    Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
+    And the performance has a ISRC equal to "NOLCA1554010"

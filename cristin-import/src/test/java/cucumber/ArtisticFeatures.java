@@ -246,16 +246,18 @@ public class ArtisticFeatures {
     @Then("the Nva resource has a AudioVisualPublication")
     public void theNvaResourceHasAAudioVisualPublication() {
         var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
-        assertThat(musicalWorkPerformance.getManifestations(), hasItem( instanceOf(AudioVisualPublication.class)));
+        assertThat(musicalWorkPerformance.getManifestations(), hasItem(instanceOf(AudioVisualPublication.class)));
     }
 
     @And("the AudioVisualPublication has a mediaSubType equalTo {string}, ISRC equalTo {string}, unconfirmedPublisher name equal to {string}")
     public void theAudiovisualPublicationHasAMediaSubTypeEqualToStringIsrtcEqualToStringUnconfirmedPublisherNameEqualToString(String mediaSubType, String isrc, String unconfirmedPublisher) throws InvalidIsrcException {
         var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
-        var audioVisualManifestationOptional = musicalWorkPerformance.getManifestations().stream().filter(manifestation -> manifestation instanceof  AudioVisualPublication).findFirst();
+        var audioVisualManifestationOptional = musicalWorkPerformance.getManifestations().stream().filter(manifestation -> manifestation instanceof AudioVisualPublication).findFirst();
         assertThat(audioVisualManifestationOptional.isPresent(), is(equalTo(true)));
         var audioVisualManifestation = (AudioVisualPublication) audioVisualManifestationOptional.get();
+        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(mediaSubType)));
         assertThat(audioVisualManifestation.getIsrc(), is(equalTo(new Isrc(isrc))));
-
+        var actualPublisher = (UnconfirmedPublisher) audioVisualManifestation.getPublisher();
+        assertThat(actualPublisher.getName(), is(equalTo(unconfirmedPublisher)));
     }
 }
