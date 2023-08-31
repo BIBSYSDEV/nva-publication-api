@@ -12,6 +12,7 @@ dependencies {
 
     implementation libs.bundles.logging
     implementation libs.bundles.jackson
+    implementation libs.bundles.jaxb
 
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'

@@ -11,7 +11,7 @@ log4j = { strictly = '2.17.2' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.27.1' }
 awsLambdaCore = { strictly = '1.2.2' }
-awsLambdaEvents = { strictly = '3.11.1' }
+awsLambdaEvents = { strictly = '3.11.2' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '1.15.0' }
