@@ -13,3 +13,7 @@ dependencies {
     testImplementation project(':publication-testing')
     testImplementation 'uk.co.datumedge:hamcrest-json:0.2'
 }
+
+test {
+    environment "ID_NAMESPACE", "https://www.example.org/publication"
+}

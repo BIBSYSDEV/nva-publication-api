@@ -29,7 +29,7 @@ nva-language = { strictly = '1.0' }
 guava = { strictly = '32.0.0-jre' }
 javers = { strictly = '6.2.4' }
 hamcrestSpotify = { strictly = '1.2.0' }
-jaxb = { strictly = '2.3.0' }
+jaxb = { strictly = '2.3.1' }
 jakarta = { strictly = '2.3.2' }
 karate-core = { strictly = '1.1.0' }
 karate-apache = { strictly = '0.9.6' }
