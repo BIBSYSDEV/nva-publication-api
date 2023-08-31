@@ -47,6 +47,7 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
     private static final Logger logger = LoggerFactory.getLogger(CristinPatchEventConsumer.class);
     public static final String PATCH_ERRORS_PATH = "PATCH_ERRORS";
     public static final String JSON = ".json";
+    public static final String PATCH_SUCCESS = "PATCH_SUCCESS";
     private final ResourceService resourceService;
     private final S3Client s3Client;
 
@@ -78,8 +79,34 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
         var eventBody = readEventBody(input);
         return attempt(() -> retrieveChildAndParentPublications(eventBody))
                    .map(CristinPatcher::updateChildPublication)
-                   .map(ParentAndChild::getChildPublication)
+                   .map( parentAndChild -> persistChangesInChild(parentAndChild, input))
                    .orElseThrow(fail -> saveErrorReport(fail, input, eventBody));
+    }
+
+    private Publication persistChangesInChild(ParentAndChild parentAndChild, EventReference input) {
+        return attempt(() -> resourceService.updatePublication(parentAndChild.getChildPublication()))
+            .map(updatedPublication -> storeSuccessReport(updatedPublication,
+                parentAndChild.getParentPublication(),
+                input))
+            .orElseThrow();
+    }
+
+    private Publication storeSuccessReport(Publication childPublication, Publication parentPublication, EventReference input) {
+        var successFileUriFileUri = constructSuccessFileUri(childPublication, input);
+        var s3Driver = new S3Driver(s3Client, successFileUriFileUri.getUri().getHost());
+        var reportContent = new ParentAndChild(childPublication, parentPublication);
+        attempt(() -> s3Driver.insertFile(successFileUriFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
+        return childPublication;
+    }
+
+    private UriWrapper constructSuccessFileUri(Publication publication, EventReference input) {
+        var fileUri = UriWrapper.fromUri(input.getUri());
+        var timestamp = input.getTimestamp();
+        var bucket = fileUri.getHost();
+        return bucket
+            .addChild(PATCH_SUCCESS)
+            .addChild(timestampToString(timestamp))
+            .addChild(publication.getIdentifier() + JSON);
     }
 
     private Optional<Publication> processMessage(SQSMessage message) {
