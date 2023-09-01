@@ -149,11 +149,19 @@ karate-parent = { group = 'com.intuit.karate', name = 'karate-parent', version.r
 jena-core = { group=  'org.apache.jena', name = 'jena-core', version.ref = 'jena' }
 jena-arq = { group = 'org.apache.jena', name = 'jena-arq', version.ref = 'jena' }
 
+
+#byte-buddy = {group= 'net.bytebuddy', name= 'byte-buddy', version='1.8.15'}
+#byte-buddy-agent = {group= 'net.bytebuddy', name='byte-buddy-agent', version= '1.8.15'}
+#objenesis = {group = 'org.objenesis', name= 'objenesis', version='2.6'}
+
+mockito-inline = {group= 'org.mockito', name= 'mockito-inline', version= '5.2.0'}
+mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
+
 [bundles]
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
     'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core', 'hamcrest-jackson',
-    'hamcrest-optional', 'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'zalando', 'datafaker']
-
+    'hamcrest-optional', 'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'zalando',
+    'mockito-junit-jupiter','datafaker']
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']
 jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']

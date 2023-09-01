@@ -72,7 +72,7 @@ public class DataEntryUpdateHandlerTest {
     @BeforeEach
     public void setUp() {
         outputStream = new ByteArrayOutputStream();
-        context = Mockito.mock(Context.class);
+        context = null;
         var s3Client = new FakeS3Client();
         handler = new DataEntryUpdateHandler(s3Client);
         s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);

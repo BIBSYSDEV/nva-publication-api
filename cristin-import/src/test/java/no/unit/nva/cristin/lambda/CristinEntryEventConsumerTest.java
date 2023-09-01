@@ -67,7 +67,7 @@ import org.junit.jupiter.api.Test;
 
 class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
     public static final JavaType IMPORT_RESULT_JAVA_TYPE = constructImportResultJavaType();

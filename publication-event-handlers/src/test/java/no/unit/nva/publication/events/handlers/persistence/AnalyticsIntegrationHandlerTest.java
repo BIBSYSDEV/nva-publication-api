@@ -87,7 +87,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenEventIsOfWrongType() {
         var eventReference = new EventReference(randomString(), randomUri());
         InputStream event = sampleLambdaDestinationsEvent(eventReference);
-        Executable action = () -> analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
+        Executable action = () -> analyticsIntegration.handleRequest(event, outputStream, null);
         var expectedException = assertThrows(Exception.class, action);
         assertThat(expectedException.getMessage(), containsString(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC));
     }
@@ -96,7 +96,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder() throws IOException {
         var inputEvent = generateEventForExpandedPublication();
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
-        analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
+        analyticsIntegration.handleRequest(event, outputStream, null);
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
         var analyticsFilePath = UriWrapper.fromUri(analyticsObjectEvent.getUri()).toS3bucketPath();
         var publicationString = s3Driver.getFile(analyticsFilePath);
@@ -109,7 +109,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     void shouldNotStoreTheExpandedDataEntriesThatAreNotPublications() throws IOException, ApiGatewayException {
         EventReference inputEvent = generateEventForExpandedDoiRequest();
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
-        analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
+        analyticsIntegration.handleRequest(event, outputStream, null);
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
         assertThat(analyticsObjectEvent, is(nullValue()));
     }

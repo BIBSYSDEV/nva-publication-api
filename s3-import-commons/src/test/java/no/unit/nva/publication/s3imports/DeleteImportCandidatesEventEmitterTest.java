@@ -41,7 +41,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public class DeleteImportCandidatesEventEmitterTest {
 
-    public static final Context CONTEXT = Mockito.mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final InputStream EVENT = IoUtils.inputStreamFromResources(
         "delete_scopus_identifier_list.txt");

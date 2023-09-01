@@ -38,7 +38,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class DeleteEntriesEventEmitterTest {
 
-    public static final Context context = mock(Context.class);
+    public static final Context context = null;
     public static final String HARDCODED_PATH = "reports/date/";
     private final String bucketName = "some_bucket";
 

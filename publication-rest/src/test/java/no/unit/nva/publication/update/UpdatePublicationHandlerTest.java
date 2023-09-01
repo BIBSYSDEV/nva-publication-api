@@ -175,7 +175,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
-        context = mock(Context.class);
+        context = null;
 
         identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);

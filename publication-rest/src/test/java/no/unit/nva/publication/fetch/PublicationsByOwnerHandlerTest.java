@@ -14,7 +14,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +26,6 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -36,6 +34,7 @@ import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 public class PublicationsByOwnerHandlerTest {
     
@@ -49,18 +48,18 @@ public class PublicationsByOwnerHandlerTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     
     @BeforeEach
-    public void setUp() throws NotFoundException {
-        var environment = mock(Environment.class);
+    public void setUp(@Mock Environment environment,
+                      @Mock ResourceService resourceService,
+                      @Mock IdentityServiceClient identityServiceClient) throws NotFoundException {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
         
-        resourceService = mock(ResourceService.class);
-        context = mock(Context.class);
+        this.resourceService = resourceService;
+        context = null;
 
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
                                                                   "someone@123",
                                                                   randomUri(),
                                                                   randomUri());
-        var identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         
         output = new ByteArrayOutputStream();

@@ -61,7 +61,7 @@ import org.junit.jupiter.api.Test;
 
 public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;

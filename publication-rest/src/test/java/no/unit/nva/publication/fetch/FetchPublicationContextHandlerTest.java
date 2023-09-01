@@ -44,7 +44,7 @@ class FetchPublicationContextHandlerTest {
 
     @BeforeEach
     void setUp() {
-        context = mock(Context.class);
+        context = null;
         output = new ByteArrayOutputStream();
         fetchPublicationContextHandler = new FetchPublicationContextHandler();
     }

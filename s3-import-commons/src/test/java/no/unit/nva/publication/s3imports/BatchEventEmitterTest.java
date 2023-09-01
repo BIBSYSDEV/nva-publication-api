@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mock;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.EventBridgeException;
 import software.amazon.awssdk.services.eventbridge.model.EventBus;
@@ -42,10 +43,10 @@ public class BatchEventEmitterTest {
     private AtomicInteger sleepingCounter;
     
     @BeforeEach
-    public void init() {
+    public void init(@Mock EventBridgeClient client) {
         sleepingCounter = new AtomicInteger();
         sleepingCounter.set(0);
-        eventBridgeClient = setupEventBridgeClient();
+        eventBridgeClient = setupEventBridgeClient(client);
     }
     
     @Test
@@ -60,8 +61,8 @@ public class BatchEventEmitterTest {
     }
     
     @Test
-    public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails() {
-        eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests();
+    public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails(@Mock EventBridgeClient client) {
+        eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests(client);
         TestAppender logAppender = LogUtils.getTestingAppender(BatchEventEmitter.class);
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
@@ -93,8 +94,7 @@ public class BatchEventEmitterTest {
         assertThrows(EntryTooBigException.class, () -> batchEventEmitter.addEvents(eventBodies));
     }
     
-    private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests() {
-        EventBridgeClient client = mock(EventBridgeClient.class);
+    private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests( EventBridgeClient client) {
         when(client.listEventBuses(any(ListEventBusesRequest.class)))
             .thenReturn(mockListEventBusesResponse());
         when(client.putEvents(any(PutEventsRequest.class)))
@@ -107,9 +107,8 @@ public class BatchEventEmitterTest {
             randomString(),
             eventBridgeClient);
     }
-    
-    private EventBridgeClient setupEventBridgeClient() {
-        EventBridgeClient client = mock(EventBridgeClient.class);
+
+    private EventBridgeClient setupEventBridgeClient( EventBridgeClient client) {
         when(client.listEventBuses(any(ListEventBusesRequest.class)))
             .thenReturn(mockListEventBusesResponse());
         when(client.putEvents(any(PutEventsRequest.class)))

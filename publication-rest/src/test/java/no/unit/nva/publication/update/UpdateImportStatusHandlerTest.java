@@ -48,7 +48,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
 
     public static final String IDENTIFIER = "importCandidateIdentifier";
     public static final String TABLE_NAME = "import-candidates";
-    private static final Context CONTEXT = mock(Context.class);
+    private static final Context CONTEXT = null;
     private ByteArrayOutputStream output;
     private ResourceService importCandidateService;
     private UpdateImportStatusHandler handler;

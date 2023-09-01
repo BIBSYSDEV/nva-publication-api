@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
@@ -66,7 +67,10 @@ public class ResourcesLocalTest extends TestDataSource {
 
     @AfterEach
     public void shutdown() {
-        client.shutdown();
+        if (nonNull(client)) {
+            client.shutdown();
+        }
+
     }
 
     private CreateTableRequest createTableRequest(String tableName) {

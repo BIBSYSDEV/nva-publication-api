@@ -20,7 +20,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -60,6 +59,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
 import org.zalando.problem.Problem;
 
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
@@ -85,12 +85,11 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
      * Setting up test environment.
      */
     @BeforeEach
-    public void setUp() throws NotFoundException {
+    public void setUp(@Mock Environment environmentMock,
+                      @Mock IdentityServiceClient identityServiceClient) throws NotFoundException {
         super.init();
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID, "someone@123", randomUri(),
             randomUri());
-        var environmentMock = mock(Environment.class);
-        var identityServiceClient = mock(IdentityServiceClient.class);
 
 
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
@@ -100,7 +99,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         ResourceService resourceService = new ResourceService(client, CLOCK);
         handler = new CreatePublicationHandler(resourceService, environmentMock, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
-        context = mock(Context.class);
+        context = null;
         samplePublication = randomPublication();
         testUserName = samplePublication.getResourceOwner().getOwner().getValue();
         testOrgId = samplePublication.getPublisher().getId();

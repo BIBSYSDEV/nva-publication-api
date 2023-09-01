@@ -70,7 +70,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
-        context = Mockito.mock(Context.class);
+        context = null;
     }
     
     @Test

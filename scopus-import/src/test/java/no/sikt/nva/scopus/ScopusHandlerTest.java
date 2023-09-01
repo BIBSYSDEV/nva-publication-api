@@ -210,7 +210,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 @WireMockTest(httpsEnabled = true)
 class ScopusHandlerTest extends ResourcesLocalTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;

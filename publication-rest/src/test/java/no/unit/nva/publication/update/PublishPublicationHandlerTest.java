@@ -56,7 +56,7 @@ public class PublishPublicationHandlerTest {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         publicationService = mock(ResourceService.class);
         output = new ByteArrayOutputStream();
-        context = mock(Context.class);
+        context = null;
     }
     
     @Test

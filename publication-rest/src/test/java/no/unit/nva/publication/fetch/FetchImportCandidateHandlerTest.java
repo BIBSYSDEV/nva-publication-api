@@ -49,6 +49,7 @@ import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.zalando.problem.Problem;
 
 @WireMockTest(httpsEnabled = true)
@@ -61,13 +62,12 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
     private FetchImportCandidateHandler handler;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp(@Mock Environment environment) {
         super.init();
-        Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        context = mock(Context.class);
+        context = null;
         output = new ByteArrayOutputStream();
         handler = new FetchImportCandidateHandler(resourceService);
     }

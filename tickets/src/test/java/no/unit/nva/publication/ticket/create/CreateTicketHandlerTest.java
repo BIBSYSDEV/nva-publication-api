@@ -88,6 +88,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mock;
 import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
@@ -96,7 +97,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
-    private final Environment environment = mock(Environment.class);
+
+    @Mock
+    private Environment environment;
     private FakeSecretsManagerClient secretsManagerClient;
     private CreateTicketHandler handler;
     private TicketResolver ticketResolver;
