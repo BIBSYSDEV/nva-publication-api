@@ -21,7 +21,7 @@ apacheCommons = { strictly = '4.4' }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.9.3' }
-mockito = { strictly = '3.12.4' }
+mockito = { strictly = '5.3.1' }
 wiremock = { strictly = "2.32.0" }
 configTypesafe = { strictly = '1.4.1' }
 jsonld = { strictly = '0.13.4' }
@@ -29,8 +29,7 @@ nva-language = { strictly = '1.0' }
 guava = { strictly = '32.0.0-jre' }
 javers = { strictly = '6.2.4' }
 hamcrestSpotify = { strictly = '1.2.0' }
-jaxb = { strictly = '2.3.1' }
-jakarta = { strictly = '2.3.2' }
+jakarta = { strictly = '2.3.3' }
 karate-core = { strictly = '1.1.0' }
 karate-apache = { strictly = '0.9.6' }
 karate-junit5 = { strictly = '1.1.0' }
@@ -104,9 +103,7 @@ commons-validator = { group = 'commons-validator', name = 'commons-validator', v
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
 guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
 
-jaxb-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'jaxb' }
-jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.ref = 'jaxb' }
-jakarta-xml-bind-api = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version.ref = 'jakarta' }
+jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version = '2.3.1' }
 
 xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '3.0.2' }
 xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '3.0.2' }
@@ -159,7 +156,7 @@ testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 
 
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']
-jaxb = ['jaxb-api', 'jaxb-runtime', 'jakarta-xml-bind-api']
+jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']
 jena = ['jena-core', 'jena-arq']
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
 
