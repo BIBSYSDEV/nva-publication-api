@@ -95,7 +95,8 @@ public class FakeAmazonSQS implements AmazonSQS {
     }
 
     @Override
-    public CancelMessageMoveTaskResult cancelMessageMoveTask(CancelMessageMoveTaskRequest cancelMessageMoveTaskRequest) {
+    public CancelMessageMoveTaskResult cancelMessageMoveTask(
+        CancelMessageMoveTaskRequest cancelMessageMoveTaskRequest) {
         throw new UnsupportedOperationException();
     }
 

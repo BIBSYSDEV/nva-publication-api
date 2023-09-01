@@ -50,7 +50,10 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects", "PMD.ForLoopCanBeForeach", "PMD.ReturnEmptyCollectionRatherThanNull"})
+@SuppressWarnings({"PMD.GodClass",
+    "PMD.CouplingBetweenObjects",
+    "PMD.ForLoopCanBeForeach",
+    "PMD.ReturnEmptyCollectionRatherThanNull"})
 public class CristinMapper extends CristinMappingModule {
 
     public static final String EMPTY_STRING = "";
