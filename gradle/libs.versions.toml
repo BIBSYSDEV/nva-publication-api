@@ -127,6 +127,7 @@ junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', v
 junit-vintage-engine = { group = 'org.junit.vintage', name = 'junit-vintage-engine', version.ref = 'junit' }
 junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit' }
 
+mockito-junit = { group = 'org.mockito', name = 'mockito-junit-jupiter', version.ref = 'mockito' }
 mockito-core = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
 
 wiremock = { group = "com.github.tomakehurst", name = "wiremock-jre8", version.ref = "wiremock" }
@@ -159,7 +160,7 @@ mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', ve
 
 [bundles]
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
-    'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core', 'hamcrest-jackson',
+    'junit-jupiter-engine', 'mockito-core', 'mockito-junit', 'hamcrest-base', 'hamcrest-core', 'hamcrest-jackson',
     'hamcrest-optional', 'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'zalando',
     'mockito-junit-jupiter','datafaker']
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']

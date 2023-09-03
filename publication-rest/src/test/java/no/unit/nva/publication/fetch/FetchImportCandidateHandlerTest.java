@@ -13,8 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -42,6 +41,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -49,25 +49,27 @@ import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
+@ExtendWith(MockitoExtension.class)
 @WireMockTest(httpsEnabled = true)
 public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
 
     public static final String IDENTIFIER = "importCandidateIdentifier";
     private ByteArrayOutputStream output;
-    private Context context;
+    private final Context context = new FakeContext();
     private ResourceService resourceService;
     private FetchImportCandidateHandler handler;
 
     @BeforeEach
     public void setUp(@Mock Environment environment) {
         super.init();
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
+        lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        context = null;
         output = new ByteArrayOutputStream();
         handler = new FetchImportCandidateHandler(resourceService);
     }

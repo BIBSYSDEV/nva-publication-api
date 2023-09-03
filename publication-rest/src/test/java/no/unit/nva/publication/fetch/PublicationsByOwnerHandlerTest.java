@@ -14,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
@@ -26,6 +27,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -34,12 +36,15 @@ import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-public class PublicationsByOwnerHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class PublicationsByOwnerHandlerTest {
     
     private ResourceService resourceService;
-    private Context context;
+    private final Context context = new FakeContext();
     
     private ByteArrayOutputStream output;
     private PublicationsByOwnerHandler publicationsByOwnerHandler;
@@ -54,13 +59,11 @@ public class PublicationsByOwnerHandlerTest {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
         
         this.resourceService = resourceService;
-        context = null;
-
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
                                                                   "someone@123",
                                                                   randomUri(),
                                                                   randomUri());
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+        lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =

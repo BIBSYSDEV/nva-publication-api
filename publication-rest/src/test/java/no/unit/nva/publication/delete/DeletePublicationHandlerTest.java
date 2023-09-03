@@ -34,6 +34,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
@@ -59,7 +60,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private IdentityServiceClient identityServiceClient;
     private Environment environment;
     private ByteArrayOutputStream outputStream;
-    private Context context;
+    private final Context context = new FakeContext();
     private GetExternalClientResponse getExternalClientResponse;
 
     @BeforeEach
@@ -70,7 +71,6 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
-        context = null;
     }
     
     @Test

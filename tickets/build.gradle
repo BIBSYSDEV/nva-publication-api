@@ -32,6 +32,8 @@ dependencies {
     testImplementation project(path: ':tickets-test')
     testImplementation libs.logutils
     testImplementation libs.wiremock
+    testImplementation libs.bundles.testing
+
 
     compileOnly libs.zalando
     compileOnly libs.aws.lambda.java.core

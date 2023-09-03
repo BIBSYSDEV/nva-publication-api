@@ -5,6 +5,7 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +26,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.Mockito.mock;
 
 class FetchPublicationContextHandlerTest {
 
@@ -39,12 +39,11 @@ class FetchPublicationContextHandlerTest {
     private static final URI BASE_URI = URI.create("https://api-host.example.com/publication");
     public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
     private FetchPublicationContextHandler fetchPublicationContextHandler;
-    private Context context;
+    private final Context context = new FakeContext();
     private ByteArrayOutputStream output;
 
     @BeforeEach
     void setUp() {
-        context = null;
         output = new ByteArrayOutputStream();
         fetchPublicationContextHandler = new FetchPublicationContextHandler();
     }

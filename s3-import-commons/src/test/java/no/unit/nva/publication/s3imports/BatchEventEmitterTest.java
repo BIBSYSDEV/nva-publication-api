@@ -10,12 +10,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -25,9 +23,11 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.EventBridgeException;
 import software.amazon.awssdk.services.eventbridge.model.EventBus;
@@ -36,23 +36,23 @@ import software.amazon.awssdk.services.eventbridge.model.ListEventBusesResponse;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class BatchEventEmitterTest {
 
     public static final Lorem FAKER = new BaseFaker().lorem();
     private EventBridgeClient eventBridgeClient;
-    private AtomicInteger sleepingCounter;
-    
+
     @BeforeEach
     public void init(@Mock EventBridgeClient client) {
-        sleepingCounter = new AtomicInteger();
-        sleepingCounter.set(0);
-        eventBridgeClient = setupEventBridgeClient(client);
+        eventBridgeClient = client;
     }
     
     @Test
-    public void emitEventsEmitsAllEventsWhenCalledWithArguments() {
+    void emitEventsEmitsAllEventsWhenCalledWithArguments() {
+        mockEventBridgeListEventBuses(eventBridgeClient);
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         List<String> manyEvents = generateInputBiggerThanEventEmittersRequestSize();
+        mockEventBridgePutEvents(eventBridgeClient);
         batchEventEmitter.addEvents(manyEvents);
         int desiredBatchSize = 20;
         batchEventEmitter.emitEvents(desiredBatchSize);
@@ -61,7 +61,7 @@ public class BatchEventEmitterTest {
     }
     
     @Test
-    public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails(@Mock EventBridgeClient client) {
+    void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails(@Mock EventBridgeClient client) {
         eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests(client);
         TestAppender logAppender = LogUtils.getTestingAppender(BatchEventEmitter.class);
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
@@ -74,7 +74,7 @@ public class BatchEventEmitterTest {
     
     @ParameterizedTest
     @CsvSource({"250000,10", "120000,5"})
-    public void eventEmitterCreatesPutEventRequestsThatDoNotExceedAmazonsLimits(String individualEntrySize,
+    void eventEmitterCreatesPutEventRequestsThatDoNotExceedAmazonsLimits(String individualEntrySize,
                                                                                 String numberOfExpectedRequests) {
         
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
@@ -87,7 +87,7 @@ public class BatchEventEmitterTest {
     }
     
     @Test
-    public void eventEmitterThrowsExceptionWhenDataEntryIsTooBigForAwsEventBridgeEvent() {
+    void eventEmitterThrowsExceptionWhenDataEntryIsTooBigForAwsEventBridgeEvent() {
         BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         int sizeBiggerThanAcceptable = REQUEST_ENTRY_SET_MAX_BYTE_SIZE + 100;
         List<String> eventBodies = generateEventsOfSpecificSize(sizeBiggerThanAcceptable);
@@ -95,8 +95,7 @@ public class BatchEventEmitterTest {
     }
     
     private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests( EventBridgeClient client) {
-        when(client.listEventBuses(any(ListEventBusesRequest.class)))
-            .thenReturn(mockListEventBusesResponse());
+        mockEventBridgeListEventBuses(client);
         when(client.putEvents(any(PutEventsRequest.class)))
             .thenThrow(EventBridgeException.builder().message("Unimportant message").build());
         return client;
@@ -108,14 +107,16 @@ public class BatchEventEmitterTest {
             eventBridgeClient);
     }
 
-    private EventBridgeClient setupEventBridgeClient( EventBridgeClient client) {
-        when(client.listEventBuses(any(ListEventBusesRequest.class)))
-            .thenReturn(mockListEventBusesResponse());
+    private void mockEventBridgePutEvents(EventBridgeClient client) {
         when(client.putEvents(any(PutEventsRequest.class)))
             .thenReturn(mockPutEventResult());
-        return client;
     }
-    
+
+    private void mockEventBridgeListEventBuses(EventBridgeClient client) {
+        when(client.listEventBuses(any(ListEventBusesRequest.class)))
+            .thenReturn(mockListEventBusesResponse());
+    }
+
     private PutEventsResponse mockPutEventResult() {
         return PutEventsResponse.builder().failedEntryCount(0).build();
     }

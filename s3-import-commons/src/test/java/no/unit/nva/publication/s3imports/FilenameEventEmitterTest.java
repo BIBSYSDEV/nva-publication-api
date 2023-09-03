@@ -45,18 +45,21 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
+@ExtendWith(MockitoExtension.class)
 class FilenameEventEmitterTest {
     
     public static final String EMPTY_SUBTOPIC = null;
     private static final String SOME_BUCKET = "someBucket";
     private static final URI SOME_S3_LOCATION = URI.create("s3://" + SOME_BUCKET + "/");
-    private static final Context CONTEXT = null;
+    private static final Context CONTEXT = mock(Context.class);
     private static final Instant NOW = Instant.now();
     private static final Integer NON_ZERO_NUMBER_OF_FAILURES = 2;
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

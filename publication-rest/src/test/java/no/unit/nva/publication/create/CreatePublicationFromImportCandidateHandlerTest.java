@@ -18,9 +18,7 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -72,7 +70,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
 @ExtendWith(MockitoExtension.class)
-public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
+class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private ByteArrayOutputStream output;
     private Context context;
@@ -173,8 +171,6 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         publicationService = resourceService;
         importCandidateService = resourceService;
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
-        when(publicationService.updatePublication(any()))
-                .thenThrow(new TransactionFailedException(new Exception()));
         when(importCandidateService.updateImportStatus(any(), any()))
                 .thenCallRealMethod()
                 .thenThrow(new NotFoundException(""));
