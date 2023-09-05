@@ -125,7 +125,7 @@ class ExpandedResourceTest {
     }
 
     @Test
-    void shouldReturnIndexDocumentWithValidContributorAffiliationLandCode() throws Exception {
+    void shouldReturnIndexDocumentWithValidContributorAffiliationCountryCode() throws Exception {
         var mockUriRetriever = mock(UriRetriever.class);
         var publication = randomPublication();
         mockCristinOrganizationRawContentResponse(mockUriRetriever, publication);
@@ -133,7 +133,8 @@ class ExpandedResourceTest {
         var indexDocument = fromPublication(mockUriRetriever, publication);
         var framedResultNode = indexDocument.asJsonNode();
 
-        assertThat(framedResultNode.at("/topLevelOrganization/1/landCode").textValue(), is(not(nullValue())));
+        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/country").textValue();
+        assertThat(actualCountryCode, is(not(nullValue())));
     }
 
     //TODO: should check that you get affiliation names
