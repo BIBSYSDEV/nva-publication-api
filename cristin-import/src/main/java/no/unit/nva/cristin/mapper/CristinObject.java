@@ -8,20 +8,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.model.Publication;
 
-@lombok.Data
-@lombok.Builder(
+
+@Builder(
     builderClassName = "CristinObjectBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
     setterPrefix = "with"
 )
-@lombok.AllArgsConstructor(access = lombok.AccessLevel.PACKAGE)
+@Getter
+@Setter
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 // This list should be emptied by either mapping the field to an NVA field or asking the Cristin people (Daniel)
 // to remove it from the exports
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
