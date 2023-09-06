@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
+@SuppressWarnings("PMD.GodClass")
 public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publication> {
 
     public static final Random RANDOM = new Random(System.currentTimeMillis());
