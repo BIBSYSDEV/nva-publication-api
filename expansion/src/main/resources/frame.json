@@ -72,7 +72,7 @@
     "createdDate": {
       "@type": "xsd:dateTime"
     },
-    "country": {
+    "countryCode": {
       "@id": "https://bibsysdev.github.io/src/organization-ontology.ttl#country"
     },
     "doi": {
@@ -207,7 +207,7 @@
           "@embed": "@always",
           "@default": "@null"
         },
-        "country": {
+        "countryCode": {
           "@embed": "@always",
           "@default": "@null"
         },

@@ -133,7 +133,8 @@ class ExpandedResourceTest {
         var indexDocument = fromPublication(mockUriRetriever, publication);
         var framedResultNode = indexDocument.asJsonNode();
 
-        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/country").textValue();
+        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/countryCode")
+                                    .textValue();
         assertThat(actualCountryCode, is(not(nullValue())));
     }
 
@@ -427,7 +428,8 @@ class ExpandedResourceTest {
             .flatMap(contributor -> contributor.getAffiliations().stream())
             .map(Organization::getId)
             .forEach(id -> mockGetRawContentResponse(mockUriRetriever, id,
-                                                     getCristinResponseForOrganization(id.toString(), COUNTRY_CODE_NO)));
+                                                     getCristinResponseForOrganization(id.toString(),
+                                                                                       COUNTRY_CODE_NO)));
     }
 
     private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
