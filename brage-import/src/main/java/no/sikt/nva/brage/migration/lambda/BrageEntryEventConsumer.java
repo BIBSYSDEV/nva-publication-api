@@ -99,15 +99,17 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private Publication createNewPublication(Publication publication, S3Event s3Event) {
         return isEmptyCristinRecord(publication)
-            ? handleSavingError(new Failure<>(unableToMergeCristinRecordException(publication)))
+            ? unableToMergeCristinRecordException(publication, s3Event)
             : attempt(() -> publication)
                    .flatMap(this::persistInDatabase)
                    .map(pub -> storeHandleAndPublicationIdentifier(pub, s3Event))
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
     }
 
-    private Publication unableToMergeCristinRecordException(Publication publication) {
-        throw new UnmappableCristinRecordException(CRISTIN_RECORD_EXCEPTION + getCristinIdentifier(publication));
+    private Publication unableToMergeCristinRecordException(Publication publication, S3Event s3Event) {
+        throw handleSavingError(new Failure<>(
+            new UnmappableCristinRecordException(CRISTIN_RECORD_EXCEPTION
+                                                 + getCristinIdentifier(publication))), s3Event);
     }
 
     private boolean isEmptyCristinRecord(Publication publication) {

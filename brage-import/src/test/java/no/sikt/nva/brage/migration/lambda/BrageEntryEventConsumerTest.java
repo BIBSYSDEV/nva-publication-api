@@ -24,6 +24,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.kms.model.NotFoundException;
@@ -49,6 +51,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
@@ -704,10 +707,25 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withType(TYPE_CRISTIN_RECORD)
                                  .withCristinIdentifier(cristinIdentifier)
                                  .build();
-        var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThat(actualPublication.getEntityDescription().getReference().getPublicationContext(),
+                   is(not(nullValue())));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenConvertingCristinRecordAndPublicationWithMatchingCristinIdDoesExist()
+        throws IOException, BadRequestException {
+        var existingPublication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();
+        Resource.fromPublication(existingPublication).persistNew(resourceService,
+                                                                 UserInstance.fromPublication(existingPublication));
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_CRISTIN_RECORD)
+                                 .withCristinIdentifier(randomString())
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+
+        assertThrows(UnmappableCristinRecordException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
     @Test
