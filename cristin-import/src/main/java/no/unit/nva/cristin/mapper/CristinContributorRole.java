@@ -7,11 +7,11 @@ import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 
-@Data
 @Builder(
     builderClassName = "CristinContributorRoleBuilder",
     toBuilder = true,
@@ -19,6 +19,8 @@ import no.unit.nva.model.role.RoleType;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributorRole {
 
