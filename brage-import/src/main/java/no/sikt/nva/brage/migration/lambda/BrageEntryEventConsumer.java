@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
+import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -51,6 +53,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
+    public static final String CRISTIN_RECORD_EXCEPTION =
+        "Cristin record has not been merged with existing publication: ";
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
@@ -94,10 +98,22 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Publication createNewPublication(Publication publication, S3Event s3Event) {
-        return attempt(() -> publication)
+        return isEmptyCristinRecord(publication)
+            ? handleSavingError(new Failure<>(unableToMergeCristinRecordException(publication)))
+            : attempt(() -> publication)
                    .flatMap(this::persistInDatabase)
                    .map(pub -> storeHandleAndPublicationIdentifier(pub, s3Event))
                    .orElseThrow(fail -> handleSavingError(fail, s3Event));
+    }
+
+    private Publication unableToMergeCristinRecordException(Publication publication) {
+        throw new UnmappableCristinRecordException(CRISTIN_RECORD_EXCEPTION + getCristinIdentifier(publication));
+    }
+
+    private boolean isEmptyCristinRecord(Publication publication) {
+        return isNull(publication.getEntityDescription().getReference().getPublicationInstance())
+               & isNull(publication.getEntityDescription().getReference().getPublicationContext())
+               & nonNull(getCristinIdentifier(publication)) ;
     }
 
     private Publication attemptToUpdateExistingPublication(Publication publication, S3Event s3Event) {
@@ -168,7 +184,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail, S3Event s3Event) {
-
         String brageObjectKey = extractObjectKey(s3Event);
         String errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectKey;
         logger.error(errorMessage, fail.getException());

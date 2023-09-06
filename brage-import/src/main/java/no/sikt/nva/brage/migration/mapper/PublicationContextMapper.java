@@ -100,9 +100,16 @@ public final class PublicationContextMapper {
         }
         if (isReaderOpinion(record)) {
             return buildPublicationContextWhenReaderOpinion();
+        }
+        if (isCristinRecord(record)) {
+            return null;
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
         }
+    }
+
+    public static boolean isCristinRecord(Record record) {
+        return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
     }
 
     private static boolean shouldBeMappedToBook(Record record) {

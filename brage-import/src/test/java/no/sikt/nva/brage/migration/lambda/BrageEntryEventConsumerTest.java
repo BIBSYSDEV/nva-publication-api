@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
+import static no.sikt.nva.brage.migration.NvaType.CRISTIN_RECORD;
 import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
 import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
@@ -110,6 +111,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                          READER_OPINION.getValue());
     public static final Type TYPE_ANTHOLOGY = new Type(List.of(ANTHOLOGY.getValue()),
                                                        ANTHOLOGY.getValue());
+    public static final Type TYPE_CRISTIN_RECORD = new Type(List.of(CRISTIN_RECORD.getValue()),
+                                                       CRISTIN_RECORD.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -681,6 +684,25 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldConvertAnthologyToPublication() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_ANTHOLOGY)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertCristinRecordToPublicationAndMergeWithExistingPublicationWithTheSameCristinId()
+        throws IOException, BadRequestException {
+        var cristinIdentifier = randomString();
+        var existingPublication =
+            randomPublication().copy().withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(
+                "Cristin", cristinIdentifier))).build();
+        Resource.fromPublication(existingPublication).persistNew(resourceService,
+                                                                 UserInstance.fromPublication(existingPublication));
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_CRISTIN_RECORD)
+                                 .withCristinIdentifier(cristinIdentifier)
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
