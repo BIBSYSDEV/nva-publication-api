@@ -12,5 +12,5 @@ dependencies {
     implementation group: 'nebula.lint', name: 'nebula.lint.gradle.plugin', version: '18.1.0'
     implementation group: 'org.jacoco', name: 'org.jacoco.core', version: '0.8.10'
     implementation group: 'org.jacoco', name: 'org.jacoco.report', version: '0.8.10'
-    implementation group: 'io.freefair.lombok', name: 'io.freefair.lombok.gradle.plugin', version: '8.1.0'
+    implementation group: 'io.freefair.lombok', name: 'io.freefair.lombok.gradle.plugin', version: '8.3'
 }
