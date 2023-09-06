@@ -73,7 +73,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class ExpandedResourceTest {
 
-    public static final String LAND_CODE_NO = "NO";
+    public static final String COUNTRY_CODE_NO = "NO";
     private static final String SERIES_LEVEL_JSON_PTR =
         "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
         + "/series/level";
@@ -427,7 +427,7 @@ class ExpandedResourceTest {
             .flatMap(contributor -> contributor.getAffiliations().stream())
             .map(Organization::getId)
             .forEach(id -> mockGetRawContentResponse(mockUriRetriever, id,
-                                                     getCristinResponseForOrganization(id.toString(), LAND_CODE_NO)));
+                                                     getCristinResponseForOrganization(id.toString(), COUNTRY_CODE_NO)));
     }
 
     private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
@@ -463,8 +463,7 @@ class ExpandedResourceTest {
     }
 
     private static void mockGetRawContentResponse(UriRetriever uriRetriever, URI uri, String response) {
-        String response1 = response;
-        when(uriRetriever.getRawContent(eq(uri), any())).thenReturn(Optional.of(response1));
+        when(uriRetriever.getRawContent(eq(uri), any())).thenReturn(Optional.of(response));
     }
 
     private static List<URI> extractActualPublicationChannelUris(ObjectNode expandedResourceJsonNode) {
@@ -516,7 +515,7 @@ class ExpandedResourceTest {
         );
     }
 
-    private static String getCristinResponseForOrganization(String id, String landCode) {
+    private static String getCristinResponseForOrganization(String id, String countryCode) {
         return "{\n"
                + "  \"@context\": \"https://bibsysdev.github.io/src/organization-context.json\",\n"
                + "  \"type\": \"Organization\",\n"
@@ -525,7 +524,7 @@ class ExpandedResourceTest {
                + "    \"en\": \"Department of Something\",\n"
                + "    \"nb\": \"Institutt for Noe\"\n"
                + "  },\n"
-               + "  \"country\": \"" + landCode + "\"\n"
+               + "  \"country\": \"" + countryCode + "\"\n"
                + "}";
     }
 

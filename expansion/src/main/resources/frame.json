@@ -204,6 +204,10 @@
           "@embed": "@always",
           "@default": "@null"
         },
+        "https://bibsysdev.github.io/src/organization-ontology.ttl#country": {
+          "@embed": "@always",
+          "@default": "@null"
+        },
         "name": {
           "@embed": "@always",
           "@default": "@null"
