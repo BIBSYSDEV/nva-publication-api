@@ -72,6 +72,9 @@
     "createdDate": {
       "@type": "xsd:dateTime"
     },
+    "country": {
+      "@id": "https://bibsysdev.github.io/src/organization-ontology.ttl#country"
+    },
     "doi": {
       "@type": "@id"
     },
@@ -181,8 +184,8 @@
         "@vocab": "https://nva.sikt.no/ontology/publication#"
       }
     },
-    "NviCandidate" : "https://nva.sikt.no/ontology/publication#NviCandidate",
-    "NonNviCandidate" : "https://nva.sikt.no/ontology/publication#NonNviCandidate",
+    "NviCandidate": "https://nva.sikt.no/ontology/publication#NviCandidate",
+    "NonNviCandidate": "https://nva.sikt.no/ontology/publication#NonNviCandidate",
     "publicationContextUris": {
       "@container": "@set"
     }
@@ -204,7 +207,7 @@
           "@embed": "@always",
           "@default": "@null"
         },
-        "https://bibsysdev.github.io/src/organization-ontology.ttl#country": {
+        "country": {
           "@embed": "@always",
           "@default": "@null"
         },
