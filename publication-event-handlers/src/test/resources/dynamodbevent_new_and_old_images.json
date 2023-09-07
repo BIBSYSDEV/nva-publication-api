@@ -1,4 +1,4 @@
-+{
+{
   "version": "0",
   "id": "6c62155d-e172-4a35-a9db-01f913282c37",
   "detail-type": "dynamodb-stream-event",
