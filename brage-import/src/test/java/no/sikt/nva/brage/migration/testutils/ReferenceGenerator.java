@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
@@ -44,12 +43,11 @@ import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
-import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtypeEnum;
-import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtypeOther;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -311,10 +309,24 @@ public final class ReferenceGenerator {
                            .withDoi(builder.getDoi())
                            .build();
             }
+            if (NvaType.TEXTBOOK.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new Textbook(generateMonographPages(builder)))
+                           .withPublishingContext(generatePublicationContextForBook(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
             return new Reference.Builder().build();
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
+    }
+
+    @NotNull
+    private static MonographPages generateMonographPages(Builder builder) {
+        return new MonographPages.Builder()
+                   .withPages(builder.getPages().getPages())
+                   .withIllustrated(false).build();
     }
 
     private static ConferencePoster generatePublicationInstanceForConferencePoster() {
@@ -461,15 +473,11 @@ public final class ReferenceGenerator {
 
     private static ReportBasic generatePublicationInstanceForReport(Builder builder) {
         return new ReportBasic(
-            new MonographPages.Builder()
-                .withPages(builder.getPages().getPages())
-                .withIllustrated(false).build());
+            generateMonographPages(builder));
     }
 
     private static ReportResearch generatePublicationInstanceForResearchReport(Builder builder) {
-        return new ReportResearch(new MonographPages.Builder()
-                                  .withPages(builder.getPages().getPages())
-                                  .withIllustrated(false).build());
+        return new ReportResearch(generateMonographPages(builder));
     }
 
     private static Book generatePublicationContextForBook(Builder builder) throws InvalidIsbnException {

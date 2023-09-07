@@ -20,6 +20,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScie
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificChapter;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isTextbook;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,7 @@ import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -74,7 +76,7 @@ public final class PublicationInstanceMapper {
     private PublicationInstanceMapper() {
     }
 
-    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
+    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity", "PMD.NcssCount"})
     public static PublicationInstance<? extends Pages> buildPublicationInstance(Record record) {
         if (isJournalArticle(record)) {
             return buildPublicationInstanceWhenJournalArticle(record);
@@ -159,9 +161,17 @@ public final class PublicationInstanceMapper {
         }
         if (isAnthology(record)) {
             return buildPublicationInstanceWhenAnthology(record);
-        } else {
+        }
+        if (isTextbook(record)) {
+            return buildPublicationInstanceWhenTextbook(record);
+        }
+        else {
             return buildPublicationInstanceWhenReport(record);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenTextbook(Record record) {
+        return new Textbook(extractMonographPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenAnthology(Record record) {
