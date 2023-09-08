@@ -104,12 +104,14 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var updatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
                 importCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo( CandidateStatus.IMPORTED)));
+        assertThat(updatedImportCandidate.getImportStatus().getCandidateStatus(),
+                   is(equalTo(CandidateStatus.IMPORTED)));
         assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
-    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(@Mock ResourceService resourceService)
+    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(@Mock
+                                                                                        ResourceService resourceService)
             throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -165,7 +167,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldReturnBadGatewayWhenRollbackFails(@Mock ResourceService resourceService) throws NotFoundException, IOException {
+    void shouldReturnBadGatewayWhenRollbackFails(@Mock ResourceService resourceService)
+        throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
         publicationService = resourceService;

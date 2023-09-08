@@ -94,7 +94,7 @@ public class BatchEventEmitterTest {
         assertThrows(EntryTooBigException.class, () -> batchEventEmitter.addEvents(eventBodies));
     }
     
-    private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests( EventBridgeClient client) {
+    private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests(EventBridgeClient client) {
         mockEventBridgeListEventBuses(client);
         when(client.putEvents(any(PutEventsRequest.class)))
             .thenThrow(EventBridgeException.builder().message("Unimportant message").build());
