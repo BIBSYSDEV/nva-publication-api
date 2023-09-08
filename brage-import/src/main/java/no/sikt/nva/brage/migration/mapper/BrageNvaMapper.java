@@ -76,13 +76,13 @@ public final class BrageNvaMapper {
                               .withAdditionalIdentifiers(extractCristinIdentifier(record))
                               .withRightsHolder(record.getRightsholder())
                               .build();
-        if(!isNotCristinRecord(record)) {
+        if(!isCristinRecord(record)) {
             assertPublicationDoesNotHaveEmptyFields(publication);
         }
         return publication;
     }
 
-    private static boolean isNotCristinRecord(Record record) {
+    private static boolean isCristinRecord(Record record) {
         return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
     }
 

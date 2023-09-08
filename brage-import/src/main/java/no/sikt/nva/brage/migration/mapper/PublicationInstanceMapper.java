@@ -160,7 +160,8 @@ public final class PublicationInstanceMapper {
         }
         if (isAnthology(record)) {
             return buildPublicationInstanceWhenAnthology(record);
-        } if (isCristinRecord(record)) {
+        }
+        if (isCristinRecord(record)) {
             return null;
         } else {
             return buildPublicationInstanceWhenReport(record);
