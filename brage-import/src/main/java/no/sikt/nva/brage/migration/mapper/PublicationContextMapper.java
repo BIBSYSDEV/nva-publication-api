@@ -110,7 +110,8 @@ public final class PublicationContextMapper {
                || isScientificMonograph(record)
                || isOtherStudentWork(record)
                || isStudentPaper(record)
-               || isAnthology(record);
+               || isAnthology(record)
+               || isTextbook(record);
     }
 
     private static PublicationContext buildPublicationContextWhenReaderOpinion() throws InvalidIssnException {
@@ -127,6 +128,10 @@ public final class PublicationContextMapper {
 
     public static boolean isPerformingArts(Record record) {
         return NvaType.PERFORMING_ARTS.getValue().equals(record.getType().getNva());
+    }
+
+        public static boolean isTextbook(Record record) {
+        return NvaType.TEXTBOOK.getValue().equals(record.getType().getNva());
     }
 
     private static boolean isArticle(Record record) {

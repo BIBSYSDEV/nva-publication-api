@@ -4,6 +4,7 @@ import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
 import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
 import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
+import static no.sikt.nva.brage.migration.NvaType.TEXTBOOK;
 import static no.sikt.nva.brage.migration.NvaType.VISUAL_ARTS;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
@@ -110,6 +111,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                          READER_OPINION.getValue());
     public static final Type TYPE_ANTHOLOGY = new Type(List.of(ANTHOLOGY.getValue()),
                                                        ANTHOLOGY.getValue());
+    public static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -681,6 +683,17 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldConvertAnthologyToPublication() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_ANTHOLOGY)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertTextbookToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_TEXTBOOK)
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
