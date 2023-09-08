@@ -33,7 +33,7 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
         super.init();
         handler = new DeletionProcessInitializationHandler();
         outputStream = new ByteArrayOutputStream();
-        context = Mockito.mock(Context.class);
+        context = null;
     }
     
     @Test

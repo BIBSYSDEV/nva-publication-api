@@ -96,7 +96,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final String PART_OF_SERIES_VALUE_V6 = "NVE Rapport;";
     public static final String EXPECTED_SERIES_NUMBER = "42";
     public static final UUID UUID = java.util.UUID.randomUUID();
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
     public static final Type TYPE_CONFERENCE_REPORT = new Type(List.of(NvaType.CONFERENCE_REPORT.getValue()),

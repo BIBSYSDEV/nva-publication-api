@@ -1,8 +1,3 @@
-plugins {
-    id 'nva-publication-api.java-library-conventions'
-}
-
-
 dependencies {
     implementation project(":publication-constants")
     implementation libs.nva.apigateway
@@ -22,17 +17,17 @@ dependencies {
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.secrets
 
-    implementation libs.jackson.databind
-    implementation libs.jackson.annotations
-    implementation libs.jackson.datatype.jsr310
+
     implementation libs.guava
     implementation libs.zalando
+    implementation (libs.bundles.jackson) {
+        exclude group: 'org.zalando', module : 'jackson-datatype-problem'
+    }
 
+    implementation (libs.jackson.datatype.problem){
 
-    runtimeOnly libs.jackson.core
-    runtimeOnly libs.jackson.datatype.jdk8
-    runtimeOnly libs.jackson.datatype.jsr310
-    runtimeOnly libs.jackson.module.parameter.names
+    }
+
     implementation libs.bundles.logging
 
     testImplementation project(path: ':tickets-test')

@@ -43,7 +43,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
-        context = Mockito.mock(Context.class);
+        context = null;
     }
     
     @Test

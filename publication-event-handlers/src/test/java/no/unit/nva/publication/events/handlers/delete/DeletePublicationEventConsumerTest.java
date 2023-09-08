@@ -49,7 +49,7 @@ public class DeletePublicationEventConsumerTest {
         s3Client = new FakeS3ClientSupportingDeleteObject();
         handler = new DeletePublicationEventConsumer(s3Client);
         outputStream = new ByteArrayOutputStream();
-        context = Mockito.mock(Context.class);
+        context = null;
     }
 
     @Test

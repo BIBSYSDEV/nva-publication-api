@@ -1,21 +1,20 @@
 package no.unit.nva.cristin.mapper.artisticproduction;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import nva.commons.core.JacocoGenerated;
-
-import java.util.List;
 
 
 /**
@@ -26,7 +25,6 @@ import java.util.List;
  * TEATERPRODUKSJON
  */
 
-@Data
 @Builder(
     builderClassName = "CristinArtisticProductionBuilder",
     toBuilder = true,
@@ -34,6 +32,8 @@ import java.util.List;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"status_bestilt", "produkttype", "hendelse"})
 @SuppressWarnings({"PMD.TooManyFields"})

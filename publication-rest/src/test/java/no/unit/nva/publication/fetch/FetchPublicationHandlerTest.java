@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -60,6 +60,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -72,10 +73,14 @@ import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
+@ExtendWith(MockitoExtension.class)
 @WireMockTest(httpsEnabled = true)
 class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private static final String TEXT_ANY = "text/*";
@@ -95,7 +100,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
     public static final String PUBLISHER_NAME = "publisher name";
     private ResourceService publicationService;
-    private Context context;
+    private final Context context = new FakeContext();
     private UriRetriever uriRetriever;
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
@@ -105,14 +110,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
      * Set up environment.
      */
     @BeforeEach
-    public void setUp() {
+    public void setUp(@Mock Environment environment) {
         super.init();
-        environment = mock(Environment.class);
+        this.environment = environment;
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
+        lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
 
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
-        context = mock(Context.class);
         output = new ByteArrayOutputStream();
         this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, uriRetriever, environment);

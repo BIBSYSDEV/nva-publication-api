@@ -11,8 +11,6 @@ dependencies {
 
     compileOnly libs.nva.apigateway
 
-    implementation libs.javafaker
-
     implementation libs.junit.jupiter.api
 
 
@@ -20,6 +18,7 @@ dependencies {
     implementation libs.aws.sdk2.s3
 
     implementation libs.bundles.testing
+    implementation libs.bundles.jackson
     implementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
@@ -30,7 +29,7 @@ dependencies {
     }
 
     // https://mvnrepository.com/artifact/uk.co.jemos.podam/podam
-    testImplementation group: 'uk.co.jemos.podam', name: 'podam', version: '7.1.0.RELEASE'
+ //   testImplementation group: 'uk.co.jemos.podam', name: 'podam', version: '8.0.0.RELEASE'
 
 
 }

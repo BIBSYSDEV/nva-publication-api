@@ -1,18 +1,16 @@
 package no.unit.nva.cristin.mapper;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-
-@Data
 @Builder(
     builderClassName = "CristinAssociatedUriBuilder",
     toBuilder = true,
@@ -20,6 +18,8 @@ import java.net.URI;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 @JsonIgnoreProperties({"sprakkode"})
 public class CristinAssociatedUri {

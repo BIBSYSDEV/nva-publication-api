@@ -19,6 +19,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -65,6 +66,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private AmazonDynamoDB dynamoClient;
+
+    private final Context context = new FakeContext();
     
     private TicketService ticketService;
     
@@ -87,7 +90,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenEventIsOfWrongType() {
         var eventReference = new EventReference(randomString(), randomUri());
         InputStream event = sampleLambdaDestinationsEvent(eventReference);
-        Executable action = () -> analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
+        Executable action = () -> analyticsIntegration.handleRequest(event, outputStream, context);
         var expectedException = assertThrows(Exception.class, action);
         assertThat(expectedException.getMessage(), containsString(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC));
     }
@@ -96,7 +99,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder() throws IOException {
         var inputEvent = generateEventForExpandedPublication();
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
-        analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
+        analyticsIntegration.handleRequest(event, outputStream, context);
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
         var analyticsFilePath = UriWrapper.fromUri(analyticsObjectEvent.getUri()).toS3bucketPath();
         var publicationString = s3Driver.getFile(analyticsFilePath);
@@ -109,7 +112,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     void shouldNotStoreTheExpandedDataEntriesThatAreNotPublications() throws IOException, ApiGatewayException {
         EventReference inputEvent = generateEventForExpandedDoiRequest();
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
-        analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
+        analyticsIntegration.handleRequest(event, outputStream, context);
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
         assertThat(analyticsObjectEvent, is(nullValue()));
     }
