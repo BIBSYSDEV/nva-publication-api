@@ -1,6 +1,10 @@
-apply plugin: 'io.freefair.lombok'
+plugins{
+    id "io.freefair.lombok" version "8.2.2"
+}
 
 dependencies {
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }

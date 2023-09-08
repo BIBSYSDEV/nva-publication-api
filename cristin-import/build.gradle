@@ -1,6 +1,13 @@
-apply plugin: 'io.freefair.lombok'
+plugins{
+    id "io.freefair.lombok" version "8.2.2"
+}
+//apply plugin: 'io.freefair.lombok'
 
 dependencies {
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
     implementation project(":publication-constants")
     implementation project(":publication-commons")
     implementation project(":s3-import-commons")

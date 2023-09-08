@@ -36,6 +36,7 @@ karate-junit5 = { strictly = '1.1.0' }
 jena = { strictly = '4.7.0'}
 jsonassert = { strictly = '1.5.1'}
 datafaker = { strictly = '1.9.0' }
+lombok = { strictly = '1.18.28' }
 
 
 [libraries]
@@ -150,6 +151,7 @@ karate-parent = { group = 'com.intuit.karate', name = 'karate-parent', version.r
 jena-core = { group=  'org.apache.jena', name = 'jena-core', version.ref = 'jena' }
 jena-arq = { group = 'org.apache.jena', name = 'jena-arq', version.ref = 'jena' }
 
+lombok = { group = 'org.projectlombok', name = 'lombok', version.ref = 'lombok' }
 
 #byte-buddy = {group= 'net.bytebuddy', name= 'byte-buddy', version='1.8.15'}
 #byte-buddy-agent = {group= 'net.bytebuddy', name='byte-buddy-agent', version= '1.8.15'}
