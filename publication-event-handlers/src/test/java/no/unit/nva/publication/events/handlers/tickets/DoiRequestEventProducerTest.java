@@ -74,7 +74,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         this.httpClient = new FakeHttpClient<>(response);
         s3Client = new FakeS3Client();
         handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
-        context = mock(Context.class);
+        context = null;
         outputStream = new ByteArrayOutputStream();
     }
 

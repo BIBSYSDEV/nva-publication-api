@@ -32,13 +32,16 @@ import org.hamcrest.beans.HasPropertyWithValue;
 import org.hamcrest.core.Every;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class DeleteImportCandidatesEventEmitterTest {
 
     public static final Context CONTEXT = Mockito.mock(Context.class);

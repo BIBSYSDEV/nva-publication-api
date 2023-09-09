@@ -20,6 +20,8 @@ import no.unit.nva.publication.model.storage.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
 
 //TODO: rename class to DynamoJsonToInternalModelEventHandler
+
+@SuppressWarnings({"PMD.ReturnEmptyCollectionRatherThanNull"})
 public final class DynamodbStreamRecordDaoMapper {
     
     private DynamodbStreamRecordDaoMapper() {

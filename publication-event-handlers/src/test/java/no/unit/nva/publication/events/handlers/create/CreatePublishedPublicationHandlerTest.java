@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 
 class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
     
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final String DATA_IMPORT_TOPIC = "PublicationService.DataImport.DataEntry";
     public static final String SCOPUS_IMPORT_SUBTOPIC = "PublicationService.ScopusData.DataEntry";
     private CreatePublishedPublicationHandler handler;

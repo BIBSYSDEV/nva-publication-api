@@ -1,6 +1,6 @@
 dependencies {
 
-    implementation libs.jaxb.api
+    implementation libs.xsd2java.api
     implementation libs.nva.doi.partner.data
     implementation libs.nva.core
     implementation libs.nva.identifiers
@@ -11,7 +11,7 @@ dependencies {
     implementation libs.nva.auth
 
     implementation libs.bundles.logging
-    implementation libs.jackson.databind
+    implementation libs.bundles.jackson
 
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'

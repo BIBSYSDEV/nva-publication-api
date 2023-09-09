@@ -38,7 +38,6 @@ dependencies {
     runtimeOnly libs.jackson.datatype.jdk8
 
     testImplementation project(":publication-testing")
-    testImplementation libs.javafaker
     testImplementation libs.nva.testutils
     testImplementation libs.logutils
     testImplementation libs.aws.sdk2.utils

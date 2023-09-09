@@ -1,18 +1,20 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.github.javafaker.Faker;
+import net.datafaker.providers.base.BaseFaker;
+import no.unit.nva.commons.json.JsonSerializable;
+
 import java.util.Objects;
 import java.util.Random;
-import no.unit.nva.commons.json.JsonSerializable;
+
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class SampleObject implements JsonSerializable {
     
     private static final Random RANDOM = new Random(System.currentTimeMillis());
-    private static final Faker FAKER = Faker.instance(RANDOM);
+    private static final BaseFaker FAKER = new BaseFaker(RANDOM);
     @JsonProperty("id")
     private final int id;
     @JsonProperty("field1")
